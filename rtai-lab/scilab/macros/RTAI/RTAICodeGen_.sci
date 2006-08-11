@@ -2339,7 +2339,6 @@ function Code=make_actuator(standalone)
 // Generating the routine for actuators interfacing
 //Copyright INRIA
 //Author : Rachid Djenidi
-//Modified for RTAI by Roberto Bucher (roberto.bucher@die.supsi.ch)
   
 Call=['/*'+part('-',ones(1,40))+' Actuators */ ';
       'void ';
@@ -2370,35 +2369,60 @@ if standalone then
   a_actuator=['  /* skeleton to be customized */' 
 	      '    switch (*flag) {'
 	      '    case 2 : ' 
-              '    if(*nevprt>0) {/* get the input value */'
-              '       /* att_1_output */'
-              '    } '
+	      '      /*if(*nevprt>0) { get the input value */'
+	      '        for (k=0;k<*nu;k++) printf(""Actuator: time=%f, u(%d) of actuator %d is %f \n"", *t, k, *nport, u[k]);  '
+	      '      /*} */'
 	      '      break;'
 	      '    case 4 : /* actuator initialisation */'
-              '    /* att_1_init */'
+	      '      /* do whatever you want to initialize the actuator */ '
 	      '      break;'
 	      '    case 5 : /* actuator ending */'
-              '    /* att_1_end */'
+	      '      /* do whatever you want to end the actuator */'
 	      '      break;'
 	      '    }']
 else
  a_actuator=[]
 end
 nc=size(act,'*')
+// pour fprintf
+typ='%f ';
+  for i=1:sum(actt(:,3))
+    typ=typ+'%f ';
+  end
+  Code1='    fprintf(fprw, '"'+typ+' \n'",*t' 
+  for i=1:size(actt,1)
+    ni=actt(i,3) // dimension of ith output
+    for j=1:ni
+      Code1= Code1+ ' ,'+rdnom+'_block_outtb['+string(actt(i,2)-1+j-1')+']'
+    end
+  end
+Code1($)=Code1($)+');'
+
 Code=[]
 if nc==1|~standalone then
   Code=[Call
 	comments
 	dcl
+	'  if (flag1 == 0){'
 	a_actuator
+	'  }else if (flag1 == 1){'
+	'    if (*flag == 4 && *nport == 1){'
+	'      fprw=fopen(output,'"wt'");'
+	'      if( fprw == NULL )'
+        '        {'
+        '          printf('"Error opening file: %s\n'", output);'
+        '          return;'
+        '        }'
+	'    }else if (*flag == 2 /* && *nevprt>0 */){'
+	Code1
+	'    }else if (*flag == 5 && *nport == 1){'
+        '      fclose(fprw);'
+        '    }'
+	'  }'
 	'}']
 elseif nc>1 then
   S='  switch (*nport) {'
-  str1='att_1'
   for k=1:nc
-    str2='att_'+string(k)
-    a_actuator=strsubst(a_actuator,str1,str2)
-    str1=str2
     S=[S;
        '  case '+string(k)+' :/* Port number '+string(k)+' ----------*/'
        '  '+a_actuator
@@ -2409,7 +2433,22 @@ elseif nc>1 then
 	Call
 	comments
 	dcl
+	'  if (flag1 == 0){'	
 	S
+	'  }else if (flag1 == 1){'
+	'    if (*flag == 4 && *nport == 1){'
+	'      fprw=fopen(output,'"wt'");'
+	'      if( fprw == NULL )'
+        '        {'
+        '          printf('"Error opening file: %s\n'", output);'
+        '          return;'
+        '        }'
+	'    }else if (*flag == 2 /*&& *nevprt>0*/ ){'
+	Code1
+	'    }else if (*flag == 5 && *nport == 1){'
+        '      fclose(fprw);'
+        '    }'
+	'  }'
 	'}']
 end
 endfunction
@@ -2712,6 +2751,9 @@ Code=[Code;
       '} /* '+rdnom+' */']
 
 endfunction
+
+//==========================================================================
+
 function Code=make_decl()
 //generates  procedure declarations
 //Copyright INRIA
@@ -2999,7 +3041,6 @@ function Code=make_sensor(standalone)
 // Generating the routine for sensors interfacing
 //Copyright INRIA
 //Author : Rachid Djenidi
-//Modified for RTAI by Roberto Bucher (roberto.bucher@die.supsi.ch)
   
 Call=['/*'+part('-',ones(1,40))+' Sensor */ ';
       'void ';
@@ -3023,43 +3064,69 @@ dcl=['     int *flag,*nevprt,*nport;'
      ''
      '     double  *t, y[];'
      '{'
-     '  int k;'];
-
+     '  int k;'
+     '  double temps;'];
 if standalone then
+
   a_sensor=['    switch (*flag) {'
-            '  case 1 : /* set the ouput value */'
-            '    /* sens_1_input */'
-            '    break;'
-            '  case 2 : /* Update internal discrete state if any */'
-            '    /* sens_1_update */'
+	    '    case 1 : /* set the output value */'
+	    '      printf(""Require outputs of sensor number %d\n"", *nport);'
+	    '      printf(""time is: %f\n"", *t);'
+	    '      printf(""size of the sensor output is: %d\n"", *ny);'
+	    '      puts(""Please set the sensor output values""); '
+	    '      for (k=0;k<*ny;k++) scanf(""%lf"", &(y[k]));'
 	    '      break;'
 	    '    case 4 : /* sensor initialisation */'
-            '    /* sens_1_init */'
+	    '      /* do whatever you want to initialize the sensor */'
 	    '      break;'
 	    '    case 5 : /* sensor ending */'
-            '    /* sens_1_end */'
+	    '      /* do whatever you want to end the sensor */'
 	    '      break;'
 	    '    }']
 else
   a_sensor=[]
 end
-
 nc=size(cap,'*')
+// pour fscanf
+typ='%lf ';
+  for i=1:sum(capt(:,3))
+    typ=typ+'%lf ';
+  end
+  Code1=['      fscanf( fprr, '"'+typ+' \n'",&temps'] 
+  for i=1:size(capt,1)
+   ni=capt(i,3) // dimension of ith input
+   for j=1:ni
+     Code1($)=Code1($)+ '  , &('+rdnom+'_block_outtb['+string(capt(i,2)-1+j-1')+'])';
+   end 
+  end
+  Code1($)=Code1($)+');'
+
 Code=[]
 if nc==1|~standalone then
   Code=[Code;
 	Call
 	comments
 	dcl
+	'  if (flag1 == 0){'
 	a_sensor
+	'  }else if (flag1 == 1){'
+	'    if (*flag == 4 && *nport == 1){'
+        '      fprr=fopen(input,'"r'");'
+        '      if( fprr == NULL )'
+	'        {'
+	'          printf('"Error opening file: %s\n'", input);'
+	'          return ;'
+        '	 }' 
+        '    }else if (*flag == 1){'
+	Code1
+	'    }else if (*flag == 5 && *nport == 1){'
+        '      fclose(fprr);'
+        '    }'
+	'  }'
 	'}'];
 elseif nc>1 then
   S='  switch (*nport) {'
-  str1='sens_1'
   for k=1:nc
-    str2='sens_'+string(k)
-    a_sensor=strsubst(a_sensor,str1,str2)
-    str1=str2
     S=[S;
        '  case '+string(k)+' : /* Port number '+string(k)+' ----------*/'
        '  '+a_sensor
@@ -3070,7 +3137,22 @@ elseif nc>1 then
 	  Call
 	  comments
 	  dcl
+	  '  if (flag1 == 0){'
 	  S
+	  '  }else if (flag1 == 1){'
+	  '    if (*flag == 4 && *nport == 1){'
+          '      fprr=fopen(input,'"r'");'
+          '      if( fprr == NULL )'
+	  '        {'
+	  '          printf('"Error opening file: %s\n'", input);'
+	  '          return ;'
+          '	 }' 
+          '    }else if (*flag == 1){'
+	  Code1
+	  '    }else if (*flag == 5 && *nport == 1){'
+          '      fclose(fprr);'
+          '    }'
+	  '  }'
 	  '}']
 end
 endfunction

@@ -1261,7 +1261,7 @@ RTAI_PROTO(int, __wrap_pthread_rwlock_destroy, (pthread_rwlock_t *rwlock))
 	return EINVAL;
 }
 
-RTAI_PROTO(int, __wrap_pthread_rwlock_rdlock,(pthread_rwlock_t *rwlock))
+RTAI_PROTO(int, __wrap_pthread_rwlock_rdlock, (pthread_rwlock_t *rwlock))
 {
 	struct { void *rwlock; } arg = { SET_ADR(rwlock) };
 	if (arg.rwlock) {
@@ -1270,7 +1270,7 @@ RTAI_PROTO(int, __wrap_pthread_rwlock_rdlock,(pthread_rwlock_t *rwlock))
 	return EINVAL;
 }
 
-RTAI_PROTO(int, __wrap_pthread_rwlock_tryrdlock,(pthread_rwlock_t *rwlock))
+RTAI_PROTO(int, __wrap_pthread_rwlock_tryrdlock, (pthread_rwlock_t *rwlock))
 {
 	struct { void *rwlock; } arg = { SET_ADR(rwlock) };
 	if (arg.rwlock) {
@@ -1280,7 +1280,7 @@ RTAI_PROTO(int, __wrap_pthread_rwlock_tryrdlock,(pthread_rwlock_t *rwlock))
 }
 
 #ifdef __USE_XOPEN2K
-RTAI_PROTO(int, __wrap_pthread_rwlock_timedrdlock,(pthread_rwlock_t *rwlock, struct timespec *abstime))
+RTAI_PROTO(int, __wrap_pthread_rwlock_timedrdlock, (pthread_rwlock_t *rwlock, struct timespec *abstime))
 {
 	struct { void *rwlock; RTIME time; } arg = { SET_ADR(rwlock), timespec2count(abstime) };
 	if (arg.rwlock && abstime->tv_nsec >= 0 && abstime->tv_nsec < 1000000000) {
@@ -1290,7 +1290,7 @@ RTAI_PROTO(int, __wrap_pthread_rwlock_timedrdlock,(pthread_rwlock_t *rwlock, str
 }
 #endif
 
-RTAI_PROTO(int, __wrap_pthread_rwlock_wrlock,(pthread_rwlock_t *rwlock))
+RTAI_PROTO(int, __wrap_pthread_rwlock_wrlock, (pthread_rwlock_t *rwlock))
 {
 	struct { void *rwlock; } arg = { SET_ADR(rwlock) };
 	if (arg.rwlock) {
@@ -1299,7 +1299,7 @@ RTAI_PROTO(int, __wrap_pthread_rwlock_wrlock,(pthread_rwlock_t *rwlock))
 	return EINVAL;
 }
 
-RTAI_PROTO(int, __wrap_pthread_rwlock_trywrlock,(pthread_rwlock_t *rwlock))
+RTAI_PROTO(int, __wrap_pthread_rwlock_trywrlock, (pthread_rwlock_t *rwlock))
 {
 	struct { void *rwlock; } arg = { SET_ADR(rwlock) };
 	if (arg.rwlock) {
@@ -1309,9 +1309,9 @@ RTAI_PROTO(int, __wrap_pthread_rwlock_trywrlock,(pthread_rwlock_t *rwlock))
 }
 
 #ifdef __USE_XOPEN2K
-RTAI_PROTO(int, __wrap_pthread_rwlock_timedwrlock,(pthread_rwlock_t *rwlock, struct timespec *abstime))
+RTAI_PROTO(int, __wrap_pthread_rwlock_timedwrlock, (pthread_rwlock_t *rwlock, struct timespec *abstime))
 {
-	struct { void *rwlock; RTIME time; } arg = { ((void **)rwlock)[0], timespec2count(abstime) };
+	struct { void *rwlock; RTIME time; } arg = { SET_ADR(rwlock), timespec2count(abstime) };
 	if (arg.rwlock && abstime->tv_nsec >= 0 && abstime->tv_nsec < 1000000000) {
 		return rtai_lxrt(BIDX, SIZARG, RWL_WRLOCK_UNTIL, &arg).i[LOW] ? ETIMEDOUT : 0;
 	}
@@ -1319,9 +1319,9 @@ RTAI_PROTO(int, __wrap_pthread_rwlock_timedwrlock,(pthread_rwlock_t *rwlock, str
 }
 #endif
 
-RTAI_PROTO(int, __wrap_pthread_rwlock_unlock,(pthread_rwlock_t *rwlock))
+RTAI_PROTO(int, __wrap_pthread_rwlock_unlock, (pthread_rwlock_t *rwlock))
 {
-	struct { void *rwlock; } arg = { ((void **)rwlock)[0] };
+	struct { void *rwlock; } arg = { SET_ADR(rwlock) };
 	return rtai_lxrt(BIDX, SIZARG, RWL_UNLOCK, &arg).i[LOW];
 }
 

@@ -860,19 +860,22 @@ RTAI_PROTO(int, __wrap_sem_destroy, (sem_t *sem))
 
 RTAI_PROTO(int, __wrap_sem_wait, (sem_t *sem))
 {
+	int oldtype, retval = -1;
 	struct { void *sem; } arg = { SET_ADR(sem) };
+	pthread_setcanceltype(PTHREAD_CANCEL_ASYNCHRONOUS, &oldtype);
 	pthread_testcancel();
 	if (arg.sem) {
 		if (abs(rtai_lxrt(BIDX, SIZARG, SEM_WAIT, &arg).i[LOW]) >= RTE_BASE) {
 			errno =  EINTR;
-			pthread_testcancel();
-			return -1;
+		} else {
+			retval = 0;
 		}
-		pthread_testcancel();
-		return 0;
+	} else {
+		errno =  EINVAL;
 	}
-	errno =  EINVAL;
-	return -1;
+	pthread_testcancel();
+	pthread_setcanceltype(oldtype, NULL);
+	return retval;
 }
 
 RTAI_PROTO(int, __wrap_sem_trywait, (sem_t *sem))
@@ -896,21 +899,25 @@ RTAI_PROTO(int, __wrap_sem_trywait, (sem_t *sem))
 
 RTAI_PROTO(int, __wrap_sem_timedwait, (sem_t *sem, const struct timespec *abstime))
 {
+	int oldtype, retval = -1;
 	struct { void *sem; RTIME time; } arg = { SET_ADR(sem), timespec2count(abstime) };
+	pthread_setcanceltype(PTHREAD_CANCEL_ASYNCHRONOUS, &oldtype);
+	pthread_testcancel();
 	if (arg.sem) {
-		int retval;
-		if (abs(retval = rtai_lxrt(BIDX, SIZARG, SEM_WAIT_UNTIL, &arg).i[LOW]) == RTE_TIMOUT) {
+		int ret;
+		if (abs(ret = rtai_lxrt(BIDX, SIZARG, SEM_WAIT_UNTIL, &arg).i[LOW]) == RTE_TIMOUT) {
 			errno =  ETIMEDOUT;
-			return -1;
-		}
-		if (retval >= RTE_BASE) {
+		} else if (ret >= RTE_BASE) {
 			errno = EINTR;
-			return -1;
+		} else {
+			retval = 0;
 		}
-		return 0;
+	} else {
+		errno =  EINVAL;
 	}
-	errno =  EINVAL;
-	return -1;
+	pthread_testcancel();
+	pthread_setcanceltype(oldtype, NULL);
+	return retval;
 }
 
 RTAI_PROTO(int, __wrap_sem_post, (sem_t *sem))
@@ -1137,24 +1144,27 @@ RTAI_PROTO(int, __wrap_pthread_cond_broadcast, (pthread_cond_t *cond))
 
 RTAI_PROTO(int, __wrap_pthread_cond_wait, (pthread_cond_t *cond, pthread_mutex_t *mutex))
 {
-	int retval = 0;
+	int oldtype, retval;
 	struct { void *cond; void *mutex; } arg = { SET_ADR(cond), SET_ADR(mutex) };
+	pthread_setcanceltype(PTHREAD_CANCEL_ASYNCHRONOUS, &oldtype);
 	pthread_testcancel();
 	if (arg.cond && arg.mutex) {
 		INC_VAL(mutex);
 		retval = !rtai_lxrt(BIDX, SIZARG, COND_WAIT, &arg).i[LOW] ? 0 : EPERM;
 		DEC_VAL(mutex);
-		pthread_testcancel();
 	} else {
 		retval = EINVAL;
 	}
+	pthread_testcancel();
+	pthread_setcanceltype(oldtype, NULL);
 	return retval;
 }
 
 RTAI_PROTO(int, __wrap_pthread_cond_timedwait, (pthread_cond_t *cond, pthread_mutex_t *mutex, const struct timespec *abstime))
 {
-	int retval = 0;
+	int oldtype, retval;
 	struct { void *cond; void *mutex; RTIME time; } arg = { SET_ADR(cond), SET_ADR(mutex), timespec2count(abstime) };
+	pthread_setcanceltype(PTHREAD_CANCEL_ASYNCHRONOUS, &oldtype);
 	pthread_testcancel();
 	if (arg.cond && arg.mutex && abstime->tv_nsec >= 0 && abstime->tv_nsec < 1000000000) {
 		INC_VAL(mutex);
@@ -1164,10 +1174,11 @@ RTAI_PROTO(int, __wrap_pthread_cond_timedwait, (pthread_cond_t *cond, pthread_mu
 			retval = !retval ? 0 : EPERM;
 		}
 		DEC_VAL(mutex);
-		pthread_testcancel();
 	} else {
 		retval = EINVAL;
 	}
+	pthread_testcancel();
+	pthread_setcanceltype(oldtype, NULL);
 	return retval;
 }
 
@@ -1527,7 +1538,6 @@ RTAI_PROTO(int, __wrap_pthread_cancel,(pthread_t thread))
 {
 	int hs, ret;
 	hs = MAKE_SOFT();
-	pthread_kill(thread, -9);
 	ret = pthread_cancel(thread);
 	MAKE_HARD(hs);
 	return ret;

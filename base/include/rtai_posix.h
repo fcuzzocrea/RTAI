@@ -713,19 +713,19 @@ static inline int MAKE_SOFT(void)
 	return 0;
 }
 
-RTAI_PROTO(void, count2timespec,(RTIME rt, struct timespec *t))
+RTAI_PROTO(void, count2timespec, (RTIME rt, struct timespec *t))
 {
 	t->tv_sec = (rt = count2nano(rt))/1000000000;
 	t->tv_nsec = rt - t->tv_sec*1000000000LL;
 }
 
-RTAI_PROTO(void, nanos2timespec,(RTIME rt, struct timespec *t))
+RTAI_PROTO(void, nanos2timespec, (RTIME rt, struct timespec *t))
 {
 	t->tv_sec = rt/1000000000;
 	t->tv_nsec = rt - t->tv_sec*1000000000LL;
 }
 
-RTAI_PROTO(RTIME, timespec2count,(const struct timespec *t))
+RTAI_PROTO(RTIME, timespec2count, (const struct timespec *t))
 {
 	return nano2count(t->tv_sec*1000000000LL + t->tv_nsec);
 }
@@ -1094,6 +1094,19 @@ RTAI_PROTO(int, __wrap_pthread_mutexattr_gettype, (const pthread_mutexattr_t *at
 			break;
 	}
 	return 0;
+}
+
+RTAI_PROTO(int, pthread_make_periodic_np, (pthread_t thread, struct timespec *start_delay, struct timespec *period))
+{
+        struct { RT_TASK *task; RTIME start_time, period; } arg = { NULL, start_delay->tv_sec*1000000000LL + start_delay->tv_nsec, period->tv_sec*1000000000LL + period->tv_nsec };
+	int retval;
+        return !(retval = rtai_lxrt(BIDX, SIZARG, MAKE_PERIODIC_NS, &arg).i[LOW]) ? 0 : retval == RTE_UNBLKD ? EINTR : ETIMEDOUT;
+}
+
+RTAI_PROTO(int, pthread_wait_period_np, (void))
+{
+        struct { unsigned long dummy; } arg;
+        return rtai_lxrt(BIDX, SIZARG, WAIT_PERIOD, &arg).i[LOW];
 }
 
 /*

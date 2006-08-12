@@ -1,3 +1,8 @@
+2006-08-12  Paolo Mantegazza <mantegazza@aero.polimi.it>
+
+	* base/include/rtai_posix.h: better enforce cancellation points
+	  in sems and conds wait.
+
 2006-08-10  Paolo Mantegazza <mantegazza@aero.polimi.it>
 
 	* base/include/rtai_posix.h: further enhance adherence to the

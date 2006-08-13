@@ -672,10 +672,12 @@ static inline int nanosleep(const struct timespec *rqtp, struct timespec *rmtp)
 #include <signal.h>
 #include <sys/types.h>
 #include <sys/stat.h>
+#include <sys/mman.h>
 #include <stdlib.h>
 #include <ctype.h>
 
 #include <semaphore.h>
+#include <limits.h>
 #include <pthread.h>
 
 struct task_struct;
@@ -1322,7 +1324,10 @@ RTAI_PROTO(int, __wrap_pthread_rwlock_timedwrlock, (pthread_rwlock_t *rwlock, st
 RTAI_PROTO(int, __wrap_pthread_rwlock_unlock, (pthread_rwlock_t *rwlock))
 {
 	struct { void *rwlock; } arg = { SET_ADR(rwlock) };
-	return rtai_lxrt(BIDX, SIZARG, RWL_UNLOCK, &arg).i[LOW];
+	if (arg.rwlock) {
+		return !rtai_lxrt(BIDX, SIZARG, RWL_UNLOCK, &arg).i[LOW] ? 0 : EPERM;
+	}
+	return EINVAL;
 }
 
 RTAI_PROTO(int, __wrap_pthread_rwlockattr_init, (pthread_rwlockattr_t *attr))
@@ -1453,6 +1458,7 @@ RTAI_PROTO(int, pthread_setschedparam_np, (int priority, int policy, int rr_quan
 		}
 	} else if (policy == SCHED_FIFO || policy == SCHED_RR || priority >= 0 || cpus_allowed) {
 		rt_task_init_schmod(rt_get_name(NULL), priority, 0, 0, policy, cpus_allowed);
+		rt_grow_and_lock_stack(PTHREAD_STACK_MIN);
 	} else {
 		return EINVAL;
 	}

@@ -1,3 +1,21 @@
+2006-08-13  Roberto Bucher <roberto.bucher@supsi.ch>
+
+	* rtai-lab/scilab/rtmain.c: Replaced send/receive for synchronisation
+	between rtBaseRate and rtMain with a semaphore (thanks to G. Palli).
+
+2006-08-13  Roberto Bucher <roberto.bucher@supsi.ch>
+
+	* rtai-lab/matlab/rtmain.c: Replaced send/receive for synchronisation
+	between rtBaseRate and rtMain with a semaphore (thanks to G. Palli).
+
+2006-08-13  Roberto Bucher <roberto.bucher@supsi.ch>
+
+	* rtai-lab/scilab/: Changed most of the file because of the new Code 
+	generator (Universal Code generator) and porting of the Scicos functions 
+	from type "2004" to type "4". The new scicos block interfaces have the 
+	name rtai4_xxxxxxxx. The old one (rtai_xxxxxx) are still provided for
+	compatibility with old block diagrams.
+
 2006-08-12  Paolo Mantegazza <mantegazza@aero.polimi.it>
 
 	* base/include/rtai_posix.h: better enforce cancellation points

@@ -1,3 +1,11 @@
+2006-08-14  Paolo Mantegazza <mantegazza@aero.polimi.it>
+
+	* base/include/rtai_posix.h: more posix compliant return in rwloc
+	  unlock.
+	* base/ipc/sem/sem.c: check semtype, not only owndby, when resetting 
+	  prios at wake up in sem_waits; signal wrlock only if owned and 
+	  return RTE_EPERM in rt_rwl_unlock if called without anything to do.
+
 2006-08-13  Roberto Bucher <roberto.bucher@supsi.ch>
 
 	* rtai-lab/scilab/rtmain.c: Replaced send/receive for synchronisation

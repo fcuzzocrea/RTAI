@@ -91,7 +91,7 @@ extern void rt_ODEUpdateContinuousStates(RTWSolverInfo *si);
 extern RT_MODEL *MODEL(void);
 static RT_MODEL *rtM;
 
-#define RTAILAB_VERSION         "3.1.1"
+#define RTAILAB_VERSION         "3.4.4"
 #define MAX_NTARGETS		1000
 #define MAX_NAMES_SIZE		256
 #define RUN_FOREVER		-1.0
@@ -663,6 +663,7 @@ static void *rt_HostInterface(void *args)
 			}
 
 			case 's': { int Reply = 1;
+
 				    rt_task_resume(rt_MainTask);
 				    rt_return(task, Reply);
 				    break;
@@ -877,8 +878,7 @@ static int_T rt_Main(RT_MODEL * (*model_name)(void), int_T priority)
 			hard_timers_cnt = rt_sem_init(nam2num("HTMRCN"), 0);
 		} else {
 			rt_BaseRateTick = nano2count(rt_BaseTaskPeriod);
-			hard_timers_cnt = rt_get_adr(nam2num("HTMRCN"));
-			hard_timers_cnt = rt_sem_init(nam2num("HTMRCN"), 0);
+			rt_sem_signal(hard_timers_cnt);
 		}
 	} else {
 		WaitTimingEvent = (void *)DummyWait;

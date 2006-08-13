@@ -1,3 +1,13 @@
+2006-08-11  Roberto Bucher <roberto.bucher@supsi.ch>
+
+	* rtai-lab/scilab/rtmain.c: Replaced send/receive for synchronisation
+	between rtBaseRate and rtMain with a semaphore (thanks to G. Palli).
+
+2006-08-11  Roberto Bucher <roberto.bucher@supsi.ch>
+
+	* rtai-lab/matlab/rtmain.c: Replaced send/receive for synchronisation
+	between rtBaseRate and rtMain with a semaphore (thanks to G. Palli).
+
 2006-07-31  Roberto Bucher <roberto.bucher@supsi.ch>
 
 	* rtai-lab/scilab/: Changed most of the file because of the new Code 

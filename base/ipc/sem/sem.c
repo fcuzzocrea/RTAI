@@ -468,7 +468,7 @@ int rt_sem_wait(SEM *sem)
 				if (++sem->count > 1 && sem->type) {
 					sem->count = 1;
 				}
-				if (sem->owndby) {
+				if (sem->owndby && sem->type > 0) {
 					set_task_prio_from_resq(sem->owndby);
 				}
 				rt_global_restore_flags(flags);
@@ -625,7 +625,7 @@ int rt_sem_wait_until(SEM *sem, RTIME time)
 			if (++sem->count > 1 && sem->type) {
 				sem->count = 1;
 			}
-			if (sem->owndby) {
+			if (sem->owndby && sem->type > 0) {
 				set_task_prio_from_resq(sem->owndby);
 			}
 			rt_global_restore_flags(flags);
@@ -965,8 +965,8 @@ int rt_cond_wait_timed(CND *cnd, SEM *mtx, RTIME delay)
 int rt_typed_rwl_init(RWL *rwl, int type)
 {
 	rt_typed_sem_init(&rwl->wrmtx, type, RES_SEM);
-	rt_typed_sem_init(&rwl->wrsem, 0, CNT_SEM);
-	rt_typed_sem_init(&rwl->rdsem, 0, CNT_SEM);
+	rt_typed_sem_init(&rwl->wrsem, 0, CNT_SEM | PRIO_Q);
+	rt_typed_sem_init(&rwl->rdsem, 0, CNT_SEM | PRIO_Q);
 	return 0;
 }
 
@@ -1025,7 +1025,7 @@ int rt_rwl_rdlock(RWL *rwl)
 			return ret;
 		}
 	}
-	((int *)&rwl->rdsem.owndby)[0]++;
+	((volatile int *)&rwl->rdsem.owndby)[0]++;
 	rt_global_restore_flags(flags);
 	return 0;
 }
@@ -1051,7 +1051,7 @@ int rt_rwl_rdlock_if(RWL *rwl)
 
 	flags = rt_global_save_flags_and_cli();
 	if (!rwl->wrmtx.owndby && (!(wtask = (rwl->wrsem.queue.next)->task) || wtask->priority > RT_CURRENT->priority)) {
-		((int *)&rwl->rdsem.owndby)[0]++;
+		((volatile int *)&rwl->rdsem.owndby)[0]++;
 		rt_global_restore_flags(flags);
 		return 0;
 	}
@@ -1095,7 +1095,7 @@ int rt_rwl_rdlock_until(RWL *rwl, RTIME time)
 			return ret;
 		}
 	}
-	((int *)&rwl->rdsem.owndby)[0]++;
+	((volatile int *)&rwl->rdsem.owndby)[0]++;
 	rt_global_restore_flags(flags);
 	return 0;
 }
@@ -1267,10 +1267,13 @@ int rt_rwl_unlock(RWL *rwl)
 	unsigned long flags;
 
 	flags = rt_global_save_flags_and_cli();
-	if (rwl->wrmtx.owndby) {
+	if (rwl->wrmtx.owndby == RT_CURRENT) {
 		rt_sem_signal(&rwl->wrmtx);
 	} else if (rwl->rdsem.owndby) {
-	           rwl->rdsem.owndby = (struct rt_task_struct *)((char *)rwl->rdsem.owndby - 1);
+		((volatile int *)&rwl->rdsem.owndby)[0]--;
+	} else {
+		rt_global_restore_flags(flags);
+		return RTE_PERM;
 	}
 	rt_global_restore_flags(flags);
 	flags = rt_global_save_flags_and_cli();

@@ -80,6 +80,8 @@
 #else
 #define RTE_BASE     (0xFFFB)
 #define RTE_RWLINV   (RTE_BASE + RT_RWLINV)
+#define RTE_DEADLOK  (RTE_BASE + RT_DEADLOK)
+#define RTE_PERM     (RTE_BASE + RT_PERM)
 #define RTE_OBJINV   (RTE_BASE + RT_OBJREM)
 #define RTE_OBJREM   (RTE_BASE + RT_OBJREM)
 #define RTE_TIMOUT   (RTE_BASE + RT_TIMOUT)

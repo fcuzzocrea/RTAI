@@ -113,8 +113,6 @@ int ComediDev_AIInUse[MAX_COMEDI_DEVICES] = {0};
 int ComediDev_AOInUse[MAX_COMEDI_DEVICES] = {0};
 int ComediDev_DIOInUse[MAX_COMEDI_DEVICES] = {0};
 
-SEM* syncronizer;
-
 static void DummyWait(void) { }
 static void DummySend(void) { }
 
@@ -276,10 +274,8 @@ static void *rt_BaseRate(void *args)
     rt_make_hard_real_time();
   }
 
-  rt_sem_wait_barrier(syncronizer);
-  //    rt_send(rt_MainTask, 0);	
-  //rt_task_suspend(rt_BaseRateTask);
-
+  rt_send(rt_MainTask, 0);
+  rt_task_suspend(rt_BaseRateTask);
   t0 = rt_get_cpu_time_ns();
   rt_task_make_periodic(rt_BaseRateTask, rt_get_time() + rt_BaseRateTick, rt_BaseRateTick);
   while (!endBaseRate) {
@@ -322,9 +318,6 @@ static void *rt_HostInterface(void *args)
   sem_post(&err_sem);
 
   while (!endInterface) {
-    sem_post(&err_sem);
-
-    while (!endInterface) {
       task = rt_receive(0, &Request);
       if (endInterface) break;
       switch (Request & 0xFF) {
@@ -547,9 +540,6 @@ static void *rt_HostInterface(void *args)
     return 0;
   }
 
-  return 0;
-}
-
 static int rt_Main(int priority)
 {
   SEM *hard_timers_cnt;
@@ -570,8 +560,6 @@ static int rt_Main(int priority)
     return 1;
   }
   sem_init(&err_sem, 0, 0);
-
-  syncronizer = rt_sem_init( nam2num("IFSEM"), 2);
 
   printf("TARGET STARTS.\n");
   pthread_create(&rt_HostInterfaceThread, NULL, rt_HostInterface, NULL);
@@ -623,10 +611,11 @@ static int rt_Main(int priority)
     printf("Executes on CPU map : %x.\n", CpuMap);
     printf("Sampling time : %e (s).\n", get_tsamp());
   }
-  /*     { */
-  /* 	int msg; */
-  /* 	rt_receive(0, &msg); */
-  /*     } */
+  {
+    int msg;
+    rt_receive(0, &msg);
+  }
+
   if (WaitToStart) {
     if (verbose) {
       printf("Target is waiting to start ... ");
@@ -634,16 +623,10 @@ static int rt_Main(int priority)
     }
     rt_task_suspend(rt_MainTask);
   }
-
-  rt_sem_wait_barrier(syncronizer);
-
-
   if (verbose) {
     printf("Target is running.\n");
   }
-
-  //    rt_task_resume(rt_BaseRateTask);
-
+  rt_task_resume(rt_BaseRateTask);
   isRunning = 1;
   while (!endex && (!FinalTime || TIME < FinalTime)) {
     msleep(POLL_PERIOD);
@@ -679,6 +662,14 @@ struct option options[] = {
   { "soft",       0, 0, 's' },
   { "wait",       0, 0, 'w' },
   { "priority",   1, 0, 'p' },
+  { "finaltime",  1, 0, 'f' },
+  { "name",       1, 0, 'n' },
+  { "idscope",    1, 0, 'i' },
+  { "idlog",      1, 0, 'l' },
+  { "idalog",     1, 0, 'a' },
+  { "idmeter",    1, 0, 't' },
+  { "idled",      1, 0, 'd' },
+  { "idsynch",    1, 0, 'y' },
   { "cpumap",     1, 0, 'c' },
   { "external",   0, 0, 'e' },
   { "oneshot",    0, 0, 'o' },
@@ -737,8 +728,6 @@ static void endme(int dummy)
   signal(SIGINT, endme);
   signal(SIGTERM, endme);
   endex = 1;
-  endBaseRate=1;
-  endInterface=1;
 }
 
 void exit_on_error()

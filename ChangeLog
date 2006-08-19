@@ -1,3 +1,8 @@
+2006-08-13  Roberto Bucher <roberto.bucher@supsi.ch>
+
+	* rtai-lab/scilab/rtmain.c: Reinserted rt_send
+	* rtai-lab/matlab/rtmain.c: Reinserted rt_send
+
 2006-08-14  Paolo Mantegazza <mantegazza@aero.polimi.it>
 
 	* base/include/rtai_posix.h: more posix compliant return in rwloc

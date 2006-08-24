@@ -1,4 +1,9 @@
-2006-08-13  Roberto Bucher <roberto.bucher@supsi.ch>
+2006-08-24  Paolo Mantegazza <mantegazza@aero.polimi.it>
+
+	* addons/rtdm/rtdm_driber.h: make timeout < 0 mean rt_sem_wait_if in
+	  _sem_wait_timed.
+
+2006-08-16  Roberto Bucher <roberto.bucher@supsi.ch>
 
 	* rtai-lab/scilab/rtmain.c: Reinserted rt_send
 	* rtai-lab/matlab/rtmain.c: Reinserted rt_send

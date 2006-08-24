@@ -961,8 +961,8 @@ static inline int _sem_wait_timed(void *sem, int64_t timeout, rtdm_toseq_t *time
 {
 	int ret;
 
-	if (unlikely(timeout < 0)) {
-		return -EWOULDBLOCK;
+	if (timeout < 0) {
+		return !(ret = rt_sem_wait_if(sem)) ? 0 : ret != RTE_OBJINV ? -EWOULDBLOCK : -EIDRM;
 	}
 	if (!timeout) {
 		/* infinite timeout */

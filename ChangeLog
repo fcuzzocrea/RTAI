@@ -2,9 +2,9 @@
 
 	* base/sched/sys.c: set the state of a newly RTAI enabled user space 
 	  task to 0 in __task_init. Otherwise there could be cases in which 
-	  other tasks using can infer a wrong status. Discovered so lately 
-	  likely because such a condition comes "by nature" if the new task 
-	  uses an RTAI service before other tasks interfere with its state. 
+	  other tasks can infer a wrong status. Discovered so lately likely 
+	  because such a condition comes "by nature" if the new task uses 
+	  an RTAI service before other tasks interfere with its state. 
 
 2006-08-24  Paolo Mantegazza <mantegazza@aero.polimi.it>
 

@@ -441,8 +441,8 @@ int rt_sem_wait(SEM *sem)
 	if ((count = sem->count) <= 0) {
 		void *retp;
 		unsigned long schedmap;
-		if (sem->restype) {
-			if (sem->owndby == rt_current) {
+		if (sem->type > 0) {
+			if (sem->restype && sem->owndby == rt_current) {
 				if (sem->restype > 0) {
 					count = sem->type++;
 					rt_global_restore_flags(flags);
@@ -594,8 +594,8 @@ int rt_sem_wait_until(SEM *sem, RTIME time)
 		rt_current->blocked_on = &sem->queue;
 		if ((rt_current->resume_time = time) > rt_time_h) {
 			unsigned long schedmap;
-			if (sem->restype) {
-				if (sem->owndby == rt_current) {
+			if (sem->type > 0) {
+				if (sem->restype && sem->owndby == rt_current) {
 					if (sem->restype > 0) {
 						count = sem->type++;
 						rt_global_restore_flags(flags);

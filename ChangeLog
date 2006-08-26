@@ -15,7 +15,7 @@
 
 2006-08-24  Paolo Mantegazza <mantegazza@aero.polimi.it>
 
-	* addons/rtdm/rtdm_driber.h: make timeout < 0 mean rt_sem_wait_if in
+	* addons/rtdm/rtdm_driver.h: make timeout < 0 mean rt_sem_wait_if in
 	  _sem_wait_timed.
 
 2006-08-16  Roberto Bucher <roberto.bucher@supsi.ch>

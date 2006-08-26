@@ -337,6 +337,8 @@ int rt_get_prio(struct rt_task_struct *task);
 
 int rt_get_inher_prio(struct rt_task_struct *task);
 
+int rt_get_priorities(struct rt_task_struct *task, int *priority, int *base_priority);
+
 void rt_spv_RMS(int cpuid);
 
 int rt_change_prio(struct rt_task_struct *task,

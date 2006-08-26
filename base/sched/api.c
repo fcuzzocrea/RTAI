@@ -23,9 +23,11 @@
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
  */
 
+#include <linux/module.h>
+#include <asm/uaccess.h>
+
 #include <rtai_schedcore.h>
 #include <rtai_registry.h>
-#include <linux/module.h>
 
 /* ++++++++++++++++++++++++ COMMON FUNCTIONALITIES ++++++++++++++++++++++++++ */
 
@@ -100,6 +102,44 @@ int rt_get_inher_prio(RT_TASK *task)
 	return task->base_priority;
 }
 
+
+/**
+ * @anchor rt_get_priorities
+ * @brief Check inheredited and base priority.
+ * 
+ * rt_task_get_priorities returns the base and inherited priorities of a task.
+ *
+ * Recall that a task has a base native priority, assigned at its
+ * birth or by @ref rt_change_prio(), and an actual, inherited,
+ * priority. They can be different because of priority inheritance.
+ *
+ * @param task is the affected task.
+ *
+ * @param priority the actual, e.e. inherited priority.
+ *
+ * @param base_priority the base priority.
+ *
+ * @return rt_task_get_priority returns 0 if non NULL priority addresses
+ * are given, EINVAL if addresses are NULL or task is not a valid object.
+ *
+ */
+int rt_get_priorities(RT_TASK *task, int *priority, int *base_priority)
+{
+	if (!task) {
+		task = RT_CURRENT;
+	}
+	if (task->magic != RT_TASK_MAGIC || !priority || !base_priority) {
+		return -EINVAL;
+	}
+	if ((unsigned long)priority < PAGE_OFFSET) {
+		put_user(task->priority, priority);
+		put_user(task->base_priority, base_priority);
+	} else {
+		*priority      = task->priority;
+		*base_priority = task->base_priority;
+	}
+	return 0;
+}
 
 /**
  * @anchor rt_change_prio
@@ -2011,6 +2051,7 @@ void rtai_proc_lxrt_unregister(void)
 EXPORT_SYMBOL(rt_set_sched_policy);
 EXPORT_SYMBOL(rt_get_prio);
 EXPORT_SYMBOL(rt_get_inher_prio);
+EXPORT_SYMBOL(rt_get_priorities);
 EXPORT_SYMBOL(rt_change_prio);
 EXPORT_SYMBOL(rt_whoami);
 EXPORT_SYMBOL(rt_task_yield);

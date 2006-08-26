@@ -2800,7 +2800,7 @@ static struct rt_native_fun_entry rt_sched_entries[] = {
 	{ { 0, rt_set_oneshot_mode },		    SET_ONESHOT_MODE },
 	{ { 0, rt_task_signal_handler },	    SIGNAL_HANDLER  },
 	{ { 0, rt_task_use_fpu },		    TASK_USE_FPU },
-	{ { 0, rt_linux_use_fpu },		    LINUX_USE_FPU },
+	{ { 0, rt_get_priorities },		    GET_PRIORITIES },
 	{ { 0, rt_hard_timer_tick_count },	    HARD_TIMER_COUNT },
 	{ { 0, rt_get_time_ns },		    GET_TIME_NS },
 	{ { 0, rt_get_cpu_time_ns },		    GET_CPU_TIME_NS },

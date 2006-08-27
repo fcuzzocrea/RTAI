@@ -104,10 +104,10 @@ struct rtdm_dev_context;
 #define RTDM_CONTEXT_STRUCT_VER     3
 
 /** Driver API version */
-#define RTDM_API_VER                4
+#define RTDM_API_VER                5
 
 /** Minimum API revision compatible with the current release */
-#define RTDM_API_MIN_COMPAT_VER     4
+#define RTDM_API_MIN_COMPAT_VER     5
 
 /** Flag indicating a secure variant of RTDM (not supported here) */
 #define RTDM_SECURE_DEVICE          0x80000000
@@ -336,7 +336,7 @@ struct rtdm_operations {
  * RTDM takes care of its creation and destruction and passes it to the
  * operation handlers when being invoked.
  *
- * Driver get attach arbitrary data immediately after the official structure.
+ * Drivers can attach arbitrary data immediately after the official structure.
  * The size of this data is provided via rtdm_device.context_size during
  * device registration.
  */
@@ -351,7 +351,7 @@ struct rtdm_dev_context {
     /** Set of active device operation handlers */
     struct rtdm_operations          *ops;
     /** Reference to owning device */
-    volatile struct rtdm_device     *device;
+    struct rtdm_device              *device;
     /** Begin of driver defined context data structure */
     char                            dev_private[0];
 };
@@ -476,7 +476,7 @@ static inline void rtdm_context_unlock(struct rtdm_dev_context *context)
 
 
 /* --- clock services --- */
-static inline uint64_t rtdm_clock_read(void)
+static inline nanosecs_abs_t rtdm_clock_read(void)
 {
     return rt_get_time_ns();
 }
@@ -854,7 +854,7 @@ typedef void (*rtdm_task_proc_t)(void *arg);
 
 int rtdm_task_init(rtdm_task_t *task, const char *name,
                    rtdm_task_proc_t task_proc, void *arg,
-                   int priority, uint64_t period);
+                   int priority, nanosecs_rel_t period);
 
 static inline void rtdm_task_destroy(rtdm_task_t *task)
 {
@@ -868,7 +868,8 @@ static inline void rtdm_task_set_priority(rtdm_task_t *task, int priority)
     rt_change_prio(task, priority);
 }
 
-static inline int rtdm_task_set_period(rtdm_task_t *task, uint64_t period)
+static inline int rtdm_task_set_period(rtdm_task_t *task,
+                                       nanosecs_rel_t period)
 {
     return rt_task_make_periodic_relative_ns(task, period > 0 ? 0 : RT_TIME_END, period > 0 ? period : 0);
 
@@ -898,16 +899,17 @@ static inline int rtdm_task_wait_period(void)
     return rt_sched_timed ? -ETIMEDOUT : -EIDRM;
 }
 
-int rtdm_task_sleep(uint64_t delay);
-int rtdm_task_sleep_until(uint64_t wakeup_time);
-void rtdm_task_busy_sleep(uint64_t delay);
+int rtdm_task_sleep(nanosecs_rel_t delay);
+int rtdm_task_sleep_until(nanosecs_abs_t wakeup_time);
+void rtdm_task_busy_sleep(nanosecs_rel_t delay);
 
 
 /* --- timeout sequences */
 
-typedef uint64_t                    rtdm_toseq_t;
+typedef nanosecs_abs_t              rtdm_toseq_t;
 
-static inline void rtdm_toseq_init(rtdm_toseq_t *timeout_seq, int64_t timeout)
+static inline void rtdm_toseq_init(rtdm_toseq_t *timeout_seq,
+                                   nanosecs_rel_t timeout)
 {
     *timeout_seq = rt_get_time() + nano2count(timeout);
 }
@@ -932,7 +934,7 @@ static inline void rtdm_event_destroy(rtdm_event_t *event)
 }
 
 int rtdm_event_wait(rtdm_event_t *event);
-int rtdm_event_timedwait(rtdm_event_t *event, int64_t timeout,
+int rtdm_event_timedwait(rtdm_event_t *event, nanosecs_rel_t timeout,
                          rtdm_toseq_t *timeout_seq);
 void rtdm_event_signal(rtdm_event_t *event);
 
@@ -957,7 +959,7 @@ static inline int _sem_wait(void *sem)
 	return _rt_whoami()->unblocked ? -EINTR : -EIDRM;
 }
 
-static inline int _sem_wait_timed(void *sem, int64_t timeout, rtdm_toseq_t *timeout_seq)
+static inline int _sem_wait_timed(void *sem, nanosecs_rel_t timeout, rtdm_toseq_t *timeout_seq)
 {
 	int ret;
 
@@ -1000,7 +1002,7 @@ static inline void rtdm_sem_destroy(rtdm_sem_t *sem)
 }
 
 int rtdm_sem_down(rtdm_sem_t *sem);
-int rtdm_sem_timeddown(rtdm_sem_t *sem, int64_t timeout,
+int rtdm_sem_timeddown(rtdm_sem_t *sem, nanosecs_rel_t timeout,
                        rtdm_toseq_t *timeout_seq);
 void rtdm_sem_up(rtdm_sem_t *sem);
 
@@ -1020,7 +1022,7 @@ static inline void rtdm_mutex_destroy(rtdm_mutex_t *mutex)
 }
 
 int rtdm_mutex_lock(rtdm_mutex_t *mutex);
-int rtdm_mutex_timedlock(rtdm_mutex_t *mutex, int64_t timeout,
+int rtdm_mutex_timedlock(rtdm_mutex_t *mutex, nanosecs_rel_t timeout,
                          rtdm_toseq_t *timeout_seq);
 void rtdm_mutex_unlock(rtdm_mutex_t *mutex);
 
@@ -1040,7 +1042,7 @@ static inline void rtdm_free(void *ptr)
 }
 
 int rtdm_mmap_to_user(rtdm_user_info_t *user_info, void *src_addr, size_t len,
-		      int prot, void **pptr,
+                      int prot, void **pptr,
                       struct vm_operations_struct *vm_ops,
                       void *vm_private_data);
 int rtdm_munmap(rtdm_user_info_t *user_info, void *ptr, size_t len);
@@ -1064,10 +1066,28 @@ static inline int rtdm_copy_from_user(rtdm_user_info_t *user_info,
     return __xn_copy_from_user(user_info, dst, src, size);
 }
 
+static inline int rtdm_safe_copy_from_user(rtdm_user_info_t *user_info,
+                                           void *dst, const void __user *src,
+                                           size_t size)
+{
+    if (unlikely(!__xn_access_ok(user_info, VERIFY_READ, src, size)))
+        return -EFAULT;
+    return __xn_copy_from_user(user_info, dst, src, size);
+}
+
 static inline int rtdm_copy_to_user(rtdm_user_info_t *user_info,
                                     void __user *dst, const void *src,
                                     size_t size)
 {
+    return __xn_copy_to_user(user_info, dst, src, size);
+}
+
+static inline int rtdm_safe_copy_to_user(rtdm_user_info_t *user_info,
+                                         void __user *dst, const void *src,
+                                         size_t size)
+{
+    if (unlikely(!__xn_access_ok(user_info, VERIFY_WRITE, dst, size)))
+        return -EFAULT;
     return __xn_copy_to_user(user_info, dst, src, size);
 }
 

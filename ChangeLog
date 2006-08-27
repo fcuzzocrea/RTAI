@@ -1,3 +1,8 @@
+2006-08-28  Paolo Mantegazza <mantegazza@aero.polimi.it>
+
+	* addons/drivers/166550: updated to the latest.
+	* addons/rtdm: updated to the latest.
+
 2006-08-27  Paolo Mantegazza <mantegazza@aero.polimi.it>
 
 	* base/ipc/sem/sem.c: ensure priority inheritance also for RES_SEM 

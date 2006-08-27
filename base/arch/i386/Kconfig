@@ -370,23 +370,32 @@ config RTAI_FULL_PRINHER
 	bool "Enable full priority inheritance"
 	default n
 	help
-	In RTAI resource semaphores can be recursively nested and support 
-	full priority inheritance, both among themselves and intertask 
-	messages sent to the task owning a resource, but for a singly owned 
-	resource only. Notice that the task itself becomes a kind of resource 
-	when tasks block on it to exchange messages. For multi ownerships 
-	priority inheritance becomes an adaptive or dynamic priority ceiling. 
-	In such a case in fact the task priority is returned to its base one 
-	only when all owned resources are released. This is a compromise 
-	design choice aimed at avoiding searches for the new priority to be 
-	inheredited across multiply owned resources and blocked tasks sending 
-	messages to a task.
-	By enabling this configuration option you'll allows full priority
-	inheritance instead, so that when a task releases any resource it
-	owns it will acquire the priority of the most prioritary task, either
-	waiting on any resource that it is still owned by the task or blocked
-	sending to it.
-	The choice is mostly dependent on your needs. Just take into account
+	In RTAI resource semaphores, aka mutexes, support two ways to
+	manage priority inheritance, both for resource semaphores and 
+	intertask messages, blocked sent or rpced, to a task owning any
+	resource semaphore already. Notice in fact that the task itself
+	becomes a kind of "de facto" resource when any task blocks on it
+	to exchange messages. 
+	Without enabling this option a task owning any resource will
+	recover its base priority only when it releases the very last
+	resource it owns. So full priority inheritance will work as
+	it is usually expected for a singly owned resource only because,
+	whenever a task achieves the ownership of more than one resource,
+	priority inheritance will become an adaptive dynamic priority
+	ceiling. In such a case in fact the task priority is increased
+	according to the highest priority task waiting on any resource
+	a task owns, itself included because of messages being exchanged
+	with it, but it will be returned to its base priority only when all
+	owned resources are released. This is a compromise design choice
+	aimed at avoiding searches for the new priority to be inheredited
+	across multiply owned resources and blocked tasks send/rpcing to
+	the task.
+	By enabling this configuration option instead you'll allow full
+	priority inheritance, so that when a task releases any resource
+	semaphore it owns it will acquire the priority of the most prioritary
+	task, either waiting on any resource semaphore that it is still
+	owned by the task or blocked send/rpcing to it.
+	The choice is dependent on your needs mostly. Just take into account
 	that the default dynamic priority ceiling is simpler, a bit more 
 	effective and less deadlock prone than full priority inheritance.
 

@@ -2065,7 +2065,9 @@ void steal_from_linux(RT_TASK *rt_task)
 #endif
 	if (rt_task->base_priority >= BASE_SOFT_PRIORITY) {
 		rt_task->base_priority -= BASE_SOFT_PRIORITY;
-		rt_task->priority      -= BASE_SOFT_PRIORITY;
+	}
+	if (rt_task->priority >= BASE_SOFT_PRIORITY) {
+		rt_task->priority -= BASE_SOFT_PRIORITY;
 	}
 	rtai_sti();
 	do {
@@ -2090,9 +2092,13 @@ void give_back_to_linux(RT_TASK *rt_task, int keeprio)
 	(rt_task->rprev)->rnext = rt_task->rnext;
 	(rt_task->rnext)->rprev = rt_task->rprev;
 	rt_task->state = 0;
-	if (!keeprio && rt_task->base_priority < BASE_SOFT_PRIORITY) {
-		rt_task->base_priority += BASE_SOFT_PRIORITY;
-		rt_task->priority      += BASE_SOFT_PRIORITY;
+	if (!keeprio) {
+		if (rt_task->base_priority < BASE_SOFT_PRIORITY) {
+			rt_task->base_priority += BASE_SOFT_PRIORITY;
+		}
+		if (rt_task->priority < BASE_SOFT_PRIORITY) {
+			rt_task->priority += BASE_SOFT_PRIORITY;
+		}
 	} 
 #ifdef NEW_WAKE_UP_TASKs
 	pend_wake_up_hts(lnxtsk = rt_task->lnxtsk, rt_task->runnable_on_cpus);

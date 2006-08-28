@@ -1,3 +1,8 @@
+2006-08-29  Paolo Mantegazza <mantegazza@aero.polimi.it>
+
+	* base/sched/sched.c: check priority and base priority independently
+	  when setting/recovering soft values in transitioning hard/soft/hard.
+
 2006-08-28  Paolo Mantegazza <mantegazza@aero.polimi.it>
 
 	* addons/drivers/166550: updated to the latest.

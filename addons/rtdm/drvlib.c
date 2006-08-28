@@ -32,6 +32,7 @@
 
 
 #include <linux/delay.h>
+#include <asm/highmem.h>
 
 #include <rtai_sched.h>
 #include <rtdm/rtdm_driver.h>

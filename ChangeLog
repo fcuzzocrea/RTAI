@@ -1,7 +1,15 @@
+2006-08-30  Paolo Mantegazza <mantegazza@aero.polimi.it>
+
+	* base/sched/api.c: revised rt_change_prio.
+	* base/include/rtai_schedcore.h: revised pass_prio.
+	  An almost common layout for both of the aboves.
+
 2006-08-29  Paolo Mantegazza <mantegazza@aero.polimi.it>
 
 	* base/sched/sched.c: check priority and base priority independently
 	  when setting/recovering soft values in transitioning hard/soft/hard.
+	* base/ipc/msg.c: rt_receive_if on blocked send made as its non if
+	  conterpart, the priority recovery was missing.
 
 2006-08-28  Paolo Mantegazza <mantegazza@aero.polimi.it>
 

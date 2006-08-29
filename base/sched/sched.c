@@ -284,9 +284,9 @@ int set_rtext(RT_TASK *task, int priority, int uses_fpu, void(*signal)(void), un
 	task->msg_queue.task = task;    
 	task->msg = 0;  
 	task->ret_queue.prev = task->ret_queue.next = &(task->ret_queue);
-	task->ret_queue.task = NOTHING;
+	task->ret_queue.task = NULL;
 	task->tprev = task->tnext = task->rprev = task->rnext = task;
-	task->blocked_on = NOTHING;        
+	task->blocked_on = NULL;        
 	task->signal = signal;
 	task->unblocked = 0;
 	task->rt_signals = NULL;
@@ -413,10 +413,10 @@ int rt_task_init_cpuid(RT_TASK *task, void (*rt_thread)(long), long data, int st
 	task->msg = 0;  
 	task->ret_queue.prev = &(task->ret_queue);
 	task->ret_queue.next = &(task->ret_queue);
-	task->ret_queue.task = NOTHING;
+	task->ret_queue.task = NULL;
 	task->tprev = task->tnext =
 	task->rprev = task->rnext = task;
-	task->blocked_on = NOTHING;        
+	task->blocked_on = NULL;        
 	task->signal = signal;
 	task->unblocked = 0;
 	task->rt_signals = NULL;
@@ -1078,7 +1078,7 @@ int clr_rtext(RT_TASK *task)
 				}
 			} else if (task->state & RT_SCHED_MBXSUSP) {
 				MBX *mbx = (MBX *)task->blocked_on;
-				mbx->waiting_task = NOTHING;
+				mbx->waiting_task = NULL;
 				sched_sem_signal(!mbx->frbs ? &mbx->sndsem : &mbx->rcvsem);
 			}
 		}
@@ -3018,7 +3018,7 @@ static int __rtai_lxrt_init(void)
 		rt_linux_task.msg = 0;  
 		rt_linux_task.ret_queue.prev = &(rt_linux_task.ret_queue);
 		rt_linux_task.ret_queue.next = &(rt_linux_task.ret_queue);
-		rt_linux_task.ret_queue.task = NOTHING;
+		rt_linux_task.ret_queue.task = NULL;
 		rt_linux_task.priority = RT_SCHED_LINUX_PRIORITY;
 		rt_linux_task.base_priority = RT_SCHED_LINUX_PRIORITY;
 		rt_linux_task.signal = 0;

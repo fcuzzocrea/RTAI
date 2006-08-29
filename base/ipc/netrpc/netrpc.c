@@ -726,8 +726,8 @@ static inline void mbx_signal(MBX *mbx)
 	flags = rt_global_save_flags_and_cli();
 	if ((task = mbx->waiting_task)) {
 		rem_timed_task(task);
-		task->blocked_on  = NOTHING;
-		mbx->waiting_task = NOTHING;
+		task->blocked_on  = NULL;
+		mbx->waiting_task = NULL;
 		if (task->state != RT_SCHED_READY && (task->state &= ~(RT_SCHED_MBXSUSP | RT_SCHED_DELAYED)) == RT_SCHED_READY) {
 			enq_ready_task(task);
 			RT_SCHEDULE(task, rtai_cpuid());

@@ -45,7 +45,7 @@ do { \
 	if ((task = mbx->waiting_task)) { \
 		rem_timed_task(task); \
 		task->blocked_on  = blckdon; \
-		mbx->waiting_task = NOTHING; \
+		mbx->waiting_task = NULL; \
 		if (task->state != RT_SCHED_READY && (task->state &= ~(RT_SCHED_MBXSUSP | RT_SCHED_DELAYED)) == RT_SCHED_READY) { \
 			enq_ready_task(task); \
 			RT_SCHEDULE(task, rtai_cpuid()); \
@@ -61,7 +61,7 @@ static void mbx_delete_signal(MBX *mbx)
 
 static void mbx_signal(MBX *mbx)
 {
-	_mbx_signal(mbx, NOTHING);
+	_mbx_signal(mbx, NULL);
 }
 
 static int mbx_wait(MBX *mbx, int *fravbs, RT_TASK *rt_current)

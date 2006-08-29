@@ -912,10 +912,16 @@ RT_TASK *rt_receive_if(RT_TASK *task, void *msg)
 		*(unsigned long *)msg = task->msg;
 		rt_current->msg_queue.task = task;
 		if (task->state & RT_SCHED_SEND) {
+			int sched;
 			task->msg_queue.task = task;
+			sched = set_current_prio_from_resq(rt_current);
 			if (task->state != RT_SCHED_READY && (task->state &= ~(RT_SCHED_SEND | RT_SCHED_DELAYED)) == RT_SCHED_READY) {
 				enq_ready_task(task);
-				RT_SCHEDULE(task, cpuid);
+				if (sched) {
+					RT_SCHEDULE_BOTH(task, cpuid);
+				} else {
+					RT_SCHEDULE(task, cpuid);
+				}
 			}
 		} else if (task->state & RT_SCHED_RPC) {
 			enqueue_blocked(task, &rt_current->ret_queue, 0);

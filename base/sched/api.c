@@ -178,27 +178,37 @@ int rt_change_prio(RT_TASK *task, int priority)
 	base_priority = task->base_priority;
 	task->base_priority = priority;
 	if (base_priority == task->priority || priority < task->priority) {
-		QUEUE *q;
+		QUEUE *q, *blocked_on;
 		unsigned long schedmap = 0;
 		do {
 			task->priority = priority;
 			if (task->state == RT_SCHED_READY) {
-				(task->rprev)->rnext = task->rnext;
-				(task->rnext)->rprev = task->rprev;
-				enq_ready_task(task);
+				if (task != rt_smp_current[task->runnable_on_cpus]) {
+					(task->rprev)->rnext = task->rnext;
+					(task->rnext)->rprev = task->rprev;
+					enq_ready_task(task);
 #ifdef CONFIG_SMP
-				__set_bit(task->runnable_on_cpus & 0x1F, &schedmap);
+					__set_bit(task->runnable_on_cpus & 0x1F, &schedmap);
 #else
-				schedmap = 1;
+					schedmap = 1;
 #endif
-			} else if ((void *)(q = task->blocked_on) > RTP_HIGERR && (((task->state & RT_SCHED_SEMAPHORE) && !((SEM *)q)->qtype) || (task->state & (RT_SCHED_SEND | RT_SCHED_RPC | RT_SCHED_RETURN)))) {
-				(task->queue.prev)->next = task->queue.next;
-				(task->queue.next)->prev = task->queue.prev;
-				while ((q = q->next) != task->blocked_on && (q->task)->priority <= priority);
-				q->prev = (task->queue.prev = q->prev)->next  = &(task->queue);
-				task->queue.next = q;
+				}
+				break;
+			 } else if ((task->state & (RT_SCHED_SEND | RT_SCHED_RPC | RT_SCHED_RETURN | RT_SCHED_SEMAPHORE))) {
+				if (task->queue.prev != (blocked_on = task->blocked_on)) {
+					q = blocked_on;
+					(task->queue.prev)->next = task->queue.next;
+					(task->queue.next)->prev = task->queue.prev;
+					while ((q = q->next) != blocked_on && (q->task)->priority <= priority);
+					q->prev = (task->queue.prev = q->prev)->next  = &(task->queue);
+					task->queue.next = q;
+					if (task->queue.prev != blocked_on) {
+						break;
+					}
+				}
+				task = (task->state & RT_SCHED_SEMAPHORE) ? ((SEM *)blocked_on)->owndby : blocked_on->task;
 			}
-		} while ((task = task->prio_passed_to) && task->priority > priority);
+		} while ((unsigned long)task > RTE_HIGERR && task->priority > priority);
 		if (schedmap) {
 #ifdef CONFIG_SMP
 			if (test_and_clear_bit(rtai_cpuid(), &schedmap)) {

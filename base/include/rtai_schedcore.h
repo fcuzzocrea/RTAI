@@ -549,31 +549,40 @@ static inline void dequeue_blocked(RT_TASK *task)
 
 static inline unsigned long pass_prio(RT_TASK *to, RT_TASK *from)
 {
-        QUEUE *q;
+        QUEUE *q, *blocked_on;
 #ifdef CONFIG_SMP
         unsigned long schedmap;
         schedmap = 0;
 #endif
-        from->prio_passed_to = to;
-        while (to && to->priority > from->priority) {
+//	from->prio_passed_to = to;
+        while ((unsigned long)to > RTE_HIGERR && to->priority > from->priority) {
                 to->priority = from->priority;
 		if (to->state == RT_SCHED_READY) {
-                        (to->rprev)->rnext = to->rnext;
-                        (to->rnext)->rprev = to->rprev;
-                        enq_ready_task(to);
+			if (to != rt_smp_current[to->runnable_on_cpus]) {
+				(to->rprev)->rnext = to->rnext;
+				(to->rnext)->rprev = to->rprev;
+				enq_ready_task(to);
 #ifdef CONFIG_SMP
-                        set_bit(to->runnable_on_cpus & 0x1F, &schedmap);
+				__set_bit(to->runnable_on_cpus & 0x1F, &schedmap);
 #endif
-//		} else if ((void *)(q = to->blocked_on) > RTP_HIGERR && !((to->state & RT_SCHED_SEMAPHORE) && ((SEM *)q)->qtype)) {
+			}
+			break;
+//		} else if ((void *)(q = to->blocked_on) > RTE_HIGERR && !((to->state & RT_SCHED_SEMAPHORE) && ((SEM *)q)->qtype)) {
 		} else if ((to->state & (RT_SCHED_SEND | RT_SCHED_RPC | RT_SCHED_RETURN | RT_SCHED_SEMAPHORE))) {
-			q = to->blocked_on;
-                        (to->queue.prev)->next = to->queue.next;
-                        (to->queue.next)->prev = to->queue.prev;
-                        while ((q = q->next) != to->blocked_on && (q->task)->priority <= to->priority);
-                        q->prev = (to->queue.prev = q->prev)->next  = &(to->queue);
-                        to->queue.next = q;
+			if (to->queue.prev != (blocked_on = to->blocked_on)) {
+				q = blocked_on;
+				(to->queue.prev)->next = to->queue.next;
+				(to->queue.next)->prev = to->queue.prev;
+				while ((q = q->next) != blocked_on && (q->task)->priority <= to->priority);
+				q->prev = (to->queue.prev = q->prev)->next  = &(to->queue);
+				to->queue.next = q;
+				if (to->queue.prev != blocked_on) {
+					break;
+				}
+			}
+			to = (to->state & RT_SCHED_SEMAPHORE) ? ((SEM *)blocked_on)->owndby : blocked_on->task;
                 }
-                to = to->prio_passed_to;
+//		to = to->prio_passed_to;
 	}
 #ifdef CONFIG_SMP
 	return schedmap;

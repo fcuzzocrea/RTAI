@@ -194,7 +194,8 @@ int rt_change_prio(RT_TASK *task, int priority)
 #endif
 				}
 				break;
-			 } else if ((task->state & (RT_SCHED_SEND | RT_SCHED_RPC | RT_SCHED_RETURN | RT_SCHED_SEMAPHORE))) {
+//			 } else if ((task->state & (RT_SCHED_SEND | RT_SCHED_RPC | RT_SCHED_RETURN | RT_SCHED_SEMAPHORE))) {
+			} else if ((unsigned long)(blocked_on = task->blocked_on) > RTE_HIGERR && (((task->state & RT_SCHED_SEMAPHORE) && ((SEM *)blocked_on)->type > 0) || (task->state & (RT_SCHED_SEND | RT_SCHED_RPC | RT_SCHED_RETURN)))) {
 				if (task->queue.prev != (blocked_on = task->blocked_on)) {
 					q = blocked_on;
 					(task->queue.prev)->next = task->queue.next;
@@ -208,7 +209,7 @@ int rt_change_prio(RT_TASK *task, int priority)
 				}
 				task = (task->state & RT_SCHED_SEMAPHORE) ? ((SEM *)blocked_on)->owndby : blocked_on->task;
 			}
-		} while ((unsigned long)task > RTE_HIGERR && task->priority > priority);
+		} while (task && task->priority > priority);
 		if (schedmap) {
 #ifdef CONFIG_SMP
 			if (test_and_clear_bit(rtai_cpuid(), &schedmap)) {
@@ -455,7 +456,7 @@ int rt_task_resume(RT_TASK *task)
 	if (!(--task->suspdepth)) {
 		rem_timed_task(task);
 		if ((task->state &= ~(RT_SCHED_SUSPENDED | RT_SCHED_DELAYED | RT_SCHED_SELFSUSP)) == RT_SCHED_READY) {
-			task->blocked_on = NOTHING;
+			task->blocked_on = NULL;
 			enq_ready_task(task);
 			RT_SCHEDULE(task, rtai_cpuid());
 		}
@@ -1925,7 +1926,7 @@ RT_TASK *rt_exec_linux_syscall(RT_TASK *rt_current, RT_TASK *task, struct pt_reg
 	if (task->state & RT_SCHED_RECEIVE) {
 		rt_current->msg = task->msg = (unsigned long)regs;
 		task->msg_queue.task = rt_current;
-		task->ret_queue.task = NOTHING;
+		task->ret_queue.task = NULL;
 		task->state = RT_SCHED_READY;
 		enq_ready_task(task);
 		enqueue_blocked(rt_current, &task->ret_queue, 1);

@@ -229,8 +229,6 @@ extern volatile int rt_sched_timed;
 #define set_exit_handler(task, fun, arg1, arg2)
 #endif /* CONFIG_RTAI_MALLOC */
 
-#define NOTHING  NULL
-
 #define SEMHLF 0x0000FFFF
 #define RPCHLF 0xFFFF0000
 #define RPCINC 0x00010000
@@ -541,10 +539,10 @@ static inline void enqueue_blocked(RT_TASK *task, QUEUE *queue, int qtype)
 
 static inline void dequeue_blocked(RT_TASK *task)
 {
-        task->prio_passed_to     = NOTHING;
+        task->prio_passed_to     = NULL;
         (task->queue.prev)->next = task->queue.next;
         (task->queue.next)->prev = task->queue.prev;
-        task->blocked_on         = NOTHING;
+        task->blocked_on         = NULL;
 }
 
 static inline unsigned long pass_prio(RT_TASK *to, RT_TASK *from)
@@ -555,7 +553,7 @@ static inline unsigned long pass_prio(RT_TASK *to, RT_TASK *from)
         schedmap = 0;
 #endif
 //	from->prio_passed_to = to;
-        while ((unsigned long)to > RTE_HIGERR && to->priority > from->priority) {
+        while (to && to->priority > from->priority) {
                 to->priority = from->priority;
 		if (to->state == RT_SCHED_READY) {
 			if (to != rt_smp_current[to->runnable_on_cpus]) {
@@ -568,8 +566,8 @@ static inline unsigned long pass_prio(RT_TASK *to, RT_TASK *from)
 			}
 			break;
 //		} else if ((void *)(q = to->blocked_on) > RTE_HIGERR && !((to->state & RT_SCHED_SEMAPHORE) && ((SEM *)q)->qtype)) {
-		} else if ((to->state & (RT_SCHED_SEND | RT_SCHED_RPC | RT_SCHED_RETURN | RT_SCHED_SEMAPHORE))) {
-			if (to->queue.prev != (blocked_on = to->blocked_on)) {
+		} else if ((unsigned long)(blocked_on = to->blocked_on) > RTE_HIGERR && (((to->state & RT_SCHED_SEMAPHORE) && ((SEM *)blocked_on)->type > 0) || (to->state & (RT_SCHED_SEND | RT_SCHED_RPC | RT_SCHED_RETURN)))) {
+			if (to->queue.prev != blocked_on) {
 				q = blocked_on;
 				(to->queue.prev)->next = to->queue.next;
 				(to->queue.next)->prev = to->queue.prev;

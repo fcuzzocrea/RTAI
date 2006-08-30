@@ -1,6 +1,6 @@
 2006-08-30  Paolo Mantegazza <mantegazza@aero.polimi.it>
 
-	* base/sched/sched.c: do not care priorities when waking up a 
+	* base/sched/sched.c: do not care Linux priorities when waking up a 
 	  SCHED_NORMAL soft real time task, for users doing it on their own.
 	* base/sched/api.c, sys.c: ensure that soft priority and policy of a 
 	  linux syscall servers are aligned with those of its master.

@@ -1924,6 +1924,7 @@ RT_TASK *rt_exec_linux_syscall(RT_TASK *rt_current, RT_TASK *task, struct pt_reg
 {
 	unsigned long flags;
 
+	task->priority = rt_current->priority + BASE_SOFT_PRIORITY;
 	flags = rt_global_save_flags_and_cli();
 	if (task->state & RT_SCHED_RECEIVE) {
 		rt_current->msg = task->msg = (unsigned long)regs;

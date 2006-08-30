@@ -1961,7 +1961,7 @@ do { \
 	RT_TASK *rt_task; \
 	int euid, rt_priority; \
 	while (p->out != p->in) { \
-		if ((lnxtsk = p->task[p->out++ & (MAX_WAKEUP_SRQ - 1)]) != SCHED_NORMAL && (rt_task = lnxtsk->rtai_tskext(TSKEXT0))) { \
+		if ((lnxtsk = p->task[p->out++ & (MAX_WAKEUP_SRQ - 1)])->policy != SCHED_NORMAL && (rt_task = lnxtsk->rtai_tskext(TSKEXT0))) { \
 			if ((rt_priority = rt_task->priority) >= BASE_SOFT_PRIORITY) { \
 				rt_priority -= BASE_SOFT_PRIORITY; \
 			} \

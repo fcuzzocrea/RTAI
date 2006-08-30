@@ -1,5 +1,7 @@
 2006-08-30  Paolo Mantegazza <mantegazza@aero.polimi.it>
 
+	* base/sched/sched.c: do not care priorities when waking up a 
+	  SCHED_NORMAL soft real time task, for users doing it on their own.
 	* base/sched/api.c: revised rt_change_prio.
 	* base/include/rtai_schedcore.h: revised pass_prio.
 	  An almost common layout for both of the aboves.

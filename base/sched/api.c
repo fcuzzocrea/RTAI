@@ -183,15 +183,17 @@ int rt_change_prio(RT_TASK *task, int priority)
 		do {
 			task->priority = priority;
 			if (task->state == RT_SCHED_READY) {
-				if (task != rt_smp_current[task->runnable_on_cpus]) {
+				if (task != rt_smp_linux_task[task->runnable_on_cpus].rnext) {
 					(task->rprev)->rnext = task->rnext;
 					(task->rnext)->rprev = task->rprev;
 					enq_ready_task(task);
+					if (task == rt_smp_linux_task[task->runnable_on_cpus].rnext) {
 #ifdef CONFIG_SMP
-					__set_bit(task->runnable_on_cpus & 0x1F, &schedmap);
+						__set_bit(task->runnable_on_cpus & 0x1F, &schedmap);
 #else
-					schedmap = 1;
+						schedmap = 1;
 #endif
+					}
 				}
 				break;
 //			 } else if ((task->state & (RT_SCHED_SEND | RT_SCHED_RPC | RT_SCHED_RETURN | RT_SCHED_SEMAPHORE))) {

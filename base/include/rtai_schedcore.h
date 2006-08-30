@@ -556,12 +556,14 @@ static inline unsigned long pass_prio(RT_TASK *to, RT_TASK *from)
         while (to && to->priority > from->priority) {
                 to->priority = from->priority;
 		if (to->state == RT_SCHED_READY) {
-			if (to != rt_smp_current[to->runnable_on_cpus]) {
+			if (to != rt_smp_linux_task[to->runnable_on_cpus].rnext) {
 				(to->rprev)->rnext = to->rnext;
 				(to->rnext)->rprev = to->rprev;
 				enq_ready_task(to);
 #ifdef CONFIG_SMP
-				__set_bit(to->runnable_on_cpus & 0x1F, &schedmap);
+				if (to == rt_smp_linux_task[to->runnable_on_cpus].rnext) {
+					__set_bit(to->runnable_on_cpus & 0x1F, &schedmap);
+				}
 #endif
 			}
 			break;

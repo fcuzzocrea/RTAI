@@ -1620,7 +1620,7 @@ RTAI_PROTO(void, __wrap_pthread_exit,(void *retval))
 {
 	MAKE_SOFT();
 	rt_task_delete(NULL);
-	pthread_exit(NULL);
+	pthread_exit(retval);
 }
 
 RTAI_PROTO(int, __wrap_pthread_join,(pthread_t thread, void **thread_return))

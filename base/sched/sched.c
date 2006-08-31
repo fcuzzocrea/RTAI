@@ -73,6 +73,7 @@ void rtai_proc_lxrt_unregister(void);
 #include <rtai_registry.h>
 #include <rtai_nam2num.h>
 #include <rtai_schedcore.h>
+#include <rtai_prinher.h>
 
 MODULE_LICENSE("GPL");
 
@@ -1063,7 +1064,7 @@ int clr_rtext(RT_TASK *task)
 
 	flags = rt_global_save_flags_and_cli();
 	ASSIGN_RT_CURRENT;
-	if ((task->resq.next == &task->resq && !(task->owndres & SEMHLF)) || task == rt_current || rt_current->priority == RT_SCHED_LINUX_PRIORITY) {
+	if (!task_owns_sems(task) || task == rt_current || rt_current->priority == RT_SCHED_LINUX_PRIORITY) {
 		call_exit_handlers(task);
 		rem_timed_task(task);
 		if (task->blocked_on) {
@@ -1927,6 +1928,8 @@ static void kthread_fun(int cpuid)
 	lxrt_sigfillset();
 	put_current_on_cpu(cpuid);
 	init_hard_fpu(current);
+	task->msg_queue.next = &task->msg_queue;
+	task->resq.next = &task->resq;
 	steal_from_linux(task);
 	while(1) {
 		rt_task_suspend(task);

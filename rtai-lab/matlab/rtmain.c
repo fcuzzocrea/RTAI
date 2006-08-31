@@ -969,8 +969,6 @@ static void endme(int dummy)
 	signal(SIGINT, endme);
 	signal(SIGTERM, endme);
 	endex = 1;
-        endBaseRate = 1;
-	endInterface = 1;
 }
 
 struct option options[] = {

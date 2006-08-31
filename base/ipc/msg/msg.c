@@ -854,7 +854,7 @@ RT_TASK *rt_receive(RT_TASK *task, void *msg)
 	}
 	rt_current->msg_queue.task = rt_current;
 	rt_global_restore_flags(flags);
-	if (task && (struct proxy_t *)task->stack_bottom) {
+	if ((unsigned long)task > RTE_HIGERR && (struct proxy_t *)task->stack_bottom) {
 		if (((struct proxy_t *)task->stack_bottom)->receiver == rt_current) {
 			rt_return(task, 0);
 		}
@@ -938,7 +938,7 @@ RT_TASK *rt_receive_if(RT_TASK *task, void *msg)
 		task = NULL;
 	}
 	rt_global_restore_flags(flags);
-	if (task && (struct proxy_t *)task->stack_bottom) {
+	if ((unsigned long)task > RTE_HIGERR && (struct proxy_t *)task->stack_bottom) {
 		if (((struct proxy_t *)task->stack_bottom)->receiver == rt_current) {
 			rt_return(task, 0);
 		}
@@ -1039,7 +1039,7 @@ RT_TASK *rt_receive_until(RT_TASK *task, void *msg, RTIME time)
 	}
 	rt_current->msg_queue.task = rt_current;
 	rt_global_restore_flags(flags);
-	if (task && (struct proxy_t *)task->stack_bottom) {
+	if ((unsigned long)task > RTE_HIGERR && (struct proxy_t *)task->stack_bottom) {
 		if (((struct proxy_t *)task->stack_bottom)->receiver == rt_current) {
 			rt_return(task, 0);
 		}

@@ -1,3 +1,10 @@
+2006-08-31  Paolo Mantegazza <mantegazza@aero.polimi.it>
+
+	* base/include/rtai_prinher.h: added macros to ascertain resources 
+	  ownership accordingly to the configured priority inheritance mode.
+	* base/sched/sched.c, api.c: use due macros to ascertain resuorces 
+	  ownership whatever the configured priority inheritance mode.
+
 2006-08-30  Paolo Mantegazza <mantegazza@aero.polimi.it>
 
 	* base/sched/sched.c: do not care Linux priorities when waking up a 

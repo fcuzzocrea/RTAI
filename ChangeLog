@@ -1,3 +1,9 @@
+2006-08-31  Roberto Bucher <roberto.bucher@supsi.ch>
+2006-08-31  Paolo Mantegazza <mantegazza@aero.polimi.it>
+
+	* base/ipc/msg/msg.c: fixed a wrong check of proxy address in case 
+	  of abnormal return.
+
 2006-08-31  Paolo Mantegazza <mantegazza@aero.polimi.it>
 
 	* base/include/rtai_prinher.h: added macros to ascertain resources 

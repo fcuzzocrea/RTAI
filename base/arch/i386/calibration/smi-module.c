@@ -51,7 +51,9 @@ RTAI_MODULE_PARM(smiReset, int);
 
 #ifndef PCI_DEVICE_ID_INTEL_ICH7_0
 #define PCI_DEVICE_ID_INTEL_ICH7_0  0x27b8
+#define PCI_DEVICE_ID_INTEL_ICH7_1 0x27b9
 #endif
+
 
 static struct pci_device_id rthal_smi_pci_tbl[] __initdata = {
 { PCI_DEVICE(PCI_VENDOR_ID_INTEL, PCI_DEVICE_ID_INTEL_82801AA_0) },
@@ -68,6 +70,7 @@ static struct pci_device_id rthal_smi_pci_tbl[] __initdata = {
 { PCI_DEVICE(PCI_VENDOR_ID_INTEL, PCI_DEVICE_ID_INTEL_ICH6_1) },
 { PCI_DEVICE(PCI_VENDOR_ID_INTEL, PCI_DEVICE_ID_INTEL_ICH6_2) },
 { PCI_DEVICE(PCI_VENDOR_ID_INTEL, PCI_DEVICE_ID_INTEL_ICH7_0) },
+{ PCI_DEVICE(PCI_VENDOR_ID_INTEL, PCI_DEVICE_ID_INTEL_ICH7_1) },
 { 0, },
 };
 

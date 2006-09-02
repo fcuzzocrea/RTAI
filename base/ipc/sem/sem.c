@@ -901,13 +901,14 @@ int rt_cond_wait_until(CND *cnd, SEM *mtx, RTIME time)
 		} else {
 			retval = 0;
 		}
+		rt_global_restore_flags(flags);
 		if (rt_sem_wait(mtx) < RTE_LOWERR) {
 			mtx->type = type;
 		}
 	} else {
 		retval = RTE_TIMOUT;
+		rt_global_restore_flags(flags);
 	}
-	rt_global_restore_flags(flags);
 	return retval;
 }
 

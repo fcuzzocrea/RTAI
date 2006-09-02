@@ -704,8 +704,6 @@ extern "C" {
  * SUPPORT STUFF
  */
 
-#define MAKE_HARD(hs)  do { if (hs) rt_make_hard_real_time(); } while (0)
-
 static inline int MAKE_SOFT(void)
 {
 	if (rt_is_hard_real_time(rt_buddy())) {
@@ -714,6 +712,8 @@ static inline int MAKE_SOFT(void)
 	}
 	return 0;
 }
+
+#define MAKE_HARD(hs)  do { if (hs) rt_make_hard_real_time(); } while (0)
 
 RTAI_PROTO(void, count2timespec, (RTIME rt, struct timespec *t))
 {
@@ -1494,14 +1494,16 @@ RTAI_PROTO(void, pthread_soft_real_time_np, (void))
 #define pthread_make_soft_real_time_np() \
 	pthread_soft_real_time_np()
 
+#if 0
 #if 1
+int __real_pthread_create(pthread_t *thread, pthread_attr_t *attr, void *(*start_routine)(void *), void *arg);
 RTAI_PROTO(int, __wrap_pthread_create,(pthread_t *thread, pthread_attr_t *attr, void *(*start_routine)(void *), void *arg))
 {
 #include <sys/poll.h>
 
 	int hs, ret;
 	hs = MAKE_SOFT();
-	ret = pthread_create(thread, attr, start_routine, arg);
+	ret = __real_pthread_create(thread, attr, start_routine, arg);
 	MAKE_HARD(hs);
 	return ret;
 }
@@ -1553,46 +1555,52 @@ RTAI_PROTO(int, __wrap_pthread_create,(pthread_t *thread, pthread_attr_t *attr, 
 }
 #endif
 
+int __real_pthread_cancel(pthread_t thread);
 RTAI_PROTO(int, __wrap_pthread_cancel,(pthread_t thread))
 {
 	int hs, ret;
 	hs = MAKE_SOFT();
-	ret = pthread_cancel(thread);
+	ret = __real_pthread_cancel(thread);
 	MAKE_HARD(hs);
 	return ret;
 }
 
+int __real_pthread_sigmask(int how, const sigset_t *newmask, sigset_t *oldmask);
 RTAI_PROTO(int, __wrap_pthread_sigmask,(int how, const sigset_t *newmask, sigset_t *oldmask))
 {
+	return __real_pthread_sigmask(how, newmask, oldmask);
 	int hs, ret;
 	hs = MAKE_SOFT();
-	ret = pthread_sigmask(how, newmask, oldmask);
+	ret = __real_pthread_sigmask(how, newmask, oldmask);
 	MAKE_HARD(hs);
 	return ret;
 }
 
+int __real_pthread_kill(pthread_t thread, int signo);
 RTAI_PROTO(int, __wrap_pthread_kill,(pthread_t thread, int signo))
 {
 	int hs, ret;
 	hs = MAKE_SOFT();
-	ret = pthread_kill(thread, signo);
+	ret = __real_pthread_kill(thread, signo);
 	MAKE_HARD(hs);
 	return ret;
 }
 
 
+int __real_sigwait(const sigset_t *set, int *sig);
 RTAI_PROTO(int, __wrap_sigwait,(const sigset_t *set, int *sig))
 {
 	int hs, ret;
 	hs = MAKE_SOFT();
-	ret = sigwait(set, sig);
+	ret = __real_sigwait(set, sig);
 	MAKE_HARD(hs);
 	return ret;
 }
 
+void __real_pthread_testcancel(void);
 RTAI_PROTO(void, __wrap_pthread_testcancel,(void))
 {
-	pthread_testcancel();
+	__real_pthread_testcancel();
 	return;
 	int oldtype, oldstate;
 	pthread_setcancelstate(PTHREAD_CANCEL_DISABLE, &oldstate);
@@ -1606,6 +1614,7 @@ RTAI_PROTO(void, __wrap_pthread_testcancel,(void))
 	pthread_setcancelstate(oldstate, &oldstate);
 }
 
+int __real_pthread_yield(void);
 RTAI_PROTO(int, __wrap_pthread_yield,(void))
 {
 	if (rt_is_hard_real_time(rt_buddy())) {
@@ -1613,24 +1622,27 @@ RTAI_PROTO(int, __wrap_pthread_yield,(void))
 		rtai_lxrt(BIDX, SIZARG, YIELD, &arg);
 		return 0;
 	}
-	return pthread_yield();
+	return __real_pthread_yield();
 }
 
+void __real_pthread_exit(void *retval);
 RTAI_PROTO(void, __wrap_pthread_exit,(void *retval))
 {
 	MAKE_SOFT();
 	rt_task_delete(NULL);
-	pthread_exit(retval);
+	__real_pthread_exit(retval);
 }
 
+int __real_pthread_join(pthread_t thread, void **thread_return);
 RTAI_PROTO(int, __wrap_pthread_join,(pthread_t thread, void **thread_return))
 {
 	int hs, ret;
 	hs = MAKE_SOFT();
-	ret = pthread_join(thread, thread_return);
+	ret = __real_pthread_join(thread, thread_return);
 	MAKE_HARD(hs);
 	return ret;
 }
+#endif
 
 /*
  * SPINLOCKS

@@ -14,6 +14,23 @@ RTAI though. See the related configuration helper.
 What above requires you to patch Linux just with patches found wihin this 
 distribution. Notice also that this release is for use with i386s only.
 
+On recent distributions the devices created by following this installation 
+procedure will disappear at each machine halting. So you have to restore them
+after each reboot. A short script containing:
+------------------------------ cut here -------------------------------------
+if test \! -c /dev/rtai_shm; then
+        mknod -m 666 /dev/rtai_shm c 10 254
+fi
+for n in `seq 0 9`; do
+        f=/dev/rtf$n
+        if test \! -c $f; then
+                mknod -m 666 $f c 150 $n
+        fi
+done
+------------------------------ cut here -------------------------------------
+will solve the problem. You can put it into your own boot profiler so that 
+it will be executed automatically at each fresh start up.
+
 1. How to build
 ===============
 

@@ -1,4 +1,6 @@
-Here is what RTAI POSIX uses to support to allow you to use plain POSIX names.
+                 ***** RTAI POSIX SUPPORT IN USER SPACE *****
+
+Here is what RTAI POSIX uses to support allowing you to use plain POSIX names.
 It is an excerpt from "man ld" read it all there, even if all what of interest
 is copied below.
 
@@ -36,3 +38,27 @@ is copied below.
 In case you suspect the need to use a __real POSIX-something function you should
 know that it should happen just for the functions listed in POSIX_WRAPS, found 
 in this subdirectory.
+
+Hard real time service are only those listed in POSIX_WRAPS and include:
+- clocking/timing (CLOCK_MONOTONIC only),
+- mutexes (normal, pshared, NORMAL, ERROCHECKING, RECURSIVE;
+           PRIOINHER/PRIOCELING as configured for RTAI),
+- semaphores (normal, pshared, named),
+- barrier (normal, pshared, named),
+- condition variables,
+- rwlocks,
+- spinlocks,
+- message queues.
+
+All the rest comes as for POSIX made available by the operating system and is
+up to you to know if it can be used in real time or not. There is much that
+can be but a few critical services, e.g. thread creation, signal, joins,
+cancellations will send you thread to soft mode. You must be aware of it.
+Overall it is believed that those services can be crafted appropriately
+during the initialisation, so that true hard real time is possible always.
+
+Notice also that you cannot use static initialisations because of the reuse
+RTAI does of the related structures.
+
+A lot if examples showing RTAI POSIX at work can be find in:
+"showroom/v3.x/posix/user" and related subdirectories therof.

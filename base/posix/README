@@ -52,24 +52,24 @@ Hard real time service are only those listed in POSIX_WRAPS and include:
 
 All the rest comes as for POSIX made available by the operating system and is
 up to you to know if it can be used in real time or not. There is much that
-can be but a few critical services, e.g. thread creation, signal, joins,
-cancellations will send you thread to soft mode. You must be aware of it.
+can be, but a few critical services, e.g. thread creation, signal, joins,
+and cancellations will send your thread to soft mode. You must be aware of it.
 Overall it is believed that those services can be crafted appropriately
-during the initialisation, so that true hard real time is possible always.
+during initialisation/closure, so that true hard real time is possible always.
 
 Notice also that you cannot use static initialisations because of the reuse
 RTAI does of the related structures.
 
-A lot if examples showing RTAI POSIX at work can be find in:
+A lot of examples showing RTAI POSIX at work can be found in:
 "showroom/v3.x/posix/user" and related subdirectories therof.
 
-It is important to remark that it has been chosen not to enable threads for
-RTAI directly, but yiu have to do it specifically eother by calling the 
+It is important to remark that it has been chosen to not enable threads for
+RTAI directly, but you have to do it specifically, either by calling the 
 standard rt_task_init_schmod or the specific pthread_setschedparam_np. The
 latter is an overall container for RTAI scheduling management, is up to you
-to possible mate it with standard POSIX calls to keep Linux and RTAI aligned,
+to possibly mate it with standard POSIX calls to keep Linux and RTAI aligned,
 but beware that doing so you'll be sent in soft real time, while 
-pthread_setschedparam_np is hard ral time, except for hard/soft/switche
+pthread_setschedparam_np is hard real time, except for hard/soft/switches
 naturally. "Showroom/v3.x/posix/user" can be your helper once more.
 
 Last, but not least, POSIX can be used with RTAI, to the point that an object

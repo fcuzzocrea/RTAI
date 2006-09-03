@@ -1,3 +1,10 @@
+2006-09-02  Paolo Mantegazza <mantegazza@aero.polimi.it>
+
+	* base/ipc/sem/sem.c: deleted useless count keeping in cond_wait 
+	  functions.
+	* base/include/rtai_pmq.c: added to substitute rtai_mq.h to return 
+	  error values as required by POSIX.
+
 2006-08-31  Roberto Bucher <roberto.bucher@supsi.ch>
 2006-08-31  Paolo Mantegazza <mantegazza@aero.polimi.it>
 

@@ -62,3 +62,12 @@ RTAI does of the related structures.
 
 A lot if examples showing RTAI POSIX at work can be find in:
 "showroom/v3.x/posix/user" and related subdirectories therof.
+
+It is important to remark that it has been chosen not to enable threads for
+RTAI directly, but yiu have to do it specifically eother by calling the 
+standard rt_task_init_schmod or the specific pthread_setschedparam_np. The
+latter is an overall container for RTAI scheduling management, is up to you
+to possible mate it with standard POSIX calls to keep Linux and RTAI aligned,
+but beware that doing so you'll be sent in soft real time, while 
+pthread_setschedparam_np is hard ral time, except for hard/soft/switche
+naturally. "Showroom/v3.x/posix/user" can be your helper once more.

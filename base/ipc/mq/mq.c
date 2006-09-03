@@ -44,14 +44,31 @@ MODULE_LICENSE("GPL");
 
 #define pthread_cond_t                   SEM
 #define pthread_mutex_t                  SEM
-#define pthread_mutex_init(mutex, attr)  rt_mutex_init(mutex)
-#define pthread_mutex_unlock             rt_mutex_unlock
-#define pthread_mutex_lock               rt_mutex_lock
-#define pthread_mutex_destroy            rt_mutex_destroy
-#define pthread_cond_init(cond, attr)    rt_cond_init(cond)
-#define pthread_cond_wait                rt_cond_wait
+#define pthread_mutex_init(mutex, attr)  rt_typed_sem_init(mutex, RESEM_CHEKWT, RES_SEM)
+#define pthread_mutex_unlock             rt_sem_signal
+#define pthread_mutex_lock               rt_sem_wait
+#define pthread_mutex_destroy            rt_sem_delete
+#define pthread_cond_init(cond, attr)    rt_sem_init(cond, 0)
+#define pthread_cond_wait(cond, mutex) \
+	do { \
+		rt_sem_signal(mutex); \
+		(cond)->count = 0; \
+		if (rt_sem_wait(cond) >= RTE_LOWERR || rt_sem_wait(mutex) >= RTE_LOWERR) { \
+			return -EBADF; \
+		} \
+	} while (0)
+#define pthread_cond_timedwait(cond, mutex, abstime) \
+	do { \
+		RTIME t = timespec2count(abstime); \
+		int ret; \
+		rt_sem_signal(mutex); \
+		(cond)->count = 0; \
+		if ((ret = rt_sem_wait_until(cond, t)) >= RTE_LOWERR || (ret = rt_sem_wait_until(mutex, t)) >= RTE_LOWERR) { \
+			return ret == RTE_TIMOUT ? -ETIMEDOUT : -EBADF; \
+		} \
+	} while (0)
 #define pthread_cond_signal              rt_cond_signal
-#define pthread_cond_destroy             rt_cond_destroy
+#define pthread_cond_destroy             rt_sem_delete
 
 #ifndef OK
 #define OK  0
@@ -505,10 +522,7 @@ size_t _mq_timedreceive(mqd_t mq, char *msg_buffer, size_t buflen, unsigned int 
 				rt_copy_from_user(&time, abstime, sizeof(struct timespec));
 				abstime = &time;
 			}
-			if (rt_cond_wait_until(&q->emp_cond, &q->mutex, timespec2count(abstime)) > 1) {
-				pthread_mutex_unlock(&q->mutex);
-				return -ETIMEDOUT;
-			}
+			pthread_cond_timedwait(&q->emp_cond, &q->mutex, abstime);
 		} else {
 			return -EAGAIN;
 		}
@@ -640,10 +654,7 @@ int _mq_timedsend(mqd_t mq, const char *msg, size_t msglen, unsigned int msgprio
 				rt_copy_from_user(&time, abstime, sizeof(struct timespec));
 				abstime = &time;
 			}
-			if (rt_cond_wait_until(&q->full_cond, &q->mutex, timespec2count(abstime)) > 1) {
-				pthread_mutex_unlock(&q->mutex);
-				return -ETIMEDOUT;
-			}
+			pthread_cond_timedwait(&q->full_cond, &q->mutex, abstime);
 		} else {
 			pthread_mutex_unlock(&q->mutex);
 			return -EAGAIN;

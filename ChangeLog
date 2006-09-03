@@ -1,3 +1,8 @@
+2006-09-03  Paolo Mantegazza <mantegazza@aero.polimi.it>
+
+	* base/ipc/mq/mq.c: modified cond_war usage, with a simpler internal, 
+	  there is no need for a true cond_wait behaviour.
+
 2006-09-02  Paolo Mantegazza <mantegazza@aero.polimi.it>
 
 	* base/ipc/sem/sem.c: deleted useless count keeping in cond_wait 

@@ -71,3 +71,6 @@ to possible mate it with standard POSIX calls to keep Linux and RTAI aligned,
 but beware that doing so you'll be sent in soft real time, while 
 pthread_setschedparam_np is hard ral time, except for hard/soft/switche
 naturally. "Showroom/v3.x/posix/user" can be your helper once more.
+
+Last, but not least, POSIX can be used with RTAI, to the point that an object
+created by one can be used by the other.

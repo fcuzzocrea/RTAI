@@ -52,7 +52,6 @@ MODULE_LICENSE("GPL");
 #define pthread_cond_wait(cond, mutex) \
 	do { \
 		rt_sem_signal(mutex); \
-		(cond)->count = 0; \
 		if (rt_sem_wait(cond) >= RTE_LOWERR || rt_sem_wait(mutex) >= RTE_LOWERR) { \
 			return -EBADF; \
 		} \
@@ -62,7 +61,6 @@ MODULE_LICENSE("GPL");
 		RTIME t = timespec2count(abstime); \
 		int ret; \
 		rt_sem_signal(mutex); \
-		(cond)->count = 0; \
 		if ((ret = rt_sem_wait_until(cond, t)) >= RTE_LOWERR || (ret = rt_sem_wait_until(mutex, t)) >= RTE_LOWERR) { \
 			return ret == RTE_TIMOUT ? -ETIMEDOUT : -EBADF; \
 		} \

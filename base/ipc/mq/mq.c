@@ -42,21 +42,21 @@ extern struct proc_dir_entry *rtai_proc_root;
 
 MODULE_LICENSE("GPL");
 
-#define pthread_cond_t                   SEM
-#define pthread_mutex_t                  SEM
-#define pthread_mutex_init(mutex, attr)  rt_typed_sem_init(mutex, RESEM_CHEKWT, RES_SEM)
-#define pthread_mutex_unlock             rt_sem_signal
-#define pthread_mutex_lock               rt_sem_wait
-#define pthread_mutex_destroy            rt_sem_delete
-#define pthread_cond_init(cond, attr)    rt_sem_init(cond, 0)
-#define pthread_cond_wait(cond, mutex) \
+#define mq_cond_t                   SEM
+#define mq_mutex_t                  SEM
+#define mq_mutex_init(mutex, attr)  rt_typed_sem_init(mutex, RESEM_CHEKWT, RES_SEM)
+#define mq_mutex_unlock             rt_sem_signal
+#define mq_mutex_lock               rt_sem_wait
+#define mq_mutex_destroy            rt_sem_delete
+#define mq_cond_init(cond, attr)    rt_sem_init(cond, 0)
+#define mq_cond_wait(cond, mutex) \
 	do { \
 		rt_sem_signal(mutex); \
 		if (rt_sem_wait(cond) >= RTE_LOWERR || rt_sem_wait(mutex) >= RTE_LOWERR) { \
 			return -EBADF; \
 		} \
 	} while (0)
-#define pthread_cond_timedwait(cond, mutex, abstime) \
+#define mq_cond_timedwait(cond, mutex, abstime) \
 	do { \
 		RTIME t = timespec2count(abstime); \
 		int ret; \
@@ -65,8 +65,8 @@ MODULE_LICENSE("GPL");
 			return ret == RTE_TIMOUT ? -ETIMEDOUT : -EBADF; \
 		} \
 	} while (0)
-#define pthread_cond_signal              rt_sem_signal
-#define pthread_cond_destroy             rt_sem_delete
+#define mq_cond_signal              rt_sem_signal
+#define mq_cond_destroy             rt_sem_delete
 
 #ifndef OK
 #define OK  0
@@ -90,7 +90,7 @@ static struct _pqueue_descr_struct rt_pqueue_descr[MAX_PQUEUES] = {{0}};
 static struct _pqueue_access_struct task_pqueue_access[MAX_RT_TASKS] = {{0}};
 static MQ_ATTR default_queue_attrs = { MAX_MSGS, MAX_MSGSIZE, MQ_NONBLOCK, 0 };
 
-static pthread_mutex_t pqueue_mutex;
+static mq_mutex_t pqueue_mutex;
 
 ///////////////////////////////////////////////////////////////////////////////
 //      LOCAL FUNCTIONS
@@ -258,10 +258,10 @@ static void delete_queue(int q_index)
 	rt_pqueue_descr[q_index].data.attrs = (MQ_ATTR){ 0, 0, 0, 0 };
 	rt_pqueue_descr[q_index].permissions = 0;
 
-	pthread_mutex_unlock(&rt_pqueue_descr[q_index].mutex);
-	pthread_mutex_destroy(&rt_pqueue_descr[q_index].mutex);
-	pthread_cond_destroy(&rt_pqueue_descr[q_index].emp_cond);
-	pthread_cond_destroy(&rt_pqueue_descr[q_index].full_cond);
+	mq_mutex_unlock(&rt_pqueue_descr[q_index].mutex);
+	mq_mutex_destroy(&rt_pqueue_descr[q_index].mutex);
+	mq_cond_destroy(&rt_pqueue_descr[q_index].emp_cond);
+	mq_cond_destroy(&rt_pqueue_descr[q_index].full_cond);
 
 	if (num_pqueues > 0) {	
 		num_pqueues--;	
@@ -282,13 +282,13 @@ mqd_t mq_open(char *mq_name, int oflags, mode_t permissions, struct mq_attr *mq_
 
 	task_data_ptr = (QUEUE_CTRL)this_task->mqueues;
 
-	pthread_mutex_lock(&pqueue_mutex);
+	mq_mutex_lock(&pqueue_mutex);
 	if ((q_index = name_to_id(mq_name)) >= 0) {
 //========================
 // OPEN AN EXISTING QUEUE
 //========================
 		if ((oflags & O_CREAT) && (oflags & O_EXCL)) {
-			pthread_mutex_unlock(&pqueue_mutex);
+			mq_mutex_unlock(&pqueue_mutex);
 			return -EEXIST;
 		}
 		if (task_data_ptr == NULL) {
@@ -301,7 +301,7 @@ mqd_t mq_open(char *mq_name, int oflags, mode_t permissions, struct mq_attr *mq_
 				}
 			}
 			if (t_index == MAX_RT_TASKS) {
-				pthread_mutex_unlock(&pqueue_mutex);
+				mq_mutex_unlock(&pqueue_mutex);
 				return -ENOMEM;
 			}
 		}
@@ -310,7 +310,7 @@ mqd_t mq_open(char *mq_name, int oflags, mode_t permissions, struct mq_attr *mq_
 	//Check first to see if this task has already opened this queue
 	//and while doing so, record the number of spare 'slots' for this
 	//task to have further opened queues
-	pthread_mutex_lock(&rt_pqueue_descr[q_index].mutex);
+	mq_mutex_lock(&rt_pqueue_descr[q_index].mutex);
 		for (q_ind = 0; q_ind < MQ_OPEN_MAX; q_ind++) {
 			if (task_data_ptr->q_access[q_ind].q_id == rt_pqueue_descr[q_index].q_id) { 
 				q_found = TRUE;
@@ -325,8 +325,8 @@ mqd_t mq_open(char *mq_name, int oflags, mode_t permissions, struct mq_attr *mq_
 	//If the task has not already opened this queue and there are no
 	//more available slots, can't do anymore...
 		if (!q_found && spare_count == 0) {
-			pthread_mutex_unlock(&rt_pqueue_descr[q_index].mutex);
-			pthread_mutex_unlock(&pqueue_mutex);
+			mq_mutex_unlock(&rt_pqueue_descr[q_index].mutex);
+			mq_mutex_unlock(&pqueue_mutex);
 			return -EINVAL;
 		}
 	//Either the queue has already been opened and so we can re-use
@@ -338,18 +338,18 @@ mqd_t mq_open(char *mq_name, int oflags, mode_t permissions, struct mq_attr *mq_
 		}
 		task_data_ptr->q_access[q_ind].q_id = rt_pqueue_descr[q_index].q_id;
 		task_data_ptr->q_access[q_ind].oflags = oflags;
-		pthread_mutex_unlock(&rt_pqueue_descr[q_index].mutex);
+		mq_mutex_unlock(&rt_pqueue_descr[q_index].mutex);
 	} else if (oflags & O_CREAT) {
 //================
 // CREATE A QUEUE 
 //================
 		if(num_pqueues >= MAX_PQUEUES) {
-			pthread_mutex_unlock(&pqueue_mutex);
+			mq_mutex_unlock(&pqueue_mutex);
 			return -ENOMEM;
 		}
 	//Check the size of the name
 		if( strlen(mq_name) >= MQ_NAME_MAX) {
-			pthread_mutex_unlock(&pqueue_mutex);
+			mq_mutex_unlock(&pqueue_mutex);
 			return -ENAMETOOLONG;
 		}
 	//Allocate a task pqueue access structure to this task, if necessary.
@@ -367,11 +367,11 @@ mqd_t mq_open(char *mq_name, int oflags, mode_t permissions, struct mq_attr *mq_
 				}
 			}
 			if (t_index == MAX_RT_TASKS) {
-				pthread_mutex_unlock(&pqueue_mutex);
+				mq_mutex_unlock(&pqueue_mutex);
 				return -ENOMEM;
 			}
 		} else if (task_data_ptr->n_open_pqueues >= MQ_OPEN_MAX) {
-			pthread_mutex_unlock(&pqueue_mutex);
+			mq_mutex_unlock(&pqueue_mutex);
 			return -EINVAL;
  		}
 	//Look for default queue attributes
@@ -388,7 +388,7 @@ mqd_t mq_open(char *mq_name, int oflags, mode_t permissions, struct mq_attr *mq_
 				queue_size = (msg_size + sizeof(void *))*mq_attr->mq_maxmsg;
 				mem_ptr = rt_malloc(queue_size);
 				if(mem_ptr == NULL) {
-					pthread_mutex_unlock(&pqueue_mutex);
+					mq_mutex_unlock(&pqueue_mutex);
 					return -ENOMEM;
 				}
 				rt_pqueue_descr[q_index].data.base = mem_ptr; 
@@ -404,9 +404,9 @@ mqd_t mq_open(char *mq_name, int oflags, mode_t permissions, struct mq_attr *mq_
 				rt_pqueue_descr[q_index].data.attrs.mq_curmsgs = 0;
 				rt_pqueue_descr[q_index].permissions = permissions;
 		//Initialise conditional variables used for blocking
-				pthread_cond_init(&rt_pqueue_descr[q_index].emp_cond, NULL);
-				pthread_cond_init(&rt_pqueue_descr[q_index].full_cond, NULL);
-				pthread_mutex_init(&rt_pqueue_descr[q_index].mutex, NULL);
+				mq_cond_init(&rt_pqueue_descr[q_index].emp_cond, NULL);
+				mq_cond_init(&rt_pqueue_descr[q_index].full_cond, NULL);
+				mq_mutex_init(&rt_pqueue_descr[q_index].mutex, NULL);
 
 		//Clear the queue contents
 				initialise_queue(&rt_pqueue_descr[q_index].data);
@@ -418,7 +418,7 @@ mqd_t mq_open(char *mq_name, int oflags, mode_t permissions, struct mq_attr *mq_
 			}
         	}
 		if(q_index >= MAX_PQUEUES) {
-			pthread_mutex_unlock(&pqueue_mutex);
+			mq_mutex_unlock(&pqueue_mutex);
 			return -EMFILE;
 		}
 		num_pqueues++;
@@ -426,7 +426,7 @@ mqd_t mq_open(char *mq_name, int oflags, mode_t permissions, struct mq_attr *mq_
 //==============================
 // OPENING A NON-EXISTANT QUEUE
 //==============================
-		pthread_mutex_unlock(&pqueue_mutex);
+		mq_mutex_unlock(&pqueue_mutex);
 		return -ENOENT;
 	}
 	
@@ -434,7 +434,7 @@ mqd_t mq_open(char *mq_name, int oflags, mode_t permissions, struct mq_attr *mq_
 
 	// Return the message queue's id and mark it as open
 	rt_pqueue_descr[q_index].open_count++;
-	pthread_mutex_unlock(&pqueue_mutex);
+	mq_mutex_unlock(&pqueue_mutex);
 	return (mqd_t)rt_pqueue_descr[q_index].q_id;
 }
 
@@ -454,12 +454,12 @@ size_t _mq_receive(mqd_t mq, char *msg_buffer, size_t buflen, unsigned int *msgp
 	if (can_access(q, FOR_READ) == FALSE) {
 		return -EINVAL;
 	}
-	pthread_mutex_lock(&q->mutex);
+	mq_mutex_lock(&q->mutex);
     	while (is_empty(&q->data)) {
 		if (is_blocking(q)) {
-			pthread_cond_wait(&q->emp_cond, &q->mutex);
+			mq_cond_wait(&q->emp_cond, &q->mutex);
 		} else {
-			pthread_mutex_unlock(&q->mutex);
+			mq_mutex_unlock(&q->mutex);
 			return -EAGAIN;
 		}
 	}
@@ -490,8 +490,8 @@ size_t _mq_receive(mqd_t mq, char *msg_buffer, size_t buflen, unsigned int *msgp
     	msg_ptr->hdr.next = NULL;
 	rt_pqueue_descr[q_index].data.attrs.mq_curmsgs--;
 
-	pthread_cond_signal(&q->full_cond);
-	pthread_mutex_unlock(&q->mutex);
+	mq_cond_signal(&q->full_cond);
+	mq_mutex_unlock(&q->mutex);
 
 	return size;
 }
@@ -512,7 +512,7 @@ size_t _mq_timedreceive(mqd_t mq, char *msg_buffer, size_t buflen, unsigned int 
 	if (can_access(q, FOR_READ) == FALSE) {
 		return -EINVAL;
 	}
-	pthread_mutex_lock(&q->mutex);
+	mq_mutex_lock(&q->mutex);
 	while (is_empty(&q->data)) {
 		if (is_blocking(q)) {
 			struct timespec time;
@@ -520,14 +520,14 @@ size_t _mq_timedreceive(mqd_t mq, char *msg_buffer, size_t buflen, unsigned int 
 				rt_copy_from_user(&time, abstime, sizeof(struct timespec));
 				abstime = &time;
 			}
-			pthread_cond_timedwait(&q->emp_cond, &q->mutex, abstime);
+			mq_cond_timedwait(&q->emp_cond, &q->mutex, abstime);
 		} else {
 			return -EAGAIN;
 		}
 	}
 	msg_ptr = q->data.head;
 	if (buflen < q->data.attrs.mq_msgsize) {
-		pthread_mutex_unlock(&q->mutex);
+		mq_mutex_unlock(&q->mutex);
 		return -EMSGSIZE;
 	}
 	if (msg_ptr->hdr.size <= buflen) {
@@ -556,8 +556,8 @@ size_t _mq_timedreceive(mqd_t mq, char *msg_buffer, size_t buflen, unsigned int 
 	msg_ptr->hdr.next = NULL;
 	rt_pqueue_descr[q_index].data.attrs.mq_curmsgs--;
 
-	pthread_cond_signal(&q->full_cond);
-	pthread_mutex_unlock(&q->mutex);
+	mq_cond_signal(&q->full_cond);
+	mq_mutex_unlock(&q->mutex);
 
 	return size;
 }
@@ -582,23 +582,23 @@ int _mq_send(mqd_t mq, const char *msg, size_t msglen, unsigned int msgprio, int
 	if(msgprio > MQ_PRIO_MAX) {
 		return -EINVAL;
 	}
-	pthread_mutex_lock(&q->mutex);
+	mq_mutex_lock(&q->mutex);
     	while (is_full(&q->data)) {
 		if (is_blocking(q)) {
-			pthread_cond_wait(&q->full_cond, &q->mutex);
+			mq_cond_wait(&q->full_cond, &q->mutex);
 		} else {
-			pthread_mutex_unlock(&q->mutex);
+			mq_mutex_unlock(&q->mutex);
 			return -EAGAIN;
 		}
        	}
 	if( (this_msg = getnode(&q->data)) == NULL) {
-		pthread_mutex_unlock(&q->mutex);
+		mq_mutex_unlock(&q->mutex);
 		return -ENOBUFS;
 	}
 	q_was_empty = is_empty(&q->data);
 	q->data.attrs.mq_curmsgs++;
 	if (msglen > q->data.attrs.mq_msgsize) {
-		pthread_mutex_unlock(&q->mutex);
+		mq_mutex_unlock(&q->mutex);
 		return -EMSGSIZE;
 	}
 	this_msg->size = msglen;
@@ -609,7 +609,7 @@ int _mq_send(mqd_t mq, const char *msg, size_t msglen, unsigned int msgprio, int
 		rt_copy_from_user(&((MQMSG *)this_msg)->data, msg, msglen);
 	}
 	insert_message(&q->data, this_msg);
-	pthread_cond_signal(&q->emp_cond);
+	mq_cond_signal(&q->emp_cond);
 
 	if(q_was_empty && rt_pqueue_descr[q_index].notify.task != NULL) {
 		//TODO: The bit that actually goes here!...........
@@ -620,7 +620,7 @@ int _mq_send(mqd_t mq, const char *msg, size_t msglen, unsigned int msgprio, int
 		//Finally, remove the notification
 		rt_pqueue_descr[q_index].notify.task = NULL;
 	}
-	pthread_mutex_unlock(&q->mutex);
+	mq_mutex_unlock(&q->mutex);
 	return msglen;
 }
 
@@ -644,7 +644,7 @@ int _mq_timedsend(mqd_t mq, const char *msg, size_t msglen, unsigned int msgprio
 	if (msgprio > MQ_PRIO_MAX) {
 		return -EINVAL;
 	}
-	pthread_mutex_lock(&q->mutex);
+	mq_mutex_lock(&q->mutex);
 	while (is_full(&q->data)) {
 		if (is_blocking(q)) {
 			struct timespec time;
@@ -652,20 +652,20 @@ int _mq_timedsend(mqd_t mq, const char *msg, size_t msglen, unsigned int msgprio
 				rt_copy_from_user(&time, abstime, sizeof(struct timespec));
 				abstime = &time;
 			}
-			pthread_cond_timedwait(&q->full_cond, &q->mutex, abstime);
+			mq_cond_timedwait(&q->full_cond, &q->mutex, abstime);
 		} else {
-			pthread_mutex_unlock(&q->mutex);
+			mq_mutex_unlock(&q->mutex);
 			return -EAGAIN;
 		}
 	}
 	if ((this_msg = getnode(&q->data)) == NULL) {
-		pthread_mutex_unlock(&q->mutex);
+		mq_mutex_unlock(&q->mutex);
 		return -ENOBUFS;
 	}
 	q_was_empty = is_empty(&q->data);
 	q->data.attrs.mq_curmsgs++;
 	if (msglen > q->data.attrs.mq_msgsize) {
-		pthread_mutex_unlock(&q->mutex);
+		mq_mutex_unlock(&q->mutex);
 		return -EMSGSIZE;
 	}
 	this_msg->size = msglen;
@@ -676,7 +676,7 @@ int _mq_timedsend(mqd_t mq, const char *msg, size_t msglen, unsigned int msgprio
 		rt_copy_from_user(&((MQMSG *)this_msg)->data, msg, msglen);
 	}
 	insert_message(&q->data, this_msg);
-	pthread_cond_signal(&q->emp_cond);
+	mq_cond_signal(&q->emp_cond);
 
 	if (q_was_empty && rt_pqueue_descr[q_index].notify.task != NULL) {
 
@@ -688,7 +688,7 @@ int _mq_timedsend(mqd_t mq, const char *msg, size_t msglen, unsigned int msgprio
 		//Finally, remove the notification
 		rt_pqueue_descr[q_index].notify.task = NULL;
 	}
-	pthread_mutex_unlock(&q->mutex);
+	mq_mutex_unlock(&q->mutex);
 	return msglen;
 
 }
@@ -710,7 +710,7 @@ int mq_close(mqd_t mq)
 	if (task_queue_data_ptr == NULL ) {
 	    return -EINVAL;
 	}
-	pthread_mutex_lock(&pqueue_mutex);
+	mq_mutex_lock(&pqueue_mutex);
 	for (q_ind = 0; q_ind < MQ_OPEN_MAX; q_ind++) {
 		if (task_queue_data_ptr->q_access[q_ind].q_id == mq) {
 			task_queue_data_ptr->q_access[q_ind].q_id = INVALID_PQUEUE;
@@ -719,10 +719,10 @@ int mq_close(mqd_t mq)
 	  	}
 	}
 	if (q_ind == MQ_OPEN_MAX) {
-		pthread_mutex_unlock(&pqueue_mutex);
+		mq_mutex_unlock(&pqueue_mutex);
 		return -EINVAL;
 	}
-	pthread_mutex_lock(&rt_pqueue_descr[q_index].mutex);
+	mq_mutex_lock(&rt_pqueue_descr[q_index].mutex);
 	if (rt_pqueue_descr[q_index].notify.task == this_task) {
 		rt_pqueue_descr[q_index].notify.task = NULL;
 	}
@@ -730,9 +730,9 @@ int mq_close(mqd_t mq)
  	    rt_pqueue_descr[q_index].marked_for_deletion == TRUE ) {
 		delete_queue(q_index);
 	} else {
-		pthread_mutex_unlock(&rt_pqueue_descr[q_index].mutex);
+		mq_mutex_unlock(&rt_pqueue_descr[q_index].mutex);
 	}
-	pthread_mutex_unlock(&pqueue_mutex);
+	mq_mutex_unlock(&pqueue_mutex);
         return OK;
 }
 
@@ -785,9 +785,9 @@ int mq_setattr(mqd_t mq, const struct mq_attr *new_attrs, struct mq_attr *old_at
 	if (q_ind == MQ_OPEN_MAX) {
 		return -EINVAL;
 	}
-	pthread_mutex_lock(&rt_pqueue_descr[q_index].mutex);
+	mq_mutex_lock(&rt_pqueue_descr[q_index].mutex);
 	rt_pqueue_descr[q_index].data.attrs.mq_flags = new_attrs->mq_flags;
-	pthread_mutex_unlock(&rt_pqueue_descr[q_index].mutex);
+	mq_mutex_unlock(&rt_pqueue_descr[q_index].mutex);
 	return OK;
 }
 
@@ -802,7 +802,7 @@ int mq_notify(mqd_t mq, const struct sigevent *notification)
 	if (q_index < 0 || q_index >= MAX_PQUEUES) {
 		return -EBADF;
 	}
-	pthread_mutex_lock(&rt_pqueue_descr[q_index].mutex);
+	mq_mutex_lock(&rt_pqueue_descr[q_index].mutex);
 	if (notification != NULL) {
 		if (rt_pqueue_descr[q_index].notify.task != NULL) {
 	        	rt_pqueue_descr[q_index].notify.task = _rt_whoami();
@@ -819,7 +819,7 @@ int mq_notify(mqd_t mq, const struct sigevent *notification)
 			rtn = ERROR;
 		}
 	}
-	pthread_mutex_unlock(&rt_pqueue_descr[q_index].mutex);
+	mq_mutex_unlock(&rt_pqueue_descr[q_index].mutex);
 	return rtn;
 }
 
@@ -827,26 +827,26 @@ int mq_unlink(char *mq_name)
 {
 	int q_index, rtn;
 
-	pthread_mutex_lock(&pqueue_mutex);
+	mq_mutex_lock(&pqueue_mutex);
 	q_index = name_to_id(mq_name);
 
 	TRACE_RTAI_POSIX(TRACE_RTAI_EV_POSIX_MQ_UNLINK, q_index, 0, 0);
 	
 	if (q_index < 0) {
-		pthread_mutex_unlock(&pqueue_mutex);
+		mq_mutex_unlock(&pqueue_mutex);
 		return -ENOENT;
 	}
-	pthread_mutex_lock(&rt_pqueue_descr[q_index].mutex);
+	mq_mutex_lock(&rt_pqueue_descr[q_index].mutex);
 	if (rt_pqueue_descr[q_index].open_count > 0) {
 		strcpy(rt_pqueue_descr[q_index].q_name, "\0");
 		rt_pqueue_descr[q_index].marked_for_deletion = TRUE;
-		pthread_mutex_unlock(&rt_pqueue_descr[q_index].mutex);
+		mq_mutex_unlock(&rt_pqueue_descr[q_index].mutex);
 		rtn = rt_pqueue_descr[q_index].open_count;
 	} else {
 		delete_queue(q_index);
 		rtn = OK;
 	}
-	pthread_mutex_unlock(&pqueue_mutex);
+	mq_mutex_unlock(&pqueue_mutex);
 	return rtn;
 }
 
@@ -931,7 +931,7 @@ extern void reset_rt_fun_entries(struct rt_native_fun_entry *entry);
 int __rtai_mq_init(void) 
 {
 	num_pqueues = 0;
-	pthread_mutex_init(&pqueue_mutex, NULL);
+	mq_mutex_init(&pqueue_mutex, NULL);
 #ifdef CONFIG_PROC_FS
 	pqueue_proc_register();
 #endif
@@ -942,7 +942,7 @@ int __rtai_mq_init(void)
 
 void __rtai_mq_exit(void) 
 {
-	pthread_mutex_destroy(&pqueue_mutex);
+	mq_mutex_destroy(&pqueue_mutex);
 	reset_rt_fun_entries(rt_pqueue_entries);
 #ifdef CONFIG_PROC_FS
 	pqueue_proc_unregister();

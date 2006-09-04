@@ -52,7 +52,7 @@ MODULE_LICENSE("GPL");
 #define mq_cond_wait(cond, mutex) \
 	do { \
 		rt_sem_signal(mutex); \
-		if (rt_sem_wait(cond) >= RTE_LOWERR || rt_sem_wait(mutex) >= RTE_LOWERR) { \
+		if (abs(rt_sem_wait(cond)) >= RTE_LOWERR || abs(rt_sem_wait(mutex)) >= RTE_LOWERR) { \
 			return -EBADF; \
 		} \
 	} while (0)
@@ -61,7 +61,7 @@ MODULE_LICENSE("GPL");
 		RTIME t = timespec2count(abstime); \
 		int ret; \
 		rt_sem_signal(mutex); \
-		if ((ret = rt_sem_wait_until(cond, t)) >= RTE_LOWERR || (ret = rt_sem_wait_until(mutex, t)) >= RTE_LOWERR) { \
+		if (abs(ret = rt_sem_wait_until(cond, t)) >= RTE_LOWERR || abs(ret = rt_sem_wait_until(mutex, t)) >= RTE_LOWERR) { \
 			return ret == RTE_TIMOUT ? -ETIMEDOUT : -EBADF; \
 		} \
 	} while (0)

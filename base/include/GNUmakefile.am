@@ -25,6 +25,7 @@ nobase_include_HEADERS = \
 		rtai_nam2num.h \
 		rtai_names.h \
 		rtai_netrpc.h \
+		rtai_pmq.h \
 		rtai_posix.h \
 		rtai_prinher.h \
 		rtai_proc_fs.h \

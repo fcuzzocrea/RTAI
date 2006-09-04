@@ -65,7 +65,7 @@ MODULE_LICENSE("GPL");
 			return ret == RTE_TIMOUT ? -ETIMEDOUT : -EBADF; \
 		} \
 	} while (0)
-#define pthread_cond_signal              rt_cond_signal
+#define pthread_cond_signal              rt_sem_signal
 #define pthread_cond_destroy             rt_sem_delete
 
 #ifndef OK

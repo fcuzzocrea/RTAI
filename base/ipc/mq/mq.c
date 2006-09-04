@@ -474,7 +474,7 @@ size_t _mq_receive(mqd_t mq, char *msg_buffer, size_t buflen, unsigned int *msgp
 		} else {
 			rt_copy_to_user(msg_buffer, &msg_ptr->data, size);
 			if (msgprio) {
-				rt_copy_to_user(msgprio, &msg_ptr->hdr.priority, sizeof(msgprio));
+				rt_put_user(msg_ptr->hdr.priority, msgprio);
 			}
 		}
 	} else {
@@ -540,7 +540,7 @@ size_t _mq_timedreceive(mqd_t mq, char *msg_buffer, size_t buflen, unsigned int 
 		} else {
 			rt_copy_to_user(msg_buffer, &msg_ptr->data, size);
 			if (msgprio) {
-				rt_copy_to_user(msgprio, &msg_ptr->hdr.priority, sizeof(msgprio));
+				rt_put_user(msg_ptr->hdr.priority, msgprio);
 			}
 		}
 	} else {

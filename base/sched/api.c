@@ -133,8 +133,8 @@ int rt_get_priorities(RT_TASK *task, int *priority, int *base_priority)
 		return -EINVAL;
 	}
 	if ((unsigned long)priority < PAGE_OFFSET) {
-		put_user(task->priority, priority);
-		put_user(task->base_priority, base_priority);
+		rt_put_user(task->priority, priority);
+		rt_put_user(task->base_priority, base_priority);
 	} else {
 		*priority      = task->priority;
 		*base_priority = task->base_priority;

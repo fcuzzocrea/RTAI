@@ -412,9 +412,7 @@ int _rt_mbx_send(MBX *mbx, void *msg, int msg_size, int space)
 	}
 	while (msg_size) {
 		if ((retval = mbx_wait(mbx, &mbx->frbs, rt_current))) {
-			if (retval >= RTE_LOWERR) {
-				rt_sem_signal(&mbx->sndsem);
-			}
+			rt_sem_signal(&mbx->sndsem);
 			return MBX_RET(msg_size, retval);
 		}
 		msg_size = mbxput(mbx, (char **)(&msg), msg_size, space);
@@ -536,9 +534,7 @@ int _rt_mbx_send_until(MBX *mbx, void *msg, int msg_size, RTIME time, int space)
 	}
 	while (msg_size) {
 		if ((retval = mbx_wait_until(mbx, &mbx->frbs, time, rt_current))) {
-			if (retval >= RTE_LOWERR) {
-				rt_sem_signal(&mbx->sndsem);
-			}
+			rt_sem_signal(&mbx->sndsem);
 			return MBX_RET(msg_size, retval);
 		}
 		msg_size = mbxput(mbx, (char **)(&msg), msg_size, space);
@@ -608,9 +604,7 @@ int _rt_mbx_receive(MBX *mbx, void *msg, int msg_size, int space)
 	}
 	while (msg_size) {
 		if ((retval = mbx_wait(mbx, &mbx->avbs, rt_current))) {
-			if (retval >= RTE_LOWERR) {
-				rt_sem_signal(&mbx->rcvsem);
-			}
+			rt_sem_signal(&mbx->rcvsem);
 			return MBX_RET(msg_size, retval);
 		}
 		msg_size = mbxget(mbx, (char **)(&msg), msg_size, space);
@@ -738,9 +732,7 @@ int _rt_mbx_receive_until(MBX *mbx, void *msg, int msg_size, RTIME time, int spa
 	}
 	while (msg_size) {
 		if ((retval = mbx_wait_until(mbx, &mbx->avbs, time, rt_current))) {
-			if (retval >= RTE_LOWERR) {
-				rt_sem_signal(&mbx->rcvsem);
-			}
+			rt_sem_signal(&mbx->rcvsem);
 			return MBX_RET(msg_size, retval);
 		}
 		msg_size = mbxget(mbx, (char **)(&msg), msg_size, space);

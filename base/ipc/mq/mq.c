@@ -44,7 +44,7 @@ MODULE_LICENSE("GPL");
 
 #define mq_cond_t                   SEM
 #define mq_mutex_t                  SEM
-#define mq_mutex_init(mutex, attr)  rt_typed_sem_init(mutex, RESEM_CHEKWT, RES_SEM)
+#define mq_mutex_init(mutex, attr)  rt_typed_sem_init(mutex, 1, BIN_SEM | PRIO_Q)
 #define mq_mutex_unlock             rt_sem_signal
 #define mq_mutex_lock               rt_sem_wait
 #define mq_mutex_destroy            rt_sem_delete

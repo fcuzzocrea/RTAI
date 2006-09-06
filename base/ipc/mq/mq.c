@@ -47,6 +47,7 @@ MODULE_LICENSE("GPL");
 #define mq_mutex_init(mutex, attr)  rt_typed_sem_init(mutex, 1, BIN_SEM | PRIO_Q)
 #define mq_mutex_unlock             rt_sem_signal
 #define mq_mutex_lock               rt_sem_wait
+#define mq_mutex_trylock            rt_sem_wait_if
 #define mq_mutex_destroy            rt_sem_delete
 #define mq_cond_init(cond, attr)    rt_sem_init(cond, 0)
 #define mq_cond_wait(cond, mutex) \
@@ -462,7 +463,12 @@ size_t _mq_receive(mqd_t mq, char *msg_buffer, size_t buflen, unsigned int *msgp
 	if (can_access(q, FOR_READ) == FALSE) {
 		return -EINVAL;
 	}
-	mq_mutex_lock(&q->mutex);
+
+	if (is_blocking(q)) {
+		mq_mutex_lock(&q->mutex);
+	} else if (mq_mutex_trylock(&q->mutex) <= 0) {
+		return -EAGAIN;
+	}
     	while (is_empty(&q->data)) {
 		if (is_blocking(q)) {
 			mq_cond_wait(&q->emp_cond, &q->mutex);
@@ -520,7 +526,11 @@ size_t _mq_timedreceive(mqd_t mq, char *msg_buffer, size_t buflen, unsigned int 
 	if (can_access(q, FOR_READ) == FALSE) {
 		return -EINVAL;
 	}
-	mq_mutex_lock(&q->mutex);
+	if (is_blocking(q)) {
+		mq_mutex_lock(&q->mutex);
+	} else if (mq_mutex_trylock(&q->mutex) <= 0) {
+		return -EAGAIN;
+	}
 	while (is_empty(&q->data)) {
 		if (is_blocking(q)) {
 			struct timespec time;
@@ -590,7 +600,11 @@ int _mq_send(mqd_t mq, const char *msg, size_t msglen, unsigned int msgprio, int
 	if(msgprio > MQ_PRIO_MAX) {
 		return -EINVAL;
 	}
-	mq_mutex_lock(&q->mutex);
+	if (is_blocking(q)) {
+		mq_mutex_lock(&q->mutex);
+	} else if (mq_mutex_trylock(&q->mutex) <= 0) {
+		return -EAGAIN;
+	}
     	while (is_full(&q->data)) {
 		if (is_blocking(q)) {
 			mq_cond_wait(&q->full_cond, &q->mutex);
@@ -603,12 +617,12 @@ int _mq_send(mqd_t mq, const char *msg, size_t msglen, unsigned int msgprio, int
 		mq_mutex_unlock(&q->mutex);
 		return -ENOBUFS;
 	}
-	q_was_empty = is_empty(&q->data);
-	q->data.attrs.mq_curmsgs++;
 	if (msglen > q->data.attrs.mq_msgsize) {
 		mq_mutex_unlock(&q->mutex);
 		return -EMSGSIZE;
 	}
+	q_was_empty = is_empty(&q->data);
+	q->data.attrs.mq_curmsgs++;
 	this_msg->size = msglen;
 	this_msg->priority = msgprio;
 	if (space) {
@@ -652,7 +666,11 @@ int _mq_timedsend(mqd_t mq, const char *msg, size_t msglen, unsigned int msgprio
 	if (msgprio > MQ_PRIO_MAX) {
 		return -EINVAL;
 	}
-	mq_mutex_lock(&q->mutex);
+	if (is_blocking(q)) {
+		mq_mutex_lock(&q->mutex);
+	} else if (mq_mutex_trylock(&q->mutex) <= 0) {
+		return -EAGAIN;
+	}
 	while (is_full(&q->data)) {
 		if (is_blocking(q)) {
 			struct timespec time;
@@ -670,12 +688,12 @@ int _mq_timedsend(mqd_t mq, const char *msg, size_t msglen, unsigned int msgprio
 		mq_mutex_unlock(&q->mutex);
 		return -ENOBUFS;
 	}
-	q_was_empty = is_empty(&q->data);
-	q->data.attrs.mq_curmsgs++;
 	if (msglen > q->data.attrs.mq_msgsize) {
 		mq_mutex_unlock(&q->mutex);
 		return -EMSGSIZE;
 	}
+	q_was_empty = is_empty(&q->data);
+	q->data.attrs.mq_curmsgs++;
 	this_msg->size = msglen;
 	this_msg->priority = msgprio;
 	if (space) {

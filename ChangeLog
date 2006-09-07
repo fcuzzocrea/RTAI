@@ -1,7 +1,7 @@
 2006-09-06  Paolo Mantegazza <mantegazza@aero.polimi.it>
 
 	* base/ipc/mbx/mbx.c: always signal sems on error returns from 
-	  mbx_wait and mbx_wait_until, to allows reuse of the mailbox on
+	  mbx_wait and mbx_wait_until, to allow reuse of the mailbox on
 	  restarting from signals.
 
 2006-09-03  Paolo Mantegazza <mantegazza@aero.polimi.it>

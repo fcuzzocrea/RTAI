@@ -70,9 +70,10 @@ libsciblk_a_LIBADD =
 am__libsciblk_a_SOURCES_DIST = rtai_scope.c rtai_led.c rtai_meter.c \
 	rtai_fifo.c rtai_sinus.c rtai_square.c rtai_step.c \
 	rtai_extdata.c mbx_receive_if.c mbx_receive.c mbx_ovrwr_send.c \
-	mbx_send_if.c getstr.c rtmain.h rtai_sem_signal.c \
-	rtai_sem_wait.c olddevices.c rtai_comedi_datain.c \
-	rtai_comedi_dataout.c rtai_comedi_dioin.c rtai_comedi_dioout.c
+	mbx_send_if.c getstr.c rtmain.h devices.h machine.h \
+	scicos_block.h rtai_sem_signal.c rtai_sem_wait.c olddevices.c \
+	rtai_comedi_datain.c rtai_comedi_dataout.c rtai_comedi_dioin.c \
+	rtai_comedi_dioout.c
 @CONFIG_RTAI_COMEDI_LXRT_TRUE@am__objects_1 =  \
 @CONFIG_RTAI_COMEDI_LXRT_TRUE@	rtai_comedi_datain.$(OBJEXT) \
 @CONFIG_RTAI_COMEDI_LXRT_TRUE@	rtai_comedi_dataout.$(OBJEXT) \
@@ -393,8 +394,8 @@ lib_LIBRARIES = libsciblk.a
 libsciblk_a_SOURCES = rtai_scope.c rtai_led.c rtai_meter.c rtai_fifo.c \
 	rtai_sinus.c rtai_square.c rtai_step.c rtai_extdata.c \
 	mbx_receive_if.c mbx_receive.c mbx_ovrwr_send.c mbx_send_if.c \
-	getstr.c rtmain.h rtai_sem_signal.c rtai_sem_wait.c \
-	olddevices.c $(am__append_1)
+	getstr.c rtmain.h devices.h machine.h scicos_block.h \
+	rtai_sem_signal.c rtai_sem_wait.c olddevices.c $(am__append_1)
 libsciblk_a_AR = $(CROSS_COMPILE)ar cru
 include_HEADERS = \
 	devices.h 

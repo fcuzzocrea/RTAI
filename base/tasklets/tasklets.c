@@ -746,8 +746,11 @@ int rt_delete_tasklet(struct rt_tasklet_struct *tasklet)
 	return thread;	
 }
 
-static int tasklets_stacksize = TASKLET_STACK_SIZE;
-RTAI_MODULE_PARM(tasklets_stacksize, int);
+static int TaskletsStacksize = TASKLET_STACK_SIZE;
+RTAI_MODULE_PARM(TaskletsStacksize, int);
+
+static int TimersManagerPrio = 0;
+RTAI_MODULE_PARM(TimersManagerPrio, int);
 
 static RT_TASK *rt_base_linux_task;
 
@@ -767,7 +770,7 @@ int __rtai_tasklets_init(void)
 		timers_lock[cpuid] = timers_lock[0];
 		timers_list[cpuid] = timers_list[0];
 		timers_list[cpuid].next = timers_list[cpuid].prev = &timers_list[cpuid];
-		rt_task_init_cpuid(&timers_manager[cpuid], rt_timers_manager, cpuid, tasklets_stacksize, RT_SCHED_LOWEST_PRIORITY, 0, 0, cpuid);
+		rt_task_init_cpuid(&timers_manager[cpuid], rt_timers_manager, cpuid, TaskletsStacksize, TimersManagerPrio, 0, 0, cpuid);
 		rt_task_resume(&timers_manager[cpuid]);
 	}
 	printk(KERN_INFO "RTAI[tasklets]: loaded.\n");

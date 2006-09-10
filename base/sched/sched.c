@@ -1941,6 +1941,9 @@ static void kthread_fun(int cpuid)
 		((void (*)(long))task->max_msg_size[0])(task->max_msg_size[1]);
 		task->owndres = 0;
 		current->comm[0] = 'F';
+		if (!clr_rtext(task)) {
+			start_stop_kthread(task, 0, 0, 0, 0, 0, 0);
+		}
 		current->rtai_tskext(TSKEXT1) = 0;
 		rtai_cli();
 		if (taskidx[cpuid] < SpareKthreads) {
@@ -2702,6 +2705,13 @@ static int rtai_read_sched(char *page, char **start, off_t off, int count,
 	PROC_PRINT("    Calibrated oneshot timer setup_to_firing time: %d ns\n\n",
                   (int)imuldiv(tuned.setup_time_TIMER_CPUNIT, 1000000000, tuned.cpu_freq));
 	PROC_PRINT("Number of RT CPUs in system: %d\n\n", NR_RT_CPUS);
+
+	PROC_PRINT("Real time kthreads in resorvoir (cpu/#)");
+        for (cpuid = 0; cpuid < NR_RT_CPUS; cpuid++) {
+                PROC_PRINT(": (%d/%d)", cpuid, taskidx[cpuid]);
+        }
+	PROC_PRINT("\n\n");
+
 	PROC_PRINT("Number of forced hard/soft/hard transitions: traps %lu, syscalls %lu\n\n", traptrans, systrans);
 
 	PROC_PRINT("Priority  Period(ns)  FPU  Sig  State  CPU  Task  HD/SF  PID  RT_TASK *  TIME\n" );

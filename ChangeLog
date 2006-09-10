@@ -1,3 +1,9 @@
+2006-09-10  Paolo Mantegazza <mantegazza@aero.polimi.it>
+
+	* base/tasklets/tasklets.c: create per cpu timers manager at the 
+	  highest priority, but make available the related value as a 
+	  module parameter.
+
 2006-09-06  Paolo Mantegazza <mantegazza@aero.polimi.it>
 
 	* base/ipc/mbx/mbx.c: always signal sems on error returns from 

@@ -35,6 +35,8 @@
 #define RT_SCHED_LOWEST_PRIORITY   0x3fffFfff
 #define RT_SCHED_LINUX_PRIORITY    0x7fffFfff
 
+#define RT_RESEM_SUSPDEL  -0x7fffFfff
+
 #define RT_SCHED_READY        1
 #define RT_SCHED_SUSPENDED    2
 #define RT_SCHED_DELAYED      4

@@ -215,7 +215,7 @@ int rt_sem_delete(SEM *sem)
 				task->state |= RT_SCHED_SUSPENDED;
 				rem_ready_task(task);
 				sched = 1;
-			} else {
+			} else if (task->suspdepth == RT_RESEM_SUSPDEL) {
 				rt_task_delete(task);
 			}
 		}
@@ -315,7 +315,7 @@ res:	if (sem->type > 0) {
 				rt_current->state |= RT_SCHED_SUSPENDED;
 				rem_ready_current(rt_current);
                         	sched = 1;
-			} else {
+			} else if (task->suspdepth == RT_RESEM_SUSPDEL) {
 				rt_task_delete(rt_current);
 			}
 		}

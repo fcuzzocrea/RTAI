@@ -548,7 +548,7 @@ int rt_check_current_stack(void)
 		sp = get_stack_pointer();
 		return (sp - (char *)(rt_current->stack_bottom));
 	} else {
-		return -0x7FFFFFFF;
+		return RT_RESEM_SUSPDEL;
 	}
 }
 

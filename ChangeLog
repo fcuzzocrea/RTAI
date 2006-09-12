@@ -1,5 +1,5 @@
-2006-09-12  Paolo Mantegazza <mantegazza@aero.polimi.it>
-	    Mathias Koehrer <mathias_koehrer@arcor.de>
+2006-09-12  Mathias Koehrer <mathias_koehrer@arcor.de>
+	    Paolo Mantegazza <mantegazza@aero.polimi.it>
 
 	* /base/ipc/sem/sem.c: appropriately test suspension of delation of
 	  a task owning a resource semaphore by using the due macro.

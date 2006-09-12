@@ -93,9 +93,6 @@ static inline int set_current_prio_from_resq(RT_TASK *rt_current)
 
 #define task_owns_sems(task)  ((task)->owndres)
 
-#define task_owns_res(task) \
-	((task)->owndres || (task)->msg_queue.next != &(task)->msg_queue)
-
 #define enqueue_resqel(resqel, task) \
 	do { (task)->owndres++; } while (0)
 

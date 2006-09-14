@@ -1,3 +1,10 @@
+2006-09-14  Paolo Mantegazza <mantegazza@aero.polimi.it>
+
+	* /base/tasklets/tasklets.c: update the actual time by reading the
+	  timer, postpone actual priority assignment when it is sure it will
+	  be used (avoids spurious preemptions), do not let the idle sleep 
+	  priority to go below the (user assignable) default threshold.
+
 2006-09-12  Mathias Koehrer <mathias_koehrer@arcor.de>
 	    Paolo Mantegazza <mantegazza@aero.polimi.it>
 

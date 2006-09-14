@@ -51,11 +51,11 @@ RTAI_MODULE_PARM(smiReset, int);
 
 #ifndef PCI_DEVICE_ID_INTEL_ICH7_0
 #define PCI_DEVICE_ID_INTEL_ICH7_0  0x27b8
-#define PCI_DEVICE_ID_INTEL_ICH7_1 0x27b9
+#define PCI_DEVICE_ID_INTEL_ICH7_1  0x27b9
 #endif
 
 
-static struct pci_device_id rthal_smi_pci_tbl[] __initdata = {
+static struct pci_device_id hal_smi_pci_tbl[] = {
 { PCI_DEVICE(PCI_VENDOR_ID_INTEL, PCI_DEVICE_ID_INTEL_82801AA_0) },
 { PCI_DEVICE(PCI_VENDOR_ID_INTEL, PCI_DEVICE_ID_INTEL_82801AB_0) },
 { PCI_DEVICE(PCI_VENDOR_ID_INTEL, PCI_DEVICE_ID_INTEL_82801BA_0) },
@@ -104,7 +104,7 @@ pci.ids database, ICH5-M ?)
 #define BIOS_EN_BIT         (0x01 << 2)
 #define GBL_SMI_EN_BIT      (0x01) /* This is reset by a PCI reset event! */
 
-static const unsigned rthal_smi_masked_bits = 0
+static const unsigned hal_smi_masked_bits = 0
 #if CONFIG_RTAI_HW_SMI_ALL
     | GBL_SMI_EN_BIT
 #else
@@ -135,26 +135,26 @@ static const unsigned rthal_smi_masked_bits = 0
 #endif
 ;
 
-static unsigned rthal_smi_saved_bits;
-static unsigned short rthal_smi_en_addr;
+static unsigned hal_smi_saved_bits;
+static unsigned short hal_smi_en_addr;
 static struct pci_dev *smi_dev;
 
 #define mask_bits(v, p)  outl(inl(p) & ~(v), (p))
 #define  set_bits(v, p)  outl(inl(p) |  (v), (p))
 
-void rthal_smi_restore(void)
+void hal_smi_restore(void)
 {
-	if (rthal_smi_en_addr) {
-		set_bits(rthal_smi_saved_bits, rthal_smi_en_addr);
+	if (hal_smi_en_addr) {
+		set_bits(hal_smi_saved_bits, hal_smi_en_addr);
 		pci_dev_put(smi_dev);
 	}
 }
 
-void rthal_smi_disable(void)
+void hal_smi_disable(void)
 {
- 	if (rthal_smi_en_addr) {
-		rthal_smi_saved_bits = inl(rthal_smi_en_addr) & rthal_smi_masked_bits;
-		mask_bits(rthal_smi_masked_bits, rthal_smi_en_addr);
+ 	if (hal_smi_en_addr) {
+		hal_smi_saved_bits = inl(hal_smi_en_addr) & hal_smi_masked_bits;
+		mask_bits(hal_smi_masked_bits, hal_smi_en_addr);
 	}
 }
 
@@ -167,7 +167,7 @@ static unsigned short __devinit get_smi_en_addr(struct pci_dev *dev)
 	return SMI_CTRL_ADDR + (((byte1 << 1) | (byte0 >> 7)) << 7); //bits 7-15
 }
 
-int __devinit rthal_smi_init(void)
+int __devinit hal_smi_init(void)
 {
 	struct pci_dev *dev = NULL;
 	struct pci_device_id *id;
@@ -176,7 +176,7 @@ int __devinit rthal_smi_init(void)
  * Do not use pci_register_driver, pci_enable_device, ...
  * Just register the used ports.
  */
-	for (id = &rthal_smi_pci_tbl[0]; dev == NULL && id->vendor != 0; id++) {
+	for (id = &hal_smi_pci_tbl[0]; dev == NULL && id->vendor != 0; id++) {
 	        dev = pci_get_device(id->vendor, id->device, NULL);
 	}
 
@@ -187,17 +187,18 @@ int __devinit rthal_smi_init(void)
         }
 
 	printk("RTAI: Intel chipset found, enabling SMI workaround.\n");
-	rthal_smi_en_addr = get_smi_en_addr(dev);
+	hal_smi_en_addr = get_smi_en_addr(dev);
 	smi_dev = dev;
-	rthal_smi_disable();
+	hal_smi_disable();
   	return 0;
 }
 
 /************************************************************************/
+
 int init_module(void)
 {
 	int retval;
-	if (!(retval = rthal_smi_init())) {
+	if (!(retval = hal_smi_init())) {
 		printk("SMI module loaded\n");
 	}
 	return retval;
@@ -206,7 +207,7 @@ int init_module(void)
 void cleanup_module(void)         
 {
 	if (smiReset) {
-		rthal_smi_restore();
+		hal_smi_restore();
 		printk("SMI module unloaded and reset\n");
 	} else {
 		printk("SMI module unloaded but not reset\n");

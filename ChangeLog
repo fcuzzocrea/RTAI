@@ -1,3 +1,5 @@
+2006-09-18 RTAI-3.4 released.
+
 2006-09-14  Paolo Mantegazza <mantegazza@aero.polimi.it>
 
 	* /base/tasklets/tasklets.c: update the actual time by reading the

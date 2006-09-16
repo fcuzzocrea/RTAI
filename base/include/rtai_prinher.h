@@ -26,6 +26,8 @@
 
 #ifdef CONFIG_RTAI_FULL_PRINHER
 
+#define task_owns_sems(task)  ((task)->resq.next != &(task)->resq)
+
 static inline void enqueue_resqel(QUEUE *resqel, RT_TASK *resownr)
 {
 	QUEUE *resq;
@@ -89,6 +91,8 @@ static inline int set_current_prio_from_resq(RT_TASK *rt_current)
 
 #else /* !CONFIG_RTAI_FULL_PRINHER */
 
+#define task_owns_sems(task)  ((task)->owndres)
+
 #define enqueue_resqel(resqel, task) \
 	do { (task)->owndres++; } while (0)
 
@@ -138,6 +142,9 @@ static inline int set_current_prio_from_resq(RT_TASK *rt_current)
 }
 
 #endif /* CONFIG_RTAI_FULL_PRINHER */
+
+#define task_owns_msgs(task)  ((task)->msg_queue.next != &(task)->msg_queue)
+#define task_owns_res(task)   (task_owns_sems(task) || task_owns_msgs(task))
 
 #endif /* __KERNEL__ */
 

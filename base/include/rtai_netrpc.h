@@ -232,7 +232,7 @@ static inline void RT_sleep_until(unsigned long node, int port, RTIME time)
 static inline SEM *RT_typed_named_sem_init(unsigned long node, int port, const char *sem_name, int value, int type)
 {
 	if (node) {
-		struct { unsigned long sem_name; long value; long type; } arg = { nam2num(sem_name), value, type };
+		struct { unsigned long sem_name; long value; long type; unsigned long *handle; } arg = { nam2num(sem_name), value, type, NULL };
 		return (SEM *)(unsigned long)rt_net_rpc(PACKPORT(port, NET_RPC_EXT, NAMED_SEM_INIT, 0), 0, &arg, SIZARG, 1);
 	}
 	return rt_typed_named_sem_init(sem_name, value, type);
@@ -833,7 +833,7 @@ static inline void RT_sleep_until(unsigned long node, int port, RTIME time)
 static inline SEM *RT_typed_named_sem_init(unsigned long node, int port, const char *sem_name, int value, int type)
 {
 	if (node) {
-		struct { unsigned long sem_name; long value; long type; } arg = { nam2num(sem_name), value, type };
+		struct { unsigned long sem_name; long value; long type; unsigned long *handle; } arg = { nam2num(sem_name), value, type, NULL };
 		struct { unsigned long fun; long type; void *args; long argsize; long space; } args = { PACKPORT(port, NET_RPC_EXT, NAMED_SEM_INIT, 0), 0, &arg, SIZARG, 0 };
 		return (SEM *)rtai_lxrt(NET_RPC_IDX, SIZARGS, NETRPC, &args).v[LOW];
 	}

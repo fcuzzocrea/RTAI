@@ -27,7 +27,17 @@
 #include <linux/module.h>
 #endif /* !__cplusplus */
 
+#include <linux/moduleparam.h>
+#define RTAI_MODULE_PARM(name, type) \
+	module_param(name, type, 0444)
+
+
 #if LINUX_VERSION_CODE < KERNEL_VERSION(2,6,0)
+
+#define RTAI_MODULE_PARM_ARRAY(name, type, addr, size) \
+        static inline void *__check_existence_##name(void) { return &name; } \
+	MODULE_PARM(name, "1-" __MODULE_STRING(size) _MODULE_PARM_STRING_ ## type);
+#define _MODULE_PARM_STRING_charp "s"
 
 #define PID_MAX_LIMIT     PID_MAX
 #define num_online_cpus() smp_num_cpus
@@ -65,6 +75,9 @@ typedef void irqreturn_t;
 #define RTAI_LINUX_IRQ_HANDLED	/* i.e. "void" return */
 
 #else /* LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,0) */
+
+#define RTAI_MODULE_PARM_ARRAY(name, type, addr, size) \
+	module_param_array(name, type, addr, 0400);
 
 /* Basic class macros */
 #ifdef CONFIG_SYSFS

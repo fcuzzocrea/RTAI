@@ -35,6 +35,8 @@
 #define RT_SCHED_LOWEST_PRIORITY   0x3fffFfff
 #define RT_SCHED_LINUX_PRIORITY    0x7fffFfff
 
+#define RT_RESEM_SUSPDEL  (-0x7fffFfff)
+
 #define RT_SCHED_READY        1
 #define RT_SCHED_SUSPENDED    2
 #define RT_SCHED_DELAYED      4
@@ -47,23 +49,29 @@
 #define RT_SCHED_SFTRDY     512
 #define RT_SCHED_SELFSUSP  1024
 
-#define RT_RWLINV   (6)
+#define RT_RWLINV   (8)  // keep this the highest
+#define RT_DEADLOK  (7)
+#define RT_PERM     (6)
 #define RT_OBJINV   (5)
 #define RT_OBJREM   (4)
 #define RT_TIMOUT   (3)
 #define RT_UNBLKD   (2)
 #define RT_TMROVRN  (1)
-#define RTP_RWLINV  ((void *)RT_RWLINV)
-#define RTP_OBJINV  ((void *)RT_OBJINV)
-#define RTP_OBJREM  ((void *)RT_OBJREM)
-#define RTP_TIMOUT  ((void *)RT_TIMOUT)
-#define RTP_UNBLKD  ((void *)RT_UNBLKD)
-#define RTP_TMROVRN ((void *)RT_TMROVRN)
-#define RTP_HIGERR  (RTP_RWLINV)
-#define RTP_LOWERR  (RTP_TMROVRN)
+#define RTP_RWLINV   ((void *)RT_RWLINV)
+#define RTP_DEADLOK  ((void *)RT_DEADLOK)
+#define RTP_PERM     ((void *)RT_PERM)
+#define RTP_OBJINV   ((void *)RT_OBJINV)
+#define RTP_OBJREM   ((void *)RT_OBJREM)
+#define RTP_TIMOUT   ((void *)RT_TIMOUT)
+#define RTP_UNBLKD   ((void *)RT_UNBLKD)
+#define RTP_TMROVRN  ((void *)RT_TMROVRN)
+#define RTP_HIGERR   (RTP_RWLINV)
+#define RTP_LOWERR   (RTP_TMROVRN)
 #if CONFIG_RTAI_USE_NEWERR
 #define RTE_BASE     (0x3FFFFF00)
 #define RTE_RWLINV   (RTE_BASE + RT_RWLINV)
+#define RTE_DEADLOK  (RTE_BASE + RT_DEADLOK)
+#define RTE_PERM     (RTE_BASE + RT_PERM)
 #define RTE_OBJINV   (RTE_BASE + RT_OBJINV)
 #define RTE_OBJREM   (RTE_BASE + RT_OBJREM)
 #define RTE_TIMOUT   (RTE_BASE + RT_TIMOUT)
@@ -74,6 +82,8 @@
 #else
 #define RTE_BASE     (0xFFFB)
 #define RTE_RWLINV   (RTE_BASE + RT_RWLINV)
+#define RTE_DEADLOK  (RTE_BASE + RT_DEADLOK)
+#define RTE_PERM     (RTE_BASE + RT_PERM)
 #define RTE_OBJINV   (RTE_BASE + RT_OBJREM)
 #define RTE_OBJREM   (RTE_BASE + RT_OBJREM)
 #define RTE_TIMOUT   (RTE_BASE + RT_TIMOUT)
@@ -328,6 +338,8 @@ RTIME rt_get_cpu_time_ns(void);
 int rt_get_prio(struct rt_task_struct *task);
 
 int rt_get_inher_prio(struct rt_task_struct *task);
+
+int rt_get_priorities(struct rt_task_struct *task, int *priority, int *base_priority);
 
 void rt_spv_RMS(int cpuid);
 

@@ -60,6 +60,17 @@
 #ifndef _RTAI_SCHED_XN_H
 #define _RTAI_SCHED_XN_H
 
+#if defined(CONFIG_RTAI_IMMEDIATE_LINUX_SYSCALL) && CONFIG_RTAI_IMMEDIATE_LINUX_SYSCALL
+#if LINUX_VERSION_CODE < KERNEL_VERSION(2,6,0)
+#define SKIP_IMMEDIATE_LINUX_SYSCALL() \
+	if (regs->LINUX_SYSCALL_NR == __NR_kill || regs->LINUX_SYSCALL_NR == __NR_rt_sigsuspend) { return 0; }
+#else
+#define SKIP_IMMEDIATE_LINUX_SYSCALL()
+#endif
+#else
+#define SKIP_IMMEDIATE_LINUX_SYSCALL()  do { return 0; } while (0)
+#endif
+
 #ifdef RTAI_TRIOSS
 
 extern int nkgkptd;
@@ -217,8 +228,6 @@ extern volatile int rt_sched_timed;
 #define call_exit_handlers(task)
 #define set_exit_handler(task, fun, arg1, arg2)
 #endif /* CONFIG_RTAI_MALLOC */
-
-#define NOTHING  NULL
 
 #define SEMHLF 0x0000FFFF
 #define RPCHLF 0xFFFF0000
@@ -530,39 +539,50 @@ static inline void enqueue_blocked(RT_TASK *task, QUEUE *queue, int qtype)
 
 static inline void dequeue_blocked(RT_TASK *task)
 {
-        task->prio_passed_to     = NOTHING;
+        task->prio_passed_to     = NULL;
         (task->queue.prev)->next = task->queue.next;
         (task->queue.next)->prev = task->queue.prev;
-        task->blocked_on         = NOTHING;
+        task->blocked_on         = NULL;
 }
 
 static inline unsigned long pass_prio(RT_TASK *to, RT_TASK *from)
 {
-        QUEUE *q;
+        QUEUE *q, *blocked_on;
 #ifdef CONFIG_SMP
         unsigned long schedmap;
         schedmap = 0;
 #endif
-        from->prio_passed_to = to;
+//	from->prio_passed_to = to;
         while (to && to->priority > from->priority) {
                 to->priority = from->priority;
 		if (to->state == RT_SCHED_READY) {
-                        (to->rprev)->rnext = to->rnext;
-                        (to->rnext)->rprev = to->rprev;
-                        enq_ready_task(to);
+			if (to != rt_smp_linux_task[to->runnable_on_cpus].rnext) {
+				(to->rprev)->rnext = to->rnext;
+				(to->rnext)->rprev = to->rprev;
+				enq_ready_task(to);
 #ifdef CONFIG_SMP
-                        set_bit(to->runnable_on_cpus & 0x1F, &schedmap);
+				if (to == rt_smp_linux_task[to->runnable_on_cpus].rnext) {
+					__set_bit(to->runnable_on_cpus & 0x1F, &schedmap);
+				}
 #endif
-//		} else if ((void *)(q = to->blocked_on) > RTP_HIGERR && !((to->state & RT_SCHED_SEMAPHORE) && ((SEM *)q)->qtype)) {
-		} else if ((to->state & (RT_SCHED_SEND | RT_SCHED_RPC | RT_SCHED_RETURN | RT_SCHED_SEMAPHORE))) {
-			q = to->blocked_on;
-                        (to->queue.prev)->next = to->queue.next;
-                        (to->queue.next)->prev = to->queue.prev;
-                        while ((q = q->next) != to->blocked_on && (q->task)->priority <= to->priority);
-                        q->prev = (to->queue.prev = q->prev)->next  = &(to->queue);
-                        to->queue.next = q;
+			}
+			break;
+//		} else if ((void *)(q = to->blocked_on) > RTE_HIGERR && !((to->state & RT_SCHED_SEMAPHORE) && ((SEM *)q)->qtype)) {
+		} else if ((unsigned long)(blocked_on = to->blocked_on) > RTE_HIGERR && (((to->state & RT_SCHED_SEMAPHORE) && ((SEM *)blocked_on)->type > 0) || (to->state & (RT_SCHED_SEND | RT_SCHED_RPC | RT_SCHED_RETURN)))) {
+			if (to->queue.prev != blocked_on) {
+				q = blocked_on;
+				(to->queue.prev)->next = to->queue.next;
+				(to->queue.next)->prev = to->queue.prev;
+				while ((q = q->next) != blocked_on && (q->task)->priority <= to->priority);
+				q->prev = (to->queue.prev = q->prev)->next  = &(to->queue);
+				to->queue.next = q;
+				if (to->queue.prev != blocked_on) {
+					break;
+				}
+			}
+			to = (to->state & RT_SCHED_SEMAPHORE) ? ((SEM *)blocked_on)->owndby : blocked_on->task;
                 }
-                to = to->prio_passed_to;
+//		to = to->prio_passed_to;
 	}
 #ifdef CONFIG_SMP
 	return schedmap;

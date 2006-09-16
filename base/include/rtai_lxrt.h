@@ -87,7 +87,7 @@
 #define SET_ONESHOT_MODE		14
 #define SIGNAL_HANDLER	 		15
 #define TASK_USE_FPU			16
-#define LINUX_USE_FPU			17
+#define GET_PRIORITIES			17  // was LINUX_USE_FPU
 #define HARD_TIMER_COUNT		18
 #define GET_TIME_NS			19
 #define GET_CPU_TIME_NS			20
@@ -592,7 +592,7 @@ RTAI_PROTO(unsigned long, rt_get_name, (void *adr))
 RTAI_PROTO(RT_TASK *, rt_task_init_schmod, (unsigned long name, int priority, int stack_size, int max_msg_size, int policy, int cpus_allowed))
 {
         struct sched_param mysched;
-        struct { unsigned long name; int priority, stack_size, max_msg_size, cpus_allowed; } arg = { name, priority, stack_size, max_msg_size, cpus_allowed };
+        struct { unsigned long name; int priority, stack_size, max_msg_size, cpus_allowed; } arg = { name ? name : rt_get_name(NULL), priority, stack_size, max_msg_size, cpus_allowed };
 
         mysched.sched_priority = sched_get_priority_max(policy) - priority;
         if (mysched.sched_priority < 1 ) {
@@ -1025,10 +1025,17 @@ RTAI_PROTO(int,rt_buddy_task_use_fpu,(RT_TASK *task, int use_fpu_flag))
 	return rtai_lxrt(BIDX, SIZARG, TASK_USE_FPU, &arg).i[LOW];
 }
 
+/*
 RTAI_PROTO(int,rt_linux_use_fpu,(int use_fpu_flag))
 {
 	struct { long use_fpu_flag; } arg = { use_fpu_flag };
 	return rtai_lxrt(BIDX, SIZARG, LINUX_USE_FPU, &arg).i[LOW];
+}
+*/
+RTAI_PROTO(int, rt_get_priorities, (RT_TASK *task, int *priority, int *base_priority))
+{
+	struct { RT_TASK *task; int *priority, *base_priority; } arg = { task, priority, base_priority };
+	return rtai_lxrt(BIDX, SIZARG, GET_PRIORITIES, &arg).i[LOW];
 }
 
 RTAI_PROTO(int, rt_hard_timer_tick, (void))
@@ -1145,14 +1152,15 @@ RTAI_PROTO(int,rt_set_linux_signal_handler,(RT_TASK *task, void (*handler)(int s
     return rtai_lxrt(BIDX, SIZARG, RT_SET_LINUX_SIGNAL_HANDLER, &arg).i[LOW];
 }
 
+#define VSNPRINTF_BUF_SIZE 256
 RTAI_PROTO(int,rtai_print_to_screen,(const char *format, ...))
 {
-	char display[256];
+	char display[VSNPRINTF_BUF_SIZE];
 	struct { const char *display; long nch; } arg = { display, 0 };
 	va_list args;
 
 	va_start(args, format);
-	arg.nch = vsprintf(display, format, args);
+	arg.nch = vsnprintf(display, VSNPRINTF_BUF_SIZE, format, args);
 	va_end(args);
 	rtai_lxrt(BIDX, SIZARG, PRINT_TO_SCREEN, &arg);
 	return arg.nch;
@@ -1160,12 +1168,12 @@ RTAI_PROTO(int,rtai_print_to_screen,(const char *format, ...))
 
 RTAI_PROTO(int,rt_printk,(const char *format, ...))
 {
-	char display[256];
+	char display[VSNPRINTF_BUF_SIZE];
 	struct { const char *display; long nch; } arg = { display, 0 };
 	va_list args;
 
 	va_start(args, format);
-	arg.nch = vsprintf(display, format, args);
+	arg.nch = vsnprintf(display, VSNPRINTF_BUF_SIZE, format, args);
 	va_end(args);
 	rtai_lxrt(BIDX, SIZARG, PRINTK, &arg);
 	return arg.nch;

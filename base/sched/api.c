@@ -23,9 +23,12 @@
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
  */
 
-#include <rtai_schedcore.h>
-#include <rtai_registry.h>
 #include <linux/module.h>
+#include <asm/uaccess.h>
+
+#include <rtai_schedcore.h>
+#include <rtai_prinher.h>
+#include <rtai_registry.h>
 
 /* ++++++++++++++++++++++++ COMMON FUNCTIONALITIES ++++++++++++++++++++++++++ */
 
@@ -65,7 +68,6 @@ void rt_set_sched_policy(RT_TASK *task, int policy, int rr_quantum_ns)
  *
  * @return rt_get_prio returns the priority of task @e task.
  *
- * @note To be used only with RTAI24.x.xx.
  */
 int rt_get_prio(RT_TASK *task)
 {
@@ -92,7 +94,6 @@ int rt_get_prio(RT_TASK *task)
  *
  * @return rt_get_inher_prio returns the priority of task @e task.
  *
- * @note To be used only with RTAI24.x.xx.
  */
 int rt_get_inher_prio(RT_TASK *task)
 {
@@ -102,6 +103,44 @@ int rt_get_inher_prio(RT_TASK *task)
 	return task->base_priority;
 }
 
+
+/**
+ * @anchor rt_get_priorities
+ * @brief Check inheredited and base priority.
+ * 
+ * rt_task_get_priorities returns the base and inherited priorities of a task.
+ *
+ * Recall that a task has a base native priority, assigned at its
+ * birth or by @ref rt_change_prio(), and an actual, inherited,
+ * priority. They can be different because of priority inheritance.
+ *
+ * @param task is the affected task.
+ *
+ * @param priority the actual, e.e. inherited priority.
+ *
+ * @param base_priority the base priority.
+ *
+ * @return rt_task_get_priority returns 0 if non NULL priority addresses
+ * are given, EINVAL if addresses are NULL or task is not a valid object.
+ *
+ */
+int rt_get_priorities(RT_TASK *task, int *priority, int *base_priority)
+{
+	if (!task) {
+		task = RT_CURRENT;
+	}
+	if (task->magic != RT_TASK_MAGIC || !priority || !base_priority) {
+		return -EINVAL;
+	}
+	if ((unsigned long)priority < PAGE_OFFSET) {
+		rt_put_user(task->priority, priority);
+		rt_put_user(task->base_priority, base_priority);
+	} else {
+		*priority      = task->priority;
+		*base_priority = task->base_priority;
+	}
+	return 0;
+}
 
 /**
  * @anchor rt_change_prio
@@ -122,7 +161,6 @@ int rt_get_inher_prio(RT_TASK *task)
  * @return rt_change_prio returns the base priority task @e task had
  * before the change.
  *
- * @note To be used only with RTAI24.x.xx (FIXME).
  */
 int rt_change_prio(RT_TASK *task, int priority)
 {
@@ -141,27 +179,40 @@ int rt_change_prio(RT_TASK *task, int priority)
 	base_priority = task->base_priority;
 	task->base_priority = priority;
 	if (base_priority == task->priority || priority < task->priority) {
-		QUEUE *q;
+		QUEUE *q, *blocked_on;
 		unsigned long schedmap = 0;
 		do {
 			task->priority = priority;
 			if (task->state == RT_SCHED_READY) {
-				(task->rprev)->rnext = task->rnext;
-				(task->rnext)->rprev = task->rprev;
-				enq_ready_task(task);
+				if (task != rt_smp_linux_task[task->runnable_on_cpus].rnext) {
+					(task->rprev)->rnext = task->rnext;
+					(task->rnext)->rprev = task->rprev;
+					enq_ready_task(task);
+					if (task == rt_smp_linux_task[task->runnable_on_cpus].rnext) {
 #ifdef CONFIG_SMP
-				__set_bit(task->runnable_on_cpus & 0x1F, &schedmap);
+						__set_bit(task->runnable_on_cpus & 0x1F, &schedmap);
 #else
-				schedmap = 1;
+						schedmap = 1;
 #endif
-			} else if ((void *)(q = task->blocked_on) > RTP_HIGERR && (((task->state & RT_SCHED_SEMAPHORE) && !((SEM *)q)->qtype) || (task->state & (RT_SCHED_SEND | RT_SCHED_RPC | RT_SCHED_RETURN)))) {
-				(task->queue.prev)->next = task->queue.next;
-				(task->queue.next)->prev = task->queue.prev;
-				while ((q = q->next) != task->blocked_on && (q->task)->priority <= priority);
-				q->prev = (task->queue.prev = q->prev)->next  = &(task->queue);
-				task->queue.next = q;
+					}
+				}
+				break;
+//			 } else if ((task->state & (RT_SCHED_SEND | RT_SCHED_RPC | RT_SCHED_RETURN | RT_SCHED_SEMAPHORE))) {
+			} else if ((unsigned long)(blocked_on = task->blocked_on) > RTE_HIGERR && (((task->state & RT_SCHED_SEMAPHORE) && ((SEM *)blocked_on)->type > 0) || (task->state & (RT_SCHED_SEND | RT_SCHED_RPC | RT_SCHED_RETURN)))) {
+				if (task->queue.prev != (blocked_on = task->blocked_on)) {
+					q = blocked_on;
+					(task->queue.prev)->next = task->queue.next;
+					(task->queue.next)->prev = task->queue.prev;
+					while ((q = q->next) != blocked_on && (q->task)->priority <= priority);
+					q->prev = (task->queue.prev = q->prev)->next  = &(task->queue);
+					task->queue.next = q;
+					if (task->queue.prev != blocked_on) {
+						break;
+					}
+				}
+				task = (task->state & RT_SCHED_SEMAPHORE) ? ((SEM *)blocked_on)->owndby : blocked_on->task;
 			}
-		} while ((task = task->prio_passed_to) && task->priority > priority);
+		} while (task && task->priority > priority);
 		if (schedmap) {
 #ifdef CONFIG_SMP
 			if (test_and_clear_bit(rtai_cpuid(), &schedmap)) {
@@ -240,10 +291,8 @@ void rt_task_yield(void)
  * rt_task_suspend suspends execution of the task task.
  *
  * It will not be executed until a call to @ref rt_task_resume() or
- * @ref rt_task_make_periodic() is made. No account is made for
- * multiple suspends, i.e. a multiply suspended task is made ready as
- * soon as it is rt_task_resumed, thus immediately resuming its
- * execution if it is the highest in priority.
+ * @ref rt_task_make_periodic() is made. Multiple suspends and require as 
+ * many @ref rt_task_resume() as the rt_task_suspends placed on a task.
  *
  * @param task pointer to a task structure.
  *
@@ -252,9 +301,6 @@ void rt_task_yield(void)
  * - @b -EINVAL: task does not refer to a valid task.
  * - @b RTE_UNBLKD:  the task was unblocked while suspended;
  *
- * @note the new RTAI 24.1.xx (FIXME) development releases take into
- * account multiple suspend and require as many @ref rt_task_resume()
- * as the rt_task_suspends placed on a task.
  */
 int rt_task_suspend(RT_TASK *task)
 {
@@ -267,7 +313,7 @@ int rt_task_suspend(RT_TASK *task)
 	}
 
 	flags = rt_global_save_flags_and_cli();
-	if (!task->owndres) {
+	if (!task_owns_res(task)) {
 		if (task->suspdepth >= 0) {
 			if (!task->suspdepth) {
 				task->suspdepth++;
@@ -311,7 +357,7 @@ int rt_task_suspend_if(RT_TASK *task)
 	}
 
 	flags = rt_global_save_flags_and_cli();
-	if (!task->owndres && task->suspdepth < 0) {
+	if (!task_owns_res(task) && task->suspdepth < 0) {
 		task->suspdepth++;
 	}
 	rt_global_restore_flags(flags);
@@ -330,7 +376,7 @@ int rt_task_suspend_until(RT_TASK *task, RTIME time)
 	}
 
 	flags = rt_global_save_flags_and_cli();
-	if (!task->owndres) {
+	if (!task_owns_res(task)) {
 		if (task->suspdepth >= 0) {
 #ifdef CONFIG_SMP
 			int cpuid = rtai_cpuid();
@@ -400,9 +446,6 @@ int rt_task_suspend_timed(RT_TASK *task, RTIME delay)
  * @return 0 on success. A negative value on failure as described below:
  * - @b EINVAL: task does not refer to a valid task.
  *
- * @note the new RTAI 24.1.xx (FIXME) development releases take into
- *       account multiple suspend and require as many rt_task_resumes
- *	 as the rt_task_suspends placed on a task.
  */
 int rt_task_resume(RT_TASK *task)
 {
@@ -416,7 +459,7 @@ int rt_task_resume(RT_TASK *task)
 	if (!(--task->suspdepth)) {
 		rem_timed_task(task);
 		if ((task->state &= ~(RT_SCHED_SUSPENDED | RT_SCHED_DELAYED | RT_SCHED_SELFSUSP)) == RT_SCHED_READY) {
-			task->blocked_on = NOTHING;
+			task->blocked_on = NULL;
 			enq_ready_task(task);
 			RT_SCHEDULE(task, rtai_cpuid());
 		}
@@ -740,8 +783,8 @@ int rt_task_wait_period(void)
 		rt_times.tick_time;
 #endif
 	} else if ((rt_current->periodic_resume_time += rt_current->period) > rt_time_h) {
-		rt_current->resume_time = rt_current->periodic_resume_time;
 		void *blocked_on;
+		rt_current->resume_time = rt_current->periodic_resume_time;
 		rt_current->blocked_on = NULL;
 		rt_current->state |= RT_SCHED_DELAYED;
 		rem_ready_current(rt_current);
@@ -1203,7 +1246,7 @@ static void *hash_find_name(unsigned long name, struct rt_registry_entry *list, 
 	i = hash_fun(name, lstlen);
 	while (1) {
 		k = i;
-		while (list[k].name > NONAME && list[k].name != name) {
+		while (list[k].name && list[k].name != name) {
 COLLISION_COUNT();
 			if (++k > lstlen) {
 				k = 1;
@@ -1237,7 +1280,7 @@ static unsigned long hash_find_adr(void *adr, struct rt_registry_entry *list, lo
 	i = hash_fun((unsigned long)adr, lstlen);
 	while (1) {
 		k = i;
-		while (list[k].adr > NOADR && list[k].adr != adr) {
+		while (list[k].adr && list[k].adr != adr) {
 COLLISION_COUNT();
 			if (++k > lstlen) {
 				k = 1;
@@ -1802,12 +1845,7 @@ void krtai_objects_release(void)
 
 #include <rtai_tasklets.h>
 
-extern struct {
-    int (*handler)(unsigned irq, void *cookie);
-    void *cookie;
-    int retmode;
-    int cpumask;
-} rtai_realtime_irq[];
+extern struct rtai_realtime_irq_s rtai_realtime_irq[];
 
 int rt_irq_wait(unsigned irq)
 {	
@@ -1887,11 +1925,12 @@ RT_TASK *rt_exec_linux_syscall(RT_TASK *rt_current, RT_TASK *task, struct pt_reg
 {
 	unsigned long flags;
 
+	task->priority = rt_current->priority + BASE_SOFT_PRIORITY;
 	flags = rt_global_save_flags_and_cli();
 	if (task->state & RT_SCHED_RECEIVE) {
 		rt_current->msg = task->msg = (unsigned long)regs;
 		task->msg_queue.task = rt_current;
-		task->ret_queue.task = NOTHING;
+		task->ret_queue.task = NULL;
 		task->state = RT_SCHED_READY;
 		enq_ready_task(task);
 		enqueue_blocked(rt_current, &task->ret_queue, 1);
@@ -2027,6 +2066,7 @@ void rtai_proc_lxrt_unregister(void)
 EXPORT_SYMBOL(rt_set_sched_policy);
 EXPORT_SYMBOL(rt_get_prio);
 EXPORT_SYMBOL(rt_get_inher_prio);
+EXPORT_SYMBOL(rt_get_priorities);
 EXPORT_SYMBOL(rt_change_prio);
 EXPORT_SYMBOL(rt_whoami);
 EXPORT_SYMBOL(rt_task_yield);

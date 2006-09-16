@@ -92,9 +92,9 @@ static inline int lxrt_typed_mbx_init(MBX *mbx, int bufsize, int type)
 	return ((int (*)(MBX *, int, int))rt_get_lxrt_fun_entry(TYPED_MBX_INIT))(mbx, bufsize, type);
 }
 
-static inline int lxrt_rwl_init(RWL *rwl)
+static inline int lxrt_typed_rwl_init(RWL *rwl, int type)
 {
-	return ((int (*)(RWL *))rt_get_lxrt_fun_entry(RWL_INIT))(rwl);
+	return ((int (*)(RWL *, int))rt_get_lxrt_fun_entry(RWL_INIT))(rwl, type);
 }
 
 static inline int lxrt_spl_init(SPL *spl)
@@ -204,11 +204,22 @@ static inline void lxrt_fun_call_wbuf(RT_TASK *rt_task, void *fun, int narg, lon
 	}
 }
 
+void put_current_on_cpu(int cpuid);
+
 static inline RT_TASK* __task_init(unsigned long name, int prio, int stack_size, int max_msg_size, int cpus_allowed)
 {
 	void *msg_buf0, *msg_buf1;
 	RT_TASK *rt_task;
 
+	if ((rt_task = current->rtai_tskext(TSKEXT0))) {
+		if (num_online_cpus() > 1 && cpus_allowed) {
+	    		cpus_allowed = hweight32(cpus_allowed) > 1 ? get_min_tasks_cpuid() : ffnz(cpus_allowed);
+		} else {
+			cpus_allowed = smp_processor_id();
+		}
+		put_current_on_cpu(cpus_allowed);
+		return rt_task;
+	}
 	if (rt_get_adr(name)) {
 		return 0;
 	}
@@ -240,6 +251,7 @@ static inline RT_TASK* __task_init(unsigned long name, int prio, int stack_size,
 		rt_task->max_msg_size[0] =
 		rt_task->max_msg_size[1] = max_msg_size;
 		if (rt_register(name, rt_task, IS_TASK, 0)) {
+			rt_task->state = 0;
 			return rt_task;
 		} else {
 			clr_rtext(rt_task);
@@ -397,8 +409,8 @@ static inline long long handle_lxrt_request (unsigned int lxsrq, long *arg, RT_T
 				return 0;
 			}
 			if ((arg0.rwl = rt_malloc(sizeof(RWL)))) {
-				struct arg { unsigned long name; };
-				lxrt_rwl_init(arg0.rwl);
+				struct arg { unsigned long name; long type; };
+				lxrt_typed_rwl_init(arg0.rwl, larg->type);
 				if (rt_register(larg->name, arg0.rwl, IS_SEM, current)) {
 					return arg0.name;
 				} else {
@@ -547,6 +559,7 @@ static inline long long handle_lxrt_request (unsigned int lxsrq, long *arg, RT_T
 		case LINUX_SERVER_INIT: {
 extern RT_TASK *lxrt_init_linux_server(RT_TASK *master_task);
 //return (long)lxrt_init_linux_server(arg0.rt_task);
+			rtai_set_linux_task_priority(current, arg0.rt_task->lnxtsk->policy, arg0.rt_task->lnxtsk->rt_priority);
 			arg0.rt_task->linux_syscall_server = __task_init((unsigned long)arg0.rt_task, arg0.rt_task->base_priority >= BASE_SOFT_PRIORITY ? arg0.rt_task->base_priority - BASE_SOFT_PRIORITY : arg0.rt_task->base_priority, 0, 0, 1 << arg0.rt_task->runnable_on_cpus);
 			rt_task_resume(arg0.rt_task);
 			return (long)arg0.rt_task->linux_syscall_server;

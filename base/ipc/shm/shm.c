@@ -565,7 +565,7 @@ static void rt_set_heap(unsigned long name, void *adr)
 	hptr = ALIGN2PAGE(heap);
 	size = ((abs(rt_get_type(name)) - sizeof(rtheap_t) - (hptr - heap)) & PAGE_MASK);
 	heap = hptr + size;
-	if (!atomic_cmpxchg((int *)hptr, 0, name)) {
+	if (!atomic_cmpxchg((atomic_t *)hptr, 0, name)) {
 		rtheap_init(heap, hptr, size, PAGE_SIZE);
 	}
 	RTAI_TASK(return);
@@ -644,9 +644,11 @@ struct rt_native_fun_entry rt_shm_entries[] = {
 extern int set_rt_fun_entries(struct rt_native_fun_entry *entry);
 extern void reset_rt_fun_entries(struct rt_native_fun_entry *entry);
 
-#include <linux/device.h>
+#if 0
 #include <linux/devfs_fs_kernel.h>
+#include <linux/device.h>
 static class_t *shm_class = NULL;
+#endif
 
 int __rtai_shm_init (void)
 {

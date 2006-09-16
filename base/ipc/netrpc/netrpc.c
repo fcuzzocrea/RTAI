@@ -100,23 +100,23 @@ MODULE_LICENSE("GPL");
 #define NETRPC_STACK_SIZE  6000
 
 static unsigned long MaxStubs = MAX_STUBS;
-MODULE_PARM(MaxStubs, "i");
+RTAI_MODULE_PARM(MaxStubs, ulong);
 static int MaxStubsMone;
 
 static unsigned long MaxSocks = MAX_SOCKS;
-MODULE_PARM(MaxSocks, "i");
+RTAI_MODULE_PARM(MaxSocks, ulong);
 
 static int StackSize = NETRPC_STACK_SIZE;
-MODULE_PARM(StackSize, "i");
+RTAI_MODULE_PARM(StackSize, int);
 
 static char *ThisNode = LOCALHOST;
-MODULE_PARM(ThisNode, "s");
+RTAI_MODULE_PARM(ThisNode, charp);
 
 static char *ThisSoftNode = 0;
-MODULE_PARM(ThisSoftNode, "s");
+RTAI_MODULE_PARM(ThisSoftNode, charp);
 
 static char *ThisHardNode = 0;
-MODULE_PARM(ThisHardNode, "s");
+RTAI_MODULE_PARM(ThisHardNode, charp);
 
 #define MAX_DFUN_EXT  16
 static struct rt_fun_entry *rt_net_rpc_fun_ext[MAX_DFUN_EXT];
@@ -726,8 +726,8 @@ static inline void mbx_signal(MBX *mbx)
 	flags = rt_global_save_flags_and_cli();
 	if ((task = mbx->waiting_task)) {
 		rem_timed_task(task);
-		task->blocked_on  = NOTHING;
-		mbx->waiting_task = NOTHING;
+		task->blocked_on  = NULL;
+		mbx->waiting_task = NULL;
 		if (task->state != RT_SCHED_READY && (task->state &= ~(RT_SCHED_MBXSUSP | RT_SCHED_DELAYED)) == RT_SCHED_READY) {
 			enq_ready_task(task);
 			RT_SCHEDULE(task, rtai_cpuid());

@@ -618,6 +618,9 @@ void rt_set_timer_period(struct rt_tasklet_struct *timer, RTIME period)
 	rt_spin_unlock_irqrestore(flags, lock);
 }
 
+static int TimersManagerPrio = 0;
+RTAI_MODULE_PARM(TimersManagerPrio, int);
+
 // the timers_manager task function
 
 static void rt_timers_manager(long cpuid)
@@ -636,7 +639,8 @@ static void rt_timers_manager(long cpuid)
 
 	while (1) {
 		rt_sleep_until((timerl->next)->firing_time);
-		now = timer_manager->resume_time + timer_tol;
+//		now = timer_manager->resume_time + timer_tol;
+		now = rt_get_time() + timer_tol;
 // find all the timers to be fired, in priority order
 		while (1) {
 			used_fpu = 0;
@@ -648,11 +652,14 @@ static void rt_timers_manager(long cpuid)
 					priority = (timer = tmr)->priority;
 				}
 			}
-			timer_manager->priority = priority;
 			rt_spin_unlock_irqrestore(flags, lock);
 			if (timer == timerl) {
+				if (timer_manager->priority > TimersManagerPrio) {
+					timer_manager->priority = TimersManagerPrio;
+				}
 				break;
 			}
+			timer_manager->priority = priority;
 			if (!timer->period) {
 				flags = rt_spin_lock_irqsave(lock);
 				rem_timer(timer);
@@ -746,8 +753,8 @@ int rt_delete_tasklet(struct rt_tasklet_struct *tasklet)
 	return thread;	
 }
 
-static int tasklets_stacksize = TASKLET_STACK_SIZE;
-MODULE_PARM(tasklets_stacksize, "i");
+static int TaskletsStacksize = TASKLET_STACK_SIZE;
+RTAI_MODULE_PARM(TaskletsStacksize, int);
 
 static RT_TASK *rt_base_linux_task;
 
@@ -767,7 +774,7 @@ int __rtai_tasklets_init(void)
 		timers_lock[cpuid] = timers_lock[0];
 		timers_list[cpuid] = timers_list[0];
 		timers_list[cpuid].next = timers_list[cpuid].prev = &timers_list[cpuid];
-		rt_task_init_cpuid(&timers_manager[cpuid], rt_timers_manager, cpuid, tasklets_stacksize, RT_SCHED_LOWEST_PRIORITY, 0, 0, cpuid);
+		rt_task_init_cpuid(&timers_manager[cpuid], rt_timers_manager, cpuid, TaskletsStacksize, TimersManagerPrio, 0, 0, cpuid);
 		rt_task_resume(&timers_manager[cpuid]);
 	}
 	printk(KERN_INFO "RTAI[tasklets]: loaded.\n");

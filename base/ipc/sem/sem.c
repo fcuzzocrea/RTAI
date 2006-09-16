@@ -29,6 +29,8 @@
  *
  *@{*/
 
+#include <asm/uaccess.h>
+
 #include <rtai_schedcore.h>
 #include <rtai_prinher.h>
 #include <rtai_sem.h>
@@ -92,15 +94,18 @@ MODULE_LICENSE("GPL");
  * posed on it is just registered. An owner task will go into suspend
  * state only when it releases all the owned resources.
  *
- * @note RTAI counting semaphores assume that their counter will never
- *	 exceed 0xFFFF, such a number being used to signal returns in
- *	 error. Thus also the initial count value cannot be greater
- *	 than 0xFFFF. To be used only with RTAI24.x.xx (FIXME).
+ * @note if the legacy error return values scheme is used RTAI counting 
+ *       semaphores assume that their counter will never exceed 0xFFFF, 
+ *       such a number being used to signal returns in error. Thus also 
+ *       the initial count value cannot be greater 0xFFFF. The new error
+ *       return scheme allows counts in the order of billions instead.
+ *
  */
 void rt_typed_sem_init(SEM *sem, int value, int type)
 {
 	sem->magic = RT_SEM_MAGIC;
 	sem->count = value;
+	sem->restype = 0;
 	if ((type & RES_SEM) == RES_SEM) {
 		sem->qtype = 0;
 	} else {
@@ -111,6 +116,7 @@ void rt_typed_sem_init(SEM *sem, int value, int type)
 		sem->count = 1;
 	} else if (type > 0) {
 		sem->type = sem->count = 1;
+		sem->restype = value;
 	}
 	sem->queue.prev = &(sem->queue);
 	sem->queue.next = &(sem->queue);
@@ -143,7 +149,7 @@ void rt_typed_sem_init(SEM *sem, int value, int type)
  *	 exceed 0xFFFF, such a number being used to signal returns in
  *	 error. Thus also the initial count value cannot be greater
  *	 than 0xFFFF.
- *	 This is an old legacy function. RTAI 24.1.xx has also 
+ *	 This is an old legacy functioni, there is also 
  *	 @ref rt_typed_sem_init(), allowing to
  *	 choose among counting, binary and resource
  *	 semaphores. Resource semaphores have priority inherithance. 
@@ -209,7 +215,7 @@ int rt_sem_delete(SEM *sem)
 				task->state |= RT_SCHED_SUSPENDED;
 				rem_ready_task(task);
 				sched = 1;
-			} else {
+			} else if (task->suspdepth == RT_RESEM_SUSPDEL) {
 				rt_task_delete(task);
 			}
 		}
@@ -268,6 +274,10 @@ int rt_sem_signal(SEM *sem)
 
 	flags = rt_global_save_flags_and_cli();
 	if (sem->type) {
+		if (sem->restype && (!sem->owndby || sem->owndby != RT_CURRENT)) {
+			rt_global_restore_flags(flags);
+			return RTE_PERM;
+		}
 		if (sem->type > 1) {
 			sem->type--;
 			rt_global_restore_flags(flags);
@@ -305,7 +315,7 @@ res:	if (sem->type > 0) {
 				rt_current->state |= RT_SCHED_SUSPENDED;
 				rem_ready_current(rt_current);
                         	sched = 1;
-			} else {
+			} else if (task->suspdepth == RT_RESEM_SUSPDEL) {
 				rt_task_delete(rt_current);
 			}
 		}
@@ -432,10 +442,14 @@ int rt_sem_wait(SEM *sem)
 		void *retp;
 		unsigned long schedmap;
 		if (sem->type > 0) {
-			if (sem->owndby == rt_current) {
-				count = sem->type++;
+			if (sem->restype && sem->owndby == rt_current) {
+				if (sem->restype > 0) {
+					count = sem->type++;
+					rt_global_restore_flags(flags);
+					return count + 1;
+				}
 				rt_global_restore_flags(flags);
-				return count + 1;
+				return RTE_DEADLOK;
 			}
 			schedmap = pass_prio(sem->owndby, rt_current);
 		} else {
@@ -454,7 +468,7 @@ int rt_sem_wait(SEM *sem)
 				if (++sem->count > 1 && sem->type) {
 					sem->count = 1;
 				}
-				if (sem->owndby) {
+				if (sem->owndby && sem->type > 0) {
 					set_task_prio_from_resq(sem->owndby);
 				}
 				rt_global_restore_flags(flags);
@@ -509,10 +523,14 @@ int rt_sem_wait_if(SEM *sem)
 
 	flags = rt_global_save_flags_and_cli();
 	if ((count = sem->count) <= 0) {
-		if (sem->type > 0 && sem->owndby == RT_CURRENT) {
-			count = sem->type++;
+		if (sem->restype && sem->owndby == RT_CURRENT) {
+			if (sem->restype > 0) {
+				count = sem->type++;
+				rt_global_restore_flags(flags);
+				return count + 1;
+			}
 			rt_global_restore_flags(flags);
-			return count + 1;
+			return RTE_DEADLOK;
 		}
 	} else {
 		sem->count--;
@@ -577,10 +595,14 @@ int rt_sem_wait_until(SEM *sem, RTIME time)
 		if ((rt_current->resume_time = time) > rt_time_h) {
 			unsigned long schedmap;
 			if (sem->type > 0) {
-				if (sem->owndby == rt_current) {
-					count = sem->type++;
+				if (sem->restype && sem->owndby == rt_current) {
+					if (sem->restype > 0) {
+						count = sem->type++;
+						rt_global_restore_flags(flags);
+						return count + 1;
+					}
 					rt_global_restore_flags(flags);
-					return count + 1;
+					return RTE_DEADLOK;
 				}
 				schedmap = pass_prio(sem->owndby, rt_current);
 			} else {
@@ -603,7 +625,7 @@ int rt_sem_wait_until(SEM *sem, RTIME time)
 			if (++sem->count > 1 && sem->type) {
 				sem->count = 1;
 			}
-			if (sem->owndby) {
+			if (sem->owndby && sem->type > 0) {
 				set_task_prio_from_resq(sem->owndby);
 			}
 			rt_global_restore_flags(flags);
@@ -674,7 +696,8 @@ int rt_sem_wait_timed(SEM *sem, RTIME delay)
  * a request will be blocked till a number of tasks equal to the semaphore
  * count set at rt_sem_init is reached.
  *
- * @returns 0 always.
+ * @returns -1 for tasks that waited on the barrier, 0 for the tasks that 
+ * completed the barrier count.
  */
 int rt_sem_wait_barrier(SEM *sem)
 {
@@ -690,9 +713,9 @@ int rt_sem_wait_barrier(SEM *sem)
 		sem->count = sem->type = 0;
 	}
 	if ((1 - sem->count) < (long)sem->owndby) {
-		int retval = rt_sem_wait(sem);
+		rt_sem_wait(sem);
 		rt_global_restore_flags(flags);
-		return retval;
+		return -1;
 	}
 	rt_sem_broadcast(sem);
 	rt_global_restore_flags(flags);
@@ -742,8 +765,9 @@ static inline int rt_cndmtx_signal(SEM *mtx, RT_TASK *rt_current)
 	int type;
 	RT_TASK *task;
 
-	type = mtx->type;
-	mtx->type = 1;
+	if ((type = mtx->type) > 1) {
+		mtx->type = 1;
+	}
 	if (++mtx->count > 1) {
 		mtx->count = 1;
 	}
@@ -796,6 +820,10 @@ int rt_cond_wait(CND *cnd, SEM *mtx)
 	}
 	flags = rt_global_save_flags_and_cli();
 	rt_current = RT_CURRENT;
+	if (mtx->owndby != rt_current) {
+		rt_global_restore_flags(flags);
+		return RTE_PERM;
+	}
 	rt_current->state |= RT_SCHED_SEMAPHORE;
 	rem_ready_current(rt_current);
 	enqueue_blocked(rt_current, &cnd->queue, cnd->qtype);
@@ -803,13 +831,12 @@ int rt_cond_wait(CND *cnd, SEM *mtx)
 	if (likely((retp = rt_current->blocked_on) != RTP_OBJREM)) { 
 		if (unlikely(retp != NULL)) {
 			dequeue_blocked(rt_current);
-			++cnd->count;
                         retval = RTE_UNBLKD;
 		} else {
-                        retval = RTE_OBJREM;
+			retval = 0;
 		}
 	} else {
-		retval = 0;
+		retval = RTE_OBJREM;
 	}
 	rt_global_restore_flags(flags);
 	if (rt_sem_wait(mtx) < RTE_LOWERR) {
@@ -854,6 +881,10 @@ int rt_cond_wait_until(CND *cnd, SEM *mtx, RTIME time)
 	}
 	flags = rt_global_save_flags_and_cli();
 	ASSIGN_RT_CURRENT;
+	if (mtx->owndby != rt_current) {
+		rt_global_restore_flags(flags);
+		return RTE_PERM;
+	}
 	if ((rt_current->resume_time = time) > rt_time_h) {
 		rt_current->state |= (RT_SCHED_SEMAPHORE | RT_SCHED_DELAYED);
 		rem_ready_current(rt_current);
@@ -864,18 +895,17 @@ int rt_cond_wait_until(CND *cnd, SEM *mtx, RTIME time)
                         retval = RTE_OBJREM;
 		} else if (unlikely(retp != NULL)) {
 			dequeue_blocked(rt_current);
-			++cnd->count;
-			return likely(retp > RTP_HIGERR) ? RTE_TIMOUT : RTE_UNBLKD;
+			retval = likely(retp > RTP_HIGERR) ? RTE_TIMOUT : RTE_UNBLKD;
 		} else {
 			retval = 0;
 		}
-	} else {
 		rt_global_restore_flags(flags);
-		return retval = RTE_TIMOUT;
-	}
-	rt_global_restore_flags(flags);
-	if (rt_sem_wait(mtx) < RTE_LOWERR) {
-		mtx->type = type;
+		if (rt_sem_wait(mtx) < RTE_LOWERR) {
+			mtx->type = type;
+		}
+	} else {
+		retval = RTE_TIMOUT;
+		rt_global_restore_flags(flags);
 	}
 	return retval;
 }
@@ -931,11 +961,11 @@ int rt_cond_wait_timed(CND *cnd, SEM *mtx, RTIME delay)
  *
  */
 
-int rt_rwl_init(RWL *rwl)
+int rt_typed_rwl_init(RWL *rwl, int type)
 {
-	rt_typed_sem_init(&rwl->wrmtx, 1, RES_SEM);
-	rt_typed_sem_init(&rwl->wrsem, 0, CNT_SEM);
-	rt_typed_sem_init(&rwl->rdsem, 0, CNT_SEM);
+	rt_typed_sem_init(&rwl->wrmtx, type, RES_SEM);
+	rt_typed_sem_init(&rwl->wrsem, 0, CNT_SEM | PRIO_Q);
+	rt_typed_sem_init(&rwl->rdsem, 0, CNT_SEM | PRIO_Q);
 	return 0;
 }
 
@@ -956,9 +986,9 @@ int rt_rwl_delete(RWL *rwl)
 	int ret;
 
 	ret  =  rt_sem_delete(&rwl->rdsem);
-	ret |= !rt_sem_delete(&rwl->wrsem);
-	ret |= !rt_sem_delete(&rwl->wrmtx);
-	return ret ? 0 : RTE_OBJINV;
+	ret |= rt_sem_delete(&rwl->wrsem);
+	ret |= rt_sem_delete(&rwl->wrmtx);
+	return !ret ? 0 : RTE_OBJINV;
 }
 
 /**
@@ -994,7 +1024,7 @@ int rt_rwl_rdlock(RWL *rwl)
 			return ret;
 		}
 	}
-	((int *)&rwl->rdsem.owndby)[0]++;
+	((volatile int *)&rwl->rdsem.owndby)[0]++;
 	rt_global_restore_flags(flags);
 	return 0;
 }
@@ -1020,7 +1050,7 @@ int rt_rwl_rdlock_if(RWL *rwl)
 
 	flags = rt_global_save_flags_and_cli();
 	if (!rwl->wrmtx.owndby && (!(wtask = (rwl->wrsem.queue.next)->task) || wtask->priority > RT_CURRENT->priority)) {
-		((int *)&rwl->rdsem.owndby)[0]++;
+		((volatile int *)&rwl->rdsem.owndby)[0]++;
 		rt_global_restore_flags(flags);
 		return 0;
 	}
@@ -1064,7 +1094,7 @@ int rt_rwl_rdlock_until(RWL *rwl, RTIME time)
 			return ret;
 		}
 	}
-	((int *)&rwl->rdsem.owndby)[0]++;
+	((volatile int *)&rwl->rdsem.owndby)[0]++;
 	rt_global_restore_flags(flags);
 	return 0;
 }
@@ -1143,9 +1173,10 @@ int rt_rwl_wrlock(RWL *rwl)
 int rt_rwl_wrlock_if(RWL *rwl)
 {
 	unsigned long flags;
+	int ret;
 
 	flags = rt_global_save_flags_and_cli();
-	if (!rwl->rdsem.owndby && rt_sem_wait_if(&rwl->wrmtx) >= 0) {
+	if (!rwl->rdsem.owndby && (ret = rt_sem_wait_if(&rwl->wrmtx)) > 0 && ret  < RTE_LOWERR) {
 		rt_global_restore_flags(flags);
 		return 0;
 	}
@@ -1235,10 +1266,13 @@ int rt_rwl_unlock(RWL *rwl)
 	unsigned long flags;
 
 	flags = rt_global_save_flags_and_cli();
-	if (rwl->wrmtx.owndby) {
+	if (rwl->wrmtx.owndby == RT_CURRENT) {
 		rt_sem_signal(&rwl->wrmtx);
 	} else if (rwl->rdsem.owndby) {
-	           rwl->rdsem.owndby = (struct rt_task_struct *)((char *)rwl->rdsem.owndby - 1);
+		((volatile int *)&rwl->rdsem.owndby)[0]--;
+	} else {
+		rt_global_restore_flags(flags);
+		return RTE_PERM;
 	}
 	rt_global_restore_flags(flags);
 	flags = rt_global_save_flags_and_cli();
@@ -1332,7 +1366,7 @@ int rt_spl_lock(SPL *spl)
 	if (spl->owndby == (rt_current = RT_CURRENT)) {
 		spl->count++;
 	} else {
-		while (atomic_cmpxchg(&spl->owndby, 0, rt_current));
+		while (atomic_cmpxchg((atomic_t *)&spl->owndby, 0, rt_current));
 		spl->flags = flags;
 	}
 	return 0;
@@ -1362,7 +1396,7 @@ int rt_spl_lock_if(SPL *spl)
 	if (spl->owndby == (rt_current = RT_CURRENT)) {
 		spl->count++;
 	} else {
-		if (atomic_cmpxchg(&spl->owndby, 0, rt_current)) {
+		if (atomic_cmpxchg((atomic_t *)&spl->owndby, 0, rt_current)) {
 			rtai_restore_flags(flags);
 			return -1;
 		}
@@ -1402,9 +1436,9 @@ int rt_spl_lock_timed(SPL *spl, unsigned long ns)
 		spl->count++;
 	} else {
 		RTIME end_time;
-		void *locked;
+		int locked;
 		end_time = rdtsc() + imuldiv(ns, tuned.cpu_freq, 1000000000);
-		while ((locked = atomic_cmpxchg(&spl->owndby, 0, rt_current)) && rdtsc() < end_time);
+		while ((locked = atomic_cmpxchg((atomic_t *)&spl->owndby, 0, rt_current)) && rdtsc() < end_time);
 		if (locked) {
 			rtai_restore_flags(flags);
 			return -1;
@@ -1496,11 +1530,18 @@ int rt_spl_unlock(SPL *spl)
  *
  */
 
-SEM *_rt_typed_named_sem_init(unsigned long sem_name, int value, int type)
+SEM *_rt_typed_named_sem_init(unsigned long sem_name, int value, int type, unsigned long *handle)
 {
 	SEM *sem;
 
 	if ((sem = rt_get_adr_cnt(sem_name))) {
+		if (handle) {
+			if ((unsigned long)handle > PAGE_OFFSET) {
+				*handle = 1;
+			} else {
+				rt_copy_to_user(handle, sem, sizeof(SEM *));
+			}
+		}
 		return sem;
 	}
 	if ((sem = rt_malloc(sizeof(SEM)))) {
@@ -1724,7 +1765,7 @@ struct rt_native_fun_entry rt_sem_entries[] = {
         { { 1, rt_cond_wait },             COND_WAIT },
         { { 1, rt_cond_wait_until },       COND_WAIT_UNTIL },
         { { 1, rt_cond_wait_timed },       COND_WAIT_TIMED },
-        { { 0, rt_rwl_init },              RWL_INIT },
+        { { 0, rt_typed_rwl_init },        RWL_INIT },
         { { 0, rt_rwl_delete },            RWL_DELETE },
 	{ { 0, _rt_named_rwl_init },	   NAMED_RWL_INIT },
 	{ { 0, rt_named_rwl_delete },      NAMED_RWL_DELETE },
@@ -1791,7 +1832,7 @@ EXPORT_SYMBOL(rt_cond_wait);
 EXPORT_SYMBOL(rt_cond_wait_until);
 EXPORT_SYMBOL(rt_cond_wait_timed);
 
-EXPORT_SYMBOL(rt_rwl_init);
+EXPORT_SYMBOL(rt_typed_rwl_init);
 EXPORT_SYMBOL(rt_rwl_delete);
 EXPORT_SYMBOL(rt_rwl_rdlock);
 EXPORT_SYMBOL(rt_rwl_rdlock_if);

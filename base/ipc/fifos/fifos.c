@@ -987,7 +987,7 @@ int rtf_create(unsigned int minor, int size)
 		return -ENODEV;
 	}
 	TRACE_RTAI_FIFO(TRACE_RTAI_EV_FIFO_CREATE, minor, size);
-	if (!atomic_cmpxchg(&fifo[minor].opncnt, 0, 1)) {
+	if (!atomic_cmpxchg((atomic_t *)&fifo[minor].opncnt, 0, 1)) {
 		if (size <= PAGE_SIZE*32) {
 			if (!(buf = kmalloc(size, GFP_KERNEL))) {
 				fifo[minor].opncnt = 0;
@@ -1670,7 +1670,7 @@ static devfs_handle_t devfs_handle;
 #endif
 
 static int MaxFifos = MAX_FIFOS;
-MODULE_PARM(MaxFifos, "i");
+RTAI_MODULE_PARM(MaxFifos, int);
 
 static struct rt_fun_entry rtai_fifos_fun[] = {
 	[_CREATE]       = { 0, rtf_create },
@@ -1691,7 +1691,7 @@ static struct rt_fun_entry rtai_fifos_fun[] = {
 };
 
 static int LxrtXten = 1;
-MODULE_PARM(LxrtXten, "i");
+RTAI_MODULE_PARM(LxrtXten, int);
 
 static int register_lxrt_fifos_support(void)
 {

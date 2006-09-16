@@ -19,25 +19,18 @@
 #ifndef _RTAI_ASM_I386_ATOMIC_H
 #define _RTAI_ASM_I386_ATOMIC_H
 
-#include <linux/bitops.h>
-
 #ifdef __KERNEL__
 
+#include <linux/bitops.h>
 #include <asm/atomic.h>
-#undef atomic_xchg /* they might have decided to use one of our names */
-#undef atomic_cmpxchg /* they might have decided to use one of our names */
-
 #include <asm/system.h>
 
-typedef struct { volatile unsigned long val; } rtai_atomic_t;
+#if LINUX_VERSION_CODE < KERNEL_VERSION(2,6,0)
 
-/* #define atomic_xchg(ptr, v)  xchg(ptr, v) */ /*previous define */
-#define atomic_xchg(ptr, v) \
-	((__typeof__(*(ptr)))xchg(&(((rtai_atomic_t *)ptr)->val),v))
+#define atomic_cmpxchg(v, old, new)  ((int)cmpxchg(&((v)->counter), old, new))
+#define atomic_xchg(v, new)          (xchg(&((v)->counter), new))
 
-/* #define atomic_cmpxchg(ptr, o, n)  cmpxchg(ptr, o, n) */ /*previous define */
-#define atomic_cmpxchg(ptr, o, n) \
-	((__typeof__(*(ptr)))cmpxchg(&(((rtai_atomic_t *)ptr)->val), o, n))
+#endif
 
 #else /* !__KERNEL__ */
 
@@ -49,35 +42,53 @@ typedef struct { volatile unsigned long val; } rtai_atomic_t;
 #define unlikely(x)	__builtin_expect(!!(x), 0)
 #endif /* !likely */
 
-#include <asm/atomic.h>
-#undef atomic_xchg /* they might have decided to use one of our names */
-#undef atomic_cmpxchg /* they might have decided to use one of our names */
+#ifdef CONFIG_SMP
+#define LOCK_PREFIX "lock ; "
+#else
+#define LOCK_PREFIX ""
+#endif
+
+#define atomic_t int
 
 struct __rtai_xchg_dummy { unsigned long a[100]; };
 #define __rtai_xg(x) ((struct __rtai_xchg_dummy *)(x))
 
-static inline unsigned long atomic_xchg (volatile void *ptr,
-					 unsigned long x)
+static inline unsigned long atomic_xchg(volatile void *ptr, unsigned long x)
 {
-    __asm__ __volatile__(LOCK_PREFIX "xchgl %0,%1"
-			 :"=r" (x)
-			 :"m" (*__rtai_xg(ptr)), "0" (x)
-			 :"memory");
-    return x;
+	__asm__ __volatile__(LOCK_PREFIX "xchgl %0,%1"
+		             :"=r" (x)
+			     :"m" (*__rtai_xg(ptr)), "0" (x)
+			     :"memory");
+	return x;
 }
 
-static inline unsigned long atomic_cmpxchg (volatile void *ptr,
-					    unsigned long o,
-					    unsigned long n)
+static inline unsigned long atomic_cmpxchg(volatile void *ptr, unsigned long o, unsigned long n)
 {
-    unsigned long prev;
+	unsigned long prev;
+	__asm__ __volatile__(LOCK_PREFIX "cmpxchgl %1,%2"
+			     : "=a"(prev)
+			     : "q"(n), "m" (*__rtai_xg(ptr)), "0" (o)
+			     : "memory");
+	return prev;
+}
 
-    __asm__ __volatile__(LOCK_PREFIX "cmpxchgl %1,%2"
-			 : "=a"(prev)
-			 : "q"(n), "m" (*__rtai_xg(ptr)), "0" (o)
-			 : "memory");
+static __inline__ int atomic_dec_and_test(atomic_t *v)
+{
+        unsigned char c;
 
-    return prev;
+        __asm__ __volatile__(
+                LOCK_PREFIX "decl %0; sete %1"
+                :"=m" (*__rtai_xg(v)), "=qm" (c)
+                :"m" (*__rtai_xg(v)) : "memory");
+        return c != 0;
+}
+
+static __inline__ void atomic_inc(atomic_t *v)
+{
+        __asm__ __volatile__(
+                LOCK_PREFIX "incl %0"
+                :"=m" (*__rtai_xg(v))
+                :"m" (*__rtai_xg(v)));
 }
 
 /* Depollute the namespace a bit. */

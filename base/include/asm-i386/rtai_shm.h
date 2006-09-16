@@ -44,62 +44,48 @@ static inline long long rtai_shmrq(int srq, unsigned long args)
 
 static inline unsigned long uvirt_to_kva(pgd_t *pgd, unsigned long adr)
 {
-	unsigned long ret = 0UL;
-	pmd_t *pmd;
-	pte_t *ptep, pte;
-
-	if(!pgd_none(*pgd)) {
+	if (!pgd_none(*pgd)) {
+		pmd_t *pmd;
 #if LINUX_VERSION_CODE < KERNEL_VERSION(2,6,11)
 		pmd = pmd_offset(pgd, adr);
 #else /* >= 2.6.11 */
 		pmd = pmd_offset(pud_offset(pgd, adr), adr);
 #endif /* < 2.6.11 */
 		if (!pmd_none(*pmd)) {
+			pte_t *ptep, pte;
 #if LINUX_VERSION_CODE < KERNEL_VERSION(2,6,0)
 			ptep = pte_offset(pmd, adr);
 #else /* >= 2.6.0 */
 			ptep = pte_offset_kernel(pmd, adr);
 #endif /* < 2.6.0 */
 			pte = *ptep;
-			if(pte_present(pte)){
-				ret = (unsigned long) page_address(pte_page(pte));
-				ret |= (adr&(PAGE_SIZE-1));
+			if (pte_present(pte)) {
+				return ((unsigned long)page_address(pte_page(pte)) | (adr & (PAGE_SIZE - 1)));
 			}
 		}
 	}
-	return ret;
+	return 0UL;
 }
 
 static inline unsigned long uvirt_to_bus(unsigned long adr)
 {
-	unsigned long kva, ret;
-
-	kva = uvirt_to_kva(pgd_offset(current->mm, adr), adr);
-	ret = virt_to_bus((void *)kva);
-
-	return ret;
+	return virt_to_bus((void *)uvirt_to_kva(pgd_offset(current->mm, adr), adr));
 }
 
 static inline unsigned long kvirt_to_bus(unsigned long adr)
 {
-	unsigned long va, kva, ret;
+	unsigned long va;
 
 	va = VMALLOC_VMADDR(adr);
-	kva = uvirt_to_kva(pgd_offset_k(va), va);
-	ret = virt_to_bus((void *)kva);
-
-	return ret;
+	return virt_to_bus((void *)uvirt_to_kva(pgd_offset_k(va), va));
 }
 
 static inline unsigned long kvirt_to_pa(unsigned long adr)
 {
-	unsigned long va, kva, ret;
+	unsigned long va;
 
 	va = VMALLOC_VMADDR(adr);
-	kva = uvirt_to_kva(pgd_offset_k(va), va);
-	ret = __pa(kva);
-
-	return ret;
+	return __pa(uvirt_to_kva(pgd_offset_k(va), va));
 }
 
 #endif  /* !_RTAI_ASM_I386_SHM_H */

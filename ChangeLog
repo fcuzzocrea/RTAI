@@ -1,12 +1,186 @@
-2006-08-11  Roberto Bucher <roberto.bucher@supsi.ch>
 
-	* rtai-lab/scilab/rtmain.c: Replaced send/receive for synchronisation
-	between rtBaseRate and rtMain with a semaphore (thanks to G. Palli).
+2006-09-18 RTAI-3.4 released.
 
-2006-08-11  Roberto Bucher <roberto.bucher@supsi.ch>
+2006-09-14  Paolo Mantegazza <mantegazza@aero.polimi.it>
+
+	* /base/tasklets/tasklets.c: update the actual time by reading the
+	  timer, postpone actual priority assignment when it is sure it will
+	  be used (avoids spurious preemptions), do not let the idle sleep 
+	  priority to go below the (user assignable) default threshold.
+
+2006-09-12  Mathias Koehrer <mathias_koehrer@arcor.de>
+	    Paolo Mantegazza <mantegazza@aero.polimi.it>
+
+	* /base/ipc/sem/sem.c: appropriately test suspension of delation of
+	  a task owning a resource semaphore by using the due macro.
+	* /base/sched/sched.c: use the due macro to set suspension of delation 
+	  of a task owning a resource semaphore.
+
+2006-09-12  Mathias Koehrer <mathias_koehrer@arcor.de>
+
+	* /testsuite/user/preempt/preemt.c.c: use a volatile to suite stricter 
+	  optimization needs for gcc-4.1.3.
+
+2006-09-10  Paolo Mantegazza <mantegazza@aero.polimi.it>
+
+	* base/tasklets/tasklets.c: create per cpu timers manager at the 
+	  highest priority, but make available the related value as a 
+	  module parameter.
+
+2006-09-06  Paolo Mantegazza <mantegazza@aero.polimi.it>
+
+	* base/ipc/mbx/mbx.c: always signal sems on error returns from 
+	  mbx_wait and mbx_wait_until, to allow reuse of the mailbox on
+	  restarting from signals.
+
+2006-09-03  Paolo Mantegazza <mantegazza@aero.polimi.it>
+
+	* base/ipc/mq/mq.c: modified cond_var usage, with a simpler internal, 
+	  there is no need for a true cond_wait behaviour.
+
+2006-09-02  Paolo Mantegazza <mantegazza@aero.polimi.it>
+
+	* base/ipc/sem/sem.c: deleted useless count keeping in cond_wait 
+	  functions.
+	* base/include/rtai_pmq.c: added to substitute rtai_mq.h to return 
+	  error values as required by POSIX.
+
+2006-08-31  Roberto Bucher <roberto.bucher@supsi.ch>
+2006-08-31  Paolo Mantegazza <mantegazza@aero.polimi.it>
+
+	* base/ipc/msg/msg.c: fixed a wrong check of proxy address in case 
+	  of abnormal return.
+
+2006-08-31  Paolo Mantegazza <mantegazza@aero.polimi.it>
+
+	* base/include/rtai_prinher.h: added macros to ascertain resources 
+	  ownership accordingly to the configured priority inheritance mode.
+	* base/sched/sched.c, api.c: use due macros to ascertain resuorces 
+	  ownership whatever the configured priority inheritance mode.
+
+2006-08-30  Paolo Mantegazza <mantegazza@aero.polimi.it>
+
+	* base/sched/sched.c: do not care Linux priorities when waking up a 
+	  SCHED_NORMAL soft real time task, for users doing it on their own.
+	* base/sched/api.c, sys.c: ensure that soft priority and policy of a 
+	  linux syscall servers are aligned with those of its master.
+	* base/sched/api.c: revised rt_change_prio.
+	* base/include/rtai_schedcore.h: revised pass_prio.
+	  An almost common layout for both of the aboves.
+
+2006-08-29  Paolo Mantegazza <mantegazza@aero.polimi.it>
+
+	* base/sched/sched.c: check priority and base priority independently
+	  when setting/recovering soft values in transitioning hard/soft/hard.
+	* base/ipc/msg.c: rt_receive_if on blocked send made as its non if
+	  conterpart, the priority recovery was missing.
+
+2006-08-28  Paolo Mantegazza <mantegazza@aero.polimi.it>
+
+	* addons/drivers/166550: updated to the latest.
+	* addons/rtdm: updated to the latest.
+
+2006-08-27  Paolo Mantegazza <mantegazza@aero.polimi.it>
+
+	* base/ipc/sem/sem.c: ensure priority inheritance also for RES_SEM 
+	  of restype RESEM_BINSEM, it was forgotten. 
+
+2006-08-26  Paolo Mantegazza <mantegazza@aero.polimi.it>
+
+	* base/sched/api.c: added function to get priority and base_priority,
+	  all at once.
+	* base/include/rtai_lxrt.h and rtai_sched.h: added declarations to
+	  support what above.
+
+2006-08-25  Paolo Mantegazza <mantegazza@aero.polimi.it>
+
+	* base/sched/sys.c: set the state of a newly RTAI enabled user space 
+	  task to 0 in __task_init. Otherwise there could be cases in which 
+	  other tasks can infer a wrong status. Discovered so lately likely 
+	  because such a condition comes "by nature" if the new task uses 
+	  an RTAI service before other tasks interfere with its state. 
+
+2006-08-24  Paolo Mantegazza <mantegazza@aero.polimi.it>
+
+	* addons/rtdm/rtdm_driver.h: make timeout < 0 mean rt_sem_wait_if in
+	  _sem_wait_timed.
+
+2006-08-16  Roberto Bucher <roberto.bucher@supsi.ch>
+
+	* rtai-lab/scilab/rtmain.c: Reinserted rt_send
+	* rtai-lab/matlab/rtmain.c: Reinserted rt_send
+
+2006-08-14  Paolo Mantegazza <mantegazza@aero.polimi.it>
+
+	* base/include/rtai_posix.h: more posix compliant return in rwloc
+	  unlock.
+	* base/ipc/sem/sem.c: check semtype, not only owndby, when resetting 
+	  prios at wake up in sem_waits; signal wrlock only if owned and 
+	  return RTE_EPERM in rt_rwl_unlock if called without anything to do.
+
+2006-08-13  Roberto Bucher <roberto.bucher@supsi.ch>
 
 	* rtai-lab/matlab/rtmain.c: Replaced send/receive for synchronisation
 	between rtBaseRate and rtMain with a semaphore (thanks to G. Palli).
+
+2006-08-13  Roberto Bucher <roberto.bucher@supsi.ch>
+
+	* rtai-lab/scilab/: Changed most of the file because of the new Code 
+	generator (Universal Code generator) and porting of the Scicos functions 
+	from type "2004" to type "4". The new scicos block interfaces have the 
+	name rtai4_xxxxxxxx. The old one (rtai_xxxxxx) are still provided for
+	compatibility with old block diagrams.
+
+2006-08-12  Paolo Mantegazza <mantegazza@aero.polimi.it>
+
+	* base/include/rtai_posix.h: better enforce cancellation points
+	  in sems and conds wait.
+
+2006-08-10  Paolo Mantegazza <mantegazza@aero.polimi.it>
+
+	* base/include/rtai_posix.h: further enhance adherence to the
+	  standard for spin locks.
+
+2006-08-07  Paolo Mantegazza <mantegazza@aero.polimi.it>
+
+	* base/sched/sys.c: rework LXRT rwl_init to take into account its
+	  type.
+	* base/ipc/sem.c: manage "restype" (recursive, ewrrorcheck, normal).
+	  Transform rt_rwl_init to rt_typed_rwl_init, to allow typed 
+	  rwlockers. Full backward compatibility kept for all.
+
+
+2006-08-06  Paolo Mantegazza <mantegazza@aero.polimi.it>
+
+	* base/include/rtai_sem.h: add "restype" to the RTAI semaphore
+	  structure.
+	* base/include/rtai_types.h: add "restype" macros.
+	* base/include/rtai_rwl.h: changes declarations and users space call
+	  of rt_rwl_init to rt_typed_rwl_init; rt_rwl_init compatibility 
+	  kept through a macro.
+	* base/include/rtai_posix.h: further enhance adherence to the
+	  standard.
+
+2006-08-05  Paolo Mantegazza <mantegazza@aero.polimi.it>
+
+	* base/include/rtai_sched.h,rtai_sem.h,rtai_types.h: macros and 
+	  declarations extensions to support non recursive RES_SEMs types 
+	  also.
+
+2006-08-04  Paolo Mantegazza <mantegazza@aero.polimi.it>
+
+	* base/include/rtai_posix.h: revised user space posix interface 
+	  (see the many tests in showroom).
+	* base/ipc/sem.c: fix wrong return value in rt_rwl_delete.
+	* base/sched/sys.c: extend use of __task_init to move user space 
+	  tasks to a cpus_allowed.
+
+2006-08-01  Paolo Mantegazza <mantegazza@aero.polimi.it>
+
+	* base/ipc/sem.c: do not let unlocking of RES_SEM, either by non 
+	  owner or by owner if unlocked already; reset recursion depth only 
+	  for RES_SEM in rt_cndmtx_signal; reorder return values in cond_wait 
+	  and cond_wait_until.
 
 2006-07-31  Roberto Bucher <roberto.bucher@supsi.ch>
 
@@ -15,6 +189,96 @@
 	from type "2004" to type "4". The new scicos block interfaces have the 
 	name rtai4_xxxxxxxx. The old one (rtai_xxxxxx) are still provided for
 	compatibility with old block diagrams.
+
+2006-07-31  Paolo Mantegazza <mantegazza@aero.polimi.it>
+
+	* base/sched/sys.c: __task_init returns immediately the available 
+	  task extension if already set.
+	* base/ipc/sem.c: barrier returns mark the unleashing task and 
+	  unlished tasks with different values; typed named semphore 
+	  initialization tell if it existed already.
+	* base/include/rtai_sem.h, rtai_posix.h: declarations of typed named
+	  semaphores redifined according to the new prototype.
+	* base/include/rtai_sched.h: add permission error definition.
+
+2006-07-23  Paolo Mantegazza <mantegazza@aero.polimi.it>
+
+	* base/include/rtai_posix: added a few APIs related to timing
+	  functions to improve plain POSIX compatibility (see posix user 
+	  examples in showroom, new sem_clock added also).
+
+2006-07-18  Paolo Mantegazza <mantegazza@aero.polimi.it>
+
+	* base/include/rtai_posix.h: adapted to the new --posix-wrap making,
+	  that allows to use standard Posix APIs names for what RTAI supports.
+
+2006-07-17  Pierangelo Masarati <masarati@aero.polimi.it>
+
+	* add --posix-wrap support to rtai-config, so that it is possible to
+	  use supported plain Posix APIs names, i.e. without the need of
+	  postpending "_rt".
+	* add new /base/posix directory and POSIX_WRAPS support file.
+
+2006-07-12  Paolo Mantegazza <mantegazza@aero.polimi.it>
+
+	* base/include/asm/rtai_shm: simplified by avoiding useless 
+	  assignements.
+	* base/ipc/shm.c: modified mapping of v/k-malloced shared memory to
+	  use the latest for > 2.6.14, found in Linux (drivers/media/video).
+
+2006-07-08  Paolo Mantegazza <mantegazza@aero.polimi.it>
+
+	* base/include/rtai_tasklets.h, base/ipc/sem/sem.c, base/sched/api.c:
+	  cleaned faky/misleading documentation comments.
+
+2006-07-07  Paolo Mantegazza <mantegazza@aero.polimi.it>
+
+	* base/sched/sched.c: revised all "stop_rt_timer", to remove 
+	  forgotten dead code; ensure period is zero in "start_rt_timer"
+	  when oneshot mode is assigned at starting the timer.
+
+2006-07-05  Paolo Mantegazza <mantegazza@aero.polimi.it>
+
+	* base/include/asm-i386/rtai_hal.h: declare support structure for
+	  interrupts handling here.
+	* base/arch/i386/hal/hal.immed and base/sched/api.c: remove redundant 
+	  local declarations of support structure for interrupts handling and 
+	  use the one defined in arch specific rtai_hal.h.
+
+2006-06-28  Matthijs ten Berge <m.h.tenberge@alumnus.utwente.nl>
+
+	* base/include/rtai_lxrt.h: use vsnprintf in place of vsprintf
+	  to guard against possible memory leaks.
+
+2006-06-26 RTAI-3.4-test1 released.
+
+2006-06-23  Paolo Mantegazza <mantegazza@aero.polimi.it>
+
+	* base/include/rtai_schedcore.h: added common support for linux 
+	  syscalls from hard real time, according to the setting of the
+	  new parameter CONFIG_RTAI_IMMEDIATE_LINUX_SYSCALL.
+	* base/include/asm-i386/rtai_lxrt.h: removed i386 specific support 
+	  for linux syscalls from hard real time.
+
+2006-06-23  Pierangelo Masarati <masarati@aero.polimi.it>
+
+	* default of RTAI_SCHED_LXRT_NUMSLOTS set to 150
+	* added check for syntax compliance of RTAI_RTDM_FD_MAX
+	* added configure/Kconfig support for RTAI_IMMEDIATE_LINUX_SYSCALL
+
+2006-06-22  Paolo Mantegazza <mantegazza@aero.polimi.it>
+
+	* base/include/rtai_wrappers.h: added support to use the newer
+	module param declarations keeping them conpatible with 2.4.xx.
+	* what above propagated to the all files needing it.
+	* base/include/asm-i386/rtai_atomic.h: revised for a better
+	  consistency.
+	* what above propagated to the all files needing it.
+
+2006-06-18  Paolo Mantegazza <mantegazza@aero.polimi.it>
+
+	* base/sched/api.c: ensure full look ahead in finding hashed 
+	  names/adres when there are search collisions.
 
 2006-06-17  Paolo Mantegazza <mantegazza@aero.polimi.it>
 

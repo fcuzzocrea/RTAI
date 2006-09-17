@@ -89,7 +89,7 @@
  * 5. Keeps a record of bad tasks (apart from those that have been killed) that 
  *    can be examined via a /proc interface. (/proc/rtai/watchdog)
  * 
- * ID: @(#)$Id: wd.c,v 1.6 2006/09/17 00:01:53 mante Exp $
+ * ID: @(#)$Id: wd.c,v 1.7 2006/09/17 09:19:30 mante Exp $
  *
  *******************************************************************************/
 
@@ -137,7 +137,7 @@ static BAD_RT_TASK bad_task_pool[BAD_TASK_MAX];
 #endif
 
 // The current version number
-static char version[] = "$Revision: 1.6 $";
+static char version[] = "$Revision: 1.7 $";
 static char ver[10];
 
 // User friendly policy names

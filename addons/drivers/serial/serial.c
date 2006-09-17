@@ -43,13 +43,15 @@ MODULE_DESCRIPTION("RTAI real time serial ports driver");
 MODULE_LICENSE("GPL");
 
 static unsigned long spconfig[CONFIG_SIZE] = RT_SP_CONFIG_INIT; 
-MODULE_PARM(spconfig, "1-" __MODULE_STRING(CONFIG_SIZE) "i");
+static int spconfig_size = CONFIG_SIZE; 
+RTAI_MODULE_PARM_ARRAY(spconfig, ulong, &spconfig_size, CONFIG_SIZE);
 
 static int spbufsiz = SPBUFSIZ;
-MODULE_PARM(spbufsiz, "i");
+RTAI_MODULE_PARM(spbufsiz, int);
 
 static int sptxdepth[CONFIG_SIZE] = { 0 };
-MODULE_PARM(sptxdepth, "1-" __MODULE_STRING(CONFIG_SIZE) "i");
+static int sptxdepth_size = CONFIG_SIZE; 
+RTAI_MODULE_PARM_ARRAY(sptxdepth, int, &sptxdepth_size, CONFIG_SIZE);
 
 struct rt_spct_t *spct;
 

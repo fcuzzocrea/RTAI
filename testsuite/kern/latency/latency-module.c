@@ -44,25 +44,25 @@ MODULE_AUTHOR("Paolo Mantegazza <mantegazza@aero.polimi.it>, Robert Schwebel <ro
 #define DEFAULT_PERIOD 100000
 #endif
 int period = DEFAULT_PERIOD;
-MODULE_PARM(period, "i");
+RTAI_MODULE_PARM(period, int);
 MODULE_PARM_DESC(period, "period in ns (default: " __stringify(DEFAULT_PERIOD) ")");
 
 static int loops;
 int avrgtime = 1;
-MODULE_PARM(avrgtime, "i");
+RTAI_MODULE_PARM(avrgtime, int);
 MODULE_PARM_DESC(avrgtime, "Averages are calculated for <avrgtime (s)> runs (default: 1)");
 
 int use_fpu = 0;
-MODULE_PARM(use_fpu, "i");
+RTAI_MODULE_PARM(use_fpu, int);
 MODULE_PARM_DESC(use_fpu, "do we want to use the FPU? (default: 0)");
 
 int start_timer = 1;
-MODULE_PARM(start_timer, "i");
+RTAI_MODULE_PARM(start_timer, int);
 MODULE_PARM_DESC(start_timer,
 		 "declares if the timer should be started or not (default: 1)");
 
 int timer_mode = 0;
-MODULE_PARM(timer_mode, "i");
+RTAI_MODULE_PARM(timer_mode, int);
 MODULE_PARM_DESC(timer_mode, "timer running mode: 0-oneshot, 1-periodic");
 
 #define DEBUG_FIFO 3

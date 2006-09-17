@@ -26,6 +26,7 @@ RTAI_LIBRARY_DIR="${staging}${libdir}"
 COMEDI_DIR="@COMEDI_DIR@"
 EFLTK_DIR="@EFLTK_DIR@"
 RTAI_MODULE_EXT="@RTAI_MODULE_EXT@"
+RTAI_POSIX_WRAP="@RTAI_POSIX_WRAP@"
 
 unset prefix exec_prefix libdir datadir pkgdatadir includedir
 
@@ -53,6 +54,7 @@ Options :
         --library-dir
         --comedi-dir
         --efltk-dir
+        --posix-wrap
 EOF
     exit $1
 }
@@ -116,6 +118,9 @@ while test $# -gt 0; do
             ;;
         --efltk-dir)
             echo $EFLTK_DIR
+            ;;
+        --posix-wrap)
+            echo $RTAI_POSIX_WRAP
             ;;
         *)
          usage 1 1>&2

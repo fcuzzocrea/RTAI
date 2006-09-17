@@ -725,7 +725,7 @@ AC_ARG_ENABLE(sched-lxrt-numslots,
 	esac])
 if test x$CONFIG_RTAI_SCHED_LXRT_NUMSLOTS = x ; then
   # Use a reasonable default if unset
-  CONFIG_RTAI_SCHED_LXRT_NUMSLOTS=100
+  CONFIG_RTAI_SCHED_LXRT_NUMSLOTS=150
 fi
 AC_MSG_RESULT($CONFIG_RTAI_SCHED_LXRT_NUMSLOTS)
 
@@ -734,13 +734,20 @@ AC_ARG_ENABLE(rtdm-fd-max,
 	      [ --enable-rtdm-fd-max        	Set maximum number of RTDM file descriptor slots],
 	[case "$enableval" in
  changequote(,)dnl
-	[0-9]*) CONFIG_RTAI_RTDM_FD_MAX=$enableval ;;
+	[1-9][0-9]*) CONFIG_RTAI_RTDM_FD_MAX=$enableval ;;
  changequote([,])dnl
 	*) AC_MSG_ERROR([Bad argument to option: --enable-rtdm-fd-max=<number>]) ;;
 	esac])
 if test x$CONFIG_RTAI_RTDM_FD_MAX = x ; then
   # Use a reasonable default if unset
   CONFIG_RTAI_RTDM_FD_MAX=128
+else
+	case $CONFIG_RTAI_RTDM_FD_MAX in
+	changequote(,)dnl
+	[1-9][0-9]*) ;;
+	changequote([,])dnl
+	*) AC_MSG_ERROR([Bad value $CONFIG_RTAI_RTDM_FD_MAX for RTAI_RTDM_FD_MAX]) ;;
+	esac
 fi
 AC_MSG_RESULT($CONFIG_RTAI_RTDM_FD_MAX)
 
@@ -1253,6 +1260,11 @@ case $CONFIG_RTAI_USE_NEWERR in
 	n|*) CONFIG_RTAI_USE_NEWERR=0 ;;
 esac
 AC_DEFINE_UNQUOTED(CONFIG_RTAI_USE_NEWERR,$CONFIG_RTAI_USE_NEWERR,[Kconfig])
+case $CONFIG_RTAI_IMMEDIATE_LINUX_SYSCALL in
+	y) CONFIG_RTAI_IMMEDIATE_LINUX_SYSCALL=1 ;;
+	n|*) CONFIG_RTAI_IMMEDIATE_LINUX_SYSCALL=0 ;;
+esac
+AC_DEFINE_UNQUOTED(CONFIG_RTAI_IMMEDIATE_LINUX_SYSCALL,$CONFIG_RTAI_IMMEDIATE_LINUX_SYSCALL,[Kconfig])
 
 case $CONFIG_RTAI_ONE_SHOT in
 	y) CONFIG_RTAI_ONE_SHOT=1 ;;
@@ -1627,6 +1639,11 @@ if test x$CONFIG_KBUILD = xy; then
 fi
 
 dnl
+dnl POSIX wraps
+dnl
+RTAI_POSIX_WRAP=`for f in \`cat "${srcdir}/base/posix/POSIX_WRAPS"\`; do echo -n " -Wl,--wrap -Wl,$f" ; done`
+
+dnl
 dnl Build the Makefiles
 dnl
 
@@ -1664,8 +1681,10 @@ AC_SUBST(RTAI_KBUILD_CMD)
 AC_SUBST(RTAI_KBUILD_CLEAN)
 AC_SUBST(RTAI_KBUILD_DISTCLEAN)
 AC_SUBST(CONFIG_RTAI_SCHED_LXRT)
+AC_SUBST(RTAI_POSIX_WRAP)
 
 AC_SUBST(CONFIG_RTAI_LINUXDIR)
+
 
 AC_CONFIG_FILES([ \
 	GNUmakefile \
@@ -1709,6 +1728,7 @@ AC_CONFIG_FILES([ \
 	base/wd/GNUmakefile \
 	base/usi/GNUmakefile \
 	base/leds/GNUmakefile \
+	base/posix/GNUmakefile \
 	])
 
 build_addons=$CONFIG_RTAI_CPLUSPLUS$CONFIG_RTAI_COMEDI_LXRT$CONFIG_RTAI_DRIVERS$CONFIG_RTAI_RTDM

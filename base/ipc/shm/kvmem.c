@@ -18,6 +18,22 @@
 
 #include <rtai_shm.h>
 
+static __inline__ int vm_remap_page_range(struct vm_area_struct *vma, unsigned long from, unsigned long to)
+{
+	vma->vm_flags |= VM_RESERVED;
+#if LINUX_VERSION_CODE > KERNEL_VERSION(2,6,14)
+	return vm_insert_page(vma, from, vmalloc_to_page((void *)to));
+#else
+	return mm_remap_page_range(vma, from, kvirt_to_pa(to), PAGE_SIZE, PAGE_SHARED);
+#endif
+}
+
+static __inline__ int km_remap_page_range(struct vm_area_struct *vma, unsigned long from, unsigned long to, unsigned long size)
+{
+	vma->vm_flags |= VM_RESERVED;
+	return mm_remap_page_range(vma, from, virt_to_phys((void *)to), size, PAGE_SHARED);
+}
+
 /* allocate user space mmapable block of memory in the kernel space */
 void *rvmalloc(unsigned long size)
 {
@@ -69,7 +85,8 @@ int rvmmap(void *mem, unsigned long memsize, struct vm_area_struct *vma) {
 		return -EFAULT;
 	}
 	while (size > 0) {
-	                if (mm_remap_page_range(vma, start, kvirt_to_pa(pos), PAGE_SIZE, PAGE_SHARED)) {
+//		if (mm_remap_page_range(vma, start, kvirt_to_pa(pos), PAGE_SIZE, PAGE_SHARED)) {
+		if (vm_remap_page_range(vma, start, pos)) {
 			return -EAGAIN;
 		}
 		start += PAGE_SIZE;
@@ -130,7 +147,8 @@ int rkmmap(void *mem, unsigned long memsize, struct vm_area_struct *vma) {
 	if (pos%PAGE_SIZE || start%PAGE_SIZE || size%PAGE_SIZE) {
 		return -EFAULT;
 	}
-	if (mm_remap_page_range(vma, start, virt_to_phys((void *)pos), size, PAGE_SHARED)) {
+//	if (mm_remap_page_range(vma, start, virt_to_phys((void *)pos), size, PAGE_SHARED)) {
+	if (km_remap_page_range(vma, start, pos, size)) {
 		return -EAGAIN;
 	}
 	return 0;

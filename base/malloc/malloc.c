@@ -45,9 +45,8 @@
 #endif /* CONFIG_RTAI_MALLOC_VMALLOC */
 #include <rtai_malloc.h>
 
-MODULE_PARM(rtai_global_heap_size,"i");
-
 int rtai_global_heap_size = RTHEAP_GLOBALSZ;
+RTAI_MODULE_PARM(rtai_global_heap_size, int);
 
 void *rtai_global_heap_adr = NULL;
 

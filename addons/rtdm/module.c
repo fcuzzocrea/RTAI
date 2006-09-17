@@ -424,7 +424,7 @@ fail:
 	return err;
 }
 
-void rtdm_skin_exit(void)
+void __exit rtdm_skin_exit(void)
 {
 	rtdm_dev_cleanup();
         reset_rt_fun_ext_index(rtdm, RTDM_INDX);

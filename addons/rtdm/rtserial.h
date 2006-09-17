@@ -2,7 +2,7 @@
  * @file
  * Real-Time Driver Model for RTAI, serial device profile header
  *
- * @note Copyright (C) 2005 Jan Kiszka <jan.kiszka@web.de>
+ * @note Copyright (C) 2005, 2006 Jan Kiszka <jan.kiszka@web.de>
  *
  * RTAI is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License as published by
@@ -141,11 +141,11 @@
 
 /*!
  * @anchor RTSER_TIMEOUT_xxx   @name RTSER_TIMEOUT_xxx
- * Special timeout values
+ * Special timeout values, see also @ref RTDM_TIMEOUT_xxx
  * @{ */
-#define RTSER_TIMEOUT_INFINITE      0
-#define RTSER_TIMEOUT_NONE          (-1)
-#define RTSER_DEF_TIMEOUT           RTSER_TIMEOUT_INFINITE
+#define RTSER_TIMEOUT_INFINITE      RTDM_TIMEOUT_INFINITE
+#define RTSER_TIMEOUT_NONE          RTDM_TIMEOUT_NONE
+#define RTSER_DEF_TIMEOUT           RTDM_TIMEOUT_INFINITE
 /** @} */
 
 /*!
@@ -233,56 +233,70 @@
  * Serial device configuration
  */
 typedef struct rtser_config {
-    int     config_mask;        /**< mask specifying valid fields,
-                                 *   see @ref RTSER_SET_xxx */
-    int     baud_rate;          /**< baud rate, default @ref RTSER_DEF_BAUD */
-    int     parity;             /**< number of parity bits, see
-                                 *   @ref RTSER_xxx_PARITY */
-    int     data_bits;          /**< number of data bits, see
-                                 *   @ref RTSER_xxx_BITS */
-    int     stop_bits;          /**< number of stop bits, see
-                                 *   @ref RTSER_xxx_STOPB */
-    int     handshake;          /**< handshake mechanisms, see
-                                 *   @ref RTSER_xxx_HAND */
-    int     fifo_depth;         /**< reception FIFO interrupt threshold, see
-                                 *   @ref RTSER_FIFO_xxx */
-    int64_t rx_timeout;         /**< reception timeout in ns, see
-                                 *   @ref RTSER_TIMEOUT_xxx for special
-                                 *   values */
-    int64_t tx_timeout;         /**< transmission timeout in ns, see
-                                 *   @ref RTSER_TIMEOUT_xxx for special
-                                 *   values */
-    int64_t event_timeout;      /**< event timeout in ns, see
-                                 *   @ref RTSER_TIMEOUT_xxx for special
-                                 *   values */
-    int     timestamp_history;  /**< enable timestamp history, see
-                                 *   @ref RTSER_xxx_TIMESTAMP_HISTORY */
-    int     event_mask;         /**< event mask to be used with
-                                 *   @ref RTSER_RTIOC_WAIT_EVENT, see
-                                 *   @ref RTSER_EVENT_xxx */
+    /** mask specifying valid fields, see @ref RTSER_SET_xxx */
+    int             config_mask;
+
+    /** baud rate, default @ref RTSER_DEF_BAUD */
+    int             baud_rate;
+
+    /** number of parity bits, see @ref RTSER_xxx_PARITY */
+    int             parity;
+
+    /** number of data bits, see @ref RTSER_xxx_BITS */
+    int             data_bits;
+
+    /** number of stop bits, see @ref RTSER_xxx_STOPB */
+    int             stop_bits;
+
+    /** handshake mechanisms, see @ref RTSER_xxx_HAND */
+    int             handshake;
+
+    /** reception FIFO interrupt threshold, see @ref RTSER_FIFO_xxx */
+    int             fifo_depth;
+
+    /** reception timeout, see @ref RTSER_TIMEOUT_xxx for special values */
+    nanosecs_rel_t  rx_timeout;
+
+    /** transmission timeout, see @ref RTSER_TIMEOUT_xxx for special values */
+    nanosecs_rel_t  tx_timeout;
+
+    /** event timeout, see @ref RTSER_TIMEOUT_xxx for special values */
+    nanosecs_rel_t  event_timeout;
+
+    /** enable timestamp history, see @ref RTSER_xxx_TIMESTAMP_HISTORY */
+    int             timestamp_history;
+
+    /** event mask to be used with @ref RTSER_RTIOC_WAIT_EVENT, see
+     *  @ref RTSER_EVENT_xxx */
+    int             event_mask;
 } rtser_config_t;
 
 /**
  * Serial device status
  */
 typedef struct rtser_status {
-    int     line_status;    /**< line status register, see
-                             *   @ref RTSER_LSR_xxx */
-    int     modem_status;   /**< modem status register, see
-                             *   @ref RTSER_MSR_xxx */
+    /** line status register, see @ref RTSER_LSR_xxx */
+    int             line_status;
+
+    /** modem status register, see @ref RTSER_MSR_xxx */
+    int             modem_status;
 } rtser_status_t;
 
 /**
  * Additional information about serial device events
  */
 typedef struct rtser_event {
-    int     events;             /**< signalled events, see
-                                 *   @ref RTSER_EVENT_xxx */
-    int     rx_pending;         /**< number of pending input characters */
-    uint64_t last_timestamp;    /**< last interrupt timestamp (absolute time
-                                 *   in ns) */
-    uint64_t rxpend_timestamp;  /**< reception timestamp (absolute time in ns)
-                                 *   of oldest character in input queue */
+    /** signalled events, see @ref RTSER_EVENT_xxx */
+    int             events;
+
+    /** number of pending input characters */
+    int             rx_pending;
+
+    /** last interrupt timestamp */
+    nanosecs_abs_t  last_timestamp;
+
+    /** reception timestamp of oldest character in input queue */
+    nanosecs_abs_t  rxpend_timestamp;
 } rtser_event_t;
 
 
@@ -365,6 +379,12 @@ typedef struct rtser_event {
  * - Kernel module initialization/cleanup code
  * - Kernel-based task
  * - User-space task (RT, non-RT)
+ *
+ * @note The error states @c RTSER_LSR_OVERRUN_ERR, @c RTSER_LSR_PARITY_ERR,
+ * @c RTSER_LSR_FRAMING_ERR, and @c RTSER_SOFT_OVERRUN_ERR that may have
+ * occured during previous read accesses to the device will be saved for being
+ * reported via this IOCTL. Upon return from @c RTSER_RTIOC_GET_STATUS, the
+ * saved state will be cleared.
  *
  * Rescheduling: never.
  */

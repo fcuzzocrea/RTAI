@@ -26,6 +26,7 @@
  */
 
 #include <linux/module.h>
+#include <linux/moduleparam.h>
 #include <linux/delay.h>
 
 #include "rtdm/device.h"
@@ -48,7 +49,6 @@
 
 unsigned int        devname_hashtab_size  = DEF_DEVNAME_HASHTAB_SIZE;
 unsigned int        protocol_hashtab_size = DEF_PROTO_HASHTAB_SIZE;
-
 module_param(devname_hashtab_size, uint, 0400);
 module_param(protocol_hashtab_size, uint, 0400);
 MODULE_PARM_DESC(devname_hashtab_size,
@@ -66,6 +66,10 @@ DECLARE_MUTEX(nrt_dev_lock);
 #ifdef CONFIG_SMP
 xnlock_t            rt_dev_lock = XNARCH_LOCK_UNLOCKED;
 #endif /* CONFIG_SMP */
+
+#ifndef MODULE
+int                 rtdm_initialised = 0;
+#endif /* !MODULE */
 
 
 int rtdm_no_support(void)
@@ -202,6 +206,10 @@ int rtdm_dev_register(struct rtdm_device* device)
     int                 ret;
 
 
+    /* Catch unsuccessful initialisation */
+    if (!rtdm_initialised)
+        return -ENOSYS;
+
     /* Sanity check: structure version */
     if (device->struct_version != RTDM_DEVICE_STRUCT_VER) {
         xnlogerr("RTDM: invalid rtdm_device version (%d, required %d)\n",
@@ -274,8 +282,6 @@ int rtdm_dev_register(struct rtdm_device* device)
             existing_dev =
                 list_entry(entry, struct rtdm_device, reserved.entry);
             if (strcmp(device->device_name, existing_dev->device_name) == 0) {
-                xnlogerr("RTDM: device name \"%s\" already exists\n",
-                         device->device_name);
                 ret = -EEXIST;
                 goto err;
             }
@@ -362,6 +368,9 @@ int rtdm_dev_unregister(struct rtdm_device* device, unsigned int poll_delay)
     struct rtdm_device  *reg_dev;
     unsigned long       warned = 0;
 
+
+    if (!rtdm_initialised)
+        return -ENOSYS;
 
     if ((device->device_flags & RTDM_DEVICE_TYPE_MASK) == RTDM_NAMED_DEVICE)
         reg_dev = get_named_device(device->device_name);

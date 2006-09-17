@@ -150,6 +150,28 @@ static inline int xnarch_remap_io_page_range(struct vm_area_struct *vma, unsigne
 #endif /* LINUX_VERSION_CODE < KERNEL_VERSION(2,6,0) */
 }
 
+static inline int xnarch_remap_vm_page(struct vm_area_struct *vma, unsigned long from, unsigned long to)
+{
+#if LINUX_VERSION_CODE < KERNEL_VERSION(2,6,0)
+
+	vma->vm_flags |= VM_RESERVED;
+	return remap_page_range(from, virt_to_phys((void *)__va_to_kva(to)), PAGE_SIZE, PAGE_SHARED);
+
+#else /* LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,0) */
+
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,15) && defined(CONFIG_MMU)
+	vma->vm_flags |= VM_RESERVED;
+	return vm_insert_page(vma, from, vmalloc_to_page((void *)to));
+#elif LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,10)
+	return remap_pfn_range(vma, from, virt_to_phys((void *)__va_to_kva(to)) >> PAGE_SHIFT, PAGE_SHIFT, PAGE_SHARED);
+#else /* LINUX_VERSION_CODE < KERNEL_VERSION(2,6,10) */
+	vma->vm_flags |= VM_RESERVED;
+	return remap_page_range(from, virt_to_phys((void *)__va_to_kva(to)), PAGE_SIZE, PAGE_SHARED);
+#endif /* LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,15) */
+
+#endif /* LINUX_VERSION_CODE < KERNEL_VERSION(2,6,0) */
+}
+
 // interrupt setup/management (adopted_&|_adapted from RTDM pet system)
 
 #define XN_ISR_NONE       0x1

@@ -35,7 +35,7 @@
 #include <asm/page.h>
 #include <asm/pgtable.h>
 #include <linux/delay.h>
-#include <asm/highmem.h>
+#include <linux/highmem.h>
 
 #include <rtai_sched.h>
 #include <rtdm/rtdm_driver.h>

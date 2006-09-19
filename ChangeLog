@@ -1,3 +1,7 @@
+2006-09-19  Paolo Mantegazza <mantegazza@aero.polimi.it>
+
+	* /base/include/rtai_posix.h: push a cleanup function to decrement
+	  the mated mutex usage count when a waiting condvar is destroyed.
 
 2006-09-18 RTAI-3.4 released.
 

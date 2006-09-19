@@ -1227,13 +1227,11 @@ RTAI_PROTO(int, __wrap_pthread_condattr_setpshared, (pthread_condattr_t *attr, i
 	return EINVAL;
 }
 
-int pthread_condattr_setclock(pthread_condattr_t *condattr, clockid_t clockid);
 RTAI_PROTO(int, __wrap_pthread_condattr_setclock, (pthread_condattr_t *condattr, clockid_t clockid))
 {
         return clockid == CLOCK_MONOTONIC ? 0 : EINVAL;
 }
 
-int pthread_condattr_getclock(pthread_condattr_t *condattr, clockid_t *clockid);
 RTAI_PROTO(int, __wrap_pthread_condattr_getclock, (pthread_condattr_t *condattr, clockid_t *clockid))
 {
         if (clockid) {

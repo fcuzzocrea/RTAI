@@ -1,3 +1,8 @@
+2006-09-21  Paolo Mantegazza <mantegazza@aero.polimi.it>
+
+	* /base/include/rtai_posix.h: get rid of redundant (with reference to 
+	  pthread.h) declarations disturbing recent gccs.
+
 2006-09-18 RTAI-3.4 released.
 
 2006-09-14  Paolo Mantegazza <mantegazza@aero.polimi.it>

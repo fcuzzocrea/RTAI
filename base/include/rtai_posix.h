@@ -1157,6 +1157,8 @@ RTAI_PROTO(int, __wrap_pthread_cond_broadcast, (pthread_cond_t *cond))
 	return EINVAL;
 }
 
+static void internal_cond_cleanup(void *mutex) { DEC_VAL(mutex); }
+
 RTAI_PROTO(int, __wrap_pthread_cond_wait, (pthread_cond_t *cond, pthread_mutex_t *mutex))
 {
 	int oldtype, retval;
@@ -1164,9 +1166,11 @@ RTAI_PROTO(int, __wrap_pthread_cond_wait, (pthread_cond_t *cond, pthread_mutex_t
 	pthread_setcanceltype(PTHREAD_CANCEL_ASYNCHRONOUS, &oldtype);
 	pthread_testcancel();
 	if (arg.cond && arg.mutex) {
+		pthread_cleanup_push(internal_cond_cleanup, mutex);
 		INC_VAL(mutex);
 		retval = !rtai_lxrt(BIDX, SIZARG, COND_WAIT, &arg).i[LOW] ? 0 : EPERM;
 		DEC_VAL(mutex);
+		pthread_cleanup_pop(0);
 	} else {
 		retval = EINVAL;
 	}
@@ -1182,6 +1186,7 @@ RTAI_PROTO(int, __wrap_pthread_cond_timedwait, (pthread_cond_t *cond, pthread_mu
 	pthread_setcanceltype(PTHREAD_CANCEL_ASYNCHRONOUS, &oldtype);
 	pthread_testcancel();
 	if (arg.cond && arg.mutex && abstime->tv_nsec >= 0 && abstime->tv_nsec < 1000000000) {
+		pthread_cleanup_push(internal_cond_cleanup, mutex);
 		INC_VAL(mutex);
 		if (abs(retval = rtai_lxrt(BIDX, SIZARG, COND_WAIT_UNTIL, &arg).i[LOW]) == RTE_TIMOUT) {
 			retval = ETIMEDOUT;
@@ -1189,6 +1194,7 @@ RTAI_PROTO(int, __wrap_pthread_cond_timedwait, (pthread_cond_t *cond, pthread_mu
 			retval = !retval ? 0 : EPERM;
 		}
 		DEC_VAL(mutex);
+		pthread_cleanup_pop(0);
 	} else {
 		retval = EINVAL;
 	}
@@ -1227,13 +1233,11 @@ RTAI_PROTO(int, __wrap_pthread_condattr_setpshared, (pthread_condattr_t *attr, i
 	return EINVAL;
 }
 
-int pthread_condattr_setclock(pthread_condattr_t *condattr, clockid_t clockid);
 RTAI_PROTO(int, __wrap_pthread_condattr_setclock, (pthread_condattr_t *condattr, clockid_t clockid))
 {
         return clockid == CLOCK_MONOTONIC ? 0 : EINVAL;
 }
 
-int pthread_condattr_getclock(pthread_condattr_t *condattr, clockid_t *clockid);
 RTAI_PROTO(int, __wrap_pthread_condattr_getclock, (pthread_condattr_t *condattr, clockid_t *clockid))
 {
         if (clockid) {

@@ -113,7 +113,7 @@ int rtdm_task_init(rtdm_task_t *task, const char *name,
 	if (rt_task_init(task, (void *)task_proc, (long)arg, PAGE_SIZE, priority, 0, 0)) {
         	return -ENOMEM;
 	}
-	if (period) {
+	if (period > 0) {
 		rt_task_make_periodic_relative_ns(task, 0, period);
 	} else {
 		rt_task_resume(task);
@@ -299,6 +299,9 @@ int rtdm_task_sleep(nanosecs_rel_t delay)
 {
 	if (delay < 0) {
 	        return 0;
+	}
+	if (delay < 0) {
+		delay = RT_TIME_END;
 	}
 	if (rt_sleep(nano2count(delay)) && _rt_whoami()->unblocked) {
 		return -EINTR;

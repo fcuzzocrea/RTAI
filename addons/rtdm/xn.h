@@ -27,6 +27,8 @@
 #include <asm/uaccess.h>
 #include <asm/mman.h>
 
+#define XENO_ASSERT(a, b, c)
+
 //recursive smp locks, as for RTAI global stuff + a name
 
 #define XNARCH_LOCK_UNLOCKED  (xnlock_t) { 0 }

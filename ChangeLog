@@ -1,3 +1,9 @@
+2006-09-25  Paolo Mantegazza <mantegazza@aero.polimi.it>
+
+	* /base/include/asm-i386/rtai_hal.h:
+	* /base/arch/i386/hal/hal.c, hal.immed: diagnose of TSCs offsets,
+	   though hal proc display, a possible correction already in place.
+
 2006-09-19  Paolo Mantegazza <mantegazza@aero.polimi.it>
 
 	* /base/include/rtai_posix.h: push a cleanup function to decrement

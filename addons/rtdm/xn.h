@@ -287,6 +287,7 @@ typedef struct xnintr_shirq {
 
 #endif /* CONFIG_SMP */
 
+#define   testbits(flags, mask)  ((flags) & (mask))
 #define __testbits(flags, mask)  ((flags) & (mask))
 #define __setbits(flags, mask)   do { (flags) |= (mask);  } while(0)
 #define __clrbits(flags, mask)   do { (flags) &= ~(mask); } while(0)

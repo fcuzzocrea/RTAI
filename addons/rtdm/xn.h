@@ -199,6 +199,7 @@ typedef unsigned long xnflags_t;
 
 typedef struct xnintr {
     struct xnintr *next;
+    unsigned unhandled;
     xnisr_t isr;
     void *cookie;
     unsigned long hits;
@@ -211,9 +212,18 @@ typedef struct xnintr {
 int xnintr_shirq_attach(xnintr_t *intr, void *cookie);
 int xnintr_shirq_detach(xnintr_t *intr);
 
-static inline void xnintr_init (xnintr_t *intr, const char *name, unsigned irq, xnisr_t isr, xniack_t iack, xnflags_t flags)
+static inline int xnintr_init (xnintr_t *intr, const char *name, unsigned irq, xnisr_t isr, xniack_t iack, xnflags_t flags)
 {
-	*intr = (xnintr_t) { NULL, isr, NULL, 0, flags, irq, iack, name };
+	intr->irq = irq;
+	intr->isr = isr;
+	intr->iack = iack;
+	intr->cookie = NULL;
+	intr->hits = 0;
+	intr->name = name;
+	intr->flags = flags;
+	intr->unhandled = 0;
+	intr->next = NULL;
+	return 0;
 }
 
 static inline int xnintr_attach (xnintr_t *intr, void *cookie)
@@ -249,6 +259,7 @@ static int xnintr_disable (xnintr_t *intr)
 
 typedef struct xnintr_shirq {
 	xnintr_t *handlers;
+	int unhandled;
 	atomic_t active;
 } xnintr_shirq_t;
 
@@ -265,6 +276,7 @@ typedef struct xnintr_shirq {
 
 typedef struct xnintr_shirq {
 	xnintr_t *handlers;
+	int unhandled;
 } xnintr_shirq_t;
 
 #define xnintr_shirq_lock(shirq)
@@ -275,8 +287,8 @@ typedef struct xnintr_shirq {
 
 #endif /* CONFIG_SMP */
 
-#define testbits(flags, mask)  ((flags) & (mask))
-#define setbits(flags, mask)   do { (flags) |= (mask);  } while(0)
-#define clrbits(flags, mask)   do { (flags) &= ~(mask); } while(0)
+#define __testbits(flags, mask)  ((flags) & (mask))
+#define __setbits(flags, mask)   do { (flags) |= (mask);  } while(0)
+#define __clrbits(flags, mask)   do { (flags) &= ~(mask); } while(0)
 
 #endif /* !_RTAI_XNSTUFF_H */

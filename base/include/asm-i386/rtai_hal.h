@@ -329,14 +329,24 @@ typedef int (*rt_irq_handler_t)(unsigned irq, void *cookie);
 #define RTAI_CPU_FREQ              (rtai_tunables.cpu_freq)
 
 #if 0
+
 static inline unsigned long long _rtai_hidden_rdtsc (void) {
     unsigned long long t;
     __asm__ __volatile__( "rdtsc" : "=A" (t));
     return t;
 }
 #define rtai_rdtsc() _rtai_hidden_rdtsc()
+
+#else
+
+#define RTAI_SYNC_TSC
+#ifdef RTAI_SYNC_TSC
+extern volatile long rtai_tsc_ofst[];
+#define rtai_rdtsc() ({ unsigned long long t; __asm__ __volatile__( "rdtsc" : "=A" (t)); t /*+ rtai_tsc_ofst[rtai_cpuid()]*/; })
 #else
 #define rtai_rdtsc() ({ unsigned long long t; __asm__ __volatile__( "rdtsc" : "=A" (t)); t; })
+#endif
+
 #endif
 
 #else  /* !CONFIG_X86_TSC */

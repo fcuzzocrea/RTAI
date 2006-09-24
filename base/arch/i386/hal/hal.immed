@@ -2017,7 +2017,7 @@ static int rtai_read_proc (char *page, char **start, off_t off, int count, int *
 	PROC_PRINT("\n\n");
 
 	PROC_PRINT("** RTAI extension traps: \n\n");
-	PROC_PRINT("    SYSREQ=0x%x\n",RTAI_SYS_VECTOR);
+	PROC_PRINT("    SYSREQ=0x%x\n\n",RTAI_SYS_VECTOR);
 
 	none = 1;
 	PROC_PRINT("** RTAI SYSREQs in use: ");
@@ -2027,11 +2027,17 @@ static int rtai_read_proc (char *page, char **start, off_t off, int count, int *
 			none = 0;
 		}
         }
-
 	if (none) {
 		PROC_PRINT("none");
 	}
     	PROC_PRINT("\n\n");
+
+	PROC_PRINT("** RTAI TSC OFFSETs in use: ");
+    	for (i = 0; i < RTAI_NR_CPUS; i++) {
+		PROC_PRINT("CPU#%d - %lu; ", i, rtai_tsc_ofst[i]);
+        }
+    	PROC_PRINT("\n\n");
+
 	PROC_PRINT_DONE;
 }
 
@@ -2157,6 +2163,8 @@ int __rtai_hal_init (void)
 		printk("%p %x %s %d\n", next_domain, next_domain->domid, next_domain->name, next_domain->priority);
 	}
 
+	init_tsc_sync();
+
 	return 0;
 }
 
@@ -2180,6 +2188,8 @@ void __rtai_hal_exit (void)
 			rt_reset_irq_to_sym_mode(trapnr);
 		}
 	}
+
+	cleanup_tsc_sync();
 
 	printk(KERN_INFO "RTAI[hal]: unmounted.\n");
 }

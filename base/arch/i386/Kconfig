@@ -226,6 +226,28 @@ config RTAI_CPUS
 
 	PAY ATTENTION: the default value is 2.
 
+config RTAI_DIAG_TSC_SYNC
+	bool "Diagnose out of sync MP-TSCs"
+	default n
+	help
+	Check alignement of MP-TSCs, against a master CPU, and show them in
+	the RTAI HAL proc file system (in TSC count units).
+
+config RTAI_MASTER_TSC_CPU
+	depends on RTAI_DIAG_TSC_SYNC
+	string "Define the master CPU for aligning MP-TSCs"
+	default 0
+	help
+	Master CPU for diagnosis and correction of TSCs alignement.
+
+config RTAI_TUNE_TSC_SYNC
+	depends on RTAI_DIAG_TSC_SYNC
+	bool "Tune out of sync MP-TSCs"
+	default n
+	help
+	Use offsets made available by enabling the out of sync diagnosis to
+	keep readings of TSCs times as aligned as possible.
+
 endmenu
 
 menu "Base system"

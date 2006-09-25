@@ -92,9 +92,11 @@ static void sync_master(void *arg)
 	local_irq_restore(flags);
 }
 
+static volatile unsigned long long best_t0 = 0, best_t1 = ~0ULL, best_tm = 0;
+
 static inline long long get_delta(long long *rt, long long *master, unsigned int slave)
 {
-	unsigned long long best_t0 = 0, best_t1 = ~0ULL, best_tm = 0;
+//	unsigned long long best_t0 = 0, best_t1 = ~0ULL, best_tm = 0;
 	unsigned long long tcenter, t0, t1, tm;
 	long i, lflags;
 
@@ -147,12 +149,13 @@ static void sync_tsc(unsigned int master, unsigned int slave)
 
 #define MASTER_CPU  0
 #define SLEEP       1000 // ms
-static volatile int end;
+static volatile int end = 1;
 
 static void kthread_fun(void *null)
 {
 	int k;
 	set_cpus_allowed(current, cpumask_of_cpu(MASTER_CPU));
+	end = 0;
 	while (!end) {
 		for (k = 0; k < num_online_cpus(); k++) {
 			if (k != MASTER_CPU) {
@@ -161,17 +164,23 @@ static void kthread_fun(void *null)
 		}
 		msleep(SLEEP);
 	}
+	end = 0;
 }
 
 void init_tsc_sync(void)
 {
 	kernel_thread((void *)kthread_fun, NULL, 0);
+	while(end) {
+		msleep(100);
+	}
 }
 
 void cleanup_tsc_sync(void)
 {
 	end = 1;
-	msleep(SLEEP);
+	while(end) {
+		msleep(100);
+	}
 }
 
 EXPORT_SYMBOL(rtai_tsc_ofst);

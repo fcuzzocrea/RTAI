@@ -2032,11 +2032,13 @@ static int rtai_read_proc (char *page, char **start, off_t off, int count, int *
 	}
     	PROC_PRINT("\n\n");
 
-	PROC_PRINT("** RTAI TSC OFFSETs in use: ");
+#ifdef RTAI_SYNC_TSC
+	PROC_PRINT("** RTAI TSC OFFSETs: ");
     	for (i = 0; i < RTAI_NR_CPUS; i++) {
 		PROC_PRINT("CPU#%d - %lu; ", i, rtai_tsc_ofst[i]);
         }
     	PROC_PRINT("\n\n");
+#endif
 
 	PROC_PRINT_DONE;
 }
@@ -2163,7 +2165,9 @@ int __rtai_hal_init (void)
 		printk("%p %x %s %d\n", next_domain, next_domain->domid, next_domain->name, next_domain->priority);
 	}
 
+#ifdef RTAI_SYNC_TSC
 	init_tsc_sync();
+#endif
 
 	return 0;
 }
@@ -2189,7 +2193,9 @@ void __rtai_hal_exit (void)
 		}
 	}
 
+#ifdef RTAI_SYNC_TSC
 	cleanup_tsc_sync();
+#endif
 
 	printk(KERN_INFO "RTAI[hal]: unmounted.\n");
 }

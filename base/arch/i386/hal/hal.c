@@ -40,7 +40,7 @@
 
 #include <asm/rtai_hal.h>
 
-#ifdef RTAI_SYNC_TSC
+#ifdef RTAI_DIAG_TSC_SYNC
 
 /*
 	Hacked from arch/ia64/kernel/smpboot.c.
@@ -147,19 +147,19 @@ static void sync_tsc(unsigned int master, unsigned int slave)
 //	printk(KERN_INFO "CPU %u: synced its TSC with CPU %u (master time stamp %llu cycles, < - OFFSET %lld cycles - > , max double tsc read span %llu cycles)\n", slave, master, master_time_stamp, delta, rt);
 }
 
-#define MASTER_CPU  0
+//#define MASTER_CPU  0
 #define SLEEP       1000 // ms
 static volatile int end = 1;
 
 static void kthread_fun(void *null)
 {
 	int k;
-	set_cpus_allowed(current, cpumask_of_cpu(MASTER_CPU));
+	set_cpus_allowed(current, cpumask_of_cpu(RTAI_MASTER_TSC_CPU));
 	end = 0;
 	while (!end) {
 		for (k = 0; k < num_online_cpus(); k++) {
-			if (k != MASTER_CPU) {
-				sync_tsc(MASTER_CPU, k);
+			if (k != RTAI_MASTER_TSC_CPU) {
+				sync_tsc(RTAI_MASTER_TSC_CPU, k);
 			}
 		}
 		msleep(SLEEP);

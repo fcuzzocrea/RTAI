@@ -339,10 +339,9 @@ static inline unsigned long long _rtai_hidden_rdtsc (void) {
 
 #else
 
-#define RTAI_SYNC_TSC
-#ifdef RTAI_SYNC_TSC
+#if defined(RTAI_DIAG_TSC_SYNC) && defined(RTAI_TUNE_TSC_SYNC)
 extern volatile long rtai_tsc_ofst[];
-#define rtai_rdtsc() ({ unsigned long long t; __asm__ __volatile__( "rdtsc" : "=A" (t)); t /*+ rtai_tsc_ofst[rtai_cpuid()]*/; })
+#define rtai_rdtsc() ({ unsigned long long t; __asm__ __volatile__( "rdtsc" : "=A" (t)); t + rtai_tsc_ofst[rtai_cpuid()]; })
 #else
 #define rtai_rdtsc() ({ unsigned long long t; __asm__ __volatile__( "rdtsc" : "=A" (t)); t; })
 #endif

@@ -64,7 +64,7 @@ static inline long long readtsc(void)
 #define MASTER	(0)
 #define SLAVE	(SMP_CACHE_BYTES/8)
 
-#define NUM_ITERS  8
+#define NUM_ITERS  10
 
 static DEFINE_SPINLOCK(tsc_sync_lock);
 static DEFINE_SPINLOCK(tsclock);
@@ -98,10 +98,10 @@ static unsigned long worst_tsc_round_trip[RTAI_NR_CPUS];
 static inline long long get_delta(long long *rt, long long *master, unsigned int slave)
 {
 	unsigned long long best_t0 = 0, best_t1 = ~0ULL, best_tm = 0;
-	unsigned long long tcenter, t0, t1, tm, dt;
-	long i, lflags;
+	unsigned long long tcenter = 0, t0, t1, tm, dt;
+	long i, lflags, done;
 
-	for (i = 0; i < NUM_ITERS; ++i) {
+	for (done = i = 0; i < NUM_ITERS; ++i) {
 		t0 = readtsc();
 		go[MASTER] = 1;
 		spin_lock_irqsave(&tsclock, lflags);
@@ -114,26 +114,29 @@ static inline long long get_delta(long long *rt, long long *master, unsigned int
 		go[SLAVE] = 0;
 		t1 = readtsc();
 		dt = t1 - t0;
-		if (!first_sync_loop_done && dt < worst_tsc_round_trip[slave]) {
+		if (!first_sync_loop_done && dt > worst_tsc_round_trip[slave]) {
 			worst_tsc_round_trip[slave] = dt;
 		}
-		if (dt < (best_t1 - best_t0) && dt >= worst_tsc_round_trip[slave]) {
+		if (dt < (best_t1 - best_t0) && (dt <= worst_tsc_round_trip[slave] || !first_sync_loop_done)) {
+			done = 1;
 			best_t0 = t0, best_t1 = t1, best_tm = tm;
 		}
 	}
 
-	*rt = best_t1 - best_t0;
-	*master = best_tm - best_t0;
-	tcenter = (best_t0/2 + best_t1/2);
-	if (best_t0 % 2 + best_t1 % 2 == 2) {
-		++tcenter;
+	if (done) {
+		*rt = best_t1 - best_t0;
+		*master = best_tm - best_t0;
+		tcenter = best_t0/2 + best_t1/2;
+		if (best_t0 % 2 + best_t1 % 2 == 2) {
+			++tcenter;
+		}
 	}
 	if (!first_sync_loop_done) {
-		worst_tsc_round_trip[slave] = worst_tsc_round_trip[slave]*120/100;
+		worst_tsc_round_trip[slave] = (worst_tsc_round_trip[slave]*120)/100;
 		first_sync_loop_done = 1;
+		return done ? rtai_tsc_ofst[slave] = tcenter - best_tm : 0;
 	}
-
-	return rtai_tsc_ofst[slave] = tcenter - best_tm;
+	return done ? rtai_tsc_ofst[slave] = (8*rtai_tsc_ofst[slave] + 2*((long)(tcenter - best_tm)))/10 : 0;
 }
 
 static void sync_tsc(unsigned int master, unsigned int slave)

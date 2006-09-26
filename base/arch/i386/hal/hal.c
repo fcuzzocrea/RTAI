@@ -92,12 +92,13 @@ static void sync_master(void *arg)
 	local_irq_restore(flags);
 }
 
-static volatile unsigned long long best_t0 = 0, best_t1 = ~0ULL, best_tm = 0;
+static int first_sync_loop_done;
+static unsigned long worst_tsc_round_trip[RTAI_NR_CPUS];
 
 static inline long long get_delta(long long *rt, long long *master, unsigned int slave)
 {
-//	unsigned long long best_t0 = 0, best_t1 = ~0ULL, best_tm = 0;
-	unsigned long long tcenter, t0, t1, tm;
+	unsigned long long best_t0 = 0, best_t1 = ~0ULL, best_tm = 0;
+	unsigned long long tcenter, t0, t1, tm, dt;
 	long i, lflags;
 
 	for (i = 0; i < NUM_ITERS; ++i) {
@@ -112,7 +113,11 @@ static inline long long get_delta(long long *rt, long long *master, unsigned int
 		spin_unlock_irqrestore(&tsclock, lflags);
 		go[SLAVE] = 0;
 		t1 = readtsc();
-		if (t1 - t0 < best_t1 - best_t0) {
+		dt = t1 - t0;
+		if (!first_sync_loop_done && dt < worst_tsc_round_trip[slave]) {
+			worst_tsc_round_trip[slave] = dt;
+		}
+		if (dt < (best_t1 - best_t0) && dt >= worst_tsc_round_trip[slave]) {
 			best_t0 = t0, best_t1 = t1, best_tm = tm;
 		}
 	}
@@ -122,6 +127,10 @@ static inline long long get_delta(long long *rt, long long *master, unsigned int
 	tcenter = (best_t0/2 + best_t1/2);
 	if (best_t0 % 2 + best_t1 % 2 == 2) {
 		++tcenter;
+	}
+	if (!first_sync_loop_done) {
+		worst_tsc_round_trip[slave] = worst_tsc_round_trip[slave]*120/100;
+		first_sync_loop_done = 1;
 	}
 
 	return rtai_tsc_ofst[slave] = tcenter - best_tm;
@@ -133,7 +142,7 @@ static void sync_tsc(unsigned int master, unsigned int slave)
 	long long delta, rt, master_time_stamp;
 
 	go[MASTER] = 1;
-	if (smp_call_function(sync_master, (void *)slave, 1, 0) < 0) {
+	if (smp_call_function(sync_master, (void *)master, 1, 0) < 0) {
 //		printk(KERN_ERR "sync_tsc: failed to get attention of CPU %u!\n", master);
 		return;
 	}
@@ -147,22 +156,29 @@ static void sync_tsc(unsigned int master, unsigned int slave)
 //	printk(KERN_INFO "CPU %u: synced its TSC with CPU %u (master time stamp %llu cycles, < - OFFSET %lld cycles - > , max double tsc read span %llu cycles)\n", slave, master, master_time_stamp, delta, rt);
 }
 
-//#define MASTER_CPU  0
-#define SLEEP       1000 // ms
-static volatile int end = 1;
+//#define RTAI_MASTER_TSC_CPU  0
+#define SLEEP0  500 // ms
+#define DSLEEP  500 // ms
+static volatile int end;
+
+static inline int irandu(void)
+{
+	static int i = 783637;
+	i = 125*i;
+	return i = i - (i/2796203)*2796203;
+}
 
 static void kthread_fun(void *null)
 {
-	int k;
-	set_cpus_allowed(current, cpumask_of_cpu(RTAI_MASTER_TSC_CPU));
-	end = 0;
+	int i;
 	while (!end) {
-		for (k = 0; k < num_online_cpus(); k++) {
-			if (k != RTAI_MASTER_TSC_CPU) {
-				sync_tsc(RTAI_MASTER_TSC_CPU, k);
+		for (i = 0; i < num_online_cpus(); i++) {
+			if (i != RTAI_MASTER_TSC_CPU) {
+				set_cpus_allowed(current, cpumask_of_cpu(i));
+				sync_tsc(RTAI_MASTER_TSC_CPU, i);
 			}
 		}
-		msleep(SLEEP);
+		msleep(SLEEP0 + irandu()%DSLEEP);
 	}
 	end = 0;
 }
@@ -170,7 +186,7 @@ static void kthread_fun(void *null)
 void init_tsc_sync(void)
 {
 	kernel_thread((void *)kthread_fun, NULL, 0);
-	while(end) {
+	while(!first_sync_loop_done) {
 		msleep(100);
 	}
 }

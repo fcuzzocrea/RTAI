@@ -1201,7 +1201,7 @@ int rtf_get_if(unsigned int minor, void *buf, int count)
 {
 	VALID_FIFO;
 
-	return count - mbx_send_if(&(fifo[minor].mbx), buf, count, 0);
+	return count - mbx_receive_if(&(fifo[minor].mbx), buf, count, 0);
 }
 
 /**

@@ -2,7 +2,8 @@
 
 	* /base/ipc/fifos.c: fixed atomic rtf_get_if, it called the internal
 	  support for rtf_put_if.
-
+	* /base/include/rtai_posix.h: better behaviour when condvars are
+	  cancelled asynchronously.
 
 2006-09-21  Paolo Mantegazza <mantegazza@aero.polimi.it>
 

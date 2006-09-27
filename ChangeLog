@@ -1,3 +1,8 @@
+2006-09-27  Paolo Mantegazza <mantegazza@aero.polimi.it>
+
+	* /base/ipc/fifos.c: fixed atomic rtf_get_if, it called the internal 
+	  support for rtf_put_if.
+
 2006-09-26  Paolo Mantegazza <mantegazza@aero.polimi.it>
 
 	* /base/arch/i386/Kconfig: add configuration for TSC diagnose and

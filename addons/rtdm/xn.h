@@ -177,6 +177,8 @@ unsigned long __va_to_kva(unsigned long va);
 
 // interrupt setup/management (adopted_&|_adapted from RTDM pet system)
 
+#define RTHAL_NR_IRQS  IPIPE_NR_XIRQS
+
 #define XN_ISR_NONE       0x1
 #define XN_ISR_HANDLED    0x2
 
@@ -197,6 +199,8 @@ typedef int (*xniack_t)(unsigned irq);
 
 typedef unsigned long xnflags_t;
 
+typedef atomic_t atomic_counter_t;
+
 typedef struct xnintr {
     struct xnintr *next;
     unsigned unhandled;
@@ -211,85 +215,31 @@ typedef struct xnintr {
 
 int xnintr_shirq_attach(xnintr_t *intr, void *cookie);
 int xnintr_shirq_detach(xnintr_t *intr);
+int xnintr_init (xnintr_t *intr, const char *name, unsigned irq, xnisr_t isr, xniack_t iack, xnflags_t flags);
+int xnintr_destroy (xnintr_t *intr);
+int xnintr_attach (xnintr_t *intr, void *cookie);
+int xnintr_detach (xnintr_t *intr);
+int xnintr_enable (xnintr_t *intr);
+int xnintr_disable (xnintr_t *intr);
 
-static inline int xnintr_init (xnintr_t *intr, const char *name, unsigned irq, xnisr_t isr, xniack_t iack, xnflags_t flags)
-{
-	intr->irq = irq;
-	intr->isr = isr;
-	intr->iack = iack;
-	intr->cookie = NULL;
-	intr->hits = 0;
-	intr->name = name;
-	intr->flags = flags;
-	intr->unhandled = 0;
-	intr->next = NULL;
-	return 0;
-}
-
-static inline int xnintr_attach (xnintr_t *intr, void *cookie)
-{
-	intr->hits = 0;
-	intr->cookie = cookie;
-	return xnintr_shirq_attach(intr, cookie);
-}
-
-static inline int xnintr_detach (xnintr_t *intr)
-{
-	return xnintr_shirq_detach(intr);
-}
-
-static inline int xnintr_destroy (xnintr_t *intr)
-{
-	return xnintr_detach(intr);
-}
-
-static int xnintr_enable (xnintr_t *intr)
-{
-	rt_enable_irq(intr->irq);
-	return 0;
-}
-
-static int xnintr_disable (xnintr_t *intr)
-{
-	rt_disable_irq(intr->irq);
-	return 0;
-}
-
-#ifdef CONFIG_SMP
-
-typedef struct xnintr_shirq {
-	xnintr_t *handlers;
-	int unhandled;
-	atomic_t active;
-} xnintr_shirq_t;
-
-#define xnintr_shirq_lock(shirq) \
-	do { atomic_inc(&shirq->active); } while (0)
-
-#define xnintr_shirq_unlock(shirq) \
-	do { atomic_dec(&shirq->active); } while (0)
-
-#define xnintr_shirq_spin(shirq) \
-	do { while (atomic_read(&shirq->active)) cpu_relax(); } while (0)
-
-#else /* !CONFIG_SMP */
-
-typedef struct xnintr_shirq {
-	xnintr_t *handlers;
-	int unhandled;
-} xnintr_shirq_t;
-
-#define xnintr_shirq_lock(shirq)
-
-#define xnintr_shirq_unlock(shirq)
-
-#define xnintr_shirq_spin(shirq)
-
-#endif /* CONFIG_SMP */
+#define xnarch_memory_barrier()      smp_mb()
+#define xnarch_atomic_get(pcounter)  atomic_read(pcounter)
+#define xnarch_atomic_inc(pcounter)  atomic_inc(pcounter)
+#define xnarch_atomic_dec(pcounter)  atomic_dec(pcounter)
 
 #define   testbits(flags, mask)  ((flags) & (mask))
 #define __testbits(flags, mask)  ((flags) & (mask))
 #define __setbits(flags, mask)   do { (flags) |= (mask);  } while(0)
 #define __clrbits(flags, mask)   do { (flags) &= ~(mask); } while(0)
+
+#define xnltt_log_event(a, b)
+
+#define xnarch_chain_irq   rt_pend_linux_irq
+#define xnarch_end_irq     rt_enable_irq
+
+#define xnarch_hook_irq(irq, handler, iack, intr) \
+	rt_request_irq_wack(irq, (void *)handler, intr, 0, iack);
+#define xnarch_release_irq(irq) \
+	rt_release_irq(irq);
 
 #endif /* !_RTAI_XNSTUFF_H */

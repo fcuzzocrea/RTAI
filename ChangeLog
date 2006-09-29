@@ -1,3 +1,8 @@
+2006-09-28  Paolo Mantegazza <mantegazza@aero.polimi.it>
+
+	* /base/ipc/sem.c: check broadcasted task handle to keep the lazy
+	  atomicity safe.
+
 2006-09-27  Paolo Mantegazza <mantegazza@aero.polimi.it>
 
 	* /base/ipc/fifos.c: fixed atomic rtf_get_if, it called the internal

@@ -362,11 +362,13 @@ int rt_sem_broadcast(SEM *sem)
 	q = &(sem->queue);
 	flags = rt_global_save_flags_and_cli();
 	while ((q = q->next) != &(sem->queue)) {
-		dequeue_blocked(task = q->task);
-		rem_timed_task(task);
-		if (task->state != RT_SCHED_READY && (task->state &= ~(RT_SCHED_SEMAPHORE | RT_SCHED_DELAYED)) == RT_SCHED_READY) {
-			enq_ready_task(task);
-			set_bit(task->runnable_on_cpus & 0x1F, &schedmap);
+		if ((task = q->task)) {
+			dequeue_blocked(task = q->task);
+			rem_timed_task(task);
+			if (task->state != RT_SCHED_READY && (task->state &= ~(RT_SCHED_SEMAPHORE | RT_SCHED_DELAYED)) == RT_SCHED_READY) {
+				enq_ready_task(task);
+				set_bit(task->runnable_on_cpus & 0x1F, &schedmap);
+			}
 		}
 		rt_global_restore_flags(flags);
 		flags = rt_global_save_flags_and_cli();

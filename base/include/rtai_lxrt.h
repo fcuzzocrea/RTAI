@@ -712,48 +712,39 @@ RTAI_PROTO(RT_TASK *, rt_thread_init, (unsigned long name, int priority, int max
 }
 
 /**
- * Create a new real time task in user space.
+ * Create an RTAI task extension for a Linux process/task in user space.
  * 
- * rt_task_init provides a real time buddy, also called proxy, task to the Linux
- * process that wants to access RTAI scheduler services.   It needs no task
- * function as none is used, but it does need to setup a task structure and
- * initialize it appropriately as the provided services are carried out as if
- * the Linux process has become an RTAI task.   Because of that it requires less
- * arguments and returns the pointer to the task that is to be used in related
- * calls.
+ * rt_task_init extends the Linux task structure, making it possible to use
+ * RTAI APIs that wants to access RTAI scheduler services.   It needs no task
+ * function as none is used, but it does need to setup an RTAI task structure
+ * and initialize it appropriately as the provided services are carried out as
+ * if the Linux process has become an RTAI task also.   Because of that it 
+ * requires less arguments and returns the pointer to the RTAI task extension
+ * that is to be used in related calls.
  *
- * @param name is a unique identifier that is possibly used by easing
- * referencing the buddy RTAItask, and thus its peer Linux process.
+ * @param name is a unique identifier that is possibly used to ease
+ * referencing the RTAI task extension of a peer Linux process.
  *
- * @param priority is the priority of the buddys priority.
+ * @param priority is the priority of the RTAI task extension.
  *
- * @param stack_size is just what is implied by such a name and refers to the
- * stack size used by the buddy.
+ * @param stack_size, a legacy parameter used nomore; kept for portability 
+ * reasons only. (It was just what is implied by such a name and referred to 
+ * the stack size used by the buddy in the very first implementation of LXRT).
  *
- * @param max_msg_size is a hint for the size of the most lengthy message than
- * is likely to be exchanged.
+ * @param max_msg_size is a hint for the size of the most lengthy intertask
+ * message that is likely to be exchanged.
  *
- * @a stack_size and @a max_msg_size can be zero, in which case the default
- * internal values are used.  The assignment of a different value should be
- * required only if you want to use task signal functions. In such a case note
- * that these signal functions are intended to catch asyncrounous events in
- * kernel space and, as such, must be programmed into a companion module and
- * interfaced to their parent Linux process through the available services.
- *
- * Keep an eye on the default stack (512) and message (256) sizes as they seem
- * to be acceptable, but this API has not been used extensively with complex
- * interrupt service  routines.   Since the latter are served on the stack of
- * any task being interrupted, and more than one can pile up on the same stack,
- * it can be possible that a larger stack is required.   In such a case either
- * recompile lxrt.c with macros STACK_SIZE and MSG_SIZE set appropriately, or
- * explicitly assign larger values at your buddy tasks  inits.   Note that while
- * the stack size can be critical the message size will not. In fact the module
- * reassigns it, appropriately sized, whenever it is needed.   The cost is a
- * kmalloc with GFP_KERNEL that can block, but within the Linux environment.
+ * @a max_msg_size can be zero, in which case a default internal value is
+ * used.  Keep an eye on such a default message (256) size. It could be 
+ * possible that a larger size is required to suite your needs best. In such 
+ * a case either recompile sys.c with the macro MSG_SIZE set appropriately, 
+ * or assign a larger size here esplicitly.  Note that the message size is 
+ * not critical though. In fact the module reassigns it, dynamically and 
+ * appropriately sized, whenever it is needed.  The cost is a real time 
+ * allocation of the new buffer.
  * Note also that @a max_msg_size is for a buffer to be used to copy whatever
- * message, either mailbox or inter task, from user to kernel space, as messages
- * are not necessarily copied immediately, and has nothing to do directly with
- * what you are doing.
+ * intertask message from user to kernel space, as intertask messages are not 
+ * necessarily used immediately.
  *
  * It is important to remark that the returned task pointers cannot be used
  * directly, they are for kernel space data, but just passed as arguments when
@@ -761,8 +752,8 @@ RTAI_PROTO(RT_TASK *, rt_thread_init, (unsigned long name, int priority, int max
  *
  * @return On success a pointer to the task structure initialized in kernel
  * space.
- * @return On failure a 0 value is returned if it was not possible to setup the
- * buddy task or something using the same name was found.
+ * @return On failure a NULL value is returned if it was not possible to setup 
+ * the RTAI task extension or something using the same name was found.
  */
 RTAI_PROTO(RT_TASK *,rt_task_init,(unsigned long name, int priority, int stack_size, int max_msg_size))
 {

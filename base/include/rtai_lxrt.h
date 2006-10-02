@@ -714,7 +714,7 @@ RTAI_PROTO(RT_TASK *, rt_thread_init, (unsigned long name, int priority, int max
 /**
  * Create an RTAI task extension for a Linux process/task in user space.
  * 
- * rt_task_init extend the Linux task structure, making it possible to use
+ * rt_task_init extends the Linux task structure, making it possible to use
  * RTAI APIs that wants to access RTAI scheduler services.   It needs no task
  * function as none is used, but it does need to setup an RTAI task structure
  * and initialize it appropriately as the provided services are carried out as
@@ -738,7 +738,7 @@ RTAI_PROTO(RT_TASK *, rt_thread_init, (unsigned long name, int priority, int max
  * used.  Keep an eye on such a default message (256) size. It could be 
  * possible that a larger size is required to suite your needs best. In such 
  * a case either recompile sys.c with the macro MSG_SIZE set appropriately, 
- * or assigna larger size here esplicitely.  Note that the message size is 
+ * or assign a larger size here esplicitly.  Note that the message size is 
  * not critical though. In fact the module reassigns it, dynamically and 
  * appropriately sized, whenever it is needed.  The cost is a real time 
  * allocation of the new buffer.

@@ -5,6 +5,7 @@
  * @note Copyright (C) 2005 Jan Kiszka <jan.kiszka@web.de>
  * @note Copyright (C) 2005 Joerg Langenberg <joerg.langenberg@gmx.net>
  * @note Copyright (C) 2005 Paolo Mantegazza <mantegazza@aero.polimi.it>
+ *       for the adaption to RTAI only.
  *
  * RTAI is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License as published by
@@ -233,6 +234,10 @@ static void xnintr_irq_handler(unsigned irq, void *cookie)
 	xnltt_log_event(xeno_ev_iexit, irq);
 }
 
+/* Optional support for shared interrupts. */
+
+#if defined(CONFIG_RTAI_RTDM_SHIRQ_LEVEL) || defined(CONFIG_RTAI_RTDM_SHIRQ_EDGE)
+
 typedef struct xnintr_shirq {
 
 	xnintr_t *handlers;
@@ -268,6 +273,12 @@ void xnintr_synchronize(xnintr_t *intr)
 		cpu_relax();
 #endif
 }
+
+#if defined(CONFIG_RTAI_RTDM_SHIRQ_LEVEL)
+/*
+ * Low-level interrupt handler dispatching the user-defined ISRs for
+ * shared interrupts -- Called with interrupts off.
+ */
 
 static void xnintr_shirq_handler(unsigned irq, void *cookie)
 {
@@ -312,6 +323,14 @@ static void xnintr_shirq_handler(unsigned irq, void *cookie)
 
 	xnltt_log_event(xeno_ev_iexit, irq);
 }
+
+#endif /* CONFIG_RTAI_RTDM_SHIRQ_LEVEL */
+
+#if defined(CONFIG_RTAI_RTDM_SHIRQ_EDGE)
+/*
+ * Low-level interrupt handler dispatching the user-defined ISRs for
+ * shared edge-triggered interrupts -- Called with interrupts off.
+ */
 
 static void xnintr_edge_shirq_handler(unsigned irq, void *cookie)
 {
@@ -378,6 +397,8 @@ static void xnintr_edge_shirq_handler(unsigned irq, void *cookie)
 	xnltt_log_event(xeno_ev_iexit, irq);
 }
 
+#endif /* CONFIG_RTAI_RTDM_SHIRQ_EDGE */
+
 static inline int xnintr_irq_attach(xnintr_t *intr)
 {
 	xnintr_shirq_t *shirq = &xnshirqs[intr->irq];
@@ -408,14 +429,14 @@ static inline int xnintr_irq_attach(xnintr_t *intr)
 		void (*handler) (unsigned, void *) = &xnintr_irq_handler;
 
 		if (intr->flags & XN_ISR_SHARED) {
-
+#if defined(CONFIG_RTAI_RTDM_SHIRQ_LEVEL)
 			handler = &xnintr_shirq_handler;
+#endif /* CONFIG_RTAI_RTDM_SHIRQ_LEVEL */
 
-
-
+#if defined(CONFIG_RTAI_RTDM_SHIRQ_EDGE)
 			if (intr->flags & XN_ISR_EDGE)
 				handler = &xnintr_edge_shirq_handler;
-
+#endif /* CONFIG_RTAI_RTDM_SHIRQ_EDGE */
 		}
 		shirq->unhandled = 0;
 
@@ -477,6 +498,23 @@ int xnintr_mount(void)
 	}
 	return 0;
 }
+
+#else /* !CONFIG_RTAI_RTDM_SHIRQ_LEVEL && !CONFIG_RTAI_RTDM_SHIRQ_EDGE */
+
+static inline int xnintr_irq_attach(xnintr_t *intr)
+{
+	return xnarch_hook_irq(intr->irq, &xnintr_irq_handler, intr->iack, intr);
+}
+
+static inline int xnintr_irq_detach(xnintr_t *intr)
+{
+	return xnarch_release_irq(intr->irq);
+}
+
+void xnintr_synchronize(xnintr_t *intr) {}
+int xnintr_mount(void) { return 0; }
+
+#endif /* CONFIG_RTAI_RTDM_SHIRQ_LEVEL || CONFIG_RTAI_RTDM_SHIRQ_EDGE */
 
 int xnintr_init(xnintr_t *intr,
 		const char *name,

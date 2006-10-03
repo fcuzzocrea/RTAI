@@ -1,6 +1,7 @@
 2006-10-03  Roberto Bucher <roberto.bucher@supsi.ch>
 
-	* /rtai-lab/scilab/rtmain.c: Better handling of the Ctrl-C signals on certain systems.
+	* /rtai-lab/scilab/rtmain.c: Better handling of the Ctrl-C signals 
+	  on certain systems.
 
 2006-09-28  Paolo Mantegazza <mantegazza@aero.polimi.it>
 

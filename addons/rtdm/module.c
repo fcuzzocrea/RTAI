@@ -236,7 +236,7 @@ static void xnintr_irq_handler(unsigned irq, void *cookie)
 
 /* Optional support for shared interrupts. */
 
-#if defined(CONFIG_RTAI_RTDM_SHIRQ_LEVEL) || defined(CONFIG_RTAI_RTDM_SHIRQ_EDGE)
+#if defined(CONFIG_RTAI_RTDM_LEVL_SHIRQ) || defined(CONFIG_RTAI_RTDM_EDGE_SHIRQ)
 
 typedef struct xnintr_shirq {
 
@@ -274,7 +274,7 @@ void xnintr_synchronize(xnintr_t *intr)
 #endif
 }
 
-#if defined(CONFIG_RTAI_RTDM_SHIRQ_LEVEL)
+#if defined(CONFIG_RTAI_RTDM_LEVL_SHIRQ)
 /*
  * Low-level interrupt handler dispatching the user-defined ISRs for
  * shared interrupts -- Called with interrupts off.
@@ -324,9 +324,9 @@ static void xnintr_shirq_handler(unsigned irq, void *cookie)
 	xnltt_log_event(xeno_ev_iexit, irq);
 }
 
-#endif /* CONFIG_RTAI_RTDM_SHIRQ_LEVEL */
+#endif /* CONFIG_RTAI_RTDM_LEVL_SHIRQ */
 
-#if defined(CONFIG_RTAI_RTDM_SHIRQ_EDGE)
+#if defined(CONFIG_RTAI_RTDM_EDGE_SHIRQ)
 /*
  * Low-level interrupt handler dispatching the user-defined ISRs for
  * shared edge-triggered interrupts -- Called with interrupts off.
@@ -397,7 +397,7 @@ static void xnintr_edge_shirq_handler(unsigned irq, void *cookie)
 	xnltt_log_event(xeno_ev_iexit, irq);
 }
 
-#endif /* CONFIG_RTAI_RTDM_SHIRQ_EDGE */
+#endif /* CONFIG_RTAI_RTDM_EDGE_SHIRQ */
 
 static inline int xnintr_irq_attach(xnintr_t *intr)
 {
@@ -429,14 +429,14 @@ static inline int xnintr_irq_attach(xnintr_t *intr)
 		void (*handler) (unsigned, void *) = &xnintr_irq_handler;
 
 		if (intr->flags & XN_ISR_SHARED) {
-#if defined(CONFIG_RTAI_RTDM_SHIRQ_LEVEL)
+#if defined(CONFIG_RTAI_RTDM_LEVL_SHIRQ)
 			handler = &xnintr_shirq_handler;
-#endif /* CONFIG_RTAI_RTDM_SHIRQ_LEVEL */
+#endif /* CONFIG_RTAI_RTDM_LEVL_SHIRQ */
 
-#if defined(CONFIG_RTAI_RTDM_SHIRQ_EDGE)
+#if defined(CONFIG_RTAI_RTDM_EDGE_SHIRQ)
 			if (intr->flags & XN_ISR_EDGE)
 				handler = &xnintr_edge_shirq_handler;
-#endif /* CONFIG_RTAI_RTDM_SHIRQ_EDGE */
+#endif /* CONFIG_RTAI_RTDM_EDGE_SHIRQ */
 		}
 		shirq->unhandled = 0;
 
@@ -499,7 +499,7 @@ int xnintr_mount(void)
 	return 0;
 }
 
-#else /* !CONFIG_RTAI_RTDM_SHIRQ_LEVEL && !CONFIG_RTAI_RTDM_SHIRQ_EDGE */
+#else /* !CONFIG_RTAI_RTDM_LEVL_SHIRQ && !CONFIG_RTAI_RTDM_EDGE_SHIRQ */
 
 static inline int xnintr_irq_attach(xnintr_t *intr)
 {
@@ -514,7 +514,7 @@ static inline int xnintr_irq_detach(xnintr_t *intr)
 void xnintr_synchronize(xnintr_t *intr) {}
 int xnintr_mount(void) { return 0; }
 
-#endif /* CONFIG_RTAI_RTDM_SHIRQ_LEVEL || CONFIG_RTAI_RTDM_SHIRQ_EDGE */
+#endif /* CONFIG_RTAI_RTDM_LEVL_SHIRQ || CONFIG_RTAI_RTDM_EDGE_SHIRQ */
 
 int xnintr_init(xnintr_t *intr,
 		const char *name,

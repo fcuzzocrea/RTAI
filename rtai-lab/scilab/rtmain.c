@@ -86,7 +86,7 @@ static volatile int verbose      = 0;
 static volatile int endBaseRate   = 0;
 static volatile int endInterface  = 0;
 static volatile int stackinc     = 100000;
-static volatile int ClockTick    = 0;
+static volatile int ClockTick    = 1;
 static volatile int InternTimer  = 1;
 static RTIME rt_BaseRateTick;
 static float FinalTime           = 0.0;
@@ -431,6 +431,18 @@ static void *rt_HostInterface(void *args)
 	    rt_returnx(task, &samplingTime, sizeof(float));
 	  }
 	}
+	while (1) {
+	  rt_receivex(task, &Idx, sizeof(int), &len);
+	  if (Idx < 0) {
+	    rt_returnx(task, &Idx, sizeof(int));
+	    break;
+	  } else {
+	    rt_returnx(task, "", MAX_NAME_SIZE);
+	    rt_receivex(task, &Idx, sizeof(int), &len);
+	    samplingTime = get_tsamp();
+	    rt_returnx(task, &samplingTime, sizeof(float));
+	  }
+	}
 	break;
       }
       case 's': {
@@ -531,7 +543,6 @@ static void *rt_HostInterface(void *args)
 	break;
       }
       default : {
-	rt_return(task, 0xFFFFFFFF);
 	break;
       }
       }
@@ -822,24 +833,20 @@ int main(int argc, char *argv[])
       break;
     }
   } while (c >= 0);
+
   if (verbose) {
-    printf("\nTarget settings:\n");
-    if (InternTimer) {
-      printf("  Real-time : %s;\n", UseHRT ? "HARD" : "SOFT");
-      if (ClockTick) {
-	printf("  Internal Clock Tick : %e (s);\n", ClockTick*1.0E-9);
-      } else {
-	printf("  Internal Clock is OneShot;\n");
-      }
-    } else {
-      printf("  External timing\n");
-    }
-    printf("  Priority : %d;\n", priority);
+    printf("\nTarget settings\n");
+    printf("===============\n");
+    printf("  Real-time : %s\n", UseHRT ? "HARD" : "SOFT");	
+    printf("  Timing    : %s / ", InternTimer ? "internal" : "external");
+    printf("%s\n", ClockTick ? "periodic" : "oneshot");
+    printf("  Priority  : %d\n", priority);
     if (FinalTime > 0) {
-      printf("  Finaltime : %f (s).\n\n", FinalTime);
+      printf("  Finaltime : %f [s]\n", FinalTime);
     } else {
-      printf("  RUN FOR EVER.\n\n");
+      printf("  Finaltime : RUN FOREVER\n");
     }
+    printf("  CPU map   : %x\n\n", CpuMap);
   }
   if (donotrun) {
     printf("ABORTED BECAUSE OF EXECUTION OPTIONS ERRORS.\n");

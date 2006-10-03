@@ -898,6 +898,22 @@ config RTAI_RTDM_FD_MAX
 	help
 	The maximum number of file descriptors in RTDM.
 
+config RTAI_RTDM_EDGE_SHIRQ
+	depends on RTAI_RTDM
+        bool "Shared edge triggered interrupts"
+        default n
+        help
+        Make it possible for RTDM own interrupt handlers to manage shared
+	edge triggered interrupts.
+
+config RTAI_RTDM_LEVL_SHIRQ
+	depends on RTAI_RTDM
+        bool "Shared level triggered interrupts"
+        default n
+        help
+        Make it possible for RTDM own interrupt handlers to manage shared
+	level triggered interrupts.
+
 menu "Drivers"
 
 config RTAI_DRIVERS_SERIAL

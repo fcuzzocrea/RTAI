@@ -1,3 +1,8 @@
+2006-10-05  Paolo Mantegazza <mantegazza@aero.polimi.it>
+
+	* /base/sched/sched.c: do not return hard immediatly if a signal is 
+	  pending after a Linux syscall made in hard mode.
+
 2006-10-04  Roberto Bucher <roberto.bucher@supsi.ch>
 
 	* /rtai-lab/scilab/macros/RTAI/RTAI-Lib.cosf: Corrected the absolute

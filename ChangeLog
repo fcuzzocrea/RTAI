@@ -1,3 +1,18 @@
+2006-10-04  Roberto Bucher <roberto.bucher@supsi.ch>
+
+	* /rtai-lab/scilab/macros/RTAI/RTAI-Lib.cosf: Corrected the absolute
+	path contained in the palette.
+
+2006-10-04  Roberto Bucher <roberto.bucher@supsi.ch>
+
+	* /rtai-lab/scilab/rtmain.c: Better handling of the Ctrl-C signals 
+	  on certain systems.
+
+2006-10-04  Roberto Bucher <roberto.bucher@supsi.ch>
+
+	* /rtai-lab/matlab/rtmain.c: Restored the previous mechanisms to
+	synchronize the tasks.
+
 2006-09-28  Paolo Mantegazza <mantegazza@aero.polimi.it>
 
 	* /base/ipc/sem.c: check broadcasted task handle to keep the lazy

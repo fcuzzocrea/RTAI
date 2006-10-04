@@ -1,7 +1,7 @@
 2006-10-03  Roberto Bucher <roberto.bucher@supsi.ch>
 
 	* /rtai-lab/scilab/macros/RTAI/RTAI-Lib.cosf: Corrected the absolute
-	path contained in the palette.
+	  path contained in the palette.
 
 2006-10-03  Roberto Bucher <roberto.bucher@supsi.ch>
 

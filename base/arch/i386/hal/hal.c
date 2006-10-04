@@ -40,7 +40,7 @@
 
 #include <asm/rtai_hal.h>
 
-#ifdef RTAI_DIAG_TSC_SYNC
+#if defined(CONFIG_SMP) && defined(RTAI_DIAG_TSC_SYNC)
 
 /*
 	Hacked from arch/ia64/kernel/smpboot.c.
@@ -204,7 +204,7 @@ void cleanup_tsc_sync(void)
 
 EXPORT_SYMBOL(rtai_tsc_ofst);
 
-#endif
+#endif /* defined(CONFIG_SMP) && defined(RTAI_DIAG_TSC_SYNC) */
 
 #undef INCLUDED_BY_HAL_C
 #define INCLUDED_BY_HAL_C

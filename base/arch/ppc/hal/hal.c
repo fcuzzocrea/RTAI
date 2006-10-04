@@ -84,15 +84,11 @@ static void (*rtai_isr_hook)(int cpuid);
 
 extern struct desc_struct idt_table[];
 
-adomain_t rtai_domain;
+struct hal_domain_struct rtai_domain;
 
-#define RTAI_NR_IRQS    (RTAI_TIMER_DECR_IRQ + 1)
+#define RTAI_NR_IRQS  IPIPE_NR_XIRQS
 
-struct {
-	int (*handler)(unsigned irq, void *cookie);
-	void *cookie;
-	int retmode;
-} rtai_realtime_irq[RTAI_NR_IRQS];
+struct rtai_realtime_irq_s rtai_realtime_irq[RTAI_NR_IRQS];
 
 static struct {
 	unsigned long flags;
@@ -135,18 +131,19 @@ struct rt_times rt_smp_times[RTAI_NR_CPUS] = { { 0 } };
 
 struct rtai_switch_data rtai_linux_context[RTAI_NR_CPUS] = { { 0 } };
 
+volatile unsigned long *ipipe_root_status[RTAI_NR_CPUS];
+
 struct calibration_data rtai_tunables = { 0 };
 
 volatile unsigned long rtai_cpu_realtime = 0;
 
 volatile unsigned long rtai_cpu_lock = 0;
 
-int rtai_adeos_ptdbase = -1;
-
 unsigned long rtai_critical_enter (void (*synch)(void))
 {
-	unsigned long flags = adeos_critical_enter(synch);
+	unsigned long flags;
 
+	flags = hal_critical_enter(synch);
 	if (atomic_dec_and_test(&rtai_sync_count)) {
 		rtai_sync_level = 0;
 	} else if (synch != NULL) {
@@ -158,7 +155,7 @@ unsigned long rtai_critical_enter (void (*synch)(void))
 void rtai_critical_exit (unsigned long flags)
 {
 	atomic_inc(&rtai_sync_count);
-	adeos_critical_exit(flags);
+	hal_critical_exit(flags);
 }
 
 int rt_request_irq (unsigned irq, int (*handler)(unsigned irq, void *cookie), void *cookie, int retmode)
@@ -179,6 +176,7 @@ int rt_request_irq (unsigned irq, int (*handler)(unsigned irq, void *cookie), vo
 	rtai_realtime_irq[irq].handler = (void *)handler;
 	rtai_realtime_irq[irq].cookie  = cookie;
 	rtai_realtime_irq[irq].retmode = retmode ? 1 : 0;
+	rtai_realtime_irq[irq].irq_ack = hal_root_domain->irqs[irq].acknowledge;
 	rtai_critical_exit(flags);
 	return 0;
 }
@@ -191,11 +189,21 @@ int rt_release_irq (unsigned irq)
 	}
 	flags = rtai_critical_enter(NULL);
 	rtai_realtime_irq[irq].handler = NULL;
+	rtai_realtime_irq[irq].irq_ack = hal_root_domain->irqs[irq].acknowledge;
 /* Reenable decrementer handling in Linux timer_interrupt() */
 	if (irq == RTAI_TIMER_DECR_IRQ)	{
 		disarm_decr[rtai_cpuid()] = 0;
 	}
 	rtai_critical_exit(flags);
+	return 0;
+}
+
+int rt_set_irq_ack(unsigned irq, int (*irq_ack)(unsigned int))
+{
+	if (irq >= RTAI_NR_IRQS) {
+		return -EINVAL;
+	}
+	rtai_realtime_irq[irq].irq_ack = irq_ack ? irq_ack : hal_root_domain->irqs[irq].acknowledge;
 	return 0;
 }
 
@@ -536,35 +544,26 @@ void rt_ack_irq (unsigned irq)
  * @retval EINVAL if @a irq is not a valid IRQ number or handler is @c NULL.
  * @retval EBUSY if there is already a handler of interrupt @a irq.
  */
-int rt_request_linux_irq (unsigned irq,
-			  irqreturn_t (*handler)(int irq,
-			  void *dev_id,
-			  struct pt_regs *regs), 
-			  char *name,
-			  void *dev_id)
+int rt_request_linux_irq (unsigned irq, irqreturn_t (*handler)(int irq, void *dev_id, struct pt_regs *regs), char *name, void *dev_id)
 {
-    unsigned long flags;
+	unsigned long flags;
 
-    if (irq >= NR_IRQS || !handler) {
-	return -EINVAL;
-    }
+	if (irq >= RTAI_NR_IRQS || !handler) {
+		return -EINVAL;
+	}
 
-    rtai_save_flags_and_cli(flags);
+	rtai_save_flags_and_cli(flags);
+	spin_lock(&irq_desc[irq].lock);
+	if (rtai_linux_irq[irq].count++ == 0 && irq_desc[irq].action) {
+		rtai_linux_irq[irq].flags = irq_desc[irq].action->flags;
+		irq_desc[irq].action->flags |= SA_SHIRQ;
+	}
+	spin_unlock(&irq_desc[irq].lock);
+	rtai_restore_flags(flags);
 
-    spin_lock(&irq_desc[irq].lock);
+	request_irq(irq, handler, SA_SHIRQ, name, dev_id);
 
-    if (rtai_linux_irq[irq].count++ == 0 && irq_desc[irq].action) {
-	rtai_linux_irq[irq].flags = irq_desc[irq].action->flags;
-	irq_desc[irq].action->flags |= SA_SHIRQ;
-    }
-
-    spin_unlock(&irq_desc[irq].lock);
-
-    rtai_restore_flags(flags);
-
-    request_irq(irq, handler, SA_SHIRQ, name, dev_id);
-
-    return 0;
+	return 0;
 }
 
 /**
@@ -579,38 +578,26 @@ int rt_request_linux_irq (unsigned irq,
  * @retval EINVAL if @a irq is not a valid IRQ number.
  */
 int rt_free_linux_irq (unsigned irq, void *dev_id)
-
 {
-    unsigned long flags;
+	unsigned long flags;
 
-    if (irq >= NR_IRQS || rtai_linux_irq[irq].count == 0)
-	return -EINVAL;
+	if (irq >= RTAI_NR_IRQS || rtai_linux_irq[irq].count == 0) {
+		return -EINVAL;
+	}
 
-    rtai_save_flags_and_cli(flags);
+	rtai_save_flags_and_cli(flags);
+	free_irq(irq,dev_id);
+	spin_lock(&irq_desc[irq].lock);
+	if (--rtai_linux_irq[irq].count == 0 && irq_desc[irq].action) {
+		irq_desc[irq].action->flags = rtai_linux_irq[irq].flags;
+	}
+	spin_unlock(&irq_desc[irq].lock);
+	rtai_restore_flags(flags);
 
-    free_irq(irq,dev_id);
-
-    spin_lock(&irq_desc[irq].lock);
-
-    if (--rtai_linux_irq[irq].count == 0 && irq_desc[irq].action)
-	irq_desc[irq].action->flags = rtai_linux_irq[irq].flags;
-
-    spin_unlock(&irq_desc[irq].lock);
-
-    rtai_restore_flags(flags);
-
-    return 0;
+	return 0;
 }
 
-static unsigned long adeos_pended;
-
-#define adeos_pend_irq(irq) \
-do { \
-	unsigned long flags; \
-	rtai_save_flags_and_cli(flags); \
-	adeos_pend_uncond(irq, rtai_cpuid()); \
-	rtai_restore_flags(flags); \
-} while (0)
+volatile unsigned long hal_pended;
 
 /**
  * Pend an IRQ to Linux.
@@ -622,7 +609,10 @@ do { \
  */
 void rt_pend_linux_irq (unsigned irq)
 {
-	adeos_pend_irq(irq);
+	unsigned long flags;
+	rtai_save_flags_and_cli(flags);
+	hal_pend_uncond(irq, rtai_cpuid());
+	rtai_restore_flags(flags);
 }
 
 /**
@@ -644,32 +634,27 @@ void rt_pend_linux_irq (unsigned irq)
  * @retval EINVAL if @a k_handler is @c NULL.
  * @retval EBUSY if no free srq slot is available.
  */
-int rt_request_srq (unsigned label,
-		    void (*k_handler)(void),
-		    long long (*u_handler)(unsigned))
+int rt_request_srq (unsigned label, void (*k_handler)(void), long long (*u_handler)(unsigned long))
 {
-    unsigned long flags;
-    int srq;
+	unsigned long flags;
+	int srq;
 
-    if (k_handler == NULL)
-	return -EINVAL;
-
-    rtai_save_flags_and_cli(flags);
-
-    if (rtai_sysreq_map != ~0)
-	{
-	srq = ffz(rtai_sysreq_map);
-	set_bit(srq, &rtai_sysreq_map);
-	rtai_sysreq_table[srq].k_handler = k_handler;
-	rtai_sysreq_table[srq].u_handler = u_handler;
-	rtai_sysreq_table[srq].label = label;
+	if (k_handler == NULL) {
+		return -EINVAL;
 	}
-    else
-	srq = -EBUSY;
 
-    rtai_restore_flags(flags);
+	rtai_save_flags_and_cli(flags);
+	if (rtai_sysreq_map != ~0) {
+		set_bit(srq = ffz(rtai_sysreq_map), &rtai_sysreq_map);
+		rtai_sysreq_table[srq].k_handler = k_handler;
+		rtai_sysreq_table[srq].u_handler = u_handler;
+		rtai_sysreq_table[srq].label = label;
+	} else {
+		srq = -EBUSY;
+	}
+	rtai_restore_flags(flags);
 
-    return srq;
+	return srq;
 }
 
 /**
@@ -698,8 +683,11 @@ int rt_free_srq (unsigned srq)
 void rt_pend_linux_srq (unsigned srq)
 {
 	if (srq > 0 && srq < RTAI_NR_SRQS) {
+		unsigned long flags;
 		set_bit(srq, &rtai_sysreq_pending);
-		adeos_pend_irq(rtai_sysreq_virq);
+		rtai_save_flags_and_cli(flags);
+		hal_pend_uncond(rtai_sysreq_virq, rtai_cpuid());
+		rtai_restore_flags(flags);
 	}
 }
 
@@ -711,9 +699,9 @@ void rt_pend_linux_srq (unsigned srq)
 
 #define rtai_critical_sync NULL
 
-void rtai_broadcast_to_timers (int irq,
-			       void *dev_id,
-			       struct pt_regs *regs) {
+irqreturn_t rtai_broadcast_to_timers (int irq, void *dev_id, struct pt_regs *regs)
+{
+	return RTAI_LINUX_IRQ_HANDLED;
 } 
 
 #endif /* CONFIG_SMP */

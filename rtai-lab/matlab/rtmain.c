@@ -132,8 +132,6 @@ static pthread_t *rt_SubRateThreads;
 static RT_TASK **rt_SubRateTasks;
 #endif
 
-SEM* syncronizer;
-
 char *HostInterfaceTaskName     = "IFTASK";
 char *TargetScopeMbxID	        = "RTS";
 char *TargetALogMbxID           = "RAL";
@@ -449,11 +447,8 @@ static void *rt_BaseRate(void *args)
 	if (UseHRT) {
 		rt_make_hard_real_time();
 	}
-
-	//rt_send(rt_MainTask, 0);	
-	rt_sem_wait_barrier(syncronizer);
-
-	//rt_task_suspend(rt_BaseRateTask);
+	rt_send(rt_MainTask, 0);	
+	rt_task_suspend(rt_BaseRateTask);
 	rt_task_make_periodic(rt_BaseRateTask, rt_get_time() + rt_BaseRateTick, rt_BaseRateTick);
 
 	while (!endBaseRate) {
@@ -783,8 +778,6 @@ static int_T rt_Main(RT_MODEL * (*model_name)(void), int_T priority)
 	sem_init(&err_sem, 0, 0);
 	iopl(3);
 
-	syncronizer = rt_sem_init( nam2num("IFSEM"), 2);
-
 	rt_InitInfAndNaN(sizeof(real_T));
 	rtM = model_name();
 	if (rtM == NULL) {
@@ -904,10 +897,8 @@ static int_T rt_Main(RT_MODEL * (*model_name)(void), int_T priority)
 		}
 		rt_task_suspend(rt_MainTask);
 	}
-
-	rt_sem_wait_barrier(syncronizer);
-	//	rt_task_resume(rt_BaseRateTask);
-
+	rt_receive(0, &msg);
+	rt_task_resume(rt_BaseRateTask);
 	IsRunning = 1;
 	if (Verbose) {
 		printf("Target is running.\n");
@@ -968,8 +959,6 @@ static int_T rt_Main(RT_MODEL * (*model_name)(void), int_T priority)
 
 finish:
 	sem_destroy(&err_sem);
-
-	rt_sem_delete(syncronizer);
 	rt_task_delete(rt_MainTask);
 
 	return 0;
@@ -980,8 +969,6 @@ static void endme(int dummy)
 	signal(SIGINT, endme);
 	signal(SIGTERM, endme);
 	endex = 1;
-        endBaseRate = 1;
-	endInterface = 1;
 }
 
 struct option options[] = {

@@ -19,6 +19,9 @@ libsciblk_a_SOURCES = \
 	mbx_send_if.c \
 	getstr.c \
 	rtmain.h \
+	devices.h \
+	machine.h \
+	scicos_block.h \
 	rtai_sem_signal.c \
 	rtai_sem_wait.c \
 	olddevices.c

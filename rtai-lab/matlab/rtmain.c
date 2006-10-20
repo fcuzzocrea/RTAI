@@ -1,8 +1,8 @@
 /*
   COPYRIGHT (C) 2003  Lorenzo Dozio (dozio@aero.polimi.it)
-		      Paolo Mantegazza (mantegazza@aero.polimi.it)
-		      Roberto Bucher (roberto.bucher@supsi.ch)
-		      Daniele Gasperini (daniele.gasperini@elet.polimi.it)
+  Paolo Mantegazza (mantegazza@aero.polimi.it)
+  Roberto Bucher (roberto.bucher@supsi.ch)
+  Daniele Gasperini (daniele.gasperini@elet.polimi.it)
 
   This library is free software; you can redistribute it and/or
   modify it under the terms of the GNU Lesser General Public
@@ -45,6 +45,7 @@
 #include <rtai_netrpc.h>
 #include <rtai_msg.h>
 #include <rtai_mbx.h>
+#include <rtai_fifos.h>
 
 #define EXPAND_CONCAT(name1,name2)	name1 ## name2
 #define CONCAT(name1,name2)		EXPAND_CONCAT(name1,name2)
@@ -91,7 +92,7 @@ extern void rt_ODEUpdateContinuousStates(RTWSolverInfo *si);
 extern RT_MODEL *MODEL(void);
 static RT_MODEL *rtM;
 
-#define RTAILAB_VERSION         "3.4.4"
+#define RTAILAB_VERSION         "3.4.5"
 #define MAX_NTARGETS		1000
 #define MAX_NAMES_SIZE		256
 #define RUN_FOREVER		-1.0
@@ -108,14 +109,14 @@ static RT_MODEL *rtM;
 #define rt_HostInterfaceTaskPriority	96
 
 typedef struct rtTargetParamInfo {
-	char modelName[MAX_NAMES_SIZE];
-	char blockName[MAX_NAMES_SIZE];
-	char paramName[MAX_NAMES_SIZE];
-	unsigned int nRows;
-	unsigned int nCols;
-	unsigned int dataType;
-	unsigned int dataClass;
-	double dataValue[MAX_DATA_SIZE];
+  char modelName[MAX_NAMES_SIZE];
+  char blockName[MAX_NAMES_SIZE];
+  char paramName[MAX_NAMES_SIZE];
+  unsigned int nRows;
+  unsigned int nCols;
+  unsigned int dataType;
+  unsigned int dataClass;
+  double dataValue[MAX_DATA_SIZE];
 } rtTargetParamInfo;
 
 static sem_t err_sem;
@@ -158,6 +159,10 @@ static volatile int endSubRate    = 0;
 
 static volatile int endex;
 
+#ifdef TASKPERIOD
+static struct { double init; double end; } taskP ={0.0,0.0};
+#endif
+
 #define MAX_RTAI_SCOPES	1000
 #define MAX_RTAI_LOGS	1000
 #define MAX_RTAI_LEDS	1000
@@ -190,22 +195,22 @@ static void DummySend(void) { }
 
 static inline void strncpyz(char *dest, const char *src, size_t n)
 {
-	if (src != NULL) {
-		strncpy(dest, src, n);
-		n = strlen(src);
-	} else
-		n = 0;
+  if (src != NULL) {
+    strncpy(dest, src, n);
+    n = strlen(src);
+  } else
+    n = 0;
 		
-	dest[n] = '\0';
+  dest[n] = '\0';
 }
 
 /* This function is hacked from /usr/src/linux/include/asm-i386/system.h */
 static inline void set_double(double *to, double *from)
 {
-	unsigned long l = ((unsigned long *)from)[0];
-	unsigned long h = ((unsigned long *)from)[1];
-	__asm__ __volatile__ (
-		"1: movl (%0), %%eax; movl 4(%0), %%edx; lock; cmpxchg8b (%0); jnz 1b" : : "D"(to), "b"(l), "c"(h) : "ax", "dx", "memory");
+  unsigned long l = ((unsigned long *)from)[0];
+  unsigned long h = ((unsigned long *)from)[1];
+  __asm__ __volatile__ (
+			"1: movl (%0), %%eax; movl 4(%0), %%edx; lock; cmpxchg8b (%0); jnz 1b" : : "D"(to), "b"(l), "c"(h) : "ax", "dx", "memory");
 }
 
 #define RT_MODIFY_PARAM_VALUE_IF(rtcase, rttype) \
@@ -255,40 +260,40 @@ static inline void set_double(double *to, double *from)
 
 int_T rt_ModifyParameterValue(void *mpi, int i, int matIdx, void *_newVal)
 {
-	ModelMappingInfo *mmi;
-	ParameterTuning *ptRec;
-	void * const     *pMap;
-	uint_T nRows;
-	uint_T nCols;
-	uint_T nParams;
-	uint_T mapOffset;
-	uint_T paramIdx;
-	uint_T rowIdx;
-	uint_T colIdx;
+  ModelMappingInfo *mmi;
+  ParameterTuning *ptRec;
+  void * const     *pMap;
+  uint_T nRows;
+  uint_T nCols;
+  uint_T nParams;
+  uint_T mapOffset;
+  uint_T paramIdx;
+  uint_T rowIdx;
+  uint_T colIdx;
 
-	mmi   = (ModelMappingInfo *)mpi;
-	ptRec = (ParameterTuning*)mmiGetBlockTuningParamInfo(mmi,i);
-	pMap  = mmiGetParametersMap(mmi);
-	nRows = ptinfoGetNumRows(ptRec);
-	nCols = ptinfoGetNumCols(ptRec);
-	nParams   = ptinfoGetNumInstances(ptRec);
-	mapOffset = ptinfoGetParametersOffset(ptRec);
+  mmi   = (ModelMappingInfo *)mpi;
+  ptRec = (ParameterTuning*)mmiGetBlockTuningParamInfo(mmi,i);
+  pMap  = mmiGetParametersMap(mmi);
+  nRows = ptinfoGetNumRows(ptRec);
+  nCols = ptinfoGetNumCols(ptRec);
+  nParams   = ptinfoGetNumInstances(ptRec);
+  mapOffset = ptinfoGetParametersOffset(ptRec);
 
-	switch (ptinfoGetDataTypeEnum(ptRec)) {
-		RT_MODIFY_PARAM_VALUE_IF(SS_DOUBLE, real_T)
-		RT_MODIFY_PARAM_VALUE_IF(SS_SINGLE, real32_T)
-		RT_MODIFY_PARAM_VALUE_IF(SS_INT8, int8_T)
-		RT_MODIFY_PARAM_VALUE_IF(SS_UINT8, uint8_T)
-		RT_MODIFY_PARAM_VALUE_IF(SS_INT16, int16_T)
-		RT_MODIFY_PARAM_VALUE_IF(SS_UINT16, uint16_T)
-		RT_MODIFY_PARAM_VALUE_IF(SS_INT32, int32_T)
-		RT_MODIFY_PARAM_VALUE_IF(SS_UINT32, uint32_T)
-		RT_MODIFY_PARAM_VALUE_IF(SS_BOOLEAN, boolean_T)
-		default:
-			return(1);
-	}
+  switch (ptinfoGetDataTypeEnum(ptRec)) {
+    RT_MODIFY_PARAM_VALUE_IF(SS_DOUBLE, real_T)
+      RT_MODIFY_PARAM_VALUE_IF(SS_SINGLE, real32_T)
+      RT_MODIFY_PARAM_VALUE_IF(SS_INT8, int8_T)
+      RT_MODIFY_PARAM_VALUE_IF(SS_UINT8, uint8_T)
+      RT_MODIFY_PARAM_VALUE_IF(SS_INT16, int16_T)
+      RT_MODIFY_PARAM_VALUE_IF(SS_UINT16, uint16_T)
+      RT_MODIFY_PARAM_VALUE_IF(SS_INT32, int32_T)
+      RT_MODIFY_PARAM_VALUE_IF(SS_UINT32, uint32_T)
+      RT_MODIFY_PARAM_VALUE_IF(SS_BOOLEAN, boolean_T)
+      default:
+    return(1);
+  }
 
-	return(0);
+  return(0);
 }
 
 #define RT_GET_PARAM_INFO_IF(rtcase, rttype) \
@@ -326,823 +331,844 @@ int_T rt_ModifyParameterValue(void *mpi, int i, int matIdx, void *_newVal)
 
 int_T rt_GetParameterInfo(void *mpi, rtTargetParamInfo *rtpi, int i)
 {
-	ModelMappingInfo *mmi;
-	ParameterTuning *ptRec;
-	void * const     *pMap;
-	uint_T nRows;
-	uint_T nCols;
-	uint_T nParams;
-        uint_T mapOffset;
-	uint_T paramIdx;
-	uint_T rowIdx;
-	uint_T colIdx;
-	uint_T dataType;
-	uint_T dataClass;
+  ModelMappingInfo *mmi;
+  ParameterTuning *ptRec;
+  void * const     *pMap;
+  uint_T nRows;
+  uint_T nCols;
+  uint_T nParams;
+  uint_T mapOffset;
+  uint_T paramIdx;
+  uint_T rowIdx;
+  uint_T colIdx;
+  uint_T dataType;
+  uint_T dataClass;
 
-	mmi   = (ModelMappingInfo *)mpi;
+  mmi   = (ModelMappingInfo *)mpi;
 	
-	ptRec = (ParameterTuning*)mmiGetBlockTuningParamInfo(mmi,i);
-	pMap  = mmiGetParametersMap(mmi);
-	nRows = ptinfoGetNumRows(ptRec);
-	nCols = ptinfoGetNumCols(ptRec);
-	nParams   = ptinfoGetNumInstances(ptRec);
-	mapOffset = ptinfoGetParametersOffset(ptRec);
-	dataType  = ptinfoGetDataTypeEnum(ptRec);
-	dataClass = ptinfoGetClass(ptRec);
+  ptRec = (ParameterTuning*)mmiGetBlockTuningParamInfo(mmi,i);
+  pMap  = mmiGetParametersMap(mmi);
+  nRows = ptinfoGetNumRows(ptRec);
+  nCols = ptinfoGetNumCols(ptRec);
+  nParams   = ptinfoGetNumInstances(ptRec);
+  mapOffset = ptinfoGetParametersOffset(ptRec);
+  dataType  = ptinfoGetDataTypeEnum(ptRec);
+  dataClass = ptinfoGetClass(ptRec);
 
- 	strncpyz(rtpi->modelName, STR(MODEL), MAX_NAMES_SIZE);
-	strncpyz(rtpi->blockName, mmiGetBlockTuningBlockName(mmi,i), MAX_NAMES_SIZE);
-	strncpyz(rtpi->paramName, mmiGetBlockTuningParamName(mmi,i), MAX_NAMES_SIZE);
-	rtpi->dataType  = dataType;
-	rtpi->dataClass = dataClass;
-	rtpi->nRows = nRows;
-	rtpi->nCols = nCols;
+  strncpyz(rtpi->modelName, STR(MODEL), MAX_NAMES_SIZE);
+  strncpyz(rtpi->blockName, mmiGetBlockTuningBlockName(mmi,i), MAX_NAMES_SIZE);
+  strncpyz(rtpi->paramName, mmiGetBlockTuningParamName(mmi,i), MAX_NAMES_SIZE);
+  rtpi->dataType  = dataType;
+  rtpi->dataClass = dataClass;
+  rtpi->nRows = nRows;
+  rtpi->nCols = nCols;
 
-	switch (ptinfoGetDataTypeEnum(ptRec)) {
-		RT_GET_PARAM_INFO_IF(SS_DOUBLE, real_T)
-		RT_GET_PARAM_INFO_IF(SS_SINGLE, real32_T)
-		RT_GET_PARAM_INFO_IF(SS_INT8, int8_T)
-		RT_GET_PARAM_INFO_IF(SS_UINT8, uint8_T)
-		RT_GET_PARAM_INFO_IF(SS_INT16, int16_T)
-		RT_GET_PARAM_INFO_IF(SS_UINT16, uint16_T)
-		RT_GET_PARAM_INFO_IF(SS_INT32, int32_T)
-		RT_GET_PARAM_INFO_IF(SS_UINT32, uint32_T)
-		RT_GET_PARAM_INFO_IF(SS_BOOLEAN, boolean_T)
-		default:
-			return(1);
-	}
+  switch (ptinfoGetDataTypeEnum(ptRec)) {
+    RT_GET_PARAM_INFO_IF(SS_DOUBLE, real_T)
+      RT_GET_PARAM_INFO_IF(SS_SINGLE, real32_T)
+      RT_GET_PARAM_INFO_IF(SS_INT8, int8_T)
+      RT_GET_PARAM_INFO_IF(SS_UINT8, uint8_T)
+      RT_GET_PARAM_INFO_IF(SS_INT16, int16_T)
+      RT_GET_PARAM_INFO_IF(SS_UINT16, uint16_T)
+      RT_GET_PARAM_INFO_IF(SS_INT32, int32_T)
+      RT_GET_PARAM_INFO_IF(SS_UINT32, uint32_T)
+      RT_GET_PARAM_INFO_IF(SS_BOOLEAN, boolean_T)
+      default:
+    return(1);
+  }
 
-	return(0);
+  return(0);
 }
 
 #ifdef MULTITASKING
 static void *rt_SubRate(int *arg)
 {
-	int sample, i;
-	char myname[7];
-	int rt_SubRateTaskPriority;
+  int sample, i;
+  char myname[7];
+  int rt_SubRateTaskPriority;
 
-	sample = arg[0];
-	rt_SubRateTaskPriority = arg[1];
+  sample = arg[0];
+  rt_SubRateTaskPriority = arg[1];
 
-	rt_allow_nonroot_hrt();
-	for (i = 0; i < MAX_NTARGETS; i++) {
-		sprintf(myname, "TSR%d", i);
-		if (!rt_get_adr(nam2num(myname))) break;
-	}
-	if (!(rt_SubRateTasks[sample] = rt_task_init_schmod(nam2num(myname), rt_SubRateTaskPriority, 0, 0, SCHED_FIFO, CpuMap))) {
-		printf("Cannot init rt_SubRateTask #%d\n", sample);
-		return (void *)1;
-	}
-//	sem_post(&err_sem);
+  rt_allow_nonroot_hrt();
+  for (i = 0; i < MAX_NTARGETS; i++) {
+    sprintf(myname, "TSR%d", i);
+    if (!rt_get_adr(nam2num(myname))) break;
+  }
+  if (!(rt_SubRateTasks[sample] = rt_task_init_schmod(nam2num(myname), rt_SubRateTaskPriority, 0, 0, SCHED_FIFO, CpuMap))) {
+    printf("Cannot init rt_SubRateTask #%d\n", sample);
+    return (void *)1;
+  }
+  //	sem_post(&err_sem);
 
-	iopl(3);
-	rt_task_use_fpu(rt_SubRateTasks[sample], 1);
-	rt_grow_and_lock_stack(StackInc);
+  iopl(3);
+  rt_task_use_fpu(rt_SubRateTasks[sample], 1);
+  rt_grow_and_lock_stack(StackInc);
 
-	if (UseHRT) {
-		rt_make_hard_real_time();
-	}
-	while (!endSubRate) {
-		rt_task_suspend(rt_SubRateTasks[sample]);
-		if (endSubRate) break;
-		OUTPUTS(rtM, sample);
-		UPDATED(rtM, sample);
-		rt_SimUpdateDiscreteTaskTime(rtmGetTPtr(rtM), rtmGetTimingData(rtM), sample);
-	}
-	if (UseHRT) {
-		rt_make_soft_real_time();
-	}
+  if (UseHRT) {
+    rt_make_hard_real_time();
+  }
+  while (!endSubRate) {
+    rt_task_suspend(rt_SubRateTasks[sample]);
+    if (endSubRate) break;
+    OUTPUTS(rtM, sample);
+    UPDATED(rtM, sample);
+    rt_SimUpdateDiscreteTaskTime(rtmGetTPtr(rtM), rtmGetTimingData(rtM), sample);
+  }
+  if (UseHRT) {
+    rt_make_soft_real_time();
+  }
 
-	rt_task_delete(rt_SubRateTasks[sample]);
-	return (void *)(rt_SubRateTasks[sample] = 0);
+  rt_task_delete(rt_SubRateTasks[sample]);
+  return (void *)(rt_SubRateTasks[sample] = 0);
 }
 #endif
 
 static void *rt_BaseRate(void *args)
 {
-	real_T tnext;
-	char myname[7];
-	int i;
+  real_T tnext;
+  char myname[7];
+  int i;
 #ifdef MULTITASKING
-	int_T  sample, *sampleHit = rtmGetSampleHitPtr(rtM);
+  int_T  sample, *sampleHit = rtmGetSampleHitPtr(rtM);
 #endif
-	int rt_BaseRateTaskPriority = *((int *)args);
 
-	rt_allow_nonroot_hrt();
-	for (i = 0; i < MAX_NTARGETS; i++) {
-		sprintf(myname, "TBR%d", i);
-		if (!rt_get_adr(nam2num(myname))) break;
-	}
-	if (!(rt_BaseRateTask = rt_task_init_schmod(nam2num(myname), rt_BaseRateTaskPriority, 0, 0, SCHED_FIFO, CpuMap))) {
-		printf("Cannot init rt_BaseRateTask\n");
-		return (void *)1;
-	}
-	sem_post(&err_sem);
+#ifdef TASKPERIOD
+  static RTIME t0;
+#endif
 
-	iopl(3);
-	rt_task_use_fpu(rt_BaseRateTask, 1);
-	rt_grow_and_lock_stack(StackInc);
+  int rt_BaseRateTaskPriority = *((int *)args);
 
-	if (UseHRT) {
-		rt_make_hard_real_time();
-	}
-	rt_send(rt_MainTask, 0);	
-	rt_task_suspend(rt_BaseRateTask);
-	rt_task_make_periodic(rt_BaseRateTask, rt_get_time() + rt_BaseRateTick, rt_BaseRateTick);
+  rt_allow_nonroot_hrt();
+  for (i = 0; i < MAX_NTARGETS; i++) {
+    sprintf(myname, "TBR%d", i);
+    if (!rt_get_adr(nam2num(myname))) break;
+  }
+  if (!(rt_BaseRateTask = rt_task_init_schmod(nam2num(myname), rt_BaseRateTaskPriority, 0, 0, SCHED_FIFO, CpuMap))) {
+    printf("Cannot init rt_BaseRateTask\n");
+    return (void *)1;
+  }
+  sem_post(&err_sem);
 
-	while (!endBaseRate) {
-		WaitTimingEvent(TimingEventArg);
-		if (endBaseRate) break;
+  iopl(3);
+  rt_task_use_fpu(rt_BaseRateTask, 1);
+#ifdef TASKPERIOD
+  t0 = rt_get_cpu_time_ns();
+  rtf_create(TASKPERIOD,2000);
+  rtf_reset(TASKPERIOD);
+#endif
+  rt_grow_and_lock_stack(StackInc);
+  if (UseHRT) {
+    rt_make_hard_real_time();
+  }
+  rt_send(rt_MainTask, 0);	
+  rt_task_suspend(rt_BaseRateTask);
+  rt_task_make_periodic(rt_BaseRateTask, rt_get_time() + rt_BaseRateTick, rt_BaseRateTick);
+
+  while (!endBaseRate) {
+#ifdef TASKPERIOD
+    taskP.end=(rt_get_cpu_time_ns() - t0)*1.0E-9;
+    rtf_put(TASKPERIOD,&taskP, sizeof(taskP));
+#endif
+    WaitTimingEvent(TimingEventArg);
+    if (endBaseRate) break;
+
+#ifdef TASKPERIOD
+    taskP.init=(rt_get_cpu_time_ns() - t0)*1.0E-9;
+#endif
+
 #ifdef MULTITASKING
-		tnext = rt_SimUpdateDiscreteEvents(rtmGetNumSampleTimes(rtM), rtmGetTimingData(rtM), rtmGetSampleHitPtr(rtM), rtmGetPerTaskSampleHitsPtr(rtM));
-		rtsiSetSolverStopTime(rtmGetRTWSolverInfo(rtM), tnext);
-		for (sample = FIRST_TID + 1; sample < NUMST; sample++) {
-			if (sampleHit[sample]) {
-				rt_task_resume(rt_SubRateTasks[sample]);
-			}
-		}
-		OUTPUTS(rtM, FIRST_TID);
-		UPDATED(rtM, FIRST_TID);
-		if (rtmGetSampleTime(rtM, 0) == CONTINUOUS_SAMPLE_TIME) {
-			rt_ODEUpdateContinuousStates(rtmGetRTWSolverInfo(rtM));
-		} else {
-			rt_SimUpdateDiscreteTaskTime(rtmGetTPtr(rtM), rtmGetTimingData(rtM), 0);
-		}
+    tnext = rt_SimUpdateDiscreteEvents(rtmGetNumSampleTimes(rtM), rtmGetTimingData(rtM), rtmGetSampleHitPtr(rtM), rtmGetPerTaskSampleHitsPtr(rtM));
+    rtsiSetSolverStopTime(rtmGetRTWSolverInfo(rtM), tnext);
+    for (sample = FIRST_TID + 1; sample < NUMST; sample++) {
+      if (sampleHit[sample]) {
+	rt_task_resume(rt_SubRateTasks[sample]);
+      }
+    }
+    OUTPUTS(rtM, FIRST_TID);
+    UPDATED(rtM, FIRST_TID);
+    if (rtmGetSampleTime(rtM, 0) == CONTINUOUS_SAMPLE_TIME) {
+      rt_ODEUpdateContinuousStates(rtmGetRTWSolverInfo(rtM));
+    } else {
+      rt_SimUpdateDiscreteTaskTime(rtmGetTPtr(rtM), rtmGetTimingData(rtM), 0);
+    }
 #if FIRST_TID == 1
-		rt_SimUpdateDiscreteTaskTime(rtmGetTPtr(rtM), rtmGetTimingData(rtM), 1);
+    rt_SimUpdateDiscreteTaskTime(rtmGetTPtr(rtM), rtmGetTimingData(rtM), 1);
 #endif
 #else
-		tnext = rt_SimGetNextSampleHit();
-		rtsiSetSolverStopTime(rtmGetRTWSolverInfo(rtM), tnext);
-		OUTPUTS(rtM, 0);
-		UPDATED(rtM, 0);
-	        rt_SimUpdateDiscreteTaskSampleHits(rtmGetNumSampleTimes(rtM), rtmGetTimingData(rtM), rtmGetSampleHitPtr(rtM), rtmGetTPtr(rtM));
-		if (rtmGetSampleTime(rtM,0) == CONTINUOUS_SAMPLE_TIME) {
-			rt_ODEUpdateContinuousStates(rtmGetRTWSolverInfo(rtM));
-		}
+    tnext = rt_SimGetNextSampleHit();
+    rtsiSetSolverStopTime(rtmGetRTWSolverInfo(rtM), tnext);
+    OUTPUTS(rtM, 0);
+    UPDATED(rtM, 0);
+    rt_SimUpdateDiscreteTaskSampleHits(rtmGetNumSampleTimes(rtM), rtmGetTimingData(rtM), rtmGetSampleHitPtr(rtM), rtmGetTPtr(rtM));
+    if (rtmGetSampleTime(rtM,0) == CONTINUOUS_SAMPLE_TIME) {
+      rt_ODEUpdateContinuousStates(rtmGetRTWSolverInfo(rtM));
+    }
 #endif
-	}
+  }
 
-	if (UseHRT) {
-		rt_make_soft_real_time();
-	}
-	rt_task_delete(rt_BaseRateTask);
-	return 0;
+  if (UseHRT) {
+    rt_make_soft_real_time();
+  }
+#ifdef TASKPERIOD
+  rtf_destroy(TASKPERIOD);
+#endif
+  rt_task_delete(rt_BaseRateTask);
+  return 0;
 }
 
 static void *rt_HostInterface(void *args)
 {
-	RT_TASK *task;
-	unsigned int IRequest;
-	char Request;
-	int len;
+  RT_TASK *task;
+  unsigned int IRequest;
+  char Request;
+  int len;
 
-	rt_allow_nonroot_hrt();
-	if (!(rt_HostInterfaceTask = rt_task_init_schmod(nam2num(HostInterfaceTaskName), rt_HostInterfaceTaskPriority, 0, 0, SCHED_FIFO, 0xFF))) {
-		printf("Cannot init rt_HostInterfaceTask\n");
-		return (void *)1;
-	}
-	sem_post(&err_sem);
+  rt_allow_nonroot_hrt();
+  if (!(rt_HostInterfaceTask = rt_task_init_schmod(nam2num(HostInterfaceTaskName), rt_HostInterfaceTaskPriority, 0, 0, SCHED_FIFO, 0xFF))) {
+    printf("Cannot init rt_HostInterfaceTask\n");
+    return (void *)1;
+  }
+  sem_post(&err_sem);
 
-	while (!endInterface) {
-		task = rt_receive(0, &IRequest);
-		Request = (char)(IRequest);
+  while (!endInterface) {
+    task = rt_receive(0, &IRequest);
+    Request = (char)(IRequest);
 		
-		if (endInterface) break;
+    if (endInterface) break;
 
-		switch (Request) {
+    switch (Request) {
 
-			case 'c': {
-					ModelMappingInfo *MMI;
-					uint_T nBlockParams;
-					{ int Reply;
-					  MMI = (ModelMappingInfo *)rtmGetModelMappingInfo(rtM);
-					  nBlockParams = mmiGetNumBlockParams(MMI);
-					  Reply = (IsRunning << 16) | (nBlockParams & 0xffff); /* max 2^16-1 blocks */
-					  rt_return(task, Reply);
-					}
-					{ int i;
-					  rtTargetParamInfo rtParameters;
-					  rt_receivex(task, &rtParameters, sizeof(char), &len);
-					  rt_GetParameterInfo(MMI, &rtParameters, 0);
-					  rt_returnx(task, &rtParameters, sizeof(rtParameters));
+    case 'c': {
+      ModelMappingInfo *MMI;
+      uint_T nBlockParams;
+      { int Reply;
+      MMI = (ModelMappingInfo *)rtmGetModelMappingInfo(rtM);
+      nBlockParams = mmiGetNumBlockParams(MMI);
+      Reply = (IsRunning << 16) | (nBlockParams & 0xffff); /* max 2^16-1 blocks */
+      rt_return(task, Reply);
+      }
+      { int i;
+      rtTargetParamInfo rtParameters;
+      rt_receivex(task, &rtParameters, sizeof(char), &len);
+      rt_GetParameterInfo(MMI, &rtParameters, 0);
+      rt_returnx(task, &rtParameters, sizeof(rtParameters));
 					  
-					  for (i = 0; i < nBlockParams; i++) {
-						rt_receivex(task, &rtParameters, sizeof(char), &len);
-						rt_GetParameterInfo(MMI, &rtParameters, i);
-						rt_returnx(task, &rtParameters, sizeof(rtParameters));
-					  } 
-					}
-					{ int scopeIdx, Reply;
-					  float samplingTime;
-					  int ntraces;
-					  while (1) {
-						rt_receivex(task, &scopeIdx, sizeof(int), &len);
-						if (scopeIdx < 0) {
-							Reply = scopeIdx;
-							rt_returnx(task, &Reply, sizeof(int));
-							break;
-						} else {
-							ntraces = ssGetNumInputPorts(rtaiScope[scopeIdx]);
-							rt_returnx(task, &ntraces, sizeof(int));
-							rt_receivex(task, &scopeIdx, sizeof(int), &len);
-							rt_returnx(task, (char *)ssGetModelName(rtaiScope[scopeIdx]), MAX_NAMES_SIZE*sizeof(char));
-							rt_receivex(task, &scopeIdx, sizeof(int), &len);
-							samplingTime = ssGetSampleTime(rtaiScope[scopeIdx],0);
-							rt_returnx(task, &samplingTime, sizeof(float));
-						}
-					  }
-					}
-					{ int logIdx, Reply;
-					  float samplingTime;
-					  int nrow, ncol, *dim;
-					  while (1) {
-						rt_receivex(task, &logIdx, sizeof(int), &len);
-						if (logIdx < 0) {
-							Reply = logIdx;
-							rt_returnx(task, &Reply, sizeof(int));
-							break;
-						} else {
-							dim = ssGetInputPortDimensions(rtaiLog[logIdx],0);
-							nrow = dim[0];
-							ncol = dim[1];
-							rt_returnx(task, &nrow, sizeof(int));
-							rt_receivex(task, &logIdx, sizeof(int), &len);
-							rt_returnx(task, &ncol, sizeof(int));
-							rt_receivex(task, &logIdx, sizeof(int), &len);
-							rt_returnx(task, (char *)ssGetModelName(rtaiLog[logIdx]), MAX_NAMES_SIZE*sizeof(char));
-							rt_receivex(task, &logIdx, sizeof(int), &len);
-							samplingTime = ssGetSampleTime(rtaiLog[logIdx],0);
-							rt_returnx(task, &samplingTime, sizeof(float));
-						}
-					  }
-					}
-					{ int alogIdx, Reply;  /* section added to support automatic log block  taken from log code */
-					  float samplingTime;
-					  int nrow, ncol, *dim;
-					  while (1) {
-						rt_receivex(task, &alogIdx, sizeof(int), &len);
-						if (alogIdx < 0) {
-							Reply = alogIdx;
-							rt_returnx(task, &Reply, sizeof(int));
-							break;
-						} else {
-							dim = ssGetInputPortDimensions(rtaiALog[alogIdx],0);
-							nrow = dim[0];
-							ncol = dim[1];
-							rt_returnx(task, &nrow, sizeof(int));
-							rt_receivex(task, &alogIdx, sizeof(int), &len);
-							rt_returnx(task, &ncol, sizeof(int));
-							rt_receivex(task, &alogIdx, sizeof(int), &len);
-							rt_returnx(task, (char *)ssGetModelName(rtaiALog[alogIdx]), MAX_NAMES_SIZE*sizeof(char));
-							rt_receivex(task, &alogIdx, sizeof(int), &len);
-							samplingTime = ssGetSampleTime(rtaiALog[alogIdx],0);
-							rt_returnx(task, &samplingTime, sizeof(float));
-						}
-					  }
-					}
-					{ int ledIdx, Reply;
-					  float samplingTime;
-					  int n_leds;
-					  while (1) {
-						rt_receivex(task, &ledIdx, sizeof(int), &len);
-						if (ledIdx < 0) {
-							Reply = ledIdx;
-							rt_returnx(task, &Reply, sizeof(int));
-							break;
-						} else {
-							n_leds = ssGetNumInputPorts(rtaiLed[ledIdx]);
-							rt_returnx(task, &n_leds, sizeof(int));
-							rt_receivex(task, &ledIdx, sizeof(int), &len);
-							rt_returnx(task, (char *)ssGetModelName(rtaiLed[ledIdx]), MAX_NAMES_SIZE*sizeof(char));
-							rt_receivex(task, &ledIdx, sizeof(int), &len);
-							samplingTime = ssGetSampleTime(rtaiLed[ledIdx],0);
-							rt_returnx(task, &samplingTime, sizeof(float));
-						}
-					  }
-					}
-					{ int meterIdx, Reply;
-					  float samplingTime;
-					  while (1) {
-						rt_receivex(task, &meterIdx, sizeof(int), &len);
-						if (meterIdx < 0) {
-							Reply = meterIdx;
-							rt_returnx(task, &Reply, sizeof(int));
-							break;
-						} else {
-							rt_returnx(task, (char *)ssGetModelName(rtaiMeter[meterIdx]), MAX_NAMES_SIZE*sizeof(char));
-							rt_receivex(task, &meterIdx, sizeof(int), &len);
-							samplingTime = ssGetSampleTime(rtaiMeter[meterIdx],0);
-							rt_returnx(task, &samplingTime, sizeof(float));
-						}
-					  }
-					}
-					{ int synchIdx, Reply;
-					  float samplingTime;
-					  while (1) {
-						rt_receivex(task, &synchIdx, sizeof(int), &len);
-						if (synchIdx < 0) {
-							Reply = synchIdx;
-							rt_returnx(task, &Reply, sizeof(int));
-							break;
-						} else {
-							rt_returnx(task, (char *)ssGetModelName(rtaiSynchronoscope[synchIdx]), MAX_NAMES_SIZE*sizeof(char));
-							rt_receivex(task, &synchIdx, sizeof(int), &len);
-							samplingTime = ssGetSampleTime(rtaiSynchronoscope[synchIdx],0);
-							rt_returnx(task, &samplingTime, sizeof(float));
-						}
-					  }
-					}
-					break;
-			}
-
-			case 's': { int Reply = 1;
-
-				    rt_task_resume(rt_MainTask);
-				    rt_return(task, Reply);
-				    break;
-				  }
-
-			case 't': { int Reply = 0;
-
-				    rt_return(task, Reply);
-				    endex = 1;
-				    break;
-				  }
-
-			case 'p': { ModelMappingInfo *MMI;
-				    int index;
-				    int Reply;
-				    int matIdx;
-				    double newv;
-
-				    rt_return(task, IsRunning);
-				    Reply = 0;
-				    rt_receivex(task, &index, sizeof(int), &len);
-				    rt_returnx(task, &Reply, sizeof(int));
-				    Reply = 1;
-				    MMI = (ModelMappingInfo *)rtmGetModelMappingInfo(rtM);
-				    rt_receivex(task, &newv, sizeof(double), &len);
-				    rt_returnx(task, &Reply, sizeof(int));
-				    rt_receivex(task, &matIdx, sizeof(int), &len);
-				    rt_ModifyParameterValue(MMI, index, matIdx, &newv);
-				    rt_returnx(task, &Reply, sizeof(int));
-				    break;			
-				  }
-
-			case 'g': { int i;
-				    uint_T nBlockParams;
-				    rtTargetParamInfo rtParameters;
-				    ModelMappingInfo *MMI;
-
-				    rt_return(task, IsRunning);
-				    MMI = (ModelMappingInfo *)rtmGetModelMappingInfo(rtM);
-				    nBlockParams = mmiGetNumBlockParams(MMI);
-				    for (i = 0; i < nBlockParams; i++) {
-					rt_receivex(task, &rtParameters, sizeof(char), &len);
-					rt_GetParameterInfo(MMI, &rtParameters, i);
-					rt_returnx(task, &rtParameters, sizeof(rtParameters));
-				    } 
-				    break;			
-				  }
-
-                        case 'd': { int ParamCnt;
-				    int Reply;
-
-				    rt_return(task, IsRunning);
-				    Reply = 0;
-				    rt_receivex(task, &ParamCnt, sizeof(int), &len);
-				    rt_returnx(task, &Reply, sizeof(int));
-
-                               	    { int i;
-				      ModelMappingInfo *MMI;
-                                      struct {
-				      	int index;
-					int mat_index;
-                                        double value;
-                                      } BatchParams[ParamCnt];
-
-				      Reply = 1;
-				      MMI = (ModelMappingInfo *)rtmGetModelMappingInfo(rtM);
-       	                              rt_receivex(task, &BatchParams, sizeof(BatchParams), &len);
-				      for (i = 0; i < ParamCnt; i++) {
-						rt_ModifyParameterValue(MMI, BatchParams[i].index, BatchParams[i].mat_index, &BatchParams[i].value);
-                                      }
-                               	    }
-                                    rt_returnx(task, &ParamCnt, sizeof(int));
-			            break;
-                        	  }
-
-			case 'm': { float ttime = (float)rtmGetT(rtM);
-				    int Reply;
-
-				    rt_return(task, IsRunning);
-				    rt_receivex(task, &Reply, sizeof(int), &len);
-				    rt_returnx(task, &ttime, sizeof(float));
-				  }
-
-			default:
-				break;
-		}
-
+      for (i = 0; i < nBlockParams; i++) {
+	rt_receivex(task, &rtParameters, sizeof(char), &len);
+	rt_GetParameterInfo(MMI, &rtParameters, i);
+	rt_returnx(task, &rtParameters, sizeof(rtParameters));
+      } 
+      }
+      { int scopeIdx, Reply;
+      float samplingTime;
+      int ntraces;
+      while (1) {
+	rt_receivex(task, &scopeIdx, sizeof(int), &len);
+	if (scopeIdx < 0) {
+	  Reply = scopeIdx;
+	  rt_returnx(task, &Reply, sizeof(int));
+	  break;
+	} else {
+	  ntraces = ssGetNumInputPorts(rtaiScope[scopeIdx]);
+	  rt_returnx(task, &ntraces, sizeof(int));
+	  rt_receivex(task, &scopeIdx, sizeof(int), &len);
+	  rt_returnx(task, (char *)ssGetModelName(rtaiScope[scopeIdx]), MAX_NAMES_SIZE*sizeof(char));
+	  rt_receivex(task, &scopeIdx, sizeof(int), &len);
+	  samplingTime = ssGetSampleTime(rtaiScope[scopeIdx],0);
+	  rt_returnx(task, &samplingTime, sizeof(float));
 	}
+      }
+      }
+      { int logIdx, Reply;
+      float samplingTime;
+      int nrow, ncol, *dim;
+      while (1) {
+	rt_receivex(task, &logIdx, sizeof(int), &len);
+	if (logIdx < 0) {
+	  Reply = logIdx;
+	  rt_returnx(task, &Reply, sizeof(int));
+	  break;
+	} else {
+	  dim = ssGetInputPortDimensions(rtaiLog[logIdx],0);
+	  nrow = dim[0];
+	  ncol = dim[1];
+	  rt_returnx(task, &nrow, sizeof(int));
+	  rt_receivex(task, &logIdx, sizeof(int), &len);
+	  rt_returnx(task, &ncol, sizeof(int));
+	  rt_receivex(task, &logIdx, sizeof(int), &len);
+	  rt_returnx(task, (char *)ssGetModelName(rtaiLog[logIdx]), MAX_NAMES_SIZE*sizeof(char));
+	  rt_receivex(task, &logIdx, sizeof(int), &len);
+	  samplingTime = ssGetSampleTime(rtaiLog[logIdx],0);
+	  rt_returnx(task, &samplingTime, sizeof(float));
+	}
+      }
+      }
+      { int alogIdx, Reply;  /* section added to support automatic log block  taken from log code */
+      float samplingTime;
+      int nrow, ncol, *dim;
+      while (1) {
+	rt_receivex(task, &alogIdx, sizeof(int), &len);
+	if (alogIdx < 0) {
+	  Reply = alogIdx;
+	  rt_returnx(task, &Reply, sizeof(int));
+	  break;
+	} else {
+	  dim = ssGetInputPortDimensions(rtaiALog[alogIdx],0);
+	  nrow = dim[0];
+	  ncol = dim[1];
+	  rt_returnx(task, &nrow, sizeof(int));
+	  rt_receivex(task, &alogIdx, sizeof(int), &len);
+	  rt_returnx(task, &ncol, sizeof(int));
+	  rt_receivex(task, &alogIdx, sizeof(int), &len);
+	  rt_returnx(task, (char *)ssGetModelName(rtaiALog[alogIdx]), MAX_NAMES_SIZE*sizeof(char));
+	  rt_receivex(task, &alogIdx, sizeof(int), &len);
+	  samplingTime = ssGetSampleTime(rtaiALog[alogIdx],0);
+	  rt_returnx(task, &samplingTime, sizeof(float));
+	}
+      }
+      }
+      { int ledIdx, Reply;
+      float samplingTime;
+      int n_leds;
+      while (1) {
+	rt_receivex(task, &ledIdx, sizeof(int), &len);
+	if (ledIdx < 0) {
+	  Reply = ledIdx;
+	  rt_returnx(task, &Reply, sizeof(int));
+	  break;
+	} else {
+	  n_leds = ssGetNumInputPorts(rtaiLed[ledIdx]);
+	  rt_returnx(task, &n_leds, sizeof(int));
+	  rt_receivex(task, &ledIdx, sizeof(int), &len);
+	  rt_returnx(task, (char *)ssGetModelName(rtaiLed[ledIdx]), MAX_NAMES_SIZE*sizeof(char));
+	  rt_receivex(task, &ledIdx, sizeof(int), &len);
+	  samplingTime = ssGetSampleTime(rtaiLed[ledIdx],0);
+	  rt_returnx(task, &samplingTime, sizeof(float));
+	}
+      }
+      }
+      { int meterIdx, Reply;
+      float samplingTime;
+      while (1) {
+	rt_receivex(task, &meterIdx, sizeof(int), &len);
+	if (meterIdx < 0) {
+	  Reply = meterIdx;
+	  rt_returnx(task, &Reply, sizeof(int));
+	  break;
+	} else {
+	  rt_returnx(task, (char *)ssGetModelName(rtaiMeter[meterIdx]), MAX_NAMES_SIZE*sizeof(char));
+	  rt_receivex(task, &meterIdx, sizeof(int), &len);
+	  samplingTime = ssGetSampleTime(rtaiMeter[meterIdx],0);
+	  rt_returnx(task, &samplingTime, sizeof(float));
+	}
+      }
+      }
+      { int synchIdx, Reply;
+      float samplingTime;
+      while (1) {
+	rt_receivex(task, &synchIdx, sizeof(int), &len);
+	if (synchIdx < 0) {
+	  Reply = synchIdx;
+	  rt_returnx(task, &Reply, sizeof(int));
+	  break;
+	} else {
+	  rt_returnx(task, (char *)ssGetModelName(rtaiSynchronoscope[synchIdx]), MAX_NAMES_SIZE*sizeof(char));
+	  rt_receivex(task, &synchIdx, sizeof(int), &len);
+	  samplingTime = ssGetSampleTime(rtaiSynchronoscope[synchIdx],0);
+	  rt_returnx(task, &samplingTime, sizeof(float));
+	}
+      }
+      }
+      break;
+    }
 
-	rt_task_delete(rt_HostInterfaceTask);
+    case 's': { int Reply = 1;
 
-	return 0;
+    rt_task_resume(rt_MainTask);
+    rt_return(task, Reply);
+    break;
+    }
+
+    case 't': { int Reply = 0;
+
+    rt_return(task, Reply);
+    endex = 1;
+    break;
+    }
+
+    case 'p': { ModelMappingInfo *MMI;
+    int index;
+    int Reply;
+    int matIdx;
+    double newv;
+
+    rt_return(task, IsRunning);
+    Reply = 0;
+    rt_receivex(task, &index, sizeof(int), &len);
+    rt_returnx(task, &Reply, sizeof(int));
+    Reply = 1;
+    MMI = (ModelMappingInfo *)rtmGetModelMappingInfo(rtM);
+    rt_receivex(task, &newv, sizeof(double), &len);
+    rt_returnx(task, &Reply, sizeof(int));
+    rt_receivex(task, &matIdx, sizeof(int), &len);
+    rt_ModifyParameterValue(MMI, index, matIdx, &newv);
+    rt_returnx(task, &Reply, sizeof(int));
+    break;			
+    }
+
+    case 'g': { int i;
+    uint_T nBlockParams;
+    rtTargetParamInfo rtParameters;
+    ModelMappingInfo *MMI;
+
+    rt_return(task, IsRunning);
+    MMI = (ModelMappingInfo *)rtmGetModelMappingInfo(rtM);
+    nBlockParams = mmiGetNumBlockParams(MMI);
+    for (i = 0; i < nBlockParams; i++) {
+      rt_receivex(task, &rtParameters, sizeof(char), &len);
+      rt_GetParameterInfo(MMI, &rtParameters, i);
+      rt_returnx(task, &rtParameters, sizeof(rtParameters));
+    } 
+    break;			
+    }
+
+    case 'd': { int ParamCnt;
+    int Reply;
+
+    rt_return(task, IsRunning);
+    Reply = 0;
+    rt_receivex(task, &ParamCnt, sizeof(int), &len);
+    rt_returnx(task, &Reply, sizeof(int));
+
+    { int i;
+    ModelMappingInfo *MMI;
+    struct {
+      int index;
+      int mat_index;
+      double value;
+    } BatchParams[ParamCnt];
+
+    Reply = 1;
+    MMI = (ModelMappingInfo *)rtmGetModelMappingInfo(rtM);
+    rt_receivex(task, &BatchParams, sizeof(BatchParams), &len);
+    for (i = 0; i < ParamCnt; i++) {
+      rt_ModifyParameterValue(MMI, BatchParams[i].index, BatchParams[i].mat_index, &BatchParams[i].value);
+    }
+    }
+    rt_returnx(task, &ParamCnt, sizeof(int));
+    break;
+    }
+
+    case 'm': { float ttime = (float)rtmGetT(rtM);
+    int Reply;
+
+    rt_return(task, IsRunning);
+    rt_receivex(task, &Reply, sizeof(int), &len);
+    rt_returnx(task, &ttime, sizeof(float));
+    }
+
+    default:
+      break;
+    }
+
+  }
+
+  rt_task_delete(rt_HostInterfaceTask);
+
+  return 0;
 }
 
 static int_T rt_Main(RT_MODEL * (*model_name)(void), int_T priority)
 {
-	const char *status;
-	unsigned int rt_BaseTaskPeriod;
-	struct timespec rt_MainTaskPollPeriod = { 0, POLL_PERIOD };
-	struct timespec err_timeout;
-	int msg, i;
-	char myname[7];
-	SEM *hard_timers_cnt = NULL;
+  const char *status;
+  unsigned int rt_BaseTaskPeriod;
+  struct timespec rt_MainTaskPollPeriod = { 0, POLL_PERIOD };
+  struct timespec err_timeout;
+  int msg, i;
+  char myname[7];
+  SEM *hard_timers_cnt = NULL;
 #ifdef MULTITASKING
-	int sample;
+  int sample;
 #endif
 
-	rt_allow_nonroot_hrt();
-	for (i = 0; i < MAX_NTARGETS; i++) {
-		sprintf(myname, "TMN%d", i);
-		if (!rt_get_adr(nam2num(myname))) break;
-	}
-	if (!(rt_MainTask = rt_task_init_schmod(nam2num(myname), rt_MainTaskPriority, 0, 0, SCHED_FIFO, 0xFF))) {
-		fprintf(stderr, "Cannot init rt_MainTask\n");
-		return 1;
-	}
-	sem_init(&err_sem, 0, 0);
-	iopl(3);
+  rt_allow_nonroot_hrt();
+  for (i = 0; i < MAX_NTARGETS; i++) {
+    sprintf(myname, "TMN%d", i);
+    if (!rt_get_adr(nam2num(myname))) break;
+  }
+  if (!(rt_MainTask = rt_task_init_schmod(nam2num(myname), rt_MainTaskPriority, 0, 0, SCHED_FIFO, 0xFF))) {
+    fprintf(stderr, "Cannot init rt_MainTask\n");
+    return 1;
+  }
+  sem_init(&err_sem, 0, 0);
+  iopl(3);
 
-	rt_InitInfAndNaN(sizeof(real_T));
-	rtM = model_name();
-	if (rtM == NULL) {
-		fprintf(stderr, "Memory allocation error during target registration.\n");
-		goto finish;
-	}
-	if (rtmGetErrorStatus(rtM) != NULL) {
-		fprintf(stderr, "Error during target registration: %s.\n", rtmGetErrorStatus(rtM));
-		goto finish;
-	}
+  rt_InitInfAndNaN(sizeof(real_T));
+  rtM = model_name();
+  if (rtM == NULL) {
+    fprintf(stderr, "Memory allocation error during target registration.\n");
+    goto finish;
+  }
+  if (rtmGetErrorStatus(rtM) != NULL) {
+    fprintf(stderr, "Error during target registration: %s.\n", rtmGetErrorStatus(rtM));
+    goto finish;
+  }
 
-	if (FinalTime > 0.0 || FinalTime == RUN_FOREVER) {
-		rtmSetTFinal(rtM, (real_T)FinalTime);
-	}
+  if (FinalTime > 0.0 || FinalTime == RUN_FOREVER) {
+    rtmSetTFinal(rtM, (real_T)FinalTime);
+  }
 
-	INITIALIZE_SIZES(rtM);
-	INITIALIZE_SAMPLE_TIMES(rtM);
+  INITIALIZE_SIZES(rtM);
+  INITIALIZE_SAMPLE_TIMES(rtM);
 
-	status = rt_SimInitTimingEngine(rtmGetNumSampleTimes(rtM), rtmGetStepSize(rtM), rtmGetSampleTimePtr(rtM), rtmGetOffsetTimePtr(rtM), rtmGetSampleHitPtr(rtM), rtmGetSampleTimeTaskIDPtr(rtM), rtmGetTStart(rtM), &rtmGetSimTimeStep(rtM), &rtmGetTimingData(rtM));
-	if (status != NULL) {
-		fprintf(stderr, "Failed to initialize target sample time engine: %s.\n", status);
-		goto finish;
-	}
+  status = rt_SimInitTimingEngine(rtmGetNumSampleTimes(rtM), rtmGetStepSize(rtM), rtmGetSampleTimePtr(rtM), rtmGetOffsetTimePtr(rtM), rtmGetSampleHitPtr(rtM), rtmGetSampleTimeTaskIDPtr(rtM), rtmGetTStart(rtM), &rtmGetSimTimeStep(rtM), &rtmGetTimingData(rtM));
+  if (status != NULL) {
+    fprintf(stderr, "Failed to initialize target sample time engine: %s.\n", status);
+    goto finish;
+  }
 
-	rt_ODECreateIntegrationData(rtmGetRTWSolverInfo(rtM));
+  rt_ODECreateIntegrationData(rtmGetRTWSolverInfo(rtM));
 
-	START(rtM);
-	if (rtmGetErrorStatus(rtM) != NULL) {
-		fprintf(stderr, "Failed in target initialization.\n");
-		TERMINATE(rtM);
-		fprintf(stderr, "Target is terminated.\n");
-		goto finish;
-	}
+  START(rtM);
+  if (rtmGetErrorStatus(rtM) != NULL) {
+    fprintf(stderr, "Failed in target initialization.\n");
+    TERMINATE(rtM);
+    fprintf(stderr, "Target is terminated.\n");
+    goto finish;
+  }
 
-	if ((pthread_create(&rt_HostInterfaceThread, NULL, rt_HostInterface, NULL)) != 0) {
-		fprintf(stderr, "Failed to create HostInterfaceThread.\n");
-		TERMINATE(rtM);
-		fprintf(stderr, "Target is terminated.\n");
-		goto finish;
-	}
-	err_timeout.tv_sec = (long int)(time(NULL)) + 1;
-	err_timeout.tv_nsec = 0;
-	if ((sem_timedwait(&err_sem, &err_timeout)) != 0) {
-		TERMINATE(rtM);
-		fprintf(stderr, "Target is terminated.\n");
-		goto finish;
-	}
-
-#ifdef MULTITASKING
-	rt_SubRateTasks = malloc(NUMST*sizeof(RT_TASK *));
-	rt_SubRateThreads = malloc(NUMST*sizeof(pthread_t));
-	for (sample = FIRST_TID + 1; sample < NUMST; sample++) {
-		int arg[2];
-		arg[0] = sample;
-		arg[1] = priority + sample;
-		pthread_create(rt_SubRateThreads + sample, NULL, (void *)rt_SubRate, (void *)arg);
-	}
-#endif
-	if ((pthread_create(&rt_BaseRateThread, NULL, rt_BaseRate, &priority)) != 0) {
-		fprintf(stderr, "Failed to create BaseRateThread.\n");
-		endInterface = 1;
-		rt_send(rt_HostInterfaceTask, 0);
-		pthread_join(rt_HostInterfaceThread, NULL);
-		TERMINATE(rtM);
-		fprintf(stderr, "Target is terminated.\n");
-		goto finish;
-	}
-	err_timeout.tv_sec = (long int)(time(NULL)) + 1;
-	err_timeout.tv_nsec = 0;
-	if ((sem_timedwait(&err_sem, &err_timeout)) != 0) {
-		endInterface = 1;
-		rt_send(rt_HostInterfaceTask, 0);
-		pthread_join(rt_HostInterfaceThread, NULL);
-		TERMINATE(rtM);
-		fprintf(stderr, "Target is terminated.\n");
-		goto finish;
-	}
-
-	rt_BaseTaskPeriod = (unsigned int)(1000000000.0*rtmGetStepSize(rtM));
-	if (InternalTimer) {
-		WaitTimingEvent = (void *)rt_task_wait_period;
-		if (!(hard_timers_cnt = rt_get_adr(nam2num("HTMRCN")))) {
-			if (!ClockTick) {
-				rt_set_oneshot_mode();
-				start_rt_timer(0);
-				rt_BaseRateTick = nano2count(rt_BaseTaskPeriod);
-			} else {
-				rt_set_periodic_mode();
-				rt_BaseRateTick = start_rt_timer(nano2count(rt_BaseTaskPeriod));
-			}
-			hard_timers_cnt = rt_sem_init(nam2num("HTMRCN"), 0);
-		} else {
-			rt_BaseRateTick = nano2count(rt_BaseTaskPeriod);
-			rt_sem_signal(hard_timers_cnt);
-		}
-	} else {
-		WaitTimingEvent = (void *)DummyWait;
-		SendTimingEvent = (void *)DummySend;
-	}
-
-	if (Verbose) {
-		int j;
-		printf("\nTarget info\n");
-		printf("===========\n");
-		printf("  Model name             : %s\n", STR(MODEL));
-		printf("  Base sample time       : %f [s]\n", rtmGetStepSize(rtM));
-		printf("  Number of sample times : %d\n", rtmGetNumSampleTimes(rtM));
-		for (j = 0; j < rtmGetNumSampleTimes(rtM); j++) {
-			printf("  Sample Time %d          : %f [s]\n", j, rtmGetSampleTimePtr(rtM)[j]);
-		}
-		printf("\n");
-	}
-
-	if (WaitToStart) {
-		if (Verbose) {
-			printf("Target is waiting to start.\n");
-		}
-		rt_task_suspend(rt_MainTask);
-	}
-	rt_receive(0, &msg);
-	rt_task_resume(rt_BaseRateTask);
-	IsRunning = 1;
-	if (Verbose) {
-		printf("Target is running.\n");
-	}
-
-	while (!endex) {
-		if (rtmGetTFinal(rtM) != RUN_FOREVER && (rtmGetTFinal(rtM) - rtmGetT(rtM)) <= rtmGetT(rtM)*DBL_EPSILON) {
-			if (Verbose) {
-				printf("Final time occured.\n");
-			}
-			break;
-		}
-		if (rtmGetErrorStatus(rtM) != NULL) {
-			fprintf(stderr, "%s.\n", rtmGetErrorStatus(rtM));
-			break;
-		}
-		nanosleep(&rt_MainTaskPollPeriod, NULL);
-	}
-
-	endBaseRate = 1;
-	if (!InternalTimer) {
-		SendTimingEvent(TimingEventArg);
-	}
-	pthread_join(rt_BaseRateThread, NULL);
+  if ((pthread_create(&rt_HostInterfaceThread, NULL, rt_HostInterface, NULL)) != 0) {
+    fprintf(stderr, "Failed to create HostInterfaceThread.\n");
+    TERMINATE(rtM);
+    fprintf(stderr, "Target is terminated.\n");
+    goto finish;
+  }
+  err_timeout.tv_sec = (long int)(time(NULL)) + 1;
+  err_timeout.tv_nsec = 0;
+  if ((sem_timedwait(&err_sem, &err_timeout)) != 0) {
+    TERMINATE(rtM);
+    fprintf(stderr, "Target is terminated.\n");
+    goto finish;
+  }
 
 #ifdef MULTITASKING
-	endSubRate = 1;
-	for (sample = FIRST_TID + 1; sample < NUMST; sample++) {
-		if (rt_SubRateTasks[sample]) {
-			rt_task_resume(rt_SubRateTasks[sample]);
-		}
-		pthread_join(rt_SubRateThreads[sample], NULL);
-	}
+  rt_SubRateTasks = malloc(NUMST*sizeof(RT_TASK *));
+  rt_SubRateThreads = malloc(NUMST*sizeof(pthread_t));
+  for (sample = FIRST_TID + 1; sample < NUMST; sample++) {
+    int arg[2];
+    arg[0] = sample;
+    arg[1] = priority + sample;
+    pthread_create(rt_SubRateThreads + sample, NULL, (void *)rt_SubRate, (void *)arg);
+  }
+#endif
+  if ((pthread_create(&rt_BaseRateThread, NULL, rt_BaseRate, &priority)) != 0) {
+    fprintf(stderr, "Failed to create BaseRateThread.\n");
+    endInterface = 1;
+    rt_send(rt_HostInterfaceTask, 0);
+    pthread_join(rt_HostInterfaceThread, NULL);
+    TERMINATE(rtM);
+    fprintf(stderr, "Target is terminated.\n");
+    goto finish;
+  }
+  err_timeout.tv_sec = (long int)(time(NULL)) + 1;
+  err_timeout.tv_nsec = 0;
+  if ((sem_timedwait(&err_sem, &err_timeout)) != 0) {
+    endInterface = 1;
+    rt_send(rt_HostInterfaceTask, 0);
+    pthread_join(rt_HostInterfaceThread, NULL);
+    TERMINATE(rtM);
+    fprintf(stderr, "Target is terminated.\n");
+    goto finish;
+  }
+
+  rt_BaseTaskPeriod = (unsigned int)(1000000000.0*rtmGetStepSize(rtM));
+  if (InternalTimer) {
+    WaitTimingEvent = (void *)rt_task_wait_period;
+    if (!(hard_timers_cnt = rt_get_adr(nam2num("HTMRCN")))) {
+      if (!ClockTick) {
+	rt_set_oneshot_mode();
+	start_rt_timer(0);
+	rt_BaseRateTick = nano2count(rt_BaseTaskPeriod);
+      } else {
+	rt_set_periodic_mode();
+	rt_BaseRateTick = start_rt_timer(nano2count(rt_BaseTaskPeriod));
+      }
+      hard_timers_cnt = rt_sem_init(nam2num("HTMRCN"), 0);
+    } else {
+      rt_BaseRateTick = nano2count(rt_BaseTaskPeriod);
+      rt_sem_signal(hard_timers_cnt);
+    }
+  } else {
+    WaitTimingEvent = (void *)DummyWait;
+    SendTimingEvent = (void *)DummySend;
+  }
+
+  if (Verbose) {
+    int j;
+    printf("\nTarget info\n");
+    printf("===========\n");
+    printf("  Model name             : %s\n", STR(MODEL));
+    printf("  Base sample time       : %f [s]\n", rtmGetStepSize(rtM));
+    printf("  Number of sample times : %d\n", rtmGetNumSampleTimes(rtM));
+    for (j = 0; j < rtmGetNumSampleTimes(rtM); j++) {
+      printf("  Sample Time %d          : %f [s]\n", j, rtmGetSampleTimePtr(rtM)[j]);
+    }
+    printf("\n");
+  }
+
+  if (WaitToStart) {
+    if (Verbose) {
+      printf("Target is waiting to start.\n");
+    }
+    rt_task_suspend(rt_MainTask);
+  }
+  rt_receive(0, &msg);
+  rt_task_resume(rt_BaseRateTask);
+  IsRunning = 1;
+  if (Verbose) {
+    printf("Target is running.\n");
+  }
+
+  while (!endex) {
+    if (rtmGetTFinal(rtM) != RUN_FOREVER && (rtmGetTFinal(rtM) - rtmGetT(rtM)) <= rtmGetT(rtM)*DBL_EPSILON) {
+      if (Verbose) {
+	printf("Final time occured.\n");
+      }
+      break;
+    }
+    if (rtmGetErrorStatus(rtM) != NULL) {
+      fprintf(stderr, "%s.\n", rtmGetErrorStatus(rtM));
+      break;
+    }
+    nanosleep(&rt_MainTaskPollPeriod, NULL);
+  }
+
+  endBaseRate = 1;
+  if (!InternalTimer) {
+    SendTimingEvent(TimingEventArg);
+  }
+  pthread_join(rt_BaseRateThread, NULL);
+
+#ifdef MULTITASKING
+  endSubRate = 1;
+  for (sample = FIRST_TID + 1; sample < NUMST; sample++) {
+    if (rt_SubRateTasks[sample]) {
+      rt_task_resume(rt_SubRateTasks[sample]);
+    }
+    pthread_join(rt_SubRateThreads[sample], NULL);
+  }
 #endif
 
-	IsRunning = 0;
-	if (Verbose) {
-		printf("Target is stopped.\n");
-	}
+  IsRunning = 0;
+  if (Verbose) {
+    printf("Target is stopped.\n");
+  }
 
-	endInterface = 1;
-	rt_send(rt_HostInterfaceTask, 0);
-	pthread_join(rt_HostInterfaceThread, NULL);
+  endInterface = 1;
+  rt_send(rt_HostInterfaceTask, 0);
+  pthread_join(rt_HostInterfaceThread, NULL);
 
-	if (InternalTimer) {
-		if (!rt_sem_wait_if(hard_timers_cnt)) {
-			rt_sem_delete(hard_timers_cnt);
-		}
-	}
+  if (InternalTimer) {
+    if (!rt_sem_wait_if(hard_timers_cnt)) {
+      rt_sem_delete(hard_timers_cnt);
+    }
+  }
 	
 #ifdef MULTITASKING
-	free(rt_SubRateTasks);
-	free(rt_SubRateThreads);
+  free(rt_SubRateTasks);
+  free(rt_SubRateThreads);
 #endif
 
-	TERMINATE(rtM);
-	printf("Target is terminated.\n");
+  TERMINATE(rtM);
+  printf("Target is terminated.\n");
 
-finish:
-	sem_destroy(&err_sem);
-	rt_task_delete(rt_MainTask);
+ finish:
+  sem_destroy(&err_sem);
+  rt_task_delete(rt_MainTask);
 
-	return 0;
+  return 0;
 }
 
 static void endme(int dummy)
 {
-	signal(SIGINT, endme);
-	signal(SIGTERM, endme);
-	endex = 1;
+  signal(SIGINT, endme);
+  signal(SIGTERM, endme);
+  endex = 1;
 }
 
 struct option options[] = {
-	{ "usage",      0, 0, 'u' },
-        { "verbose",    0, 0, 'v' },
-        { "version",    0, 0, 'V' },
-        { "soft",       0, 0, 's' },
-        { "wait",       0, 0, 'w' },
-        { "priority",   1, 0, 'p' },
-        { "finaltime",  1, 0, 'f' },
-        { "name",       1, 0, 'n' },
-        { "idscope",    1, 0, 'i' },
-        { "idlog",      1, 0, 'l' },
-	{ "idalog",     1, 0, 'a' },
-        { "idmeter",    1, 0, 't' },
-        { "idled",      1, 0, 'd' },
-        { "idsynch",    1, 0, 'y' },
-	{ "cpumap",     1, 0, 'c' },
-	{ "external",   0, 0, 'e' },
-	{ "oneshot",    0, 0, 'o' },
-	{ "stack",      1, 0, 'm' }
+  { "usage",      0, 0, 'u' },
+  { "verbose",    0, 0, 'v' },
+  { "version",    0, 0, 'V' },
+  { "soft",       0, 0, 's' },
+  { "wait",       0, 0, 'w' },
+  { "priority",   1, 0, 'p' },
+  { "finaltime",  1, 0, 'f' },
+  { "name",       1, 0, 'n' },
+  { "idscope",    1, 0, 'i' },
+  { "idlog",      1, 0, 'l' },
+  { "idalog",     1, 0, 'a' },
+  { "idmeter",    1, 0, 't' },
+  { "idled",      1, 0, 'd' },
+  { "idsynch",    1, 0, 'y' },
+  { "cpumap",     1, 0, 'c' },
+  { "external",   0, 0, 'e' },
+  { "oneshot",    0, 0, 'o' },
+  { "stack",      1, 0, 'm' }
 };
 
 void print_usage(void)
 {
-	fputs(
-("\nUsage:  'RT-model-name' [OPTIONS]\n"
-"\n"
-"OPTIONS:\n"
-"  -u, --usage\n"
-"      print usage\n"
-"  -v, --verbose\n"
-"      verbose output\n"
-"  -V, --version\n"
-"      print rt_main version\n"
-"  -s, --soft\n"
-"      run RT-model in soft real time (default hard RT)\n"
-"  -w, --wait\n"
-"      wait to start\n"
-"  -p <priority>, --priority <priority>\n"
-"      set the priority at which the RT-model's highest priority task will run (default 0)\n"
-"  -f <finaltime>, --finaltime <finaltime>\n"
-"      set the final time (default infinite)\n"
-"  -n <ifname>, --name <ifname>\n"
-"      set the name of the host interface task (default IFTASK)\n"
-"  -i <scopeid>, --idscope <scopeid>\n"
-"      set the scope mailboxes identifier (default RTS)\n"
-"  -l <logid>, --idlog <logid>\n"
-"      set the log mailboxes identifier (default RTL)\n"
-"  -a <alogid>, --idalog <alogid>\n"
-"      set the automatic log mailboxes identifier (default RAL)\n"
-"  -t <meterid>, --idmeter <meterid>\n"
-"      set the meter mailboxes identifier (default RTM)\n"
-"  -d <ledid>, --idled <ledid>\n"
-"      set the led mailboxes identifier (default RTE)\n"
-"  -y <synchid>, --idsynch <synchid>\n"
-"      set the synchronoscope mailboxes identifier (default RTY)\n"
-"  -c <cpumap>, --cpumap <cpumap>\n"
-"      (1 << cpunum) on which the RT-model runs (default: let RTAI choose)\n"
-"  -e, --external\n"
-"      RT-model timed by an external resume (default internal)\n"
-"  -o, --oneshot\n"
-"      the hard timer will run in oneshot mode (default periodic)\n"
-"  -m <stack>, --stack <stack>\n"
-"      set a guaranteed stack size extension (default 30000)\n"
-"\n")
-		,stderr);
-	exit(0);
+  fputs(
+	("\nUsage:  'RT-model-name' [OPTIONS]\n"
+	 "\n"
+	 "OPTIONS:\n"
+	 "  -u, --usage\n"
+	 "      print usage\n"
+	 "  -v, --verbose\n"
+	 "      verbose output\n"
+	 "  -V, --version\n"
+	 "      print rt_main version\n"
+	 "  -s, --soft\n"
+	 "      run RT-model in soft real time (default hard RT)\n"
+	 "  -w, --wait\n"
+	 "      wait to start\n"
+	 "  -p <priority>, --priority <priority>\n"
+	 "      set the priority at which the RT-model's highest priority task will run (default 0)\n"
+	 "  -f <finaltime>, --finaltime <finaltime>\n"
+	 "      set the final time (default infinite)\n"
+	 "  -n <ifname>, --name <ifname>\n"
+	 "      set the name of the host interface task (default IFTASK)\n"
+	 "  -i <scopeid>, --idscope <scopeid>\n"
+	 "      set the scope mailboxes identifier (default RTS)\n"
+	 "  -l <logid>, --idlog <logid>\n"
+	 "      set the log mailboxes identifier (default RTL)\n"
+	 "  -a <alogid>, --idalog <alogid>\n"
+	 "      set the automatic log mailboxes identifier (default RAL)\n"
+	 "  -t <meterid>, --idmeter <meterid>\n"
+	 "      set the meter mailboxes identifier (default RTM)\n"
+	 "  -d <ledid>, --idled <ledid>\n"
+	 "      set the led mailboxes identifier (default RTE)\n"
+	 "  -y <synchid>, --idsynch <synchid>\n"
+	 "      set the synchronoscope mailboxes identifier (default RTY)\n"
+	 "  -c <cpumap>, --cpumap <cpumap>\n"
+	 "      (1 << cpunum) on which the RT-model runs (default: let RTAI choose)\n"
+	 "  -e, --external\n"
+	 "      RT-model timed by an external resume (default internal)\n"
+	 "  -o, --oneshot\n"
+	 "      the hard timer will run in oneshot mode (default periodic)\n"
+	 "  -m <stack>, --stack <stack>\n"
+	 "      set a guaranteed stack size extension (default 30000)\n"
+	 "\n")
+	,stderr);
+  exit(0);
 }
 
 int main(int argc, char *argv[])
 {
-	int priority = 0;
-	int c, option_index = 0;
+  int priority = 0;
+  int c, option_index = 0;
 
-	signal(SIGINT, endme);
-	signal(SIGTERM, endme);
+  signal(SIGINT, endme);
+  signal(SIGTERM, endme);
 
-	while (1) {
-		c = getopt_long(argc, argv, "uvVsweop:f:n:i:l:a:d:t:y:c:m:", options, &option_index);
-                if (c == -1)
-			break;
-                switch (c) {
-			case 'v':
-				Verbose = 1;
-				break;
-			case 'V':
-				fputs("rt_main version " RTAILAB_VERSION "\n", stderr);
-				exit(0);
-			case 'p':
-				if (isalpha(optarg[0])) {
-					fprintf(stderr, "Invalid priority value\n");
-					exit(1);
-				}
-				priority = atoi(optarg);
-				if (priority < 0) {
-					fprintf(stderr, "Invalid priority value\n");
-					exit(1);
-				}
-				break;
-			case 's':
-				UseHRT = 0;
-				break;
-			case 'f':
-				if (strstr(optarg, "inf")) {
-					FinalTime = RUN_FOREVER;
-				} else {
-					if (isalpha(optarg[0])) {
-						fprintf(stderr, "Invalid final time value\n");
-						exit(1);
-					}
-					FinalTime = atof(optarg);
-				}
-				break;
-			case 'w':
-				WaitToStart = 1;
-				break;
-			case 'u':
-				print_usage();
-				exit(0);
-			case 'n':
-				HostInterfaceTaskName = strdup(optarg);
-				break;
-			case 'i':
-				TargetScopeMbxID = strdup(optarg);
-				break;
-			case 'l':
-				TargetLogMbxID = strdup(optarg);
-				break;
-			case 't':
-				TargetMeterMbxID = strdup(optarg);
-				break;
-			case 'a':
-				TargetALogMbxID = strdup(optarg);
-				break;	
-			case 'd':
-				TargetLedMbxID = strdup(optarg);
-				break;
-			case 'y':
-				TargetSynchronoscopeMbxID = strdup(optarg);
-				break;
-			case 'c':
-				if (!(CpuMap = atoi(optarg))) {
-					CpuMap = 0xF;
-				}
-				break;
-			case 'e':
-				InternalTimer = 0;
-				break;
-			case 'o':
-				ClockTick = 0;
-				break;
-			case 'm':
-				StackInc = atoi(optarg);
-				break;
-			default:
-				break;
-		}
+  while (1) {
+    c = getopt_long(argc, argv, "uvVsweop:f:n:i:l:a:d:t:y:c:m:", options, &option_index);
+    if (c == -1)
+      break;
+    switch (c) {
+    case 'v':
+      Verbose = 1;
+      break;
+    case 'V':
+      fputs("rt_main version " RTAILAB_VERSION "\n", stderr);
+      exit(0);
+    case 'p':
+      if (isalpha(optarg[0])) {
+	fprintf(stderr, "Invalid priority value\n");
+	exit(1);
+      }
+      priority = atoi(optarg);
+      if (priority < 0) {
+	fprintf(stderr, "Invalid priority value\n");
+	exit(1);
+      }
+      break;
+    case 's':
+      UseHRT = 0;
+      break;
+    case 'f':
+      if (strstr(optarg, "inf")) {
+	FinalTime = RUN_FOREVER;
+      } else {
+	if (isalpha(optarg[0])) {
+	  fprintf(stderr, "Invalid final time value\n");
+	  exit(1);
 	}
+	FinalTime = atof(optarg);
+      }
+      break;
+    case 'w':
+      WaitToStart = 1;
+      break;
+    case 'u':
+      print_usage();
+      exit(0);
+    case 'n':
+      HostInterfaceTaskName = strdup(optarg);
+      break;
+    case 'i':
+      TargetScopeMbxID = strdup(optarg);
+      break;
+    case 'l':
+      TargetLogMbxID = strdup(optarg);
+      break;
+    case 't':
+      TargetMeterMbxID = strdup(optarg);
+      break;
+    case 'a':
+      TargetALogMbxID = strdup(optarg);
+      break;	
+    case 'd':
+      TargetLedMbxID = strdup(optarg);
+      break;
+    case 'y':
+      TargetSynchronoscopeMbxID = strdup(optarg);
+      break;
+    case 'c':
+      if (!(CpuMap = atoi(optarg))) {
+	CpuMap = 0xF;
+      }
+      break;
+    case 'e':
+      InternalTimer = 0;
+      break;
+    case 'o':
+      ClockTick = 0;
+      break;
+    case 'm':
+      StackInc = atoi(optarg);
+      break;
+    default:
+      break;
+    }
+  }
 
-	if (Verbose) {
-		printf("\nTarget settings\n");
-		printf("===============\n");
-		printf("  Real-time : %s\n", UseHRT ? "HARD" : "SOFT");	
-		printf("  Timing    : %s / ", InternalTimer ? "internal" : "external");
-		printf("%s\n", ClockTick ? "periodic" : "oneshot");
-		printf("  Priority  : %d\n", priority);
-		if (FinalTime > 0) {
-			printf("  Finaltime : %f [s]\n", FinalTime);
-		} else {
-			printf("  Finaltime : RUN FOREVER\n");
-		}
-		printf("  CPU map   : %x\n\n", CpuMap);
-	}
+  if (Verbose) {
+    printf("\nTarget settings\n");
+    printf("===============\n");
+    printf("  Real-time : %s\n", UseHRT ? "HARD" : "SOFT");	
+    printf("  Timing    : %s / ", InternalTimer ? "internal" : "external");
+    printf("%s\n", ClockTick ? "periodic" : "oneshot");
+    printf("  Priority  : %d\n", priority);
+    if (FinalTime > 0) {
+      printf("  Finaltime : %f [s]\n", FinalTime);
+    } else {
+      printf("  Finaltime : RUN FOREVER\n");
+    }
+    printf("  CPU map   : %x\n\n", CpuMap);
+  }
 
-	return rt_Main(MODEL, priority);
+  return rt_Main(MODEL, priority);
 }

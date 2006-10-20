@@ -38,8 +38,9 @@
 #include <rtai_netrpc.h>
 #include <rtai_msg.h>
 #include <rtai_mbx.h>
+#include <rtai_fifos.h>
 
-#define RTAILAB_VERSION         "3.4.4"
+#define RTAILAB_VERSION         "3.4.5"
 #define MAX_ADR_SRCH      500
 #define MAX_NAME_SIZE     256
 #define MAX_SCOPES        100
@@ -99,6 +100,10 @@ static struct { char name[MAX_NAME_SIZE]; int nrow, ncol; } rtaiLogData[MAX_LOGS
 static struct { char name[MAX_NAME_SIZE]; int nrow, ncol; } rtaiALogData[MAX_LOGS];
 static struct { char name[MAX_NAME_SIZE]; int nleds; } rtaiLed[MAX_LEDS];
 static struct { char name[MAX_NAME_SIZE]; int nmeters; } rtaiMeter[MAX_METERS];
+
+#ifdef TASKPERIOD
+static struct { double init; double end; } taskP ={0.0,0.0};
+#endif
 
 #define SS_DOUBLE  0
 #define rt_SCALAR  0 
@@ -268,6 +273,12 @@ static void *rt_BaseRate(void *args)
 
   iopl(3);
   rt_task_use_fpu(rt_BaseRateTask, 1);
+
+#ifdef TASKPERIOD
+  rtf_create(TASKPERIOD,2000);
+  rtf_reset(TASKPERIOD);
+#endif
+
   NAME(MODEL,_init_blk)();
   grow_and_lock_stack(stackinc);
   if (UseHRT) {
@@ -279,10 +290,18 @@ static void *rt_BaseRate(void *args)
   t0 = rt_get_cpu_time_ns();
   rt_task_make_periodic(rt_BaseRateTask, rt_get_time() + rt_BaseRateTick, rt_BaseRateTick);
   while (!endBaseRate) {
+#ifdef TASKPERIOD
+    taskP.end=(rt_get_cpu_time_ns() - t0)*1.0E-9;
+    rtf_put(TASKPERIOD,&taskP, sizeof(taskP));
+#endif
     WaitTimingEvent(TimingEventArg);
+
     if (endBaseRate) break;
 
     TIME = (rt_get_cpu_time_ns() - t0)*1.0E-9;
+#ifdef TASKPERIOD
+    taskP.init=TIME;
+#endif
 
     NAME(MODEL,_rt_exec)(NAME(block_,MODEL),z, &TIME);
 
@@ -292,6 +311,11 @@ static void *rt_BaseRate(void *args)
   }
   NAME(MODEL,_end)(NAME(block_,MODEL),z, &TIME);
   rt_task_delete(rt_BaseRateTask);
+
+#ifdef TASKPERIOD
+    rtf_destroy(TASKPERIOD);
+#endif
+
   return 0;
 }
 

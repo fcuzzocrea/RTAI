@@ -1,3 +1,13 @@
+2006-10-20  Roberto Bucher <roberto.bucher@supsi.ch>
+
+	* /rtai-lab/scilab/rtmain.c: Added a hiddean feature to measure the
+	task duration using a compiler flag "-DTASKPERIOD=<fifo nr>
+
+2006-10-20  Roberto Bucher <roberto.bucher@supsi.ch>
+
+	* /rtai-lab/matlab/rtmain.c: Added a hiddean feature to measure the
+	task duration using a compiler flag "-DTASKPERIOD=<fifo nr>
+
 2006-10-05  Paolo Mantegazza <mantegazza@aero.polimi.it>
 
 	* /base/sched/sched.c: do not return hard immediatly if a signal is 

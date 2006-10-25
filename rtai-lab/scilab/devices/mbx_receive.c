@@ -8,7 +8,7 @@
 #include <arpa/inet.h>
 
 #include <rtai_netrpc.h>
-#include <rtai_sem.h>
+#include <rtai_mbx.h>
 
 struct MbxR{
   char mbxName[10];

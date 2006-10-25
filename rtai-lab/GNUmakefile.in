@@ -274,6 +274,7 @@ F77 = @F77@
 FFLAGS = @FFLAGS@
 GL_CFLAGS = @GL_CFLAGS@
 GL_LIBS = @GL_LIBS@
+GREP = @GREP@
 INSTALL_DATA = @INSTALL_DATA@
 INSTALL_PROGRAM = @INSTALL_PROGRAM@
 INSTALL_SCRIPT = @INSTALL_SCRIPT@
@@ -321,6 +322,7 @@ RTAI_MAYBE_DOCDIR = @RTAI_MAYBE_DOCDIR@
 RTAI_MAYBE_SIMDIR = @RTAI_MAYBE_SIMDIR@
 RTAI_MODULE_DIR = @RTAI_MODULE_DIR@
 RTAI_MODULE_EXT = @RTAI_MODULE_EXT@
+RTAI_POSIX_WRAP = @RTAI_POSIX_WRAP@
 RTAI_TARGET_ARCH = @RTAI_TARGET_ARCH@
 RTAI_TARGET_SUBARCH = @RTAI_TARGET_SUBARCH@
 RTAI_USER_APP_CFLAGS = @RTAI_USER_APP_CFLAGS@
@@ -329,16 +331,14 @@ SET_MAKE = @SET_MAKE@
 SHELL = @SHELL@
 STRIP = @STRIP@
 VERSION = @VERSION@
+XMKMF = @XMKMF@
 X_CFLAGS = @X_CFLAGS@
 X_EXTRA_LIBS = @X_EXTRA_LIBS@
 X_LIBS = @X_LIBS@
 X_PRE_LIBS = @X_PRE_LIBS@
-ac_ct_AR = @ac_ct_AR@
 ac_ct_CC = @ac_ct_CC@
 ac_ct_CXX = @ac_ct_CXX@
 ac_ct_F77 = @ac_ct_F77@
-ac_ct_RANLIB = @ac_ct_RANLIB@
-ac_ct_STRIP = @ac_ct_STRIP@
 am__fastdepCC_FALSE = @am__fastdepCC_FALSE@
 am__fastdepCC_TRUE = @am__fastdepCC_TRUE@
 am__fastdepCXX_FALSE = @am__fastdepCXX_FALSE@
@@ -355,23 +355,30 @@ build_cpu = @build_cpu@
 build_os = @build_os@
 build_vendor = @build_vendor@
 datadir = @datadir@
+datarootdir = @datarootdir@
+docdir = @docdir@
+dvidir = @dvidir@
 exec_prefix = @exec_prefix@
 host = @host@
 host_alias = @host_alias@
 host_cpu = @host_cpu@
 host_os = @host_os@
 host_vendor = @host_vendor@
+htmldir = @htmldir@
 includedir = @includedir@
 infodir = @infodir@
 install_sh = @install_sh@
 libdir = @libdir@
 libexecdir = @libexecdir@
+localedir = @localedir@
 localstatedir = @localstatedir@
 mandir = @mandir@
 mkdir_p = @mkdir_p@
 oldincludedir = @oldincludedir@
+pdfdir = @pdfdir@
 prefix = @prefix@
 program_transform_name = @program_transform_name@
+psdir = @psdir@
 sbindir = @sbindir@
 sharedstatedir = @sharedstatedir@
 subdirs = @subdirs@
@@ -384,8 +391,8 @@ xrtailab_SOURCES = \
 	Fl_Led_Window.cpp \
 	Fl_Leds_Manager.cpp \
 	Fl_Leds_Manager.h \
-	Fl_Alog_Manager.cpp\
-	Fl_Alog_Manager.h\
+	Fl_ALogs_Manager.cpp\
+	Fl_ALogs_Manager.h\
 	Fl_Logs_Manager.cpp \
 	Fl_Logs_Manager.h \
 	Fl_Meter.h \
@@ -497,7 +504,7 @@ mostlyclean-compile:
 distclean-compile:
 	-rm -f *.tab.c
 
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/xrtailab-Fl_Alog_Manager.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/xrtailab-Fl_ALogs_Manager.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/xrtailab-Fl_Led.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/xrtailab-Fl_Led_Window.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/xrtailab-Fl_Leds_Manager.Po@am__quote@
@@ -577,19 +584,19 @@ xrtailab-Fl_Leds_Manager.obj: Fl_Leds_Manager.cpp
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(xrtailab_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o xrtailab-Fl_Leds_Manager.obj `if test -f 'Fl_Leds_Manager.cpp'; then $(CYGPATH_W) 'Fl_Leds_Manager.cpp'; else $(CYGPATH_W) '$(srcdir)/Fl_Leds_Manager.cpp'; fi`
 
-xrtailab-Fl_Alog_Manager.o: Fl_Alog_Manager.cpp
-@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(xrtailab_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT xrtailab-Fl_Alog_Manager.o -MD -MP -MF "$(DEPDIR)/xrtailab-Fl_Alog_Manager.Tpo" -c -o xrtailab-Fl_Alog_Manager.o `test -f 'Fl_Alog_Manager.cpp' || echo '$(srcdir)/'`Fl_Alog_Manager.cpp; \
-@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/xrtailab-Fl_Alog_Manager.Tpo" "$(DEPDIR)/xrtailab-Fl_Alog_Manager.Po"; else rm -f "$(DEPDIR)/xrtailab-Fl_Alog_Manager.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='Fl_Alog_Manager.cpp' object='xrtailab-Fl_Alog_Manager.o' libtool=no @AMDEPBACKSLASH@
+xrtailab-Fl_ALogs_Manager.o: Fl_ALogs_Manager.cpp
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(xrtailab_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT xrtailab-Fl_ALogs_Manager.o -MD -MP -MF "$(DEPDIR)/xrtailab-Fl_ALogs_Manager.Tpo" -c -o xrtailab-Fl_ALogs_Manager.o `test -f 'Fl_ALogs_Manager.cpp' || echo '$(srcdir)/'`Fl_ALogs_Manager.cpp; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/xrtailab-Fl_ALogs_Manager.Tpo" "$(DEPDIR)/xrtailab-Fl_ALogs_Manager.Po"; else rm -f "$(DEPDIR)/xrtailab-Fl_ALogs_Manager.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='Fl_ALogs_Manager.cpp' object='xrtailab-Fl_ALogs_Manager.o' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(xrtailab_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o xrtailab-Fl_Alog_Manager.o `test -f 'Fl_Alog_Manager.cpp' || echo '$(srcdir)/'`Fl_Alog_Manager.cpp
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(xrtailab_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o xrtailab-Fl_ALogs_Manager.o `test -f 'Fl_ALogs_Manager.cpp' || echo '$(srcdir)/'`Fl_ALogs_Manager.cpp
 
-xrtailab-Fl_Alog_Manager.obj: Fl_Alog_Manager.cpp
-@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(xrtailab_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT xrtailab-Fl_Alog_Manager.obj -MD -MP -MF "$(DEPDIR)/xrtailab-Fl_Alog_Manager.Tpo" -c -o xrtailab-Fl_Alog_Manager.obj `if test -f 'Fl_Alog_Manager.cpp'; then $(CYGPATH_W) 'Fl_Alog_Manager.cpp'; else $(CYGPATH_W) '$(srcdir)/Fl_Alog_Manager.cpp'; fi`; \
-@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/xrtailab-Fl_Alog_Manager.Tpo" "$(DEPDIR)/xrtailab-Fl_Alog_Manager.Po"; else rm -f "$(DEPDIR)/xrtailab-Fl_Alog_Manager.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='Fl_Alog_Manager.cpp' object='xrtailab-Fl_Alog_Manager.obj' libtool=no @AMDEPBACKSLASH@
+xrtailab-Fl_ALogs_Manager.obj: Fl_ALogs_Manager.cpp
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(xrtailab_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT xrtailab-Fl_ALogs_Manager.obj -MD -MP -MF "$(DEPDIR)/xrtailab-Fl_ALogs_Manager.Tpo" -c -o xrtailab-Fl_ALogs_Manager.obj `if test -f 'Fl_ALogs_Manager.cpp'; then $(CYGPATH_W) 'Fl_ALogs_Manager.cpp'; else $(CYGPATH_W) '$(srcdir)/Fl_ALogs_Manager.cpp'; fi`; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/xrtailab-Fl_ALogs_Manager.Tpo" "$(DEPDIR)/xrtailab-Fl_ALogs_Manager.Po"; else rm -f "$(DEPDIR)/xrtailab-Fl_ALogs_Manager.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='Fl_ALogs_Manager.cpp' object='xrtailab-Fl_ALogs_Manager.obj' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(xrtailab_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o xrtailab-Fl_Alog_Manager.obj `if test -f 'Fl_Alog_Manager.cpp'; then $(CYGPATH_W) 'Fl_Alog_Manager.cpp'; else $(CYGPATH_W) '$(srcdir)/Fl_Alog_Manager.cpp'; fi`
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(xrtailab_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o xrtailab-Fl_ALogs_Manager.obj `if test -f 'Fl_ALogs_Manager.cpp'; then $(CYGPATH_W) 'Fl_ALogs_Manager.cpp'; else $(CYGPATH_W) '$(srcdir)/Fl_ALogs_Manager.cpp'; fi`
 
 xrtailab-Fl_Logs_Manager.o: Fl_Logs_Manager.cpp
 @am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(xrtailab_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT xrtailab-Fl_Logs_Manager.o -MD -MP -MF "$(DEPDIR)/xrtailab-Fl_Logs_Manager.Tpo" -c -o xrtailab-Fl_Logs_Manager.o `test -f 'Fl_Logs_Manager.cpp' || echo '$(srcdir)/'`Fl_Logs_Manager.cpp; \

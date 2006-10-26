@@ -29,12 +29,12 @@ function [x,y,typ] = rtai4_comedi_datain(job,arg1,arg2)
       [model,graphics,ok]=check_io(model,graphics,in,out,1,[])
       if ok then
         graphics.exprs=exprs;
-        model.rpar=[ch;
+        model.ipar=[ch;
                     range;
                     aref;
                     length(name);
                     ascii(name)'];
-        model.ipar=[];
+        model.rpar=[];
         model.dstate=[1];
         x.graphics=graphics;x.model=model
         break

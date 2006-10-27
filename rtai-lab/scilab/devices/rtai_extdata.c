@@ -18,7 +18,7 @@ static void init(scicos_block *block)
 
   pData=(double *) calloc(npts,sizeof(double));
 
-  getstr(filename,block->ipar,3,block->ipar[2]);
+  par_getstr(filename,block->ipar,3,block->ipar[2]);
   fp=fopen(filename,"r");
   if(fp!=NULL){
     block->ipar[1]=0;

@@ -22,9 +22,9 @@ static void init(scicos_block *block)
   char str[20];
   struct MbxOwS * mbx = (struct MbxOwS *) malloc(sizeof(struct MbxOwS));
   int nch=block->nin;
-  getstr(str,block->ipar,2,block->ipar[0]);
+  par_getstr(str,block->ipar,2,block->ipar[0]);
   strcpy(mbx->mbxName,str);
-  getstr(str,block->ipar,2+block->ipar[0],block->ipar[1]);
+  par_getstr(str,block->ipar,2+block->ipar[0],block->ipar[1]);
 
   struct sockaddr_in addr;
 

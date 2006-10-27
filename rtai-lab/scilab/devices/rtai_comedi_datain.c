@@ -40,7 +40,7 @@ static void init(scicos_block *block)
   comedi_krange krange;
 
   comdev->channel=block->ipar[0];
-  getstr(sName,block->ipar,4,block->ipar[3]);
+  par_getstr(sName,block->ipar,4,block->ipar[3]);
   sprintf(comdev->devName,"/dev/%s",sName);
   comdev->range=(unsigned int) block->ipar[1];
   comdev->aref=block->ipar[2];

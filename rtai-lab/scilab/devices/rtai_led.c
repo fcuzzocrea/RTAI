@@ -13,7 +13,7 @@
 
 extern char *TargetLedMbxID;
 
-void getstr(char * str, int par[], int init, int len);
+void par_getstr(char * str, int par[], int init, int len);
 
 static void init(scicos_block *block)
 {
@@ -22,7 +22,7 @@ static void init(scicos_block *block)
   int nch = block->nin;
   MBX *mbx;
 
-  getstr(ledName,block->ipar,1,block->ipar[0]);
+  par_getstr(ledName,block->ipar,1,block->ipar[0]);
   rtRegisterLed(ledName,nch);
   get_a_name(TargetLedMbxID,name);
 
@@ -57,7 +57,7 @@ static void end(scicos_block *block)
   char ledName[10];
   MBX * mbx = (MBX *) (*block->work);
   RT_named_mbx_delete(0, 0, mbx);
-  getstr(ledName,block->ipar,1,block->ipar[0]);
+  par_getstr(ledName,block->ipar,1,block->ipar[0]);
   printf("Led %s closed\n",ledName);
 }
 

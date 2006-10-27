@@ -36,7 +36,7 @@ static void init(scicos_block *block)
   char sName[15];
 
   comdev->channel=block->ipar[0];
-  getstr(sName,block->ipar,2,block->ipar[1]);
+  par_getstr(sName,block->ipar,2,block->ipar[1]);
   sprintf(comdev->devName,"/dev/%s",sName);
 
   len=strlen(comdev->devName);

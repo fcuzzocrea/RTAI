@@ -13,7 +13,7 @@
 
 extern char *TargetMeterMbxID;
 
-void getstr(char * str, int par[], int init, int len);
+void par_getstr(char * str, int par[], int init, int len);
 
 static void init(scicos_block *block)
 {
@@ -22,7 +22,7 @@ static void init(scicos_block *block)
   int nch = block->nin;
   MBX *mbx;
 
-  getstr(meterName,block->ipar,1,block->ipar[0]);
+  par_getstr(meterName,block->ipar,1,block->ipar[0]);
   rtRegisterMeter(meterName,nch);
   get_a_name(TargetMeterMbxID,name);
 
@@ -48,7 +48,7 @@ static void end(scicos_block *block)
   char meterName[10];
   MBX * mbx = (MBX *) (*block->work);
   RT_named_mbx_delete(0, 0, mbx);
-  getstr(meterName,block->ipar,1,block->ipar[0]);
+  par_getstr(meterName,block->ipar,1,block->ipar[0]);
   printf("Meter %s closed\n",meterName);
 }
 

@@ -22,9 +22,9 @@ static void init(scicos_block *block)
   char str[20];
   struct Semw * sem = (struct Semw *) malloc(sizeof(struct Semw));
 
-  getstr(str,block->ipar,2,block->ipar[0]);
+  par_getstr(str,block->ipar,2,block->ipar[0]);
   strcpy(sem->semName,str);
-  getstr(str,block->ipar,2+block->ipar[0],block->ipar[1]);
+  par_getstr(str,block->ipar,2+block->ipar[0],block->ipar[1]);
 
   struct sockaddr_in addr;
 

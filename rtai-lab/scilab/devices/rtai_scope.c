@@ -13,7 +13,7 @@
 
 extern char *TargetMbxID;
 
-void getstr(char * str, int par[], int init, int len);
+void par_getstr(char * str, int par[], int init, int len);
 
 static void init(scicos_block *block)
 {
@@ -23,7 +23,7 @@ static void init(scicos_block *block)
   int nt=nch + 1;
   MBX *mbx;
 
-  getstr(scopeName,block->ipar,1,block->ipar[0]);
+  par_getstr(scopeName,block->ipar,1,block->ipar[0]);
   rtRegisterScope(scopeName,nch);
   get_a_name(TargetMbxID,name);
 
@@ -59,7 +59,7 @@ static void end(scicos_block *block)
   char scopeName[10];
   MBX * mbx = (MBX *) (*block->work);
   RT_named_mbx_delete(0, 0, mbx);
-  getstr(scopeName,block->ipar,1,block->ipar[0]);
+  par_getstr(scopeName,block->ipar,1,block->ipar[0]);
   printf("Scope %s closed\n",scopeName);
 }
 

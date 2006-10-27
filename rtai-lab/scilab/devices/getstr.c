@@ -1,4 +1,4 @@
-void getstr(char * str, int par[], int init, int len)
+void par_getstr(char * str, int par[], int init, int len)
 {
   int i;
   int j=0;

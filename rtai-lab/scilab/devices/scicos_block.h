@@ -47,7 +47,7 @@ void do_cold_restart(void);
 int get_phase_simulation(void);
 double get_scicos_time(void);
 int get_block_number(void);
-void getstr(char * str, int par[], int init, int len);
+void par_getstr(char * str, int par[], int init, int len);
 void set_block_error(int);
 void set_pointer_xproperty(int* pointer);
 

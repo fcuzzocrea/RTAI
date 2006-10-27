@@ -1,22 +1,23 @@
 2006-10-27  Roberto Bucher <roberto.bucher@supsi.ch>
 
-        * /rtai-lab/scilab/devices/*.c: function getstr changed to
-        par_getstr (conflict with a Scilab function)
+	* /rtai-lab/scilab/devices/*.c: function getstr changed to
+	par_getstr (conflict with a Scilab function). Thanks to
+	Simone Mannori.
 
 2006-10-26  Roberto Bucher <roberto.bucher@supsi.ch>
 
-        * /rtai-lab/scilab/macros/RTAI/rtai4_comedi_datain.sci: Corrected
-        bug by passing block parameters
-
-2006-10-20  Roberto Bucher <roberto.bucher@supsi.ch>
-
-	* /rtai-lab/scilab/rtmain.c: Added a hiddean feature to measure the
-	task duration using a compiler flag "-DTASKPERIOD=<fifo nr>
+	* /rtai-lab/scilab/macros/RTAI/rtai4_comedi_datain.sci: Corrected
+	bug by passing block parameters. Thanks to Simone Mannori.
 
 2006-10-20  Roberto Bucher <roberto.bucher@supsi.ch>
 
 	* /rtai-lab/matlab/rtmain.c: Added a hiddean feature to measure the
-	task duration using a compiler flag "-DTASKPERIOD=<fifo nr>
+	task duration using a compiler flag "-DTASKPERIOD=<fifo nr>.
+
+2006-10-20  Roberto Bucher <roberto.bucher@supsi.ch>
+
+	* /rtai-lab/scilab/rtmain.c: Added a hiddean feature to measure the
+	task duration using a compiler flag "-DTASKPERIOD=<fifo nr>.
 
 2006-10-05  Paolo Mantegazza <mantegazza@aero.polimi.it>
 

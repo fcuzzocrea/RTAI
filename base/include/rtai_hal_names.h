@@ -27,6 +27,8 @@
 #define TSKEXT2  (HAL_ROOT_NPTDKEYS - 1)
 #define TSKEXT3  (HAL_ROOT_NPTDKEYS - 0)
 
+#define HAL_PATCH_RELEASE_NUMBER(a, b, c)  (((a) << 16) | ((b) << 8) | (c))
+
 #if LINUX_VERSION_CODE < KERNEL_VERSION(2,4,32) || (LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,0) && LINUX_VERSION_CODE < KERNEL_VERSION(2,6,13))
 
 #define HAL_VERSION_STRING   ADEOS_VERSION_STRING
@@ -149,7 +151,11 @@ do { \
 #define hal_pipeline        __ipipe_pipeline
 #define hal_domain_struct   ipipe_domain 
 #define hal_root_domain     ipipe_root_domain 
-#define hal_current_domain  ipipe_percpu_domain 
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,17) && IPIPE_RELEASE_NUMBER >= HAL_PATCH_RELEASE_NUMBER(1,5,1)
+#define hal_current_domain(cpuid)  per_cpu(ipipe_percpu_domain, cpuid) 
+#else
+#define hal_current_domain(cpuid)  (ipipe_percpu_domain[cpuid])
+#endif
 
 #define hal_critical_enter  ipipe_critical_enter
 #define hal_critical_exit   ipipe_critical_exit

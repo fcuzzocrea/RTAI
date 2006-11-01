@@ -914,6 +914,14 @@ config RTAI_RTDM_LEVL_SHIRQ
         Make it possible for RTDM own interrupt handlers to manage shared
 	level triggered interrupts.
 
+config RTAI_DEBUG_RTDM
+	depends on RTAI_RTDM
+        bool "Enable some elementary RTDM debugging messages"
+        default n
+        help
+        Enable some elementary debugging of wrong requests to RTDM, in the 
+	form of messages asserting what's improper and where it's happening.
+
 menu "Drivers"
 
 config RTAI_DRIVERS_SERIAL

@@ -1,5 +1,6 @@
 2006-11-01  Paolo Mantegazza <mantegazza@aero.polimi.it>
 
+	* /base/include/rtai_hal_names.h,
 	* /base/include/asm-i386/rtai_hal.h: adapted to the new definition of 
 	  hal domains through Linux per_cpu stuff.
 

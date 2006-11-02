@@ -1,3 +1,9 @@
+2006-11-02  Paolo Mantegazza <mantegazza@aero.polimi.it>
+
+	* /base/iarch/i386/hal/hal.immed: use existing hal-linux support for 
+	  changing Linux real time scheduling policy and rt_priority for 
+	  2.6.xx.
+
 2006-11-01  Paolo Mantegazza <mantegazza@aero.polimi.it>
 
 	* /base/include/rtai_hal_names.h,

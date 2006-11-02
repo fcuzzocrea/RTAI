@@ -1954,13 +1954,25 @@ static inline _syscall3(int, sched_setscheduler, pid_t,pid, int,policy, struct s
 #endif
 
 #if LINUX_VERSION_CODE < KERNEL_VERSION(2,6,0)
+
 void rtai_set_linux_task_priority (struct task_struct *task, int policy, int prio)
 {
-	task->policy = policy;
 	task->rt_priority = prio;
+	task->policy = policy;
 	set_tsk_need_resched(current);
 }
+
 #else /* KERNEL_VERSION >= 2.6.0 */
+
+void rtai_set_linux_task_priority (struct task_struct *task, int policy, int prio)
+{
+	hal_set_linux_task_priority(task, policy, prio);
+	if (task->rt_priority != prio || task->policy != policy) {
+		printk("RTAI[hal]: sched_setscheduler(policy = %d, prio = %d) failed, (%s -- pid = %d)\n", policy, prio, task->comm, task->pid);
+	}
+}
+
+#if 0  //keep for a while as a memo of what we did
 void rtai_set_linux_task_priority (struct task_struct *task, int policy, int prio)
 {
 	int rc;
@@ -1982,6 +1994,8 @@ void rtai_set_linux_task_priority (struct task_struct *task, int policy, int pri
 		printk("RTAI[hal]: sched_setscheduler(policy=%d,prio=%d) failed, code %d (%s -- pid=%d)\n", policy, prio, rc, task->comm, task->pid);
 	}
 }
+#endif
+
 #endif  /* KERNEL_VERSION < 2.6.0 */
 
 #ifdef CONFIG_PROC_FS

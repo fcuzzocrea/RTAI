@@ -1953,7 +1953,7 @@ static int errno;
 static inline _syscall3(int, sched_setscheduler, pid_t,pid, int,policy, struct sched_param *,param)
 #endif
 
-#if LINUX_VERSION_CODE < KERNEL_VERSION(2,6,0)
+#if LINUX_VERSION_CODE < KERNEL_VERSION(2,4,32)
 
 void rtai_set_linux_task_priority (struct task_struct *task, int policy, int prio)
 {

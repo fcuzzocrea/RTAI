@@ -1,6 +1,11 @@
+2006-11-04  Paolo Mantegazza <mantegazza@aero.polimi.it>
+
+	* /base/arch/i386/hal/hal.immed: check task extensions to avoid 
+	  memory leaks in case of changes pf what set in Linux task struct.
+
 2006-11-02  Paolo Mantegazza <mantegazza@aero.polimi.it>
 
-	* /base/iarch/i386/hal/hal.immed: use existing hal-linux support for 
+	* /base/arch/i386/hal/hal.immed: use existing hal-linux support for 
 	  changing Linux real time scheduling policy and rt_priority for 
 	  2.6.xx.
 

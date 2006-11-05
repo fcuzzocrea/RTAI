@@ -138,7 +138,7 @@ static int rt_shm_alloc_usp(unsigned long name, int size, int suprt)
 	TRACE_RTAI_SHM(TRACE_RTAI_EV_SHM_MALLOC, name, size, current->pid);
 
 	if (_rt_shm_alloc(name, size, suprt)) {
-		current->rtai_tskext(TSKEXT3) = (void *)name;
+		current->rtai_tskext(TSKEXT1) = (void *)name;
 		return abs(rt_get_type(name));
 	}
 	return 0;
@@ -232,8 +232,8 @@ static int rtai_shm_f_mmap(struct file *file, struct vm_area_struct *vma)
 	if (!vma->vm_ops) {
 		vma->vm_ops = &rtai_shm_vm_ops;
 		vma->vm_flags |= VM_LOCKED;
-		name = (unsigned long)(vma->vm_private_data = current->rtai_tskext(TSKEXT3));
-		current->rtai_tskext(TSKEXT3) = NULL;
+		name = (unsigned long)(vma->vm_private_data = current->rtai_tskext(TSKEXT1));
+		current->rtai_tskext(TSKEXT1) = current->rtai_tskext(TSKEXT0) ? current : NULL;
 		return (size = rt_get_type(name)) < 0 ? rkmmap(ALIGN2PAGE(rt_get_adr(name)), -size, vma) : rvmmap(rt_get_adr(name), size, vma);
 	}
 	return -EFAULT;

@@ -1,6 +1,12 @@
 2006-11-05  Paolo Mantegazza <mantegazza@aero.polimi.it>
 
-	* /addons/rtdm/* and /addons/drivers/16550.c; aligned to the latest.
+	* /addons/rtdm/* and /addons/drivers/16550.c: aligned to the latest.
+	* /base/ipc/shm/shm.c: use TSKEXT1, properly restoring it after being 
+	   used, in place of TSKEXT3 for mapping to user space.
+	* /base/include/rtai_hal_names.h: added #error check for TSKEXTs, to
+	  avoid memory leaks in case hal patches change the related sizing;
+	  reworked hal_schedule_back_root stuff for proper use of "prev", as
+	  set from within "context_switch".
 
 2006-11-04  Paolo Mantegazza <mantegazza@aero.polimi.it>
 

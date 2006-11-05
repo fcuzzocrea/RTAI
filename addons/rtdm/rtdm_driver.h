@@ -1035,10 +1035,16 @@ static inline void rtdm_free(void *ptr)
     xnfree(ptr);
 }
 
-int rtdm_mmap_to_user(rtdm_user_info_t *user_info, void *src_addr, size_t len,
+int rtdm_mmap_to_user(rtdm_user_info_t *user_info,
+	              void *src_addr, size_t len,
                       int prot, void **pptr,
                       struct vm_operations_struct *vm_ops,
                       void *vm_private_data);
+int rtdm_iomap_to_user(rtdm_user_info_t *user_info,
+                       unsigned long src_addr, size_t len,
+                       int prot, void **pptr,
+                       struct vm_operations_struct *vm_ops,
+                       void *vm_private_data);
 int rtdm_munmap(rtdm_user_info_t *user_info, void *ptr, size_t len);
 
 static inline int rtdm_read_user_ok(rtdm_user_info_t *user_info,
@@ -1057,32 +1063,30 @@ static inline int rtdm_copy_from_user(rtdm_user_info_t *user_info,
                                       void *dst, const void __user *src,
                                       size_t size)
 {
-    return __xn_copy_from_user(user_info, dst, src, size);
+    return __xn_copy_from_user(user_info, dst, src, size) ? -EFAULT : 0;
 }
 
 static inline int rtdm_safe_copy_from_user(rtdm_user_info_t *user_info,
                                            void *dst, const void __user *src,
                                            size_t size)
 {
-    if (unlikely(!__xn_access_ok(user_info, VERIFY_READ, src, size)))
-        return -EFAULT;
-    return __xn_copy_from_user(user_info, dst, src, size);
+    return (!__xn_access_ok(user_info, VERIFY_READ, src, size) ||
+            __xn_copy_from_user(user_info, dst, src, size)) ? -EFAULT : 0;
 }
 
 static inline int rtdm_copy_to_user(rtdm_user_info_t *user_info,
                                     void __user *dst, const void *src,
                                     size_t size)
 {
-    return __xn_copy_to_user(user_info, dst, src, size);
+    return __xn_copy_to_user(user_info, dst, src, size) ? -EFAULT : 0;
 }
 
 static inline int rtdm_safe_copy_to_user(rtdm_user_info_t *user_info,
                                          void __user *dst, const void *src,
                                          size_t size)
 {
-    if (unlikely(!__xn_access_ok(user_info, VERIFY_WRITE, dst, size)))
-        return -EFAULT;
-    return __xn_copy_to_user(user_info, dst, src, size);
+    return (!__xn_access_ok(user_info, VERIFY_WRITE, dst, size) ||
+            __xn_copy_to_user(user_info, dst, src, size)) ? -EFAULT : 0;
 }
 
 static inline int rtdm_strncpy_from_user(rtdm_user_info_t *user_info,

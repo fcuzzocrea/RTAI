@@ -205,15 +205,18 @@ static void xnintr_irq_handler(unsigned irq, void *cookie)
 {
 
 	xnintr_t *intr = (xnintr_t *)cookie;
+
+
 	int s;
 
 	xnarch_memory_barrier();
 
-	xnltt_log_event(xeno_ev_ienter, irq);
+
+
+
 
 	RTAI_SCHED_ISR_LOCK();
 	s = intr->isr(intr);
-	++intr->hits;
 
 	if (unlikely(s == XN_ISR_NONE)) {
 		if (++intr->unhandled == XNINTR_MAX_UNHANDLED) {
@@ -221,8 +224,13 @@ static void xnintr_irq_handler(unsigned irq, void *cookie)
 				 "line.\n", __FUNCTION__, irq);
 			s |= XN_ISR_NOENABLE;
 		}
-	} else
+	} else {
+		xnstat_counter_inc(&intr->stat[xnsched_cpu(sched)].hits);
+
+
+
 		intr->unhandled = 0;
+	}
 
 	if (s & XN_ISR_PROPAGATE)
 		xnarch_chain_irq(irq);
@@ -231,12 +239,31 @@ static void xnintr_irq_handler(unsigned irq, void *cookie)
 
 	RTAI_SCHED_ISR_UNLOCK();
 
-	xnltt_log_event(xeno_ev_iexit, irq);
+
+
+
+
+
+
+
+
+
+
+
+
 }
 
-/* Optional support for shared interrupts. */
 
-#if defined(CONFIG_RTAI_RTDM_LEVL_SHIRQ) || defined(CONFIG_RTAI_RTDM_EDGE_SHIRQ)
+
+
+
+
+
+
+
+
+
+#if defined(CONFIG_RTAI_RTDM_LEVEL_SHIRQ) ||defined(CONFIG_RTAI_RTDM_EDGE_SHIRQ)
 
 typedef struct xnintr_shirq {
 
@@ -274,14 +301,16 @@ void xnintr_synchronize(xnintr_t *intr)
 #endif
 }
 
-#if defined(CONFIG_RTAI_RTDM_LEVL_SHIRQ)
-/*
- * Low-level interrupt handler dispatching the user-defined ISRs for
- * shared interrupts -- Called with interrupts off.
- */
+#if defined(CONFIG_RTAI_RTDM_LEVEL_SHIRQ)
+
+
+
+
 
 static void xnintr_shirq_handler(unsigned irq, void *cookie)
 {
+
+
 
 	xnintr_shirq_t *shirq = &xnshirqs[irq];
 	xnintr_t *intr;
@@ -289,7 +318,9 @@ static void xnintr_shirq_handler(unsigned irq, void *cookie)
 
 	xnarch_memory_barrier();
 
-	xnltt_log_event(xeno_ev_ienter, irq);
+
+
+
 
 	RTAI_SCHED_ISR_LOCK();
 
@@ -297,9 +328,21 @@ static void xnintr_shirq_handler(unsigned irq, void *cookie)
 	intr = shirq->handlers;
 
 	while (intr) {
-		s |= intr->isr(intr);
-		++intr->hits;
-		intr = intr->next;
+		int ret;
+
+		ret = intr->isr(intr);
+		s |= ret;
+
+                if (ret & XN_ISR_HANDLED) {
+                        xnstat_counter_inc(
+                                &intr->stat[xnsched_cpu(sched)].hits);
+
+
+
+
+                }
+
+                intr = intr->next;
 	}
 
 	xnintr_shirq_unlock(shirq);
@@ -321,20 +364,23 @@ static void xnintr_shirq_handler(unsigned irq, void *cookie)
 	RTAI_SCHED_ISR_UNLOCK();
 
 
-	xnltt_log_event(xeno_ev_iexit, irq);
+
+
 }
 
-#endif /* CONFIG_RTAI_RTDM_LEVL_SHIRQ */
+#endif /* CONFIG_RTAI_RTDM_LEVEL_SHIRQ */
 
 #if defined(CONFIG_RTAI_RTDM_EDGE_SHIRQ)
-/*
- * Low-level interrupt handler dispatching the user-defined ISRs for
- * shared edge-triggered interrupts -- Called with interrupts off.
- */
+
+
+
+
 
 static void xnintr_edge_shirq_handler(unsigned irq, void *cookie)
 {
 	const int MAX_EDGEIRQ_COUNTER = 128;
+
+
 
 
 	xnintr_shirq_t *shirq = &xnshirqs[irq];
@@ -343,7 +389,9 @@ static void xnintr_edge_shirq_handler(unsigned irq, void *cookie)
 
 	xnarch_memory_barrier();
 
-	xnltt_log_event(xeno_ev_ienter, irq);
+
+
+
 
 	RTAI_SCHED_ISR_LOCK();
 
@@ -353,13 +401,21 @@ static void xnintr_edge_shirq_handler(unsigned irq, void *cookie)
 	while (intr != end) {
 		int ret, code;
 
+
+
+
 		ret = intr->isr(intr);
 		code = ret & ~XN_ISR_BITMASK;
 		s |= ret;
 
 		if (code == XN_ISR_HANDLED) {
-			++intr->hits;
 			end = NULL;
+                        xnstat_counter_inc(
+                                &intr->stat[xnsched_cpu(sched)].hits);
+
+
+
+
 		} else if (code == XN_ISR_NONE && end == NULL)
 			end = intr;
 
@@ -394,7 +450,8 @@ static void xnintr_edge_shirq_handler(unsigned irq, void *cookie)
 	RTAI_SCHED_ISR_UNLOCK();
 
 
-	xnltt_log_event(xeno_ev_iexit, irq);
+
+
 }
 
 #endif /* CONFIG_RTAI_RTDM_EDGE_SHIRQ */
@@ -419,7 +476,8 @@ static inline int xnintr_irq_attach(xnintr_t *intr)
 			(intr->flags & XN_ISR_EDGE)))
 			return -EBUSY;
 
-		/* Get a position at the end of the list to insert the new element. */
+
+
 		while (prev) {
 			p = &prev->next;
 			prev = *p;
@@ -429,14 +487,19 @@ static inline int xnintr_irq_attach(xnintr_t *intr)
 		void (*handler) (unsigned, void *) = &xnintr_irq_handler;
 
 		if (intr->flags & XN_ISR_SHARED) {
-#if defined(CONFIG_RTAI_RTDM_LEVL_SHIRQ)
-			handler = &xnintr_shirq_handler;
-#endif /* CONFIG_RTAI_RTDM_LEVL_SHIRQ */
-
-#if defined(CONFIG_RTAI_RTDM_EDGE_SHIRQ)
 			if (intr->flags & XN_ISR_EDGE)
+#if defined(CONFIG_RTAI_RTDM_EDGE_SHIRQ)
 				handler = &xnintr_edge_shirq_handler;
+#else /* !CONFIG_RTAI_RTDM_EDGE_SHIRQ */
+				return -ENOSYS;
 #endif /* CONFIG_RTAI_RTDM_EDGE_SHIRQ */
+			else
+#if defined(CONFIG_RTAI_RTDM_LEVEL_SHIRQ)
+				handler = &xnintr_shirq_handler;
+#else /* !CONFIG_RTAI_RTDM_LEVEL_SHIRQ */
+				return -ENOSYS;
+#endif /* CONFIG_RTAI_RTDM_LEVEL_SHIRQ */
+
 		}
 		shirq->unhandled = 0;
 
@@ -499,7 +562,7 @@ int xnintr_mount(void)
 	return 0;
 }
 
-#else /* !CONFIG_RTAI_RTDM_LEVL_SHIRQ && !CONFIG_RTAI_RTDM_EDGE_SHIRQ */
+#else /* !CONFIG_RTAI_RTDM_LEVEL_SHIRQ && !CONFIG_RTAI_RTDM_EDGE_SHIRQ */
 
 static inline int xnintr_irq_attach(xnintr_t *intr)
 {
@@ -514,7 +577,7 @@ static inline int xnintr_irq_detach(xnintr_t *intr)
 void xnintr_synchronize(xnintr_t *intr) {}
 int xnintr_mount(void) { return 0; }
 
-#endif /* CONFIG_RTAI_RTDM_LEVL_SHIRQ || CONFIG_RTAI_RTDM_EDGE_SHIRQ */
+#endif /* CONFIG_RTAI_RTDM_LEVEL_SHIRQ || CONFIG_RTAI_RTDM_EDGE_SHIRQ */
 
 int xnintr_init(xnintr_t *intr,
 		const char *name,
@@ -524,13 +587,13 @@ int xnintr_init(xnintr_t *intr,
 	intr->isr = isr;
 	intr->iack = iack;
 	intr->cookie = NULL;
-	intr->hits = 0;
 	intr->name = name;
 	intr->flags = flags;
 	intr->unhandled = 0;
-
+	memset(&intr->stat, 0, sizeof(intr->stat));
+#if defined(CONFIG_RTAI_RTDM_LEVEL_SHIRQ) ||defined(CONFIG_RTAI_RTDM_EDGE_SHIRQ)
 	intr->next = NULL;
-
+#endif /* CONFIG_RTAI_RTDM_LEVEL_SHIRQ) || CONFIG_RTAI_RTDM_EDGE_SHIRQ */
 
 	return 0;
 }
@@ -546,7 +609,6 @@ int xnintr_attach(xnintr_t *intr, void *cookie)
 	int err;
 	spl_t s;
 
-	intr->hits = 0;
 	intr->cookie = cookie;
 
 	xnlock_get_irqsave(&intrlock, s);
@@ -554,6 +616,14 @@ int xnintr_attach(xnintr_t *intr, void *cookie)
 	err = xnintr_irq_attach(intr);
 
 	xnlock_put_irqrestore(&intrlock, s);
+
+
+
+
+
+
+
+
 
 	return err;
 }
@@ -569,10 +639,18 @@ int xnintr_detach(xnintr_t *intr)
 
 	xnlock_put_irqrestore(&intrlock, s);
 
-        /* The idea here is to keep a detached interrupt object valid as long
-           as the corresponding irq handler is running. This is one of the
-           requirements to iterate over the xnintr_shirq_t::handlers list in
-           xnintr_irq_handler() in a lockless way. */
+
+
+
+
+
+
+
+
+
+
+
+
 	xnintr_synchronize(intr);
 
 	return err;

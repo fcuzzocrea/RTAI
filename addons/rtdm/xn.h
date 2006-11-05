@@ -27,7 +27,42 @@
 #include <asm/uaccess.h>
 #include <asm/mman.h>
 
-#define XENO_ASSERT(a, b, c)
+#if 0
+#define XENO_ASSERT(subsystem, cond, action)  do { } while (0)
+#else
+#ifndef CONFIG_RTAI_DEBUG_RTDM
+#define CONFIG_RTAI_DEBUG_RTDM  1
+#endif
+#define XENO_ASSERT(subsystem, cond, action)  do { \
+    if (unlikely(CONFIG_RTAI_DEBUG_##subsystem > 0 && !(cond))) { \
+        xnlogerr("assertion failed at %s:%d (%s)\n", __FILE__, __LINE__, (#cond)); \
+        action; \
+    } \
+} while(0)
+#endif
+
+/* 
+  With what above we let some assertion diagnostic. Here below we keep knowledge
+  of specific assertions we care of.
+ */
+
+#define xnpod_root_p()          (!current->rtai_tskext(TSKEXT0) || !((RT_TASK *)(current->rtai_tskext(TSKEXT0)))->is_hard)
+#define rthal_local_irq_test()  (!rtai_save_flags_irqbit())
+#define rthal_local_irq_enable  rtai_sti 
+
+#if LINUX_VERSION_CODE < KERNEL_VERSION(2,6,0)
+
+#define _MODULE_PARM_STRING_charp "s"
+#define compat_module_param_array(name, type, count, perm) \
+        static inline void *__check_existence_##name(void) { return &name; } \
+        MODULE_PARM(name, "1-" __MODULE_STRING(count) _MODULE_PARM_STRING_##type)
+
+#else
+
+#define compat_module_param_array(name, type, count, perm) \
+        module_param_array(name, type, NULL, perm)
+
+#endif
 
 //recursive smp locks, as for RTAI global stuff + a name
 
@@ -201,17 +236,35 @@ typedef unsigned long xnflags_t;
 
 typedef atomic_t atomic_counter_t;
 
+typedef RTIME xnticks_t;
+
+typedef struct xnstat_runtime {
+        xnticks_t start;
+        xnticks_t total;
+} xnstat_runtime_t;
+
+typedef struct xnstat_counter {
+        int counter;
+} xnstat_counter_t;
+#define xnstat_counter_inc(c)  ((c)->counter++)
+
 typedef struct xnintr {
     struct xnintr *next;
     unsigned unhandled;
     xnisr_t isr;
     void *cookie;
-    unsigned long hits;
     xnflags_t flags;
     unsigned irq;
     xniack_t iack;
     const char *name;
+    struct {
+        xnstat_counter_t hits;
+        xnstat_runtime_t account;
+    } stat[RTAI_NR_CPUS];
+
 } xnintr_t;
+
+#define xnsched_cpu(sched)  rtai_cpuid()
 
 int xnintr_shirq_attach(xnintr_t *intr, void *cookie);
 int xnintr_shirq_detach(xnintr_t *intr);
@@ -231,8 +284,6 @@ int xnintr_disable (xnintr_t *intr);
 #define __testbits(flags, mask)  ((flags) & (mask))
 #define __setbits(flags, mask)   do { (flags) |= (mask);  } while(0)
 #define __clrbits(flags, mask)   do { (flags) &= ~(mask); } while(0)
-
-#define xnltt_log_event(a, b)
 
 #define xnarch_chain_irq   rt_pend_linux_irq
 #define xnarch_end_irq     rt_enable_irq

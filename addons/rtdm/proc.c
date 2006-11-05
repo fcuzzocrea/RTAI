@@ -195,7 +195,7 @@ static int proc_read_fildes(char* buf, char** start, off_t offset,
     RTDM_PROC_PRINT_VARS(80);
 
 
-    RTDM_PROC_PRINT("total:\t%d\nopen:\t%d\nfree:\t%d\n", RTDM_FD_MAX,
+    RTDM_PROC_PRINT("total=%d:open=%d:free=%d\n", RTDM_FD_MAX,
                     open_fildes, RTDM_FD_MAX - open_fildes);
 
     RTDM_PROC_PRINT_DONE;
@@ -244,10 +244,6 @@ int rtdm_proc_register_device(struct rtdm_device* device)
     struct proc_dir_entry   *dev_dir;
     struct proc_dir_entry   *proc_entry;
 
-    if (device->proc_name == NULL) {
-        xnlogerr("RTDM: missing device proc name\n");
-        return -EINVAL;
-    }
 
     dev_dir = create_proc_entry(device->proc_name, S_IFDIR, rtdm_proc_root);
     if (!dev_dir)

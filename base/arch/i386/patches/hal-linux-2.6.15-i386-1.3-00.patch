@@ -2547,7 +2547,7 @@
  	if (unlikely(!mm)) {
  		next->active_mm = oldmm;
  		atomic_inc(&oldmm->mm_count);
-@@ -1678,13 +1682,15 @@ task_t * context_switch(runqueue_t *rq, 
+@@ -1678,13 +1682,18 @@ task_t * context_switch(runqueue_t *rq, 
  		WARN_ON(rq->prev_mm);
  		rq->prev_mm = oldmm;
  	}
@@ -2555,6 +2555,9 @@
 +}
  	/* Here we just switch the register state and the stack. */
  	switch_to(prev, next, prev);
++#ifdef CONFIG_IPIPE
++       current->ptd[IPIPE_ROOT_NPTDKEYS - 1] = prev;
++#endif /* CONFIG_IPIPE */
  
  	return prev;
  }

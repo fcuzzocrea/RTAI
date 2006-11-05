@@ -4864,7 +4864,7 @@ diff -uNrp 2.4.32/kernel/sched.c 2.4.32-i386-ipipe/kernel/sched.c
  /*
   *  'schedule()' is the scheduler function. It's a very simple and nice
   * scheduler: it's not perfect, but certainly works for most things.
-@@ -544,6 +586,14 @@ asmlinkage void schedule_tail(struct tas
+@@ -544,6 +586,21 @@ asmlinkage void schedule_tail(struct tas
   * tasks can run. It can not be killed, and it cannot sleep. The 'state'
   * information in task[0] is never used.
   */
@@ -4873,8 +4873,15 @@ diff -uNrp 2.4.32/kernel/sched.c 2.4.32-i386-ipipe/kernel/sched.c
 +*next)
 +{
 +	switch_to(prev, next, prev);
++#ifdef CONFIG_IPIPE
++       current->ptd[IPIPE_ROOT_NPTDKEYS - 1] = prev;
++#endif /* CONFIG_IPIPE */
 +	return prev;
 +}
++
++#define EXPORT_SYMTAB
++#include <linux/module.h>
++EXPORT_SYMBOL(context_switch);
 +
  asmlinkage void schedule(void)
  {

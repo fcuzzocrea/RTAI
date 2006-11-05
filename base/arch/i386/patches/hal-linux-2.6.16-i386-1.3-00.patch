@@ -2548,7 +2548,7 @@ Binary files 2.6.16/arch/ia64/hp/sim/boot/bootloader and 2.6.16-ipipe/arch/ia64/
  	if (unlikely(!mm)) {
  		next->active_mm = oldmm;
  		atomic_inc(&oldmm->mm_count);
-@@ -1594,13 +1598,15 @@ task_t * context_switch(runqueue_t *rq, 
+@@ -1594,13 +1598,18 @@ task_t * context_switch(runqueue_t *rq, 
  		WARN_ON(rq->prev_mm);
  		rq->prev_mm = oldmm;
  	}
@@ -2556,6 +2556,9 @@ Binary files 2.6.16/arch/ia64/hp/sim/boot/bootloader and 2.6.16-ipipe/arch/ia64/
 +}
  	/* Here we just switch the register state and the stack. */
  	switch_to(prev, next, prev);
++#ifdef CONFIG_IPIPE
++       current->ptd[IPIPE_ROOT_NPTDKEYS - 1] = prev;
++#endif /* CONFIG_IPIPE */
  
  	return prev;
  }

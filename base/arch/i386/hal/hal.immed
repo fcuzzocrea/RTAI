@@ -2108,11 +2108,6 @@ int __rtai_hal_init (void)
 	int trapnr, halinv;
 	struct hal_attr_struct attr;
 
-	if (TSKEXT0 < 0) {
-		printk(KERN_ERR "RTAI[hal]: RTAI TASK EXTENSIONs WILL CAUSE MEMORY LEAKs, CHECK 'rtai_hal_name.h' CONSISTENCY WITH HAL SIZING\n");
-		return -1;
-	}
-		
 	for (halinv = trapnr = 0; trapnr < HAL_NR_EVENTS; trapnr++) {
 		if (hal_root_domain->hal_event_handler_fun(trapnr)) {
 			halinv = 1;

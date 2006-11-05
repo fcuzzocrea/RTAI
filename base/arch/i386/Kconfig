@@ -906,7 +906,7 @@ config RTAI_RTDM_EDGE_SHIRQ
         Make it possible for RTDM own interrupt handlers to manage shared
 	edge triggered interrupts.
 
-config RTAI_RTDM_LEVL_SHIRQ
+config RTAI_RTDM_LEVEL_SHIRQ
 	depends on RTAI_RTDM
         bool "Shared level triggered interrupts"
         default n

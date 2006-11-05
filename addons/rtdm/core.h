@@ -27,7 +27,7 @@
 extern xnlock_t             rt_fildes_lock;
 #endif /* CONFIG_SMP */
 
-#define RTDM_FD_MAX  CONFIG_RTAI_RTDM_FD_MAX
+#define RTDM_FD_MAX         CONFIG_RTAI_RTDM_FD_MAX
 
 struct rtdm_fildes {
     struct rtdm_dev_context *context;

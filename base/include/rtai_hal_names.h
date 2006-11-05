@@ -22,10 +22,10 @@
 
 #include <linux/version.h>
 
-#define TSKEXT0  (HAL_ROOT_NPTDKEYS - 3)
-#define TSKEXT1  (HAL_ROOT_NPTDKEYS - 2)
-#define TSKEXT2  (HAL_ROOT_NPTDKEYS - 1)
-#define TSKEXT3  (HAL_ROOT_NPTDKEYS - 0)
+#define TSKEXT0  (HAL_ROOT_NPTDKEYS - 4)
+#define TSKEXT1  (HAL_ROOT_NPTDKEYS - 3)
+#define TSKEXT2  (HAL_ROOT_NPTDKEYS - 2)
+#define TSKEXT3  (HAL_ROOT_NPTDKEYS - 1)
 
 #define HAL_PATCH_RELEASE_NUMBER(a, b, c)  (((a) << 16) | ((b) << 8) | (c))
 
@@ -129,6 +129,8 @@ do { \
 
 #define hal_tskext  ptd
 
+#define hal_set_linux_task_priority  __adeos_setscheduler_root
+
 #else
 
 #define HAL_VERSION_STRING   IPIPE_VERSION_STRING
@@ -219,7 +221,14 @@ do { \
 #define hal_set_printk_async  ipipe_set_printk_async
 
 #define hal_schedule_back_root(prev) \
-	ipipe_reenter_root(prev, current->policy, current->rt_priority);
+do { \
+	if ((prev)->rtai_tskext(HAL_ROOT_NPTDKEYS - 1)) { \
+		ipipe_reenter_root((prev)->rtai_tskext(HAL_ROOT_NPTDKEYS - 1), (prev)->policy, (prev)->rt_priority); \
+		(prev)->rtai_tskext(HAL_ROOT_NPTDKEYS - 1) = NULL; \
+	} else { \
+		ipipe_reenter_root(prev, (prev)->policy, (prev)->rt_priority); \
+	} \
+} while (0)
 
 #define hal_processor_id  ipipe_processor_id
 
@@ -237,6 +246,12 @@ do { \
 
 #define hal_tskext  ptd
 
+#define hal_set_linux_task_priority  ipipe_setscheduler_root
+
+#endif
+
+#if defined(IPIPE_ROOT_NPTDKEYS) && TSKEXT0 < 0
+#error *** TSKEXTs WILL CAUSE MEMORY LEAKS, CHECK BOUNDS IN HAL PATCHES ***
 #endif
 
 #endif

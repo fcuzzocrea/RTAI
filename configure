@@ -24055,19 +24055,19 @@ cat >>confdefs.h <<_ACEOF
 #define CONFIG_RTAI_RTDM_FD_MAX $CONFIG_RTAI_RTDM_FD_MAX
 _ACEOF
 
-
-cat >>confdefs.h <<_ACEOF
-#define CONFIG_RTAI_RTDM_EDGE_SHIRQ $CONFIG_RTAI_RTDM_EDGE_SHIRQ
+test x$CONFIG_RTAI_RTDM_EDGE_SHIRQ = xy &&
+cat >>confdefs.h <<\_ACEOF
+#define CONFIG_RTAI_RTDM_EDGE_SHIRQ 1
 _ACEOF
 
-
-cat >>confdefs.h <<_ACEOF
-#define CONFIG_RTAI_RTDM_LEVEL_SHIRQ $CONFIG_RTAI_RTDM_LEVEL_SHIRQ
+test x$CONFIG_RTAI_RTDM_LEVEL_SHIRQ = xy &&
+cat >>confdefs.h <<\_ACEOF
+#define CONFIG_RTAI_RTDM_LEVEL_SHIRQ 1
 _ACEOF
 
-
-cat >>confdefs.h <<_ACEOF
-#define CONFIG_RTAI_DEBUG_RTDM $CONFIG_RTAI_DEBUG_RTDM
+test x$CONFIG_RTAI_DEBUG_RTDM = xy &&
+cat >>confdefs.h <<\_ACEOF
+#define CONFIG_RTAI_DEBUG_RTDM 1
 _ACEOF
 
 

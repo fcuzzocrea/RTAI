@@ -28,18 +28,20 @@
 #include <asm/mman.h>
 
 #if 0
+
 #define XENO_ASSERT(subsystem, cond, action)  do { } while (0)
 #else
+
 #ifndef CONFIG_RTAI_DEBUG_RTDM
-#define CONFIG_RTAI_DEBUG_RTDM  1
+#define CONFIG_RTAI_DEBUG_RTDM  0
 #endif
+
 #define XENO_ASSERT(subsystem, cond, action)  do { \
     if (unlikely(CONFIG_RTAI_DEBUG_##subsystem > 0 && !(cond))) { \
         xnlogerr("assertion failed at %s:%d (%s)\n", __FILE__, __LINE__, (#cond)); \
         action; \
     } \
 } while(0)
-#endif
 
 /* 
   With what above we let some assertion diagnostic. Here below we keep knowledge
@@ -49,6 +51,8 @@
 #define xnpod_root_p()          (!current->rtai_tskext(TSKEXT0) || !((RT_TASK *)(current->rtai_tskext(TSKEXT0)))->is_hard)
 #define rthal_local_irq_test()  (!rtai_save_flags_irqbit())
 #define rthal_local_irq_enable  rtai_sti 
+
+#endif
 
 #if LINUX_VERSION_CODE < KERNEL_VERSION(2,6,0)
 

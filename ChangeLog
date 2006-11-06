@@ -1,8 +1,14 @@
+2006-11-06  Pierangelo Masarati <masarati@aero.polimi.it>
+
+	* configure.in: allow to configure RTAI_RTDM_EDGE_SHIRQ,
+	  RTAI_RTDM_LEVEL_SHIRQ and RTAI_DEBUG_RTDM;
+	  refresh of all build files
+
 2006-11-05  Paolo Mantegazza <mantegazza@aero.polimi.it>
 
 	* /addons/rtdm/* and /addons/drivers/16550.c: aligned to the latest.
 	* /base/ipc/shm/shm.c: use TSKEXT1, properly restoring it after being 
-	   used, in place of TSKEXT3 for mapping to user space.
+	  used, in place of TSKEXT3 for mapping to user space.
 	* /base/include/rtai_hal_names.h: added #error check for TSKEXTs, to
 	  avoid memory leaks in case hal patches change the related sizing;
 	  reworked hal_schedule_back_root stuff for proper use of "prev", as

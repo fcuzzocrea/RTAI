@@ -34,6 +34,9 @@
 #undef CONFIG_RTAI_CPUS
 
 /* Kconfig */
+#undef CONFIG_RTAI_DEBUG_RTDM
+
+/* Kconfig */
 #undef CONFIG_RTAI_DONT_DISPATCH_CORE_IRQS
 
 /* Kconfig */
@@ -184,7 +187,13 @@
 #undef CONFIG_RTAI_RTDM
 
 /* Kconfig */
+#undef CONFIG_RTAI_RTDM_EDGE_SHIRQ
+
+/* Kconfig */
 #undef CONFIG_RTAI_RTDM_FD_MAX
+
+/* Kconfig */
+#undef CONFIG_RTAI_RTDM_LEVEL_SHIRQ
 
 /* Kconfig */
 #undef CONFIG_RTAI_SCHED_8254_LATENCY

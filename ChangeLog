@@ -21,10 +21,6 @@
 
 2006-11-05  Paolo Mantegazza <mantegazza@aero.polimi.it>
 
-	* /include/rtai_sched.h: extended error codes to include netrpc timeout.
-
-2006-11-05  Paolo Mantegazza <mantegazza@aero.polimi.it>
-
 	* /addons/rtdm/* and /addons/drivers/16550.c: aligned to the latest.
 	* /base/ipc/shm/shm.c: use TSKEXT1, properly restoring it after being 
 	  used, in place of TSKEXT3 for mapping to user space.

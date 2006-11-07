@@ -37,6 +37,9 @@
 #undef CONFIG_RTAI_DEBUG_RTDM
 
 /* Kconfig */
+#undef CONFIG_RTAI_DIAG_TSC_SYNC
+
+/* Kconfig */
 #undef CONFIG_RTAI_DONT_DISPATCH_CORE_IRQS
 
 /* Kconfig */
@@ -131,6 +134,9 @@
 
 /* Kconfig */
 #undef CONFIG_RTAI_MALLOC_VMALLOC
+
+/* Kconfig */
+#undef CONFIG_RTAI_MASTER_TSC_CPU
 
 /* Kconfig */
 #undef CONFIG_RTAI_MATH
@@ -236,6 +242,9 @@
 
 /* Kconfig */
 #undef CONFIG_RTAI_TRACE
+
+/* Kconfig */
+#undef CONFIG_RTAI_TUNE_TSC_SYNC
 
 /* Kconfig */
 #undef CONFIG_RTAI_USE_NEWERR

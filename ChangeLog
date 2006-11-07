@@ -1,12 +1,17 @@
-2006-11-05  Paolo Mantegazza <mantegazza@aero.polimi.it>
+2006-11-07  Pierangelo Masarati <masarati@aero.polimi.it>
 
-	* /include/rtai_sched.h: extended error codes to include netrpc timeout.
+	* configure.in: allow to configure RTAI_DIAG_TSC_SYNC,
+	  RTAI_MASTER_TSC_CPU and RTAI_TUNE_TSC_SYNC
 
 2006-11-06  Pierangelo Masarati <masarati@aero.polimi.it>
 
 	* configure.in: allow to configure RTAI_RTDM_EDGE_SHIRQ,
 	  RTAI_RTDM_LEVEL_SHIRQ and RTAI_DEBUG_RTDM;
 	  refresh of all build files
+
+2006-11-05  Paolo Mantegazza <mantegazza@aero.polimi.it>
+
+	* /include/rtai_sched.h: extended error codes to include netrpc timeout.
 
 2006-11-05  Paolo Mantegazza <mantegazza@aero.polimi.it>
 

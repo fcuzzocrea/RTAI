@@ -40,7 +40,7 @@
 
 #include <asm/rtai_hal.h>
 
-#if defined(CONFIG_SMP) && defined(RTAI_DIAG_TSC_SYNC)
+#if defined(CONFIG_SMP) && defined(CONFIG_RTAI_DIAG_TSC_SYNC)
 
 /*
 	Hacked from arch/ia64/kernel/smpboot.c.
@@ -159,7 +159,7 @@ static void sync_tsc(unsigned int master, unsigned int slave)
 //	printk(KERN_INFO "CPU %u: synced its TSC with CPU %u (master time stamp %llu cycles, < - OFFSET %lld cycles - > , max double tsc read span %llu cycles)\n", slave, master, master_time_stamp, delta, rt);
 }
 
-//#define RTAI_MASTER_TSC_CPU  0
+//#define CONFIG_RTAI_MASTER_TSC_CPU  0
 #define SLEEP0  500 // ms
 #define DSLEEP  500 // ms
 static volatile int end;
@@ -176,9 +176,9 @@ static void kthread_fun(void *null)
 	int i;
 	while (!end) {
 		for (i = 0; i < num_online_cpus(); i++) {
-			if (i != RTAI_MASTER_TSC_CPU) {
+			if (i != CONFIG_RTAI_MASTER_TSC_CPU) {
 				set_cpus_allowed(current, cpumask_of_cpu(i));
-				sync_tsc(RTAI_MASTER_TSC_CPU, i);
+				sync_tsc(CONFIG_RTAI_MASTER_TSC_CPU, i);
 			}
 		}
 		msleep(SLEEP0 + irandu()%DSLEEP);
@@ -204,7 +204,7 @@ void cleanup_tsc_sync(void)
 
 EXPORT_SYMBOL(rtai_tsc_ofst);
 
-#endif /* defined(CONFIG_SMP) && defined(RTAI_DIAG_TSC_SYNC) */
+#endif /* defined(CONFIG_SMP) && defined(CONFIG_RTAI_DIAG_TSC_SYNC) */
 
 #undef INCLUDED_BY_HAL_C
 #define INCLUDED_BY_HAL_C

@@ -86,10 +86,10 @@
 2006-09-26  Paolo Mantegazza <mantegazza@aero.polimi.it>
 
 	* /base/arch/i386/Kconfig: add configuration for TSC diagnose and
-	  syncing.
+	  synchronisation.
 	* /base/include/asm-i386/rtai_hal.h:
-	* /base/arch/i386/hal/hal.c, hal.immed: use configiration parameters
-	  for TSC syncing.
+	* /base/arch/i386/hal/hal.c, hal.immed: use confugiration parameters
+	  for TSC synchronisation.
 
 2006-09-25  Paolo Mantegazza <mantegazza@aero.polimi.it>
 

@@ -298,6 +298,7 @@ void xnintr_synchronize(xnintr_t *intr)
 
 	while (xnarch_atomic_get(&shirq->active))
 		cpu_relax();
+	smp_mb();
 #endif
 }
 

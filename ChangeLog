@@ -1,3 +1,13 @@
+2006-11-08  Paolo Mantegazza <mantegazza@aero.polimi.it>
+
+	* /addons/rtdm/module.c: added smp_mb() at the end of
+	  xnintr_synchronize to avoid computer locks at irq
+	  detach when shared irqs are enabled.
+
+2006-11-07  Paolo Mantegazza <mantegazza@aero.polimi.it>
+
+	* /include/rtai_sched.h: extended error codes to include netrpc timeout.
+
 2006-11-07  Pierangelo Masarati <masarati@aero.polimi.it>
 
 	* configure.in: allow to configure RTAI_DIAG_TSC_SYNC,

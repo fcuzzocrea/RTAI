@@ -1,3 +1,8 @@
+2006-11-08  Roberto Bucher <roberto.bucher@supsi.ch>
+
+	* /rtai-lab/scilab/macros/RTAI/RTAI-Lib.cosf: Changed the path 
+	saved in the file (probably not necessary...)
+
 2006-11-08  Paolo Mantegazza <mantegazza@aero.polimi.it>
 
 	* /addons/rtdm/module.c: added smp_mb() at the end of

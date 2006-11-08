@@ -185,6 +185,7 @@
 #include <rtai_spl.h>
 #include <rtai_sem.h>
 
+#define MIN_PRIO       99
 #define MIN_PRIO       1
 #define STACK_SIZE     8192
 #define RR_QUANTUM_NS  1000000

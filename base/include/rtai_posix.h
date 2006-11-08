@@ -232,7 +232,7 @@ extern "C" {
 static inline int sem_init(sem_t *sem, int pshared, unsigned int value)
 {
 	if (value < SEM_TIMOUT) {
-		rt_typed_sem_init(sem, value, pshared | PRIO_Q);
+		rt_typed_sem_init(sem, value, CNT_SEM | PRIO_Q);
 		return 0;
 	}
 	return -EINVAL;

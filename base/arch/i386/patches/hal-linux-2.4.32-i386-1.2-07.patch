@@ -4906,7 +4906,7 @@ diff -uNrp 2.4.32/kernel/sched.c 2.4.32-i386-ipipe/kernel/sched.c
 +{
 +	switch_to(prev, next, prev);
 +#ifdef CONFIG_IPIPE
-+	current->ptd[IPIPE_ROOT_NPTDKEYS - 1] = prev;
++//	current->ptd[IPIPE_ROOT_NPTDKEYS - 1] = prev;
 +#endif /* CONFIG_IPIPE */
 +	return prev;
 +}

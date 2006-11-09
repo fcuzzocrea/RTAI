@@ -2618,7 +2618,7 @@
  	/* Here we just switch the register state and the stack. */
  	switch_to(prev, next, prev);
 +#ifdef CONFIG_IPIPE
-+        current->ptd[IPIPE_ROOT_NPTDKEYS - 1] = prev;
++//	current->ptd[IPIPE_ROOT_NPTDKEYS - 1] = prev;
 +#endif /* CONFIG_IPIPE */
  
  	return prev;

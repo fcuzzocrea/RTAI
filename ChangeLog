@@ -1,3 +1,17 @@
+2006-11-09  Paolo Mantegazza <mantegazza@aero.polimi.it>
+
+        * /base/include/asm-i386/rtai_lxrt.h: let _lxrt_context_switch return
+           the task pointer returned by context_switch.
+        * /base/sched/sched.c: use the value returned by lxrt_context_switch,
+          a simple redefinition of _lxrt_context_switch now, in rt_schedule
+          only; place a barrier() after all calls of lxrt_context_switch.
+
+2006-11-09  Paulo Stein <stein@cepel.br>
+
+        * /base/include/rtai_posix.h: for kerne space: fixed an improper
+          use of "pshared" in sem_init and redefined a lost MAX_PRIO macro
+          again.
+
 2006-11-08  Roberto Bucher <roberto.bucher@supsi.ch>
 
 	* /rtai-lab/scilab/macros/RTAI/RTAI-Lib.cosf: Changed the path 

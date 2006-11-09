@@ -117,17 +117,17 @@ extern "C" {
 #define __LXRT_GET_DATASEG(reg) "movl $" STR(__USER_DS) ",%" #reg "\n\t"
 #endif  /* KERNEL_VERSION < 2.6.0 */
 
-static inline void _lxrt_context_switch (struct task_struct *prev, struct task_struct *next, int cpuid)
+static inline struct task_struct *_lxrt_context_switch (struct task_struct *prev, struct task_struct *next, int cpuid)
 {
 #if LINUX_VERSION_CODE < KERNEL_VERSION(2,6,0)
-	extern void context_switch(void *, void *);
+	extern struct task_struct *context_switch(void *, void *);
 	struct mm_struct *oldmm = prev->active_mm;
 	switch_mm(oldmm, next->active_mm, next, cpuid);
 	if (!next->mm) enter_lazy_tlb(oldmm, next, cpuid);
-	context_switch(prev, next); // was switch_to(prev, next, prev);
+	return context_switch(prev, next); // was switch_to(prev, next, prev);
 #else /* >= 2.6.0 */
-	extern void context_switch(void *, void *, void *);
-	context_switch(0, prev, next);
+	extern struct task_struct *context_switch(void *, void *, void *);
+	return context_switch(0, prev, next);
 #endif /* < 2.6.0 */
 }
 

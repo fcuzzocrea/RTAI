@@ -761,8 +761,7 @@ static RT_TASK *switch_rtai_tasks(RT_TASK *rt_current, RT_TASK *new_task, int cp
 	return NULL;
 }
 
-#define lxrt_context_switch(prev, next, cpuid) \
-	do { _lxrt_context_switch(prev, next, cpuid); barrier(); } while (0)
+#define lxrt_context_switch _lxrt_context_switch
 
 #ifdef CONFIG_SMP
 static void rt_schedule_on_schedule_ipi(void)
@@ -832,6 +831,7 @@ static void rt_schedule_on_schedule_ipi(void)
 			rt_smp_current[cpuid] = new_task;
 			UEXECTIME();
 			lxrt_context_switch(prev, new_task->lnxtsk, cpuid);
+			barrier();
 			if (!rt_current->is_hard) {
 				RESTORE_UNLOCK_LINUX_IN_IRQ(cpuid);
 			} else if (lnxtsk_uses_fpu(prev)) {
@@ -925,7 +925,8 @@ void rt_schedule(void)
 				prev = rt_current->lnxtsk;
 			}
 			UEXECTIME();
-			lxrt_context_switch(prev, new_task->lnxtsk, cpuid);
+			prev->rtai_tskext(TSKEXT3) = lxrt_context_switch(prev, new_task->lnxtsk, cpuid);
+			barrier();
 			if (!rt_current->is_hard) {
 				RESTORE_UNLOCK_LINUX(cpuid);
 				if (rt_current->state != RT_SCHED_READY) {

@@ -1,3 +1,8 @@
+2006-11-10  Paolo Mantegazza <mantegazza@aero.polimi.it>
+
+        * /base/ipc/netrpc.c: do label current (current->comm) if the hard 
+	  stub is an RTAI own kernel task.
+
 2006-11-09  Paolo Mantegazza <mantegazza@aero.polimi.it>
 
         * /base/include/asm-i386/rtai_lxrt.h: let _lxrt_context_switch return

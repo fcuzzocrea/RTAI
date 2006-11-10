@@ -1964,6 +1964,7 @@ void rtai_set_linux_task_priority (struct task_struct *task, int policy, int pri
 
 #else /* KERNEL_VERSION >= 2.6.0 */
 
+#if 1
 void rtai_set_linux_task_priority (struct task_struct *task, int policy, int prio)
 {
 	hal_set_linux_task_priority(task, policy, prio);
@@ -1972,7 +1973,7 @@ void rtai_set_linux_task_priority (struct task_struct *task, int policy, int pri
 	}
 }
 
-#if 0  //keep for a while as a memo of what we did
+#else  //keep for a while as a memo of what we did
 void rtai_set_linux_task_priority (struct task_struct *task, int policy, int prio)
 {
 	int rc;
@@ -1991,7 +1992,7 @@ void rtai_set_linux_task_priority (struct task_struct *task, int policy, int pri
 #endif
 
 	if (rc) {
-		printk("RTAI[hal]: sched_setscheduler(policy=%d,prio=%d) failed, code %d (%s -- pid=%d)\n", policy, prio, rc, task->comm, task->pid);
+//		printk("RTAI[hal]: sched_setscheduler(policy=%d,prio=%d) failed, code %d (%s -- pid=%d)\n", policy, prio, rc, task->comm, task->pid);
 	}
 }
 #endif

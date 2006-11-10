@@ -435,7 +435,9 @@ static void hard_stub_fun(struct portslot_t *portslotp)
 	sem  = &portslotp->sem;
 	a = (par = (void *)msg)->a;
 	task = (RT_TASK *)portslotp->task;
-	sprintf(current->comm, "HRDSTB-%d", sock);
+	if (task->lnxtsk) {
+		sprintf(current->comm, "HRDSTB-%d", sock);
+	}
 
 	while (rt_sem_wait(sem) < RTE_LOWERR) {
 		wsize = hard_rt_recvfrom(sock, msg, MAX_MSG_SIZE, 0, addr, &w2size);

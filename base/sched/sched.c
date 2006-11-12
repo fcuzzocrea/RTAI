@@ -2079,19 +2079,19 @@ void steal_from_linux(RT_TASK *rt_task)
 	klistp = &klistb[rt_task->runnable_on_cpus];
 	rtai_cli();
 	klistp->task[klistp->in++ & (MAX_WAKEUP_SRQ - 1)] = rt_task;
-#if 0 //defined(TASK_ATOMICSWITCH) && TASK_ATOMICSWITCH && defined(CONFIG_PREEMPT)
-	preempt_disable();
-	(lnxtsk = rt_task->lnxtsk)->state = (TASK_HARDREALTIME | TASK_ATOMICSWITCH);
-#else
-	(lnxtsk = rt_task->lnxtsk)->state = TASK_HARDREALTIME;
-#endif
 	if (rt_task->base_priority >= BASE_SOFT_PRIORITY) {
 		rt_task->base_priority -= BASE_SOFT_PRIORITY;
 	}
 	if (rt_task->priority >= BASE_SOFT_PRIORITY) {
 		rt_task->priority -= BASE_SOFT_PRIORITY;
 	}
-//	rtai_sti();
+#if defined(TASK_ATOMICSWITCH) && TASK_ATOMICSWITCH && defined(CONFIG_PREEMPT)
+	preempt_disable();
+	(lnxtsk = rt_task->lnxtsk)->state = (TASK_HARDREALTIME | TASK_ATOMICSWITCH);
+	rtai_sti();
+#else
+	(lnxtsk = rt_task->lnxtsk)->state = TASK_HARDREALTIME;
+#endif
 	do {
 		schedule();
 	} while (rt_task->state != RT_SCHED_READY);

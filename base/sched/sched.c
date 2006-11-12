@@ -761,7 +761,8 @@ static RT_TASK *switch_rtai_tasks(RT_TASK *rt_current, RT_TASK *new_task, int cp
 	return NULL;
 }
 
-#define lxrt_context_switch _lxrt_context_switch
+#define lxrt_context_switch(prev, next, cpuid) \
+	do { _lxrt_context_switch(prev, next, cpuid); barrier(); } while (0)
 
 #ifdef CONFIG_SMP
 static void rt_schedule_on_schedule_ipi(void)
@@ -831,7 +832,6 @@ static void rt_schedule_on_schedule_ipi(void)
 			rt_smp_current[cpuid] = new_task;
 			UEXECTIME();
 			lxrt_context_switch(prev, new_task->lnxtsk, cpuid);
-			barrier();
 			if (!rt_current->is_hard) {
 				RESTORE_UNLOCK_LINUX_IN_IRQ(cpuid);
 			} else if (lnxtsk_uses_fpu(prev)) {
@@ -925,8 +925,7 @@ void rt_schedule(void)
 				prev = rt_current->lnxtsk;
 			}
 			UEXECTIME();
-			prev->rtai_tskext(TSKEXT3) = lxrt_context_switch(prev, new_task->lnxtsk, cpuid);
-			barrier();
+			lxrt_context_switch(prev, new_task->lnxtsk, cpuid);
 			if (!rt_current->is_hard) {
 				RESTORE_UNLOCK_LINUX(cpuid);
 				if (rt_current->state != RT_SCHED_READY) {
@@ -1789,6 +1788,9 @@ static RT_TRAP_HANDLER lxrt_old_trap_handler;
 
 static inline void _rt_schedule_soft_tail(RT_TASK *rt_task, int cpuid)
 {
+	int rt_priority;
+	struct task_struct *lnxtsk;
+
 	rt_global_cli();
 	rt_task->state &= ~(RT_SCHED_READY | RT_SCHED_SFTRDY);
 	(rt_task->rprev)->rnext = rt_task->rnext;
@@ -1797,6 +1799,19 @@ static inline void _rt_schedule_soft_tail(RT_TASK *rt_task, int cpuid)
 	rt_schedule();
 	UNLOCK_LINUX(cpuid);
 	rt_global_sti();
+
+	if ((lnxtsk = rt_task->lnxtsk)->policy == SCHED_FIFO || lnxtsk->policy == SCHED_RR) {
+		if ((rt_priority = rt_task->priority) >= BASE_SOFT_PRIORITY) {
+			rt_priority -= BASE_SOFT_PRIORITY;
+		}
+		if ((rt_priority = (MAX_LINUX_RTPRIO - rt_priority)) < 1) {
+			rt_priority = 1;
+		}
+		if (rt_priority != lnxtsk->rt_priority) {
+			rtai_set_linux_task_priority(lnxtsk, lnxtsk->policy, rt_priority);
+		}
+	}
+
 }
 
 void rt_schedule_soft(RT_TASK *rt_task)
@@ -1965,15 +1980,18 @@ do { \
 	RT_TASK *rt_task; \
 	int euid, rt_priority; \
 	while (p->out != p->in) { \
-		if ((lnxtsk = p->task[p->out++ & (MAX_WAKEUP_SRQ - 1)])->policy != SCHED_NORMAL && (rt_task = lnxtsk->rtai_tskext(TSKEXT0))) { \
+		if (((lnxtsk = p->task[p->out++ & (MAX_WAKEUP_SRQ - 1)])->policy == SCHED_FIFO || lnxtsk->policy == SCHED_RR) && (rt_task = lnxtsk->rtai_tskext(TSKEXT0))) { \
 			if ((rt_priority = rt_task->priority) >= BASE_SOFT_PRIORITY) { \
 				rt_priority -= BASE_SOFT_PRIORITY; \
 			} \
-			if ((rt_priority = (MAX_LINUX_RTPRIO - rt_priority) < 1 ? 1 : MAX_LINUX_RTPRIO - rt_priority) != lnxtsk->rt_priority) { \
-	                	euid = lnxtsk->euid; \
-	        	        lnxtsk->euid = current->euid; \
+			if ((rt_priority = (MAX_LINUX_RTPRIO - rt_priority)) < 1) { \
+				rt_priority = 1; \
+			} \
+			if (rt_priority != lnxtsk->rt_priority) { \
+				euid = lnxtsk->euid; \
+				lnxtsk->euid = current->euid; \
 				rtai_set_linux_task_priority(lnxtsk, lnxtsk->policy, rt_priority); \
-	        	        lnxtsk->euid = euid; \
+				lnxtsk->euid = euid; \
 			} \
 		} \
 		wake_up_process(lnxtsk); \
@@ -2073,7 +2091,7 @@ void steal_from_linux(RT_TASK *rt_task)
 	if (rt_task->priority >= BASE_SOFT_PRIORITY) {
 		rt_task->priority -= BASE_SOFT_PRIORITY;
 	}
-	rtai_sti();
+//	rtai_sti();
 	do {
 		schedule();
 	} while (rt_task->state != RT_SCHED_READY);

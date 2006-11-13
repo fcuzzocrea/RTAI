@@ -300,7 +300,7 @@ void xnintr_synchronize(xnintr_t *intr)
 
 	while (xnarch_atomic_get(&shirq->active))
 		cpu_relax();
-//	xnarch_memory_barrier();
+	xnarch_memory_barrier();
 #endif
 }
 

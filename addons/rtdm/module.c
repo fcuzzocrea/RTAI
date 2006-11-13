@@ -280,6 +280,7 @@ static xnintr_shirq_t xnshirqs[RTHAL_NR_IRQS];
 static inline void xnintr_shirq_lock(xnintr_shirq_t *shirq)
 {
 #ifdef CONFIG_SMP
+	xnarch_before_atomic_inc();
 	xnarch_atomic_inc(&shirq->active);
 #endif
 }
@@ -288,6 +289,7 @@ static inline void xnintr_shirq_unlock(xnintr_shirq_t *shirq)
 {
 #ifdef CONFIG_SMP
 	xnarch_atomic_dec(&shirq->active);
+	xnarch_after_atomic_dec();
 #endif
 }
 
@@ -298,7 +300,7 @@ void xnintr_synchronize(xnintr_t *intr)
 
 	while (xnarch_atomic_get(&shirq->active))
 		cpu_relax();
-	smp_mb();
+//	xnarch_memory_barrier();
 #endif
 }
 

@@ -15,7 +15,7 @@ static void end(scicos_block *block)
 
 
 
-void xxxx(scicos_block *block,int flag)
+void rt_xxxx(scicos_block *block,int flag)
 {
   if (flag==1){          /* set output */
     inout(block);

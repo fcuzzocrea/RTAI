@@ -141,7 +141,8 @@ cleanup () {
     fi
 }
 
-trap cleanup SIGINT
+#trap cleanup SIGINT  this is an old reminder, it seems it must be like below
+trap cleanup INT
 
 while test -n "$target_deps" ; do
   mod=`echo $target_deps|cut -d+ -f1`

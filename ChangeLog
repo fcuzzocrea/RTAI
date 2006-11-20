@@ -1,3 +1,8 @@
+2006-11-20  Paul Corner <paul_c@tuxcnc.org>
+
+        * /base/scripts/rtai-load.in: use INT in place of SIGINT, should be
+	  more general and portable.
+	
 2006-11-10  Paolo Mantegazza <mantegazza@aero.polimi.it>
 
         * /base/ipc/netrpc.c: do label current (current->comm) if the hard 

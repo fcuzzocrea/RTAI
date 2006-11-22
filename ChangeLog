@@ -1,3 +1,7 @@
+2006-11-22  Emanuele Monari <emonari@system-group.it>
+
+        * /base/ipc/msg/msg.c: fixes incongrences in documentation.
+	
 2006-11-20  Paul Corner <paul_c@tuxcnc.org>
 
         * /base/scripts/rtai-load.in: use INT in place of SIGINT, should be

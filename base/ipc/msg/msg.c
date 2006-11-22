@@ -1109,7 +1109,7 @@ COPYRIGHT (C) 2003  Pierre Cloutier  (pcloutier@poseidoncontrols.com)
 	} while (0)
 
 /**
- * @ingroup rpcx
+ * @ingroup rpc
  * @anchor rt_rpcx
  * @brief Make an extended remote procedure call
  *
@@ -1156,7 +1156,7 @@ RT_TASK *rt_rpcx(RT_TASK *task, void *smsg, void *rmsg, int ssize, int rsize)
 
 
 /**
- * @ingroup rpcx
+ * @ingroup rpc
  * @anchor rt_rpcx_if
  * @brief Make an extended remote procedure call, only if the calling task 
  * will not be blocked.

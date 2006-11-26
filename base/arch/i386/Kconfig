@@ -436,7 +436,7 @@ config RTAI_BUSY_TIME_ALIGN
 	Do not set it if a hard periodic timer is to be used.
 
 config RTAI_LXRT_USE_LINUX_SYSCALL
-	bool "Wrap LXRT service calls through Linux syscall mechanism"
+	bool "Use Linux syscall mechanism for LXRT calls from user space"
 	default n
 	help
 	With this option enabled, LXRT uses the Linux syscall mechanism

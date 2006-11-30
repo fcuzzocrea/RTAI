@@ -1,3 +1,9 @@
+2006-11-30  Paolo Mantegazza <mantegazza@aero.polimi.it>
+
+	* /base/include/asm-i386/rtai_hal.h and
+	* /base/include/rtai_hal_names.h: modified to allow using latest hal 
+	  patches, even if they are not contained in Vulcano yet.
+
 2006-10-27  Roberto Bucher <roberto.bucher@supsi.ch>
 
 	* /rtai-lab/scilab/devices/*.c: function getstr changed to

@@ -657,15 +657,15 @@ extern struct hal_domain_struct *fusion_domain;
 #define _rt_switch_to_real_time(cpuid) \
 do { \
 	rtai_linux_context[cpuid].lflags = xchg(&DOMAIN_TO_STALL->cpudata[cpuid].status, (1 << IPIPE_STALL_FLAG)); \
-	rtai_linux_context[cpuid].oldomain = hal_current_domain[cpuid]; \
+	rtai_linux_context[cpuid].oldomain = hal_current_domain(cpuid); \
 	rtai_linux_context[cpuid].sflags = 1; \
-	hal_current_domain[cpuid] = &rtai_domain; \
+	hal_current_domain(cpuid) = &rtai_domain; \
 } while (0)
 
 #define rt_switch_to_linux(cpuid) \
 do { \
 	if (rtai_linux_context[cpuid].sflags) { \
-		hal_current_domain[cpuid] = (void *)rtai_linux_context[cpuid].oldomain; \
+		hal_current_domain(cpuid) = (void *)rtai_linux_context[cpuid].oldomain; \
 		DOMAIN_TO_STALL->cpudata[cpuid].status = rtai_linux_context[cpuid].lflags; \
 		rtai_linux_context[cpuid].sflags = 0; \
 		CLR_TASKPRI(cpuid); \
@@ -678,13 +678,13 @@ do { \
 do { \
 	rtai_linux_context[cpuid].lflags = xchg(ipipe_root_status[cpuid], (1 << IPIPE_STALL_FLAG)); \
 	rtai_linux_context[cpuid].sflags = 1; \
-	hal_current_domain[cpuid] = &rtai_domain; \
+	hal_current_domain(cpuid) = &rtai_domain; \
 } while (0)
 
 #define rt_switch_to_linux(cpuid) \
 do { \
 	if (rtai_linux_context[cpuid].sflags) { \
-		hal_current_domain[cpuid] = hal_root_domain; \
+		hal_current_domain(cpuid) = hal_root_domain; \
 		*ipipe_root_status[cpuid] = rtai_linux_context[cpuid].lflags; \
 		rtai_linux_context[cpuid].sflags = 0; \
 		CLR_TASKPRI(cpuid); \
@@ -968,7 +968,7 @@ extern int fusion_timer_running;
 
 #define NON_RTAI_SCHEDULE(cpuid) \
 do { \
-	if (hal_current_domain[cpuid] == hal_root_domain) { \
+	if (hal_current_domain(cpuid) == hal_root_domain) { \
 		schedule(); \
 	} else { \
 		xnpod_schedule(); \

@@ -1,3 +1,30 @@
+2006-11-30  Roberto Bucher <roberto.bucher@supsi.ch>
+
+	* /rtai-lab/scilab/macros/RTAI/RT_templates: Added the gen 
+	file for the original INRIA standalone code generation.
+
+2006-11-30  Roberto Bucher <roberto.bucher@supsi.ch>
+
+	* /rtai-lab/scilab/macros/RTAI/RTAICodeGen_.sci: Added the 
+	possibility 	have the target files in a local directory (to be 
+	specified as TARGET_DIR 	in the .scilab file.
+
+2006-11-30  Roberto Bucher <roberto.bucher@supsi.ch>
+
+	* /rtai-lab/scilab/rtmain.c: Implemented the structure to 
+	measure the 	task duration. This measure must be activated 
+	by adding by hand a new 	compilation flag (-DTASKPERIOD) to 
+	the compilation flags. The variable RTTSKper contains the task 
+	duration and can be elaborated by a scicos 	block.
+
+2006-11-30  Roberto Bucher <roberto.bucher@supsi.ch>
+
+	* /rtai-lab/matlab/rtmain.c: Implemented the structure to 
+	measure the task duration. This measure must be activated 
+	by adding by hand a new 	compilation flag (-DTASKPERIOD) to 
+	the compilation flags. The variable RTTSKper contains the task 
+	duration and can be elaborated by a S-Function.
+
 2006-11-22  Emanuele Monari <emonari@system-group.it>
 
         * /base/ipc/msg/msg.c: fixes incongrences in documentation.

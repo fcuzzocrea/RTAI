@@ -38,13 +38,24 @@ function  SetTarget_()
 	  'Step between sampling: '],..
           list('str',1,'str',1,'str',1),lab);
       if ~ok then break,end
-  
-      [fd,ierr]=mopen(SCI+'/macros/RTAI/RT_templates/'+target+'.mak','r');
-      if ierr==0 then
-         mclose(fd);
-      else
-         x_message('Target not valid');
-         ok = %f;
+
+      if exists('TARGET_DIR') then
+        [fd,ierr]=mopen(TARGET_DIR+'/'+target+'.mak','r');
+        if ierr==0 then
+           mclose(fd);
+        else
+	  ok = %f;
+        end
+      end
+
+      if ~ok then
+        [fd,ierr]=mopen(SCI+'/macros/RTAI/RT_templates/'+target+'.mak','r');
+        if ierr==0 then
+	  ok=%t
+          mclose(fd);
+        else
+          x_message('Target not valid');
+        end
       end
       
       if grep(odefun,ode_x) == [] then

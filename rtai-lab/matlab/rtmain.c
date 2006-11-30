@@ -160,7 +160,7 @@ static volatile int endSubRate    = 0;
 static volatile int endex;
 
 #ifdef TASKPERIOD
-static struct { double init; double end; } taskP ={0.0,0.0};
+RTIME RTTSKinit=0, RTTSKend=0;
 #endif
 
 #define MAX_RTAI_SCOPES	1000
@@ -433,10 +433,6 @@ static void *rt_BaseRate(void *args)
   int_T  sample, *sampleHit = rtmGetSampleHitPtr(rtM);
 #endif
 
-#ifdef TASKPERIOD
-  static RTIME t0;
-#endif
-
   int rt_BaseRateTaskPriority = *((int *)args);
 
   rt_allow_nonroot_hrt();
@@ -452,11 +448,6 @@ static void *rt_BaseRate(void *args)
 
   iopl(3);
   rt_task_use_fpu(rt_BaseRateTask, 1);
-#ifdef TASKPERIOD
-  t0 = rt_get_cpu_time_ns();
-  rtf_create(TASKPERIOD,2000);
-  rtf_reset(TASKPERIOD);
-#endif
   rt_grow_and_lock_stack(StackInc);
   if (UseHRT) {
     rt_make_hard_real_time();
@@ -467,14 +458,13 @@ static void *rt_BaseRate(void *args)
 
   while (!endBaseRate) {
 #ifdef TASKPERIOD
-    taskP.end=(rt_get_cpu_time_ns() - t0)*1.0E-9;
-    rtf_put(TASKPERIOD,&taskP, sizeof(taskP));
+    RTTSKend=rt_get_cpu_time_ns();
 #endif
     WaitTimingEvent(TimingEventArg);
     if (endBaseRate) break;
 
 #ifdef TASKPERIOD
-    taskP.init=(rt_get_cpu_time_ns() - t0)*1.0E-9;
+    RTTSKinit=rt_get_cpu_time_ns();
 #endif
 
 #ifdef MULTITASKING
@@ -510,9 +500,6 @@ static void *rt_BaseRate(void *args)
   if (UseHRT) {
     rt_make_soft_real_time();
   }
-#ifdef TASKPERIOD
-  rtf_destroy(TASKPERIOD);
-#endif
   rt_task_delete(rt_BaseRateTask);
   return 0;
 }

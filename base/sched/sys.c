@@ -470,7 +470,17 @@ static inline long long handle_lxrt_request (unsigned int lxsrq, long *arg, RT_T
 			if (task->is_hard < 0) {
 				task->is_hard = 0;
 			} else {
-				give_back_to_linux(task, 0);
+				give_back_to_linux(task, -1);
+				rt_global_cli();
+				if (task->priority < BASE_SOFT_PRIORITY) {
+					if (task->priority == task->base_priority) {
+						task->priority += BASE_SOFT_PRIORITY;
+					}
+				}
+				if (task->base_priority < BASE_SOFT_PRIORITY) {
+					task->base_priority += BASE_SOFT_PRIORITY;
+				}
+				rt_global_sti();
 			}
 			return 0;
 		}

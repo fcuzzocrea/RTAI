@@ -19,7 +19,6 @@
 #include <linux/kernel.h>
 #include <linux/module.h>
 #include <linux/errno.h>
-//#include <linux/config.h>
 #include <linux/version.h>
 #include <asm/uaccess.h>
 

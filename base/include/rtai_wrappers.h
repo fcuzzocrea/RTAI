@@ -22,7 +22,7 @@
 #ifdef __KERNEL__
 
 #include <linux/version.h>
-#include <linux/config.h>
+//#include <linux/config.h>
 #ifndef __cplusplus
 #include <linux/module.h>
 #endif /* !__cplusplus */

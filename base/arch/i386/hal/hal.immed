@@ -302,7 +302,12 @@ extern unsigned long io_apic_irqs;
 
 #if (LINUX_VERSION_CODE > KERNEL_VERSION(2,4,31) && LINUX_VERSION_CODE < KERNEL_VERSION(2,6,0)) || LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,9)
 
+#if LINUX_VERSION_CODE < KERNEL_VERSION(2,6,18)
 #define rtai_irq_desc(irq) (irq_desc[irq].handler)
+#else
+#define rtai_irq_desc(irq) (irq_desc[irq].chip)
+#endif
+
 #define BEGIN_PIC()
 #define END_PIC()
 #undef hal_lock_irq
@@ -514,7 +519,7 @@ void rt_disable_irq (unsigned irq)
  */
 void rt_mask_and_ack_irq (unsigned irq)
 {
-        irq_desc[irq].handler->ack(irq);
+	rtai_irq_desc(irq)->ack(irq);
 }
 
 static inline void _rt_end_irq (unsigned irq)
@@ -630,7 +635,7 @@ void rt_end_irq (unsigned irq)
  * @retval EINVAL if @a irq is not a valid IRQ number or handler is @c NULL.
  * @retval EBUSY if there is already a handler of interrupt @a irq.
  */
-int rt_request_linux_irq (unsigned irq, irqreturn_t (*handler)(int irq, void *dev_id, struct pt_regs *regs), char *name, void *dev_id)
+int rt_request_linux_irq (unsigned irq, void *handler, char *name, void *dev_id)
 {
 	unsigned long flags;
 
@@ -1473,7 +1478,11 @@ static int rtai_hirq_dispatcher (struct pt_regs regs)
 
 	CHECK_KERCTX();
 
+#if LINUX_VERSION_CODE < KERNEL_VERSION(2,6,18)
 	if (rtai_realtime_irq[irq = regs.orig_eax & 0xFF].handler) {
+#else
+	if (rtai_realtime_irq[irq = ~regs.orig_eax].handler) {
+#endif
 		unsigned long sflags;
 		RTAI_SCHED_ISR_LOCK();
 		HAL_LOCK_LINUX();
@@ -2103,6 +2112,17 @@ long rtai_catch_event (struct hal_domain_struct *from, unsigned long event, int 
 
 static void *saved_hal_irq_handler;
 extern void *hal_irq_handler;
+
+#undef ack_bad_irq
+void ack_bad_irq(unsigned int irq)
+{
+	printk("unexpected IRQ trap at vector %02x\n", irq);
+#ifdef CONFIG_X86_LOCAL_APIC
+	if (cpu_has_apic) {
+		__ack_APIC_irq();
+	}
+#endif
+}
 
 int __rtai_hal_init (void)
 {

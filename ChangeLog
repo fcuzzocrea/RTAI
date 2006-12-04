@@ -1,3 +1,18 @@
+2006-12-04  Roberto Bucher <roberto.bucher@supsi.ch>
+
+	* /rtai-lab/matlab/rtmain.c: Changed the macro TASKPERIOD
+	to TASKDURATION.
+
+2006-12-04  Roberto Bucher <roberto.bucher@supsi.ch>
+
+	* /rtai-lab/scilab/rtmain.c: Changed the macro TASKPERIOD
+	to TASKDURATION.
+
+2006-12-04  Roberto Bucher <roberto.bucher@supsi.ch>
+
+	* /rtai-lab/scilab/macros/RTAI/RT_templates: renamed
+	stdalone.cmd to standalone.cmd.
+
 2006-11-30  Roberto Bucher <roberto.bucher@supsi.ch>
 
 	* /rtai-lab/scilab/macros/RTAI/RT_templates: Added the gen 

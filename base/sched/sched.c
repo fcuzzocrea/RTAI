@@ -2815,6 +2815,11 @@ static void rtai_proc_sched_unregister(void)
 extern void usp_request_rtc(int, void *);
 extern void rt_release_rtc(void);
 
+static int rt_gettid(void)
+{
+	return current->pid;
+}
+
 static struct rt_native_fun_entry rt_sched_entries[] = {
 	{ { 0, rt_named_task_init },		    NAMED_TASK_INIT },  
 	{ { 0, rt_named_task_init_cpuid },	    NAMED_TASK_INIT_CPUID },  
@@ -2877,6 +2882,7 @@ static struct rt_native_fun_entry rt_sched_entries[] = {
 	{ { 1, rt_receive_linux_syscall },          RECEIVE_LINUX_SYSCALL },
 	{ { 0, usp_request_rtc },                   REQUEST_RTC },
 	{ { 0, rt_release_rtc },                    RELEASE_RTC },
+	{ { 0, rt_gettid },                         RT_GETTID },
 	{ { 0, 0 },			            000 }
 };
 

@@ -201,6 +201,7 @@ static inline int rt_pmutex_unlock(pmutex_t *mutex) {
     return rt_sem_signal(mutex);
 }
 
+#undef rt_mutex_init
 #define rt_mutex_init(mtx)             rt_typed_sem_init(mtx, 1, RES_SEM)
 #define rt_mutex_delete(mtx)           rt_sem_delete(mtx)
 #define rt_mutex_destroy(mtx)          rt_sem_delete(mtx)

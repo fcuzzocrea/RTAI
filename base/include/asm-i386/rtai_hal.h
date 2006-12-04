@@ -414,6 +414,20 @@ irqreturn_t rtai_broadcast_to_local_timers(int irq,
 					   void *dev_id,
 					   struct pt_regs *regs);
 
+static inline unsigned long rtai_save_flags_irqbit(void)
+{
+	unsigned long flags;
+	rtai_save_flags(flags);
+	return flags & (1 << RTAI_IFLAG);
+}
+
+static inline unsigned long rtai_save_flags_irqbit_and_cli(void)
+{
+	unsigned long flags;
+	rtai_save_flags_and_cli(flags);
+	return flags & (1 << RTAI_IFLAG);
+}
+
 #ifdef CONFIG_SMP
 
 #define SCHED_VECTOR  RTAI_SMP_NOTIFY_VECTOR
@@ -544,19 +558,6 @@ static inline void rt_global_sti(void)
 {
     rt_release_global_lock();
     rtai_sti();
-}
-
-static inline unsigned long rtai_save_flags_irqbit(void)
-{
-	unsigned long flags;
-	rtai_save_flags(flags);
-	return flags & (1 << RTAI_IFLAG);
-}
-static inline unsigned long rtai_save_flags_irqbit_and_cli(void)
-{
-	unsigned long flags;
-	rtai_save_flags_and_cli(flags);
-	return flags & (1 << RTAI_IFLAG);
 }
 
 /**
@@ -718,7 +719,7 @@ do { \
 do { \
 	int v; \
 	for (v = SPURIOUS_APIC_VECTOR + 1; v < 256; v++) { \
-		hal_virtualize_irq(hal_root_domain, v - FIRST_EXTERNAL_VECTOR, (void (*)(unsigned))rtai_get_intr_handler(v), ack_bad_irq, IPIPE_HANDLE_MASK); \
+		hal_virtualize_irq(hal_root_domain, v - FIRST_EXTERNAL_VECTOR, (void (*)(unsigned))rtai_get_intr_handler(v), (void *)ack_bad_irq, IPIPE_HANDLE_MASK); \
 	} \
 } while (0)
 
@@ -859,9 +860,7 @@ void rtai_reset_gate_vector(unsigned vector, struct desc_struct e);
 void rt_do_irq(unsigned irq);
 
 int rt_request_linux_irq(unsigned irq,
-			 irqreturn_t (*handler)(int irq,
-			 void *dev_id,
-			 struct pt_regs *regs), 
+			 void *handler,
 			 char *name,
 			 void *dev_id);
 

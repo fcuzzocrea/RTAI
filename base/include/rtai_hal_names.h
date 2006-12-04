@@ -240,7 +240,11 @@ do { \
 
 #define hal_unstall_pipeline_from  ipipe_unstall_pipeline_from
 
+#if LINUX_VERSION_CODE < KERNEL_VERSION(2,6,18)
 #define hal_ack_system_irq  __ipipe_ack_system_irq
+#else
+#define hal_ack_system_irq  __ipipe_ack_apic
+#endif
 
 #define hal_irq_handler     ipipe_irq_handler
 

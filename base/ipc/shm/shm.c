@@ -33,7 +33,6 @@
 
 #include <linux/version.h>
 #include <linux/module.h>
-#include <linux/config.h>
 #include <linux/errno.h>
 #include <linux/mm.h>
 #include <linux/miscdevice.h>
@@ -645,7 +644,6 @@ extern int set_rt_fun_entries(struct rt_native_fun_entry *entry);
 extern void reset_rt_fun_entries(struct rt_native_fun_entry *entry);
 
 #if 0
-#include <linux/devfs_fs_kernel.h>
 #include <linux/device.h>
 static class_t *shm_class = NULL;
 #endif

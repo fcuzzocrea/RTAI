@@ -147,9 +147,7 @@ ACKNOWLEDGEMENTS:
 #include <linux/termios.h>
 #include <linux/tty_driver.h>
 #include <linux/console.h>
-#include <linux/config.h>
 #include <linux/slab.h>
-#include <linux/devfs_fs_kernel.h>
 #include <linux/stat.h>
 #include <linux/proc_fs.h>
 #ifdef CONFIG_SYSFS

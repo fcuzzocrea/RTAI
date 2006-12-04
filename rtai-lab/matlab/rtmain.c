@@ -159,7 +159,7 @@ static volatile int endSubRate    = 0;
 
 static volatile int endex;
 
-#ifdef TASKPERIOD
+#ifdef TASKDURATION
 RTIME RTTSKinit=0, RTTSKend=0;
 #endif
 
@@ -457,13 +457,13 @@ static void *rt_BaseRate(void *args)
   rt_task_make_periodic(rt_BaseRateTask, rt_get_time() + rt_BaseRateTick, rt_BaseRateTick);
 
   while (!endBaseRate) {
-#ifdef TASKPERIOD
+#ifdef TASKDURATION
     RTTSKend=rt_get_cpu_time_ns();
 #endif
     WaitTimingEvent(TimingEventArg);
     if (endBaseRate) break;
 
-#ifdef TASKPERIOD
+#ifdef TASKDURATION
     RTTSKinit=rt_get_cpu_time_ns();
 #endif
 

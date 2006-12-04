@@ -101,7 +101,7 @@ static struct { char name[MAX_NAME_SIZE]; int nrow, ncol; } rtaiALogData[MAX_LOG
 static struct { char name[MAX_NAME_SIZE]; int nleds; } rtaiLed[MAX_LEDS];
 static struct { char name[MAX_NAME_SIZE]; int nmeters; } rtaiMeter[MAX_METERS];
 
-#ifdef TASKPERIOD
+#ifdef TASKDURATION
 RTIME RTTSKinit=0, RTTSKper;
 #endif
 
@@ -285,7 +285,7 @@ static void *rt_BaseRate(void *args)
   t0 = rt_get_cpu_time_ns();
   rt_task_make_periodic(rt_BaseRateTask, rt_get_time() + rt_BaseRateTick, rt_BaseRateTick);
   while (!endBaseRate) {
-#ifdef TASKPERIOD
+#ifdef TASKDURATION
     RTTSKper=rt_get_cpu_time_ns()-RTTSKinit;
 #endif
     WaitTimingEvent(TimingEventArg);
@@ -293,7 +293,7 @@ static void *rt_BaseRate(void *args)
     if (endBaseRate) break;
 
     TIME = (rt_get_cpu_time_ns() - t0)*1.0E-9;
-#ifdef TASKPERIOD
+#ifdef TASKDURATION
     RTTSKinit=rt_get_cpu_time_ns();
 #endif
 

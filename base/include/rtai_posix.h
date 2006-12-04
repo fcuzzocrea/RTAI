@@ -1490,6 +1490,12 @@ RTAI_PROTO(void, pthread_soft_real_time_np, (void))
 	rt_make_soft_real_time();
 }
 
+RTAI_PROTO(int, pthread_gettid_np, (void))
+{
+        struct { unsigned long dummy; } arg;
+        return rtai_lxrt(BIDX, SIZARG, RT_GETTID, &arg).i[LOW];
+}
+
 #define PTHREAD_SOFT_REAL_TIME  PTHREAD_SOFT_REAL_TIME_NP
 #define PTHREAD_HARD_REAL_TIME  PTHREAD_HARD_REAL_TIME_NP
 #define pthread_init_real_time_np(a, b, c, d, e) \
@@ -1695,6 +1701,12 @@ RTAI_PROTO(int, __wrap_pthread_spin_unlock,(pthread_spinlock_t *lock))
 	return EINVAL;
 }
 #else
+static inline int _pthread_gettid_np(void)
+{
+        struct { unsigned long dummy; } arg;
+        return rtai_lxrt(BIDX, SIZARG, RT_GETTID, &arg).i[LOW];
+}
+
 RTAI_PROTO(int, __wrap_pthread_spin_init, (pthread_spinlock_t *lock, int pshared))
 {
 	return lock ? (((pid_t *)lock)[0] = 0) : EINVAL;
@@ -1712,8 +1724,7 @@ RTAI_PROTO(int, __wrap_pthread_spin_lock,(pthread_spinlock_t *lock))
 {
 	if (lock) {
 		pid_t tid;
-		_syscall0(pid_t, gettid)
-		if (((pid_t *)lock)[0] == (tid = gettid())) {
+		if (((pid_t *)lock)[0] == (tid = _pthread_gettid_np())) {
 			return EDEADLOCK;
 		}
 		while (atomic_cmpxchg(lock, 0, tid));
@@ -1725,8 +1736,7 @@ RTAI_PROTO(int, __wrap_pthread_spin_lock,(pthread_spinlock_t *lock))
 RTAI_PROTO(int, __wrap_pthread_spin_trylock,(pthread_spinlock_t *lock))
 {
 	if (lock) {
-		_syscall0(pid_t, gettid)
-		return atomic_cmpxchg(lock, 0, gettid()) ? EBUSY : 0;
+		return atomic_cmpxchg(lock, 0, _pthread_gettid_np()) ? EBUSY : 0;
 	}
 	return EINVAL;
 }
@@ -1737,8 +1747,7 @@ RTAI_PROTO(int, __wrap_pthread_spin_unlock,(pthread_spinlock_t *lock))
 #if 0
 		return ((pid_t *)lock)[0] = 0;
 #else
-		_syscall0(pid_t, gettid)
-		return ((pid_t *)lock)[0] != gettid() ? EPERM : (((pid_t *)lock)[0] = 0);
+		return ((pid_t *)lock)[0] != _pthread_gettid_np() ? EPERM : (((pid_t *)lock)[0] = 0);
 #endif
 	}
 	return EINVAL;

@@ -1,3 +1,9 @@
+2006-12-06  Paolo Mantegazza <mantegazza@aero.polimi.it>
+
+        * base/arch/i386/Kconfig: add configurable parameter to enable keeping
+	  soft real time linux tasks priority aligne to RTAI.
+        * base/sched/sched.c: add code to support what above.
+
 2006-12-05  Paolo Mantegazza <mantegazza@aero.polimi.it>
 
         * base/sched/sched.c: added support for getting linux tasks tid, 

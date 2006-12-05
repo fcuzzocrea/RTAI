@@ -7367,7 +7367,7 @@ diff -uNrp --exclude .pc --exclude patches 2.6.19/kernel/sched.c 2.6.19-ipipe/ke
  		prev = context_switch(rq, prev, next);
  		barrier();
 + 		if (task_hijacked(prev))
-+ 		    return;
++ 		    return; __ipipe_dispatch_event(IPIPE_FIRST_EVENT - 2, 0);
  		/*
  		 * this_rq must be evaluated again because prev may have moved
  		 * CPUs since it called schedule(), thus the 'rq' on its stack

@@ -36,6 +36,8 @@ ACKNOWLEDGMENTS:
 
 //#define USE_RTAI_TASKS    0
 
+#define CONFIG_RTAI_ALIGN_LINUX_PRIORITY  0
+
 #include <linux/module.h>
 #include <linux/kernel.h>
 #include <linux/version.h>
@@ -679,6 +681,7 @@ void rt_do_force_soft(RT_TASK *rt_task)
 	rt_global_sti();
 }
 
+#if 0
 #define enq_soft_ready_task(ready_task) \
 do { \
 	RT_TASK *task = rt_smp_linux_task[cpuid].rnext; \
@@ -688,6 +691,15 @@ do { \
 	task->rprev = (ready_task->rprev = task->rprev)->rnext = ready_task; \
 	ready_task->rnext = task; \
 } while (0)
+#else
+#define enq_soft_ready_task(ready_task) \
+do { \
+	RT_TASK *task = rt_smp_linux_task[cpuid].rnext; \
+	if (ready_task == task) break; \
+	task->rprev = (ready_task->rprev = task->rprev)->rnext = ready_task; \
+	ready_task->rnext = task; \
+} while (0)
+#endif
 
 
 #define pend_wake_up_hts(lnxtsk, cpuid) \
@@ -937,12 +949,28 @@ void rt_schedule(void)
 				}
 				if (rt_current->force_soft) {
 					make_current_soft(rt_current, cpuid);
-				}	
+				}
 			}
 		} else if (rt_current->state != RT_SCHED_READY) {
 sched_soft:
 			UNLOCK_LINUX(cpuid);
 			rt_global_sti();
+
+#ifdef CONFIG_RTAI_ALIGN_LINUX_PRIORITY
+			if (current->rtai_tskext(TSKEXT0) && (current->policy == SCHED_FIFO || current->policy == SCHED_RR)) {
+				int rt_priority;
+				if ((rt_priority = ((RT_TASK *)current->rtai_tskext(TSKEXT0))->priority) >= BASE_SOFT_PRIORITY) {
+					rt_priority -= BASE_SOFT_PRIORITY;
+				}
+				if ((rt_priority = (MAX_LINUX_RTPRIO - rt_priority)) < 1) {
+					rt_priority = 1;
+				}
+				if (rt_priority != current->rt_priority) {
+					rtai_set_linux_task_priority(current, current->policy, rt_priority);
+				}
+			}
+#endif
+
 			hal_test_and_fast_flush_pipeline(cpuid);
 			NON_RTAI_SCHEDULE(cpuid);
 			rt_global_cli();
@@ -951,6 +979,8 @@ sched_soft:
 			enq_soft_ready_task(rt_current);
 			rt_smp_current[cpuid] = rt_current;
 			goto sched_exit1;
+		} else {
+			printk(">>> RTAI SCHED SOFT WARNING: WHY HERE? <<<\n");
 		}
 	}
 sched_exit:
@@ -1788,9 +1818,6 @@ static RT_TRAP_HANDLER lxrt_old_trap_handler;
 
 static inline void _rt_schedule_soft_tail(RT_TASK *rt_task, int cpuid)
 {
-	int rt_priority;
-	struct task_struct *lnxtsk;
-
 	rt_global_cli();
 	rt_task->state &= ~(RT_SCHED_READY | RT_SCHED_SFTRDY);
 	(rt_task->rprev)->rnext = rt_task->rnext;
@@ -1799,6 +1826,11 @@ static inline void _rt_schedule_soft_tail(RT_TASK *rt_task, int cpuid)
 	rt_schedule();
 	UNLOCK_LINUX(cpuid);
 	rt_global_sti();
+
+#ifdef CONFIG_RTAI_ALIGN_LINUX_PRIORITY
+do {
+	int rt_priority;
+	struct task_struct *lnxtsk;
 
 	if ((lnxtsk = rt_task->lnxtsk)->policy == SCHED_FIFO || lnxtsk->policy == SCHED_RR) {
 		if ((rt_priority = rt_task->priority) >= BASE_SOFT_PRIORITY) {
@@ -1811,7 +1843,8 @@ static inline void _rt_schedule_soft_tail(RT_TASK *rt_task, int cpuid)
 			rtai_set_linux_task_priority(lnxtsk, lnxtsk->policy, rt_priority);
 		}
 	}
-
+} while (0);
+#endif
 }
 
 void rt_schedule_soft(RT_TASK *rt_task)
@@ -1968,36 +2001,6 @@ static void kthread_fun(int cpuid)
 	clr_rtext(task);
 }
 
-#define NEW_WAKE_UP_TASKs
-#ifdef NEW_WAKE_UP_TASKs
-#if LINUX_VERSION_CODE < KERNEL_VERSION(2,6,0)
-#define SCHED_NORMAL  SCHED_OTHER
-#endif
-#define WAKE_UP_TASKs(klist) \
-do { \
-	struct klist_t *p = &klist[cpuid]; \
-	struct task_struct *lnxtsk; \
-	RT_TASK *rt_task; \
-	int euid, rt_priority; \
-	while (p->out != p->in) { \
-		if (((lnxtsk = p->task[p->out++ & (MAX_WAKEUP_SRQ - 1)])->policy == SCHED_FIFO || lnxtsk->policy == SCHED_RR) && (rt_task = lnxtsk->rtai_tskext(TSKEXT0))) { \
-			if ((rt_priority = rt_task->priority) >= BASE_SOFT_PRIORITY) { \
-				rt_priority -= BASE_SOFT_PRIORITY; \
-			} \
-			if ((rt_priority = (MAX_LINUX_RTPRIO - rt_priority)) < 1) { \
-				rt_priority = 1; \
-			} \
-			if (rt_priority != lnxtsk->rt_priority) { \
-				euid = lnxtsk->euid; \
-				lnxtsk->euid = current->euid; \
-				rtai_set_linux_task_priority(lnxtsk, lnxtsk->policy, rt_priority); \
-				lnxtsk->euid = euid; \
-			} \
-		} \
-		wake_up_process(lnxtsk); \
-	} \
-} while (0)
-#else
 #define WAKE_UP_TASKs(klist) \
 do { \
 	struct klist_t *p = &klist[cpuid]; \
@@ -2005,7 +2008,6 @@ do { \
 		wake_up_process(p->task[p->out++ & (MAX_WAKEUP_SRQ - 1)]); \
 	} \
 } while (0)
-#endif
 
 static void kthread_m(int cpuid)
 {
@@ -2109,31 +2111,50 @@ void steal_from_linux(RT_TASK *rt_task)
 void give_back_to_linux(RT_TASK *rt_task, int keeprio)
 {
 	struct task_struct *lnxtsk;
+	int rt_priority;
 
 	rt_global_cli();
 	(rt_task->rprev)->rnext = rt_task->rnext;
 	(rt_task->rnext)->rprev = rt_task->rprev;
 	rt_task->state = 0;
-	if (!keeprio) {
+	pend_wake_up_hts(lnxtsk = rt_task->lnxtsk, rt_task->runnable_on_cpus);
+	rt_schedule();
+	if (!(rt_task->is_hard = keeprio)) {
+		if (rt_task->priority < BASE_SOFT_PRIORITY) {
+			rt_priority = rt_task->priority;
+			if (rt_task->priority == rt_task->base_priority) {
+				rt_task->priority += BASE_SOFT_PRIORITY;
+			}
+		} else {
+			rt_priority = rt_task->priority - BASE_SOFT_PRIORITY;
+		}
 		if (rt_task->base_priority < BASE_SOFT_PRIORITY) {
 			rt_task->base_priority += BASE_SOFT_PRIORITY;
 		}
+	} else {
 		if (rt_task->priority < BASE_SOFT_PRIORITY) {
-			rt_task->priority += BASE_SOFT_PRIORITY;
+			rt_priority = rt_task->priority;
+		} else {
+			rt_priority = rt_task->priority - BASE_SOFT_PRIORITY;
 		}
-	} 
-#ifdef NEW_WAKE_UP_TASKs
-	pend_wake_up_hts(lnxtsk = rt_task->lnxtsk, rt_task->runnable_on_cpus);
-#else
-	(lnxtsk = rt_task->lnxtsk)->rt_priority = (MAX_LINUX_RTPRIO - rt_task->priority) < 1 ? 1 : MAX_LINUX_RTPRIO - rt_task->priority;
-	pend_wake_up_hts(lnxtsk, rt_task->runnable_on_cpus);
-#endif
-	rt_schedule();
-	rt_task->is_hard = keeprio;
+	}
 	rt_global_sti();
 	/* Perform Linux's scheduling tail now since we woke up
 	   outside the regular schedule() point. */
 	hal_schedule_back_root(lnxtsk);
+
+#ifdef CONFIG_RTAI_ALIGN_LINUX_PRIORITY
+	if (lnxtsk->policy == SCHED_FIFO || lnxtsk->policy == SCHED_RR) {
+		if ((rt_priority = (MAX_LINUX_RTPRIO - rt_priority)) < 1) {
+			rt_priority = 1;
+		}
+		if (rt_priority != lnxtsk->rt_priority) {
+			rtai_set_linux_task_priority(lnxtsk, lnxtsk->policy, rt_priority);
+		}
+	}
+#endif
+
+	return;
 }
 
 static struct task_struct *get_kthread(int get, int cpuid, void *lnxtsk)

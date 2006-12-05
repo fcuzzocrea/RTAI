@@ -461,6 +461,17 @@ config RTAI_LXRT_USE_LINUX_SYSCALL
 	
 	If in doubt, say no.
 
+config RTAI_ALIGN_LINUX_priority
+	bool "Keep Linux task priority aligned to RTAI"
+	default n
+	help
+
+	By enabling this option the RTAI scheduler will keep Linux tasks
+	execution priority aligned to its. Naturally this makes sense
+	either for Linux soft real time tasks enabled to use RTAI APIs, 
+	i.e. they issued rt_task_init/rt_task_init_schmod, or when RTAI 
+	hard real time tasks are given back to Linux. 
+
 config RTAI_ONE_SHOT
 	bool "One-shot timer mode"
 	default n
@@ -492,9 +503,9 @@ config RTAI_CAL_FREQS_FACT
 	be awaken in case of unprecise calibrations of the above cited
 	frequencies;
 	2 - in the case of very long timed list it will limit the search 
-	for the next firing time in the case of widely scattered tasks with 
-	lowest priorities, thus avoiding useless scheduling delays.
-	The granted firing interval will be roughly equal to:
+	for the next firing time of widely scattered tasks with lowest 
+	priorities, thus avoiding useless scheduling delays. The granted 
+	firing interval will be roughly equal to:
 	1.0/(RTAI_CAL_FREQS_FACT + 2.0) (seconds).
 
 endmenu

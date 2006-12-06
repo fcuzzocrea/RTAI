@@ -53,15 +53,6 @@ static struct rt_fun_entry *rt_fun_ext[MAX_FUN_EXT];
  */
 #define USRLAND_MAX_MSG_SIZE  128  // Default max message size, used here only.
 
-#ifdef CONFIG_RTAI_TRACE
-/****************************************************************************/
-/* Trace functions. These functions have to be used rather than insert
-the macros as-is. Otherwise the system crashes ... You've been warned. K.Y. */
-void trace_true_lxrt_rtai_syscall_entry(void);
-void trace_true_lxrt_rtai_syscall_exit(void);
-/****************************************************************************/
-#endif /* CONFIG_RTAI_TRACE */
-
 int get_min_tasks_cpuid(void);
 
 int set_rtext(RT_TASK *task,
@@ -621,33 +612,21 @@ static inline int rt_do_signal(struct pt_regs *regs, RT_TASK *task)
 
 long long rtai_lxrt_invoke (unsigned int lxsrq, void *arg, struct pt_regs *regs)
 {
-	long long retval;
 	RT_TASK *task;
 
-#ifdef CONFIG_RTAI_TRACE
-	trace_true_lxrt_rtai_syscall_entry();
-#endif /* CONFIG_RTAI_TRACE */
-
 	if (likely((task = current->rtai_tskext(TSKEXT0)) != NULL)) {
+		long long retval;
 		if (unlikely(rt_do_signal(regs, task))) {
 			force_soft(task);
 		}
-	}
-	retval = handle_lxrt_request(lxsrq, arg, task);
-	if (likely(task != NULL)) {
+		retval = handle_lxrt_request(lxsrq, arg, task);
 		if (unlikely(rt_do_signal(regs, task))) {
 			force_soft(task);
-		} else {
-			task->system_data_ptr = regs;
-			retval = -RT_EINTR;
 		}
+		return retval;
+	} else {
+		return handle_lxrt_request(lxsrq, arg, task);
 	}
-
-#ifdef CONFIG_RTAI_TRACE
-	trace_true_lxrt_rtai_syscall_exit();
-#endif /* CONFIG_RTAI_TRACE */
-
-	return retval;
 }
 
 int set_rt_fun_ext_index(struct rt_fun_entry *fun, int idx)

@@ -469,17 +469,7 @@ static inline long long handle_lxrt_request (unsigned int lxsrq, long *arg, RT_T
 			if (task->is_hard < 0) {
 				task->is_hard = 0;
 			} else {
-				give_back_to_linux(task, -1);
-				rt_global_cli();
-				if (task->priority < BASE_SOFT_PRIORITY) {
-					if (task->priority == task->base_priority) {
-						task->priority += BASE_SOFT_PRIORITY;
-					}
-				}
-				if (task->base_priority < BASE_SOFT_PRIORITY) {
-					task->base_priority += BASE_SOFT_PRIORITY;
-				}
-				rt_global_sti();
+				give_back_to_linux(task, 0);
 			}
 			return 0;
 		}
@@ -539,7 +529,7 @@ static inline long long handle_lxrt_request (unsigned int lxsrq, long *arg, RT_T
                         struct task_struct *ltsk;
                         if ((ltsk = find_task_by_pid(arg0.name)))  {
                                 if ((arg0.rt_task = ltsk->rtai_tskext(TSKEXT0))) {
-					if ((arg0.rt_task->force_soft = (arg0.rt_task->is_hard > 0) && FORCE_SOFT)) {
+					if ((arg0.rt_task->force_soft = (arg0.rt_task->is_hard != 0) && FORCE_SOFT)) {
 						rt_do_force_soft(arg0.rt_task);
 					}
                                         return (unsigned long)arg0.rt_task;

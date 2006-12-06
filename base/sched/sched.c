@@ -713,23 +713,32 @@ do { \
 
 static inline void make_current_soft(RT_TASK *rt_current, int cpuid)
 {
+	struct task_struct *lnxtsk;
         void rt_schedule(void);
         rt_current->force_soft = 0;
 	rt_current->state &= ~RT_SCHED_READY;;
-	pend_wake_up_hts(rt_current->lnxtsk, cpuid);
+	pend_wake_up_hts(lnxtsk = rt_current->lnxtsk, cpuid);
         (rt_current->rprev)->rnext = rt_current->rnext;
         (rt_current->rnext)->rprev = rt_current->rprev;
         rt_schedule();
         rt_current->is_hard = 0;
+	if (rt_current->priority < BASE_SOFT_PRIORITY) {
+		if (rt_current->priority == rt_current->base_priority) {
+			rt_current->priority += BASE_SOFT_PRIORITY;
+		}
+	}
+	if (rt_current->base_priority < BASE_SOFT_PRIORITY) {
+		rt_current->base_priority += BASE_SOFT_PRIORITY;
+	}
 	rt_global_sti();
-        hal_schedule_back_root(rt_current->lnxtsk);
+        hal_schedule_back_root(lnxtsk);
 // now make it as if it was scheduled soft, the tail is cared in sys_lxrt.c
 	rt_global_cli();
 	LOCK_LINUX(cpuid);
 	rt_current->state |= RT_SCHED_READY;
 	rt_smp_current[cpuid] = rt_current;
         if (rt_current->state != RT_SCHED_READY) {
-        	(rt_current->lnxtsk)->state = TASK_SOFTREALTIME;
+        	lnxtsk->state = TASK_SOFTREALTIME;
 		rt_schedule();
 	} else {
 		enq_soft_ready_task(rt_current);

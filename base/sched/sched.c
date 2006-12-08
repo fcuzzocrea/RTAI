@@ -93,6 +93,7 @@ int rt_smp_oneshot_timer[NR_RT_CPUS];
 
 volatile int rt_sched_timed;
 
+static struct klist_t wake_up_sth[NR_RT_CPUS];
 struct klist_t wake_up_hts[NR_RT_CPUS];
 struct klist_t wake_up_srq[NR_RT_CPUS];
 
@@ -123,8 +124,6 @@ static struct notifier_block lxrt_notifier_reboot = {
 	.next		= NULL,
 	.priority	= 0
 };
-
-static struct klist_t klistb[NR_RT_CPUS];
 
 static struct klist_t klistm[NR_RT_CPUS];
 
@@ -2089,7 +2088,7 @@ void steal_from_linux(RT_TASK *rt_task)
 	if (signal_pending(rt_task->lnxtsk)) {
 		return;
 	}
-	klistp = &klistb[rt_task->runnable_on_cpus];
+	klistp = &wake_up_sth[rt_task->runnable_on_cpus];
 	rtai_cli();
 	klistp->task[klistp->in++ & (MAX_WAKEUP_SRQ - 1)] = rt_task;
 	if (rt_task->base_priority >= BASE_SOFT_PRIORITY) {
@@ -2277,8 +2276,6 @@ static inline void rt_signal_wake_up(RT_TASK *task)
 	}
 }
 
-#ifdef UNWRAPPED_CATCH_EVENT
-
 #if LINUX_VERSION_CODE < KERNEL_VERSION(2,4,32)
 static struct mmreq {
     int in, out, count;
@@ -2331,7 +2328,7 @@ static int lxrt_intercept_schedule_tail (unsigned event, void *nothing)
 	if (in_hrt_mode(cpuid = smp_processor_id())) {
 		return 1;
 	} else {
-		struct klist_t *klistp = &klistb[cpuid];
+		struct klist_t *klistp = &wake_up_sth[cpuid];
 		struct task_struct *lnxtsk = current;
 #ifdef CONFIG_PREEMPT
 //		preempt_disable();
@@ -2546,194 +2543,6 @@ static int lxrt_intercept_syscall_epilogue(unsigned long event, void *nothing)
 	}
 	return 0;
 } }
-
-#else
-#if LINUX_VERSION_CODE < KERNEL_VERSION(2,4,32)
-
-static struct mmreq {
-    int in, out, count;
-#define MAX_MM 32  /* Should be more than enough (must be a power of 2). */
-#define bump_mmreq(x) do { x = (x + 1) & (MAX_MM - 1); } while(0)
-    struct mm_struct *mm[MAX_MM];
-} lxrt_mmrqtab[NR_CPUS];
-
-static void lxrt_intercept_schedule_head (adevinfo_t *evinfo)
-
-{
-    IN_INTERCEPT_IRQ_ENABLE(); {
-
-    struct { struct task_struct *prev, *next; } *evdata = (__typeof(evdata))evinfo->evdata;
-    struct task_struct *prev = evdata->prev;
-
-    /* The SCHEDULE_HEAD event is sent by the (Adeosized) Linux kernel
-       each time it's about to switch a process out. This hook is
-       aimed at preventing the last active MM from being dropped
-       during the LXRT real-time operations since it's a lengthy
-       atomic operation. See kernel/sched.c (schedule()) for more. The
-       MM dropping is simply postponed until the SCHEDULE_TAIL event
-       is received, right after the incoming task has been switched
-       in. */
-
-    if (!prev->mm)
-	{
-	struct mmreq *p = lxrt_mmrqtab + task_cpu(prev);
-	struct mm_struct *oldmm = prev->active_mm;
-	BUG_ON(p->count >= MAX_MM);
-	/* Prevent the MM from being dropped in schedule(), then pend
-	   a request to drop it later in lxrt_intercept_schedule_tail(). */
-	atomic_inc(&oldmm->mm_count);
-	p->mm[p->in] = oldmm;
-	bump_mmreq(p->in);
-	p->count++;
-	}
-
-    hal_propagate_event(evinfo);
-} }
-
-#endif  /* KERNEL_VERSION < 2.4.32 */
-
-static void lxrt_intercept_schedule_tail (adevinfo_t *evinfo)
-
-{
-	IN_INTERCEPT_IRQ_ENABLE(); {
-
-	int cpuid;
-	if (in_hrt_mode(cpuid = smp_processor_id())) {
-		return;
-	} else {
-		struct klist_t *klistp = &klistb[cpuid];
-		struct task_struct *lnxtsk = current;
-#ifdef CONFIG_PREEMPT
-		preempt_disable();
-#endif
-		while (klistp->out != klistp->in) {
-			rt_global_cli();
-			fast_schedule(klistp->task[klistp->out++ & (MAX_WAKEUP_SRQ - 1)], lnxtsk, cpuid);
-			rt_global_sti();
-		}
-#ifdef CONFIG_PREEMPT
-		preempt_enable();
-#endif
-	}
-
-#ifdef CONFIG_PREEMPT
-//	current->cpus_allowed = cpumask_of_cpu(smp_processor_id());
-#endif
-
-#if LINUX_VERSION_CODE < KERNEL_VERSION(2,4,32)
-    {
-    struct mmreq *p;
-
-#ifdef CONFIG_PREEMPT
-    preempt_disable();
-#endif /* CONFIG_PREEMPT */
-
-    p = lxrt_mmrqtab + smp_processor_id();
-
-    while (p->out != p->in)
-	{
-	struct mm_struct *oldmm = p->mm[p->out];
-	mmdrop(oldmm);
-	bump_mmreq(p->out);
-	p->count--;
-	}
-
-#ifdef CONFIG_PREEMPT
-    preempt_enable();
-#endif /* CONFIG_PREEMPT */
-    }
-#endif  /* KERNEL_VERSION < 2.4.32 */
-
-    hal_propagate_event(evinfo);
-} }
-
-struct sig_wakeup_t { struct task_struct *task; };
-static void lxrt_intercept_sig_wakeup (long event, struct sig_wakeup_t *evdata)
-{
-	IN_INTERCEPT_IRQ_ENABLE(); {
-	RT_TASK *task;
-	if ((task = (evdata->task)->rtai_tskext(TSKEXT0))) {
-		rt_signal_wake_up(task);
-	}
-} }
-
-static void lxrt_intercept_exit (adevinfo_t *evinfo)
-{
-	IN_INTERCEPT_IRQ_ENABLE(); {
-
-	extern void linux_process_termination(void);
-	RT_TASK *task = current->rtai_tskext(TSKEXT0);
-	if (task) {
-		if (task->is_hard > 0) {
-			give_back_to_linux(task, 0);
-		}
-		linux_process_termination();
-	}
-	hal_propagate_event(evinfo);
-} }
-
-extern long long rtai_lxrt_invoke (unsigned long, void *, void *);
-
-static void lxrt_intercept_syscall_prologue(adevinfo_t *evinfo)
-{
-	IN_INTERCEPT_IRQ_ENABLE(); {
-
-#ifdef USE_LINUX_SYSCALL
-	struct pt_regs *r = (struct pt_regs *)evinfo->evdata;
-	unsigned long syscall_nr;
-	if ((syscall_nr = r->RTAI_SYSCALL_NR) >= GT_NR_SYSCALLS) {
-		long long retval = rtai_lxrt_invoke(syscall_nr, (void *)r->RTAI_SYSCALL_ARGS, r);
-		SET_LXRT_RETVAL_IN_SYSCALL(r, retval);
-		if (!in_hrt_mode(rtai_cpuid())) {
-			hal_propagate_event(evinfo);
-		}
-		return;
-	}
-#endif
-	{ int cpuid;
-
-	if (in_hrt_mode(cpuid = rtai_cpuid())) {
-#ifdef ECHO_SYSW
-		struct pt_regs *r = (struct pt_regs *)evinfo->evdata;
-#endif
-		RT_TASK *task = rt_smp_current[cpuid];
-		if (task->is_hard > 0) {
-
-			if (task->linux_syscall_server) {
-#if 1
-				rt_exec_linux_syscall(task, (void *)task->linux_syscall_server, (struct pt_regs *)evinfo->evdata);
-#else
-				struct pt_regs *r = (struct pt_regs *)evinfo->evdata;
-				((void (*)(RT_TASK *, void *, void *, int, int))rt_fun_lxrt[RPCX].fun)(task->linux_syscall_server, r, &r->LINUX_SYSCALL_RETREG, sizeof(struct pt_regs), sizeof(long));
-#endif
-				return;
-			}
-			if (!systrans++) {
-				struct pt_regs *r = (struct pt_regs *)evinfo->evdata;
-				rt_printk("\nLXRT CHANGED MODE (SYSCALL), PID = %d, SYSCALL = %lu.\n", (task->lnxtsk)->pid, r->RTAI_SYSCALL_NR);
-			}
-			SYSW_DIAG_MSG(rt_printk("\nFORCING IT SOFT (SYSCALL), PID = %d, SYSCALL = %ld.\n", (task->lnxtsk)->pid, r->RTAI_SYSCALL_NR););
-			give_back_to_linux(task, -1);
-			SYSW_DIAG_MSG(rt_printk("FORCED IT SOFT (SYSCALL), PID = %d, SYSCALL = %ld.\n", (task->lnxtsk)->pid, r->RTAI_SYSCALL_NR););
-		}
-	} }
-	hal_propagate_event(evinfo);
-} }
-
-static void lxrt_intercept_syscall_epilogue(adevinfo_t *evinfo)
-{
-	IN_INTERCEPT_IRQ_ENABLE(); {
-
-	RT_TASK *task;
-	if (current->rtai_tskext(TSKEXT0) && (task = (RT_TASK *)current->rtai_tskext(TSKEXT0))->is_hard < 0) {
-		SYSW_DIAG_MSG(rt_printk("GOING BACK TO HARD (SYSLXRT), PID = %d.\n", current->pid););
-		steal_from_linux(task);
-		SYSW_DIAG_MSG(rt_printk("GONE BACK TO HARD (SYSLXRT),  PID = %d.\n", current->pid););
-		return;
-	}
-	hal_propagate_event(evinfo);
-} }
-#endif
 
 /* ++++++++++++++++++++++++++ SCHEDULER PROC FILE +++++++++++++++++++++++++++ */
 

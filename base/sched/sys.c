@@ -117,7 +117,10 @@ static inline void lxrt_fun_call(RT_TASK *task, void *fun, int narg, long *arg)
 	if (likely(task->is_hard > 0)) {
 		task->retval = ((long long (*)(unsigned long, ...))fun)(RTAI_FUN_ARGS);
 		if (unlikely(!task->is_hard)) {
-			rt_schedule_soft_tail(task, task->runnable_on_cpus);
+//			rt_schedule_soft_tail(task, task->runnable_on_cpus);
+			rt_global_cli();
+			rt_schedule();
+			rt_global_sti();
 		}
 	} else {
 		struct fun_args *funarg;

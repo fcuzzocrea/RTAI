@@ -43,7 +43,6 @@
 #define RTAI_TRIOSS
 #endif
 #define LOCKED_LINUX_IN_IRQ_HANDLER
-#define UNWRAPPED_CATCH_EVENT
 #define DOMAIN_TO_STALL  (fusion_domain)
 
 #include <asm/rtai_vectors.h>

@@ -827,7 +827,7 @@ static void rtf_sysrq_handler(void)
  * @retval EINVAL if @a fd_fifo refers to a not opened fifo.
  * @retval EFAULT if the operation was unsuccessful.
  */
-int rtf_reset(unsigned int minor)
+RTAI_SYSCALL_MODE int rtf_reset(unsigned int minor)
 {
 	int semval;
 	F_MBX *mbx;
@@ -877,7 +877,7 @@ int rtf_reset(unsigned int minor)
  * @retval -EBUSY if @a size is smaller than actual content
  * size is unchanged.
  */
-int rtf_resize(unsigned int minor, int size)
+RTAI_SYSCALL_MODE int rtf_resize(unsigned int minor, int size)
 {
 	void *oldbuf, *newbuf;
 	int old_malloc_type, new_malloc_type, semval;
@@ -977,7 +977,7 @@ int rtf_resize(unsigned int minor, int size)
  * @retval ENOMEM if the necessary size could not be allocated for the RT-FIFO.
  *
  */
-int rtf_create(unsigned int minor, int size)
+RTAI_SYSCALL_MODE int rtf_create(unsigned int minor, int size)
 {
 	void *buf;
 
@@ -1036,7 +1036,7 @@ int rtf_create(unsigned int minor, int size)
  * @note The equivalent of rtf_destroy in user space is the standard UNIX
  * close.
  */
-int rtf_destroy(unsigned int minor)
+RTAI_SYSCALL_MODE int rtf_destroy(unsigned int minor)
 {
 	VALID_FIFO;
 
@@ -1122,7 +1122,7 @@ int rtf_create_handler(unsigned int minor, int (*handler) (unsigned int fifo))
  * which can be either blocking or nonblocking according to how you opened the
  * related device.
  */
-int rtf_put(unsigned int minor, void *buf, int count)
+RTAI_SYSCALL_MODE int rtf_put(unsigned int minor, void *buf, int count)
 {
 	VALID_FIFO;
 
@@ -1132,13 +1132,13 @@ int rtf_put(unsigned int minor, void *buf, int count)
 	return count;
 }
 
-int rtf_ovrwr_put(unsigned int minor, void *buf, int count)
+RTAI_SYSCALL_MODE int rtf_ovrwr_put(unsigned int minor, void *buf, int count)
 {
 	VALID_FIFO;
 	return mbx_ovrwr_send(&(fifo[minor].mbx), buf, count, 0);
 }
 
-int rtf_put_if(unsigned int minor, void *buf, int count)
+RTAI_SYSCALL_MODE int rtf_put_if(unsigned int minor, void *buf, int count)
 {
 	VALID_FIFO;
 
@@ -1178,7 +1178,7 @@ int rtf_put_if(unsigned int minor, void *buf, int count)
  * which can be either blocking or nonblocking according to how you opened the
  * related device.
  */
-int rtf_get(unsigned int minor, void *buf, int count)
+RTAI_SYSCALL_MODE int rtf_get(unsigned int minor, void *buf, int count)
 {
 	VALID_FIFO;
 
@@ -1195,7 +1195,7 @@ int rtf_evdrp(unsigned int minor, void *msg, int msg_size)
 	return msg_size - mbx_evdrp(&(fifo[minor].mbx), (char **)(&msg), msg_size, 0);
 }
 
-int rtf_get_if(unsigned int minor, void *buf, int count)
+RTAI_SYSCALL_MODE int rtf_get_if(unsigned int minor, void *buf, int count)
 {
 	VALID_FIFO;
 
@@ -1223,7 +1223,7 @@ int rtf_get_if(unsigned int minor, void *buf, int count)
  * @retval 0 on success.
  * @retval EINVAL if @a fd_fifo refers to an invalid file descriptor or fifo.
  */
-int rtf_sem_init(unsigned int minor, int value)
+RTAI_SYSCALL_MODE int rtf_sem_init(unsigned int minor, int value)
 {
 	VALID_FIFO;
 
@@ -1251,7 +1251,7 @@ int rtf_sem_init(unsigned int minor, int value)
  * @retval 0 on success.
  * @retval EINVAL if @a fd_fifo refers to an invalid file descriptor or fifo.
  */
-int rtf_sem_post(unsigned int minor)
+RTAI_SYSCALL_MODE int rtf_sem_post(unsigned int minor)
 {
 	VALID_FIFO;
 
@@ -1280,7 +1280,7 @@ int rtf_sem_post(unsigned int minor)
  * @retval 0 on success.
  * @retval EINVAL if @a fd_fifo  refers to an invalid file descriptor or fifo.
  */
-int rtf_sem_trywait(unsigned int minor)
+RTAI_SYSCALL_MODE int rtf_sem_trywait(unsigned int minor)
 {
 	VALID_FIFO;
 
@@ -1307,7 +1307,7 @@ int rtf_sem_trywait(unsigned int minor)
  * @retval 0 on sucess.
  * @retval EINVAL if @a fd_fifo refers to an invalid file descriptor or fifo.
  */
-int rtf_sem_destroy(unsigned int minor)
+RTAI_SYSCALL_MODE int rtf_sem_destroy(unsigned int minor)
 {
 	VALID_FIFO;
 
@@ -1938,12 +1938,12 @@ int rtf_named_create(const char *name, int size)
 	return -EBUSY;
 }
 
-int rtf_create_named(const char *name)
+RTAI_SYSCALL_MODE int rtf_create_named(const char *name)
 {
 	return rtf_named_create(name, DEFAULT_SIZE);
 }
 
-int rtf_getfifobyname(const char *name)
+RTAI_SYSCALL_MODE int rtf_getfifobyname(const char *name)
 {
     	int minor;
 

@@ -37,18 +37,22 @@ typedef struct rtai_spl {
 extern "C" {
 #endif /* !__cplusplus */
 
-int rt_spl_init(struct rtai_spl *spl);
+RTAI_SYSCALL_MODE int rt_spl_init(struct rtai_spl *spl);
 
-int rt_spl_delete(struct rtai_spl *spl);
+RTAI_SYSCALL_MODE int rt_spl_delete(struct rtai_spl *spl);
 
-int rt_spl_lock(struct rtai_spl *spl);
+RTAI_SYSCALL_MODE SPL *_rt_named_spl_init(unsigned long spl_name);
 
-int rt_spl_lock_if(struct rtai_spl *spl);
+RTAI_SYSCALL_MODE int rt_named_spl_delete(SPL *spl);
 
-int rt_spl_lock_timed(struct rtai_spl *spl,
+RTAI_SYSCALL_MODE int rt_spl_lock(struct rtai_spl *spl);
+
+RTAI_SYSCALL_MODE int rt_spl_lock_if(struct rtai_spl *spl);
+
+RTAI_SYSCALL_MODE int rt_spl_lock_timed(struct rtai_spl *spl,
 		      unsigned long ns);
 
-int rt_spl_unlock(struct rtai_spl *spl);
+RTAI_SYSCALL_MODE int rt_spl_unlock(struct rtai_spl *spl);
 
 #ifdef __cplusplus
 }

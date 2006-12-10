@@ -108,6 +108,7 @@ static inline int remap_page_range(struct vm_area_struct *vma, unsigned long uva
 
 #include <rtai_malloc.h>
 
+#include <rtai.h>
 #include <asm/rtai_shm.h>
 
 #ifdef __cplusplus
@@ -125,7 +126,7 @@ void *rt_shm_alloc(unsigned long name,
 #define rt_shm_alloc_adr(adr, name, size) \
 	rt_shm_alloc(name, size, suprt)
 
-int rt_shm_free(unsigned long name);
+RTAI_SYSCALL_MODE int rt_shm_free(unsigned long name);
 
 void *rt_heap_open(unsigned long name,
 		   int size,
@@ -134,14 +135,13 @@ void *rt_heap_open(unsigned long name,
 #define rt_heap_open_adr(adr, name, size, suprt) \
 	rt_heap_open(name, size, suprt)
 
-void *rt_halloc(int size);
+RTAI_SYSCALL_MODE void *rt_halloc(int size);
 
-void rt_hfree(void *addr);
+RTAI_SYSCALL_MODE void rt_hfree(void *addr);
 
-void *rt_named_halloc(unsigned long name,
-		      int size);
+RTAI_SYSCALL_MODE void *rt_named_halloc(unsigned long name, int size);
 
-void rt_named_hfree(void *addr);
+RTAI_SYSCALL_MODE void rt_named_hfree(void *addr);
 
 void *rt_named_malloc(unsigned long name,
 		      int size);

@@ -19,7 +19,6 @@
 
 #include <linux/kernel.h>
 #include <linux/module.h>
-//#include <linux/config.h>
 #include <linux/version.h>
 #include <linux/timer.h>
 #include <linux/unistd.h>
@@ -579,7 +578,7 @@ ret:
 
 static int mod_timer_srq;
 
-int rt_send_req_rel_port(unsigned long node, int op, unsigned long id, MBX *mbx, int hard)
+RTAI_SYSCALL_MODE int rt_send_req_rel_port(unsigned long node, int op, unsigned long id, MBX *mbx, int hard)
 {
 	RT_TASK *task;
 	int i, msgsize;
@@ -652,19 +651,19 @@ int rt_send_req_rel_port(unsigned long node, int op, unsigned long id, MBX *mbx,
 	return msg.port ? msg.port : -ETIMEDOUT;
 }
 
-RT_TASK *rt_find_asgn_stub(unsigned long long owner, int asgn)
+RTAI_SYSCALL_MODE RT_TASK *rt_find_asgn_stub(unsigned long long owner, int asgn)
 {
 	int i;
 	i = asgn ? hash_find_if_not_ins(owner) : hash_find(owner);
 	return i > 0 ? (RT_TASK *)portslot[i].task : 0;
 }
 
-int rt_rel_stub(unsigned long long owner)
+RTAI_SYSCALL_MODE int rt_rel_stub(unsigned long long owner)
 {
 	return hash_rem(owner) > 0 ? 0 : -ESRCH;
 }
 
-int rt_waiting_return(unsigned long node, int port)
+RTAI_SYSCALL_MODE int rt_waiting_return(unsigned long node, int port)
 {
 	struct portslot_t *portslotp;
 	portslotp = portslot + abs(port);
@@ -792,7 +791,7 @@ static void mbx_send_if(MBX *mbx, void *msg, int msg_size)
 
 #endif
 
-unsigned long long rt_net_rpc(long fun_ext_timed, long type, void *args, int argsize, int space)
+RTAI_SYSCALL_MODE unsigned long long rt_net_rpc(long fun_ext_timed, long type, void *args, int argsize, int space)
 {
 	char msg[MAX_MSG_SIZE];
 	struct reply_t { int wsize, w2size; unsigned long long retval; char msg[1]; } *reply;
@@ -923,7 +922,7 @@ int rt_get_net_rpc_ret(MBX *mbx, unsigned long long *retval, void *msg1, int *ms
 	return 0;
 }
 
-unsigned long ddn2nl(const char *ddn)
+RTAI_SYSCALL_MODE unsigned long ddn2nl(const char *ddn)
 {
 	int p, n, c;
 	union { unsigned long l; char c[4]; } u;
@@ -945,7 +944,7 @@ unsigned long ddn2nl(const char *ddn)
 	return u.l;
 }
 
-unsigned long rt_set_this_node(const char *ddn, unsigned long node, int hard)
+RTAI_SYSCALL_MODE unsigned long rt_set_this_node(const char *ddn, unsigned long node, int hard)
 {
 	return this_node[hard ? MSG_HARD : MSG_SOFT] = ddn ? ddn2nl(ddn) : node;
 }

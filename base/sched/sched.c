@@ -474,7 +474,7 @@ int rt_task_init(RT_TASK *task, void (*rt_thread)(long), long data, int stack_si
 
 #endif /* USE_RTAI_TASKS */
 
-void rt_set_runnable_on_cpuid(RT_TASK *task, unsigned int cpuid)
+RTAI_SYSCALL_MODE void rt_set_runnable_on_cpuid(RT_TASK *task, unsigned int cpuid)
 {
 	unsigned long flags;
 	RT_TASK *linux_task;
@@ -520,7 +520,7 @@ void rt_set_runnable_on_cpuid(RT_TASK *task, unsigned int cpuid)
 }
 
 
-void rt_set_runnable_on_cpus(RT_TASK *task, unsigned long run_on_cpus)
+RTAI_SYSCALL_MODE void rt_set_runnable_on_cpus(RT_TASK *task, unsigned long run_on_cpus)
 {
 	int cpuid;
 
@@ -1007,7 +1007,7 @@ sched_exit1:
 }
 
 
-void rt_spv_RMS(int cpuid)
+RTAI_SYSCALL_MODE void rt_spv_RMS(int cpuid)
 {
 	RT_TASK *task;
 	int prio;
@@ -1409,7 +1409,7 @@ void start_rt_apic_timers(struct apic_timer_setup_data *setup_data, unsigned int
 
 #ifdef CONFIG_SMP
 
-void start_rt_apic_timers(struct apic_timer_setup_data *setup_data, unsigned int rcvr_jiffies_cpuid)
+RTAI_SYSCALL_MODE void start_rt_apic_timers(struct apic_timer_setup_data *setup_data, unsigned int rcvr_jiffies_cpuid)
 {
 	unsigned long flags, cpuid;
 
@@ -1432,7 +1432,7 @@ void start_rt_apic_timers(struct apic_timer_setup_data *setup_data, unsigned int
 }
 
 
-RTIME start_rt_timer(int period)
+RTAI_SYSCALL_MODE RTIME start_rt_timer(int period)
 {
 	int cpuid;
 	struct apic_timer_setup_data setup_data[NR_RT_CPUS];
@@ -1554,7 +1554,7 @@ int rt_sched_type(void)
 }
 
 
-int rt_hard_timer_tick_count(void)
+RTAI_SYSCALL_MODE int rt_hard_timer_tick_count(void)
 {
 	int cpuid = rtai_cpuid();
 	if (rt_sched_timed) {
@@ -1564,7 +1564,7 @@ int rt_hard_timer_tick_count(void)
 }
 
 
-int rt_hard_timer_tick_count_cpuid(int cpuid)
+RTAI_SYSCALL_MODE int rt_hard_timer_tick_count_cpuid(int cpuid)
 {
 	if (rt_sched_timed) {
 		return oneshot_timer ? 0 : rt_smp_times[cpuid].periodic_tick;
@@ -1675,7 +1675,7 @@ static int lxrt_notify_reboot (struct notifier_block *nb, unsigned long event, v
 
 /* ++++++++++++++++++++++++++ TIME CONVERSIONS +++++++++++++++++++++++++++++ */
 
-RTIME count2nano(RTIME counts)
+RTAI_SYSCALL_MODE RTIME count2nano(RTIME counts)
 {
 	int sign;
 
@@ -1692,7 +1692,7 @@ RTIME count2nano(RTIME counts)
 }
 
 
-RTIME nano2count(RTIME ns)
+RTAI_SYSCALL_MODE RTIME nano2count(RTIME ns)
 {
 	int sign;
 
@@ -1708,7 +1708,7 @@ RTIME nano2count(RTIME ns)
 	return sign ? ns : - ns;
 }
 
-RTIME count2nano_cpuid(RTIME counts, unsigned int cpuid)
+RTAI_SYSCALL_MODE RTIME count2nano_cpuid(RTIME counts, unsigned int cpuid)
 {
 	int sign;
 
@@ -1725,7 +1725,7 @@ RTIME count2nano_cpuid(RTIME counts, unsigned int cpuid)
 }
 
 
-RTIME nano2count_cpuid(RTIME ns, unsigned int cpuid)
+RTAI_SYSCALL_MODE RTIME nano2count_cpuid(RTIME ns, unsigned int cpuid)
 {
 	int sign;
 
@@ -1749,7 +1749,7 @@ RTIME rt_get_time(void)
 	return rt_smp_oneshot_timer[cpuid = rtai_cpuid()] ? rdtsc() : rt_smp_times[cpuid].tick_time;
 }
 
-RTIME rt_get_time_cpuid(unsigned int cpuid)
+RTAI_SYSCALL_MODE RTIME rt_get_time_cpuid(unsigned int cpuid)
 {
 	return oneshot_timer ? rdtsc(): rt_times.tick_time;
 }
@@ -1761,7 +1761,7 @@ RTIME rt_get_time_ns(void)
 	    		       llimd(rt_times.tick_time, 1000000000, TIMER_FREQ);
 }
 
-RTIME rt_get_time_ns_cpuid(unsigned int cpuid)
+RTAI_SYSCALL_MODE RTIME rt_get_time_ns_cpuid(unsigned int cpuid)
 {
 	return oneshot_timer ? llimd(rdtsc(), 1000000000, tuned.cpu_freq) :
 			       llimd(rt_times.tick_time, 1000000000, TIMER_FREQ);
@@ -2651,53 +2651,42 @@ static int rt_gettid(void)
 }
 
 static struct rt_native_fun_entry rt_sched_entries[] = {
-	{ { 0, rt_named_task_init },		    NAMED_TASK_INIT },  
-	{ { 0, rt_named_task_init_cpuid },	    NAMED_TASK_INIT_CPUID },  
-	{ { 0, rt_named_task_delete },	 	    NAMED_TASK_DELETE },  
-	{ { 1, rt_task_yield },			    YIELD },  
-	{ { 1, rt_task_suspend },		    SUSPEND },
-	{ { 1, rt_task_resume },		    RESUME },
-	{ { 1, rt_task_make_periodic },		    MAKE_PERIODIC },
-	{ { 1, rt_task_wait_period },		    WAIT_PERIOD },
-	{ { 1, rt_sleep },			    SLEEP },
-	{ { 1, rt_sleep_until },		    SLEEP_UNTIL },
-	{ { 0, start_rt_timer },		    START_TIMER },
-	{ { 0, stop_rt_timer },			    STOP_TIMER },
-	{ { 0, rt_get_time },			    GET_TIME },
-	{ { 0, count2nano },			    COUNT2NANO },
-	{ { 0, nano2count },			    NANO2COUNT },
-	{ { 0, rt_busy_sleep },			    BUSY_SLEEP },
-	{ { 0, rt_set_periodic_mode },		    SET_PERIODIC_MODE },
-	{ { 0, rt_set_oneshot_mode },		    SET_ONESHOT_MODE },
-	{ { 0, rt_task_signal_handler },	    SIGNAL_HANDLER  },
-	{ { 0, rt_task_use_fpu },		    TASK_USE_FPU },
-	{ { 0, rt_get_priorities },		    GET_PRIORITIES },
-	{ { 0, rt_hard_timer_tick_count },	    HARD_TIMER_COUNT },
-	{ { 0, rt_get_time_ns },		    GET_TIME_NS },
-	{ { 0, rt_get_cpu_time_ns },		    GET_CPU_TIME_NS },
 	{ { 0, rt_set_runnable_on_cpus },	    SET_RUNNABLE_ON_CPUS },
 	{ { 0, rt_set_runnable_on_cpuid },	    SET_RUNNABLE_ON_CPUID },
+	{ { 0, rt_set_sched_policy },		    SET_SCHED_POLICY },
 	{ { 0, rt_get_timer_cpu },		    GET_TIMER_CPU },
+	{ { 0, rt_is_hard_timer_running },	    HARD_TIMER_RUNNING },
+	{ { 0, rt_set_periodic_mode },		    SET_PERIODIC_MODE },
+	{ { 0, rt_set_oneshot_mode },		    SET_ONESHOT_MODE },
+	{ { 0, start_rt_timer },		    START_TIMER },
 	{ { 0, start_rt_apic_timers },		    START_RT_APIC_TIMERS },
+	{ { 0, stop_rt_timer },			    STOP_TIMER },
+	{ { 0, rt_task_signal_handler },	    SIGNAL_HANDLER  },
+	{ { 0, rt_task_use_fpu },		    TASK_USE_FPU },
+	{ { 0, rt_hard_timer_tick_count },	    HARD_TIMER_COUNT },
 	{ { 0, rt_hard_timer_tick_count_cpuid },    HARD_TIMER_COUNT_CPUID },
+	{ { 0, count2nano },			    COUNT2NANO },
+	{ { 0, nano2count },			    NANO2COUNT },
 	{ { 0, count2nano_cpuid },		    COUNT2NANO_CPUID },
 	{ { 0, nano2count_cpuid },		    NANO2COUNT_CPUID },
+	{ { 0, rt_get_time },			    GET_TIME },
 	{ { 0, rt_get_time_cpuid },		    GET_TIME_CPUID },
+	{ { 0, rt_get_time_ns },		    GET_TIME_NS },
 	{ { 0, rt_get_time_ns_cpuid },		    GET_TIME_NS_CPUID },
-	{ { 1, rt_task_make_periodic_relative_ns }, MAKE_PERIODIC_NS },
-	{ { 0, rt_set_sched_policy },		    SET_SCHED_POLICY },
-	{ { 1, rt_task_set_resume_end_times },	    SET_RESUME_END },
+	{ { 0, rt_get_cpu_time_ns },		    GET_CPU_TIME_NS },
+	{ { 0, rt_get_priorities },		    GET_PRIORITIES },
 	{ { 0, rt_spv_RMS },			    SPV_RMS },
-	{ { 0, rt_task_masked_unblock },	    WAKEUP_SLEEPING },
 	{ { 1, rt_change_prio },		    CHANGE_TASK_PRIO },
-	{ { 0, rt_set_resume_time },  		    SET_RESUME_TIME },
-	{ { 0, rt_set_period },			    SET_PERIOD },
-	{ { 0, rt_is_hard_timer_running },	    HARD_TIMER_RUNNING },
-	{ { 0, rt_get_adr },			    GET_ADR },
-	{ { 0, rt_get_name },			    GET_NAME },
+	{ { 0, rt_sched_lock },			    SCHED_LOCK },
+	{ { 0, rt_sched_unlock },		    SCHED_UNLOCK },
+	{ { 1, rt_task_yield },			    YIELD },  
+	{ { 1, rt_task_suspend },		    SUSPEND },
 	{ { 1, rt_task_suspend_if },		    SUSPEND_IF },
 	{ { 1, rt_task_suspend_until },		    SUSPEND_UNTIL },
 	{ { 1, rt_task_suspend_timed },		    SUSPEND_TIMED },
+	{ { 1, rt_task_resume },		    RESUME },
+	{ { 1, rt_receive_linux_syscall },          RECEIVE_LINUX_SYSCALL },
+	{ { 1, rt_return_linux_syscall  },          RETURN_LINUX_SYSCALL  },
 	{ { 1, rt_irq_wait },			    IRQ_WAIT },
 	{ { 1, rt_irq_wait_if },		    IRQ_WAIT_IF },
 	{ { 1, rt_irq_wait_until },		    IRQ_WAIT_UNTIL },
@@ -2705,11 +2694,22 @@ static struct rt_native_fun_entry rt_sched_entries[] = {
 	{ { 0, rt_irq_signal },			    IRQ_SIGNAL },
 	{ { 0, rt_request_irq_task },		    REQUEST_IRQ_TASK },
 	{ { 0, rt_release_irq_task },		    RELEASE_IRQ_TASK },
-	{ { 0, rt_sched_lock },			    SCHED_LOCK },
-	{ { 0, rt_sched_unlock },		    SCHED_UNLOCK },
+	{ { 1, rt_task_make_periodic_relative_ns }, MAKE_PERIODIC_NS },
+	{ { 1, rt_task_make_periodic },		    MAKE_PERIODIC },
+	{ { 1, rt_task_set_resume_end_times },	    SET_RESUME_END },
+	{ { 0, rt_set_resume_time },  		    SET_RESUME_TIME },
+	{ { 0, rt_set_period },			    SET_PERIOD },
+	{ { 1, rt_task_wait_period },		    WAIT_PERIOD },
+	{ { 0, rt_busy_sleep },			    BUSY_SLEEP },
+	{ { 1, rt_sleep },			    SLEEP },
+	{ { 1, rt_sleep_until },		    SLEEP_UNTIL },
+	{ { 0, rt_task_masked_unblock },	    WAKEUP_SLEEPING },
+	{ { 0, rt_named_task_init },		    NAMED_TASK_INIT },  
+	{ { 0, rt_named_task_init_cpuid },	    NAMED_TASK_INIT_CPUID },  
+	{ { 0, rt_named_task_delete },	 	    NAMED_TASK_DELETE },  
+	{ { 0, rt_get_name },			    GET_NAME },
+	{ { 0, rt_get_adr },			    GET_ADR },
 	{ { 0, rt_pend_linux_irq },		    PEND_LINUX_IRQ },
-	{ { 1, rt_return_linux_syscall  },          RETURN_LINUX_SYSCALL  },
-	{ { 1, rt_receive_linux_syscall },          RECEIVE_LINUX_SYSCALL },
 	{ { 0, usp_request_rtc },                   REQUEST_RTC },
 	{ { 0, rt_release_rtc },                    RELEASE_RTC },
 	{ { 0, rt_gettid },                         RT_GETTID },
@@ -2867,7 +2867,7 @@ static int __rtai_lxrt_init(void)
 	
 #ifdef CONFIG_REGPARM
 	printk(KERN_INFO "RTAI[sched]: Linux kernel REGPARM configuration enabled, RTAI will not work in user space, disable it.\n");
-	return -EINVAL;
+//	return -EINVAL;
 #endif
 	sched_mem_init();
 	rt_registry_alloc();

@@ -87,89 +87,49 @@
 
 #include <rtai.h>
 
-int rt_spopen(unsigned int tty,
-	      unsigned int baud,
-	      unsigned int numbits,
-	      unsigned int stopbits,
-	      unsigned int parity,
-	      int mode,
-	      int fifotrig);
+RTAI_SYSCALL_MODE int rt_spopen(unsigned int tty, unsigned int baud, unsigned int numbits, unsigned int stopbits, unsigned int parity, int mode, int fifotrig);
 
-int rt_spclose(unsigned int tty);
+RTAI_SYSCALL_MODE int rt_spclose(unsigned int tty);
 
-int rt_spread(unsigned int tty,
-	      char *msg,
-	      int msg_size);
+RTAI_SYSCALL_MODE int rt_spread(unsigned int tty, char *msg, int msg_size);
 
-int rt_spevdrp(unsigned int tty,
-	       char *msg,
-	       int msg_size);
+RTAI_SYSCALL_MODE int rt_spevdrp(unsigned int tty, char *msg, int msg_size);
 
-int rt_spwrite(unsigned int tty,
-	       char *msg,
-	       int msg_size);
+RTAI_SYSCALL_MODE int rt_spwrite(unsigned int tty, char *msg, int msg_size);
 
-int rt_spget_rxavbs(unsigned int tty);
+RTAI_SYSCALL_MODE int rt_spget_rxavbs(unsigned int tty);
 
-int rt_spget_txfrbs(unsigned int tty);
+RTAI_SYSCALL_MODE int rt_spget_txfrbs(unsigned int tty);
 
-int rt_spclear_rx(unsigned int tty);
+RTAI_SYSCALL_MODE int rt_spclear_rx(unsigned int tty);
 
-int rt_spclear_tx(unsigned int tty);
+RTAI_SYSCALL_MODE int rt_spclear_tx(unsigned int tty);
 
-int rt_spset_mcr(unsigned int tty,
-		 int mask,
-		 int setbits);
+RTAI_SYSCALL_MODE int rt_spset_mcr(unsigned int tty, int mask, int setbits);
 
-int rt_spget_msr(unsigned int tty,
-		 int mask);
+RTAI_SYSCALL_MODE int rt_spget_msr(unsigned int tty, int mask);
 
-int rt_spset_mode(unsigned int tty,
-		  int mode);
+RTAI_SYSCALL_MODE int rt_spset_mode(unsigned int tty, int mode);
 
-int rt_spset_fifotrig(unsigned int tty,
-		      int fifotrig);
+RTAI_SYSCALL_MODE int rt_spset_fifotrig(unsigned int tty, int fifotrig);
 
-int rt_spget_err(unsigned int tty);
+RTAI_SYSCALL_MODE int rt_spget_err(unsigned int tty);
 
-long rt_spset_callback_fun(unsigned int tty,
-			  void (*callback_fun)(int, int),
-			  int rxthrs,
-			  int txthrs);
+long rt_spset_callback_fun(unsigned int tty, void (*callback_fun)(int, int), int rxthrs, int txthrs);
 
-int rt_spset_thrs(unsigned int tty,
-		  int rxthrs,
-		  int txthrs);
+RTAI_SYSCALL_MODE int rt_spset_thrs(unsigned int tty, int rxthrs, int txthrs);
 
-long rt_spset_err_callback_fun(unsigned int tty,
-			      void (*err_callback_fun)(int));
+long rt_spset_err_callback_fun(unsigned int tty, void (*err_callback_fun)(int));
 
-int rt_spset_callback_fun_usr(unsigned int tty,
-			      unsigned long callback_fun,
-			      int rxthrs,
-			      int txthrs,
-			      int code,
-			      void *task);
+RTAI_SYSCALL_MODE int rt_spset_callback_fun_usr(unsigned int tty, unsigned long callback_fun, int rxthrs, int txthrs, int code, void *task);
 
-int rt_spset_err_callback_fun_usr(unsigned int tty,
-				  unsigned long err_callback_fun,
-				  int dummy1,
-				  int dummy2,
-				  int code,
-				  void *task);
+RTAI_SYSCALL_MODE int rt_spset_err_callback_fun_usr(unsigned int tty, unsigned long err_callback_fun, int dummy1, int dummy2, int code, void *task);
 
-void rt_spwait_usr_callback(unsigned int tty,
-			    unsigned long *retvals);
+RTAI_SYSCALL_MODE void rt_spwait_usr_callback(unsigned int tty, unsigned long *retvals);
 
-int rt_spread_timed(unsigned int tty,
-		    char *msg,
-		    int msg_size,
-		    RTIME delay);
+RTAI_SYSCALL_MODE int rt_spread_timed(unsigned int tty, char *msg, int msg_size, RTIME delay);
 
-int rt_spwrite_timed(unsigned int tty,
-		     char *msg,
-		     int msg_size,
-		     RTIME delay);
+RTAI_SYSCALL_MODE int rt_spwrite_timed(unsigned int tty, char *msg, int msg_size, RTIME delay);
 
 /*
  * rt_com compatibility functions.

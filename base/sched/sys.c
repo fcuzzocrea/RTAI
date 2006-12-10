@@ -74,32 +74,32 @@ void *rt_get_lxrt_fun_entry(int index);
 
 static inline void lxrt_typed_sem_init(SEM *sem, int count, int type)
 {
-	((int (*)(SEM *, int, int))rt_get_lxrt_fun_entry(TYPED_SEM_INIT))(sem, count, type);
+	((RTAI_SYSCALL_MODE int (*)(SEM *, int, int))rt_get_lxrt_fun_entry(TYPED_SEM_INIT))(sem, count, type);
 }
 
 static inline int lxrt_typed_mbx_init(MBX *mbx, int bufsize, int type)
 {
-	return ((int (*)(MBX *, int, int))rt_get_lxrt_fun_entry(TYPED_MBX_INIT))(mbx, bufsize, type);
+	return ((RTAI_SYSCALL_MODE int (*)(MBX *, int, int))rt_get_lxrt_fun_entry(TYPED_MBX_INIT))(mbx, bufsize, type);
 }
 
 static inline int lxrt_typed_rwl_init(RWL *rwl, int type)
 {
-	return ((int (*)(RWL *, int))rt_get_lxrt_fun_entry(RWL_INIT))(rwl, type);
+	return ((RTAI_SYSCALL_MODE int (*)(RWL *, int))rt_get_lxrt_fun_entry(RWL_INIT))(rwl, type);
 }
 
 static inline int lxrt_spl_init(SPL *spl)
 {
-	return ((int (*)(SPL *))rt_get_lxrt_fun_entry(SPL_INIT))(spl);
+	return ((RTAI_SYSCALL_MODE int (*)(SPL *))rt_get_lxrt_fun_entry(SPL_INIT))(spl);
 }
 
 static inline int lxrt_Proxy_detach(pid_t pid)
 {
-	return ((int (*)(int))rt_get_lxrt_fun_entry(PROXY_DETACH))(pid);
+	return ((RTAI_SYSCALL_MODE int (*)(int))rt_get_lxrt_fun_entry(PROXY_DETACH))(pid);
 }
 
 static inline int GENERIC_DELETE(int index, void *object)
 {
-	return ((int (*)(void *))rt_get_lxrt_fun_entry(index))(object);
+	return ((RTAI_SYSCALL_MODE int (*)(void *))rt_get_lxrt_fun_entry(index))(object);
 }
 			 
 #define lxrt_sem_delete(sem)        GENERIC_DELETE(SEM_DELETE, sem)
@@ -115,7 +115,7 @@ extern void rt_schedule_soft_tail(RT_TASK *, int);
 static inline void lxrt_fun_call(RT_TASK *task, void *fun, int narg, long *arg)
 {
 	if (likely(task->is_hard > 0)) {
-		task->retval = ((long long (*)(unsigned long, ...))fun)(RTAI_FUN_ARGS);
+		task->retval = ((RTAI_SYSCALL_MODE long long (*)(unsigned long, ...))fun)(RTAI_FUN_ARGS);
 		if (unlikely(!task->is_hard)) {
 //			rt_schedule_soft_tail(task, task->runnable_on_cpus);
 			rt_global_cli();
@@ -319,7 +319,7 @@ static inline long long handle_lxrt_request (unsigned int lxsrq, long *arg, RT_T
 		}
 		if (!(type = funcm[srq].type)) {
 			recover_hardrt(task, task);
-			return ((long long (*)(unsigned long, ...))funcm[srq].fun)(RTAI_FUN_ARGS);
+			return ((RTAI_SYSCALL_MODE long long (*)(unsigned long, ...))funcm[srq].fun)(RTAI_FUN_ARGS);
 		}
 		recover_hardrt(1, task);
 		if (unlikely(NEED_TO_RW(type))) {

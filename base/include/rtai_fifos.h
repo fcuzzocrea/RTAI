@@ -93,6 +93,8 @@ struct rt_fifo_get_info_struct{
 
 #ifdef __KERNEL__
 
+#include <rtai.h>
+
 #ifdef __cplusplus
 extern "C" {
 #endif /* __cplusplus */
@@ -134,7 +136,7 @@ int rtf_create_handler(unsigned int fifo,	/* RT-FIFO */
  * Return value: On success, 0 is returned. On error, -1 is returned.
  */
 #undef rtf_create
-int rtf_create(unsigned int fifo, int size);
+RTAI_SYSCALL_MODE int rtf_create(unsigned int fifo, int size);
 
 /* Create an RT-FIFO with a name and size.
  *
@@ -154,7 +156,7 @@ int rtf_named_create(const char *name, int size);
  *               On error, -errno is returned.
  */
 
-int rtf_create_named(const char *name);
+RTAI_SYSCALL_MODE int rtf_create_named(const char *name);
 
 /* Look up a named RT-FIFO.
  *
@@ -163,7 +165,7 @@ int rtf_create_named(const char *name);
  *               On error, -errno is returned.
  */
 
-int rtf_getfifobyname(const char *name);
+RTAI_SYSCALL_MODE int rtf_getfifobyname(const char *name);
 
 /* Reset an RT-FIFO.
  * 
@@ -172,14 +174,14 @@ int rtf_getfifobyname(const char *name);
  * creation.
  */
 
-int rtf_reset(unsigned int fifo);
+RTAI_SYSCALL_MODE int rtf_reset(unsigned int fifo);
 
 /* destroy an RT-FIFO.
  * 
  * Return value: On success, 0 is returned.
  */
 
-int rtf_destroy(unsigned int fifo);
+RTAI_SYSCALL_MODE int rtf_destroy(unsigned int fifo);
 
 
 /* Resize an RT-FIFO.
@@ -188,7 +190,7 @@ int rtf_destroy(unsigned int fifo);
  * is returned.
  */
 
-int rtf_resize(unsigned int minor, int size);
+RTAI_SYSCALL_MODE int rtf_resize(unsigned int minor, int size);
 
 
 /* Write to an RT-FIFO.
@@ -196,7 +198,7 @@ int rtf_resize(unsigned int minor, int size);
  * Try to write count bytes to an FIFO. Returns the number of bytes written.
  */
 
-int rtf_put(unsigned int fifo,	/* RT-FIFO */
+RTAI_SYSCALL_MODE int rtf_put(unsigned int fifo,	/* RT-FIFO */
 	    void * buf,		/* buffer address */
 	    int count		/* number of bytes to write */);
 
@@ -207,7 +209,7 @@ int rtf_put(unsigned int fifo,	/* RT-FIFO */
  * Try to write count bytes to an FIFO. Returns 0.
  */
 
-int rtf_ovrwr_put(unsigned int fifo,	/* RT-FIFO */
+RTAI_SYSCALL_MODE int rtf_ovrwr_put(unsigned int fifo,	/* RT-FIFO */
 		  void * buf,		/* buffer address */
 		  int count		/* number of bytes to write */);
 
@@ -219,7 +221,7 @@ int rtf_ovrwr_put(unsigned int fifo,	/* RT-FIFO */
  * written.
  */
 
-extern int rtf_put_if (unsigned int fifo,	/* RT-FIFO */
+extern RTAI_SYSCALL_MODE int rtf_put_if (unsigned int fifo,	/* RT-FIFO */
 		void * buf,			/* buffer address */
 	       	int count			/* number of bytes to write */);
 
@@ -228,7 +230,7 @@ extern int rtf_put_if (unsigned int fifo,	/* RT-FIFO */
  * Try to read count bytes from a FIFO. Returns the number of bytes read.
  */
 
-int rtf_get(unsigned int fifo,	/* RT-FIFO */
+RTAI_SYSCALL_MODE int rtf_get(unsigned int fifo,	/* RT-FIFO */
 	    void * buf, 		/* buffer address */
 	    int count		/* number of bytes to read */);
 
@@ -238,7 +240,7 @@ int rtf_get(unsigned int fifo,	/* RT-FIFO */
  * Try to read count bytes in a block from an FIFO. Returns the number of bytes read.
  */
 
-int rtf_get_if(unsigned int fifo,	/* RT-FIFO */
+RTAI_SYSCALL_MODE int rtf_get_if(unsigned int fifo,	/* RT-FIFO */
 	    void * buf, 		/* buffer address */
 	    int count		/* number of bytes to read */);
 
@@ -255,7 +257,7 @@ int rtf_evdrp(unsigned int fifo,	/* RT-FIFO */
  *
  */
 
-int rtf_sem_init(unsigned int fifo,	/* RT-FIFO */
+RTAI_SYSCALL_MODE int rtf_sem_init(unsigned int fifo,	/* RT-FIFO */
 		 int value			/* initial semaphore value */);
 
 
@@ -263,21 +265,21 @@ int rtf_sem_init(unsigned int fifo,	/* RT-FIFO */
  *
  */
 
-int rtf_sem_post(unsigned int fifo	/* RT-FIFO */);
+RTAI_SYSCALL_MODE int rtf_sem_post(unsigned int fifo	/* RT-FIFO */);
 
 
 /* Try to acquire an RT-FIFO semaphore.
  *
  */
 
-int rtf_sem_trywait(unsigned int fifo	/* RT-FIFO */);
+RTAI_SYSCALL_MODE int rtf_sem_trywait(unsigned int fifo	/* RT-FIFO */);
 
 
 /* Destroy an RT-FIFO semaphore.
  *
  */
 
-int rtf_sem_destroy(unsigned int fifo	/* RT-FIFO */);
+RTAI_SYSCALL_MODE int rtf_sem_destroy(unsigned int fifo	/* RT-FIFO */);
 
 #define rtf_sem_delete rtf_sem_destroy
 

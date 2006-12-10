@@ -281,7 +281,7 @@ static void delete_queue(int q_index)
 //      POSIX MESSAGE QUEUES API
 ///////////////////////////////////////////////////////////////////////////////
 
-mqd_t mq_open(char *mq_name, int oflags, mode_t permissions, struct mq_attr *mq_attr)
+RTAI_SYSCALL_MODE mqd_t mq_open(char *mq_name, int oflags, mode_t permissions, struct mq_attr *mq_attr)
 {
 	int q_index, t_index, q_ind;
 	int spare_count = 0, first_spare = 0;
@@ -448,7 +448,7 @@ mqd_t mq_open(char *mq_name, int oflags, mode_t permissions, struct mq_attr *mq_
 }
 
 
-size_t _mq_receive(mqd_t mq, char *msg_buffer, size_t buflen, unsigned int *msgprio, int space)
+RTAI_SYSCALL_MODE size_t _mq_receive(mqd_t mq, char *msg_buffer, size_t buflen, unsigned int *msgprio, int space)
 {
 	int q_index = mq - 1, size;
 	MQMSG *msg_ptr;
@@ -511,7 +511,7 @@ size_t _mq_receive(mqd_t mq, char *msg_buffer, size_t buflen, unsigned int *msgp
 }
 
 
-size_t _mq_timedreceive(mqd_t mq, char *msg_buffer, size_t buflen, unsigned int *msgprio, const struct timespec *abstime, int space)
+RTAI_SYSCALL_MODE size_t _mq_timedreceive(mqd_t mq, char *msg_buffer, size_t buflen, unsigned int *msgprio, const struct timespec *abstime, int space)
 {
 	int q_index = mq - 1, size;
 	MQMSG *msg_ptr;
@@ -581,7 +581,7 @@ size_t _mq_timedreceive(mqd_t mq, char *msg_buffer, size_t buflen, unsigned int 
 }
 
 
-int _mq_send(mqd_t mq, const char *msg, size_t msglen, unsigned int msgprio, int space)
+RTAI_SYSCALL_MODE int _mq_send(mqd_t mq, const char *msg, size_t msglen, unsigned int msgprio, int space)
 {
 	int q_index = mq - 1;
 	MSG_QUEUE *q;
@@ -647,7 +647,7 @@ int _mq_send(mqd_t mq, const char *msg, size_t msglen, unsigned int msgprio, int
 }
 
 
-int _mq_timedsend(mqd_t mq, const char *msg, size_t msglen, unsigned int msgprio, const struct timespec *abstime, int space)
+RTAI_SYSCALL_MODE int _mq_timedsend(mqd_t mq, const char *msg, size_t msglen, unsigned int msgprio, const struct timespec *abstime, int space)
 {
 	int q_index = mq - 1;
 	MSG_QUEUE *q;
@@ -720,7 +720,7 @@ int _mq_timedsend(mqd_t mq, const char *msg, size_t msglen, unsigned int msgprio
 }
 
 
-int mq_close(mqd_t mq)
+RTAI_SYSCALL_MODE int mq_close(mqd_t mq)
 {
 	int q_index = mq - 1;
 	int q_ind;
@@ -763,7 +763,7 @@ int mq_close(mqd_t mq)
 }
 
 
-int mq_getattr(mqd_t mq, struct mq_attr *attrbuf)
+RTAI_SYSCALL_MODE int mq_getattr(mqd_t mq, struct mq_attr *attrbuf)
 {
 	int q_index = mq - 1;
 
@@ -777,7 +777,7 @@ int mq_getattr(mqd_t mq, struct mq_attr *attrbuf)
 }
 
 
-int mq_setattr(mqd_t mq, const struct mq_attr *new_attrs, struct mq_attr *old_attrs)
+RTAI_SYSCALL_MODE int mq_setattr(mqd_t mq, const struct mq_attr *new_attrs, struct mq_attr *old_attrs)
 {
 	int q_index = mq - 1;
 	int q_ind;
@@ -818,7 +818,7 @@ int mq_setattr(mqd_t mq, const struct mq_attr *new_attrs, struct mq_attr *old_at
 }
 
 
-int mq_notify(mqd_t mq, const struct sigevent *notification)
+RTAI_SYSCALL_MODE int mq_notify(mqd_t mq, const struct sigevent *notification)
 {
 	int q_index = mq - 1;
 	int rtn;
@@ -849,7 +849,7 @@ int mq_notify(mqd_t mq, const struct sigevent *notification)
 	return rtn;
 }
 
-int mq_unlink(char *mq_name)
+RTAI_SYSCALL_MODE int mq_unlink(char *mq_name)
 {
 	int q_index, rtn;
 

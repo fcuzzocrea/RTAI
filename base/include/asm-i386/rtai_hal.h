@@ -38,6 +38,12 @@
 #ifndef _RTAI_ASM_I386_HAL_H
 #define _RTAI_ASM_I386_HAL_H
 
+#ifdef CONFIG_REGPARM
+#define RTAI_SYSCALL_MODE asmlinkage __attribute__((regparm(0)))
+#else
+#define RTAI_SYSCALL_MODE
+#endif
+
 #define RTAI_DUOSS
 #ifndef RTAI_DUOSS
 #define RTAI_TRIOSS
@@ -656,8 +662,8 @@ static inline unsigned long rt_global_save_flags_and_cli(void)
 
 #endif
 
-int rt_printk(const char *format, ...);
-int rt_printk_sync(const char *format, ...);
+asmlinkage int rt_printk(const char *format, ...);
+asmlinkage int rt_printk_sync(const char *format, ...);
 
 extern struct hal_domain_struct rtai_domain;
 extern struct hal_domain_struct *fusion_domain;

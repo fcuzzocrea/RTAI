@@ -101,7 +101,7 @@ MODULE_LICENSE("GPL");
  *       return scheme allows counts in the order of billions instead.
  *
  */
-void rt_typed_sem_init(SEM *sem, int value, int type)
+RTAI_SYSCALL_MODE void rt_typed_sem_init(SEM *sem, int value, int type)
 {
 	sem->magic = RT_SEM_MAGIC;
 	sem->count = value;
@@ -183,7 +183,7 @@ void rt_sem_init(SEM *sem, int value)
  *	 up to such number of events, in any case avoid counting up 
  *	 to 0xFFFF. 
  */
-int rt_sem_delete(SEM *sem)
+RTAI_SYSCALL_MODE int rt_sem_delete(SEM *sem)
 {
 	unsigned long flags;
 	RT_TASK *task;
@@ -232,7 +232,7 @@ int rt_sem_delete(SEM *sem)
 }
 
 
-int rt_sem_count(SEM *sem)
+RTAI_SYSCALL_MODE int rt_sem_count(SEM *sem)
 {
 	return sem->count;
 }
@@ -262,7 +262,7 @@ int rt_sem_count(SEM *sem)
  * 	 0xFFFF.
  *	 See @ref rt_sem_wait() notes for some curiosities.
  */
-int rt_sem_signal(SEM *sem)
+RTAI_SYSCALL_MODE int rt_sem_signal(SEM *sem)
 {
 	unsigned long flags;
 	RT_TASK *task;
@@ -349,7 +349,7 @@ res:	if (sem->type > 0) {
  * 
  * @returns 0 always.
  */
-int rt_sem_broadcast(SEM *sem)
+RTAI_SYSCALL_MODE int rt_sem_broadcast(SEM *sem)
 {
 	unsigned long flags, schedmap;
 	RT_TASK *task;
@@ -428,7 +428,7 @@ int rt_sem_broadcast(SEM *sem)
  *	 traffic light, so that semaphores have an intuitive appeal
  * 	 and their use and meaning is easily understood.
  */
-int rt_sem_wait(SEM *sem)
+RTAI_SYSCALL_MODE int rt_sem_wait(SEM *sem)
 {
 	RT_TASK *rt_current;
 	unsigned long flags;
@@ -514,7 +514,7 @@ int rt_sem_wait(SEM *sem)
  *	 up to such number  of events, in any case avoid counting up
  *	 to 0xFFFF.
  */
-int rt_sem_wait_if(SEM *sem)
+RTAI_SYSCALL_MODE int rt_sem_wait_if(SEM *sem)
 {
 	int count;
 	unsigned long flags;
@@ -579,7 +579,7 @@ int rt_sem_wait_if(SEM *sem)
  *	 up to such number of events, in any case avoid counting up to
  *	 0xFFFF.
  */
-int rt_sem_wait_until(SEM *sem, RTIME time)
+RTAI_SYSCALL_MODE int rt_sem_wait_until(SEM *sem, RTIME time)
 {
 	DECLARE_RT_CURRENT;
 	int count;
@@ -682,7 +682,7 @@ int rt_sem_wait_until(SEM *sem, RTIME time)
  *	 up to such number of events, in any case avoid counting up to
  *	 0xFFFF.
  */
-int rt_sem_wait_timed(SEM *sem, RTIME delay)
+RTAI_SYSCALL_MODE int rt_sem_wait_timed(SEM *sem, RTIME delay)
 {
 	return rt_sem_wait_until(sem, get_time() + delay);
 }
@@ -701,7 +701,7 @@ int rt_sem_wait_timed(SEM *sem, RTIME delay)
  * @returns -1 for tasks that waited on the barrier, 0 for the tasks that 
  * completed the barrier count.
  */
-int rt_sem_wait_barrier(SEM *sem)
+RTAI_SYSCALL_MODE int rt_sem_wait_barrier(SEM *sem)
 {
 	unsigned long flags;
 
@@ -741,7 +741,7 @@ int rt_sem_wait_barrier(SEM *sem)
  * @returns 0
  *
  */
-int rt_cond_signal(CND *cnd)
+RTAI_SYSCALL_MODE int rt_cond_signal(CND *cnd)
 {
 	unsigned long flags;
 	RT_TASK *task;
@@ -810,7 +810,7 @@ static inline int rt_cndmtx_signal(SEM *mtx, RT_TASK *rt_current)
  * @return 0 on succes, SEM_ERR in case of error.
  *
  */
-int rt_cond_wait(CND *cnd, SEM *mtx)
+RTAI_SYSCALL_MODE int rt_cond_wait(CND *cnd, SEM *mtx)
 {
 	RT_TASK *rt_current;
 	unsigned long flags;
@@ -871,7 +871,7 @@ int rt_cond_wait(CND *cnd, SEM *mtx)
  * if the task has been resumed because of any other action (likely cnd
  * was deleted).
  */
-int rt_cond_wait_until(CND *cnd, SEM *mtx, RTIME time)
+RTAI_SYSCALL_MODE int rt_cond_wait_until(CND *cnd, SEM *mtx, RTIME time)
 {
 	DECLARE_RT_CURRENT;
 	unsigned long flags;
@@ -937,7 +937,7 @@ int rt_cond_wait_until(CND *cnd, SEM *mtx, RTIME time)
  * if the task has been resumed because of any other action (likely cnd
  * was deleted).
  */
-int rt_cond_wait_timed(CND *cnd, SEM *mtx, RTIME delay)
+RTAI_SYSCALL_MODE int rt_cond_wait_timed(CND *cnd, SEM *mtx, RTIME delay)
 {
 	return rt_cond_wait_until(cnd, mtx, get_time() + delay);
 }
@@ -963,7 +963,7 @@ int rt_cond_wait_timed(CND *cnd, SEM *mtx, RTIME delay)
  *
  */
 
-int rt_typed_rwl_init(RWL *rwl, int type)
+RTAI_SYSCALL_MODE int rt_typed_rwl_init(RWL *rwl, int type)
 {
 	rt_typed_sem_init(&rwl->wrmtx, type, RES_SEM);
 	rt_typed_sem_init(&rwl->wrsem, 0, CNT_SEM | PRIO_Q);
@@ -983,7 +983,7 @@ int rt_typed_rwl_init(RWL *rwl, int type)
  *
  */
 
-int rt_rwl_delete(RWL *rwl)
+RTAI_SYSCALL_MODE int rt_rwl_delete(RWL *rwl)
 {
 	int ret;
 
@@ -1008,7 +1008,7 @@ int rt_rwl_delete(RWL *rwl)
  *
  */
 
-int rt_rwl_rdlock(RWL *rwl)
+RTAI_SYSCALL_MODE int rt_rwl_rdlock(RWL *rwl)
 {
 	unsigned long flags;
 	RT_TASK *wtask, *rt_current;
@@ -1045,7 +1045,7 @@ int rt_rwl_rdlock(RWL *rwl)
  *
  */
 
-int rt_rwl_rdlock_if(RWL *rwl)
+RTAI_SYSCALL_MODE int rt_rwl_rdlock_if(RWL *rwl)
 {
 	unsigned long flags;
 	RT_TASK *wtask;
@@ -1078,7 +1078,7 @@ int rt_rwl_rdlock_if(RWL *rwl)
  *
  */
 
-int rt_rwl_rdlock_until(RWL *rwl, RTIME time)
+RTAI_SYSCALL_MODE int rt_rwl_rdlock_until(RWL *rwl, RTIME time)
 {
 	unsigned long flags;
 	RT_TASK *wtask, *rt_current;
@@ -1120,7 +1120,7 @@ int rt_rwl_rdlock_until(RWL *rwl, RTIME time)
  *
  */
 
-int rt_rwl_rdlock_timed(RWL *rwl, RTIME delay)
+RTAI_SYSCALL_MODE int rt_rwl_rdlock_timed(RWL *rwl, RTIME delay)
 {
 	return rt_rwl_rdlock_until(rwl, get_time() + delay);
 }
@@ -1139,7 +1139,7 @@ int rt_rwl_rdlock_timed(RWL *rwl, RTIME delay)
  *
  */
 
-int rt_rwl_wrlock(RWL *rwl)
+RTAI_SYSCALL_MODE int rt_rwl_wrlock(RWL *rwl)
 {
 	unsigned long flags;
 	int ret;
@@ -1172,7 +1172,7 @@ int rt_rwl_wrlock(RWL *rwl)
  *
  */
 
-int rt_rwl_wrlock_if(RWL *rwl)
+RTAI_SYSCALL_MODE int rt_rwl_wrlock_if(RWL *rwl)
 {
 	unsigned long flags;
 	int ret;
@@ -1204,7 +1204,7 @@ int rt_rwl_wrlock_if(RWL *rwl)
  *
  */
 
-int rt_rwl_wrlock_until(RWL *rwl, RTIME time)
+RTAI_SYSCALL_MODE int rt_rwl_wrlock_until(RWL *rwl, RTIME time)
 {
 	unsigned long flags;
 	int ret;
@@ -1243,7 +1243,7 @@ int rt_rwl_wrlock_until(RWL *rwl, RTIME time)
  *
  */
 
-int rt_rwl_wrlock_timed(RWL *rwl, RTIME delay)
+RTAI_SYSCALL_MODE int rt_rwl_wrlock_timed(RWL *rwl, RTIME delay)
 {
 	return rt_rwl_wrlock_until(rwl, get_time() + delay);
 }
@@ -1263,7 +1263,7 @@ int rt_rwl_wrlock_timed(RWL *rwl, RTIME delay)
  *
  */
 
-int rt_rwl_unlock(RWL *rwl)
+RTAI_SYSCALL_MODE int rt_rwl_unlock(RWL *rwl)
 {
 	unsigned long flags;
 
@@ -1319,7 +1319,7 @@ int rt_rwl_unlock(RWL *rwl)
  *
  */
 
-int rt_spl_init(SPL *spl)
+RTAI_SYSCALL_MODE int rt_spl_init(SPL *spl)
 {
 	spl->owndby = 0;
 	spl->count  = 0;
@@ -1338,7 +1338,7 @@ int rt_spl_init(SPL *spl)
  *
  */
 
-int rt_spl_delete(SPL *spl)
+RTAI_SYSCALL_MODE int rt_spl_delete(SPL *spl)
 {
         return 0;
 }
@@ -1359,7 +1359,7 @@ int rt_spl_delete(SPL *spl)
  *
  */
 
-int rt_spl_lock(SPL *spl)
+RTAI_SYSCALL_MODE int rt_spl_lock(SPL *spl)
 {
 	unsigned long flags;
 	RT_TASK *rt_current;
@@ -1389,7 +1389,7 @@ int rt_spl_lock(SPL *spl)
  *
  */
 
-int rt_spl_lock_if(SPL *spl)
+RTAI_SYSCALL_MODE int rt_spl_lock_if(SPL *spl)
 {
 	unsigned long flags;
 	RT_TASK *rt_current;
@@ -1428,7 +1428,7 @@ int rt_spl_lock_if(SPL *spl)
  *
  */
 
-int rt_spl_lock_timed(SPL *spl, unsigned long ns)
+RTAI_SYSCALL_MODE int rt_spl_lock_timed(SPL *spl, unsigned long ns)
 {
 	unsigned long flags;
 	RT_TASK *rt_current;
@@ -1467,7 +1467,7 @@ int rt_spl_lock_timed(SPL *spl, unsigned long ns)
  *
  */
 
-int rt_spl_unlock(SPL *spl)
+RTAI_SYSCALL_MODE int rt_spl_unlock(SPL *spl)
 {
 	unsigned long flags;
 	RT_TASK *rt_current;
@@ -1532,7 +1532,7 @@ int rt_spl_unlock(SPL *spl)
  *
  */
 
-SEM *_rt_typed_named_sem_init(unsigned long sem_name, int value, int type, unsigned long *handle)
+RTAI_SYSCALL_MODE SEM *_rt_typed_named_sem_init(unsigned long sem_name, int value, int type, unsigned long *handle)
 {
 	SEM *sem;
 
@@ -1578,7 +1578,7 @@ SEM *_rt_typed_named_sem_init(unsigned long sem_name, int value, int type, unsig
  *
  */
 
-int rt_named_sem_delete(SEM *sem)
+RTAI_SYSCALL_MODE int rt_named_sem_delete(SEM *sem)
 {
 	int ret;
 	if (!(ret = rt_drg_on_adr_cnt(sem))) {
@@ -1621,7 +1621,7 @@ int rt_named_sem_delete(SEM *sem)
  *
  */
 
-RWL *_rt_named_rwl_init(unsigned long rwl_name)
+RTAI_SYSCALL_MODE RWL *_rt_named_rwl_init(unsigned long rwl_name)
 {
 	RWL *rwl;
 
@@ -1659,7 +1659,7 @@ RWL *_rt_named_rwl_init(unsigned long rwl_name)
  *
  */
 
-int rt_named_rwl_delete(RWL *rwl)
+RTAI_SYSCALL_MODE int rt_named_rwl_delete(RWL *rwl)
 {
 	int ret;
 	if (!(ret = rt_drg_on_adr_cnt(rwl))) {
@@ -1701,7 +1701,7 @@ int rt_named_rwl_delete(RWL *rwl)
  *
  */
 
-SPL *_rt_named_spl_init(unsigned long spl_name)
+RTAI_SYSCALL_MODE SPL *_rt_named_spl_init(unsigned long spl_name)
 {
 	SPL *spl;
 
@@ -1738,7 +1738,7 @@ SPL *_rt_named_spl_init(unsigned long spl_name)
  *
  */
 
-int rt_named_spl_delete(SPL *spl)
+RTAI_SYSCALL_MODE int rt_named_spl_delete(SPL *spl)
 {
 	int ret;
 	if (!(ret = rt_drg_on_adr_cnt(spl))) {
@@ -1757,13 +1757,14 @@ struct rt_native_fun_entry rt_sem_entries[] = {
 	{ { 0, _rt_typed_named_sem_init }, NAMED_SEM_INIT },
 	{ { 0, rt_named_sem_delete },      NAMED_SEM_DELETE },
 	{ { 1, rt_sem_signal },            SEM_SIGNAL },
+	{ { 1, rt_sem_broadcast },         SEM_BROADCAST },
 	{ { 1, rt_sem_wait },              SEM_WAIT },
 	{ { 1, rt_sem_wait_if },           SEM_WAIT_IF },
 	{ { 1, rt_sem_wait_until },        SEM_WAIT_UNTIL },
 	{ { 1, rt_sem_wait_timed },        SEM_WAIT_TIMED },
-	{ { 1, rt_sem_broadcast },         SEM_BROADCAST },
 	{ { 1, rt_sem_wait_barrier },      SEM_WAIT_BARRIER },
 	{ { 1, rt_sem_count },             SEM_COUNT },
+        { { 1, rt_cond_signal}, 	   COND_SIGNAL },
         { { 1, rt_cond_wait },             COND_WAIT },
         { { 1, rt_cond_wait_until },       COND_WAIT_UNTIL },
         { { 1, rt_cond_wait_timed },       COND_WAIT_TIMED },
@@ -1788,7 +1789,6 @@ struct rt_native_fun_entry rt_sem_entries[] = {
         { { 1, rt_spl_lock_if },           SPL_LOCK_IF },
         { { 1, rt_spl_lock_timed },        SPL_LOCK_TIMED },
         { { 1, rt_spl_unlock },            SPL_UNLOCK },
-        { { 1, rt_cond_signal}, 	   COND_SIGNAL },
 	{ { 0, 0 },  		           000 }
 };
 

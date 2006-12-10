@@ -73,44 +73,39 @@ int __rtai_bits_init(void);
 
 void __rtai_bits_exit(void);
 
-void rt_bits_init(struct rt_bits_struct *bits,
-		  unsigned long mask);
+void rt_bits_init(struct rt_bits_struct *bits, unsigned long mask);
 
 int rt_bits_delete(struct rt_bits_struct *bits);
 
-unsigned long rt_get_bits(struct rt_bits_struct *bits);
+RTAI_SYSCALL_MODE unsigned long rt_get_bits(struct rt_bits_struct *bits);
 
-int rt_bits_reset(struct rt_bits_struct *bits,
-		  unsigned long mask);
+RTAI_SYSCALL_MODE int rt_bits_reset(struct rt_bits_struct *bits, unsigned long mask);
 
-unsigned long rt_bits_signal(struct rt_bits_struct *bits,
-			     int setfun,
-			     unsigned long masks);
+RTAI_SYSCALL_MODE unsigned long rt_bits_signal(struct rt_bits_struct *bits, int setfun, unsigned long masks);
 
-int _rt_bits_wait(struct rt_bits_struct *bits, int testfun, unsigned long testmasks, int exitfun, unsigned long exitmasks, unsigned long *resulting_mask, int space);
+RTAI_SYSCALL_MODE int _rt_bits_wait(struct rt_bits_struct *bits, int testfun, unsigned long testmasks, int exitfun, unsigned long exitmasks, unsigned long *resulting_mask, int space);
 static inline int rt_bits_wait(struct rt_bits_struct *bits, int testfun, unsigned long testmasks, int exitfun, unsigned long exitmasks, unsigned long *resulting_mask)
 {
 	return  _rt_bits_wait(bits, testfun, testmasks, exitfun, exitmasks, resulting_mask, 1);
 }
 
-int _rt_bits_wait_if(struct rt_bits_struct *bits, int testfun, unsigned long testmasks, int exitfun, unsigned long exitmasks, unsigned long *resulting_mask, int space);
+RTAI_SYSCALL_MODE int _rt_bits_wait_if(struct rt_bits_struct *bits, int testfun, unsigned long testmasks, int exitfun, unsigned long exitmasks, unsigned long *resulting_mask, int space);
 static inline int rt_bits_wait_if(struct rt_bits_struct *bits, int testfun, unsigned long testmasks, int exitfun, unsigned long exitmasks, unsigned long *resulting_mask)
 {
 	return  _rt_bits_wait_if(bits, testfun, testmasks, exitfun, exitmasks, resulting_mask, 1);
 }
 
-int _rt_bits_wait_until(struct rt_bits_struct *bits, int testfun, unsigned long testmasks, int exitfun, unsigned long exitmasks, RTIME time, unsigned long *resulting_mask, int space);
+RTAI_SYSCALL_MODE int _rt_bits_wait_until(struct rt_bits_struct *bits, int testfun, unsigned long testmasks, int exitfun, unsigned long exitmasks, RTIME time, unsigned long *resulting_mask, int space);
 static inline int rt_bits_wait_until(struct rt_bits_struct *bits, int testfun, unsigned long testmasks, int exitfun, unsigned long exitmasks, RTIME time, unsigned long *resulting_mask)
 {
 	return  _rt_bits_wait_until(bits, testfun, testmasks, exitfun, exitmasks, time, resulting_mask, 1);
 }
 
-int _rt_bits_wait_timed(struct rt_bits_struct *bits, int testfun, unsigned long testmasks, int exitfun, unsigned long exitmasks, RTIME delay, unsigned long *resulting_mask, int space);
+RTAI_SYSCALL_MODE int _rt_bits_wait_timed(struct rt_bits_struct *bits, int testfun, unsigned long testmasks, int exitfun, unsigned long exitmasks, RTIME delay, unsigned long *resulting_mask, int space);
 static inline int rt_bits_wait_timed(struct rt_bits_struct *bits, int testfun, unsigned long testmasks, int exitfun, unsigned long exitmasks, RTIME delay, unsigned long *resulting_mask)
 {
 	return  _rt_bits_wait_timed(bits, testfun, testmasks, exitfun, exitmasks, delay, resulting_mask, 1);
 }
-
 
 #ifdef __cplusplus
 }

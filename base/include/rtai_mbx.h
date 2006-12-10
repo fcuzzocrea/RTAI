@@ -54,93 +54,91 @@ int __rtai_mbx_init(void);
 
 void __rtai_mbx_exit(void);
 
-int rt_typed_mbx_init(struct rt_mailbox *mbx, int size, int qtype);
+RTAI_SYSCALL_MODE int rt_typed_mbx_init(struct rt_mailbox *mbx, int size, int qtype);
 
 int rt_mbx_init(struct rt_mailbox *mbx, int size);
 
-int rt_mbx_delete(struct rt_mailbox *mbx);
+RTAI_SYSCALL_MODE int rt_mbx_delete(struct rt_mailbox *mbx);
 
-int _rt_mbx_send(struct rt_mailbox *mbx, void *msg, int msg_size, int space);
+RTAI_SYSCALL_MODE int _rt_mbx_send(struct rt_mailbox *mbx, void *msg, int msg_size, int space);
 static inline int rt_mbx_send(struct rt_mailbox *mbx, void *msg, int msg_size)
 {
 	return _rt_mbx_send(mbx, msg, msg_size, 1);
 }
 
-int _rt_mbx_send_wp(struct rt_mailbox *mbx, void *msg, int msg_size, int space);
+RTAI_SYSCALL_MODE int _rt_mbx_send_wp(struct rt_mailbox *mbx, void *msg, int msg_size, int space);
 static inline int rt_mbx_send_wp(struct rt_mailbox *mbx, void *msg, int msg_size)
 {
 	return _rt_mbx_send_wp(mbx, msg, msg_size, 1);
 }
 
-int _rt_mbx_send_if(struct rt_mailbox *mbx, void *msg, int msg_size, int space);
+RTAI_SYSCALL_MODE int _rt_mbx_send_if(struct rt_mailbox *mbx, void *msg, int msg_size, int space);
 static inline int rt_mbx_send_if(struct rt_mailbox *mbx, void *msg, int msg_size)
 {
 	return _rt_mbx_send_if(mbx, msg, msg_size, 1);
 }
 
-int _rt_mbx_send_until(struct rt_mailbox *mbx, void *msg, int msg_size, RTIME timei, int space);
+RTAI_SYSCALL_MODE int _rt_mbx_send_until(struct rt_mailbox *mbx, void *msg, int msg_size, RTIME timei, int space);
 static inline int rt_mbx_send_until(struct rt_mailbox *mbx, void *msg, int msg_size, RTIME time)
 {
 	return _rt_mbx_send_until(mbx, msg, msg_size, time, 1);
 }
 
-int _rt_mbx_send_timed(struct rt_mailbox *mbx, void *msg, int msg_size, RTIME delay, int space);
+RTAI_SYSCALL_MODE int _rt_mbx_send_timed(struct rt_mailbox *mbx, void *msg, int msg_size, RTIME delay, int space);
 static inline int rt_mbx_send_timed(struct rt_mailbox *mbx, void *msg, int msg_size, RTIME delay)
 {
 	return _rt_mbx_send_timed(mbx, msg, msg_size, delay, 1);
 }
 
-int _rt_mbx_ovrwr_send(struct rt_mailbox *mbx, void *msg, int msg_size, int space);
+RTAI_SYSCALL_MODE int _rt_mbx_ovrwr_send(struct rt_mailbox *mbx, void *msg, int msg_size, int space);
 static inline int rt_mbx_ovrwr_send(struct rt_mailbox *mbx, void *msg, int msg_size)
 {
 	return _rt_mbx_ovrwr_send(mbx, msg, msg_size, 1);
 }
 
-int _rt_mbx_evdrp(struct rt_mailbox *mbx, void *msg, int msg_size, int space);
+RTAI_SYSCALL_MODE int _rt_mbx_evdrp(struct rt_mailbox *mbx, void *msg, int msg_size, int space);
 static inline int rt_mbx_evdrp(struct rt_mailbox *mbx, void *msg, int msg_size)
 {
 	return _rt_mbx_evdrp(mbx, msg, msg_size, 1);
 }
 
-int _rt_mbx_receive(struct rt_mailbox *mbx, void *msg, int msg_size, int space);
+RTAI_SYSCALL_MODE int _rt_mbx_receive(struct rt_mailbox *mbx, void *msg, int msg_size, int space);
 static inline int rt_mbx_receive(struct rt_mailbox *mbx, void *msg, int msg_size)
 {
 	return _rt_mbx_receive(mbx, msg, msg_size, 1);
 }
 
-int _rt_mbx_receive_wp(struct rt_mailbox *mbx, void *msg, int msg_size, int space);
+RTAI_SYSCALL_MODE int _rt_mbx_receive_wp(struct rt_mailbox *mbx, void *msg, int msg_size, int space);
 static inline int rt_mbx_receive_wp(struct rt_mailbox *mbx, void *msg, int msg_size)
 {
 	return _rt_mbx_receive_wp(mbx, msg, msg_size, 1);
 }
 
-int _rt_mbx_receive_if(struct rt_mailbox *mbx, void *msg, int msg_size, int space);
+RTAI_SYSCALL_MODE int _rt_mbx_receive_if(struct rt_mailbox *mbx, void *msg, int msg_size, int space);
 static inline int rt_mbx_receive_if(struct rt_mailbox *mbx, void *msg, int msg_size)
 {
 	return _rt_mbx_receive_if(mbx, msg, msg_size, 1);
 }
 
-int _rt_mbx_receive_until(struct rt_mailbox *mbx, void *msg, int msg_size, RTIME time, int space);
+RTAI_SYSCALL_MODE int _rt_mbx_receive_until(struct rt_mailbox *mbx, void *msg, int msg_size, RTIME time, int space);
 static inline int rt_mbx_receive_until(struct rt_mailbox *mbx, void *msg, int msg_size, RTIME time)
 {
 	return _rt_mbx_receive_until(mbx, msg, msg_size, time, 1);
 }
 
-int _rt_mbx_receive_timed(struct rt_mailbox *mbx, void *msg, int msg_size, RTIME delay, int space);
+RTAI_SYSCALL_MODE int _rt_mbx_receive_timed(struct rt_mailbox *mbx, void *msg, int msg_size, RTIME delay, int space);
 static inline int rt_mbx_receive_timed(struct rt_mailbox *mbx, void *msg, int msg_size, RTIME delay)
 {
 	return _rt_mbx_receive_timed(mbx, msg, msg_size, delay, 1);
 }
 
-struct rt_mailbox *_rt_typed_named_mbx_init(unsigned long mbx_name,
-					   int size,
-					   int qtype);
+RTAI_SYSCALL_MODE struct rt_mailbox *_rt_typed_named_mbx_init(unsigned long mbx_name, int size, int qtype);
 static inline struct rt_mailbox *rt_typed_named_mbx_init(const char *mbx_name, int size, int qtype)
 {
 	return _rt_typed_named_mbx_init(nam2num(mbx_name), size, qtype);
 }
 
-int rt_named_mbx_delete(struct rt_mailbox *mbx);
+RTAI_SYSCALL_MODE int rt_named_mbx_delete(struct rt_mailbox *mbx);
 
 #define rt_named_mbx_init(mbx_name, size)  rt_typed_named_mbx_init(mbx_name, size, FIFO_Q)
      

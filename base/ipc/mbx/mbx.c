@@ -263,7 +263,7 @@ static int mbxevdrp(MBX *mbx, char **msg, int msg_size, int space)
  *
  * @return The number of bytes not received is returned.
  */
-int _rt_mbx_evdrp(MBX *mbx, void *msg, int msg_size, int space)
+RTAI_SYSCALL_MODE int _rt_mbx_evdrp(MBX *mbx, void *msg, int msg_size, int space)
 {
 	return mbxevdrp(mbx, (char **)(&msg), msg_size, space);
 }
@@ -295,7 +295,7 @@ int _rt_mbx_evdrp(MBX *mbx, void *msg, int msg_size, int space)
  *
  * See also: notes under rt_mbx_init().
  */
-int rt_typed_mbx_init(MBX *mbx, int size, int type)
+RTAI_SYSCALL_MODE int rt_typed_mbx_init(MBX *mbx, int size, int type)
 {
 	if (!(mbx->bufadr = sched_malloc(size))) { 
 		return -ENOMEM;
@@ -364,7 +364,7 @@ int rt_mbx_init(MBX *mbx, int size)
  * - @b EINVAL: @e mbx points to an invalid mailbox.
  * - @b EFAULT: mailbox data were found in an invalid state.
  */
-int rt_mbx_delete(MBX *mbx)
+RTAI_SYSCALL_MODE int rt_mbx_delete(MBX *mbx)
 {
 	CHK_MBX_MAGIC;
 	mbx->magic = 0;
@@ -401,7 +401,7 @@ int rt_mbx_delete(MBX *mbx)
  *   in the queueing of all sending tasks.
  * - @b EINVAL: mbx points to an invalid mailbox.
  */
-int _rt_mbx_send(MBX *mbx, void *msg, int msg_size, int space)
+RTAI_SYSCALL_MODE int _rt_mbx_send(MBX *mbx, void *msg, int msg_size, int space)
 {
 	RT_TASK *rt_current = RT_CURRENT;
 	int retval;
@@ -439,7 +439,7 @@ int _rt_mbx_send(MBX *mbx, void *msg, int msg_size, int space)
  * failure a negative value is returned as described below:
  * - @b EINVAL: @e mbx points to an invalid mailbox.
  */
-int _rt_mbx_send_wp(MBX *mbx, void *msg, int msg_size, int space)
+RTAI_SYSCALL_MODE int _rt_mbx_send_wp(MBX *mbx, void *msg, int msg_size, int space)
 {
 	unsigned long flags;
 	RT_TASK *rt_current = RT_CURRENT;
@@ -476,7 +476,7 @@ int _rt_mbx_send_wp(MBX *mbx, void *msg, int msg_size, int space)
  * below:
  * - @b EINVAL: @e mbx points to an invalid mailbox.
  */
-int _rt_mbx_send_if(MBX *mbx, void *msg, int msg_size, int space)
+RTAI_SYSCALL_MODE int _rt_mbx_send_if(MBX *mbx, void *msg, int msg_size, int space)
 {
 	unsigned long flags;
 	RT_TASK *rt_current = RT_CURRENT;
@@ -523,7 +523,7 @@ int _rt_mbx_send_if(MBX *mbx, void *msg, int msg_size, int space)
  *
  * See also: notes under @ref _rt_mbx_send_timed().
  */
-int _rt_mbx_send_until(MBX *mbx, void *msg, int msg_size, RTIME time, int space)
+RTAI_SYSCALL_MODE int _rt_mbx_send_until(MBX *mbx, void *msg, int msg_size, RTIME time, int space)
 {
 	RT_TASK *rt_current = RT_CURRENT;
 	int retval;
@@ -568,7 +568,7 @@ int _rt_mbx_send_until(MBX *mbx, void *msg, int msg_size, RTIME time, int space)
  *
  * See also: notes under @ref _rt_mbx_send_until().
  */
-int _rt_mbx_send_timed(MBX *mbx, void *msg, int msg_size, RTIME delay, int space)
+RTAI_SYSCALL_MODE int _rt_mbx_send_timed(MBX *mbx, void *msg, int msg_size, RTIME delay, int space)
 {
 	return _rt_mbx_send_until(mbx, msg, msg_size, get_time() + delay, space);
 }
@@ -593,7 +593,7 @@ int _rt_mbx_send_timed(MBX *mbx, void *msg, int msg_size, RTIME delay, int space
  *   in the queueing of all receiving tasks.
  * - @b EINVAL: mbx points to an invalid mailbox.
  */
-int _rt_mbx_receive(MBX *mbx, void *msg, int msg_size, int space)
+RTAI_SYSCALL_MODE int _rt_mbx_receive(MBX *mbx, void *msg, int msg_size, int space)
 {
 	RT_TASK *rt_current = RT_CURRENT;
 	int retval;
@@ -632,7 +632,7 @@ int _rt_mbx_receive(MBX *mbx, void *msg, int msg_size, int space)
  * failure a negative value is returned as described below:
  * - @b EINVAL: mbx points to not a valid mailbox.
  */
-int _rt_mbx_receive_wp(MBX *mbx, void *msg, int msg_size, int space)
+RTAI_SYSCALL_MODE int _rt_mbx_receive_wp(MBX *mbx, void *msg, int msg_size, int space)
 {
 	unsigned long flags;
 	RT_TASK *rt_current = RT_CURRENT;
@@ -674,7 +674,7 @@ int _rt_mbx_receive_wp(MBX *mbx, void *msg, int msg_size, int space)
  * below:
  * - @b EINVAL: mbx points to an invalid mailbox.
  */
-int _rt_mbx_receive_if(MBX *mbx, void *msg, int msg_size, int space)
+RTAI_SYSCALL_MODE int _rt_mbx_receive_if(MBX *mbx, void *msg, int msg_size, int space)
 {
 	unsigned long flags;
 	RT_TASK *rt_current = RT_CURRENT;
@@ -721,7 +721,7 @@ int _rt_mbx_receive_if(MBX *mbx, void *msg, int msg_size, int space)
  *
  * See also: notes under rt_mbx_received_timed().
  */
-int _rt_mbx_receive_until(MBX *mbx, void *msg, int msg_size, RTIME time, int space)
+RTAI_SYSCALL_MODE int _rt_mbx_receive_until(MBX *mbx, void *msg, int msg_size, RTIME time, int space)
 {
 	RT_TASK *rt_current = RT_CURRENT;
 	int retval;
@@ -766,7 +766,7 @@ int _rt_mbx_receive_until(MBX *mbx, void *msg, int msg_size, RTIME time, int spa
  *
  * See also: notes under rt_mbx_received_until().
  */
-int _rt_mbx_receive_timed(MBX *mbx, void *msg, int msg_size, RTIME delay, int space)
+RTAI_SYSCALL_MODE int _rt_mbx_receive_timed(MBX *mbx, void *msg, int msg_size, RTIME delay, int space)
 {
 	return _rt_mbx_receive_until(mbx, msg, msg_size, get_time() + delay, space);
 }
@@ -785,7 +785,7 @@ int _rt_mbx_receive_timed(MBX *mbx, void *msg, int msg_size, RTIME delay, int sp
  * is returned as described below:
  * - @b EINVAL: @e mbx points to an invalid mailbox.
  */
-int _rt_mbx_ovrwr_send(MBX *mbx, void *msg, int msg_size, int space)
+RTAI_SYSCALL_MODE int _rt_mbx_ovrwr_send(MBX *mbx, void *msg, int msg_size, int space)
 {
 	unsigned long flags;
 	RT_TASK *rt_current = RT_CURRENT;
@@ -836,7 +836,7 @@ int _rt_mbx_ovrwr_send(MBX *mbx, void *msg, int msg_size, int space)
  *
  * See also: notes under rt_mbx_init() and rt_typed_mbx_init().
  */
-MBX *_rt_typed_named_mbx_init(unsigned long mbx_name, int size, int qtype)
+RTAI_SYSCALL_MODE MBX *_rt_typed_named_mbx_init(unsigned long mbx_name, int size, int qtype)
 {
 	MBX *mbx;
 
@@ -875,7 +875,7 @@ MBX *_rt_typed_named_mbx_init(unsigned long mbx_name, int size, int qtype)
  *
  * See also: notes under rt_mbx_delete().
  */
-int rt_named_mbx_delete(MBX *mbx)
+RTAI_SYSCALL_MODE int rt_named_mbx_delete(MBX *mbx)
 {
 	int ret;
 	if (!(ret = rt_drg_on_adr_cnt(mbx))) {
@@ -895,20 +895,20 @@ struct rt_native_fun_entry rt_mbx_entries[] = {
 
 	{ { 0, rt_typed_mbx_init }, 	      	TYPED_MBX_INIT },
 	{ { 0, rt_mbx_delete }, 	      	MBX_DELETE },
-	{ { 0, _rt_typed_named_mbx_init },  	NAMED_MBX_INIT },
-	{ { 0, rt_named_mbx_delete },		NAMED_MBX_DELETE },
 	{ { 1, _rt_mbx_send }, 	       		MBX_SEND },
 	{ { 1, _rt_mbx_send_wp },      		MBX_SEND_WP },
 	{ { 1, _rt_mbx_send_if },      	 	MBX_SEND_IF },
 	{ { 1, _rt_mbx_send_until },    	MBX_SEND_UNTIL },
 	{ { 1, _rt_mbx_send_timed },    	MBX_SEND_TIMED },
+	{ { 1, _rt_mbx_ovrwr_send },    	MBX_OVRWR_SEND },
+        { { 1, _rt_mbx_evdrp },         	MBX_EVDRP },
 	{ { 1, _rt_mbx_receive },       	MBX_RECEIVE },
 	{ { 1, _rt_mbx_receive_wp },    	MBX_RECEIVE_WP },
 	{ { 1, _rt_mbx_receive_if },    	MBX_RECEIVE_IF },
 	{ { 1, _rt_mbx_receive_until }, 	MBX_RECEIVE_UNTIL },
 	{ { 1, _rt_mbx_receive_timed }, 	MBX_RECEIVE_TIMED },
-	{ { 1, _rt_mbx_ovrwr_send },    	MBX_OVRWR_SEND },
-        { { 1, _rt_mbx_evdrp },         	MBX_EVDRP },
+	{ { 0, _rt_typed_named_mbx_init },  	NAMED_MBX_INIT },
+	{ { 0, rt_named_mbx_delete },		NAMED_MBX_DELETE },
 	{ { 0, 0 },  		      	       	000 }
 };
 

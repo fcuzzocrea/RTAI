@@ -54,7 +54,7 @@ MODULE_DESCRIPTION("Real-Time Driver Model");
 MODULE_AUTHOR("jan.kiszka@web.de");
 MODULE_LICENSE("GPL");
 
-static int _rtdm_fdcount(void)
+static RTAI_SYSCALL_MODE int _rtdm_fdcount(void)
 {
 	return RTDM_FD_MAX;
 }
@@ -75,7 +75,7 @@ static struct rt_fun_entry rtdm[] = {
 
 #else /* !TRUE_LXRT_WAY */
 
-static int sys_rtdm_open(const char *path, long oflag)
+static RTAI_SYSCALL_MODE int sys_rtdm_open(const char *path, long oflag)
 {
 	char krnl_path[RTDM_MAX_DEVNAME_LEN + 1];
 	struct task_struct *curr = current;
@@ -88,32 +88,32 @@ static int sys_rtdm_open(const char *path, long oflag)
 	return _rtdm_open(curr, (const char *)krnl_path, oflag);
 }
 
-static int sys_rtdm_socket(long protocol_family, long socket_type, long protocol)
+static RTAI_SYSCALL_MODE int sys_rtdm_socket(long protocol_family, long socket_type, long protocol)
 {
 	return _rtdm_socket(current, protocol_family, socket_type, protocol);
 }
 
-static int sys_rtdm_close(long fd, long forced)
+static RTAI_SYSCALL_MODE int sys_rtdm_close(long fd, long forced)
 {
 	return _rtdm_close(current, fd, forced);
 }
 
-static int sys_rtdm_ioctl(long fd, long request, void *arg)
+static RTAI_SYSCALL_MODE int sys_rtdm_ioctl(long fd, long request, void *arg)
 {
 	return _rtdm_ioctl(current, fd, request, arg);
 }
 
-static int sys_rtdm_read(long fd, void *buf, long nbytes)
+static RTAI_SYSCALL_MODE int sys_rtdm_read(long fd, void *buf, long nbytes)
 {
 	return _rtdm_read(current, fd, buf, nbytes);
 }
 
-static int sys_rtdm_write(long fd, void *buf, long nbytes)
+static RTAI_SYSCALL_MODE int sys_rtdm_write(long fd, void *buf, long nbytes)
 {
 	return _rtdm_write(current, fd, buf, nbytes);
 }
 
-static int sys_rtdm_recvmsg(long fd, struct msghdr *msg, long flags)
+static RTAI_SYSCALL_MODE int sys_rtdm_recvmsg(long fd, struct msghdr *msg, long flags)
 {
 	struct msghdr krnl_msg;
 	struct task_struct *curr = current;
@@ -129,7 +129,7 @@ static int sys_rtdm_recvmsg(long fd, struct msghdr *msg, long flags)
 	return ret;
 }
 
-static int sys_rtdm_sendmsg(long fd, const struct msghdr *msg, long flags)
+static RTAI_SYSCALL_MODE int sys_rtdm_sendmsg(long fd, const struct msghdr *msg, long flags)
 {
 	struct msghdr krnl_msg;
 	struct task_struct *curr = current;

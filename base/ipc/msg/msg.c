@@ -96,7 +96,7 @@ do { \
  * CPUs RTAI runs on 0xFFFF is not an address that can be used by any
  * RTAI task, so it is should be safe always.
  */
-RT_TASK *rt_send(RT_TASK *task, unsigned long msg)
+RTAI_SYSCALL_MODE RT_TASK *rt_send(RT_TASK *task, unsigned long msg)
 {
 	DECLARE_RT_CURRENT;
 	unsigned long flags;
@@ -162,7 +162,7 @@ RT_TASK *rt_send(RT_TASK *task, unsigned long msg)
  * CPUs RTAI runs on 0xFFFF is not an address that can be used by any
  * RTAI task, so it is should be safe always. (FIXME)
  */
-RT_TASK *rt_send_if(RT_TASK *task, unsigned long msg)
+RTAI_SYSCALL_MODE RT_TASK *rt_send_if(RT_TASK *task, unsigned long msg)
 {
 	DECLARE_RT_CURRENT;
 	unsigned long flags;
@@ -234,7 +234,7 @@ RT_TASK *rt_send_if(RT_TASK *task, unsigned long msg)
  * the CPUs RTAI runs on 0xFFFF is not an address that can be used by
  * any RTAI task, so it is should be safe always.
  */
-RT_TASK *rt_send_until(RT_TASK *task, unsigned long msg, RTIME time)
+RTAI_SYSCALL_MODE RT_TASK *rt_send_until(RT_TASK *task, unsigned long msg, RTIME time)
 {
 	DECLARE_RT_CURRENT;
 	unsigned long flags;
@@ -317,7 +317,7 @@ RT_TASK *rt_send_until(RT_TASK *task, unsigned long msg, RTIME time)
  * any RTAI task, so it is should be safe always. (FIXME)
  */
 
-RT_TASK *rt_send_timed(RT_TASK *task, unsigned long msg, RTIME delay)
+RTAI_SYSCALL_MODE RT_TASK *rt_send_timed(RT_TASK *task, unsigned long msg, RTIME delay)
 {
 	return rt_send_until(task, msg, get_time() + delay);
 }
@@ -372,7 +372,7 @@ RT_TASK *rt_send_timed(RT_TASK *task, unsigned long msg, RTIME delay)
  * 	 a more truly QNX like way of inter task messaging use the support
  * 	 of the upper cased functions: rt_Send-rt_Recieve-rt_Reply.
  */
-RT_TASK *rt_rpc(RT_TASK *task, unsigned long to_do, void *result)
+RTAI_SYSCALL_MODE RT_TASK *rt_rpc(RT_TASK *task, unsigned long to_do, void *result)
 {
 
 	DECLARE_RT_CURRENT;
@@ -454,7 +454,7 @@ RT_TASK *rt_rpc(RT_TASK *task, unsigned long to_do, void *result)
  * 	 all the CPUs RTAI runs on, 0xFFFF is not an address that can
  *  	 be used by any RTAI task, so it is should be safe always.
  */
-RT_TASK *rt_rpc_if(RT_TASK *task, unsigned long to_do, void *result)
+RTAI_SYSCALL_MODE RT_TASK *rt_rpc_if(RT_TASK *task, unsigned long to_do, void *result)
 {
 	DECLARE_RT_CURRENT;
 	unsigned long flags;
@@ -531,7 +531,7 @@ RT_TASK *rt_rpc_if(RT_TASK *task, unsigned long to_do, void *result)
  * task, so it is should be always safe.<br>
  * See also the notes under @ref rt_rpc().
  */
-RT_TASK *rt_rpc_until(RT_TASK *task, unsigned long to_do, void *result, RTIME time)
+RTAI_SYSCALL_MODE RT_TASK *rt_rpc_until(RT_TASK *task, unsigned long to_do, void *result, RTIME time)
 {
 	DECLARE_RT_CURRENT;
 	unsigned long flags;
@@ -615,7 +615,7 @@ RT_TASK *rt_rpc_until(RT_TASK *task, unsigned long to_do, void *result, RTIME ti
  * task, so it is should be always safe.<br>
  * See also the notes under @ref rt_rpc().
  */
-RT_TASK *rt_rpc_timed(RT_TASK *task, unsigned long to_do, void *result, RTIME delay)
+RTAI_SYSCALL_MODE RT_TASK *rt_rpc_timed(RT_TASK *task, unsigned long to_do, void *result, RTIME delay)
 {
 	return rt_rpc_until(task, to_do, result, get_time() + delay);
 }
@@ -646,7 +646,7 @@ RT_TASK *rt_rpc_timed(RT_TASK *task, unsigned long to_do, void *result, RTIME de
  * task which is not waiting for it. Therefore using rt_isrpc might not
  * be necessary. 
  */
-int rt_isrpc(RT_TASK *task)
+RTAI_SYSCALL_MODE int rt_isrpc(RT_TASK *task)
 {
 	return task->state & RT_SCHED_RETURN;
 }
@@ -687,7 +687,7 @@ int rt_isrpc(RT_TASK *task)
  *
  * See also: notes under @ref rt_rpc().
  */
-RT_TASK *rt_return(RT_TASK *task, unsigned long result)
+RTAI_SYSCALL_MODE RT_TASK *rt_return(RT_TASK *task, unsigned long result)
 {
 	DECLARE_RT_CURRENT;
 	unsigned long flags;
@@ -752,7 +752,7 @@ RT_TASK *rt_return(RT_TASK *task, unsigned long result)
  * the CPUs RTAI runs on 0xFFFF is not an address that can be used by
  * any RTAI task, so it is should be always safe.
  */
-RT_TASK *rt_evdrp(RT_TASK *task, void *msg)
+RTAI_SYSCALL_MODE RT_TASK *rt_evdrp(RT_TASK *task, void *msg)
 {
 	DECLARE_RT_CURRENT;
 
@@ -806,7 +806,7 @@ RT_TASK *rt_evdrp(RT_TASK *task, void *msg)
  * the CPUs RTAI runs on 0xFFFF is not an address that can be used by
  * any RTAI task, so it is should be always safe.
  */
-RT_TASK *rt_receive(RT_TASK *task, void *msg)
+RTAI_SYSCALL_MODE RT_TASK *rt_receive(RT_TASK *task, void *msg)
 {
 	DECLARE_RT_CURRENT;
 	unsigned long flags;
@@ -894,7 +894,7 @@ RT_TASK *rt_receive(RT_TASK *task, void *msg)
  * RTAI runs on 0xFFFF is not an address that can be used by any RTAI
  * task, so it is should be always safe.
  */
-RT_TASK *rt_receive_if(RT_TASK *task, void *msg)
+RTAI_SYSCALL_MODE RT_TASK *rt_receive_if(RT_TASK *task, void *msg)
 {
 	DECLARE_RT_CURRENT;
 	unsigned long flags;
@@ -988,7 +988,7 @@ RT_TASK *rt_receive_if(RT_TASK *task, void *msg)
  *
  * See also: @ref rt_receive_timed().
  */
-RT_TASK *rt_receive_until(RT_TASK *task, void *msg, RTIME time)
+RTAI_SYSCALL_MODE RT_TASK *rt_receive_until(RT_TASK *task, void *msg, RTIME time)
 {
 	DECLARE_RT_CURRENT;
 	unsigned long flags;
@@ -1090,7 +1090,7 @@ RT_TASK *rt_receive_until(RT_TASK *task, void *msg, RTIME time)
  *
  * See also: @ref rt_receive_until().
  */
-RT_TASK *rt_receive_timed(RT_TASK *task, void *msg, RTIME delay)
+RTAI_SYSCALL_MODE RT_TASK *rt_receive_timed(RT_TASK *task, void *msg, RTIME delay)
 {
 	return rt_receive_until(task, msg, get_time() + delay);
 }
@@ -1144,7 +1144,7 @@ COPYRIGHT (C) 2003  Pierre Cloutier  (pcloutier@poseidoncontrols.com)
  * 	 found in QNX. For a even greater compatibility see
  *       rt_Send-rt_Receive-rt_Reply.
  */
-RT_TASK *rt_rpcx(RT_TASK *task, void *smsg, void *rmsg, int ssize, int rsize)
+RTAI_SYSCALL_MODE RT_TASK *rt_rpcx(RT_TASK *task, void *smsg, void *rmsg, int ssize, int rsize)
 {
 	if (task) {
 		struct mcb_t mcb;
@@ -1193,7 +1193,7 @@ RT_TASK *rt_rpcx(RT_TASK *task, void *smsg, void *rmsg, int ssize, int rsize)
  * 	 all the CPUs RTAI runs on, 0xFFFF is not an address that can
  *  	 be used by any RTAI task, so it is should be always safe.
  */
-RT_TASK *rt_rpcx_if(RT_TASK *task, void *smsg, void *rmsg, int ssize, int rsize)
+RTAI_SYSCALL_MODE RT_TASK *rt_rpcx_if(RT_TASK *task, void *smsg, void *rmsg, int ssize, int rsize)
 {
 	if (task) {
 		struct mcb_t mcb;
@@ -1247,7 +1247,7 @@ RT_TASK *rt_rpcx_if(RT_TASK *task, void *smsg, void *rmsg, int ssize, int rsize)
  * task, so it is should be always safe.<br>
  * See also the notes under @ref rt_rpc().
  */
-RT_TASK *rt_rpcx_until(RT_TASK *task, void *smsg, void *rmsg, int ssize, int rsize, RTIME time)
+RTAI_SYSCALL_MODE RT_TASK *rt_rpcx_until(RT_TASK *task, void *smsg, void *rmsg, int ssize, int rsize, RTIME time)
 {
 	if (task) {
 		struct mcb_t mcb;
@@ -1301,7 +1301,7 @@ RT_TASK *rt_rpcx_until(RT_TASK *task, void *smsg, void *rmsg, int ssize, int rsi
  * task, so it is should be always safe.<br>
  * See also the notes under @ref rt_rpc().
  */
-RT_TASK *rt_rpcx_timed(RT_TASK *task, void *smsg, void *rmsg, int ssize, int rsize, RTIME delay)
+RTAI_SYSCALL_MODE RT_TASK *rt_rpcx_timed(RT_TASK *task, void *smsg, void *rmsg, int ssize, int rsize, RTIME delay)
 {
 	if (task) {
 		struct mcb_t mcb;
@@ -1353,7 +1353,7 @@ RT_TASK *rt_rpcx_timed(RT_TASK *task, void *smsg, void *rmsg, int ssize, int rsi
  * CPUs RTAI runs on 0xFFFF is not an address that can be used by any
  * RTAI task, so it is should be safe always.
  */
-RT_TASK *rt_sendx(RT_TASK *task, void *msg, int size) 
+RTAI_SYSCALL_MODE RT_TASK *rt_sendx(RT_TASK *task, void *msg, int size) 
 {
 	if (task) {
 		SET_SEND_MCB();
@@ -1394,7 +1394,7 @@ RT_TASK *rt_sendx(RT_TASK *task, void *msg, int size)
  * CPUs RTAI runs on 0xFFFF is not an address that can be used by any
  * RTAI task, so it is should be safe always.
  */
-RT_TASK *rt_sendx_if(RT_TASK *task, void *msg, int size)
+RTAI_SYSCALL_MODE RT_TASK *rt_sendx_if(RT_TASK *task, void *msg, int size)
 {
 	if (task) {
 		SET_SEND_MCB();
@@ -1445,7 +1445,7 @@ RT_TASK *rt_sendx_if(RT_TASK *task, void *msg, int size)
  * CPUs RTAI runs on 0xFFFF is not an address that can be used by any
  * RTAI task, so it is should be safe always.
  */
-RT_TASK *rt_sendx_until(RT_TASK *task, void *msg, int size, RTIME time)
+RTAI_SYSCALL_MODE RT_TASK *rt_sendx_until(RT_TASK *task, void *msg, int size, RTIME time)
 {
 	if (task) {
 		SET_SEND_MCB();
@@ -1496,7 +1496,7 @@ RT_TASK *rt_sendx_until(RT_TASK *task, void *msg, int size, RTIME time)
  * CPUs RTAI runs on 0xFFFF is not an address that can be used by any
  * RTAI task, so it is should be safe always.
  */
-RT_TASK *rt_sendx_timed(RT_TASK *task, void *msg, int size, RTIME delay)
+RTAI_SYSCALL_MODE RT_TASK *rt_sendx_timed(RT_TASK *task, void *msg, int size, RTIME delay)
 {
 	if (task) {
 		SET_SEND_MCB();
@@ -1541,7 +1541,7 @@ RT_TASK *rt_sendx_timed(RT_TASK *task, void *msg, int size, RTIME delay)
  *
  * See also: notes under @ref rt_rpcx().
  */
-RT_TASK *rt_returnx(RT_TASK *task, void *msg, int size)
+RTAI_SYSCALL_MODE RT_TASK *rt_returnx(RT_TASK *task, void *msg, int size)
 {
 	if (task) {
 		struct mcb_t *mcb;
@@ -1596,7 +1596,7 @@ RT_TASK *rt_returnx(RT_TASK *task, void *msg, int size)
  * the CPUs RTAI runs on 0xFFFF is not an address that can be used by
  * any RTAI task, so it is should be always safe.
  */
-RT_TASK *rt_evdrpx(RT_TASK *task, void *msg, int size, int *len)
+RTAI_SYSCALL_MODE RT_TASK *rt_evdrpx(RT_TASK *task, void *msg, int size, int *len)
 {
 	struct mcb_t *mcb;
 	if ((task = rt_evdrp(task, (unsigned long *)&mcb))) {
@@ -1647,7 +1647,7 @@ RT_TASK *rt_evdrpx(RT_TASK *task, void *msg, int size, int *len)
  * the CPUs RTAI runs on 0xFFFF is not an address that can be used by
  * any RTAI task, so it is should be always safe.
  */
-RT_TASK *rt_receivex(RT_TASK *task, void *msg, int size, int *len)
+RTAI_SYSCALL_MODE RT_TASK *rt_receivex(RT_TASK *task, void *msg, int size, int *len)
 {
 	struct mcb_t *mcb;
 	if ((task = rt_receive(task, (unsigned long *)&mcb))) {
@@ -1698,7 +1698,7 @@ RT_TASK *rt_receivex(RT_TASK *task, void *msg, int size, int *len)
  * the CPUs RTAI runs on 0xFFFF is not an address that can be used by
  * any RTAI task, so it is should be always safe.
  */
-RT_TASK *rt_receivex_if(RT_TASK *task, void *msg, int size, int *len)
+RTAI_SYSCALL_MODE RT_TASK *rt_receivex_if(RT_TASK *task, void *msg, int size, int *len)
 {
 	struct mcb_t *mcb;
 	if ((task = rt_receive_if(task, (unsigned long *)&mcb))) {
@@ -1755,7 +1755,7 @@ RT_TASK *rt_receivex_if(RT_TASK *task, void *msg, int size, int *len)
  * the CPUs RTAI runs on 0xFFFF is not an address that can be used by
  * any RTAI task, so it is should be always safe.
  */
-RT_TASK *rt_receivex_until(RT_TASK *task, void *msg, int size, int *len, RTIME time)
+RTAI_SYSCALL_MODE RT_TASK *rt_receivex_until(RT_TASK *task, void *msg, int size, int *len, RTIME time)
 {
 	struct mcb_t *mcb;
 	if ((task = rt_receive_until(task, (unsigned long *)&mcb, time))) {
@@ -1812,7 +1812,7 @@ RT_TASK *rt_receivex_until(RT_TASK *task, void *msg, int size, int *len, RTIME t
  * the CPUs RTAI runs on 0xFFFF is not an address that can be used by
  * any RTAI task, so it is should be always safe.
  */
-RT_TASK *rt_receivex_timed(RT_TASK *task, void *msg, int size, int *len, RTIME delay)
+RTAI_SYSCALL_MODE RT_TASK *rt_receivex_timed(RT_TASK *task, void *msg, int size, int *len, RTIME delay)
 {
 	struct mcb_t *mcb;
 	if ((task = rt_receive_timed(task, (unsigned long *)&mcb, delay))) {
@@ -1881,14 +1881,14 @@ RT_TASK *__rt_proxy_attach(void (*agent)(long), RT_TASK *task, void *msg, int nb
 }
 
 // Create a raw proxy task.
-RT_TASK *rt_proxy_attach(RT_TASK *task, void *msg, int nbytes, int prio)
+RTAI_SYSCALL_MODE RT_TASK *rt_proxy_attach(RT_TASK *task, void *msg, int nbytes, int prio)
 {
 	return __rt_proxy_attach((void *)proxy_task, task, msg, nbytes, prio);
 }
 
 // Delete a proxy task (a simplified specific rt_task_delete).
 // Note: a self delete will not do the rt_free() call.
-int rt_proxy_detach(RT_TASK *proxy)
+RTAI_SYSCALL_MODE int rt_proxy_detach(RT_TASK *proxy)
 {
 	if (!rt_task_delete(proxy)) {
 		rt_free(proxy);
@@ -1898,7 +1898,7 @@ int rt_proxy_detach(RT_TASK *proxy)
 }
 
 // Trigger a proxy.
-RT_TASK *rt_trigger(RT_TASK *proxy)
+RTAI_SYSCALL_MODE RT_TASK *rt_trigger(RT_TASK *proxy)
 {
 	struct proxy_t *his;
 	
@@ -1923,7 +1923,7 @@ COPYRIGHT (C) 2003  Pierre Cloutier  (pcloutier@poseidoncontrols.com)
 #include "rtai_registry.h"
 #include "rtai_msg.h"
 
-int rt_Send(pid_t pid, void *smsg, void *rmsg, size_t ssize, size_t rsize)
+RTAI_SYSCALL_MODE int rt_Send(pid_t pid, void *smsg, void *rmsg, size_t ssize, size_t rsize)
 {
 	RT_TASK *task;
 	if ((task = pid2rttask(pid))) {
@@ -1945,7 +1945,7 @@ int rt_Send(pid_t pid, void *smsg, void *rmsg, size_t ssize, size_t rsize)
 	return -ESRCH;
 }
 
-pid_t rt_Receive(pid_t pid, void *msg, size_t maxsize, size_t *msglen)
+RTAI_SYSCALL_MODE pid_t rt_Receive(pid_t pid, void *msg, size_t maxsize, size_t *msglen)
 {
 	RT_TASK *task;
 	MSGCB *cb;
@@ -1962,7 +1962,7 @@ pid_t rt_Receive(pid_t pid, void *msg, size_t maxsize, size_t *msglen)
 	return -EINVAL;
 }
 
-pid_t rt_Creceive(pid_t pid, void *msg, size_t maxsize, size_t *msglen, RTIME delay)
+RTAI_SYSCALL_MODE pid_t rt_Creceive(pid_t pid, void *msg, size_t maxsize, size_t *msglen, RTIME delay)
 {
 	RT_TASK *task;
 	MSGCB *cb;
@@ -1985,7 +1985,7 @@ pid_t rt_Creceive(pid_t pid, void *msg, size_t maxsize, size_t *msglen, RTIME de
 	return 0;
 }
 
-int rt_Reply(pid_t pid, void *msg, size_t size)
+RTAI_SYSCALL_MODE int rt_Reply(pid_t pid, void *msg, size_t size)
 {
 	RT_TASK *task;
 	if ((task = pid2rttask(pid))) {
@@ -2028,13 +2028,13 @@ static void Proxy_Task(RT_TASK *me)
         }
 }
 
-pid_t rt_Proxy_attach(pid_t pid, void *msg, int nbytes, int prio)
+RTAI_SYSCALL_MODE pid_t rt_Proxy_attach(pid_t pid, void *msg, int nbytes, int prio)
 {
 	RT_TASK *task;
 	return (task = __rt_proxy_attach((void *)Proxy_Task, pid ? pid2rttask(pid) : 0, msg, nbytes, prio)) ? (task->lnxtsk)->pid : -ENOMEM;
 }
 
-int rt_Proxy_detach(pid_t pid)
+RTAI_SYSCALL_MODE int rt_Proxy_detach(pid_t pid)
 {
 	RT_TASK *proxy;
 	if (!rt_task_delete(proxy = pid2rttask(pid))) {
@@ -2044,7 +2044,7 @@ int rt_Proxy_detach(pid_t pid)
 	return -EINVAL;
 }
 
-pid_t rt_Trigger(pid_t pid)
+RTAI_SYSCALL_MODE pid_t rt_Trigger(pid_t pid)
 {
 	RT_TASK *proxy;
        	struct proxy_t *his;
@@ -2061,7 +2061,7 @@ pid_t rt_Trigger(pid_t pid)
 }
 
 
-pid_t rt_Name_attach(const char *argname)
+RTAI_SYSCALL_MODE pid_t rt_Name_attach(const char *argname)
 {
 	RT_TASK *task;
 	task = current->rtai_tskext(TSKEXT0) ? (RT_TASK *)current->rtai_tskext(TSKEXT0) : _rt_whoami();
@@ -2074,7 +2074,7 @@ pid_t rt_Name_attach(const char *argname)
 	return strnlen(task->task_name, RTAI_MAX_NAME_LENGTH) > (RTAI_MAX_NAME_LENGTH - 1) ? -EINVAL : task->lnxtsk ? ((struct task_struct *)current->rtai_tskext(TSKEXT1))->pid : (long)task;
 }
 
-pid_t rt_Name_locate(const char *arghost, const char *argname)
+RTAI_SYSCALL_MODE pid_t rt_Name_locate(const char *arghost, const char *argname)
 {
 	extern RT_TASK rt_smp_linux_task[];
 	int cpuid;
@@ -2091,7 +2091,7 @@ pid_t rt_Name_locate(const char *arghost, const char *argname)
 	return strlen(argname) <= 6 && (task = rt_get_adr(nam2num(argname))) ? rttask2pid(task) : 0;
 }
 
-int rt_Name_detach(pid_t pid)
+RTAI_SYSCALL_MODE int rt_Name_detach(pid_t pid)
 {
 	if (pid <= PID_MAX_LIMIT) {
 	 	if (pid != ((struct task_struct *)current->rtai_tskext(TSKEXT1))->pid ) {
@@ -2113,6 +2113,7 @@ struct rt_native_fun_entry rt_msg_entries[] = {
 	{ { 1, rt_send_if },				SEND_IF },
 	{ { 1, rt_send_until },				SEND_UNTIL },
 	{ { 1, rt_send_timed },				SEND_TIMED },
+	{ { UW1(2, 0), rt_evdrp },			EVDRP },
 	{ { UW1(2, 0), rt_receive },			RECEIVEMSG },
 	{ { UW1(2, 0), rt_receive_if },			RECEIVE_IF },
 	{ { UW1(2, 0), rt_receive_until },		RECEIVE_UNTIL },
@@ -2121,7 +2122,6 @@ struct rt_native_fun_entry rt_msg_entries[] = {
 	{ { UW1(3, 0), rt_rpc_if },			RPC_IF },
 	{ { UW1(3, 0), rt_rpc_until },			RPC_UNTIL },
 	{ { UW1(3, 0), rt_rpc_timed },			RPC_TIMED },
-	{ { UW1(2, 0), rt_evdrp },			EVDRP },
 	{ { 0, rt_isrpc }, 		 		ISRPC },
 	{ { 1, rt_return },				RETURNMSG },
 	{ { UR1(2, 4) | UW1(3, 5), rt_rpcx },		RPCX },
@@ -2133,15 +2133,14 @@ struct rt_native_fun_entry rt_msg_entries[] = {
 	{ { UR1(2, 3), rt_sendx_until },		SENDX_UNTIL },
 	{ { UR1(2, 3), rt_sendx_timed },		SENDX_TIMED },
 	{ { UR1(2, 3), rt_returnx },			RETURNX },
+	{ { UW1(2, 3) | UW2(4, 0), rt_evdrpx },		EVDRPX },
 	{ { UW1(2, 3) | UW2(4, 0), rt_receivex },	RECEIVEX },
 	{ { UW1(2, 3) | UW2(4, 0), rt_receivex_if },	RECEIVEX_IF },
 	{ { UW1(2, 3) | UW2(4, 0), rt_receivex_until }, RECEIVEX_UNTIL },
 	{ { UW1(2, 3) | UW2(4, 0), rt_receivex_timed },	RECEIVEX_TIMED },
-	{ { UW1(2, 3) | UW2(4, 0), rt_evdrpx },		EVDRPX },
 	{ { UR1(2, 3), rt_proxy_attach },         	PROXY_ATTACH },
 	{ { 1, rt_proxy_detach },                 	PROXY_DETACH },
 	{ { 1, rt_trigger },                      	PROXY_TRIGGER },
-#if 1 //def CONFIG_RTAI_INTERNAL_LXRT_SUPPORT
 	{ { UR1(2, 4) | UW1(3, 5), rt_Send },	 	RT_SEND },
 	{ { UW1(2, 3) | UW2(4, 0), rt_Receive },	RT_RECEIVE },
 	{ { UW1(2, 3) | UW2(4, 0), rt_Creceive }, 	RT_CRECEIVE },
@@ -2150,9 +2149,8 @@ struct rt_native_fun_entry rt_msg_entries[] = {
 	{ { 1, rt_Proxy_detach },		  	RT_PROXY_DETACH },
 	{ { 1, rt_Trigger },			  	RT_TRIGGER },
 	{ { 1, rt_Name_attach },		  	RT_NAME_ATTACH },
-	{ { 1, rt_Name_detach },		  	RT_NAME_DETACH },
 	{ { 0, rt_Name_locate },		  	RT_NAME_LOCATE },
-#endif /* CONFIG_RTAI_INTERNAL_LXRT_SUPPORT */
+	{ { 1, rt_Name_detach },		  	RT_NAME_DETACH },
 	{ { 0, 0 },  		      			000 }
 };
 

@@ -34,7 +34,7 @@
 
 /* +++++++++++++++++++++++++ PRIORITY MANAGEMENT ++++++++++++++++++++++++++++ */
 
-void rt_set_sched_policy(RT_TASK *task, int policy, int rr_quantum_ns)
+RTAI_SYSCALL_MODE void rt_set_sched_policy(RT_TASK *task, int policy, int rr_quantum_ns)
 {
 	if (!task) {
 		task = RT_CURRENT;
@@ -124,7 +124,7 @@ int rt_get_inher_prio(RT_TASK *task)
  * are given, EINVAL if addresses are NULL or task is not a valid object.
  *
  */
-int rt_get_priorities(RT_TASK *task, int *priority, int *base_priority)
+RTAI_SYSCALL_MODE int rt_get_priorities(RT_TASK *task, int *priority, int *base_priority)
 {
 	if (!task) {
 		task = RT_CURRENT;
@@ -162,7 +162,7 @@ int rt_get_priorities(RT_TASK *task, int *priority, int *base_priority)
  * before the change.
  *
  */
-int rt_change_prio(RT_TASK *task, int priority)
+RTAI_SYSCALL_MODE int rt_change_prio(RT_TASK *task, int priority)
 {
 	unsigned long flags;
 	int prio, base_priority;
@@ -302,7 +302,7 @@ void rt_task_yield(void)
  * - @b RTE_UNBLKD:  the task was unblocked while suspended;
  *
  */
-int rt_task_suspend(RT_TASK *task)
+RTAI_SYSCALL_MODE int rt_task_suspend(RT_TASK *task)
 {
 	unsigned long flags;
 
@@ -346,7 +346,7 @@ int rt_task_suspend(RT_TASK *task)
 }
 
 
-int rt_task_suspend_if(RT_TASK *task)
+RTAI_SYSCALL_MODE int rt_task_suspend_if(RT_TASK *task)
 {
 	unsigned long flags;
 
@@ -365,7 +365,7 @@ int rt_task_suspend_if(RT_TASK *task)
 }
 
 
-int rt_task_suspend_until(RT_TASK *task, RTIME time)
+RTAI_SYSCALL_MODE int rt_task_suspend_until(RT_TASK *task, RTIME time)
 {
 	unsigned long flags;
 
@@ -425,7 +425,7 @@ int rt_task_suspend_until(RT_TASK *task, RTIME time)
 }
 
 
-int rt_task_suspend_timed(RT_TASK *task, RTIME delay)
+RTAI_SYSCALL_MODE int rt_task_suspend_timed(RT_TASK *task, RTIME delay)
 {
 	return rt_task_suspend_until(task, get_time() + delay);
 }
@@ -447,7 +447,7 @@ int rt_task_suspend_timed(RT_TASK *task, RTIME delay)
  * - @b EINVAL: task does not refer to a valid task.
  *
  */
-int rt_task_resume(RT_TASK *task)
+RTAI_SYSCALL_MODE int rt_task_resume(RT_TASK *task)
 {
 	unsigned long flags;
 
@@ -577,7 +577,7 @@ void rt_linux_use_fpu(int use_fpu_flag)
  *
  * See also: @ref rt_linux_use_fpu().
  */
-int rt_task_use_fpu(RT_TASK *task, int use_fpu_flag)
+RTAI_SYSCALL_MODE int rt_task_use_fpu(RT_TASK *task, int use_fpu_flag)
 {
 	if (task->magic != RT_TASK_MAGIC) {
 		return -EINVAL;
@@ -609,7 +609,7 @@ int rt_task_use_fpu(RT_TASK *task, int use_fpu_flag)
  * @return 0 on success.A negative value on failure as described below:
  * - @b EINVAL: task does not refer to a valid task.
  */
-int rt_task_signal_handler(RT_TASK *task, void (*handler)(void))
+RTAI_SYSCALL_MODE int rt_task_signal_handler(RT_TASK *task, void (*handler)(void))
 {
 	if (task->magic != RT_TASK_MAGIC) {
 		return -EINVAL;
@@ -665,7 +665,7 @@ void rt_gettimeorig(RTIME time_orig[])
  * hard timer in use and irrespective of any period used in the call to
  * start_rt_timer.
  */
-int rt_task_make_periodic_relative_ns(RT_TASK *task, RTIME start_delay, RTIME period)
+RTAI_SYSCALL_MODE int rt_task_make_periodic_relative_ns(RT_TASK *task, RTIME start_delay, RTIME period)
 {
 	long flags;
 
@@ -724,7 +724,7 @@ int rt_task_make_periodic_relative_ns(RT_TASK *task, RTIME start_delay, RTIME pe
  * start_rt_timer.
  *
  */
-int rt_task_make_periodic(RT_TASK *task, RTIME start_time, RTIME period)
+RTAI_SYSCALL_MODE int rt_task_make_periodic(RT_TASK *task, RTIME start_time, RTIME period)
 {
 	long flags;
 
@@ -798,7 +798,7 @@ int rt_task_wait_period(void)
 	return RTE_TMROVRN;
 }
 
-void rt_task_set_resume_end_times(RTIME resume, RTIME end)
+RTAI_SYSCALL_MODE void rt_task_set_resume_end_times(RTIME resume, RTIME end)
 {
 	RT_TASK *rt_current;
 	long flags;
@@ -824,7 +824,7 @@ void rt_task_set_resume_end_times(RTIME resume, RTIME end)
 	rt_global_restore_flags(flags);
 }
 
-int rt_set_resume_time(RT_TASK *task, RTIME new_resume_time)
+RTAI_SYSCALL_MODE int rt_set_resume_time(RT_TASK *task, RTIME new_resume_time)
 {
 	long flags;
 
@@ -845,7 +845,7 @@ int rt_set_resume_time(RT_TASK *task, RTIME new_resume_time)
 	return -ETIME;
 }
 
-int rt_set_period(RT_TASK *task, RTIME new_period)
+RTAI_SYSCALL_MODE int rt_set_period(RT_TASK *task, RTIME new_period)
 {
 	long flags;
 
@@ -899,7 +899,7 @@ RTIME next_period(void)
  *	 the task goes to sleep, so the actual time spent in these
  *	 functions may be longer than that specified.
  */
-void rt_busy_sleep(int ns)
+RTAI_SYSCALL_MODE void rt_busy_sleep(int ns)
 {
 	RTIME end_time;
 	end_time = rtai_rdtsc() + llimd(ns, tuned.cpu_freq, 1000000000);
@@ -928,7 +928,7 @@ void rt_busy_sleep(int ns)
  *	 the task goes to sleep, so the actual time spent in these
  *	 functions may be longer than the the one specified.
  */
-int rt_sleep(RTIME delay)
+RTAI_SYSCALL_MODE int rt_sleep(RTIME delay)
 {
 	DECLARE_RT_CURRENT;
 	unsigned long flags;
@@ -971,7 +971,7 @@ int rt_sleep(RTIME delay)
  *	 the task goes to sleep, so the actual time spent in these
  *	 functions may be longer than the the one specified.
  */
-int rt_sleep_until(RTIME time)
+RTAI_SYSCALL_MODE int rt_sleep_until(RTIME time)
 {
 	DECLARE_RT_CURRENT;
 	unsigned long flags;
@@ -992,7 +992,7 @@ int rt_sleep_until(RTIME time)
 	return RTE_TMROVRN;
 }
 
-int rt_task_masked_unblock(RT_TASK *task, unsigned long mask)
+RTAI_SYSCALL_MODE int rt_task_masked_unblock(RT_TASK *task, unsigned long mask)
 {
 	unsigned long flags;
 
@@ -1095,7 +1095,7 @@ int rt_renq_current(RT_TASK *rt_current, int priority)
 
 /* ++++++++++++++++++++++++ NAMED TASK INIT/DELETE ++++++++++++++++++++++++++ */
 
-RT_TASK *rt_named_task_init(const char *task_name, void (*thread)(long), long data, int stack_size, int prio, int uses_fpu, void(*signal)(void))
+RTAI_SYSCALL_MODE RT_TASK *rt_named_task_init(const char *task_name, void (*thread)(long), long data, int stack_size, int prio, int uses_fpu, void(*signal)(void))
 {
 	RT_TASK *task;
 	unsigned long name;
@@ -1113,7 +1113,7 @@ RT_TASK *rt_named_task_init(const char *task_name, void (*thread)(long), long da
 	return (RT_TASK *)0;
 }
 
-RT_TASK *rt_named_task_init_cpuid(const char *task_name, void (*thread)(long), long data, int stack_size, int prio, int uses_fpu, void(*signal)(void), unsigned int run_on_cpu)
+RTAI_SYSCALL_MODE RT_TASK *rt_named_task_init_cpuid(const char *task_name, void (*thread)(long), long data, int stack_size, int prio, int uses_fpu, void(*signal)(void), unsigned int run_on_cpu)
 {
 	RT_TASK *task;
 	unsigned long name;
@@ -1131,7 +1131,7 @@ RT_TASK *rt_named_task_init_cpuid(const char *task_name, void (*thread)(long), l
 	return (RT_TASK *)0;
 }
 
-int rt_named_task_delete(RT_TASK *task)
+RTAI_SYSCALL_MODE int rt_named_task_delete(RT_TASK *task)
 {
 	if (!rt_task_delete(task)) {
 		rt_free(task);
@@ -1763,12 +1763,12 @@ int rt_drg_on_adr(void *adr)
 	return drg_on_adr(adr);
 } 
 
-unsigned long rt_get_name(void *adr)
+RTAI_SYSCALL_MODE unsigned long rt_get_name(void *adr)
 {
 	return get_name(adr);
 } 
 
-void *rt_get_adr(unsigned long name)
+RTAI_SYSCALL_MODE void *rt_get_adr(unsigned long name)
 {
 	return get_adr(name);
 }
@@ -1847,46 +1847,46 @@ void krtai_objects_release(void)
 
 extern struct rtai_realtime_irq_s rtai_realtime_irq[];
 
-int rt_irq_wait(unsigned irq)
+RTAI_SYSCALL_MODE int rt_irq_wait(unsigned irq)
 {	
 	int retval;
 	retval = rt_task_suspend(0);
 	return rtai_realtime_irq[irq].handler ? -retval : RT_IRQ_TASK_ERR;
 }
 
-int rt_irq_wait_if(unsigned irq)
+RTAI_SYSCALL_MODE int rt_irq_wait_if(unsigned irq)
 {
 	int retval;
 	retval = rt_task_suspend_if(0);
 	return rtai_realtime_irq[irq].handler ? -retval : RT_IRQ_TASK_ERR;
 }
 
-int rt_irq_wait_until(unsigned irq, RTIME time)
+RTAI_SYSCALL_MODE int rt_irq_wait_until(unsigned irq, RTIME time)
 {
 	int retval;
 	retval = rt_task_suspend_until(0, time);
 	return rtai_realtime_irq[irq].handler ? -retval : RT_IRQ_TASK_ERR;
 }
 
-int rt_irq_wait_timed(unsigned irq, RTIME delay)
+RTAI_SYSCALL_MODE int rt_irq_wait_timed(unsigned irq, RTIME delay)
 {
 	return rt_irq_wait_until(irq, get_time() + delay);
 }
 
-void rt_irq_signal(unsigned irq)
+RTAI_SYSCALL_MODE void rt_irq_signal(unsigned irq)
 {
 	if (rtai_realtime_irq[irq].handler) {
 		rt_task_resume((void *)rtai_realtime_irq[irq].cookie);
 	}
 }
 
-static int rt_irq_task_handler(unsigned irq, RT_TASK *irq_task)
+RTAI_SYSCALL_MODE static int rt_irq_task_handler(unsigned irq, RT_TASK *irq_task)
 {
 	rt_task_resume(irq_task);
 	return 0;
 }
 
-int rt_request_irq_task (unsigned irq, void *handler, int type, int affine2task)
+RTAI_SYSCALL_MODE int rt_request_irq_task (unsigned irq, void *handler, int type, int affine2task)
 {
 	RT_TASK *task;
 	if (!handler) {
@@ -1900,7 +1900,7 @@ int rt_request_irq_task (unsigned irq, void *handler, int type, int affine2task)
 	return rt_request_irq(irq, (void *)rt_irq_task_handler, task, 0);
 }
 
-int rt_release_irq_task (unsigned irq)
+RTAI_SYSCALL_MODE int rt_release_irq_task (unsigned irq)
 {
 	int retval;
 	RT_TASK *task;
@@ -1912,8 +1912,8 @@ int rt_release_irq_task (unsigned irq)
 	return retval;
 }
 
-extern void usp_request_rtc(int, void *);
-void usp_request_rtc(int rtc_freq, void *handler)
+//extern void usp_request_rtc(int, void *);
+RTAI_SYSCALL_MODE void usp_request_rtc(int rtc_freq, void *handler)
 {
 	rt_request_rtc(rtc_freq, !handler || (handler && handler == (void *)1) ? handler : rt_irq_signal);
 		
@@ -1949,7 +1949,7 @@ RT_TASK *rt_exec_linux_syscall(RT_TASK *rt_current, RT_TASK *task, struct pt_reg
 }
 
 #include <asm/uaccess.h>
-RT_TASK *rt_receive_linux_syscall(RT_TASK *task, struct pt_regs *regs)
+RTAI_SYSCALL_MODE RT_TASK *rt_receive_linux_syscall(RT_TASK *task, struct pt_regs *regs)
 {
 	unsigned long flags;
 	RT_TASK *rt_current;
@@ -1975,7 +1975,7 @@ RT_TASK *rt_receive_linux_syscall(RT_TASK *task, struct pt_regs *regs)
 	return rt_current->ret_queue.task ? NULL : task;
 }
 
-void rt_return_linux_syscall(RT_TASK *task, unsigned long retval)
+RTAI_SYSCALL_MODE void rt_return_linux_syscall(RT_TASK *task, unsigned long retval)
 {
 	unsigned long flags;
 

@@ -1,3 +1,22 @@
+2006-12-10  Paolo Mantegazza <mantegazza@aero.polimi.it>
+
+	* addons/drivers/serial/rtai_serial.h, addons/drivers/serial/serial.c,
+	  addons/rtdm/module.c;
+	* base/include/rtai_bits.h, base/include/rtai_fifos.h, 
+	  base/include/rtai_mbx.h base/include/rtai_mq.h, 
+	  base/include/rtai_msg.h, base/include/rtai_netrpc.h,
+	  base/include/rtai_proxies.h, base/include/rtai_registry.h,
+	  base/include/rtai_rwl.h, base/include/rtai_sched.h,
+	  base/include/rtai_schedcore.h, base/include/rtai_sem.h,
+	  base/include/rtai_shm.h, base/include/rtai_spl.h,
+	  base/include/rtai_tbx.h;
+	* base/include/asm-i386/rtai_hal.h;
+	* base/ipc/bits/bits.c, base/ipc/fifos/fifos.c, base/ipc/mbx/mbx.c,
+	  base/ipc/mq/mq.c, base/ipc/msg/msg.c, base/ipc/netrpc/netrpc.c,
+	  base/ipc/sem/sem.c, base/ipc/shm/shm.c base/ipc/tbx/tbx.c;
+	* base/sched/api.c base/sched/sched.c base/sched/sys.c: 
+	  all of the aboves changed to allow using Linux with REGPARM enabled.
+
 2006-12-09  Paolo Mantegazza <mantegazza@aero.polimi.it>
 
 	* base/include/asm-i386/rtai_hal.h and 

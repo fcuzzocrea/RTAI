@@ -1334,7 +1334,7 @@ void rt_set_oneshot_mode(void)
 
 #ifdef CONFIG_SMP
 
-RTIME start_rt_timer(int period)
+RTAI_SYSCALL_MODE RTIME start_rt_timer(int period)
 {
 	int cpuid;
 	for (cpuid = 0; cpuid < NR_RT_CPUS; cpuid++) {
@@ -1371,7 +1371,7 @@ void stop_rt_timer(void)
 
 #else /* !CONFIG_SMP */
 
-RTIME start_rt_timer(int period)
+RTAI_SYSCALL_MODE RTIME start_rt_timer(int period)
 {
 	int const cpuid = 0;
 	oneshot_timer = oneshot_running = 0;
@@ -1400,7 +1400,7 @@ void stop_rt_timer(void)
 
 #endif /* CONFIG_SMP */
 
-void start_rt_apic_timers(struct apic_timer_setup_data *setup_data, unsigned int rcvr_jiffies_cpuid)
+RTAI_SYSCALL_MODE void start_rt_apic_timers(struct apic_timer_setup_data *setup_data, unsigned int rcvr_jiffies_cpuid)
 {
 	start_rt_timer(0);
 }
@@ -1470,7 +1470,7 @@ void stop_rt_timer(void)
 #define TIMER_TYPE 1
 #endif
 
-RTIME start_rt_timer(int period)
+RTAI_SYSCALL_MODE RTIME RTIME start_rt_timer(int period)
 {
 #define cpuid 0
 #undef rt_times
@@ -1508,7 +1508,7 @@ RTIME start_rt_timer(int period)
 }
 
 
-void start_rt_apic_timers(struct apic_timer_setup_data *setup_mode, unsigned int rcvr_jiffies_cpuid)
+RTAI_SYSCALL_MODE void start_rt_apic_timers(struct apic_timer_setup_data *setup_mode, unsigned int rcvr_jiffies_cpuid)
 {
 	int cpuid, period;
 

@@ -1,14 +1,11 @@
 #include <machine.h>
 #include <scicos_block.h>
 #include <stdio.h>
-#include <stdlib.h>
 #include <rtai_fifos.h>
-
-#define FIFO_SIZE   50000
 
 static void init(scicos_block *block)
 {
-  rtf_create(block->ipar[0],FIFO_SIZE);
+  rtf_create(block->ipar[0],block->ipar[1]);
   rtf_reset(block->ipar[0]);
 }
 
@@ -34,9 +31,14 @@ static void end(scicos_block *block)
   printf("FIFO %d closed\n",block->ipar[0]);
 }
 
-void rtfifo(scicos_block *block,int flag)
+
+
+void rt_fifoout(scicos_block *block,int flag)
 {
-  if (flag==2){          
+  if (flag==1){          /* set output */
+    inout(block);
+  }
+  if (flag==2){          /* get input */
     inout(block);
   }
   else if (flag==5){     /* termination */ 

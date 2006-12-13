@@ -61,8 +61,9 @@
 #define _KCOMEDI_DO_INSN_LIST		27  // not yet in kcomedilib... (tl) 
 #define _KCOMEDI_POLL 			28
 
-/* DEPRECATED function */
+/* DEPRECATED function
 #define _KCOMEDI_GET_RANGETYPE 		29
+*/
 
 /* ALPHA functions */
 #define _KCOMEDI_GET_SUBDEVICE_FLAGS 	30
@@ -91,30 +92,19 @@
 extern "C" {
 #endif /* __cplusplus */
 
-int rt_comedi_register_callback(void *dev,
-				unsigned int subdev,
-				unsigned int mask,
-				SEM *sem);
+RTAI_SYSCALL_MODE int rt_comedi_register_callback(void *dev, unsigned int subdev, unsigned int mask, SEM *sem);
 
-unsigned int rt_comedi_wait(SEM *sem,
-			    int *semcnt);
+RTAI_SYSCALL_MODE unsigned int rt_comedi_wait(SEM *sem, int *semcnt);
 
-unsigned int rt_comedi_wait_if(SEM *sem,
-			       int *semcnt);
+RTAI_SYSCALL_MODE unsigned int rt_comedi_wait_if(SEM *sem, int *semcnt);
 
-unsigned int rt_comedi_wait_until(SEM *sem,
-				  RTIME until,
-				  int *semcnt);
+RTAI_SYSCALL_MODE unsigned int rt_comedi_wait_until(SEM *sem, RTIME until, int *semcnt);
 
-unsigned int rt_comedi_wait_timed(SEM *sem,
-				  RTIME delay,
-				  int *semcnt);
+RTAI_SYSCALL_MODE unsigned int rt_comedi_wait_timed(SEM *sem, RTIME delay, int *semcnt);
 
-char *rt_comedi_get_driver_name(void *dev,
-				char *name);
+RTAI_SYSCALL_MODE char *rt_comedi_get_driver_name(void *dev, char *name);
 
-char *rt_comedi_get_board_name(void *dev,
-			       char *name);
+RTAI_SYSCALL_MODE char *rt_comedi_get_board_name(void *dev, char *name);
 
 #ifdef __cplusplus
 }

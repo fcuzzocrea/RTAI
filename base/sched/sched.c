@@ -2324,16 +2324,11 @@ static int lxrt_intercept_schedule_tail (unsigned event, void *nothing)
 	IN_INTERCEPT_IRQ_ENABLE(); {
 
 	int cpuid;
-	if (in_hrt_mode(cpuid = smp_processor_id())) {
-		return 1;
-	} else {
-		struct klist_t *klistp = &wake_up_sth[cpuid];
-		struct task_struct *lnxtsk = current;
-		while (klistp->out != klistp->in) {
-			rt_global_cli();
-			fast_schedule(klistp->task[klistp->out++ & (MAX_WAKEUP_SRQ - 1)], lnxtsk, cpuid);
-			rt_global_sti();
-		}
+	struct klist_t *klistp = &wake_up_sth[cpuid = smp_processor_id()];
+	while (klistp->out != klistp->in) {
+		rt_global_cli();
+		fast_schedule(klistp->task[klistp->out++ & (MAX_WAKEUP_SRQ - 1)], current, cpuid);
+		rt_global_sti();
 	}
 
 #if LINUX_VERSION_CODE < KERNEL_VERSION(2,4,32)

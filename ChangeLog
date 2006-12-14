@@ -1,3 +1,10 @@
+2006-12-14  Paolo Mantegazza <mantegazza@aero.polimi.it>
+
+	* base/arch/i386/Kconfig: define the new way for setting RTNet 
+	  availability.
+	* base/ipec/netrpc/netrpc.c: use properly the new way of defining 
+	  RTNet availability.
+
 2006-12-13  Paolo Mantegazza <mantegazza@aero.polimi.it>
 
 	* base/sched/sched.c: simplified schedule tail, it can be called just

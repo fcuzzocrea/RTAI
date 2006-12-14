@@ -559,14 +559,16 @@ config RTAI_NETRPC
 	The NetRPC module will be called rtai_netrpc.o.
 
 config RTAI_NETRPC_RTNET
-	bool "Emulate RTNet"
+	bool "Use RTNet"
 	depends on RTAI_NETRPC
-	default y
+	default n
 	help
-	This enable RTNet like usage, using Linux soft networking support,
-	even when no RTNet is available. It can be used also when RTNet is
-	available. In such a case soft real time RTAI tasks will avoid 
-	loading the hard real time networking layer.
+	This enable support of RTNet in NETRPC. By setting this parameters hard 
+	real time will use RTNet automatically, while soft real time task will 
+	use Linux networking. With this parameter set the making of RTAI will 
+	work even if RTNet is not installed but you'll need RTNet to run it.
+	Notice that the initial linking and set up of remote port stubs is 
+	done in soft mode always.
 
 config RTAI_SHM
 	tristate "Shared memory"

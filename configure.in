@@ -273,10 +273,11 @@ if test x${CONFIG_MODULES} = x ; then
   AC_MSG_ERROR([Please set CONFIG_MODULES for $RTAI_LINUX_DIR and rebuild your kernel])
 fi
 
-if test x${CONFIG_REGPARM} = xy ; then
-  AC_MSG_ERROR([Please unset CONFIG_REGPARM for $RTAI_LINUX_DIR and 
-rebuild your kernel])
-fi
+dnl No longer used.
+dnl if test x${CONFIG_REGPARM} = xy ; then
+dnl   AC_MSG_ERROR([Please unset CONFIG_REGPARM for $RTAI_LINUX_DIR and 
+dnl rebuild your kernel])
+dnl fi
 
 if test x${CONFIG_MODVERSIONS} = xy ; then
   AC_MSG_ERROR([Please unset CONFIG_MODVERSIONS for $RTAI_LINUX_DIR and rebuild your kernel])
@@ -778,6 +779,15 @@ AC_ARG_ENABLE(debug-rtdm,
 	esac])
 AC_MSG_RESULT(${CONFIG_RTAI_DEBUG_RTDM:-no})
 
+AC_MSG_CHECKING(for Linux task priority alignment to RTAI)
+AC_ARG_ENABLE(align-priority,
+	      [ --enable-align-priority		Keep Linux task priority aligned to RTAI],
+	[case "$enableval" in
+	y | yes) CONFIG_CONFIG_RTAI_ALIGN_LINUX_PRIORITY=y ;;
+	*) unset CONFIG_CONFIG_RTAI_ALIGN_LINUX_PRIORITY ;;
+	esac])
+AC_MSG_RESULT(${CONFIG_RTAI_ALIGN_LINUX_PRIORITY:-no})
+
 AC_MSG_CHECKING(for in-kernel C++ support)
 AC_ARG_ENABLE(cplusplus,
 	[ --enable-cplusplus	Build in-kernel C++ support],
@@ -1273,7 +1283,7 @@ test \! x$CONFIG_RTAI_MATH = x && AC_DEFINE(CONFIG_RTAI_MATH,1,[Kconfig])
 test \! x$CONFIG_RTAI_BITS = x && AC_DEFINE(CONFIG_RTAI_BITS,1,[Kconfig])
 test \! x$CONFIG_RTAI_FIFOS = x && AC_DEFINE(CONFIG_RTAI_FIFOS,1,[Kconfig])
 test \! x$CONFIG_RTAI_NETRPC = x && AC_DEFINE(CONFIG_RTAI_NETRPC,1,[Kconfig])
-test \! x$CONFIG_RTAI_NETRPC_RTNET = x && AC_DEFINE(CONFIG_RTAI_NETRPC_RTNET,1,[Kconfig])
+test x$CONFIG_RTAI_NETRPC_RTNET = xy && AC_DEFINE(CONFIG_RTAI_NETRPC_RTNET,1,[Kconfig])
 test \! x$CONFIG_RTAI_SEM = x && AC_DEFINE(CONFIG_RTAI_SEM,1,[Kconfig])
 test \! x$CONFIG_RTAI_MSG = x && AC_DEFINE(CONFIG_RTAI_MSG,1,[Kconfig])
 test \! x$CONFIG_RTAI_MBX = x && AC_DEFINE(CONFIG_RTAI_MBX,1,[Kconfig])
@@ -1290,6 +1300,7 @@ test \! x$CONFIG_RTAI_LXRT_USE_LINUX_SYSCALL = x && AC_DEFINE(CONFIG_RTAI_LXRT_U
 test \! x$CONFIG_RTAI_DRIVERS_SERIAL = x && AC_DEFINE(CONFIG_RTAI_DRIVERS_SERIAL,1,[Kconfig])
 test \! x$CONFIG_RTAI_DRIVERS_16550A = x && AC_DEFINE(CONFIG_RTAI_DRIVERS_16550A,1,[Kconfig])
 test \! x$CONFIG_RTAI_RTDM = x && AC_DEFINE(CONFIG_RTAI_RTDM,1,[Kconfig])
+test \! x$CONFIG_RTAI_ALIGN_LINUX_PRIORITY = x && AC_DEFINE(CONFIG_RTAI_ALIGN_LINUX_PRIORITY,1,[Kconfig])
 
 test x$CONFIG_RTAI_MATH = xy && AC_DEFINE(CONFIG_RTAI_MATH_BUILTIN,1,[Kconfig])
 test x$CONFIG_RTAI_BITS = xy && AC_DEFINE(CONFIG_RTAI_BITS_BUILTIN,1,[Kconfig])
@@ -1418,7 +1429,8 @@ dnl Now we can close the conditional section, right after all
 dnl Autoconf-generated symbols have been listed.
 AH_BOTTOM([#endif /* __IN_RTAI__ */])
 
-AH_BOTTOM([#include <linux/config.h>])
+dnl No longer used after 2.6.17
+dnl AH_BOTTOM([#include <linux/config.h>])
 
 dnl
 dnl Produce automake conditionals.

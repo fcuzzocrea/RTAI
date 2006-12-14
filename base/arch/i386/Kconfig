@@ -461,7 +461,7 @@ config RTAI_LXRT_USE_LINUX_SYSCALL
 	
 	If in doubt, say no.
 
-config RTAI_ALIGN_LINUX_priority
+config RTAI_ALIGN_LINUX_PRIORITY
 	bool "Keep Linux task priority aligned to RTAI"
 	default n
 	help

@@ -10,6 +10,9 @@
 #undef CONFIG_RTAI_ADEOS
 
 /* Kconfig */
+#undef CONFIG_RTAI_ALIGN_LINUX_PRIORITY
+
+/* Kconfig */
 #undef CONFIG_RTAI_ALLOW_RR
 
 /* Kconfig */
@@ -324,5 +327,3 @@
 #undef X_DISPLAY_MISSING
 
 #endif /* __IN_RTAI__ */
-
-#include <linux/config.h>

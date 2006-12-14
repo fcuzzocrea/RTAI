@@ -36,10 +36,6 @@ ACKNOWLEDGMENTS:
 
 //#define USE_RTAI_TASKS    0
 
-#ifndef CONFIG_RTAI_ALIGN_LINUX_PRIORITY
-#define CONFIG_RTAI_ALIGN_LINUX_PRIORITY  1
-#endif
-
 #include <linux/module.h>
 #include <linux/kernel.h>
 #include <linux/version.h>
@@ -78,6 +74,10 @@ void rtai_proc_lxrt_unregister(void);
 #include <rtai_nam2num.h>
 #include <rtai_schedcore.h>
 #include <rtai_prinher.h>
+
+#ifndef CONFIG_RTAI_ALIGN_LINUX_PRIORITY
+//#define CONFIG_RTAI_ALIGN_LINUX_PRIORITY  1
+#endif
 
 MODULE_LICENSE("GPL");
 

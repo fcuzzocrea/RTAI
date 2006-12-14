@@ -39,8 +39,6 @@ MODULE_LICENSE("GPL");
 
 /* ethernet support(s) we want to use: 1 -> DO, 0 -> DO NOT */
 
-#define SOFT_RTNET      1
-
 #ifdef CONFIG_RTAI_NETRPC_RTNET
 #define HARD_RTNET      1
 #else
@@ -49,38 +47,7 @@ MODULE_LICENSE("GPL");
 
 /* end of ethernet support(s) we want to use */
 
-#if SOFT_RTNET && !HARD_RTNET
-#define MSG_SOFT 0
-#define MSG_HARD 0
-#define hard_rt_socket(a, b, c)  portslot[i].socket[0]
-#define hard_rt_bind(a, b, c)
-#define hard_rt_close(a)
-#define hard_rt_socket_callback  soft_rt_socket_callback
-#define hard_rt_recvfrom         soft_rt_recvfrom
-#define hard_rt_sendto           soft_rt_sendto
-#endif
-
-#if !SOFT_RTNET && HARD_RTNET
-#ifndef COMPILE_ANYHOW
-#include <rtnet.h>  // must be the true RTNet header file
-#endif
-#define MSG_SOFT 1
-#define MSG_HARD 1
-#define soft_rt_socket           rt_socket
-#define soft_rt_bind(a, b, c)    rt_bind(a, b, c)
-#define soft_rt_close(a)         rt_close(a)
-#define soft_rt_socket_callback  rt_socket_callback
-#define soft_rt_recvfrom         rt_recvfrom
-#define soft_rt_sendto           rt_sendto
-#define hard_rt_socket(a, b, c)  portslot[i].socket[0]
-#define hard_rt_bind(a, b, c)
-#define hard_rt_close(a)
-#define hard_rt_socket_callback  rt_socket_callback
-#define hard_rt_recvfrom         rt_recvfrom
-#define hard_rt_sendto           rt_sendto
-#endif
-
-#if SOFT_RTNET && HARD_RTNET
+#if HARD_RTNET
 #ifndef COMPILE_ANYHOW
 #include <rtnet.h>  // must be the true RTNet header file
 #endif
@@ -92,6 +59,15 @@ MODULE_LICENSE("GPL");
 #define hard_rt_socket_callback  rt_socket_callback
 #define hard_rt_recvfrom         rt_recvfrom
 #define hard_rt_sendto           rt_sendto
+#else
+#define MSG_SOFT 0
+#define MSG_HARD 0
+#define hard_rt_socket(a, b, c)  portslot[i].socket[0]
+#define hard_rt_bind(a, b, c)
+#define hard_rt_close(a)
+#define hard_rt_socket_callback  soft_rt_socket_callback
+#define hard_rt_recvfrom         soft_rt_recvfrom
+#define hard_rt_sendto           soft_rt_sendto
 #endif
 
 #define LOCALHOST         "127.0.0.1"
@@ -975,7 +951,7 @@ void do_mod_timer(void)
 	mod_timer(&timer, jiffies + (HZ + NETRPC_TIMER_FREQ/2 - 1)/NETRPC_TIMER_FREQ);
 }
 
-#ifndef CONFIG_RTAI_NETRPC_RTNET
+#if 1 //ndef CONFIG_RTAI_NETRPC_RTNET
 
 static struct sock_t *socks;
 

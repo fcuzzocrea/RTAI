@@ -39,12 +39,12 @@ MODULE_LICENSE("GPL");
 
 /* ethernet support(s) we want to use: 1 -> DO, 0 -> DO NOT */
 
-#define HARD_RTNET      0
+#define SOFT_RTNET      1
 
 #ifdef CONFIG_RTAI_NETRPC_RTNET
-#define SOFT_RTNET      1
+#define HARD_RTNET      1
 #else
-#define SOFT_RTNET      0
+#define HARD_RTNET      0
 #endif
 
 /* end of ethernet support(s) we want to use */
@@ -975,7 +975,7 @@ void do_mod_timer(void)
 	mod_timer(&timer, jiffies + (HZ + NETRPC_TIMER_FREQ/2 - 1)/NETRPC_TIMER_FREQ);
 }
 
-#ifdef CONFIG_RTAI_NETRPC_RTNET
+#ifndef CONFIG_RTAI_NETRPC_RTNET
 
 static struct sock_t *socks;
 
@@ -1603,7 +1603,7 @@ EXPORT_SYMBOL(rt_net_rpc);
 EXPORT_SYMBOL(rt_get_net_rpc_ret);
 EXPORT_SYMBOL(rt_set_this_node);
 
-#ifdef CONFIG_RTAI_NETRPC_RTNET
+#ifndef CONFIG_RTAI_NETRPC_RTNET
 EXPORT_SYMBOL(soft_rt_socket);
 EXPORT_SYMBOL(soft_rt_close);
 EXPORT_SYMBOL(soft_rt_bind);
@@ -1611,7 +1611,7 @@ EXPORT_SYMBOL(soft_rt_socket_callback);
 EXPORT_SYMBOL(soft_rt_sendto);
 EXPORT_SYMBOL(soft_rt_recvfrom);
 EXPORT_SYMBOL(ddn2nl);
-#endif /* CONFIG_RTAI_NETRPC_RTNET */
+#endif /* !CONFIG_RTAI_NETRPC_RTNET */
 
 EXPORT_SYMBOL(rt_net_rpc_fun_hook);
 #endif /* CONFIG_KBUILD */

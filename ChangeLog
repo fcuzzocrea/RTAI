@@ -1,5 +1,7 @@
 2006-11-07  Pierangelo Masarati <masarati@aero.polimi.it>
-	* add support to keep Linux task priority aligned to RTAI
+	* add support to keep Linux task priority aligned to RTAI, structure
+	  the new way for setting RTNet availability, do not halt making RTAI
+	  when LINUX REGPARM is set.
 
 2006-12-14  Paolo Mantegazza <mantegazza@aero.polimi.it>
 

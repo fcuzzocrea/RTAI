@@ -1,4 +1,10 @@
-2006-11-07  Pierangelo Masarati <masarati@aero.polimi.it>
+2006-12-16  Paolo Mantegazza <mantegazza@aero.polimi.it>
+
+	* base/sched/sched.c: set is_hard for an RTAI task being stolen from
+	  Linux before calling schedule.
+
+2006-12-15  Pierangelo Masarati <masarati@aero.polimi.it>
+
 	* add support to keep Linux task priority aligned to RTAI, structure
 	  the new way for setting RTNet availability, do not halt making RTAI
 	  when LINUX REGPARM is set.

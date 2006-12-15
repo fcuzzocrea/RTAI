@@ -2097,6 +2097,7 @@ void steal_from_linux(RT_TASK *rt_task)
 	if (rt_task->priority >= BASE_SOFT_PRIORITY) {
 		rt_task->priority -= BASE_SOFT_PRIORITY;
 	}
+	rt_task->is_hard = 1;
 #if defined(TASK_ATOMICSWITCH) && TASK_ATOMICSWITCH && defined(CONFIG_PREEMPT)
 	preempt_disable();
 	(lnxtsk = rt_task->lnxtsk)->state = (TASK_HARDREALTIME | TASK_ATOMICSWITCH);
@@ -2110,12 +2111,11 @@ void steal_from_linux(RT_TASK *rt_task)
 	if (!rt_task->exectime[1]) {
 		rt_task->exectime[1] = rdtsc();
 	}
-	rtai_cli();
-	rt_task->is_hard = 1;
 	if (lnxtsk_uses_fpu(lnxtsk)) {
+		rtai_cli();
 		restore_fpu(lnxtsk);
+		rtai_sti();
 	}
-	rtai_sti();
 }
 
 void give_back_to_linux(RT_TASK *rt_task, int keeprio)

@@ -60,8 +60,6 @@
 	  UNWRAPPED_CATCH_EVENT away.
 	* base/sched/sched.c: use a more meaningful klist name for going hard,
 	  wipe unused legacy code related to UNWRAPPED_CATCH_EVENT away.
-	* base/sched/sys.c: call rt_schedule, instead of schedule_soft_tail, 
-	  if a hard task calling a function is forced soft during its execution.
 
 2006-12-07  Paolo Mantegazza <mantegazza@aero.polimi.it>
 

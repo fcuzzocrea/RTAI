@@ -1,7 +1,7 @@
 2006-12-16  Paolo Mantegazza <mantegazza@aero.polimi.it>
 
 	* base/sched/sched.c: set is_hard for an RTAI task being stolen from
-	  Linux before calling schedule.
+	  Linux before calling schedule, simplified fast_schedule.
 
 2006-12-15  Pierangelo Masarati <masarati@aero.polimi.it>
 

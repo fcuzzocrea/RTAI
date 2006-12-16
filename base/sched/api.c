@@ -1880,7 +1880,7 @@ RTAI_SYSCALL_MODE void rt_irq_signal(unsigned irq)
 	}
 }
 
-RTAI_SYSCALL_MODE static int rt_irq_task_handler(unsigned irq, RT_TASK *irq_task)
+static int rt_irq_task_handler(unsigned irq, RT_TASK *irq_task)
 {
 	rt_task_resume(irq_task);
 	return 0;

@@ -706,6 +706,14 @@ void rt_pend_linux_irq (unsigned irq)
 	rtai_restore_flags(flags);
 }
 
+RTAI_SYSCALL_MODE void usr_rt_pend_linux_irq (unsigned irq)
+{
+	unsigned long flags;
+	rtai_save_flags_and_cli(flags);
+	hal_pend_uncond(irq, rtai_cpuid());
+	rtai_restore_flags(flags);
+}
+
 /**
  * Install a system request handler
  *
@@ -2219,6 +2227,7 @@ EXPORT_SYMBOL(rt_ack_irq);
 EXPORT_SYMBOL(rt_request_linux_irq);
 EXPORT_SYMBOL(rt_free_linux_irq);
 EXPORT_SYMBOL(rt_pend_linux_irq);
+EXPORT_SYMBOL(usr_rt_pend_linux_irq);
 EXPORT_SYMBOL(rt_request_srq);
 EXPORT_SYMBOL(rt_free_srq);
 EXPORT_SYMBOL(rt_pend_linux_srq);

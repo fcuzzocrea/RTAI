@@ -710,7 +710,7 @@ do { \
 } while (0)
 
 
-static inline void make_current_soft(RT_TASK *rt_current, int cpuid)
+static inline void force_current_soft(RT_TASK *rt_current, int cpuid)
 {
 	struct task_struct *lnxtsk;
         void rt_schedule(void);
@@ -958,7 +958,7 @@ void rt_schedule(void)
 					restore_fpu(prev);
 				}
 				if (rt_current->force_soft) {
-					make_current_soft(rt_current, cpuid);
+					force_current_soft(rt_current, cpuid);
 				}
 			}
 		} else if (rt_current->state != RT_SCHED_READY) {

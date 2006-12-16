@@ -1888,25 +1888,17 @@ void rt_schedule_soft_tail(RT_TASK *rt_task, int cpuid)
 static inline void fast_schedule(RT_TASK *new_task, struct task_struct *lnxtsk, int cpuid)
 {
 	RT_TASK *rt_current;
+	rt_global_cli();
 	new_task->state |= RT_SCHED_READY;
 	enq_soft_ready_task(new_task);
 	sched_release_global_lock(cpuid);
-	if (!new_task->is_hard) {
-		unsigned long sflags;
-		SAVE_LOCK_LINUX(cpuid);
-		(rt_current = &rt_linux_task)->lnxtsk = lnxtsk;
-		UEXECTIME();
-		rt_smp_current[cpuid] = new_task;
-		lxrt_context_switch(lnxtsk, new_task->lnxtsk, cpuid);
-		RESTORE_UNLOCK_LINUX(cpuid);
-	} else {
-		LOCK_LINUX(cpuid);
-		(rt_current = &rt_linux_task)->lnxtsk = lnxtsk;
-		UEXECTIME();
-		rt_smp_current[cpuid] = new_task;
-		lxrt_context_switch(lnxtsk, new_task->lnxtsk, cpuid);
-		UNLOCK_LINUX(cpuid);
-	}
+	LOCK_LINUX(cpuid);
+	(rt_current = &rt_linux_task)->lnxtsk = lnxtsk;
+	UEXECTIME();
+	rt_smp_current[cpuid] = new_task;
+	lxrt_context_switch(lnxtsk, new_task->lnxtsk, cpuid);
+	UNLOCK_LINUX(cpuid);
+	rtai_sti();
 }
 
 
@@ -2326,9 +2318,7 @@ static int lxrt_intercept_schedule_tail (unsigned event, void *nothing)
 	int cpuid;
 	struct klist_t *klistp = &wake_up_sth[cpuid = smp_processor_id()];
 	while (klistp->out != klistp->in) {
-		rt_global_cli();
 		fast_schedule(klistp->task[klistp->out++ & (MAX_WAKEUP_SRQ - 1)], current, cpuid);
-		rt_global_sti();
 	}
 
 #if LINUX_VERSION_CODE < KERNEL_VERSION(2,4,32)

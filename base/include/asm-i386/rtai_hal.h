@@ -874,6 +874,8 @@ int rt_free_linux_irq(unsigned irq,
 
 void rt_pend_linux_irq(unsigned irq);
 
+RTAI_SYSCALL_MODE void usr_rt_pend_linux_irq(unsigned irq);
+
 void rt_pend_linux_srq(unsigned srq);
 
 int rt_request_srq(unsigned label,

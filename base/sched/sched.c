@@ -2694,7 +2694,7 @@ static struct rt_native_fun_entry rt_sched_entries[] = {
 	{ { 0, rt_named_task_delete },	 	    NAMED_TASK_DELETE },  
 	{ { 0, rt_get_name },			    GET_NAME },
 	{ { 0, rt_get_adr },			    GET_ADR },
-	{ { 0, rt_pend_linux_irq },		    PEND_LINUX_IRQ },
+	{ { 0, usr_rt_pend_linux_irq },		    PEND_LINUX_IRQ },
 	{ { 0, usp_request_rtc },                   REQUEST_RTC },
 	{ { 0, rt_release_rtc },                    RELEASE_RTC },
 	{ { 0, rt_gettid },                         RT_GETTID },

@@ -8,7 +8,8 @@ libsciblk_a_SOURCES = \
 	rtai_scope.c \
 	rtai_led.c \
 	rtai_meter.c \
-	rtai_fifo.c \
+	rtai_fifoin.c \
+	rtai_fifoout.c \
 	rtai_sinus.c \
 	rtai_square.c \
 	rtai_step.c \
@@ -31,7 +32,8 @@ libsciblk_a_SOURCES += \
 	rtai_comedi_datain.c \
 	rtai_comedi_dataout.c \
 	rtai_comedi_dioin.c \
-	rtai_comedi_dioout.c
+	rtai_comedi_dioout.c \
+	old_comedi.c
 endif
 
 libsciblk_a_AR = $(CROSS_COMPILE)ar cru

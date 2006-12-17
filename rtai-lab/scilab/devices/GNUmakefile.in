@@ -41,7 +41,8 @@ host_triplet = @host@
 @CONFIG_RTAI_COMEDI_LXRT_TRUE@	rtai_comedi_datain.c \
 @CONFIG_RTAI_COMEDI_LXRT_TRUE@	rtai_comedi_dataout.c \
 @CONFIG_RTAI_COMEDI_LXRT_TRUE@	rtai_comedi_dioin.c \
-@CONFIG_RTAI_COMEDI_LXRT_TRUE@	rtai_comedi_dioout.c
+@CONFIG_RTAI_COMEDI_LXRT_TRUE@	rtai_comedi_dioout.c \
+@CONFIG_RTAI_COMEDI_LXRT_TRUE@	old_comedi.c
 
 subdir = rtai-lab/scilab/devices
 DIST_COMMON = $(include_HEADERS) $(srcdir)/GNUmakefile.am \
@@ -68,19 +69,21 @@ LIBRARIES = $(lib_LIBRARIES)
 ARFLAGS = cru
 libsciblk_a_LIBADD =
 am__libsciblk_a_SOURCES_DIST = rtai_scope.c rtai_led.c rtai_meter.c \
-	rtai_fifo.c rtai_sinus.c rtai_square.c rtai_step.c \
-	rtai_extdata.c mbx_receive_if.c mbx_receive.c mbx_ovrwr_send.c \
-	mbx_send_if.c getstr.c rtmain.h devices.h machine.h \
-	scicos_block.h rtai_sem_signal.c rtai_sem_wait.c olddevices.c \
-	rtai_comedi_datain.c rtai_comedi_dataout.c rtai_comedi_dioin.c \
-	rtai_comedi_dioout.c
+	rtai_fifoin.c rtai_fifoout.c rtai_sinus.c rtai_square.c \
+	rtai_step.c rtai_extdata.c mbx_receive_if.c mbx_receive.c \
+	mbx_ovrwr_send.c mbx_send_if.c getstr.c rtmain.h devices.h \
+	machine.h scicos_block.h rtai_sem_signal.c rtai_sem_wait.c \
+	olddevices.c rtai_comedi_datain.c rtai_comedi_dataout.c \
+	rtai_comedi_dioin.c rtai_comedi_dioout.c old_comedi.c
 @CONFIG_RTAI_COMEDI_LXRT_TRUE@am__objects_1 =  \
 @CONFIG_RTAI_COMEDI_LXRT_TRUE@	rtai_comedi_datain.$(OBJEXT) \
 @CONFIG_RTAI_COMEDI_LXRT_TRUE@	rtai_comedi_dataout.$(OBJEXT) \
 @CONFIG_RTAI_COMEDI_LXRT_TRUE@	rtai_comedi_dioin.$(OBJEXT) \
-@CONFIG_RTAI_COMEDI_LXRT_TRUE@	rtai_comedi_dioout.$(OBJEXT)
+@CONFIG_RTAI_COMEDI_LXRT_TRUE@	rtai_comedi_dioout.$(OBJEXT) \
+@CONFIG_RTAI_COMEDI_LXRT_TRUE@	old_comedi.$(OBJEXT)
 am_libsciblk_a_OBJECTS = rtai_scope.$(OBJEXT) rtai_led.$(OBJEXT) \
-	rtai_meter.$(OBJEXT) rtai_fifo.$(OBJEXT) rtai_sinus.$(OBJEXT) \
+	rtai_meter.$(OBJEXT) rtai_fifoin.$(OBJEXT) \
+	rtai_fifoout.$(OBJEXT) rtai_sinus.$(OBJEXT) \
 	rtai_square.$(OBJEXT) rtai_step.$(OBJEXT) \
 	rtai_extdata.$(OBJEXT) mbx_receive_if.$(OBJEXT) \
 	mbx_receive.$(OBJEXT) mbx_ovrwr_send.$(OBJEXT) \
@@ -279,6 +282,7 @@ F77 = @F77@
 FFLAGS = @FFLAGS@
 GL_CFLAGS = @GL_CFLAGS@
 GL_LIBS = @GL_LIBS@
+GREP = @GREP@
 INSTALL_DATA = @INSTALL_DATA@
 INSTALL_PROGRAM = @INSTALL_PROGRAM@
 INSTALL_SCRIPT = @INSTALL_SCRIPT@
@@ -335,16 +339,14 @@ SET_MAKE = @SET_MAKE@
 SHELL = @SHELL@
 STRIP = @STRIP@
 VERSION = @VERSION@
+XMKMF = @XMKMF@
 X_CFLAGS = @X_CFLAGS@
 X_EXTRA_LIBS = @X_EXTRA_LIBS@
 X_LIBS = @X_LIBS@
 X_PRE_LIBS = @X_PRE_LIBS@
-ac_ct_AR = @ac_ct_AR@
 ac_ct_CC = @ac_ct_CC@
 ac_ct_CXX = @ac_ct_CXX@
 ac_ct_F77 = @ac_ct_F77@
-ac_ct_RANLIB = @ac_ct_RANLIB@
-ac_ct_STRIP = @ac_ct_STRIP@
 am__fastdepCC_FALSE = @am__fastdepCC_FALSE@
 am__fastdepCC_TRUE = @am__fastdepCC_TRUE@
 am__fastdepCXX_FALSE = @am__fastdepCXX_FALSE@
@@ -361,23 +363,30 @@ build_cpu = @build_cpu@
 build_os = @build_os@
 build_vendor = @build_vendor@
 datadir = @datadir@
+datarootdir = @datarootdir@
+docdir = @docdir@
+dvidir = @dvidir@
 exec_prefix = @exec_prefix@
 host = @host@
 host_alias = @host_alias@
 host_cpu = @host_cpu@
 host_os = @host_os@
 host_vendor = @host_vendor@
+htmldir = @htmldir@
 includedir = $(prefix)/include/scicos
 infodir = @infodir@
 install_sh = @install_sh@
 libdir = @libdir@
 libexecdir = @libexecdir@
+localedir = @localedir@
 localstatedir = @localstatedir@
 mandir = @mandir@
 mkdir_p = @mkdir_p@
 oldincludedir = @oldincludedir@
+pdfdir = @pdfdir@
 prefix = @prefix@
 program_transform_name = @program_transform_name@
+psdir = @psdir@
 sbindir = @sbindir@
 sharedstatedir = @sharedstatedir@
 subdirs = @subdirs@
@@ -385,11 +394,12 @@ sysconfdir = @sysconfdir@
 target_alias = @target_alias@
 moduledir = @RTAI_MODULE_DIR@
 lib_LIBRARIES = libsciblk.a
-libsciblk_a_SOURCES = rtai_scope.c rtai_led.c rtai_meter.c rtai_fifo.c \
-	rtai_sinus.c rtai_square.c rtai_step.c rtai_extdata.c \
-	mbx_receive_if.c mbx_receive.c mbx_ovrwr_send.c mbx_send_if.c \
-	getstr.c rtmain.h devices.h machine.h scicos_block.h \
-	rtai_sem_signal.c rtai_sem_wait.c olddevices.c $(am__append_1)
+libsciblk_a_SOURCES = rtai_scope.c rtai_led.c rtai_meter.c \
+	rtai_fifoin.c rtai_fifoout.c rtai_sinus.c rtai_square.c \
+	rtai_step.c rtai_extdata.c mbx_receive_if.c mbx_receive.c \
+	mbx_ovrwr_send.c mbx_send_if.c getstr.c rtmain.h devices.h \
+	machine.h scicos_block.h rtai_sem_signal.c rtai_sem_wait.c \
+	olddevices.c $(am__append_1)
 libsciblk_a_AR = $(CROSS_COMPILE)ar cru
 include_HEADERS = \
 	devices.h 
@@ -480,13 +490,15 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/mbx_receive.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/mbx_receive_if.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/mbx_send_if.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/old_comedi.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/olddevices.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/rtai_comedi_datain.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/rtai_comedi_dataout.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/rtai_comedi_dioin.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/rtai_comedi_dioout.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/rtai_extdata.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/rtai_fifo.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/rtai_fifoin.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/rtai_fifoout.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/rtai_led.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/rtai_meter.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/rtai_scope.Po@am__quote@

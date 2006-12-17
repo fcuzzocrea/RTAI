@@ -1,3 +1,12 @@
+2006-12-18  Paolo Mantegazza <mantegazza@aero.polimi.it>
+
+	* base/include/rtai_tasklets.h, base/include/rtai_wd.h,
+	  base/include/rtai_signal.h,
+	  base/tasklets/tasklets.c, base/tasklets/signal.c,
+	  base/wd/wd.c: all changed to allow using Linux with REGPARM enabled.
+	* base/include/rtai_schedcore and base/sched/sched.c: try to avoid 
+	  useless reschedules when changing the priority of a ready task.
+
 2006-12-17  Roberto Bucher <roberto.bucher@supsi.ch>
 
 	* /rtai-lab/scilab/devices/olddevices.c: extract the COMEDI functions.
@@ -29,13 +38,13 @@
 
 2006-12-13  Paolo Mantegazza <mantegazza@aero.polimi.it>
 
-	* base/sched/sched.c: simplified schedule tail, it can be called just
-	  within Linux so let's avoiding a useless test.
+	* base/sched/sched.c: simplified Linux schedule tail, it can be called 
+	  just within Linux so let's avoiding a useless test.
 
 2006-12-12  Roberto Bucher <roberto.bucher@supsi.ch>
 
 	* /addons/comedi/kcomedi-module.c: Modified the file for REGPARM.
-	* /addons/comedi/rtai_comedi.h       : Modified the file for REGPARM.
+	* /addons/comedi/rtai_comedi.h: Modified the file for REGPARM.
 
 2006-12-12  Roberto Bucher <roberto.bucher@supsi.ch>
 
@@ -104,13 +113,14 @@
 
         * base/ipc/bits/bits.c, base/ipc/netrpc/netrpc.c, base/ipc/sys/sys.c:
 	  base/include/rtai.h, base/include/rtai_wrappers.h: avoid inclusion 
-	  of linux/config.h, dismissed in 2.6.19, checked down to 2.4.33.
+	  of linux/config.h, dismissed in 2.6.19, checked it gives no problem
+	  down to 2.4.33.
 
 	* base/include/rtai_sem.h: fix a name conflict introduced by 
 	  Linux 2.6.19 (rt_mutex_init).
 
-	* base/include/rtai_hal_names.h: comply to name changes in hal patches, 
-	  from 2.6.19.
+	* base/include/rtai_hal_names.h: comply to name changes in hal patches
+	  (from 2.6.19).
 
         * base/ipc/fifos/fifos.c, base/ipc/shm/shm.c: avoid inclusion of 
 	  linux/devfs_fs_kernel.h and linux/config.h, dismissed in 2.6.19, 
@@ -160,7 +170,7 @@
 
 2006-11-22  Emanuele Monari <emonari@system-group.it>
 
-        * /base/ipc/msg/msg.c: fixes incongrences in documentation.
+	* /base/ipc/msg/msg.c: fixes incongruences in documentation.
 	
 2006-11-20  Paul Corner <paul_c@tuxcnc.org>
 
@@ -172,17 +182,9 @@
         * /base/ipc/netrpc.c: do label current (current->comm) if the hard 
 	  stub is an RTAI own kernel task.
 
-2006-11-09  Paolo Mantegazza <mantegazza@aero.polimi.it>
-
-        * /base/include/asm-i386/rtai_lxrt.h: let _lxrt_context_switch return
-           the task pointer returned by context_switch.
-        * /base/sched/sched.c: use the value returned by lxrt_context_switch,
-          a simple redefinition of _lxrt_context_switch now, in rt_schedule
-          only; place a barrier() after all calls of lxrt_context_switch.
-
 2006-11-09  Paulo Stein <stein@cepel.br>
 
-        * /base/include/rtai_posix.h: for kerne space: fixed an improper
+        * /base/include/rtai_posix.h: for kernel space: fixed an improper
           use of "pshared" in sem_init and redefined a lost MAX_PRIO macro
           again.
 
@@ -224,7 +226,7 @@
 
 2006-11-04  Paolo Mantegazza <mantegazza@aero.polimi.it>
 
-	* /base/include/rtai_hal_names.h: check task extensions (throug macro
+	* /base/include/rtai_hal_names.h: check task extensions (through macro
 	   TSKEXT0) to avoid memory leaks in case of hal patches changing of 
 	   what set in Linux task struct.
 
@@ -263,8 +265,9 @@
 
 2006-10-05  Paolo Mantegazza <mantegazza@aero.polimi.it>
 
-	* /base/sched/sched.c: do not return hard immediatly if a signal is 
-	  pending after a Linux syscall made in hard mode.
+	* /base/sched/sched.c: do not return hard immediately if a signal is 
+	  pending after a Linux syscall made in hard mode, use the final part
+	  of Linux return processing by returning -1.
 
 2006-10-04  Roberto Bucher <roberto.bucher@supsi.ch>
 

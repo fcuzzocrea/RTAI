@@ -2850,10 +2850,6 @@ static int __rtai_lxrt_init(void)
 {
 	int cpuid, retval;
 	
-#ifdef CONFIG_REGPARM
-	printk(KERN_INFO "RTAI[sched]: Linux kernel REGPARM configuration enabled, RTAI will not work in user space, disable it.\n");
-//	return -EINVAL;
-#endif
 	sched_mem_init();
 	rt_registry_alloc();
 

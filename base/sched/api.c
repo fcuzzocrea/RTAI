@@ -184,7 +184,7 @@ RTAI_SYSCALL_MODE int rt_change_prio(RT_TASK *task, int priority)
 		do {
 			task->priority = priority;
 			if (task->state == RT_SCHED_READY) {
-				if (task != rt_smp_linux_task[task->runnable_on_cpus].rnext) {
+				if ((task->rprev)->priority > task->priority || (task->rnext)->priority < task->priority) {
 					(task->rprev)->rnext = task->rnext;
 					(task->rnext)->rprev = task->rprev;
 					enq_ready_task(task);

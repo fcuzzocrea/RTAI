@@ -556,7 +556,7 @@ static inline unsigned long pass_prio(RT_TASK *to, RT_TASK *from)
         while (to && to->priority > from->priority) {
                 to->priority = from->priority;
 		if (to->state == RT_SCHED_READY) {
-			if (to != rt_smp_linux_task[to->runnable_on_cpus].rnext) {
+			if ((to->rprev)->priority > to->priority || (to->rnext)->priority < to->priority) {
 				(to->rprev)->rnext = to->rnext;
 				(to->rnext)->rprev = to->rprev;
 				enq_ready_task(to);

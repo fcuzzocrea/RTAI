@@ -101,8 +101,8 @@ static struct { char name[MAX_NAME_SIZE]; int nrow, ncol; } rtaiALogData[MAX_LOG
 static struct { char name[MAX_NAME_SIZE]; int nleds; } rtaiLed[MAX_LEDS];
 static struct { char name[MAX_NAME_SIZE]; int nmeters; } rtaiMeter[MAX_METERS];
 
-#ifdef TASKPERIOD
-static struct { double init; double end; } taskP ={0.0,0.0};
+#ifdef TASKDURATION
+RTIME RTTSKinit=0, RTTSKper;
 #endif
 
 #define SS_DOUBLE  0
@@ -274,11 +274,6 @@ static void *rt_BaseRate(void *args)
   iopl(3);
   rt_task_use_fpu(rt_BaseRateTask, 1);
 
-#ifdef TASKPERIOD
-  rtf_create(TASKPERIOD,2000);
-  rtf_reset(TASKPERIOD);
-#endif
-
   NAME(MODEL,_init_blk)();
   grow_and_lock_stack(stackinc);
   if (UseHRT) {
@@ -290,17 +285,16 @@ static void *rt_BaseRate(void *args)
   t0 = rt_get_cpu_time_ns();
   rt_task_make_periodic(rt_BaseRateTask, rt_get_time() + rt_BaseRateTick, rt_BaseRateTick);
   while (!endBaseRate) {
-#ifdef TASKPERIOD
-    taskP.end=(rt_get_cpu_time_ns() - t0)*1.0E-9;
-    rtf_put(TASKPERIOD,&taskP, sizeof(taskP));
+#ifdef TASKDURATION
+    RTTSKper=rt_get_cpu_time_ns()-RTTSKinit;
 #endif
     WaitTimingEvent(TimingEventArg);
 
     if (endBaseRate) break;
 
     TIME = (rt_get_cpu_time_ns() - t0)*1.0E-9;
-#ifdef TASKPERIOD
-    taskP.init=TIME;
+#ifdef TASKDURATION
+    RTTSKinit=rt_get_cpu_time_ns();
 #endif
 
     NAME(MODEL,_rt_exec)(NAME(block_,MODEL),z, &TIME);
@@ -311,10 +305,6 @@ static void *rt_BaseRate(void *args)
   }
   NAME(MODEL,_end)(NAME(block_,MODEL),z, &TIME);
   rt_task_delete(rt_BaseRateTask);
-
-#ifdef TASKPERIOD
-    rtf_destroy(TASKPERIOD);
-#endif
 
   return 0;
 }

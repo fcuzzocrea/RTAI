@@ -51,8 +51,9 @@ function [ok,Makename]=buildnewblock()
       archname=pathconvert(archname,%f,%t)
     end
 
-    Makename=gen_make(rdnom,files,archname)
+    Makename=gen_make(rdnom,files,archname)     
     //unlink if necessary
+    
     [a,b]=c_link(rdnom); while a ; ulink(b);[a,b]=c_link(rdnom);end
     ierr=execstr('libn=ilib_compile(''lib''+rdnom,Makename)','errcatch')
     if ierr<>0 then 
@@ -1916,9 +1917,7 @@ zcptr=cpr.sim.zcptr;
     dirinfo=fileinfo(rpat)
     if dirinfo==[] then
       [pathrp,fnamerp,extensionrp]=fileparts(rpat)
-
-      cmd='mkdir '+rpat
-      ok=0==execstr('unix_s(cmd)','errcatch')
+      ok=mkdir(pathrp,fnamerp+extensionrp)
       if ~ok then 
 	x_message('Directory '+rpat+' cannot be created');
       end
@@ -1930,15 +1929,34 @@ zcptr=cpr.sim.zcptr;
       ok=%f;x_message('sorry C file name not defined');
     end
 
-    target_t=mgetl(SCI+'/macros/RTAI/RT_templates/'+target+'.gen');
-    makfil = target_t(1);
-    cmdfil = target_t(2);
+    if exists('TARGET_DIR') then
+      [fd,ierr]=mopen(TARGET_DIR+'/'+target+'.gen','r');
+      if ierr==0 then
+	 TARGETDIR=TARGET_DIR;
+         mclose(fd);
+      else
+        TARGETDIR=SCI+'/macros/RTAI/RT_templates';
+      end
+    end
 
-    [fd,ierr]=mopen(SCI+'//macros/RTAI/RT_templates/'+makfil,'r');
+    [fd,ierr]=mopen(TARGETDIR+'/'+target+'.gen','r');
     if ierr==0 then
       mclose(fd);
     else
-      ok=%f;x_message('Target not valid '+makfil);
+      ok=%f;x_message('Target not valid '+target+'.gen');
+    end
+    
+    if ok then
+      target_t=mgetl(TARGETDIR+'/'+target+'.gen');
+      makfil = target_t(1);
+      cmdfil = target_t(2);
+
+      [fd,ierr]=mopen(TARGETDIR+'/'+makfil,'r');
+      if ierr==0 then
+        mclose(fd);
+      else
+        ok=%f;x_message('Makefile not valid '+makfil);
+      end
     end
 
     if x ~= [] then
@@ -2037,7 +2055,7 @@ zcptr=cpr.sim.zcptr;
   // Scilab and C files generation
   //***********************************
   
-  cmdseq = mgetl(SCI+'/macros/RTAI/RT_templates/'+cmdfil);
+  cmdseq = mgetl(TARGETDIR+'/'+cmdfil);
   n_cmd=size(cmdseq,1);
   for i=1:n_cmd
     execstr(cmdseq(i));
@@ -2325,12 +2343,27 @@ endfunction
 function Makename=gen_make(name,files,libs)
   //   "OBJSSTAN="+strcat(strsubst(files,'_void_io','_standalone')+'.o',' ...
   //		')+' '+rdnom+'_act_sens_events.o'
+  
   Makename=rpat+'/Makefile';
-  T=mgetl(SCI+'/macros/RTAI/RT_templates/'+makfil);
+
+  if (exists('TARGET') & TARGET== 'WINDOWS') then
+     Makename=Makename+'.mak'
+  end
+
+  T=mgetl(TARGETDIR+'/'+makfil);
   T=strsubst(T,'$$MODEL$$',name);
-  T=strsubst(T,'$$OBJ$$',strcat(files+'.o',' '));
-  T=strsubst(T,'$$SCILAB_DIR$$',SCI);
+  if (exists('TARGET') & TARGET== 'WINDOWS') then
+    T=strsubst(T,'$$OBJ$$',strcat(files+'.obj',' '));
+    T=strsubst(T,'$$SCILAB_DIR$$',WSCI);
+  else 
+    T=strsubst(T,'$$OBJ$$',strcat(files+'.o',' '));
+    T=strsubst(T,'$$SCILAB_DIR$$',SCI);
+  end
   mputl(T,Makename)
+  if (exists('TARGET') & TARGET== 'WINDOWS') then
+    Makename=strsubst(Makename,'.mak','');
+  end
+ 
 endfunction
 
 //==========================================================================
@@ -3627,12 +3660,13 @@ function Code=make_static_standalone()
     
   strRCode = 'char * strRPAR1[' + string(nbrpa) + '] = {' + ..
              part(strRCode,[1:length(strRCode)-1]) + '};';
-  RCode($+1) = strRCode;
     
   if nbrpa <> 0 then
+    RCode($+1) = strRCode;
     lenRCode = 'int lenRPAR1[' + string(nbrpa) + '] = {' + ..
                part(lenRCode,[1:length(lenRCode)-1]) + '};';
   else
+     RCode($+1) = 'char * strRPAR1;'
      lenRCode = 'int lenRPAR1[1] = {0};'
   end
   RCode($+1) = lenRCode;
@@ -3691,12 +3725,13 @@ function Code=make_static_standalone()
 
   strICode = 'char * strIPAR1[' + string(nbipa) + '] = {' + ..
              part(strICode,[1:length(strICode)-1]) + '};';
-  ICode($+1) = strICode;
 
   if nbipa <> 0 then
+     ICode($+1) = strICode;
      lenICode = 'int lenIPAR1[' + string(nbipa) + '] = {' + ..
                 part(lenICode,[1:length(lenICode)-1]) + '};';
   else
+     ICode($+1) = 'char * strIPAR1;'
      lenICode = 'int lenIPAR1[1] = {0};'
   end
   ICode($+1) = lenICode;
@@ -3733,11 +3768,14 @@ function ok = compile_standalone()
 // 22.01.2004
 //Author : Roberto Bucher (roberto.bucher@die.supsi.ch)
   xinfo('Compiling standalone');
-  wd = unix_g('pwd');
+  wd = pwd();
   chdir(rpat);
 
-  unix_w('make')
-  
+  if (exists('TARGET') & TARGET== 'WINDOWS') then
+     unix_w('nmake -f Makefile.mak');
+  else
+    unix_w('make')
+  end
   chdir(wd);
   ok = %t;
 endfunction	

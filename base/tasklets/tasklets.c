@@ -230,7 +230,7 @@ static inline void rem_timer(struct rt_tasklet_struct *timer)
  *
  */
 
-int rt_insert_tasklet(struct rt_tasklet_struct *tasklet, int priority, void (*handler)(unsigned long), unsigned long data, unsigned long id, int pid)
+RTAI_SYSCALL_MODE int rt_insert_tasklet(struct rt_tasklet_struct *tasklet, int priority, void (*handler)(unsigned long), unsigned long data, unsigned long id, int pid)
 {
 	unsigned long flags;
 
@@ -269,7 +269,7 @@ int rt_insert_tasklet(struct rt_tasklet_struct *tasklet, int priority, void (*ha
  *
  */
 
-void rt_remove_tasklet(struct rt_tasklet_struct *tasklet)
+RTAI_SYSCALL_MODE void rt_remove_tasklet(struct rt_tasklet_struct *tasklet)
 {
 	if (tasklet->next != tasklet && tasklet->prev != tasklet) {
 		unsigned long flags;
@@ -328,7 +328,7 @@ struct rt_tasklet_struct *rt_find_tasklet_by_id(unsigned long id)
  *
  */
 
-int rt_exec_tasklet(struct rt_tasklet_struct *tasklet)
+RTAI_SYSCALL_MODE int rt_exec_tasklet(struct rt_tasklet_struct *tasklet)
 {
 	if (tasklet && tasklet->next != tasklet && tasklet->prev != tasklet) {
 		if (!tasklet->task) {
@@ -341,7 +341,7 @@ int rt_exec_tasklet(struct rt_tasklet_struct *tasklet)
 	return -EINVAL;
 }
 
-void rt_set_tasklet_priority(struct rt_tasklet_struct *tasklet, int priority)
+RTAI_SYSCALL_MODE void rt_set_tasklet_priority(struct rt_tasklet_struct *tasklet, int priority)
 {
 	tasklet->priority = priority;
 	if (tasklet->task) {
@@ -349,7 +349,7 @@ void rt_set_tasklet_priority(struct rt_tasklet_struct *tasklet, int priority)
 	}
 }
 
-int rt_set_tasklet_handler(struct rt_tasklet_struct *tasklet, void (*handler)(unsigned long))
+RTAI_SYSCALL_MODE int rt_set_tasklet_handler(struct rt_tasklet_struct *tasklet, void (*handler)(unsigned long))
 {
 	if (!handler) {
 		return -EINVAL;
@@ -361,7 +361,7 @@ int rt_set_tasklet_handler(struct rt_tasklet_struct *tasklet, void (*handler)(un
 	return 0;
 }
 
-void rt_set_tasklet_data(struct rt_tasklet_struct *tasklet, unsigned long data)
+RTAI_SYSCALL_MODE void rt_set_tasklet_data(struct rt_tasklet_struct *tasklet, unsigned long data)
 {
 	tasklet->data = data;
 	if (tasklet->task) {
@@ -369,7 +369,7 @@ void rt_set_tasklet_data(struct rt_tasklet_struct *tasklet, unsigned long data)
 	}
 }
 
-RT_TASK *rt_tasklet_use_fpu(struct rt_tasklet_struct *tasklet, int use_fpu)
+RTAI_SYSCALL_MODE RT_TASK *rt_tasklet_use_fpu(struct rt_tasklet_struct *tasklet, int use_fpu)
 {
 	tasklet->uses_fpu = use_fpu ? 1 : 0;
 	return tasklet->task;
@@ -458,7 +458,7 @@ static inline void set_timer_firing_time(struct rt_tasklet_struct *timer, RTIME 
  *
  */
 
-int rt_insert_timer(struct rt_tasklet_struct *timer, int priority, RTIME firing_time, RTIME period, void (*handler)(unsigned long), unsigned long data, int pid)
+RTAI_SYSCALL_MODE int rt_insert_timer(struct rt_tasklet_struct *timer, int priority, RTIME firing_time, RTIME period, void (*handler)(unsigned long), unsigned long data, int pid)
 {
 	spinlock_t *lock;
 	unsigned long flags, cpuid;
@@ -512,7 +512,7 @@ int rt_insert_timer(struct rt_tasklet_struct *timer, int priority, RTIME firing_
  *
  */
 
-void rt_remove_timer(struct rt_tasklet_struct *timer)
+RTAI_SYSCALL_MODE void rt_remove_timer(struct rt_tasklet_struct *timer)
 {
 	if (timer->next != timer && timer->prev != timer) {
 		spinlock_t *lock;
@@ -540,7 +540,7 @@ void rt_remove_timer(struct rt_tasklet_struct *timer)
  *
  */
 
-void rt_set_timer_priority(struct rt_tasklet_struct *timer, int priority)
+RTAI_SYSCALL_MODE void rt_set_timer_priority(struct rt_tasklet_struct *timer, int priority)
 {
 	timer->priority = priority;
 	if (timer->task) {
@@ -569,7 +569,7 @@ void rt_set_timer_priority(struct rt_tasklet_struct *timer, int priority)
  *
  */
 
-void rt_set_timer_firing_time(struct rt_tasklet_struct *timer, RTIME firing_time)
+RTAI_SYSCALL_MODE void rt_set_timer_firing_time(struct rt_tasklet_struct *timer, RTIME firing_time)
 {
 	unsigned long flags;
 	RT_TASK *timer_manager;
@@ -609,7 +609,7 @@ void rt_set_timer_firing_time(struct rt_tasklet_struct *timer, RTIME firing_time
  *
  */
 
-void rt_set_timer_period(struct rt_tasklet_struct *timer, RTIME period)
+RTAI_SYSCALL_MODE void rt_set_timer_period(struct rt_tasklet_struct *timer, RTIME period)
 {
 	spinlock_t *lock;
 	unsigned long flags;
@@ -709,14 +709,14 @@ struct rt_tasklet_struct *rt_init_tasklet(void)
 	return tasklet;
 }
 
-void rt_register_task(struct rt_tasklet_struct *tasklet, struct rt_tasklet_struct *usptasklet, RT_TASK *task)
+RTAI_SYSCALL_MODE void rt_register_task(struct rt_tasklet_struct *tasklet, struct rt_tasklet_struct *usptasklet, RT_TASK *task)
 {
 	tasklet->task = task;
 	tasklet->usptasklet = usptasklet;
 	rt_copy_to_user(usptasklet, tasklet, sizeof(struct rt_tasklet_struct));
 }
 
-void rt_wait_tasklet_is_hard(struct rt_tasklet_struct *tasklet, int thread)
+RTAI_SYSCALL_MODE void rt_wait_tasklet_is_hard(struct rt_tasklet_struct *tasklet, int thread)
 {
 	tasklet->thread = thread;
 	while (!tasklet->task || !((tasklet->task)->state & RT_SCHED_SUSPENDED)) {
@@ -740,7 +740,7 @@ void rt_wait_tasklet_is_hard(struct rt_tasklet_struct *tasklet, int thread)
  *
  */
 
-int rt_delete_tasklet(struct rt_tasklet_struct *tasklet)
+RTAI_SYSCALL_MODE int rt_delete_tasklet(struct rt_tasklet_struct *tasklet)
 {
 	int thread;
 

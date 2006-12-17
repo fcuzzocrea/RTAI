@@ -1,3 +1,9 @@
+2006-12-17  Roberto Bucher <roberto.bucher@supsi.ch>
+
+	* /rtai-lab/scilab/devices/olddevices.c: extract the COMEDI functions.
+	* /rtai-lab/scilab/devices/old_comedi.c: Compatibility with old version for
+	comedi functions.
+
 2006-12-17  Paolo Mantegazza <mantegazza@aero.polimi.it>
 
 	* base/arch/i386/hal/hal.immed: added user space specific code for
@@ -28,16 +34,16 @@
 
 2006-12-12  Roberto Bucher <roberto.bucher@supsi.ch>
 
-	* /addons/comedi/kcomedi-module.c: Modified the file for REGPARM
-	* /addons/comedi/rtai_comedi.h       : Modified the file for REGPARM
+	* /addons/comedi/kcomedi-module.c: Modified the file for REGPARM.
+	* /addons/comedi/rtai_comedi.h       : Modified the file for REGPARM.
 
 2006-12-12  Roberto Bucher <roberto.bucher@supsi.ch>
 
-	* /rtai-lab/scilab/devices/rtai_fifoin.c: Added block for FIFO input
-	* /rtai-lab/scilab/macros/RTAI/rtai_fifoin.sci: Added block for FIFO input
-	* /rtai-lab/scilab/devices/rtai_fifoout.c: Added block for FIFO output
-	* /rtai-lab/scilab/macros/RTAI/rtai_fifoout.sci: Added block for FIFO output
-	* /rtai-lab/scilab/macros/RTAI/RTAI-Lib.cosfi: Modified Scicos Palette
+	* /rtai-lab/scilab/devices/rtai_fifoin.c: Added block for FIFO input.
+	* /rtai-lab/scilab/macros/RTAI/rtai_fifoin.sci: Added block for FIFO input.
+	* /rtai-lab/scilab/devices/rtai_fifoout.c: Added block for FIFO output.
+	* /rtai-lab/scilab/macros/RTAI/rtai_fifoout.sci: Added block for FIFO output.
+	* /rtai-lab/scilab/macros/RTAI/RTAI-Lib.cosfi: Modified Scicos Palette.
 
 2006-12-10  Paolo Mantegazza <mantegazza@aero.polimi.it>
 

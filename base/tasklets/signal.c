@@ -31,7 +31,7 @@ MODULE_LICENSE("GPL");
 #define RT_SIGNALS ((struct rt_signal_t *)task->rt_signals)
 struct rt_signal_t { unsigned long flags; RT_TASK *sigtask; };
 
-static int rt_request_signal_(RT_TASK *sigtask, RT_TASK *task, long signal)
+RTAI_SYSCALL_MODE static int rt_request_signal_(RT_TASK *sigtask, RT_TASK *task, long signal)
 {
 	int retval;
 	if (signal >= 0 && sigtask && task) {
@@ -87,7 +87,7 @@ static inline void rt_exec_signal(RT_TASK *sigtask, RT_TASK *task)
  *
  */
 
-int rt_release_signal(long signal, RT_TASK *task)
+RTAI_SYSCALL_MODE int rt_release_signal(long signal, RT_TASK *task)
 {
 	if (task == NULL) {
 		task = RT_CURRENT;
@@ -115,7 +115,7 @@ EXPORT_SYMBOL(rt_release_signal);
  *
  */
 
-void rt_trigger_signal(long signal, RT_TASK *task)
+RTAI_SYSCALL_MODE void rt_trigger_signal(long signal, RT_TASK *task)
 {
 	if (task == NULL) {
 		task = RT_CURRENT;
@@ -146,7 +146,7 @@ EXPORT_SYMBOL(rt_trigger_signal);
  *
  */
 
-void rt_enable_signal(long signal, RT_TASK *task)
+RTAI_SYSCALL_MODE void rt_enable_signal(long signal, RT_TASK *task)
 {
 	if (task == NULL) {
 		task = RT_CURRENT;
@@ -169,7 +169,7 @@ EXPORT_SYMBOL(rt_enable_signal);
  *
  */
 
-void rt_disable_signal(long signal, RT_TASK *task)
+RTAI_SYSCALL_MODE void rt_disable_signal(long signal, RT_TASK *task)
 {
 	if (task == NULL) {
 		task = RT_CURRENT;
@@ -180,7 +180,7 @@ void rt_disable_signal(long signal, RT_TASK *task)
 }
 EXPORT_SYMBOL(rt_disable_signal);
 
-static int rt_signal_helper(RT_TASK *task)
+static RTAI_SYSCALL_MODE int rt_signal_helper(RT_TASK *task)
 {
 	if (task) {
 		rt_task_suspend(task);
@@ -189,7 +189,7 @@ static int rt_signal_helper(RT_TASK *task)
 	return (RT_CURRENT)->runnable_on_cpus;
 }
 
-int rt_wait_signal(RT_TASK *sigtask, RT_TASK *task)
+RTAI_SYSCALL_MODE int rt_wait_signal(RT_TASK *sigtask, RT_TASK *task)
 {
 	unsigned long flags;
 

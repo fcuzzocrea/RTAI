@@ -32,7 +32,8 @@ libsciblk_a_SOURCES += \
 	rtai_comedi_datain.c \
 	rtai_comedi_dataout.c \
 	rtai_comedi_dioin.c \
-	rtai_comedi_dioout.c
+	rtai_comedi_dioout.c \
+	old_comedi.c
 endif
 
 libsciblk_a_AR = $(CROSS_COMPILE)ar cru

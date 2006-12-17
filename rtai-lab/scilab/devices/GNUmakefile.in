@@ -41,7 +41,8 @@ host_triplet = @host@
 @CONFIG_RTAI_COMEDI_LXRT_TRUE@	rtai_comedi_datain.c \
 @CONFIG_RTAI_COMEDI_LXRT_TRUE@	rtai_comedi_dataout.c \
 @CONFIG_RTAI_COMEDI_LXRT_TRUE@	rtai_comedi_dioin.c \
-@CONFIG_RTAI_COMEDI_LXRT_TRUE@	rtai_comedi_dioout.c
+@CONFIG_RTAI_COMEDI_LXRT_TRUE@	rtai_comedi_dioout.c \
+@CONFIG_RTAI_COMEDI_LXRT_TRUE@	old_comedi.c
 
 subdir = rtai-lab/scilab/devices
 DIST_COMMON = $(include_HEADERS) $(srcdir)/GNUmakefile.am \
@@ -73,12 +74,13 @@ am__libsciblk_a_SOURCES_DIST = rtai_scope.c rtai_led.c rtai_meter.c \
 	mbx_ovrwr_send.c mbx_send_if.c getstr.c rtmain.h devices.h \
 	machine.h scicos_block.h rtai_sem_signal.c rtai_sem_wait.c \
 	olddevices.c rtai_comedi_datain.c rtai_comedi_dataout.c \
-	rtai_comedi_dioin.c rtai_comedi_dioout.c
+	rtai_comedi_dioin.c rtai_comedi_dioout.c old_comedi.c
 @CONFIG_RTAI_COMEDI_LXRT_TRUE@am__objects_1 =  \
 @CONFIG_RTAI_COMEDI_LXRT_TRUE@	rtai_comedi_datain.$(OBJEXT) \
 @CONFIG_RTAI_COMEDI_LXRT_TRUE@	rtai_comedi_dataout.$(OBJEXT) \
 @CONFIG_RTAI_COMEDI_LXRT_TRUE@	rtai_comedi_dioin.$(OBJEXT) \
-@CONFIG_RTAI_COMEDI_LXRT_TRUE@	rtai_comedi_dioout.$(OBJEXT)
+@CONFIG_RTAI_COMEDI_LXRT_TRUE@	rtai_comedi_dioout.$(OBJEXT) \
+@CONFIG_RTAI_COMEDI_LXRT_TRUE@	old_comedi.$(OBJEXT)
 am_libsciblk_a_OBJECTS = rtai_scope.$(OBJEXT) rtai_led.$(OBJEXT) \
 	rtai_meter.$(OBJEXT) rtai_fifoin.$(OBJEXT) \
 	rtai_fifoout.$(OBJEXT) rtai_sinus.$(OBJEXT) \
@@ -490,6 +492,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/mbx_receive.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/mbx_receive_if.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/mbx_send_if.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/old_comedi.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/olddevices.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/rtai_comedi_datain.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/rtai_comedi_dataout.Po@am__quote@

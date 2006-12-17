@@ -1,3 +1,42 @@
+2006-12-17  Roberto Bucher <roberto.bucher@supsi.ch>
+
+	* /rtai-lab/scilab/devices/olddevices.c: extract the COMEDI functions.
+	* /rtai-lab/scilab/devices/old_comedi.c: Compatibility with old version for
+	comedi functions.
+
+2006-12-17  Roberto Bucher <roberto.bucher@supsi.ch>
+
+	* /rtai-lab/scilab/devices/rtai_fifoin.c: Added block for FIFO input.
+	* /rtai-lab/scilab/macros/RTAI/rtai_fifoin.sci: Added block for FIFO input.
+	* /rtai-lab/scilab/devices/rtai_fifoout.c: Added block for FIFO output.
+	* /rtai-lab/scilab/macros/RTAI/rtai_fifoout.sci: Added block for FIFO output.
+	* /rtai-lab/scilab/macros/RTAI/RTAI-Lib.cosfi: Modified Scicos Palette.
+
+2006-12-17  Roberto Bucher <roberto.bucher@supsi.ch>
+
+	* /rtai-lab/matlab/rtmain.c: Changed the macro TASKPERIOD
+	to TASKDURATION. This feature can be activated by adding
+	_DTASKDURATION in the generated Makefile. A variable called
+	RTTSKper can read in a S-Function and sent to the output.
+
+2006-12-17  Roberto Bucher <roberto.bucher@supsi.ch>
+
+	* /rtai-lab/scilab/rtmain.c: Changed the macro TASKPERIOD
+	to TASKDURATION. This feature can be activated by adding
+	_DTASKDURATION in the generated Makefile. A variable called
+	RTTSKper can read in a Scicos block and sent to the output.
+
+2006-12-17  Roberto Bucher <roberto.bucher@supsi.ch>
+
+	* /rtai-lab/scilab/macros/RTAI/RT_templates: renamed
+	stdalone.cmd to standalone.cmd.
+
+2006-11-17  Roberto Bucher <roberto.bucher@supsi.ch>
+
+	* /rtai-lab/scilab/macros/RTAI/RTAICodeGen_.sci: Added the 
+	possibility 	have the target files in a local directory (to be 
+	specified as TARGET_DIR 	in the .scilab file.
+
 2006-11-30  Paolo Mantegazza <mantegazza@aero.polimi.it>
 
 	* /base/include/asm-i386/rtai_hal.h and

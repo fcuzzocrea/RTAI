@@ -39,7 +39,7 @@
 #define _RTAI_ASM_I386_HAL_H
 
 #ifdef CONFIG_REGPARM
-#define RTAI_SYSCALL_MODE asmlinkage __attribute__((regparm(0)))
+#define RTAI_SYSCALL_MODE __attribute__((regparm(0)))
 #else
 #define RTAI_SYSCALL_MODE
 #endif

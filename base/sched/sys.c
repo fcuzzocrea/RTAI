@@ -74,32 +74,32 @@ void *rt_get_lxrt_fun_entry(int index);
 
 static inline void lxrt_typed_sem_init(SEM *sem, int count, int type)
 {
-	((RTAI_SYSCALL_MODE int (*)(SEM *, int, int))rt_get_lxrt_fun_entry(TYPED_SEM_INIT))(sem, count, type);
+	((RTAI_SYSCALL_MODE int (*)(SEM *, ...))rt_get_lxrt_fun_entry(TYPED_SEM_INIT))(sem, count, type);
 }
 
 static inline int lxrt_typed_mbx_init(MBX *mbx, int bufsize, int type)
 {
-	return ((RTAI_SYSCALL_MODE int (*)(MBX *, int, int))rt_get_lxrt_fun_entry(TYPED_MBX_INIT))(mbx, bufsize, type);
+	return ((RTAI_SYSCALL_MODE int (*)(MBX *, ...))rt_get_lxrt_fun_entry(TYPED_MBX_INIT))(mbx, bufsize, type);
 }
 
 static inline int lxrt_typed_rwl_init(RWL *rwl, int type)
 {
-	return ((RTAI_SYSCALL_MODE int (*)(RWL *, int))rt_get_lxrt_fun_entry(RWL_INIT))(rwl, type);
+	return ((RTAI_SYSCALL_MODE int (*)(RWL *, ...))rt_get_lxrt_fun_entry(RWL_INIT))(rwl, type);
 }
 
 static inline int lxrt_spl_init(SPL *spl)
 {
-	return ((RTAI_SYSCALL_MODE int (*)(SPL *))rt_get_lxrt_fun_entry(SPL_INIT))(spl);
+	return ((RTAI_SYSCALL_MODE int (*)(SPL *, ...))rt_get_lxrt_fun_entry(SPL_INIT))(spl);
 }
 
 static inline int lxrt_Proxy_detach(pid_t pid)
 {
-	return ((RTAI_SYSCALL_MODE int (*)(int))rt_get_lxrt_fun_entry(PROXY_DETACH))(pid);
+	return ((RTAI_SYSCALL_MODE int (*)(int, ...))rt_get_lxrt_fun_entry(PROXY_DETACH))(pid);
 }
 
 static inline int GENERIC_DELETE(int index, void *object)
 {
-	return ((RTAI_SYSCALL_MODE int (*)(void *))rt_get_lxrt_fun_entry(index))(object);
+	return ((RTAI_SYSCALL_MODE int (*)(void *, ...))rt_get_lxrt_fun_entry(index))(object);
 }
 			 
 #define lxrt_sem_delete(sem)        GENERIC_DELETE(SEM_DELETE, sem)

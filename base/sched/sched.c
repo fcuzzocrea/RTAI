@@ -1470,7 +1470,7 @@ void stop_rt_timer(void)
 #define TIMER_TYPE 1
 #endif
 
-RTAI_SYSCALL_MODE RTIME RTIME start_rt_timer(int period)
+RTAI_SYSCALL_MODE RTIME start_rt_timer(int period)
 {
 #define cpuid 0
 #undef rt_times

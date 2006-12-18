@@ -945,7 +945,7 @@ config RTAI_DRIVERS_SERIAL
 	The module will be called rtai_serial.o.
 
 config RTAI_DRIVERS_16550A
-	bool "RTDM base 16550A driver support"
+	bool "RTDM based 16550A driver support"
 	depends on RTAI_RTDM
 	default n
 	help

@@ -89,7 +89,7 @@
  * 5. Keeps a record of bad tasks (apart from those that have been killed) that 
  *    can be examined via a /proc interface. (/proc/rtai/watchdog)
  * 
- * ID: @(#)$Id: wd.c,v 1.7 2006/06/21 16:33:39 mante Exp $
+ * ID: @(#)$Id: wd.c,v 1.8 2006/12/18 10:43:28 ando Exp $
  *
  *******************************************************************************/
 
@@ -137,7 +137,7 @@ static BAD_RT_TASK bad_task_pool[BAD_TASK_MAX];
 #endif
 
 // The current version number
-static char version[] = "$Revision: 1.7 $";
+static char version[] = "$Revision: 1.8 $";
 static char ver[10];
 
 // User friendly policy names
@@ -182,7 +182,7 @@ static int Limit = 100;			// Maximum number of offences
 RTAI_MODULE_PARM(Limit, int);		// (-ve means disabled ie. no limit)
 
 // Parameter configuring API
-int rt_wdset_grace(int new)		// How much a task can be overdue
+RTAI_SYSCALL_MODE int rt_wdset_grace(int new) // How much a task can be overdue
 {
     int old = Grace;
 
@@ -192,7 +192,7 @@ int rt_wdset_grace(int new)		// How much a task can be overdue
     return old;
 }
 
-int rt_wdset_gracediv(int new)		// Divisor for Gracevalues < 1
+RTAI_SYSCALL_MODE int rt_wdset_gracediv(int new) // Divisor for Gracevalues < 1
 {
     int old = GraceDiv;
 
@@ -202,7 +202,7 @@ int rt_wdset_gracediv(int new)		// Divisor for Gracevalues < 1
     return old;
 }
 
-int rt_wdset_safety(int new)		// Safety net to suspend infinite loops
+RTAI_SYSCALL_MODE int rt_wdset_safety(int new) // Safety net to suspend infinite loops
 {
     int old = Safety;
 
@@ -211,7 +211,7 @@ int rt_wdset_safety(int new)		// Safety net to suspend infinite loops
     return old;
 }
 
-wd_policy rt_wdset_policy(wd_policy new) // How to punish misbehavers
+RTAI_SYSCALL_MODE wd_policy rt_wdset_policy(wd_policy new) // How to punish misbehavers
 {
     wd_policy old = Policy;
 
@@ -222,7 +222,7 @@ wd_policy rt_wdset_policy(wd_policy new) // How to punish misbehavers
     return old;
 }
 
-int rt_wdset_slip(int new)		// %ge of period to slip a task
+RTAI_SYSCALL_MODE int rt_wdset_slip(int new)  // %ge of period to slip a task
 {
     int old = Slip;
 
@@ -231,7 +231,7 @@ int rt_wdset_slip(int new)		// %ge of period to slip a task
     return old;
 }
 
-int rt_wdset_stretch(int new)		// %ge to increase period by
+RTAI_SYSCALL_MODE int rt_wdset_stretch(int new)	 // %ge to increase period by
 {
     int old = Stretch;
 
@@ -240,7 +240,7 @@ int rt_wdset_stretch(int new)		// %ge to increase period by
     return old;
 }
 
-int rt_wdset_limit(int new)		// Maximum number of offences
+RTAI_SYSCALL_MODE int rt_wdset_limit(int new)  // Maximum number of offences
 {
     int old = Limit;
 

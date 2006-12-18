@@ -45,13 +45,13 @@ struct sigsuprt_t { RT_TASK *sigtask; RT_TASK *task; long signal; void (*sighdl)
 
 int rt_request_signal(long signal, void (*sighdl)(long, RT_TASK *));
 
-int rt_release_signal(long signal, RT_TASK *task);
+RTAI_SYSCALL_MODE int rt_release_signal(long signal, RT_TASK *task);
 
-void rt_enable_signal(long signal, RT_TASK *task);
+RTAI_SYSCALL_MODE void rt_enable_signal(long signal, RT_TASK *task);
 
-void rt_disable_signal(long signal, RT_TASK *task);
+RTAI_SYSCALL_MODE void rt_disable_signal(long signal, RT_TASK *task);
 
-void rt_trigger_signal(long signal, RT_TASK *task);
+RTAI_SYSCALL_MODE void rt_trigger_signal(long signal, RT_TASK *task);
 
 #else /* !__KERNEL__ */
 
@@ -59,7 +59,7 @@ void rt_trigger_signal(long signal, RT_TASK *task);
 
 #include <rtai_lxrt.h>
 
-#define SIGNAL_TASK_STACK_SIZE  8192
+#define SIGNAL_TASK_STACK_SIZE  64*1024 //8192
 
 #ifndef __SIGNAL_SUPPORT_FUN__
 #define __SIGNAL_SUPPORT_FUN__

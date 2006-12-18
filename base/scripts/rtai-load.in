@@ -128,7 +128,8 @@ children_pids=""
 cleanup () {
 
     if test \! "x$children_pids" = x; then
-       $sudo kill -SIGINT $children_pids >& /dev/null
+#      $sudo kill -SIGINT $children_pids >& /dev/null see comment below
+       $sudo kill -INT $children_pids >& /dev/null
        children_pids=""
        sleep 1
     fi
@@ -141,7 +142,8 @@ cleanup () {
     fi
 }
 
-trap cleanup SIGINT
+#trap cleanup SIGINT  this is an old reminder, it seems it must be like below
+trap cleanup INT
 
 while test -n "$target_deps" ; do
   mod=`echo $target_deps|cut -d+ -f1`

@@ -316,6 +316,7 @@
 #define RETURN_LINUX_SYSCALL           213
 #define REQUEST_RTC                    214
 #define RELEASE_RTC                    215
+#define RT_GETTID                      216
 
 #define MAX_LXRT_FUN                   220
 
@@ -1213,6 +1214,12 @@ RTAI_PROTO(RT_TASK *,rt_agent,(void))
 }
 
 #define rt_buddy() rt_agent()
+
+RTAI_PROTO(int, rt_gettid, (void))
+{
+	struct { unsigned long dummy; } arg;
+	return rtai_lxrt(BIDX, SIZARG, RT_GETTID, &arg).i[LOW];
+}
 
 /**
  * Give a Linux process, or pthread, hard real time execution capabilities 

@@ -10,6 +10,9 @@
 #undef CONFIG_RTAI_ADEOS
 
 /* Kconfig */
+#undef CONFIG_RTAI_ALIGN_LINUX_PRIORITY
+
+/* Kconfig */
 #undef CONFIG_RTAI_ALLOW_RR
 
 /* Kconfig */
@@ -32,6 +35,12 @@
 
 /* Kconfig */
 #undef CONFIG_RTAI_CPUS
+
+/* Kconfig */
+#undef CONFIG_RTAI_DEBUG_RTDM
+
+/* Kconfig */
+#undef CONFIG_RTAI_DIAG_TSC_SYNC
 
 /* Kconfig */
 #undef CONFIG_RTAI_DONT_DISPATCH_CORE_IRQS
@@ -130,6 +139,9 @@
 #undef CONFIG_RTAI_MALLOC_VMALLOC
 
 /* Kconfig */
+#undef CONFIG_RTAI_MASTER_TSC_CPU
+
+/* Kconfig */
 #undef CONFIG_RTAI_MATH
 
 /* Kconfig */
@@ -184,7 +196,13 @@
 #undef CONFIG_RTAI_RTDM
 
 /* Kconfig */
+#undef CONFIG_RTAI_RTDM_EDGE_SHIRQ
+
+/* Kconfig */
 #undef CONFIG_RTAI_RTDM_FD_MAX
+
+/* Kconfig */
+#undef CONFIG_RTAI_RTDM_LEVEL_SHIRQ
 
 /* Kconfig */
 #undef CONFIG_RTAI_SCHED_8254_LATENCY
@@ -227,6 +245,9 @@
 
 /* Kconfig */
 #undef CONFIG_RTAI_TRACE
+
+/* Kconfig */
+#undef CONFIG_RTAI_TUNE_TSC_SYNC
 
 /* Kconfig */
 #undef CONFIG_RTAI_USE_NEWERR
@@ -306,5 +327,3 @@
 #undef X_DISPLAY_MISSING
 
 #endif /* __IN_RTAI__ */
-
-#include <linux/config.h>

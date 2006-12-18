@@ -83,67 +83,67 @@ int __rtai_msg_queue_init(void);
 
 void __rtai_msg_queue_exit(void);
 
-int rt_msgq_init(RT_MSGQ *msgq, int nmsg, int msg_size);
+RTAI_SYSCALL_MODE int rt_msgq_init(RT_MSGQ *msgq, int nmsg, int msg_size);
 
-int rt_msgq_delete(RT_MSGQ *msgq);
+RTAI_SYSCALL_MODE int rt_msgq_delete(RT_MSGQ *msgq);
 
-RT_MSGQ *_rt_named_msgq_init(unsigned long msgq_name, int nmsg, int size);
+RTAI_SYSCALL_MODE RT_MSGQ *_rt_named_msgq_init(unsigned long msgq_name, int nmsg, int size);
 static inline RT_MSGQ *rt_named_msgq_init(const char *msgq_name, int nmsg, int size)
 {
 	return _rt_named_msgq_init(nam2num(msgq_name), nmsg, size);
 }
 
-int rt_named_msgq_delete(RT_MSGQ *msgq);
+RTAI_SYSCALL_MODE int rt_named_msgq_delete(RT_MSGQ *msgq);
 
-int _rt_msg_send(RT_MSGQ *msgq, void *msg, int msg_size, int msgpri, int space);
+RTAI_SYSCALL_MODE int _rt_msg_send(RT_MSGQ *msgq, void *msg, int msg_size, int msgpri, int space);
 static inline int rt_msg_send(RT_MSGQ *msgq, void *msg, int msg_size, int msgpri)
 {
 	return _rt_msg_send(msgq, msg, msg_size, msgpri, 1);
 }
 
-int _rt_msg_send_if(RT_MSGQ *msgq, void *msg, int msg_size, int msgpri, int space);
+RTAI_SYSCALL_MODE int _rt_msg_send_if(RT_MSGQ *msgq, void *msg, int msg_size, int msgpri, int space);
 static inline int rt_msg_send_if(RT_MSGQ *msgq, void *msg, int msg_size, int msgpri)
 {
 	return _rt_msg_send_if(msgq, msg, msg_size, msgpri, 1);
 }
 
-int _rt_msg_send_until(RT_MSGQ *msgq, void *msg, int msg_size, int msgpri, RTIME until, int space);
+RTAI_SYSCALL_MODE int _rt_msg_send_until(RT_MSGQ *msgq, void *msg, int msg_size, int msgpri, RTIME until, int space);
 static inline int rt_msg_send_until(RT_MSGQ *msgq, void *msg, int msg_size, int msgpri, RTIME until)
 {
 	return _rt_msg_send_until(msgq, msg, msg_size, msgpri, until, 1);
 }
 
-int _rt_msg_send_timed(RT_MSGQ *msgq, void *msg, int msg_size, int msgpri, RTIME delay, int space);
+RTAI_SYSCALL_MODE int _rt_msg_send_timed(RT_MSGQ *msgq, void *msg, int msg_size, int msgpri, RTIME delay, int space);
 static inline int rt_msg_send_timed(RT_MSGQ *msgq, void *msg, int msg_size, int msgpri, RTIME delay)
 {
 	return _rt_msg_send_timed(msgq, msg, msg_size, msgpri, delay, 1);
 }
 
-int _rt_msg_receive(RT_MSGQ *msgq, void *msg, int msg_size, int *msgpri, int space);
+RTAI_SYSCALL_MODE int _rt_msg_receive(RT_MSGQ *msgq, void *msg, int msg_size, int *msgpri, int space);
 static inline int rt_msg_receive(RT_MSGQ *msgq, void *msg, int msg_size, int *msgpri)
 {
 	return _rt_msg_receive(msgq, msg, msg_size, msgpri, 1);
 }
 
-int _rt_msg_receive_if(RT_MSGQ *msgq, void *msg, int msg_size, int *msgpri, int space);
+RTAI_SYSCALL_MODE int _rt_msg_receive_if(RT_MSGQ *msgq, void *msg, int msg_size, int *msgpri, int space);
 static inline int rt_msg_receive_if(RT_MSGQ *msgq, void *msg, int msg_size, int *msgpri)
 {
 	return _rt_msg_receive_if(msgq, msg, msg_size, msgpri, 1);
 }
 
-int _rt_msg_receive_until(RT_MSGQ *msgq, void *msg, int msg_size, int *msgpri, RTIME until, int space);
+RTAI_SYSCALL_MODE int _rt_msg_receive_until(RT_MSGQ *msgq, void *msg, int msg_size, int *msgpri, RTIME until, int space);
 static inline int rt_msg_receive_until(RT_MSGQ *msgq, void *msg, int msg_size, int *msgpri, RTIME until)
 {
 	return _rt_msg_receive_until(msgq, msg, msg_size, msgpri, until, 1);
 }
 
-int _rt_msg_receive_timed(RT_MSGQ *msgq, void *msg, int msg_size, int *msgpri, RTIME delay, int space);
+RTAI_SYSCALL_MODE int _rt_msg_receive_timed(RT_MSGQ *msgq, void *msg, int msg_size, int *msgpri, RTIME delay, int space);
 static inline int rt_msg_receive_timed(RT_MSGQ *msgq, void *msg, int msg_size, int *msgpri, RTIME delay)
 {
 	return _rt_msg_receive_timed(msgq, msg, msg_size, msgpri, delay, 1);
 }
 
-int _rt_msg_evdrp(RT_MSGQ *msgq, void *msg, int msg_size, int *msgpri, int space);
+RTAI_SYSCALL_MODE int _rt_msg_evdrp(RT_MSGQ *msgq, void *msg, int msg_size, int *msgpri, int space);
 static inline int rt_msg_evdrp(RT_MSGQ *msgq, void *msg, int msg_size, int *msgpri)
 {
 	return _rt_msg_evdrp(msgq, msg, msg_size, msgpri, 1);

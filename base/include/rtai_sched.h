@@ -49,51 +49,55 @@
 #define RT_SCHED_SFTRDY     512
 #define RT_SCHED_SELFSUSP  1024
 
-#define RT_RWLINV   (8)  // keep this the highest
-#define RT_DEADLOK  (7)
-#define RT_PERM     (6)
-#define RT_OBJINV   (5)
-#define RT_OBJREM   (4)
-#define RT_TIMOUT   (3)
-#define RT_UNBLKD   (2)
-#define RT_TMROVRN  (1)
-#define RTP_RWLINV   ((void *)RT_RWLINV)
-#define RTP_DEADLOK  ((void *)RT_DEADLOK)
-#define RTP_PERM     ((void *)RT_PERM)
-#define RTP_OBJINV   ((void *)RT_OBJINV)
-#define RTP_OBJREM   ((void *)RT_OBJREM)
-#define RTP_TIMOUT   ((void *)RT_TIMOUT)
-#define RTP_UNBLKD   ((void *)RT_UNBLKD)
-#define RTP_TMROVRN  ((void *)RT_TMROVRN)
-#define RTP_HIGERR   (RTP_RWLINV)
-#define RTP_LOWERR   (RTP_TMROVRN)
+#define RT_RWLINV     (9)  // keep this the highest
+#define RT_NETIMOUT   (8)
+#define RT_DEADLOK    (7)
+#define RT_PERM       (6)
+#define RT_OBJINV     (5)
+#define RT_OBJREM     (4)
+#define RT_TIMOUT     (3)
+#define RT_UNBLKD     (2)
+#define RT_TMROVRN    (1)  // keep this the lowest, must be 1
+#define RTP_RWLINV    ((void *)RT_RWLINV)
+#define RTP_NETIMOUT  ((void *)RT_NETIMOUT)
+#define RTP_DEADLOK   ((void *)RT_DEADLOK)
+#define RTP_PERM      ((void *)RT_PERM)
+#define RTP_OBJINV    ((void *)RT_OBJINV)
+#define RTP_OBJREM    ((void *)RT_OBJREM)
+#define RTP_TIMOUT    ((void *)RT_TIMOUT)
+#define RTP_UNBLKD    ((void *)RT_UNBLKD)
+#define RTP_TMROVRN   ((void *)RT_TMROVRN)
+#define RTP_HIGERR    (RTP_RWLINV)
+#define RTP_LOWERR    (RTP_TMROVRN)
 #if CONFIG_RTAI_USE_NEWERR
-#define RTE_BASE     (0x3FFFFF00)
-#define RTE_RWLINV   (RTE_BASE + RT_RWLINV)
-#define RTE_DEADLOK  (RTE_BASE + RT_DEADLOK)
-#define RTE_PERM     (RTE_BASE + RT_PERM)
-#define RTE_OBJINV   (RTE_BASE + RT_OBJINV)
-#define RTE_OBJREM   (RTE_BASE + RT_OBJREM)
-#define RTE_TIMOUT   (RTE_BASE + RT_TIMOUT)
-#define RTE_UNBLKD   (RTE_BASE + RT_UNBLKD)
-#define RTE_TMROVRN  (RTE_BASE + RT_TMROVRN)
-#define RTE_HIGERR   (RTE_RWLINV)
-#define RTE_LOWERR   (RTE_TMROVRN)
+#define RTE_BASE      (0x3FFFFF00)
+#define RTE_RWLINV    (RTE_BASE + RT_RWLINV)
+#define RTE_NETIMOUT  (RTE_BASE + RT_NETIMOUT)
+#define RTE_DEADLOK   (RTE_BASE + RT_DEADLOK)
+#define RTE_PERM      (RTE_BASE + RT_PERM)
+#define RTE_OBJINV    (RTE_BASE + RT_OBJINV)
+#define RTE_OBJREM    (RTE_BASE + RT_OBJREM)
+#define RTE_TIMOUT    (RTE_BASE + RT_TIMOUT)
+#define RTE_UNBLKD    (RTE_BASE + RT_UNBLKD)
+#define RTE_TMROVRN   (RTE_BASE + RT_TMROVRN)
+#define RTE_HIGERR    (RTE_RWLINV)
+#define RTE_LOWERR    (RTE_TMROVRN)
 #else
-#define RTE_BASE     (0xFFFB)
-#define RTE_RWLINV   (RTE_BASE + RT_RWLINV)
-#define RTE_DEADLOK  (RTE_BASE + RT_DEADLOK)
-#define RTE_PERM     (RTE_BASE + RT_PERM)
-#define RTE_OBJINV   (RTE_BASE + RT_OBJREM)
-#define RTE_OBJREM   (RTE_BASE + RT_OBJREM)
-#define RTE_TIMOUT   (RTE_BASE + RT_TIMOUT)
-#define RTE_UNBLKD   (RTE_BASE + RT_UNBLKD)
-#define RTE_TMROVRN  (RTE_BASE + RT_TMROVRN)
-#define RTE_HIGERR   (RTE_RWLINV)
-#define RTE_LOWERR   (RTE_TMROVRN)
+#define RTE_BASE      (0xFFFB)
+#define RTE_RWLINV    (RTE_BASE + RT_RWLINV)
+#define RTE_NETIMOUT  (RTE_BASE + RT_NETIMOUT)
+#define RTE_DEADLOK   (RTE_BASE + RT_DEADLOK)
+#define RTE_PERM      (RTE_BASE + RT_PERM)
+#define RTE_OBJINV    (RTE_BASE + RT_OBJREM)
+#define RTE_OBJREM    (RTE_BASE + RT_OBJREM)
+#define RTE_TIMOUT    (RTE_BASE + RT_TIMOUT)
+#define RTE_UNBLKD    (RTE_BASE + RT_UNBLKD)
+#define RTE_TMROVRN   (RTE_BASE + RT_TMROVRN)
+#define RTE_HIGERR    (RTE_RWLINV)
+#define RTE_LOWERR    (RTE_TMROVRN)
 #endif
 
-#define RT_EINTR    (RTE_UNBLKD)
+#define RT_EINTR      (RTE_UNBLKD)
 
 #define rt_is_reterr(i)  (i >= RTE_LOWERR)
 
@@ -266,13 +270,13 @@ int rt_kthread_init_cpuid(struct rt_task_struct *task,
 		          void(*signal)(void),
 		          unsigned run_on_cpu);
 
-void rt_set_runnable_on_cpus(struct rt_task_struct *task,
+RTAI_SYSCALL_MODE void rt_set_runnable_on_cpus(struct rt_task_struct *task,
 			     unsigned long cpu_mask);
 
-void rt_set_runnable_on_cpuid(struct rt_task_struct *task,
+RTAI_SYSCALL_MODE void rt_set_runnable_on_cpuid(struct rt_task_struct *task,
 			      unsigned cpuid);
 
-void rt_set_sched_policy(struct rt_task_struct *task,
+RTAI_SYSCALL_MODE void rt_set_sched_policy(struct rt_task_struct *task,
 			 int policy,
 			 int rr_quantum_ns);
 
@@ -290,11 +294,11 @@ void rt_set_periodic_mode(void);
 
 void rt_set_oneshot_mode(void);
 
-RTIME start_rt_timer(int period);
+RTAI_SYSCALL_MODE RTIME start_rt_timer(int period);
 
 #define start_rt_timer_ns(period) start_rt_timer(nano2count((period)))
 
-void start_rt_apic_timers(struct apic_timer_setup_data *setup_mode,
+RTAI_SYSCALL_MODE void start_rt_apic_timers(struct apic_timer_setup_data *setup_mode,
 			  unsigned rcvr_jiffies_cpuid);
 
 void stop_rt_timer(void);
@@ -303,35 +307,33 @@ struct rt_task_struct *rt_whoami(void);
 
 int rt_sched_type(void);
 
-int rt_task_signal_handler(struct rt_task_struct *task,
+RTAI_SYSCALL_MODE int rt_task_signal_handler(struct rt_task_struct *task,
 			   void (*handler)(void));
 
-int rt_task_use_fpu(struct rt_task_struct *task,
+RTAI_SYSCALL_MODE int rt_task_use_fpu(struct rt_task_struct *task,
 		    int use_fpu_flag);
   
 void rt_linux_use_fpu(int use_fpu_flag);
 
-int rt_hard_timer_tick_count(void);
+RTAI_SYSCALL_MODE int rt_hard_timer_tick_count(void);
 
-int rt_hard_timer_tick_count_cpuid(int cpuid);
+RTAI_SYSCALL_MODE int rt_hard_timer_tick_count_cpuid(int cpuid);
 
-RTIME count2nano(RTIME timercounts);
+RTAI_SYSCALL_MODE RTIME count2nano(RTIME timercounts);
 
-RTIME nano2count(RTIME nanosecs);
+RTAI_SYSCALL_MODE RTIME nano2count(RTIME nanosecs);
   
-RTIME count2nano_cpuid(RTIME timercounts,
-		       unsigned cpuid);
+RTAI_SYSCALL_MODE RTIME count2nano_cpuid(RTIME timercounts, unsigned cpuid);
 
-RTIME nano2count_cpuid(RTIME nanosecs,
-		       unsigned cpuid);
+RTAI_SYSCALL_MODE RTIME nano2count_cpuid(RTIME nanosecs, unsigned cpuid);
   
 RTIME rt_get_time(void);
 
-RTIME rt_get_time_cpuid(unsigned cpuid);
+RTAI_SYSCALL_MODE RTIME rt_get_time_cpuid(unsigned cpuid);
 
 RTIME rt_get_time_ns(void);
 
-RTIME rt_get_time_ns_cpuid(unsigned cpuid);
+RTAI_SYSCALL_MODE RTIME rt_get_time_ns_cpuid(unsigned cpuid);
 
 RTIME rt_get_cpu_time_ns(void);
 
@@ -339,11 +341,11 @@ int rt_get_prio(struct rt_task_struct *task);
 
 int rt_get_inher_prio(struct rt_task_struct *task);
 
-int rt_get_priorities(struct rt_task_struct *task, int *priority, int *base_priority);
+RTAI_SYSCALL_MODE int rt_get_priorities(struct rt_task_struct *task, int *priority, int *base_priority);
 
-void rt_spv_RMS(int cpuid);
+RTAI_SYSCALL_MODE void rt_spv_RMS(int cpuid);
 
-int rt_change_prio(struct rt_task_struct *task,
+RTAI_SYSCALL_MODE int rt_change_prio(struct rt_task_struct *task,
 		   int priority);
 
 void rt_sched_lock(void);
@@ -352,51 +354,51 @@ void rt_sched_unlock(void);
 
 void rt_task_yield(void);
 
-int rt_task_suspend(struct rt_task_struct *task);
+RTAI_SYSCALL_MODE int rt_task_suspend(struct rt_task_struct *task);
 
-int rt_task_suspend_if(struct rt_task_struct *task);
+RTAI_SYSCALL_MODE int rt_task_suspend_if(struct rt_task_struct *task);
 
-int rt_task_suspend_until(struct rt_task_struct *task, RTIME until);
+RTAI_SYSCALL_MODE int rt_task_suspend_until(struct rt_task_struct *task, RTIME until);
 
-int rt_task_suspend_timed(struct rt_task_struct *task, RTIME delay);
+RTAI_SYSCALL_MODE int rt_task_suspend_timed(struct rt_task_struct *task, RTIME delay);
 
-int rt_task_resume(struct rt_task_struct *task);
+RTAI_SYSCALL_MODE int rt_task_resume(struct rt_task_struct *task);
 
 RT_TASK *rt_exec_linux_syscall(RT_TASK *rt_current, RT_TASK *task, struct pt_regs *regs);
 
-RT_TASK *rt_receive_linux_syscall(RT_TASK *task, struct pt_regs *regs);
+RTAI_SYSCALL_MODE RT_TASK *rt_receive_linux_syscall(RT_TASK *task, struct pt_regs *regs);
 
-void rt_return_linux_syscall(RT_TASK *task, unsigned long retval);
+RTAI_SYSCALL_MODE void rt_return_linux_syscall(RT_TASK *task, unsigned long retval);
 
-int rt_irq_wait(unsigned irq);
+RTAI_SYSCALL_MODE int rt_irq_wait(unsigned irq);
 
-int rt_irq_wait_if(unsigned irq);
+RTAI_SYSCALL_MODE int rt_irq_wait_if(unsigned irq);
 
-int rt_irq_wait_until(unsigned irq, RTIME until);
+RTAI_SYSCALL_MODE int rt_irq_wait_until(unsigned irq, RTIME until);
 
-int rt_irq_wait_timed(unsigned irq, RTIME delay);
+RTAI_SYSCALL_MODE int rt_irq_wait_timed(unsigned irq, RTIME delay);
 
-void rt_irq_signal(unsigned irq);
+RTAI_SYSCALL_MODE void rt_irq_signal(unsigned irq);
 
-int rt_request_irq_task (unsigned irq, void *handler, int type, int affine2task);
+RTAI_SYSCALL_MODE int rt_request_irq_task (unsigned irq, void *handler, int type, int affine2task);
 
-int rt_release_irq_task (unsigned irq);
+RTAI_SYSCALL_MODE int rt_release_irq_task (unsigned irq);
 
-int rt_task_make_periodic_relative_ns(struct rt_task_struct *task,
+RTAI_SYSCALL_MODE int rt_task_make_periodic_relative_ns(struct rt_task_struct *task,
 				      RTIME start_delay,
 				      RTIME period);
 
-int rt_task_make_periodic(struct rt_task_struct *task,
+RTAI_SYSCALL_MODE int rt_task_make_periodic(struct rt_task_struct *task,
 			  RTIME start_time,
 			  RTIME period);
 
-void rt_task_set_resume_end_times(RTIME resume,
+RTAI_SYSCALL_MODE void rt_task_set_resume_end_times(RTIME resume,
 				  RTIME end);
 
-int rt_set_resume_time(struct rt_task_struct *task,
+RTAI_SYSCALL_MODE int rt_set_resume_time(struct rt_task_struct *task,
 		       RTIME new_resume_time);
 
-int rt_set_period(struct rt_task_struct *task,
+RTAI_SYSCALL_MODE int rt_set_period(struct rt_task_struct *task,
 		  RTIME new_period);
 
 int rt_task_wait_period(void);
@@ -405,17 +407,17 @@ void rt_schedule(void);
 
 RTIME next_period(void);
 
-void rt_busy_sleep(int nanosecs);
+RTAI_SYSCALL_MODE void rt_busy_sleep(int nanosecs);
 
-int rt_sleep(RTIME delay);
+RTAI_SYSCALL_MODE int rt_sleep(RTIME delay);
 
-int rt_sleep_until(RTIME time);
+RTAI_SYSCALL_MODE int rt_sleep_until(RTIME time);
 
-int rt_task_masked_unblock(struct rt_task_struct *task, unsigned long mask);
+RTAI_SYSCALL_MODE int rt_task_masked_unblock(struct rt_task_struct *task, unsigned long mask);
 
 #define rt_task_wakeup_sleeping(t)  rt_task_masked_unblock(t, RT_SCHED_DELAYED)
 
-struct rt_task_struct *rt_named_task_init(const char *task_name,
+RTAI_SYSCALL_MODE struct rt_task_struct *rt_named_task_init(const char *task_name,
 					  void (*thread)(long),
 					  long data,
 					  int stack_size,
@@ -423,7 +425,7 @@ struct rt_task_struct *rt_named_task_init(const char *task_name,
 					  int uses_fpu,
 					  void(*signal)(void));
 
-struct rt_task_struct *rt_named_task_init_cpuid(const char *task_name,
+RTAI_SYSCALL_MODE struct rt_task_struct *rt_named_task_init_cpuid(const char *task_name,
 						void (*thread)(long),
 						long data,
 						int stack_size,
@@ -432,7 +434,7 @@ struct rt_task_struct *rt_named_task_init_cpuid(const char *task_name,
 						void(*signal)(void),
 						unsigned run_on_cpu);
 
-int rt_named_task_delete(struct rt_task_struct *task);
+RTAI_SYSCALL_MODE int rt_named_task_delete(struct rt_task_struct *task);
 
 RT_TRAP_HANDLER rt_set_task_trap_handler(struct rt_task_struct *task,
 					 unsigned vec,

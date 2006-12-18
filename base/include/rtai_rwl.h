@@ -37,33 +37,33 @@ typedef struct rtai_rwlock {
 extern "C" {
 #endif /* !__cplusplus */
 
-int rt_typed_rwl_init(RWL *rwl, int type);
+RTAI_SYSCALL_MODE int rt_typed_rwl_init(RWL *rwl, int type);
 
 #define rt_rwl_init(rwl)  rt_typed_rwl_init(rwl, RESEM_RECURS)
 
-int rt_rwl_delete(struct rtai_rwlock *rwl);
+RTAI_SYSCALL_MODE int rt_rwl_delete(struct rtai_rwlock *rwl);
 
-int rt_rwl_rdlock(struct rtai_rwlock *rwl);
+RTAI_SYSCALL_MODE RWL *_rt_named_rwl_init(unsigned long rwl_name);
 
-int rt_rwl_rdlock_if(struct rtai_rwlock *rwl);
+RTAI_SYSCALL_MODE int rt_named_rwl_delete(RWL *rwl);
 
-int rt_rwl_rdlock_until(struct rtai_rwlock *rwl,
-			RTIME time);
+RTAI_SYSCALL_MODE int rt_rwl_rdlock(struct rtai_rwlock *rwl);
 
-int rt_rwl_rdlock_timed(struct rtai_rwlock *rwl,
-			RTIME delay);
+RTAI_SYSCALL_MODE int rt_rwl_rdlock_if(struct rtai_rwlock *rwl);
 
-int rt_rwl_wrlock(struct rtai_rwlock *rwl);
+RTAI_SYSCALL_MODE int rt_rwl_rdlock_until(struct rtai_rwlock *rwl, RTIME time);
 
-int rt_rwl_wrlock_if(struct rtai_rwlock *rwl);
+RTAI_SYSCALL_MODE int rt_rwl_rdlock_timed(struct rtai_rwlock *rwl, RTIME delay);
 
-int rt_rwl_wrlock_until(struct rtai_rwlock *rwl,
-			RTIME time);
+RTAI_SYSCALL_MODE int rt_rwl_wrlock(struct rtai_rwlock *rwl);
 
-int rt_rwl_wrlock_timed(struct rtai_rwlock *rwl,
-			RTIME delay);
+RTAI_SYSCALL_MODE int rt_rwl_wrlock_if(struct rtai_rwlock *rwl);
 
-int rt_rwl_unlock(struct rtai_rwlock *rwl);
+RTAI_SYSCALL_MODE int rt_rwl_wrlock_until(struct rtai_rwlock *rwl, RTIME time);
+
+RTAI_SYSCALL_MODE int rt_rwl_wrlock_timed(struct rtai_rwlock *rwl, RTIME delay);
+
+RTAI_SYSCALL_MODE int rt_rwl_unlock(struct rtai_rwlock *rwl);
 
 #ifdef __cplusplus
 }

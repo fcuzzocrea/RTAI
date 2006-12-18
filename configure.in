@@ -1,11 +1,11 @@
 dnl Process this file with autoconf to produce a configure script.
 AC_PREREQ(2.59)
 
-AC_INIT(rtai,3.4-cv,rtai@rtai.org)
+AC_INIT(rtai,magma,rtai@rtai.org)
 
 CONFIG_RTAI_VERSION_MAJOR=3
-CONFIG_RTAI_VERSION_MINOR=4
-CONFIG_RTAI_REVISION_LEVEL=0
+CONFIG_RTAI_VERSION_MINOR=3
+CONFIG_RTAI_REVISION_LEVEL=90
 
 AC_CONFIG_HEADERS(rtai_config.h)
 AC_CONFIG_AUX_DIR(base/config/autoconf)
@@ -267,10 +267,11 @@ if test x${CONFIG_MODULES} = x ; then
   AC_MSG_ERROR([Please set CONFIG_MODULES for $RTAI_LINUX_DIR and rebuild your kernel])
 fi
 
-if test x${CONFIG_REGPARM} = xy ; then
-  AC_MSG_ERROR([Please unset CONFIG_REGPARM for $RTAI_LINUX_DIR and 
-rebuild your kernel])
-fi
+dnl No longer used.
+dnl if test x${CONFIG_REGPARM} = xy ; then
+dnl   AC_MSG_ERROR([Please unset CONFIG_REGPARM for $RTAI_LINUX_DIR and 
+dnl rebuild your kernel])
+dnl fi
 
 if test x${CONFIG_MODVERSIONS} = xy ; then
   AC_MSG_ERROR([Please unset CONFIG_MODVERSIONS for $RTAI_LINUX_DIR and rebuild your kernel])
@@ -517,7 +518,7 @@ fi
 
 AC_MSG_CHECKING(whether LXRT wraps service calls through Linux syscalls)
 AC_ARG_ENABLE(lxrt-use-linux-syscall,
-	[ --enable-lxrt-use-linux-syscall		Wrap LXRT service calls throug Linux syscall mechanism],
+	[ --enable-lxrt-use-linux-syscall	Wrap LXRT service calls throug Linux syscall mechanism],
 	[case "$enableval" in
 	y | yes) CONFIG_RTAI_LXRT_USE_LINUX_SYSCALL=y ;;
 	*) unset CONFIG_RTAI_LXRT_USE_LINUX_SYSCALL ;;
@@ -588,35 +589,14 @@ if test "$CONFIG_X86" = y; then
      AC_MSG_ERROR([RTAI won't work on legacy i386 platforms (cmpxchg() is missing, need >= CONFIG_M486)])
   fi
 else
-  if test "$CONFIG_X86_64" = y; then
-    if test "$CONFIG_SMP" = y; then
-      # x86_64 with SMP kernel
-      test x$CONFIG_RTAI_SCHED_SMP = x && smp_forced="(forced)"
-      CONFIG_RTAI_SCHED_SMP=y
-      test x$CONFIG_RTAI_SCHED_UP = xy && up_forced="(forced)"
-      unset CONFIG_RTAI_SCHED_UP
-    else
-      # x86_64 with UP kernel
-      if test "$CONFIG_RTAI_SCHED_MUP" = y -o "$CONFIG_RTAI_SCHED_SMP" = y; then
-        test x$CONFIG_RTAI_SCHED_SMP = xy && smp_forced="(forced)"
-        unset CONFIG_RTAI_SCHED_SMP
-        test x$CONFIG_RTAI_SCHED_MUP = xy && mup_forced="(forced)"
-        unset CONFIG_RTAI_SCHED_MUP
-      fi
-      test x$CONFIG_RTAI_SCHED_UP = x && up_forced="(forced)"
-      CONFIG_RTAI_SCHED_UP=y
-      CONFIG_RTAI_CPUS=1
-    fi
-  else
-    # non-x86
-    test x$CONFIG_RTAI_SCHED_UP = x && up_forced="(forced)"
-    CONFIG_RTAI_SCHED_UP=y
-    test x$CONFIG_RTAI_SCHED_SMP = xy && smp_forced="(forced)"
-    unset CONFIG_RTAI_SCHED_SMP
-    test x$CONFIG_RTAI_SCHED_MUP = xy && mup_forced="(forced)"
-    unset CONFIG_RTAI_SCHED_MUP
-    CONFIG_RTAI_CPUS=1
-  fi
+  # non-x86
+  test x$CONFIG_RTAI_SCHED_UP = x && up_forced="(forced)"
+  CONFIG_RTAI_SCHED_UP=y
+  test x$CONFIG_RTAI_SCHED_SMP = xy && smp_forced="(forced)"
+  unset CONFIG_RTAI_SCHED_SMP
+  test x$CONFIG_RTAI_SCHED_MUP = xy && mup_forced="(forced)"
+  unset CONFIG_RTAI_SCHED_MUP
+  CONFIG_RTAI_CPUS=1
 fi
 
 AC_MSG_CHECKING(for UP scheduler support)
@@ -656,7 +636,7 @@ AC_MSG_RESULT(${CONFIG_RTAI_SCHED_ISR_LOCK:-no})
 
 AC_MSG_CHECKING(for RTC freq)
 AC_ARG_ENABLE(rtc-freq,
-	[ --enable-rtc-freq Enable RTC freq],
+	[ --enable-rtc-freq	Enable RTC freq],
 	[case "$enableval" in
  changequote(,)dnl add a test for 0 or power of 2, <2-8192>
 	[0-9]*) CONFIG_RTAI_RTC_FREQ=$enableval ;;
@@ -744,6 +724,42 @@ else
 	esac
 fi
 AC_MSG_RESULT($CONFIG_RTAI_RTDM_FD_MAX)
+
+AC_MSG_CHECKING(for shared edge triggered interrupts in RTDM)
+AC_ARG_ENABLE(rtdm-edge-shirq,
+	      [ --enable-rtdm-edge-shirq	Enable shared edge triggered interrupts in RTDM],
+	[case "$enableval" in
+	y | yes) CONFIG_RTAI_RTDM_EDGE_SHIRQ=y ;;
+	*) unset CONFIG_RTAI_RTDM_EDGE_SHIRQ ;;
+	esac])
+AC_MSG_RESULT(${CONFIG_RTAI_RTDM_EDGE_SHIRQ:-no})
+
+AC_MSG_CHECKING(for shared level triggered interrupts in RTDM)
+AC_ARG_ENABLE(rtdm-level-shirq,
+	      [ --enable-rtdm-level-shirq	Enable shared level triggered interrupts in RTDM],
+	[case "$enableval" in
+	y | yes) CONFIG_RTAI_RTDM_LEVEL_SHIRQ=y ;;
+	*) unset CONFIG_RTAI_RTDM_LEVEL_SHIRQ ;;
+	esac])
+AC_MSG_RESULT(${CONFIG_RTAI_RTDM_LEVEL_SHIRQ:-no})
+
+AC_MSG_CHECKING(for RTDM debug)
+AC_ARG_ENABLE(debug-rtdm,
+	      [ --enable-debug-rtdm		Enable RTDM debug],
+	[case "$enableval" in
+	y | yes) CONFIG_RTAI_DEBUG_RTDM=y ;;
+	*) unset CONFIG_RTAI_DEBUG_RTDM ;;
+	esac])
+AC_MSG_RESULT(${CONFIG_RTAI_DEBUG_RTDM:-no})
+
+AC_MSG_CHECKING(for Linux task priority alignment to RTAI)
+AC_ARG_ENABLE(align-priority,
+	      [ --enable-align-priority		Keep Linux task priority aligned to RTAI],
+	[case "$enableval" in
+	y | yes) CONFIG_CONFIG_RTAI_ALIGN_LINUX_PRIORITY=y ;;
+	*) unset CONFIG_CONFIG_RTAI_ALIGN_LINUX_PRIORITY ;;
+	esac])
+AC_MSG_RESULT(${CONFIG_RTAI_ALIGN_LINUX_PRIORITY:-no})
 
 AC_MSG_CHECKING(for in-kernel C++ support)
 AC_ARG_ENABLE(cplusplus,
@@ -909,6 +925,49 @@ AC_ARG_ENABLE(cpus,
 	*) AC_MSG_ERROR([Bad argument to option: --enable-cpus=<number-of-CPUs>]) ;;
 	esac])
 AC_MSG_RESULT(${CONFIG_RTAI_CPUS:-1})
+
+dnl
+dnl Check for TSC options
+dnl
+
+AC_MSG_CHECKING(for diagnose out of sync MP-TSCs)
+AC_ARG_ENABLE(diag-tsc-sync,
+	      [ --enable-diag-tsc-sync		Enable diagnose out of sync MP-TSCs],
+	[case "$enableval" in
+	y | yes) CONFIG_RTAI_DIAG_TSC_SYNC=y ;;
+	*) unset CONFIG_RTAI_DIAG_TSC_SYNC ;;
+	esac])
+AC_MSG_RESULT(${CONFIG_RTAI_DIAG_TSC_SYNC:-no})
+
+dnl FIXME: is 0-7 correct?
+dnl what about larger CPU numbers (if at all possible)?
+dnl should we test for valid CPU number?
+AC_MSG_CHECKING(for master CPU for aligning MP-TSCs)
+AC_ARG_ENABLE(master-tsc-cpu,
+	[ --enable-master-tsc-cpu	Enable master TSC CPU],
+	[case "$enableval" in
+ changequote(,)dnl
+        [0-7])
+ changequote([,])dnl
+		if test x$CONFIG_RTAI_CPUS = x ; then
+			AC_MSG_ERROR([Option --enable-cpus must be defined before --enable-master-tsc-cpu])
+		fi
+		if test $enableval -lt 0 -o $enableval -ge $CONFIG_RTAI_CPUS ; then
+			AC_MSG_ERROR([Invalid value to option: --enable-master-tsc-cpu=<master-CPU-number> (must be between 0 and CONFIG_RTAI_CPUS)])
+		fi
+		CONFIG_RTAI_MASTER_TSC_CPU=$enableval ;;
+	*) AC_MSG_ERROR([Bad argument to option: --enable-master-tsc-cpu=<master-CPU-number>]) ;;
+	esac])
+AC_MSG_RESULT(${CONFIG_RTAI_MASTER_TSC_CPU:0})
+
+AC_MSG_CHECKING(for tune out of sync MP-TSCs)
+AC_ARG_ENABLE(tune-tsc-sync,
+	      [ --enable-tune-tsc-sync		Enable tune out of sync MP-TSCs],
+	[case "$enableval" in
+	y | yes) CONFIG_RTAI_TUNE_TSC_SYNC=y ;;
+	*) unset CONFIG_RTAI_TUNE_TSC_SYNC ;;
+	esac])
+AC_MSG_RESULT(${CONFIG_RTAI_TUNE_TSC_SYNC:-no})
 
 dnl
 dnl Check for additional build options.
@@ -1187,6 +1246,9 @@ test \! x$CONFIG_KBUILD = x && AC_DEFINE(CONFIG_KBUILD,1,[Kconfig])
 test \! x$CONFIG_RTAI_ADEOS = x && AC_DEFINE(CONFIG_RTAI_ADEOS,1,[Kconfig])
 test \! x$CONFIG_RTAI_HAL_PREEMPT = x && AC_DEFINE(CONFIG_RTAI_HAL_PREEMPT,1,[Kconfig])
 test \! x$CONFIG_RTAI_CPUS = x && AC_DEFINE_UNQUOTED(CONFIG_RTAI_CPUS,$CONFIG_RTAI_CPUS,[Kconfig])
+test x$CONFIG_RTAI_DIAG_TSC_SYNC = xy && AC_DEFINE(CONFIG_RTAI_DIAG_TSC_SYNC,1,[Kconfig])
+test \! x$CONFIG_RTAI_MASTER_TSC_CPU = x && AC_DEFINE_UNQUOTED(CONFIG_RTAI_MASTER_TSC_CPU,$CONFIG_RTAI_MASTER_TSC_CPU,[Kconfig])
+test x$CONFIG_RTAI_TUNE_TSC_SYNC = xy && AC_DEFINE(CONFIG_RTAI_TUNE_TSC_SYNC,1,[Kconfig])
 test \! x$CONFIG_RTAI_FPU_SUPPORT = x && AC_DEFINE(CONFIG_RTAI_FPU_SUPPORT,1,[Kconfig])
 test \! x$CONFIG_RTAI_MATH_C99 = x && AC_DEFINE(CONFIG_RTAI_MATH_C99,1,[Kconfig])
 test \! x$CONFIG_RTAI_TRACE = x && AC_DEFINE(CONFIG_RTAI_TRACE,1,[Kconfig])
@@ -1194,7 +1256,7 @@ test \! x$CONFIG_RTAI_MATH = x && AC_DEFINE(CONFIG_RTAI_MATH,1,[Kconfig])
 test \! x$CONFIG_RTAI_BITS = x && AC_DEFINE(CONFIG_RTAI_BITS,1,[Kconfig])
 test \! x$CONFIG_RTAI_FIFOS = x && AC_DEFINE(CONFIG_RTAI_FIFOS,1,[Kconfig])
 test \! x$CONFIG_RTAI_NETRPC = x && AC_DEFINE(CONFIG_RTAI_NETRPC,1,[Kconfig])
-test \! x$CONFIG_RTAI_NETRPC_RTNET = x && AC_DEFINE(CONFIG_RTAI_NETRPC_RTNET,1,[Kconfig])
+test x$CONFIG_RTAI_NETRPC_RTNET = xy && AC_DEFINE(CONFIG_RTAI_NETRPC_RTNET,1,[Kconfig])
 test \! x$CONFIG_RTAI_SEM = x && AC_DEFINE(CONFIG_RTAI_SEM,1,[Kconfig])
 test \! x$CONFIG_RTAI_MSG = x && AC_DEFINE(CONFIG_RTAI_MSG,1,[Kconfig])
 test \! x$CONFIG_RTAI_MBX = x && AC_DEFINE(CONFIG_RTAI_MBX,1,[Kconfig])
@@ -1211,6 +1273,7 @@ test \! x$CONFIG_RTAI_LXRT_USE_LINUX_SYSCALL = x && AC_DEFINE(CONFIG_RTAI_LXRT_U
 test \! x$CONFIG_RTAI_DRIVERS_SERIAL = x && AC_DEFINE(CONFIG_RTAI_DRIVERS_SERIAL,1,[Kconfig])
 test \! x$CONFIG_RTAI_DRIVERS_16550A = x && AC_DEFINE(CONFIG_RTAI_DRIVERS_16550A,1,[Kconfig])
 test \! x$CONFIG_RTAI_RTDM = x && AC_DEFINE(CONFIG_RTAI_RTDM,1,[Kconfig])
+test \! x$CONFIG_RTAI_ALIGN_LINUX_PRIORITY = x && AC_DEFINE(CONFIG_RTAI_ALIGN_LINUX_PRIORITY,1,[Kconfig])
 
 test x$CONFIG_RTAI_MATH = xy && AC_DEFINE(CONFIG_RTAI_MATH_BUILTIN,1,[Kconfig])
 test x$CONFIG_RTAI_BITS = xy && AC_DEFINE(CONFIG_RTAI_BITS_BUILTIN,1,[Kconfig])
@@ -1234,6 +1297,9 @@ AC_DEFINE_UNQUOTED(CONFIG_RTAI_SCHED_8254_LATENCY,$CONFIG_RTAI_SCHED_8254_LATENC
 AC_DEFINE_UNQUOTED(CONFIG_RTAI_SCHED_APIC_LATENCY,$CONFIG_RTAI_SCHED_APIC_LATENCY,[Kconfig])
 AC_DEFINE_UNQUOTED(CONFIG_RTAI_SCHED_LXRT_NUMSLOTS,$CONFIG_RTAI_SCHED_LXRT_NUMSLOTS,[Kconfig])
 AC_DEFINE_UNQUOTED(CONFIG_RTAI_RTDM_FD_MAX,$CONFIG_RTAI_RTDM_FD_MAX,[Kconfig])
+test x$CONFIG_RTAI_RTDM_EDGE_SHIRQ = xy && AC_DEFINE(CONFIG_RTAI_RTDM_EDGE_SHIRQ,1,[Kconfig])
+test x$CONFIG_RTAI_RTDM_LEVEL_SHIRQ = xy && AC_DEFINE(CONFIG_RTAI_RTDM_LEVEL_SHIRQ,1,[Kconfig])
+test x$CONFIG_RTAI_DEBUG_RTDM = xy && AC_DEFINE(CONFIG_RTAI_DEBUG_RTDM,1,[Kconfig])
 AC_DEFINE_UNQUOTED(CONFIG_RTAI_CAL_FREQS_FACT,$CONFIG_RTAI_CAL_FREQS_FACT,[Kconfig])
 
 case $CONFIG_RTAI_MONITOR_EXECTIME in
@@ -1336,7 +1402,8 @@ dnl Now we can close the conditional section, right after all
 dnl Autoconf-generated symbols have been listed.
 AH_BOTTOM([#endif /* __IN_RTAI__ */])
 
-AH_BOTTOM([#include <linux/config.h>])
+dnl No longer used after 2.6.17
+dnl AH_BOTTOM([#include <linux/config.h>])
 
 dnl
 dnl Produce automake conditionals.

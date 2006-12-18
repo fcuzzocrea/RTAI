@@ -71,11 +71,13 @@ int __rtai_sem_init(void);
 
 void __rtai_sem_exit(void);
 
-void rt_typed_sem_init(SEM *sem,
+RTAI_SYSCALL_MODE void rt_typed_sem_init(SEM *sem,
 		       int value,
 		       int type);
 
-SEM *_rt_typed_named_sem_init(unsigned long sem_name,
+RTAI_SYSCALL_MODE int rt_sem_delete(SEM *sem);
+
+RTAI_SYSCALL_MODE SEM *_rt_typed_named_sem_init(unsigned long sem_name,
 			     int value,
 			     int type,
 			     unsigned long *handle);
@@ -86,47 +88,45 @@ static inline SEM *rt_typed_named_sem_init(const char *sem_name,
     return _rt_typed_named_sem_init(nam2num(sem_name), value, type, NULL);
 }
 
+RTAI_SYSCALL_MODE int rt_named_sem_delete(SEM *sem);
+
 void rt_sem_init(SEM *sem,
 		 int value);
 
-int rt_sem_delete(SEM *sem);
+RTAI_SYSCALL_MODE int rt_sem_signal(SEM *sem);
 
-int rt_sem_signal(SEM *sem);
+RTAI_SYSCALL_MODE int rt_sem_broadcast(SEM *sem);
 
-int rt_sem_broadcast(SEM *sem);
+RTAI_SYSCALL_MODE int rt_sem_wait(SEM *sem);
 
-int rt_sem_wait(SEM *sem);
-
-int rt_sem_wait_if(SEM *sem);
+RTAI_SYSCALL_MODE int rt_sem_wait_if(SEM *sem);
 
 int rt_cntsem_wait_if_and_lock(SEM *sem);
 
-int rt_sem_wait_until(SEM *sem,
+RTAI_SYSCALL_MODE int rt_sem_wait_until(SEM *sem,
 		      RTIME time);
 
-int rt_sem_wait_timed(SEM *sem,
+RTAI_SYSCALL_MODE int rt_sem_wait_timed(SEM *sem,
 		      RTIME delay);
 
-int rt_sem_wait_barrier(SEM *sem);
+RTAI_SYSCALL_MODE int rt_sem_wait_barrier(SEM *sem);
 
-int rt_sem_count(SEM *sem);
+RTAI_SYSCALL_MODE int rt_sem_count(SEM *sem);
 
-int rt_cond_signal(CND *cnd);
+RTAI_SYSCALL_MODE int rt_cond_signal(CND *cnd);
 
-int rt_cond_wait(CND *cnd,
+RTAI_SYSCALL_MODE int rt_cond_wait(CND *cnd,
 		 SEM *mtx);
 
-int rt_cond_wait_until(CND *cnd,
+RTAI_SYSCALL_MODE int rt_cond_wait_until(CND *cnd,
 		       SEM *mtx,
 		       RTIME time);
 
-int rt_cond_wait_timed(CND *cnd,
+RTAI_SYSCALL_MODE int rt_cond_wait_timed(CND *cnd,
 		       SEM *mtx,
 		       RTIME delay);
 
 #define rt_named_sem_init(sem_name, value)  rt_typed_named_sem_init(sem_name, value, CNT_SEM)
-
-int rt_named_sem_delete(SEM *sem);
 
 static inline int rt_psem_init(psem_t *sem, int pshared, unsigned int value)
 {
@@ -201,6 +201,7 @@ static inline int rt_pmutex_unlock(pmutex_t *mutex) {
     return rt_sem_signal(mutex);
 }
 
+#undef rt_mutex_init
 #define rt_mutex_init(mtx)             rt_typed_sem_init(mtx, 1, RES_SEM)
 #define rt_mutex_delete(mtx)           rt_sem_delete(mtx)
 #define rt_mutex_destroy(mtx)          rt_sem_delete(mtx)

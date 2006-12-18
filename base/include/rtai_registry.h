@@ -53,6 +53,10 @@ struct rt_registry_entry {
 #define IS_TBX   7
 #define IS_HPCK  8
 
+#ifdef __KERNEL__
+
+#include <rtai.h>
+
 #ifdef __cplusplus
 extern "C" {
 #endif /* __cplusplus */
@@ -72,9 +76,9 @@ int rt_drg_on_adr(void *adr);
 
 int rt_drg_on_adr_cnt(void *adr);
 
-unsigned long rt_get_name(void *adr);
+RTAI_SYSCALL_MODE unsigned long rt_get_name(void *adr);
 
-void *rt_get_adr(unsigned long name);
+RTAI_SYSCALL_MODE void *rt_get_adr(unsigned long name);
 
 void *rt_get_adr_cnt(unsigned long name);
 
@@ -87,6 +91,8 @@ int rt_get_registry_slot(int slot, struct rt_registry_entry *entry);
 #ifdef __cplusplus
 }
 #endif /* __cplusplus */
+
+#endif
 
 #define exist(name)  rt_get_adr(nam2num(name))
 

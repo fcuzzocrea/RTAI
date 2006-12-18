@@ -31,8 +31,8 @@
  */
 
 
-#include <asm/io.h>
 #include <asm/page.h>
+#include <asm/io.h>
 #include <asm/pgtable.h>
 #include <linux/delay.h>
 #include <linux/highmem.h>
@@ -85,6 +85,10 @@ nanosecs_abs_t rtdm_clock_read(void);
 /**
  * @brief Intialise and start a real-time task
  *
+ * After initialising a task, the task handle remains valid and can be passed
+ * to RTDM services until either rtdm_task_destroy() or rtdm_task_join_nrt()
+ * was invoked.
+ *
  * @param[in,out] task Task handle
  * @param[in] name Optional task name
  * @param[in] task_proc Procedure to be executed by the task
@@ -113,7 +117,7 @@ int rtdm_task_init(rtdm_task_t *task, const char *name,
 	if (rt_task_init(task, (void *)task_proc, (long)arg, PAGE_SIZE, priority, 0, 0)) {
         	return -ENOMEM;
 	}
-	if (period) {
+	if (period > 0) {
 		rt_task_make_periodic_relative_ns(task, 0, period);
 	} else {
 		rt_task_resume(task);
@@ -129,6 +133,9 @@ EXPORT_SYMBOL(rtdm_task_init);
  * @brief Destroy a real-time task
  *
  * @param[in,out] task Task handle as returned by rtdm_task_init()
+ *
+ * @note Passing the same task handle to RTDM services after the completion of
+ * this function is not allowed.
  *
  * Environments:
  *
@@ -246,9 +253,11 @@ rtdm_task_t *rtdm_task_current(void);
  * @param[in,out] task Task handle as returned by rtdm_task_init()
  * @param[in] poll_delay Polling delay in milliseconds
  *
- * @note It is not required to call rtdm_task_destroy() for a task which has
- * been passed to rtdm_task_join_nrt(). Moreover, don't forget to inform the
- * targeted task that it has to terminate. Otherwise, this function will never
+ * @note Passing the same task handle to RTDM services after the completion of
+ * this function is not allowed.
+ *
+ * @note This service does not trigger the termination of the targeted task.
+ * The user has to take of this, otherwise rtdm_task_join_nrt() will never
  * return.
  *
  * Environments:
@@ -286,6 +295,9 @@ EXPORT_SYMBOL(rtdm_task_join_nrt);
  * - -EINTR is returned if calling task has been unblock by a signal or
  * explicitely via rtdm_task_unblock().
  *
+ * - -EPERM @e may be returned if an illegal invocation environment is
+ * detected.
+ *
  * Environments:
  *
  * This service can be called from:
@@ -299,6 +311,9 @@ int rtdm_task_sleep(nanosecs_rel_t delay)
 {
 	if (delay < 0) {
 	        return 0;
+	}
+	if (delay < 0) {
+		delay = RT_TIME_END;
 	}
 	if (rt_sleep(nano2count(delay)) && _rt_whoami()->unblocked) {
 		return -EINTR;
@@ -318,6 +333,9 @@ EXPORT_SYMBOL(rtdm_task_sleep);
  *
  * - -EINTR is returned if calling task has been unblock by a signal or
  * explicitely via rtdm_task_unblock().
+ *
+ * - -EPERM @e may be returned if an illegal invocation environment is
+ * detected.
  *
  * Environments:
  *
@@ -343,7 +361,7 @@ EXPORT_SYMBOL(rtdm_task_sleep_until);
  * @brief Busy-wait a specified amount of time
  *
  * @param[in] delay Delay in nanoseconds. Note that a zero delay does @b not
- * have the meaning of RTDM_TIMEOUT_INFINITE here.
+ * have the meaning of @c RTDM_TIMEOUT_INFINITE here.
  *
  * @note The caller must not be migratable to different CPUs while executing
  * this service. Otherwise, the actual delay will be undefined.
@@ -429,7 +447,7 @@ int device_service_routine(...)
 {
     ...
     while (received < requested) {
-        ret = rtdm_event_wait_until(&event->synch_base, rt_get_time()+timeout);
+        ret = rtdm_event_timedwait(&event->synch_base, rt_get_time()+timeout);
         if (ret < 0)    // including -ETIMEDOUT
             break;
         ...
@@ -503,7 +521,7 @@ void rtdm_event_destroy(rtdm_event_t *event);
  *
  * This function wakes up all current waiters of the given event, but it does
  * not change the event state. Subsequently callers of rtdm_event_wait() or
- * rtdm_event_wait_until() will therefore be blocked first.
+ * rtdm_event_timedwait() will therefore be blocked first.
  *
  * @param[in,out] event Event handle as returned by rtdm_event_init()
  *
@@ -527,7 +545,7 @@ void rtdm_event_pulse(rtdm_event_t *event);
  *
  * This function sets the given event and wakes up all current waiters. If no
  * waiter is presently registered, the next call to rtdm_event_wait() or
- * rtdm_event_wait_until() will return immediately.
+ * rtdm_event_timedwait() will return immediately.
  *
  * @param[in,out] event Event handle as returned by rtdm_event_init()
  *
@@ -569,6 +587,9 @@ EXPORT_SYMBOL(rtdm_event_signal);
  * explicitely via rtdm_task_unblock().
  *
  * - -EIDRM is returned if @a event has been destroyed.
+ *
+ * - -EPERM @e may be returned if an illegal invocation environment is
+ * detected.
  *
  * Environments:
  *
@@ -622,6 +643,9 @@ EXPORT_SYMBOL(rtdm_event_wait);
  * explicitely via rtdm_task_unblock().
  *
  * - -EIDRM is returned if @a event has been destroyed.
+ *
+ * - -EPERM @e may be returned if an illegal invocation environment is
+ * detected.
  *
  * Environments:
  *
@@ -906,6 +930,9 @@ EXPORT_SYMBOL(rtdm_mutex_unlock);
  *
  * - -EIDRM is returned if @a mutex has been destroyed.
  *
+ * - -EPERM @e may be returned if an illegal invocation environment is
+ * detected.
+ *
  * Environments:
  *
  * This service can be called from:
@@ -917,7 +944,9 @@ EXPORT_SYMBOL(rtdm_mutex_unlock);
  */
 int rtdm_mutex_lock(rtdm_mutex_t *mutex)
 {
-	return _sem_wait(mutex);
+	int retval;
+	while ((retval = _sem_wait(mutex)) == -EINTR);
+	return retval;
 }
 
 EXPORT_SYMBOL(rtdm_mutex_lock);
@@ -943,10 +972,10 @@ EXPORT_SYMBOL(rtdm_mutex_lock);
  * - -EWOULDBLOCK is returned if @a timeout is negative and the semaphore
  * value is currently not positive.
  *
- * - -EINTR is returned if calling task has been unblock by a signal or
- * explicitely via rtdm_task_unblock().
- *
  * - -EIDRM is returned if @a mutex has been destroyed.
+ *
+ * - -EPERM @e may be returned if an illegal invocation environment is
+ * detected.
  *
  * Environments:
  *
@@ -960,7 +989,14 @@ EXPORT_SYMBOL(rtdm_mutex_lock);
 int rtdm_mutex_timedlock(rtdm_mutex_t *mutex, nanosecs_rel_t timeout,
                          rtdm_toseq_t *timeout_seq)
 {
-	return _sem_wait_timed(mutex, timeout, timeout_seq);
+	int retval;
+	if (timeout_seq) {
+		while((retval = _sem_wait_timed(mutex, timeout, timeout_seq)) == -EINTR);
+	} else {
+		rtdm_toseq_t until = rt_get_time() + nano2count(timeout);
+		while((retval = _sem_wait_timed(mutex, timeout, &until)) == -EINTR);
+	}
+	return retval;
 }
 
 EXPORT_SYMBOL(rtdm_mutex_timedlock);
@@ -1153,7 +1189,8 @@ void rtdm_nrtsig_pend(rtdm_nrtsig_t *nrt_sig);
  */
 
 struct rtdm_mmap_data {
-    void *src_addr;
+    void *src_vaddr;
+    unsigned long src_paddr;
     struct vm_operations_struct *vm_ops;
     void *vm_private_data;
 };
@@ -1161,18 +1198,27 @@ struct rtdm_mmap_data {
 static int rtdm_mmap_buffer(struct file *filp, struct vm_area_struct *vma)
 {
     struct rtdm_mmap_data *mmap_data = filp->private_data;
-    unsigned long vaddr, maddr, size;
+    unsigned long vaddr, paddr, maddr, size;
 
     vma->vm_ops = mmap_data->vm_ops;
     vma->vm_private_data = mmap_data->vm_private_data;
 
-    vaddr = (unsigned long)mmap_data->src_addr;
+    vaddr = (unsigned long)mmap_data->src_vaddr;
+    paddr = (unsigned long)mmap_data->src_paddr;
+    if (!paddr)
+        /* kmalloc memory */
+        paddr = virt_to_phys((void *)vaddr);
+
     maddr = vma->vm_start;
     size  = vma->vm_end - vma->vm_start;
 
 #ifdef CONFIG_MMU
+    /* Catch vmalloc memory (vaddr is 0 for I/O mapping) */
     if ((vaddr >= VMALLOC_START) && (vaddr < VMALLOC_END)) {
         unsigned long mapped_size = 0;
+
+        XENO_ASSERT(RTDM, (vaddr == PAGE_ALIGN(vaddr)), return -EINVAL);
+        XENO_ASSERT(RTDM, (size % PAGE_SIZE == 0), return -EINVAL);
 
         while (mapped_size < size) {
             if (xnarch_remap_vm_page(vma, maddr,vaddr))
@@ -1185,21 +1231,60 @@ static int rtdm_mmap_buffer(struct file *filp, struct vm_area_struct *vma)
         return 0;
     } else
 #endif /* CONFIG_MMU */
-        return xnarch_remap_io_page_range(vma, maddr,
-                                          virt_to_phys((void *)vaddr),
+        return xnarch_remap_io_page_range(vma, maddr, paddr,
                                           size, PAGE_SHARED);
 }
+
 
 static struct file_operations rtdm_mmap_fops = {
     .mmap = rtdm_mmap_buffer,
 };
+
+static int rtdm_do_mmap(rtdm_user_info_t *user_info,
+                        struct rtdm_mmap_data *mmap_data,
+                        size_t len, int prot, void **pptr)
+{
+    struct file                     *filp;
+    const struct file_operations    *old_fops;
+    void                            *old_priv_data;
+    void                            *user_ptr;
+
+    XENO_ASSERT(RTDM, xnpod_root_p(), return -EPERM;);
+
+    filp = filp_open("/dev/zero", O_RDWR, 0);
+    if (IS_ERR(filp))
+        return PTR_ERR(filp);
+
+    old_fops = filp->f_op;
+    filp->f_op = &rtdm_mmap_fops;
+
+    old_priv_data = filp->private_data;
+    filp->private_data = mmap_data;
+
+    down_write(&user_info->mm->mmap_sem);
+    user_ptr = (void *)do_mmap(filp, (unsigned long)*pptr, len, prot,
+                               MAP_SHARED, 0);
+    up_write(&user_info->mm->mmap_sem);
+
+    filp->f_op = (typeof(filp->f_op))old_fops;
+    filp->private_data = old_priv_data;
+
+    filp_close(filp, user_info->files);
+
+    if (IS_ERR(user_ptr))
+        return PTR_ERR(user_ptr);
+
+    *pptr = user_ptr;
+    return 0;
+}
+
 
 /**
  * Map a kernel memory range into the address space of the user.
  *
  * @param[in] user_info User information pointer as passed to the invoked
  * device operation handler
- * @param[in] src_addr Kernel address to be mapped
+ * @param[in] src_addr Kernel virtual address to be mapped
  * @param[in] len Length of the memory range
  * @param[in] prot Protection flags for the user's memory range, typically
  * either PROT_READ or PROT_READ|PROT_WRITE
@@ -1221,6 +1306,13 @@ static struct file_operations rtdm_mmap_fops = {
  * - -EAGAIN is returned if too much memory has been already locked by the
  * user process.
  *
+ * - -EPERM @e may be returned if an illegal invocation environment is
+ * detected.
+ *
+ * @note This service only works on memory regions allocated via kmalloc() or
+ * vmalloc(). To map physical I/O memory to user-space use
+ * rtdm_iomap_to_user() instead.
+ *
  * @note RTDM supports two models for unmapping the user memory range again.
  * One is explicite unmapping via rtdm_munmap(), either performed when the
  * user requests it via an IOCTL etc. or when the related device is closed.
@@ -1241,45 +1333,84 @@ static struct file_operations rtdm_mmap_fops = {
  *
  * Rescheduling: possible.
  */
-int rtdm_mmap_to_user(rtdm_user_info_t *user_info, void *src_addr, size_t len,
+int rtdm_mmap_to_user(rtdm_user_info_t *user_info,
+                      void *src_addr, size_t len,
                       int prot, void **pptr,
                       struct vm_operations_struct *vm_ops,
                       void *vm_private_data)
 {
-    struct rtdm_mmap_data   mmap_data = {src_addr, vm_ops, vm_private_data};
-    struct file             *filp;
-    const struct file_operations    *old_fops;
-    void                    *old_priv_data;
-    void                    *user_ptr;
+    struct rtdm_mmap_data   mmap_data = { src_addr, 0,
+                                          vm_ops, vm_private_data };
 
-    filp = filp_open("/dev/zero", O_RDWR, 0);
-    if (IS_ERR(filp))
-        return PTR_ERR(filp);
-
-    old_fops = filp->f_op;
-    filp->f_op = &rtdm_mmap_fops;
-
-    old_priv_data = filp->private_data;
-    filp->private_data = &mmap_data;
-
-    down_write(&user_info->mm->mmap_sem);
-    user_ptr = (void *)do_mmap(filp, (unsigned long)*pptr, len, prot,
-                               MAP_SHARED, 0);
-    up_write(&user_info->mm->mmap_sem);
-
-    filp->f_op = (typeof(filp->f_op))old_fops;
-    filp->private_data = old_priv_data;
-
-    filp_close(filp, user_info->files);
-
-    if (IS_ERR(user_ptr))
-        return PTR_ERR(user_ptr);
-
-    *pptr = user_ptr;
-    return 0;
+    return rtdm_do_mmap(user_info, &mmap_data, len, prot, pptr);
 }
 
 EXPORT_SYMBOL(rtdm_mmap_to_user);
+
+
+/**
+ * Map an I/O memory range into the address space of the user.
+ *
+ * @param[in] user_info User information pointer as passed to the invoked
+ * device operation handler
+ * @param[in] src_addr physical I/O address to be mapped
+ * @param[in] len Length of the memory range
+ * @param[in] prot Protection flags for the user's memory range, typically
+ * either PROT_READ or PROT_READ|PROT_WRITE
+ * @param[in,out] pptr Address of a pointer containing the desired user
+ * address or NULL on entry and the finally assigned address on return
+ * @param[in] vm_ops vm_operations to be executed on the vma_area of the
+ * user memory range or NULL
+ * @param[in] vm_private_data Private data to be stored in the vma_area,
+ * primarily useful for vm_operation handlers
+ *
+ * @return 0 on success, otherwise (most common values):
+ *
+ * - -EINVAL is returned if an invalid start address, size, or destination
+ * address was passed.
+ *
+ * - -ENOMEM is returned if there is insufficient free memory or the limit of
+ * memory mapping for the user process was reached.
+ *
+ * - -EAGAIN is returned if too much memory has been already locked by the
+ * user process.
+ *
+ * - -EPERM @e may be returned if an illegal invocation environment is
+ * detected.
+ *
+ * @note RTDM supports two models for unmapping the user memory range again.
+ * One is explicite unmapping via rtdm_munmap(), either performed when the
+ * user requests it via an IOCTL etc. or when the related device is closed.
+ * The other is automatic unmapping, triggered by the user invoking standard
+ * munmap() or by the termination of the related process. To track release of
+ * the mapping and therefore relinquishment of the referenced physical memory,
+ * the caller of rtdm_iomap_to_user() can pass a vm_operations_struct on
+ * invocation, defining a close handler for the vm_area. See Linux
+ * documentaion (e.g. Linux Device Drivers book) on virtual memory management
+ * for details.
+ *
+ * Environments:
+ *
+ * This service can be called from:
+ *
+ * - Kernel module initialization/cleanup code
+ * - User-space task (non-RT)
+ *
+ * Rescheduling: possible.
+ */
+int rtdm_iomap_to_user(rtdm_user_info_t *user_info,
+                       unsigned long src_addr, size_t len,
+                       int prot, void **pptr,
+                       struct vm_operations_struct *vm_ops,
+                       void *vm_private_data)
+{
+    struct rtdm_mmap_data   mmap_data = { NULL, src_addr,
+                                          vm_ops, vm_private_data };
+
+    return rtdm_do_mmap(user_info, &mmap_data, len, prot, pptr);
+}
+
+EXPORT_SYMBOL(rtdm_iomap_to_user);
 
 
 /**
@@ -1294,6 +1425,9 @@ EXPORT_SYMBOL(rtdm_mmap_to_user);
  *
  * - -EINVAL is returned if an invalid address or size was passed.
  *
+ * - -EPERM @e may be returned if an illegal invocation environment is
+ * detected.
+ *
  * Environments:
  *
  * This service can be called from:
@@ -1306,6 +1440,9 @@ EXPORT_SYMBOL(rtdm_mmap_to_user);
 int rtdm_munmap(rtdm_user_info_t *user_info, void *ptr, size_t len)
 {
     int err;
+
+
+    XENO_ASSERT(RTDM, xnpod_root_p(), return -EPERM;);
 
     down_write(&user_info->mm->mmap_sem);
     err = do_munmap(user_info->mm, (unsigned long)ptr, len);
@@ -1557,7 +1694,8 @@ int rtdm_safe_copy_to_user(rtdm_user_info_t *user_info, void __user *dst,
  * @param[in] count Maximum number of bytes to copy, including the trailing
  * '0'
  *
- * @return 0 on success, otherwise:
+ * @return Length of the string on success (not including the trailing '0'),
+ * otherwise:
  *
  * - -EFAULT is returned if an invalid memory area was accessed.
  *

@@ -27,6 +27,47 @@
 #include <asm/uaccess.h>
 #include <asm/mman.h>
 
+#if 0
+
+#define XENO_ASSERT(subsystem, cond, action)  do { } while (0)
+#else
+
+#ifndef CONFIG_RTAI_DEBUG_RTDM
+#define CONFIG_RTAI_DEBUG_RTDM  0
+#endif
+
+#define XENO_ASSERT(subsystem, cond, action)  do { \
+    if (unlikely(CONFIG_RTAI_DEBUG_##subsystem > 0 && !(cond))) { \
+        xnlogerr("assertion failed at %s:%d (%s)\n", __FILE__, __LINE__, (#cond)); \
+        action; \
+    } \
+} while(0)
+
+/* 
+  With what above we let some assertion diagnostic. Here below we keep knowledge
+  of specific assertions we care of.
+ */
+
+#define xnpod_root_p()          (!current->rtai_tskext(TSKEXT0) || !((RT_TASK *)(current->rtai_tskext(TSKEXT0)))->is_hard)
+#define rthal_local_irq_test()  (!rtai_save_flags_irqbit())
+#define rthal_local_irq_enable  rtai_sti 
+
+#endif
+
+#if LINUX_VERSION_CODE < KERNEL_VERSION(2,6,0)
+
+#define _MODULE_PARM_STRING_charp "s"
+#define compat_module_param_array(name, type, count, perm) \
+        static inline void *__check_existence_##name(void) { return &name; } \
+        MODULE_PARM(name, "1-" __MODULE_STRING(count) _MODULE_PARM_STRING_##type)
+
+#else
+
+#define compat_module_param_array(name, type, count, perm) \
+        module_param_array(name, type, NULL, perm)
+
+#endif
+
 //recursive smp locks, as for RTAI global stuff + a name
 
 #define XNARCH_LOCK_UNLOCKED  (xnlock_t) { 0 }
@@ -175,6 +216,8 @@ unsigned long __va_to_kva(unsigned long va);
 
 // interrupt setup/management (adopted_&|_adapted from RTDM pet system)
 
+#define RTHAL_NR_IRQS  IPIPE_NR_XIRQS
+
 #define XN_ISR_NONE       0x1
 #define XN_ISR_HANDLED    0x2
 
@@ -195,86 +238,69 @@ typedef int (*xniack_t)(unsigned irq);
 
 typedef unsigned long xnflags_t;
 
+typedef atomic_t atomic_counter_t;
+
+typedef RTIME xnticks_t;
+
+typedef struct xnstat_runtime {
+        xnticks_t start;
+        xnticks_t total;
+} xnstat_runtime_t;
+
+typedef struct xnstat_counter {
+        int counter;
+} xnstat_counter_t;
+#define xnstat_counter_inc(c)  ((c)->counter++)
+
 typedef struct xnintr {
     struct xnintr *next;
+    unsigned unhandled;
     xnisr_t isr;
     void *cookie;
-    unsigned long hits;
     xnflags_t flags;
     unsigned irq;
     xniack_t iack;
     const char *name;
+    struct {
+        xnstat_counter_t hits;
+        xnstat_runtime_t account;
+    } stat[RTAI_NR_CPUS];
+
 } xnintr_t;
+
+#define xnsched_cpu(sched)  rtai_cpuid()
 
 int xnintr_shirq_attach(xnintr_t *intr, void *cookie);
 int xnintr_shirq_detach(xnintr_t *intr);
+int xnintr_init (xnintr_t *intr, const char *name, unsigned irq, xnisr_t isr, xniack_t iack, xnflags_t flags);
+int xnintr_destroy (xnintr_t *intr);
+int xnintr_attach (xnintr_t *intr, void *cookie);
+int xnintr_detach (xnintr_t *intr);
+int xnintr_enable (xnintr_t *intr);
+int xnintr_disable (xnintr_t *intr);
 
-static inline void xnintr_init (xnintr_t *intr, const char *name, unsigned irq, xnisr_t isr, xniack_t iack, xnflags_t flags)
-{
-	*intr = (xnintr_t) { NULL, isr, NULL, 0, flags, irq, iack, name };
-}
+/* Atomic operations are already serializing on x86 */
+#define xnarch_before_atomic_dec()  smp_mb__before_atomic_dec()
+#define xnarch_after_atomic_dec()    smp_mb__after_atomic_dec()
+#define xnarch_before_atomic_inc()  smp_mb__before_atomic_inc()
+#define xnarch_after_atomic_inc()    smp_mb__after_atomic_inc()
 
-static inline int xnintr_attach (xnintr_t *intr, void *cookie)
-{
-	intr->hits = 0;
-	intr->cookie = cookie;
-	return xnintr_shirq_attach(intr, cookie);
-}
+#define xnarch_memory_barrier()      smp_mb()
+#define xnarch_atomic_get(pcounter)  atomic_read(pcounter)
+#define xnarch_atomic_inc(pcounter)  atomic_inc(pcounter)
+#define xnarch_atomic_dec(pcounter)  atomic_dec(pcounter)
 
-static inline int xnintr_detach (xnintr_t *intr)
-{
-	return xnintr_shirq_detach(intr);
-}
+#define   testbits(flags, mask)  ((flags) & (mask))
+#define __testbits(flags, mask)  ((flags) & (mask))
+#define __setbits(flags, mask)   do { (flags) |= (mask);  } while(0)
+#define __clrbits(flags, mask)   do { (flags) &= ~(mask); } while(0)
 
-static inline int xnintr_destroy (xnintr_t *intr)
-{
-	return xnintr_detach(intr);
-}
+#define xnarch_chain_irq   rt_pend_linux_irq
+#define xnarch_end_irq     rt_enable_irq
 
-static int xnintr_enable (xnintr_t *intr)
-{
-	rt_enable_irq(intr->irq);
-	return 0;
-}
-
-static int xnintr_disable (xnintr_t *intr)
-{
-	rt_disable_irq(intr->irq);
-	return 0;
-}
-
-#ifdef CONFIG_SMP
-
-typedef struct xnintr_shirq {
-	xnintr_t *handlers;
-	atomic_t active;
-} xnintr_shirq_t;
-
-#define xnintr_shirq_lock(shirq) \
-	do { atomic_inc(&shirq->active); } while (0)
-
-#define xnintr_shirq_unlock(shirq) \
-	do { atomic_dec(&shirq->active); } while (0)
-
-#define xnintr_shirq_spin(shirq) \
-	do { while (atomic_read(&shirq->active)) cpu_relax(); } while (0)
-
-#else /* !CONFIG_SMP */
-
-typedef struct xnintr_shirq {
-	xnintr_t *handlers;
-} xnintr_shirq_t;
-
-#define xnintr_shirq_lock(shirq)
-
-#define xnintr_shirq_unlock(shirq)
-
-#define xnintr_shirq_spin(shirq)
-
-#endif /* CONFIG_SMP */
-
-#define testbits(flags, mask)  ((flags) & (mask))
-#define setbits(flags, mask)   do { (flags) |= (mask);  } while(0)
-#define clrbits(flags, mask)   do { (flags) &= ~(mask); } while(0)
+#define xnarch_hook_irq(irq, handler, iack, intr) \
+	rt_request_irq_wack(irq, (void *)handler, intr, 0, iack);
+#define xnarch_release_irq(irq) \
+	rt_release_irq(irq);
 
 #endif /* !_RTAI_XNSTUFF_H */

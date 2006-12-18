@@ -15,8 +15,8 @@ calibrate_rt.ko: $(libcalibrate_rt_a_SOURCES)
 	@RTAI_KBUILD_CMD@ \
 	@RTAI_KBUILD_BOTTOM@
 
-rtai_smi.ko: @RTAI_KBUILD_ENV@
-rtai_smi.ko: $(libsmi_rt_a_SOURCES)
+smi_rt.ko: @RTAI_KBUILD_ENV@
+smi_rt.ko: $(libsmi_rt_a_SOURCES)
 	@RTAI_KBUILD_TOP@ \
 	@RTAI_KBUILD_CMD@ \
 	@RTAI_KBUILD_BOTTOM@
@@ -43,7 +43,7 @@ libsmi_rt_a_CPPFLAGS = \
 	-I$(top_srcdir)/base/include \
 	-I../../../include
 
-rtai_smi.o: libsmi_rt.a
+smi_rt.o: libsmi_rt.a
 	$(CROSS_COMPILE)$(LD) --whole-archive $< -r -o $@
 endif
 
@@ -71,10 +71,9 @@ calibration_helper_LDADD = \
 	../../../sched/liblxrt/liblxrt.la \
 	-lpthread
 
-all-local: calibrate_rt$(modext) rtai_smi$(modext)
+all-local: calibrate_rt$(modext) smi_rt$(modext)
 
-RT_MODULES = calibrate_rt$(modext)
-RTAI_MODULES = rtai_smi$(modext)
+RT_MODULES = calibrate_rt$(modext) smi_rt$(modext)
 
 install-exec-local: $(RT_MODULES)
 	$(mkinstalldirs) $(DESTDIR)$(moduledir)
@@ -82,10 +81,6 @@ install-exec-local: $(RT_MODULES)
 		k="rtai_`echo $$m | sed 's;_rt\.;.;'`" ; \
 		echo "installing module $$m as $$k in $(DESTDIR)$(moduledir)" ; \
 		$(INSTALL_DATA) $$m $(DESTDIR)$(moduledir)/$$k ; \
-	done
-	@for m in $(RTAI_MODULES) ; do \
-		echo "installing module $$m in $(DESTDIR)$(moduledir)" ; \
-		$(INSTALL_DATA) $$m $(DESTDIR)$(moduledir)/ ; \
 	done
 
 install-data-local:

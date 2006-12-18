@@ -163,7 +163,7 @@ static void cleanup_instance(struct rtdm_device *device,
                              struct rtdm_dev_context *context,
                              struct rtdm_fildes *fildes,
                              int nrt_mem,
-                             spl_t *s)
+                             spl_t s)
 {
     if (fildes) {
         clear_bit((fildes - fildes_table), used_fildes);
@@ -171,7 +171,7 @@ static void cleanup_instance(struct rtdm_device *device,
         open_fildes--;
     }
 
-    xnlock_put_irqrestore(&rt_fildes_lock, *s);
+    xnlock_put_irqrestore(&rt_fildes_lock, s);
 
     if (context) {
         if (device->reserved.exclusive_context) {
@@ -215,6 +215,8 @@ int _rtdm_open(rtdm_user_info_t *user_info, const char *path, int oflag)
         ret = device->open_rt(context, user_info, oflag);
     }
 
+    XENO_ASSERT(RTDM, !rthal_local_irq_test(), rthal_local_irq_enable(););
+
     if (unlikely(ret < 0))
         goto cleanup_out;
 
@@ -225,7 +227,7 @@ int _rtdm_open(rtdm_user_info_t *user_info, const char *path, int oflag)
 
  cleanup_out:
     xnlock_get_irqsave(&rt_fildes_lock, s);
-    cleanup_instance(device, context, fildes, nrt_mode, &s);
+    cleanup_instance(device, context, fildes, nrt_mode, s);
 
  err_out:
     return ret;
@@ -260,6 +262,8 @@ int _rtdm_socket(rtdm_user_info_t *user_info, int protocol_family,
         ret = device->socket_rt(context, user_info, protocol);
     }
 
+    XENO_ASSERT(RTDM, !rthal_local_irq_test(), rthal_local_irq_enable(););
+
     if (unlikely(ret < 0))
         goto cleanup_out;
 
@@ -270,7 +274,7 @@ int _rtdm_socket(rtdm_user_info_t *user_info, int protocol_family,
 
  cleanup_out:
     xnlock_get_irqsave(&rt_fildes_lock, s);
-    cleanup_instance(device, context, fildes, nrt_mode, &s);
+    cleanup_instance(device, context, fildes, nrt_mode, s);
 
  err_out:
     return ret;
@@ -322,6 +326,8 @@ int _rtdm_close(rtdm_user_info_t *user_info, int fd, int forced)
     } else
         ret = context->ops->close_nrt(context, user_info);
 
+    XENO_ASSERT(RTDM, !rthal_local_irq_test(), rthal_local_irq_enable(););
+
     if (unlikely(ret < 0))
         goto unlock_out;
 
@@ -335,7 +341,7 @@ int _rtdm_close(rtdm_user_info_t *user_info, int fd, int forced)
 
     cleanup_instance(context->device, context, &fildes_table[fd],
                      test_bit(RTDM_CREATED_IN_NRT, &context->context_flags),
-                     &s);
+                     s);
 
     return ret;
 
@@ -366,6 +372,8 @@ int _rtdm_close(rtdm_user_info_t *user_info, int fd, int forced)
         ret = ops->operation##_rt(context, user_info, args);                \
     else                                                                    \
         ret = ops->operation##_nrt(context, user_info, args);               \
+                                                                            \
+    XENO_ASSERT(RTDM, !rthal_local_irq_test(), rthal_local_irq_enable(););  \
                                                                             \
     rtdm_context_unlock(context);                                           \
                                                                             \

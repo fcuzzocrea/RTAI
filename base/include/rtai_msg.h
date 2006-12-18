@@ -61,132 +61,132 @@ int __rtai_msg_init(void);
 
 void __rtai_msg_exit(void);
 
-struct rt_task_struct *rt_send(struct rt_task_struct *task,
+RTAI_SYSCALL_MODE struct rt_task_struct *rt_send(struct rt_task_struct *task,
 			       unsigned long msg);
 
-struct rt_task_struct *rt_send_if(struct rt_task_struct *task,
+RTAI_SYSCALL_MODE struct rt_task_struct *rt_send_if(struct rt_task_struct *task,
 				  unsigned long msg);
 
-struct rt_task_struct *rt_send_until(struct rt_task_struct *task,
+RTAI_SYSCALL_MODE struct rt_task_struct *rt_send_until(struct rt_task_struct *task,
 				     unsigned long msg,
 				     RTIME time);
     
-struct rt_task_struct *rt_send_timed(struct rt_task_struct *task,
+RTAI_SYSCALL_MODE struct rt_task_struct *rt_send_timed(struct rt_task_struct *task,
 				     unsigned long msg,
 				     RTIME delay);
 
-struct rt_task_struct *rt_evdrp(struct rt_task_struct *task,
+RTAI_SYSCALL_MODE struct rt_task_struct *rt_evdrp(struct rt_task_struct *task,
 				void *msg);
 
-struct rt_task_struct *rt_receive(struct rt_task_struct *task,
+RTAI_SYSCALL_MODE struct rt_task_struct *rt_receive(struct rt_task_struct *task,
 				  void *msg);
 
-struct rt_task_struct *rt_receive_if(struct rt_task_struct *task,
+RTAI_SYSCALL_MODE struct rt_task_struct *rt_receive_if(struct rt_task_struct *task,
 				     void *msg);
 
-struct rt_task_struct *rt_receive_until(struct rt_task_struct *task,
+RTAI_SYSCALL_MODE struct rt_task_struct *rt_receive_until(struct rt_task_struct *task,
 					void *msg,
 					RTIME time);
 
-struct rt_task_struct *rt_receive_timed(struct rt_task_struct *task,
+RTAI_SYSCALL_MODE struct rt_task_struct *rt_receive_timed(struct rt_task_struct *task,
 					void *msg,
 					RTIME delay);
 
-struct rt_task_struct *rt_rpc(struct rt_task_struct *task,
+RTAI_SYSCALL_MODE struct rt_task_struct *rt_rpc(struct rt_task_struct *task,
 			      unsigned long to_do,
 			      void *result);
 
-struct rt_task_struct *rt_rpc_if(struct rt_task_struct *task,
+RTAI_SYSCALL_MODE struct rt_task_struct *rt_rpc_if(struct rt_task_struct *task,
 				 unsigned long to_do,
 				 void *result);
 
-struct rt_task_struct *rt_rpc_until(struct rt_task_struct *task,
+RTAI_SYSCALL_MODE struct rt_task_struct *rt_rpc_until(struct rt_task_struct *task,
 				    unsigned long to_do,
 				    void *result,
 				    RTIME time);
 
-struct rt_task_struct *rt_rpc_timed(struct rt_task_struct *task,
+RTAI_SYSCALL_MODE struct rt_task_struct *rt_rpc_timed(struct rt_task_struct *task,
 				    unsigned long to_do,
 				    void *result,
 				    RTIME delay);
 
-int rt_isrpc(struct rt_task_struct *task);
+RTAI_SYSCALL_MODE int rt_isrpc(struct rt_task_struct *task);
 
-struct rt_task_struct *rt_return(struct rt_task_struct *task,
+RTAI_SYSCALL_MODE struct rt_task_struct *rt_return(struct rt_task_struct *task,
 				 unsigned long result);
 
-struct rt_task_struct *rt_rpcx(struct rt_task_struct *task,
+RTAI_SYSCALL_MODE struct rt_task_struct *rt_rpcx(struct rt_task_struct *task,
 			       void *smsg,
 			       void *rmsg,
 			       int ssize,
 			       int rsize);
 
-struct rt_task_struct *rt_rpcx_if(struct rt_task_struct *task,
+RTAI_SYSCALL_MODE struct rt_task_struct *rt_rpcx_if(struct rt_task_struct *task,
 				  void *smsg,
 				  void *rmsg,
 				  int ssize,
 				  int rsize);
 
-struct rt_task_struct *rt_rpcx_until(struct rt_task_struct *task,
+RTAI_SYSCALL_MODE struct rt_task_struct *rt_rpcx_until(struct rt_task_struct *task,
 				     void *smsg,
 				     void *rmsg,
 				     int ssize,
 				     int rsize,
 				     RTIME time);
 
-struct rt_task_struct *rt_rpcx_timed(struct rt_task_struct *task,
+RTAI_SYSCALL_MODE struct rt_task_struct *rt_rpcx_timed(struct rt_task_struct *task,
 				     void *smsg,
 				     void *rmsg,
 				     int ssize,
 				     int rsize,
 				     RTIME delay);
 
-struct rt_task_struct *rt_sendx(struct rt_task_struct *task,
+RTAI_SYSCALL_MODE struct rt_task_struct *rt_sendx(struct rt_task_struct *task,
 				void *msg,
 				int size);
 
-struct rt_task_struct *rt_sendx_if(struct rt_task_struct *task,
+RTAI_SYSCALL_MODE struct rt_task_struct *rt_sendx_if(struct rt_task_struct *task,
 				   void *msg,
 				   int size);
 
-struct rt_task_struct *rt_sendx_until(struct rt_task_struct *task,
+RTAI_SYSCALL_MODE struct rt_task_struct *rt_sendx_until(struct rt_task_struct *task,
 				      void *msg,
 				      int size,
 				      RTIME time);
 
-struct rt_task_struct *rt_sendx_timed(struct rt_task_struct *task,
+RTAI_SYSCALL_MODE struct rt_task_struct *rt_sendx_timed(struct rt_task_struct *task,
 				      void *msg,
 				      int size,
 				      RTIME delay);
 
-struct rt_task_struct *rt_returnx(struct rt_task_struct *task,
+RTAI_SYSCALL_MODE struct rt_task_struct *rt_returnx(struct rt_task_struct *task,
 				  void *msg,
 				  int size);
 
 #define rt_isrpcx(task) rt_isrpc(task)
 
-struct rt_task_struct *rt_evdrpx(struct rt_task_struct *task,
+RTAI_SYSCALL_MODE struct rt_task_struct *rt_evdrpx(struct rt_task_struct *task,
 				 void *msg,
 				 int size,
 				 int *len);
 
-struct rt_task_struct *rt_receivex(struct rt_task_struct *task,
+RTAI_SYSCALL_MODE struct rt_task_struct *rt_receivex(struct rt_task_struct *task,
 				   void *msg,
 				   int size,
 				   int *len);
 
-struct rt_task_struct *rt_receivex_if(struct rt_task_struct *task,
+RTAI_SYSCALL_MODE struct rt_task_struct *rt_receivex_if(struct rt_task_struct *task,
 				      void *msg,
 				      int size,
 				      int *len);
 
-struct rt_task_struct *rt_receivex_until(struct rt_task_struct *task,
+RTAI_SYSCALL_MODE struct rt_task_struct *rt_receivex_until(struct rt_task_struct *task,
 					 void *msg,
 					 int size,
 					 int *len,
 					 RTIME time);
 
-struct rt_task_struct *rt_receivex_timed(struct rt_task_struct *task,
+RTAI_SYSCALL_MODE struct rt_task_struct *rt_receivex_timed(struct rt_task_struct *task,
 					 void *msg,
 					 int size,
 					 int *len,
@@ -198,53 +198,53 @@ struct rt_task_struct *__rt_proxy_attach(void (*func)(long),
 					 int nbytes,
 					 int priority);
 
-struct rt_task_struct *rt_proxy_attach(struct rt_task_struct *task,
+RTAI_SYSCALL_MODE struct rt_task_struct *rt_proxy_attach(struct rt_task_struct *task,
 				       void *msg,
 				       int nbytes,
 				       int priority);
 
-int rt_proxy_detach(struct rt_task_struct *proxy);
+RTAI_SYSCALL_MODE int rt_proxy_detach(struct rt_task_struct *proxy);
 
-struct rt_task_struct *rt_trigger(struct rt_task_struct *proxy);
+RTAI_SYSCALL_MODE struct rt_task_struct *rt_trigger(struct rt_task_struct *proxy);
 
 #define exist(name)  rt_get_adr(nam2num(name))
 
-int rt_Send(pid_t pid,
+RTAI_SYSCALL_MODE int rt_Send(pid_t pid,
 	    void *smsg,
 	    void *rmsg,
 	    size_t ssize,
 	    size_t rsize);
 
-pid_t rt_Receive(pid_t pid,
+RTAI_SYSCALL_MODE pid_t rt_Receive(pid_t pid,
 		 void *msg,
 		 size_t maxsize,
 		 size_t *msglen);
 
-pid_t rt_Creceive(pid_t pid,
+RTAI_SYSCALL_MODE pid_t rt_Creceive(pid_t pid,
 		  void *msg,
 		  size_t maxsize,
 		  size_t *msglen,
 		  RTIME delay);
 
-int rt_Reply(pid_t pid,
+RTAI_SYSCALL_MODE int rt_Reply(pid_t pid,
 	     void *msg,
 	     size_t size);
 
-pid_t rt_Proxy_attach(pid_t pid,
+RTAI_SYSCALL_MODE pid_t rt_Proxy_attach(pid_t pid,
 		      void *msg,
 		      int nbytes,
 		      int priority);
 
-int rt_Proxy_detach(pid_t pid);
+RTAI_SYSCALL_MODE int rt_Proxy_detach(pid_t pid);
 
-pid_t rt_Trigger(pid_t pid);
+RTAI_SYSCALL_MODE pid_t rt_Trigger(pid_t pid);
 
-pid_t rt_Name_attach(const char *name);
+RTAI_SYSCALL_MODE pid_t rt_Name_attach(const char *name);
 
-pid_t rt_Name_locate(const char *host,
+RTAI_SYSCALL_MODE pid_t rt_Name_locate(const char *host,
 		     const char *name);
 
-int rt_Name_detach(pid_t pid);
+RTAI_SYSCALL_MODE int rt_Name_detach(pid_t pid);
 
 #ifdef __cplusplus
 }

@@ -6,7 +6,7 @@ config MODULES
 
 config RTAI_VERSION
 	string
-	default "3.4 (vulcano)"
+	default "3.5 (vulcano)"
 
 menu "General"
 
@@ -226,6 +226,28 @@ config RTAI_CPUS
 
 	PAY ATTENTION: the default value is 2.
 
+config RTAI_DIAG_TSC_SYNC
+	bool "Diagnose out of sync MP-TSCs"
+	default n
+	help
+	Check alignement of MP-TSCs, against a master CPU, and show them in
+	the RTAI HAL proc file system (in TSC count units).
+
+config RTAI_MASTER_TSC_CPU
+	depends on RTAI_DIAG_TSC_SYNC
+	string "Define the master CPU for aligning MP-TSCs"
+	default 0
+	help
+	Master CPU for diagnosis and correction of TSCs alignement.
+
+config RTAI_TUNE_TSC_SYNC
+	depends on RTAI_DIAG_TSC_SYNC
+	bool "Tune out of sync MP-TSCs"
+	default n
+	help
+	Use offsets made available by enabling the out of sync diagnosis to
+	keep readings of TSCs times as aligned as possible.
+
 endmenu
 
 menu "Base system"
@@ -414,7 +436,7 @@ config RTAI_BUSY_TIME_ALIGN
 	Do not set it if a hard periodic timer is to be used.
 
 config RTAI_LXRT_USE_LINUX_SYSCALL
-	bool "Wrap LXRT service calls through Linux syscall mechanism"
+	bool "Use Linux syscall mechanism for LXRT calls from user space"
 	default n
 	help
 	With this option enabled, LXRT uses the Linux syscall mechanism
@@ -438,6 +460,17 @@ config RTAI_LXRT_USE_LINUX_SYSCALL
 	its own and Linux syscall mechanisms.
 	
 	If in doubt, say no.
+
+config RTAI_ALIGN_LINUX_PRIORITY
+	bool "Keep Linux task priority aligned to RTAI"
+	default n
+	help
+
+	By enabling this option the RTAI scheduler will keep Linux tasks
+	execution priority aligned to its. Naturally this makes sense
+	either for Linux soft real time tasks enabled to use RTAI APIs, 
+	i.e. they issued rt_task_init/rt_task_init_schmod, or when RTAI 
+	hard real time tasks are given back to Linux. 
 
 config RTAI_ONE_SHOT
 	bool "One-shot timer mode"
@@ -470,9 +503,9 @@ config RTAI_CAL_FREQS_FACT
 	be awaken in case of unprecise calibrations of the above cited
 	frequencies;
 	2 - in the case of very long timed list it will limit the search 
-	for the next firing time in the case of widely scattered tasks with 
-	lowest priorities, thus avoiding useless scheduling delays.
-	The granted firing interval will be roughly equal to:
+	for the next firing time of widely scattered tasks with lowest 
+	priorities, thus avoiding useless scheduling delays. The granted 
+	firing interval will be roughly equal to:
 	1.0/(RTAI_CAL_FREQS_FACT + 2.0) (seconds).
 
 endmenu
@@ -526,14 +559,16 @@ config RTAI_NETRPC
 	The NetRPC module will be called rtai_netrpc.o.
 
 config RTAI_NETRPC_RTNET
-	bool "Emulate RTNet"
+	bool "Use RTNet"
 	depends on RTAI_NETRPC
-	default y
+	default n
 	help
-	This enable RTNet like usage, using Linux soft networking support,
-	even when no RTNet is available. It can be used also when RTNet is
-	available. In such a case soft real time RTAI tasks will avoid 
-	loading the hard real time networking layer.
+	This enable support of RTNet in NETRPC. By setting this parameters hard 
+	real time will use RTNet automatically, while soft real time task will 
+	use Linux networking. With this parameter set the making of RTAI will 
+	work even if RTNet is not installed but you'll need RTNet to run it.
+	Notice that the initial linking and set up of remote port stubs is 
+	done in soft mode always.
 
 config RTAI_SHM
 	tristate "Shared memory"
@@ -875,6 +910,30 @@ config RTAI_RTDM_FD_MAX
 	default 128
 	help
 	The maximum number of file descriptors in RTDM.
+
+config RTAI_RTDM_EDGE_SHIRQ
+	depends on RTAI_RTDM
+        bool "Shared edge triggered interrupts"
+        default n
+        help
+        Make it possible for RTDM own interrupt handlers to manage shared
+	edge triggered interrupts.
+
+config RTAI_RTDM_LEVEL_SHIRQ
+	depends on RTAI_RTDM
+        bool "Shared level triggered interrupts"
+        default n
+        help
+        Make it possible for RTDM own interrupt handlers to manage shared
+	level triggered interrupts.
+
+config RTAI_DEBUG_RTDM
+	depends on RTAI_RTDM
+        bool "Enable some elementary RTDM debugging messages"
+        default n
+        help
+        Enable some elementary debugging of wrong requests to RTDM, in the 
+	form of messages asserting what's improper and where it's happening.
 
 menu "Drivers"
 

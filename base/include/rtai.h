@@ -19,7 +19,6 @@
 #ifndef _RTAI_RTAI_H
 #define _RTAI_RTAI_H
 #ifdef __KERNEL__
-#include <linux/config.h>
 #include <linux/version.h>
 #endif /* __KERNEL__ */
 #include <rtai_sanity.h>

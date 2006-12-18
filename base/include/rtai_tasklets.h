@@ -83,31 +83,23 @@ void __rtai_tasklets_exit(void);
 
 struct rt_tasklet_struct *rt_init_tasklet(void);
 
-int rt_delete_tasklet(struct rt_tasklet_struct *tasklet);
+RTAI_SYSCALL_MODE int rt_delete_tasklet(struct rt_tasklet_struct *tasklet);
 
-int rt_insert_tasklet(struct rt_tasklet_struct *tasklet,
-		      int priority,
-		      void (*handler)(unsigned long),
-		      unsigned long data,
-		      unsigned long id,
-		      int pid);
+RTAI_SYSCALL_MODE int rt_insert_tasklet(struct rt_tasklet_struct *tasklet, int priority, void (*handler)(unsigned long), unsigned long data, unsigned long id, int pid);
 
-void rt_remove_tasklet(struct rt_tasklet_struct *tasklet);
+RTAI_SYSCALL_MODE void rt_remove_tasklet(struct rt_tasklet_struct *tasklet);
 
 struct rt_tasklet_struct *rt_find_tasklet_by_id(unsigned long id);
 
-int rt_exec_tasklet(struct rt_tasklet_struct *tasklet);
+RTAI_SYSCALL_MODE int rt_exec_tasklet(struct rt_tasklet_struct *tasklet);
 
-void rt_set_tasklet_priority(struct rt_tasklet_struct *tasklet,
-			     int priority);
+RTAI_SYSCALL_MODE void rt_set_tasklet_priority(struct rt_tasklet_struct *tasklet, int priority);
 
-int rt_set_tasklet_handler(struct rt_tasklet_struct *tasklet,
-			   void (*handler)(unsigned long));
+RTAI_SYSCALL_MODE int rt_set_tasklet_handler(struct rt_tasklet_struct *tasklet, void (*handler)(unsigned long));
 
 #define rt_fast_set_tasklet_handler(t, h) do { (t)->handler = (h); } while (0)
 
-void rt_set_tasklet_data(struct rt_tasklet_struct *tasklet,
-			 unsigned long data);
+RTAI_SYSCALL_MODE void rt_set_tasklet_data(struct rt_tasklet_struct *tasklet, unsigned long data);
 
 #define rt_fast_set_tasklet_data(t, d) \
 do { \
@@ -134,8 +126,7 @@ do { \
  * This function and macro can be used within the timer handler.
  *
  */
-struct rt_task_struct *rt_tasklet_use_fpu(struct rt_tasklet_struct *tasklet,
-					  int use_fpu);
+RTAI_SYSCALL_MODE struct rt_task_struct *rt_tasklet_use_fpu(struct rt_tasklet_struct *tasklet, int use_fpu);
 
 /**
  * Init, in kernel space, a timed tasklet, simply called timer, structure
@@ -171,24 +162,15 @@ struct rt_task_struct *rt_tasklet_use_fpu(struct rt_tasklet_struct *tasklet,
  */
 #define rt_delete_timer rt_delete_tasklet
 
-int rt_insert_timer(struct rt_tasklet_struct *timer,
-		    int priority,
-		    RTIME firing_time,
-		    RTIME period,
-		    void (*handler)(unsigned long),
-		    unsigned long data,
-		    int pid);
+RTAI_SYSCALL_MODE int rt_insert_timer(struct rt_tasklet_struct *timer, int priority, RTIME firing_time, RTIME period, void (*handler)(unsigned long), unsigned long data, int pid);
 
-void rt_remove_timer(struct rt_tasklet_struct *timer);
+RTAI_SYSCALL_MODE void rt_remove_timer(struct rt_tasklet_struct *timer);
 
-void rt_set_timer_priority(struct rt_tasklet_struct *timer,
-			   int priority);
+RTAI_SYSCALL_MODE void rt_set_timer_priority(struct rt_tasklet_struct *timer, int priority);
 
-void rt_set_timer_firing_time(struct rt_tasklet_struct *timer,
-			      RTIME firing_time);
+RTAI_SYSCALL_MODE void rt_set_timer_firing_time(struct rt_tasklet_struct *timer, RTIME firing_time);
 
-void rt_set_timer_period(struct rt_tasklet_struct *timer,
-			 RTIME period);
+RTAI_SYSCALL_MODE void rt_set_timer_period(struct rt_tasklet_struct *timer, RTIME period);
 
 #define rt_fast_set_timer_period(t, p) \
 do { \
@@ -248,12 +230,9 @@ do { \
 
 #define rt_timer_use_fpu rt_tasklet_use_fpu
 
-void rt_wait_tasklet_is_hard(struct rt_tasklet_struct *tasklet,
-			     int thread);
+RTAI_SYSCALL_MODE void rt_wait_tasklet_is_hard(struct rt_tasklet_struct *tasklet, int thread);
 
-void rt_register_task(struct rt_tasklet_struct *tasklet,
-		      struct rt_tasklet_struct *usptasklet,
-		      struct rt_task_struct *task);
+RTAI_SYSCALL_MODE void rt_register_task(struct rt_tasklet_struct *tasklet, struct rt_tasklet_struct *usptasklet, struct rt_task_struct *task);
  
 #ifdef __cplusplus
 }

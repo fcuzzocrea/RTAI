@@ -33,7 +33,6 @@
 
 #include <linux/version.h>
 #include <linux/module.h>
-#include <linux/config.h>
 #include <linux/errno.h>
 #include <linux/mm.h>
 #include <linux/miscdevice.h>
@@ -133,12 +132,12 @@ void *rt_shm_alloc(unsigned long name, int size, int suprt)
 	return _rt_shm_alloc(name, size, suprt);
 }
 
-static int rt_shm_alloc_usp(unsigned long name, int size, int suprt)
+static RTAI_SYSCALL_MODE int rt_shm_alloc_usp(unsigned long name, int size, int suprt)
 {
 	TRACE_RTAI_SHM(TRACE_RTAI_EV_SHM_MALLOC, name, size, current->pid);
 
 	if (_rt_shm_alloc(name, size, suprt)) {
-		current->rtai_tskext(TSKEXT3) = (void *)name;
+		current->rtai_tskext(TSKEXT1) = (void *)name;
 		return abs(rt_get_type(name));
 	}
 	return 0;
@@ -164,13 +163,13 @@ static int rt_shm_alloc_usp(unsigned long name, int size, int suprt)
  *
  */
 
-int rt_shm_free(unsigned long name)
+RTAI_SYSCALL_MODE int rt_shm_free(unsigned long name)
 {
 	TRACE_RTAI_SHM(TRACE_RTAI_EV_SHM_KFREE, name, 0, 0);
 	return _rt_shm_free(name, rt_get_type(name));
 }
 
-static int rt_shm_size(unsigned long *arg)
+static RTAI_SYSCALL_MODE int rt_shm_size(unsigned long *arg)
 {
 	int size;
 	struct vm_area_struct *vma;
@@ -200,7 +199,7 @@ static struct vm_operations_struct rtai_shm_vm_ops = {
 	close: 	rtai_shm_vm_close
 };
 
-static void rt_set_heap(unsigned long, void *);
+static RTAI_SYSCALL_MODE void rt_set_heap(unsigned long, void *);
 
 static int rtai_shm_f_ioctl(struct inode *inode, struct file *file, unsigned int cmd, unsigned long arg)
 {
@@ -232,8 +231,8 @@ static int rtai_shm_f_mmap(struct file *file, struct vm_area_struct *vma)
 	if (!vma->vm_ops) {
 		vma->vm_ops = &rtai_shm_vm_ops;
 		vma->vm_flags |= VM_LOCKED;
-		name = (unsigned long)(vma->vm_private_data = current->rtai_tskext(TSKEXT3));
-		current->rtai_tskext(TSKEXT3) = NULL;
+		name = (unsigned long)(vma->vm_private_data = current->rtai_tskext(TSKEXT1));
+		current->rtai_tskext(TSKEXT1) = current->rtai_tskext(TSKEXT0) ? current : NULL;
 		return (size = rt_get_type(name)) < 0 ? rkmmap(ALIGN2PAGE(rt_get_adr(name)), -size, vma) : rvmmap(rt_get_adr(name), size, vma);
 	}
 	return -EFAULT;
@@ -445,7 +444,7 @@ static inline void rt_named_hfree_typed(void *adr, int htype)
  *
  */
 
-void *rt_halloc(int size)
+RTAI_SYSCALL_MODE void *rt_halloc(int size)
 {
 	return rt_halloc_typed(size, SPECIFIC);
 }
@@ -462,7 +461,7 @@ void *rt_halloc(int size)
  *
  */
 
-void rt_hfree(void *adr)
+RTAI_SYSCALL_MODE void rt_hfree(void *adr)
 {
 	rt_hfree_typed(adr, SPECIFIC);
 }
@@ -498,7 +497,7 @@ void rt_hfree(void *adr)
  *
  */
 
-void *rt_named_halloc(unsigned long name, int size)
+RTAI_SYSCALL_MODE void *rt_named_halloc(unsigned long name, int size)
 {
 	return rt_named_halloc_typed(name, size, SPECIFIC);
 }
@@ -522,7 +521,7 @@ void *rt_named_halloc(unsigned long name, int size)
  *
  */
 
-void rt_named_hfree(void *adr)
+RTAI_SYSCALL_MODE void rt_named_hfree(void *adr)
 {
 	rt_named_hfree_typed(adr, SPECIFIC);
 }
@@ -531,31 +530,31 @@ extern rtheap_t  rtai_global_heap;
 extern void     *rtai_global_heap_adr;
 extern int       rtai_global_heap_size;
 
-static void *rt_malloc_usp(int size)
+static RTAI_SYSCALL_MODE void *rt_malloc_usp(int size)
 {
 	return rtai_global_heap_adr ? rt_halloc_typed(size, GLOBAL) : NULL;
 }
 
-static void rt_free_usp(void *adr)
+static RTAI_SYSCALL_MODE void rt_free_usp(void *adr)
 {
 	if (rtai_global_heap_adr) {
 		rt_hfree_typed(adr, GLOBAL);
 	}
 }
 
-static void *rt_named_malloc_usp(unsigned long name, int size)
+static RTAI_SYSCALL_MODE void *rt_named_malloc_usp(unsigned long name, int size)
 {
 	return rtai_global_heap_adr ? rt_named_halloc_typed(name, size, GLOBAL) : NULL;
 }
 
-static void rt_named_free_usp(void *adr)
+static RTAI_SYSCALL_MODE void rt_named_free_usp(void *adr)
 {
 	if (rtai_global_heap_adr) {
 		rt_named_hfree_typed(adr, GLOBAL);
 	}
 }
 
-static void rt_set_heap(unsigned long name, void *adr)
+static RTAI_SYSCALL_MODE void rt_set_heap(unsigned long name, void *adr)
 {
 	void *heap, *hptr;
 	int size;
@@ -645,7 +644,6 @@ extern int set_rt_fun_entries(struct rt_native_fun_entry *entry);
 extern void reset_rt_fun_entries(struct rt_native_fun_entry *entry);
 
 #if 0
-#include <linux/devfs_fs_kernel.h>
 #include <linux/device.h>
 static class_t *shm_class = NULL;
 #endif

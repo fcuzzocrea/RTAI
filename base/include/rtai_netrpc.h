@@ -82,30 +82,30 @@ int __rtai_netrpc_init(void);
 
 void __rtai_netrpc_exit(void);
 
-unsigned long long rt_net_rpc(long fun_ext_timed,
+RTAI_SYSCALL_MODE unsigned long long rt_net_rpc(long fun_ext_timed,
                               long type,
 			      void *args,
 			      int argsize,
 			      int space);
 
-int rt_send_req_rel_port(unsigned long node,
+RTAI_SYSCALL_MODE int rt_send_req_rel_port(unsigned long node,
 			 int port,
 			 unsigned long id,
 			 MBX *mbx,
 			 int hard);
 
-unsigned long ddn2nl(const char *ddn);
+RTAI_SYSCALL_MODE unsigned long ddn2nl(const char *ddn);
 
-unsigned long rt_set_this_node(const char *ddn,
+RTAI_SYSCALL_MODE unsigned long rt_set_this_node(const char *ddn,
 			       unsigned long node,
 			       int hard);
 
-RT_TASK *rt_find_asgn_stub(unsigned long long owner,
+RTAI_SYSCALL_MODE RT_TASK *rt_find_asgn_stub(unsigned long long owner,
 			   int asgn);
 
-int rt_rel_stub(unsigned long long owner);
+RTAI_SYSCALL_MODE int rt_rel_stub(unsigned long long owner);
 
-int rt_waiting_return(unsigned long node,
+RTAI_SYSCALL_MODE int rt_waiting_return(unsigned long node,
 		      int port);
 
 int rt_get_net_rpc_ret(MBX *mbx,

@@ -25,7 +25,6 @@ Nov. 2001, Jan Kiszka (Jan.Kiszka@web.de) fix a tiny bug in __task_init.
 
 #include <linux/module.h>
 #include <linux/kernel.h>
-#include <linux/config.h>
 #include <linux/version.h>
 #include <linux/errno.h>
 #include <linux/slab.h>
@@ -54,15 +53,6 @@ static struct rt_fun_entry *rt_fun_ext[MAX_FUN_EXT];
  */
 #define USRLAND_MAX_MSG_SIZE  128  // Default max message size, used here only.
 
-#ifdef CONFIG_RTAI_TRACE
-/****************************************************************************/
-/* Trace functions. These functions have to be used rather than insert
-the macros as-is. Otherwise the system crashes ... You've been warned. K.Y. */
-void trace_true_lxrt_rtai_syscall_entry(void);
-void trace_true_lxrt_rtai_syscall_exit(void);
-/****************************************************************************/
-#endif /* CONFIG_RTAI_TRACE */
-
 int get_min_tasks_cpuid(void);
 
 int set_rtext(RT_TASK *task,
@@ -84,32 +74,32 @@ void *rt_get_lxrt_fun_entry(int index);
 
 static inline void lxrt_typed_sem_init(SEM *sem, int count, int type)
 {
-	((int (*)(SEM *, int, int))rt_get_lxrt_fun_entry(TYPED_SEM_INIT))(sem, count, type);
+	((RTAI_SYSCALL_MODE int (*)(SEM *, int, int))rt_get_lxrt_fun_entry(TYPED_SEM_INIT))(sem, count, type);
 }
 
 static inline int lxrt_typed_mbx_init(MBX *mbx, int bufsize, int type)
 {
-	return ((int (*)(MBX *, int, int))rt_get_lxrt_fun_entry(TYPED_MBX_INIT))(mbx, bufsize, type);
+	return ((RTAI_SYSCALL_MODE int (*)(MBX *, int, int))rt_get_lxrt_fun_entry(TYPED_MBX_INIT))(mbx, bufsize, type);
 }
 
 static inline int lxrt_typed_rwl_init(RWL *rwl, int type)
 {
-	return ((int (*)(RWL *, int))rt_get_lxrt_fun_entry(RWL_INIT))(rwl, type);
+	return ((RTAI_SYSCALL_MODE int (*)(RWL *, int))rt_get_lxrt_fun_entry(RWL_INIT))(rwl, type);
 }
 
 static inline int lxrt_spl_init(SPL *spl)
 {
-	return ((int (*)(SPL *))rt_get_lxrt_fun_entry(SPL_INIT))(spl);
+	return ((RTAI_SYSCALL_MODE int (*)(SPL *))rt_get_lxrt_fun_entry(SPL_INIT))(spl);
 }
 
 static inline int lxrt_Proxy_detach(pid_t pid)
 {
-	return ((int (*)(int))rt_get_lxrt_fun_entry(PROXY_DETACH))(pid);
+	return ((RTAI_SYSCALL_MODE int (*)(int))rt_get_lxrt_fun_entry(PROXY_DETACH))(pid);
 }
 
 static inline int GENERIC_DELETE(int index, void *object)
 {
-	return ((int (*)(void *))rt_get_lxrt_fun_entry(index))(object);
+	return ((RTAI_SYSCALL_MODE int (*)(void *))rt_get_lxrt_fun_entry(index))(object);
 }
 			 
 #define lxrt_sem_delete(sem)        GENERIC_DELETE(SEM_DELETE, sem)
@@ -125,7 +115,7 @@ extern void rt_schedule_soft_tail(RT_TASK *, int);
 static inline void lxrt_fun_call(RT_TASK *task, void *fun, int narg, long *arg)
 {
 	if (likely(task->is_hard > 0)) {
-		task->retval = ((long long (*)(unsigned long, ...))fun)(RTAI_FUN_ARGS);
+		task->retval = ((RTAI_SYSCALL_MODE long long (*)(unsigned long, ...))fun)(RTAI_FUN_ARGS);
 		if (unlikely(!task->is_hard)) {
 			rt_schedule_soft_tail(task, task->runnable_on_cpus);
 		}
@@ -326,7 +316,7 @@ static inline long long handle_lxrt_request (unsigned int lxsrq, long *arg, RT_T
 		}
 		if (!(type = funcm[srq].type)) {
 			recover_hardrt(task, task);
-			return ((long long (*)(unsigned long, ...))funcm[srq].fun)(RTAI_FUN_ARGS);
+			return ((RTAI_SYSCALL_MODE long long (*)(unsigned long, ...))funcm[srq].fun)(RTAI_FUN_ARGS);
 		}
 		recover_hardrt(1, task);
 		if (unlikely(NEED_TO_RW(type))) {
@@ -530,7 +520,7 @@ static inline long long handle_lxrt_request (unsigned int lxsrq, long *arg, RT_T
                         struct task_struct *ltsk;
                         if ((ltsk = find_task_by_pid(arg0.name)))  {
                                 if ((arg0.rt_task = ltsk->rtai_tskext(TSKEXT0))) {
-					if ((arg0.rt_task->force_soft = (arg0.rt_task->is_hard > 0) && FORCE_SOFT)) {
+					if ((arg0.rt_task->force_soft = (arg0.rt_task->is_hard != 0) && FORCE_SOFT)) {
 						rt_do_force_soft(arg0.rt_task);
 					}
                                         return (unsigned long)arg0.rt_task;
@@ -622,33 +612,21 @@ static inline int rt_do_signal(struct pt_regs *regs, RT_TASK *task)
 
 long long rtai_lxrt_invoke (unsigned int lxsrq, void *arg, struct pt_regs *regs)
 {
-	long long retval;
 	RT_TASK *task;
 
-#ifdef CONFIG_RTAI_TRACE
-	trace_true_lxrt_rtai_syscall_entry();
-#endif /* CONFIG_RTAI_TRACE */
-
 	if (likely((task = current->rtai_tskext(TSKEXT0)) != NULL)) {
+		long long retval;
 		if (unlikely(rt_do_signal(regs, task))) {
 			force_soft(task);
 		}
-	}
-	retval = handle_lxrt_request(lxsrq, arg, task);
-	if (likely(task != NULL)) {
+		retval = handle_lxrt_request(lxsrq, arg, task);
 		if (unlikely(rt_do_signal(regs, task))) {
 			force_soft(task);
-		} else {
-			task->system_data_ptr = regs;
-			retval = -RT_EINTR;
 		}
+		return retval;
+	} else {
+		return handle_lxrt_request(lxsrq, arg, task);
 	}
-
-#ifdef CONFIG_RTAI_TRACE
-	trace_true_lxrt_rtai_syscall_exit();
-#endif /* CONFIG_RTAI_TRACE */
-
-	return retval;
 }
 
 int set_rt_fun_ext_index(struct rt_fun_entry *fun, int idx)

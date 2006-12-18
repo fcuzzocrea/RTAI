@@ -19,7 +19,6 @@
 #include <linux/kernel.h>
 #include <linux/module.h>
 #include <linux/errno.h>
-#include <linux/config.h>
 #include <linux/version.h>
 #include <asm/uaccess.h>
 
@@ -190,12 +189,12 @@ int rt_bits_delete(BITS *bits)
 #define TEST_FUN(x)     ((long *)((unsigned long)(x)->retval))[0]
 #define TEST_MASK(x)    ((unsigned long *)((unsigned long)(x)->retval))[1]
 
-unsigned long rt_get_bits(BITS *bits)
+RTAI_SYSCALL_MODE unsigned long rt_get_bits(BITS *bits)
 {
 	return bits->mask;
 }
 
-int rt_bits_reset(BITS *bits, unsigned long mask)
+RTAI_SYSCALL_MODE int rt_bits_reset(BITS *bits, unsigned long mask)
 {
 	unsigned long flags, schedmap, oldmask;
 	RT_TASK *task;
@@ -226,7 +225,7 @@ int rt_bits_reset(BITS *bits, unsigned long mask)
 	return oldmask;
 }
 
-unsigned long rt_bits_signal(BITS *bits, int setfun, unsigned long masks)
+RTAI_SYSCALL_MODE unsigned long rt_bits_signal(BITS *bits, int setfun, unsigned long masks)
 {
 	unsigned long flags, schedmap;
 	RT_TASK *task;
@@ -259,7 +258,7 @@ unsigned long rt_bits_signal(BITS *bits, int setfun, unsigned long masks)
 	return masks;
 }
 
-int _rt_bits_wait(BITS *bits, int testfun, unsigned long testmasks, int exitfun, unsigned long exitmasks, unsigned long *resulting_mask, int space)
+RTAI_SYSCALL_MODE int _rt_bits_wait(BITS *bits, int testfun, unsigned long testmasks, int exitfun, unsigned long exitmasks, unsigned long *resulting_mask, int space)
 {
 	RT_TASK *rt_current;
 	unsigned long flags, mask;
@@ -304,7 +303,7 @@ int _rt_bits_wait(BITS *bits, int testfun, unsigned long testmasks, int exitfun,
 	return 0;
 }
 
-int _rt_bits_wait_if(BITS *bits, int testfun, unsigned long testmasks, int exitfun, unsigned long exitmasks, unsigned long *resulting_mask, int space)
+RTAI_SYSCALL_MODE int _rt_bits_wait_if(BITS *bits, int testfun, unsigned long testmasks, int exitfun, unsigned long exitmasks, unsigned long *resulting_mask, int space)
 {
 	unsigned long flags, mask;
 
@@ -330,7 +329,7 @@ int _rt_bits_wait_if(BITS *bits, int testfun, unsigned long testmasks, int exitf
 	return 0;
 }
 
-int _rt_bits_wait_until(BITS *bits, int testfun, unsigned long testmasks, int exitfun, unsigned long exitmasks, RTIME time, unsigned long *resulting_mask, int space)
+RTAI_SYSCALL_MODE int _rt_bits_wait_until(BITS *bits, int testfun, unsigned long testmasks, int exitfun, unsigned long exitmasks, RTIME time, unsigned long *resulting_mask, int space)
 {
 	RT_TASK *rt_current;
 	unsigned long flags, mask;
@@ -382,7 +381,7 @@ int _rt_bits_wait_until(BITS *bits, int testfun, unsigned long testmasks, int ex
 	return 0;
 }
 
-int _rt_bits_wait_timed(BITS *bits, int testfun, unsigned long testmasks, int exitfun, unsigned long exitmasks, RTIME delay, unsigned long *resulting_mask, int space)
+RTAI_SYSCALL_MODE int _rt_bits_wait_timed(BITS *bits, int testfun, unsigned long testmasks, int exitfun, unsigned long exitmasks, RTIME delay, unsigned long *resulting_mask, int space)
 {
 	return _rt_bits_wait_until(bits, testfun, testmasks, exitfun, exitmasks, get_time() + delay, resulting_mask, space);
 }
@@ -391,7 +390,7 @@ int _rt_bits_wait_timed(BITS *bits, int testfun, unsigned long testmasks, int ex
 
 #include <rtai_registry.h>
 
-BITS *rt_named_bits_init(const char *bits_name, unsigned long mask)
+RTAI_SYSCALL_MODE BITS *rt_named_bits_init(const char *bits_name, unsigned long mask)
 {
 	BITS *bits;
 	unsigned long name;
@@ -410,7 +409,7 @@ BITS *rt_named_bits_init(const char *bits_name, unsigned long mask)
 	return NULL;
 }
 
-int rt_named_bits_delete(BITS *bits)
+RTAI_SYSCALL_MODE int rt_named_bits_delete(BITS *bits)
 {
 	if (!rt_bits_delete(bits)) {
 		rt_free(bits);
@@ -418,7 +417,7 @@ int rt_named_bits_delete(BITS *bits)
 	return rt_drg_on_adr(bits);
 }
 
-void *rt_bits_init_u(unsigned long name, unsigned long mask)
+RTAI_SYSCALL_MODE void *rt_bits_init_u(unsigned long name, unsigned long mask)
 {
 	BITS *bits;
 	if (rt_get_adr(name)) {
@@ -435,7 +434,7 @@ void *rt_bits_init_u(unsigned long name, unsigned long mask)
 	return NULL;
 }
 
-int rt_bits_delete_u(BITS *bits)
+RTAI_SYSCALL_MODE int rt_bits_delete_u(BITS *bits)
 {
 	if (rt_bits_delete(bits)) {
 		return -EFAULT;

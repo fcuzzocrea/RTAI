@@ -260,7 +260,7 @@ void rtai_handle_isched_lock(int nesting);
  */
 
 #define RTAI_MAX_FUN_ARGS  9
-struct fun_args { unsigned long a[RTAI_MAX_FUN_ARGS]; long long (*fun)(unsigned long, ...); };
+struct fun_args { unsigned long a[RTAI_MAX_FUN_ARGS]; RTAI_SYSCALL_MODE long long (*fun)(unsigned long, ...); };
 //used in sys.c
 #define RTAI_FUN_ARGS  arg[0],arg[1],arg[2],arg[3],arg[4],arg[5],arg[6],arg[7],arg[RTAI_MAX_FUN_ARGS - 1]
 //used in sched.c and netrpc.c (generalised calls from soft threads)
@@ -556,7 +556,7 @@ static inline unsigned long pass_prio(RT_TASK *to, RT_TASK *from)
         while (to && to->priority > from->priority) {
                 to->priority = from->priority;
 		if (to->state == RT_SCHED_READY) {
-			if (to != rt_smp_linux_task[to->runnable_on_cpus].rnext) {
+			if ((to->rprev)->priority > to->priority || (to->rnext)->priority < to->priority) {
 				(to->rprev)->rnext = to->rnext;
 				(to->rnext)->rprev = to->rprev;
 				enq_ready_task(to);

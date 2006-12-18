@@ -76,19 +76,19 @@ int __rtai_wd_init(void);
 void __rtai_wd_exit(void);
 
 // API for setting parameters
-int rt_wdset_grace(int new_value);
+RTAI_SYSCALL_MODE int rt_wdset_grace(int new_value);
 
-int rt_wdset_gracediv(int new_value);
+RTAI_SYSCALL_MODE int rt_wdset_gracediv(int new_value);
 
-wd_policy rt_wdset_policy(wd_policy new_value);
+RTAI_SYSCALL_MODE wd_policy rt_wdset_policy(wd_policy new_value);
 
-int rt_wdset_slip(int new_value);
+RTAI_SYSCALL_MODE int rt_wdset_slip(int new_value);
 
-int rt_wdset_stretch(int new_value);
+RTAI_SYSCALL_MODE int rt_wdset_stretch(int new_value);
 
-int rt_wdset_limit(int new_value);
+RTAI_SYSCALL_MODE int rt_wdset_limit(int new_value);
 
-int rt_wdset_safety(int new_value);
+RTAI_SYSCALL_MODE int rt_wdset_safety(int new_value);
 
 #ifdef __cplusplus
 }

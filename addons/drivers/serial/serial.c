@@ -22,7 +22,6 @@
 
 #include <linux/module.h>
 #include <linux/kernel.h>
-#include <linux/config.h>
 #include <linux/errno.h>
 #include <linux/ioport.h>
 #include <linux/version.h>
@@ -81,7 +80,7 @@ static void mbx_init(struct rt_spmbx *mbx);
  * 		-EACCES		if rx occupied
  *
  */ 
-int rt_spclear_rx(unsigned int tty)
+RTAI_SYSCALL_MODE int rt_spclear_rx(unsigned int tty)
 {
 //	static void mbx_init(struct rt_spmbx *mbx);
 	unsigned long flags;
@@ -119,7 +118,7 @@ int rt_spclear_rx(unsigned int tty)
  * 		-EACCES		if tx occupied
  *
  */ 
-int rt_spclear_tx(unsigned int tty)
+RTAI_SYSCALL_MODE int rt_spclear_tx(unsigned int tty)
 {
 //	static void mbx_init(struct rt_spmbx *mbx);
 	unsigned long flags;
@@ -160,7 +159,7 @@ int rt_spclear_tx(unsigned int tty)
  * 		-ENODEV		if wrong tty number
  *
  */ 
-int rt_spset_mode(unsigned int tty, int mode)
+RTAI_SYSCALL_MODE int rt_spset_mode(unsigned int tty, int mode)
 {
 	CHECK_SPINDX(tty);
 	if ( (mode&(RT_SP_DSR_ON_TX|RT_SP_HW_FLOW)) != mode )
@@ -192,7 +191,7 @@ int rt_spset_mode(unsigned int tty, int mode)
  * 		-EINVAL		if wrong fifotrig value
  *
  */ 
-int rt_spset_fifotrig(unsigned int tty, int fifotrig)
+RTAI_SYSCALL_MODE int rt_spset_fifotrig(unsigned int tty, int fifotrig)
 {
 	CHECK_SPINDX(tty);
 	if ( (fifotrig&0xC0) != fifotrig)
@@ -222,7 +221,7 @@ int rt_spset_fifotrig(unsigned int tty, int fifotrig)
  * 		-EINVAL		if wrong mask value
  *
  */ 
-int rt_spset_mcr(unsigned int tty, int mask, int setbits)
+RTAI_SYSCALL_MODE int rt_spset_mcr(unsigned int tty, int mask, int setbits)
 {
 	CHECK_SPINDX(tty);
 	if ( (mask&(RT_SP_DSR_ON_TX|RT_SP_HW_FLOW)) != mask)
@@ -249,7 +248,7 @@ int rt_spset_mcr(unsigned int tty, int mask, int setbits)
  * 		-ENODEV		if wrong tty number
  *
  */ 
-int rt_spget_msr(unsigned int tty, int mask)
+RTAI_SYSCALL_MODE int rt_spget_msr(unsigned int tty, int mask)
 {
 	CHECK_SPINDX(tty);
 	return inb(spct[tty].base_adr + RT_SP_MSR) & 0xF0 & mask;
@@ -277,7 +276,7 @@ int rt_spget_msr(unsigned int tty, int mask)
  * 		RT_SP_BREAK
  *
  */ 
-int rt_spget_err(unsigned int tty)
+RTAI_SYSCALL_MODE int rt_spget_err(unsigned int tty)
 {
    	int tmp;
 
@@ -390,7 +389,7 @@ static inline int mbxevdrp(struct rt_spmbx *mbx, char **msg, int msg_size)
  * 		-ENODEV		if wrong tty number
  *
  */ 
-int rt_spwrite(unsigned int tty, char *msg, int msg_size)
+RTAI_SYSCALL_MODE int rt_spwrite(unsigned int tty, char *msg, int msg_size)
 {
 	struct rt_spct_t *p;
 	CHECK_SPINDX(tty);
@@ -428,7 +427,7 @@ int rt_spwrite(unsigned int tty, char *msg, int msg_size)
  * 		-ENODEV		if wrong tty number
  *
  */ 
-int rt_spread(unsigned int tty, char *msg, int msg_size)
+RTAI_SYSCALL_MODE int rt_spread(unsigned int tty, char *msg, int msg_size)
 {
 	struct rt_spct_t *p;
 	CHECK_SPINDX(tty);
@@ -468,7 +467,7 @@ int rt_spread(unsigned int tty, char *msg, int msg_size)
  * 		-ENODEV		if wrong tty number
  *
  */ 
-int rt_spevdrp(unsigned int tty, char *msg, int msg_size)
+RTAI_SYSCALL_MODE int rt_spevdrp(unsigned int tty, char *msg, int msg_size)
 {
 	struct rt_spct_t *p;
 
@@ -505,7 +504,7 @@ int rt_spevdrp(unsigned int tty, char *msg, int msg_size)
  * 		0, message sent succesfully.
  *
  */ 
-int rt_spwrite_timed(unsigned int tty, char *msg, int msg_size, RTIME delay)
+RTAI_SYSCALL_MODE int rt_spwrite_timed(unsigned int tty, char *msg, int msg_size, RTIME delay)
 {
 	struct rt_spct_t *p;
 	CHECK_SPINDX(tty);
@@ -555,7 +554,7 @@ int rt_spwrite_timed(unsigned int tty, char *msg, int msg_size, RTIME delay)
  * 		0, message received succesfully.
  *
  */ 
-int rt_spread_timed(unsigned int tty, char *msg, int msg_size, RTIME delay)
+RTAI_SYSCALL_MODE int rt_spread_timed(unsigned int tty, char *msg, int msg_size, RTIME delay)
 {
 	struct rt_spct_t *p;
 	CHECK_SPINDX(tty);
@@ -599,7 +598,7 @@ int rt_spread_timed(unsigned int tty, char *msg, int msg_size, RTIME delay)
  * 		-ENODEV		if wrong tty number
  *
  */ 
-int rt_spget_rxavbs(unsigned int tty)
+RTAI_SYSCALL_MODE int rt_spget_rxavbs(unsigned int tty)
 {
 	CHECK_SPINDX(tty);
 	return spct[tty].ibuf.avbs;
@@ -620,7 +619,7 @@ int rt_spget_rxavbs(unsigned int tty)
  * 		-ENODEV		if wrong tty number
  *
  */ 
-int rt_spget_txfrbs(unsigned int tty)
+RTAI_SYSCALL_MODE int rt_spget_txfrbs(unsigned int tty)
 {
 	CHECK_SPINDX(tty);
 	return spct[tty].obuf.frbs;
@@ -857,7 +856,7 @@ static int rt_spisr(int irq, struct rt_spct_t *p)
  * 		-EADDRINUSE	if trying to open an openend port
  *
  */ 
-int rt_spopen(unsigned int tty, unsigned int baud, unsigned int numbits,
+RTAI_SYSCALL_MODE int rt_spopen(unsigned int tty, unsigned int baud, unsigned int numbits,
               unsigned int stopbits, unsigned int parity, int mode,
 			  int fifotrig)
 {
@@ -939,7 +938,7 @@ int rt_spopen(unsigned int tty, unsigned int baud, unsigned int numbits,
  * 		-ENODEV		if wrong tty number
  *
  */ 
-int rt_spclose(unsigned int tty)
+RTAI_SYSCALL_MODE int rt_spclose(unsigned int tty)
 {
 	int base_adr=spct[tty].base_adr;
 	
@@ -982,7 +981,7 @@ int rt_spclose(unsigned int tty)
  * 		-EINVAL		if wrong parameter value
  *
  */ 
-int rt_spset_thrs(unsigned int tty, int rxthrs, int txthrs)
+RTAI_SYSCALL_MODE int rt_spset_thrs(unsigned int tty, int rxthrs, int txthrs)
 {
 	CHECK_SPINDX(tty);
 	if (rxthrs < 0 || txthrs < 0) {
@@ -1068,7 +1067,7 @@ long rt_spset_err_callback_fun(unsigned int tty, void (*err_callback_fun)(int))
  * Define the callback function to be called from user space
  *
  */ 
-int rt_spset_callback_fun_usr(unsigned int tty, unsigned long callback_fun_usr, int rxthrs, int txthrs, int code, void *task)
+RTAI_SYSCALL_MODE int rt_spset_callback_fun_usr(unsigned int tty, unsigned long callback_fun_usr, int rxthrs, int txthrs, int code, void *task)
 {
 	int prev_callback_fun_usr;
 
@@ -1097,7 +1096,7 @@ int rt_spset_callback_fun_usr(unsigned int tty, unsigned long callback_fun_usr, 
  * Define the err callback function to be called from user space
  *
  */ 
-int rt_spset_err_callback_fun_usr(unsigned int tty, unsigned long err_callback_fun_usr, int dummy1, int dummy2, int code, void *task)
+RTAI_SYSCALL_MODE int rt_spset_err_callback_fun_usr(unsigned int tty, unsigned long err_callback_fun_usr, int dummy1, int dummy2, int code, void *task)
 {
 	int prev_err_callback_fun_usr;
 
@@ -1126,7 +1125,7 @@ int rt_spset_err_callback_fun_usr(unsigned int tty, unsigned long err_callback_f
  * Wait for user space callback
  *
  */ 
-void rt_spwait_usr_callback(unsigned int tty, unsigned long *retvals)
+RTAI_SYSCALL_MODE void rt_spwait_usr_callback(unsigned int tty, unsigned long *retvals)
 {
 	rt_task_suspend(spct[tty].callback_task);
 	retvals[0] = spct[tty].call_usr | 2 ? spct[tty].callback_fun_usr : 0;

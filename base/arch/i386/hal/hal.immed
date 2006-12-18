@@ -302,7 +302,12 @@ extern unsigned long io_apic_irqs;
 
 #if (LINUX_VERSION_CODE > KERNEL_VERSION(2,4,31) && LINUX_VERSION_CODE < KERNEL_VERSION(2,6,0)) || LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,9)
 
+#if LINUX_VERSION_CODE < KERNEL_VERSION(2,6,18)
 #define rtai_irq_desc(irq) (irq_desc[irq].handler)
+#else
+#define rtai_irq_desc(irq) (irq_desc[irq].chip)
+#endif
+
 #define BEGIN_PIC()
 #define END_PIC()
 #undef hal_lock_irq
@@ -514,7 +519,7 @@ void rt_disable_irq (unsigned irq)
  */
 void rt_mask_and_ack_irq (unsigned irq)
 {
-        irq_desc[irq].handler->ack(irq);
+	rtai_irq_desc(irq)->ack(irq);
 }
 
 static inline void _rt_end_irq (unsigned irq)
@@ -630,7 +635,7 @@ void rt_end_irq (unsigned irq)
  * @retval EINVAL if @a irq is not a valid IRQ number or handler is @c NULL.
  * @retval EBUSY if there is already a handler of interrupt @a irq.
  */
-int rt_request_linux_irq (unsigned irq, irqreturn_t (*handler)(int irq, void *dev_id, struct pt_regs *regs), char *name, void *dev_id)
+int rt_request_linux_irq (unsigned irq, void *handler, char *name, void *dev_id)
 {
 	unsigned long flags;
 
@@ -694,6 +699,14 @@ volatile unsigned long hal_pended;
  * @note rt_pend_linux_irq does not perform any check on @a irq.
  */
 void rt_pend_linux_irq (unsigned irq)
+{
+	unsigned long flags;
+	rtai_save_flags_and_cli(flags);
+	hal_pend_uncond(irq, rtai_cpuid());
+	rtai_restore_flags(flags);
+}
+
+RTAI_SYSCALL_MODE void usr_rt_pend_linux_irq (unsigned irq)
 {
 	unsigned long flags;
 	rtai_save_flags_and_cli(flags);
@@ -1473,7 +1486,11 @@ static int rtai_hirq_dispatcher (struct pt_regs regs)
 
 	CHECK_KERCTX();
 
+#if LINUX_VERSION_CODE < KERNEL_VERSION(2,6,18)
 	if (rtai_realtime_irq[irq = regs.orig_eax & 0xFF].handler) {
+#else
+	if (rtai_realtime_irq[irq = ~regs.orig_eax].handler) {
+#endif
 		unsigned long sflags;
 		RTAI_SCHED_ISR_LOCK();
 		HAL_LOCK_LINUX();
@@ -1532,7 +1549,6 @@ RTAI_MODULE_PARM(PrintFpuTrap, int);
 static int PrintFpuInit = 0;
 RTAI_MODULE_PARM(PrintFpuInit, int);
 
-#ifdef UNWRAPPED_CATCH_EVENT
 static int rtai_trap_fault (unsigned event, void *evdata)
 {
 #ifdef HINT_DIAG_TRAPS
@@ -1662,131 +1678,6 @@ endtrap:
 	TRACE_RTAI_TRAP_EXIT();
 	return 1;
 }
-#else
-static void rtai_trap_fault (adevinfo_t *evinfo)
-{
-#ifdef HINT_DIAG_TRAPS
-	static unsigned long traps_in_hard_intr = 0;
-        do {
-                unsigned long flags;
-                rtai_save_flags_and_cli(flags);
-                if (!test_bit(RTAI_IFLAG, &flags)) {
-                        if (!test_and_set_bit(evinfo->event, &traps_in_hard_intr)) {
-                                HINT_DIAG_MSG(rt_printk("TRAP %d HAS INTERRUPT DISABLED (TRAPS PICTURE %lx).\n", evinfo->event, traps_in_hard_intr););
-                        }
-                }
-        } while (0);
-#endif
-
-	static const int trap2sig[] = {
-    		SIGFPE,         //  0 - Divide error
-		SIGTRAP,        //  1 - Debug
-		SIGSEGV,        //  2 - NMI (but we ignore these)
-		SIGTRAP,        //  3 - Software breakpoint
-		SIGSEGV,        //  4 - Overflow
-		SIGSEGV,        //  5 - Bounds
-		SIGILL,         //  6 - Invalid opcode
-		SIGSEGV,        //  7 - Device not available
-		SIGSEGV,        //  8 - Double fault
-		SIGFPE,         //  9 - Coprocessor segment overrun
-		SIGSEGV,        // 10 - Invalid TSS
-		SIGBUS,         // 11 - Segment not present
-		SIGBUS,         // 12 - Stack segment
-		SIGSEGV,        // 13 - General protection fault
-		SIGSEGV,        // 14 - Page fault
-		0,              // 15 - Spurious interrupt
-		SIGFPE,         // 16 - Coprocessor error
-		SIGBUS,         // 17 - Alignment check
-		SIGSEGV,        // 18 - Reserved
-		SIGFPE,         // 19 - XMM fault
-		0,0,0,0,0,0,0,0,0,0,0,0
-	};
-
-	TRACE_RTAI_TRAP_ENTRY(evinfo->event, 0);
-
-    /* Notes:
-
-    1) GPF needs to be propagated downstream whichever domain caused
-    it. This is required so that we don't spuriously raise a fatal
-    error when some fixup code is available to solve the error
-    condition. For instance, Linux always attempts to reload the %gs
-    segment register when switching a process in (__switch_to()),
-    regardless of its value. It is then up to Linux's GPF handling
-    code to search for a possible fixup whenever some exception
-    occurs. In the particular case of the %gs register, such an
-    exception could be raised for an exiting process if a preemption
-    occurs inside a short time window, after the process's LDT has
-    been dropped, but before the kernel lock is taken.  The same goes
-    for LXRT switching back a Linux thread in non-RT mode which
-    happens to have been preempted inside do_exit() after the MM
-    context has been dropped (thus the LDT too). In such a case, %gs
-    could be reloaded with what used to be the TLS descriptor of the
-    exiting thread, but unfortunately after the LDT itself has been
-    dropped. Since the default LDT is only 5 entries long, any attempt
-    to refer to an LDT-indexed descriptor above this value would cause
-    a GPF.
-    2) NMI is not pipelined by Adeos. */
-
-	if (!in_hrt_mode(rtai_cpuid())) {
-		goto propagate;
-	}
-
-	if (evinfo->event == 7)	{ /* (FPU) Device not available. */
-	/* A trap must come from a well estabilished Linux task context; from
-	   anywhere else it is a bug to fix and not a hal.c problem */
-		struct task_struct *linux_task = current;
-
-	/* We need to keep this to avoid going through Linux in case users
-	   do not set the FPU, for hard real time operations, either by 
-	   calling the appropriate LXRT function or by doing any FP operation
-	   before going to hard mode. Notice that after proper initialization
-	   LXRT anticipate restoring the hard FP context at any task switch.
-	   So just the initialisation should be needed, but we do what Linux
-	   does in math_state_restore anyhow, to stay on the safe side. 
-	   In any case we inform the user. */
-		rtai_hw_cli(); /* in task context, so we can be preempted */
-		if (lnxtsk_uses_fpu(linux_task)) {
-			restore_fpu(linux_task);
-			rt_printk("\nUNEXPECTED FPU TRAP FROM HARD PID = %d\n", linux_task->pid);
-		} else {	
-			init_hard_fpu(linux_task);
-			rt_printk("\nUNEXPECTED FPU INITIALIZATION FROM HARD PID = %d\n", linux_task->pid);
-		}
-		rtai_hw_sti();
-		goto endtrap;
-	}
-
-#if 0 //ADEOS_RELEASE_NUMBER >= 0x02060601
-	if (evinfo->event == 14) {	/* Page fault. */
-		struct pt_regs *regs = (struct pt_regs *)evinfo->evdata;
-		unsigned long address;
-
-	/* Handle RTAI-originated faults in kernel space caused by
-	   on-demand virtual memory mappings. We can specifically
-	   process this case through the Linux fault handler since we
-	   know that it is context-agnostic and does not wreck the
-	   determinism. Any other case would lead us to panicking. */
-
-		rtai_hw_cli();
-		__asm__("movl %%cr2,%0":"=r" (address));
-		if (address >= TASK_SIZE && !(regs->orig_eax & 5)) { /* i.e. trap error code. */
-			asmlinkage void do_page_fault(struct pt_regs *regs, unsigned long error_code);
-			do_page_fault(regs,regs->orig_eax);
-			goto endtrap;
-		}
-		 rtai_hw_sti();
-	}
-#endif /* ADEOS_RELEASE_NUMBER >= 0x02060601 */
-
-	if (rtai_trap_handler && rtai_trap_handler(evinfo->event, trap2sig[evinfo->event], (struct pt_regs *)evinfo->evdata, NULL)) {
-		goto endtrap;
-	}
-propagate:
-	hal_propagate_event(evinfo);
-endtrap:
-	TRACE_RTAI_TRAP_EXIT();
-}
-#endif
 
 static void rtai_lsrq_dispatcher (unsigned virq)
 {
@@ -1953,14 +1844,27 @@ static int errno;
 static inline _syscall3(int, sched_setscheduler, pid_t,pid, int,policy, struct sched_param *,param)
 #endif
 
-#if LINUX_VERSION_CODE < KERNEL_VERSION(2,6,0)
+#if LINUX_VERSION_CODE < KERNEL_VERSION(2,4,32)
+
 void rtai_set_linux_task_priority (struct task_struct *task, int policy, int prio)
 {
-	task->policy = policy;
 	task->rt_priority = prio;
+	task->policy = policy;
 	set_tsk_need_resched(current);
 }
+
 #else /* KERNEL_VERSION >= 2.6.0 */
+
+#if 1
+void rtai_set_linux_task_priority (struct task_struct *task, int policy, int prio)
+{
+	hal_set_linux_task_priority(task, policy, prio);
+	if (task->rt_priority != prio || task->policy != policy) {
+		printk("RTAI[hal]: sched_setscheduler(policy = %d, prio = %d) failed, (%s -- pid = %d)\n", policy, prio, task->comm, task->pid);
+	}
+}
+
+#else  //keep for a while as a memo of what we did
 void rtai_set_linux_task_priority (struct task_struct *task, int policy, int prio)
 {
 	int rc;
@@ -1979,9 +1883,11 @@ void rtai_set_linux_task_priority (struct task_struct *task, int policy, int pri
 #endif
 
 	if (rc) {
-		printk("RTAI[hal]: sched_setscheduler(policy=%d,prio=%d) failed, code %d (%s -- pid=%d)\n", policy, prio, rc, task->comm, task->pid);
+//		printk("RTAI[hal]: sched_setscheduler(policy=%d,prio=%d) failed, code %d (%s -- pid=%d)\n", policy, prio, rc, task->comm, task->pid);
 	}
 }
+#endif
+
 #endif  /* KERNEL_VERSION < 2.6.0 */
 
 #ifdef CONFIG_PROC_FS
@@ -2017,7 +1923,7 @@ static int rtai_read_proc (char *page, char **start, off_t off, int count, int *
 	PROC_PRINT("\n\n");
 
 	PROC_PRINT("** RTAI extension traps: \n\n");
-	PROC_PRINT("    SYSREQ=0x%x\n",RTAI_SYS_VECTOR);
+	PROC_PRINT("    SYSREQ=0x%x\n\n",RTAI_SYS_VECTOR);
 
 	none = 1;
 	PROC_PRINT("** RTAI SYSREQs in use: ");
@@ -2027,11 +1933,19 @@ static int rtai_read_proc (char *page, char **start, off_t off, int count, int *
 			none = 0;
 		}
         }
-
 	if (none) {
 		PROC_PRINT("none");
 	}
     	PROC_PRINT("\n\n");
+
+#ifdef CONFIG_RTAI_DIAG_TSC_SYNC
+	PROC_PRINT("** RTAI TSC OFFSETs (TSC units, 0 ref. CPU): ");
+    	for (i = 0; i < RTAI_NR_CPUS; i++) {
+		PROC_PRINT("CPU#%d > %lu; ", i, rtai_tsc_ofst[i]);
+        }
+    	PROC_PRINT("\n\n");
+#endif
+
 	PROC_PRINT_DONE;
 }
 
@@ -2080,6 +1994,17 @@ long rtai_catch_event (struct hal_domain_struct *from, unsigned long event, int 
 
 static void *saved_hal_irq_handler;
 extern void *hal_irq_handler;
+
+#undef ack_bad_irq
+void ack_bad_irq(unsigned int irq)
+{
+	printk("unexpected IRQ trap at vector %02x\n", irq);
+#ifdef CONFIG_X86_LOCAL_APIC
+	if (cpu_has_apic) {
+		__ack_APIC_irq();
+	}
+#endif
+}
 
 int __rtai_hal_init (void)
 {
@@ -2157,6 +2082,10 @@ int __rtai_hal_init (void)
 		printk("%p %x %s %d\n", next_domain, next_domain->domid, next_domain->name, next_domain->priority);
 	}
 
+#ifdef CONFIG_RTAI_DIAG_TSC_SYNC
+	init_tsc_sync();
+#endif
+
 	return 0;
 }
 
@@ -2180,6 +2109,10 @@ void __rtai_hal_exit (void)
 			rt_reset_irq_to_sym_mode(trapnr);
 		}
 	}
+
+#ifdef CONFIG_RTAI_DIAG_TSC_SYNC
+	cleanup_tsc_sync();
+#endif
 
 	printk(KERN_INFO "RTAI[hal]: unmounted.\n");
 }
@@ -2294,6 +2227,7 @@ EXPORT_SYMBOL(rt_ack_irq);
 EXPORT_SYMBOL(rt_request_linux_irq);
 EXPORT_SYMBOL(rt_free_linux_irq);
 EXPORT_SYMBOL(rt_pend_linux_irq);
+EXPORT_SYMBOL(usr_rt_pend_linux_irq);
 EXPORT_SYMBOL(rt_request_srq);
 EXPORT_SYMBOL(rt_free_srq);
 EXPORT_SYMBOL(rt_pend_linux_srq);

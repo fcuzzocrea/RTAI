@@ -248,6 +248,9 @@ likely mostly inappropriate. So "netrpc" forces the stubs to be soft when just
 Linux networking is available, coherently forcing them to hard when just RTNet 
 is being used. However there is no constraint imposed by NETRPC in the case 
 both supports are in place and the user can choose whatever s/he wants.
+Notice also that RTNet now imposes that hard communications be done from hard 
+real time tasks only. It is thus compulsory to adhere to this condition in
+developing your own applications.
 
 It must be noted also that the specific implementation adopted for our RPC
 scheme acts along the ideas already used for LXRT. In fact, networking

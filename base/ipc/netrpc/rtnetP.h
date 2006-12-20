@@ -68,23 +68,9 @@ struct rtnet_callback {
 	void    *arg;
 };
 
-#define RTDM_CLASS_NETWORK    4
-
 #define RTIOC_TYPE_NETWORK    RTDM_CLASS_NETWORK
 
 #define RTNET_RTIOC_CALLBACK  _IOW(RTIOC_TYPE_NETWORK, 0x12, struct rtnet_callback)
-
-int rt_dev_socket(int domain, int type, int protocol);
-
-int rt_dev_bind(int s, struct sockaddr *my_addr, int addrlen);
-
-int rt_dev_close(int s);
-
-int rt_dev_recvfrom(int s, void *buf, int len, unsigned int flags, struct sockaddr *from, int *fromlen);
-
-int rt_dev_sendto(int s, const void *buf, int len, unsigned int flags, struct sockaddr *to, int tolen);
-
-int rt_dev_ioctl(int fd, int func, void *rtnet_callback_struct);
 
 #endif /* COMPILE_ANYHOW */
 

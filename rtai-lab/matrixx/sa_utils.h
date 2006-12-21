@@ -1,3 +1,8 @@
+/*
+Mattia Mattaboni (mattaboni@aero.polimi.it) reworked this file for use within
+RTAI-Lab.
+*/
+
 /* AutoCode_LicensedWork --------------------------------------------------
 
 This product is protected by the National Instruments License Agreement

@@ -12,7 +12,8 @@ EXTRA_INST_SRC = rtmain.c \
 		mxp.h \
 		rtai.tpl \
 		sa_utils.c \
-		sa_utils.h
+		sa_utils.h \
+		Makefile
 
 EXTRA_DIST_SRC = $(EXTRA_INST_SRC) 
 
@@ -22,5 +23,8 @@ install-exec-local: $(EXTRA_INST_SRC) $(EXTRA_INST_DIR)
 	$(mkinstalldirs) $(DESTDIR)$(pkgdatadir)/matrixx
 	$(INSTALL_DATA) $(EXTRA_INST_SRC) $(DESTDIR)$(pkgdatadir)/matrixx
 	$(mkinstalldirs) $(DESTDIR)$(pkgdatadir)/matrixx/matrixx-files
-	$(INSTALL_DATA) -d $(EXTRA_INST_DIR) $(DESTDIR)$(pkgdatadir)/matrixx/
-		
+	@for d in $(EXTRA_INST_DIR) ; do \
+		$(mkinstalldirs) $(DESTDIR)$(pkgdatadir)/matrixx/$$d ; \
+		$(INSTALL_DATA) $$d/*.* $(DESTDIR)$(pkgdatadir)/matrixx/$$d ; \
+	done
+

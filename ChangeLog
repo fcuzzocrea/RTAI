@@ -1,7 +1,32 @@
+2006-12-21  Mattia Mattaboni (mattaboni@aero.polimi.it)
+
+	* rtai-lab/matrixx/rtailab.*: adaption of existing rtmains to support
+	  Matrixx autocode generated programs.
+	* rtai-lab/matrixx/rtai.tpl: reworked for RTAI-Lab existing template 
+	  file in Matrixx.
+	* rtai-lab/matrixx/sa_utils.*: reworked corresponding existing files
+	  in Matrixx for better interoperability within RTAI-Lab.
+	* rtai-lab/matrixx/devices: Matrixx UCBs for RTAI-Lab scopes and logs.
+	* rtai-lab/matrixx/examples: a couple of examples to demonstrate
+	  Matrixx working with RTAI-Lab.
+
+2006-12-21  Paolo Mantegazza <mantegazza@aero.polimi.it>
+
+	* rtai-lab/matrixx/vxwoks-wrappers: utility headers to allow an easy
+	  modification of Matrixx templates, without too much retyping.
+
 2006-12-21  Pierangelo Masarati <masarati@aero.polimi.it>
 
-	* preliminary Matrix X support (thanks to contributions
-	  from Paolo Mantegazza and Matteo Mattaboni)
+	* rtai-lab/matrixx/mxp.*: support services for parameters naming,
+	  setting and getting on the fly through RTAI-Lab.
+	* rtai-lab/matrixx/Makefile: first draft for the making of an 
+	  application.
+
+2006-12-21  Pierangelo Masarati <masarati@aero.polimi.it>
+
+	* making support for Matrixx committed to CVS, in rtai-lab/matrixx.
+
+2006-12-18 RTAI-3.4 closure version released, 3.5 begins in VULCANO.
 
 2006-12-18  Roberto Bucher <roberto.bucher@supsi.ch>
 

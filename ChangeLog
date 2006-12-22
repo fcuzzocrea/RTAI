@@ -1,6 +1,6 @@
 2006-12-21  Mattia Mattaboni (mattaboni@aero.polimi.it)
 
-	* rtai-lab/matrixx/rtailab.*: adaption of existing rtmains to support
+	* rtai-lab/matrixx/rtmain.*: adaption of existing rtmains to support
 	  Matrixx autocode generated programs.
 	* rtai-lab/matrixx/rtai.tpl: reworked for RTAI-Lab existing template 
 	  file in Matrixx.

@@ -70,7 +70,7 @@ INFO,T,U,NU,X,XDOT,NX,Y,NY,RP,IP)
 		int nch = NU;
 		int nt=nch + 1;
 		
-		sprintf(logName,"LOG%ld",IP[0]);
+		sprintf(logName,"LOG-%ld",IP[0]);
 		rtRegisterLogData(logName,1,nt,IP[0]);
 	}
 	if(INFO->OUTPUTS)  {

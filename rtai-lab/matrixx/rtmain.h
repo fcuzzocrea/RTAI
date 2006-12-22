@@ -33,5 +33,7 @@
 
 #define MBX_RTAI_SCOPE_SIZE  5000
 #define MBX_RTAI_LOG_SIZE    5000
+#define MBX_RTAI_METER_SIZE  5000
+#define MBX_RTAI_LED_SIZE    5000
 
 #endif /* _RTMAIN_H_ */

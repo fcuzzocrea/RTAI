@@ -69,7 +69,7 @@ INFO,T,U,NU,X,XDOT,NX,Y,NY,RP,IP)
 		char scopeName[10];
 		int nch = NU;
 		
-		sprintf(scopeName,"SCOPE%ld",IP[0]);
+		sprintf(scopeName,"SCOPE-%ld",IP[0]);
 		rtRegisterScope(scopeName,nch,IP[0]);
 	}
 	if(INFO->OUTPUTS)  {

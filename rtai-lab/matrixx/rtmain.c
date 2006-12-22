@@ -103,8 +103,8 @@ double SIM_TIME;
 struct { char name[MAX_NAME_SIZE]; int ntraces; int ID; MBX *mbx; char MBXname[MAX_NAME_SIZE];} rtaiScope[MAX_SCOPES];
 struct { char name[MAX_NAME_SIZE]; int nrow, ncol; int ID ; MBX *mbx ; char MBXname[MAX_NAME_SIZE]; } rtaiLogData[MAX_LOGS];
 static struct { char name[MAX_NAME_SIZE]; int nrow, ncol; } rtaiALogData[MAX_LOGS];
-static struct { char name[MAX_NAME_SIZE]; int nleds; } rtaiLed[MAX_LEDS];
-static struct { char name[MAX_NAME_SIZE]; int nmeters; } rtaiMeter[MAX_METERS];
+struct { char name[MAX_NAME_SIZE]; int nleds; int ID; MBX *mbx; char MBXname[MAX_NAME_SIZE];} rtaiLed[MAX_LEDS];
+struct { char name[MAX_NAME_SIZE]; int ntraces; int ID; MBX *mbx; char MBXname[MAX_NAME_SIZE];} rtaiMeter[MAX_METERS];
 
 #ifdef TASKDURATION
 RTIME RTTSKinit=0, RTTSKper;
@@ -140,6 +140,8 @@ extern MSG_Q_ID qid_ovflow1;
 extern char modelname[30];
 int NSCOPE;
 int NLOGS;
+int NMETERS;
+int NLEDS;
 int OVERFLOW_LIMIT = 5;
 char *DATA_FILE_LOCATION = "./";
 /***************************************/
@@ -201,49 +203,80 @@ int rtRegisterScope(const char *name, int n, int ID )
       sprintf(rtaiScope[nscope].MBXname, "%s%d", TargetMbxID, nscope);
       rtaiScope[nscope].ntraces = n;
       rtaiScope[nscope].ID = ID;
-      rtaiScope[nscope].mbx=  (MBX *) RT_typed_named_mbx_init(0,0,rtaiScope[nscope].MBXname,(MBX_RTAI_SCOPE_SIZE/((n+1)*sizeof(float)))*((n+1)*sizeof(float)),FIFO_Q);   
+      rtaiScope[nscope].mbx=  (MBX *) RT_typed_named_mbx_init(0,0,rtaiScope[nscope].MBXname,(MBX_RTAI_SCOPE_SIZE/((n+1)*sizeof(float)))*((n+1)*sizeof(float)),FIFO_Q);
       if(rtaiScope[nscope].mbx == NULL) {
           fprintf(stderr, "Cannot init mailbox\n");
           exit_on_error();
       }
       strncpyz(rtaiScope[nscope].name, name, MAX_NAME_SIZE);
       return 0;
-    
-  
+
+
   return -1;
 }
 
-int rtRegisterLed(const char *name, int n)
+int rtRegisterLed(const char *name, int n, int ID )
 {
   int i;
+  int nled;
+  rt_sched_lock();
+  nled = NLEDS++;
+  rt_sched_unlock();
+  if ( ID <= 0  )
+	  fprintf(stderr,"Warning: leds ID must be positive\n");
   for (i = 0; i < MAX_LEDS; i++) {
-    if (!rtaiLed[i].nleds) {
-      rtaiLed[i].nleds = n;
-      strncpyz(rtaiLed[i].name, name, MAX_NAME_SIZE);
-      return 0;
-    }
+    if (rtaiLed[i].ID == ID)
+  	fprintf(stderr,"Warning: two or more leds have the same ID(%d)\n",ID);
   }
+      sprintf(rtaiLed[nled].MBXname, "%s%d", TargetLedMbxID, nled);
+      rtaiLed[nled].nleds= n;
+      rtaiLed[nled].ID = ID;
+      rtaiLed[nled].mbx=  (MBX *) RT_typed_named_mbx_init(0,0,rtaiLed[nled].MBXname,(MBX_RTAI_LED_SIZE/((n+1)*sizeof(float)))*((n+1)*sizeof(float)),FIFO_Q);
+      if(rtaiLed[nled].mbx == NULL) {
+          fprintf(stderr, "Cannot init mailbox\n");
+          exit_on_error();
+      }
+      strncpyz(rtaiLed[nled].name, name, MAX_NAME_SIZE);
+      return 0;
+
+
   return -1;
 }
 
-int rtRegisterMeter(const char *name, int n)
+int rtRegisterMeter(const char *name, int n, int ID )
 {
   int i;
+  int nmeter;
+  rt_sched_lock();
+  nmeter = NMETERS++;
+  rt_sched_unlock();
+  if ( ID <= 0  )
+	  fprintf(stderr,"Warning: meters ID must be positive\n");
   for (i = 0; i < MAX_METERS; i++) {
-    if (!rtaiMeter[i].nmeters) {
-      rtaiMeter[i].nmeters = n;
-      strncpyz(rtaiMeter[i].name, name, MAX_NAME_SIZE);
-      return 0;
-    }
+    if (rtaiMeter[i].ID == ID)
+  	fprintf(stderr,"Warning: two or more meters have the same ID(%d)\n",ID);
   }
+      sprintf(rtaiMeter[nmeter].MBXname, "%s%d", TargetMeterMbxID, nmeter);
+      rtaiMeter[nmeter].ntraces = n;
+      rtaiMeter[nmeter].ID = ID;
+      rtaiMeter[nmeter].mbx=  (MBX *) RT_typed_named_mbx_init(0,0,rtaiMeter[nmeter].MBXname,(MBX_RTAI_METER_SIZE/((n+1)*sizeof(float)))*((n+1)*sizeof(float)),FIFO_Q);
+      if(rtaiMeter[nmeter].mbx == NULL) {
+          fprintf(stderr, "Cannot init mailbox\n");
+          exit_on_error();
+      }
+      strncpyz(rtaiMeter[nmeter].name, name, MAX_NAME_SIZE);
+      return 0;
+
+
   return -1;
 }
+
 
 int rtRegisterLogData(const char *name, int nrow, int ncol, int ID)
 {
   int i;
   int nlogs;
-  
+
   rt_sched_lock();
   nlogs = NLOGS++;
   rt_sched_unlock();
@@ -265,8 +298,8 @@ int rtRegisterLogData(const char *name, int nrow, int ncol, int ID)
       }
       strncpyz(rtaiLogData[nlogs].name, name, MAX_NAME_SIZE);
       return 0;
-    
-  
+
+
   return -1;
 }
 
@@ -758,7 +791,7 @@ static int rt_Main(int priority)
     rt_task_suspend(rt_MainTask);
   }
 
-  
+
   if (verbose) {
     printf("Target is running.\n");
   }
@@ -786,10 +819,14 @@ static int rt_Main(int priority)
   }
 
 	finish:
-    		for (i=0 ; i<NSCOPE ; i++)	 
-			RT_named_mbx_delete(0, 0, rtaiScope[i].mbx);		
-    		for (i=0 ; i<NLOGS ; i++)	 
-			RT_named_mbx_delete(0, 0, rtaiLogData[i].mbx);	
+    		for (i=0 ; i<NSCOPE ; i++)
+			RT_named_mbx_delete(0, 0, rtaiScope[i].mbx);
+    		for (i=0 ; i<NLOGS ; i++)
+			RT_named_mbx_delete(0, 0, rtaiLogData[i].mbx);
+    		for (i=0 ; i<NLEDS ; i++)
+			RT_named_mbx_delete(0, 0, rtaiLed[i].mbx);
+    		for (i=0 ; i<NMETERS ; i++)
+			RT_named_mbx_delete(0, 0, rtaiMeter[i].mbx);
 
                 SA_Output_To_File();
 		rt_task_delete(rt_MainTask);
@@ -960,7 +997,7 @@ int main(int argc, char *argv[])
       }
       break;
     case 'P':
-      DATA_FILE_LOCATION = strdup(optarg);  
+      DATA_FILE_LOCATION = strdup(optarg);
       break;
     default:
       if (c >= 0) {

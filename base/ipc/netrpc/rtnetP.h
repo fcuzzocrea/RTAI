@@ -61,33 +61,16 @@ struct sock_t {
 
 /* the hard RTNet external interface, used just to check netrpc compiles */
 
-int rt_socket(int domain,
-	      int type,
-	      int protocol);
+struct rtdm_dev_context;
 
-int rt_bind(int s,
-	    struct sockaddr *my_addr,
-	    int addrlen);
+struct rtnet_callback {
+	void    (*func)(struct rtdm_dev_context *, void *);
+	void    *arg;
+};
 
-int rt_close(int s);
+#define RTIOC_TYPE_NETWORK    RTDM_CLASS_NETWORK
 
-int rt_recvfrom(int s,
-		void *buf,
-		int len,
-		unsigned int flags,
-		struct sockaddr *from,
-		int *fromlen);
-
-int rt_sendto(int s,
-	      const void *buf,
-	      int len,
-	      unsigned int flags,
-	      struct sockaddr *to,
-	      int tolen);
-
-int rt_socket_callback(int s,
-		       int (*func)(int s, void *arg),
-		       void *arg);
+#define RTNET_RTIOC_CALLBACK  _IOW(RTIOC_TYPE_NETWORK, 0x12, struct rtnet_callback)
 
 #endif /* COMPILE_ANYHOW */
 

@@ -37,6 +37,8 @@ SRC =   rtmain.c   \
 	$(PREFIX)/sa_utils.c \
 	$(MATRIXX_DEV)/rtai_scope.c \
 	$(MATRIXX_DEV)/rtai_log.c \
+	$(MATRIXX_DEV)/rtai_meter.c \
+	$(MATRIXX_DEV)/rtai_led.c
 
 
 %: %.c mxp mxp.c mxp.h $(SRC) rtmain.h

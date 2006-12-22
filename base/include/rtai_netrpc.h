@@ -69,6 +69,8 @@
 
 #define OWNER(node, task) \
 	((((unsigned long long)(node)) << 32) | (unsigned long)(task))
+	
+#define TSK_FRM_WNR(i)	((i) & 0xFFFFFFFF);
 
 #ifdef __KERNEL__
 
@@ -88,7 +90,10 @@ RTAI_SYSCALL_MODE unsigned long long rt_net_rpc(long fun_ext_timed,
 			      int argsize,
 			      int space);
 
-RTAI_SYSCALL_MODE int rt_send_req_rel_port(unsigned long node,
+RTAI_SYSCALL_MODE int rt_set_netrpc_timeout( int port,
+			 RTIME timeout);
+
+RTAI_SYSCALL_MODE int rt_send_req_rel_port(unsigned long node, 
 			 int port,
 			 unsigned long id,
 			 MBX *mbx,
@@ -703,6 +708,12 @@ static inline int rt_send_req_rel_port(unsigned long node, int port, unsigned lo
 	struct { unsigned long node, port; unsigned long id; MBX *mbx; long hard; } args = { node, port, id, mbx, hard };
 	return rtai_lxrt(NET_RPC_IDX, SIZARGS, SEND_REQ_REL_PORT, &args).i[LOW];
 } 
+
+static inline int rt_set_netrpc_timeout(int port, RTIME timeout)
+{
+	struct { long port; RTIME timeout; } args = { port, timeout };
+	return rtai_lxrt(NET_RPC_IDX, SIZARGS, SET_NETRPC_TIMEOUT, &args).i[LOW];
+}
 
 static inline unsigned long ddn2nl(const char *ddn)
 {
@@ -1328,9 +1339,9 @@ static inline int RT_mbx_receive_timed(unsigned long node, int port, MBX *mbx, v
 
 static inline int rt_get_net_rpc_ret(MBX *mbx, unsigned long long *retval, void *msg1, int *msglen1, void *msg2, int *msglen2, RTIME timeout, int type)
 {
-	struct { int wsize, w2size; unsigned long long retval; } reply;
+	struct { int wsize, w2size; unsigned long long retval; int myport;} reply;
 	int ret;
-
+	
 	switch (type) {
 		case MBX_RECEIVE:
 			ret = rt_mbx_receive(mbx, &reply, sizeof(reply));

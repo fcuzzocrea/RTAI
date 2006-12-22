@@ -1,3 +1,11 @@
+2006-12-22  Emanuele Clerici (clerici@aero.polimi.it)
+
+	* base/include/rtai_netrpc.h: adapted to support new netrpc extensions.
+	* base/ipc/netrpc/netrpc.c: added timeouts and dynamic recovery of
+	  lost ports (network downs); revised registry.
+	* base/ipc/netrpc/README: rewritten and revised to explain new/modified
+	  services.
+
 2006-12-22  Mattia Mattaboni (mattaboni@aero.polimi.it)
 
 	* rtai-lab/matrixx/rtmain.*: support for meters and leds.

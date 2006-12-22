@@ -317,6 +317,7 @@
 #define REQUEST_RTC                    214
 #define RELEASE_RTC                    215
 #define RT_GETTID                      216
+#define SET_NETRPC_TIMEOUT             217
 
 #define MAX_LXRT_FUN                   220
 

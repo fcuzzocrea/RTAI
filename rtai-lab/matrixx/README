@@ -77,7 +77,7 @@ RTAI_INSTALL_DIR is the RTAI installation directory within Linux and
 MATRIXX_HOME is the Matrixx installation directory in Windows).
 Notice that those are Matrixx files that were found to be needed during the
 work carried out during the development of the RTAI-Lab support for Matrixx
-so far. It is possible that you application at hand may require other files
+so far. It is possible that your application at hand can require other files
 distributed within Matrixx. If that happens you'll have just to copy them
 in the same Linux place as those mentioned above.
 

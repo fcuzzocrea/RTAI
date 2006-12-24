@@ -2447,30 +2447,7 @@ RT_TASK *lxrt_init_linux_server(RT_TASK *master_task)
 static int lxrt_intercept_syscall_prologue(unsigned long event, struct pt_regs *regs)
 {
 	IN_INTERCEPT_IRQ_ENABLE(); {
-
-	if (unlikely(regs->LINUX_SYSCALL_NR >= RTAI_SYSCALL_NR)) {
-		long long retval;
-		int cpuid;
-	        if (likely(regs->LINUX_SYSCALL_NR == RTAI_SYSCALL_NR)) {
-			retval = rtai_lxrt_invoke(regs->RTAI_SYSCALL_CODE, (void *)regs->RTAI_SYSCALL_ARGS, regs);
-			SET_LXRT_RETVAL_IN_SYSCALL(regs, retval);
-	        } else {
-        	        unsigned long args[2] = { (unsigned long)current, (unsigned long)regs };
-			retval = regs->LINUX_SYSCALL_RETREG = rtai_lxrt_invoke(regs->LINUX_SYSCALL_NR, args, regs);
-	        }
-		if (unlikely(!in_hrt_mode(cpuid = rtai_cpuid()))) {
-#if 0
-			if (unlikely((int)retval == -RT_EINTR)) {
-				regs->LINUX_SYSCALL_NR = RTAI_FAKE_LINUX_SYSCALL;
-			}
-#endif
-			hal_test_and_fast_flush_pipeline(cpuid);
-			return 0;
-		}
-		return 1;
-	}
-
-	{ int cpuid;
+	int cpuid;
 
 	if (in_hrt_mode(cpuid = rtai_cpuid()) && regs->LINUX_SYSCALL_NR < NR_syscalls) {
 		RT_TASK *task = rt_smp_current[cpuid];
@@ -2493,7 +2470,7 @@ static int lxrt_intercept_syscall_prologue(unsigned long event, struct pt_regs *
 			SYSW_DIAG_MSG(rt_printk("GONE BACK TO HARD (SYSLXRT),  PID = %d.\n", current->pid););
 			return 1;
 		}
-	} }
+	}
 	return 0;
 } }
 

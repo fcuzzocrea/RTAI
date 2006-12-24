@@ -1716,11 +1716,33 @@ static inline long long rtai_usrq_dispatcher (unsigned long srq, unsigned long l
 #include <asm/rtai_usi.h>
 long long (*rtai_lxrt_dispatcher)(unsigned long, unsigned long, void *);
 
+static int (*lxrt_intercept_syscall_prologue)(unsigned long, struct pt_regs *);
+
+static int intercept_syscall_prologue(unsigned long event, struct pt_regs *regs)
+{
+	if (likely(regs->orig_eax >= RTAI_SYSCALL_NR)) {
+		int cpuid;
+		unsigned long srq  = regs->ebx;
+		unsigned long args = regs->ecx;
+		long long *retval  = (void *)regs->edx;
+#ifdef USI_SRQ_MASK
+		IF_IS_A_USI_SRQ_CALL_IT(srq, args, retval, regs->eflags);
+#endif
+		*retval = srq > RTAI_NR_SRQS ? rtai_lxrt_dispatcher(srq, args, regs) : rtai_usrq_dispatcher(srq, args);
+		if (!in_hrt_mode(cpuid = rtai_cpuid())) {
+			hal_test_and_fast_flush_pipeline(cpuid);
+			return 0;
+		}
+		return 1;
+	}
+	return lxrt_intercept_syscall_prologue(event, regs);
+}
+
 asmlinkage int rtai_syscall_dispatcher (long bx, unsigned long cx_args, long long *dx_retval, long si, long di, long bp, unsigned long ax_srq, long ds, long es, long orig_eax, long eip, long cs, unsigned long eflags)
 {
 	int cpuid;
 #ifdef USI_SRQ_MASK
-	IF_IS_A_USI_SRQ_CALL_IT();
+	IF_IS_A_USI_SRQ_CALL_IT(ax_srq, cx_args, dx_retval, eflags);
 #endif
 	*dx_retval = ax_srq > RTAI_NR_SRQS ? rtai_lxrt_dispatcher(ax_srq, cx_args, &bx) : rtai_usrq_dispatcher(ax_srq, cx_args);
 	if (!in_hrt_mode(cpuid = rtai_cpuid())) {
@@ -1785,6 +1807,8 @@ static void rtai_install_archdep (void)
 	rtai_sysvec = rtai_set_gate_vector(RTAI_SYS_VECTOR, 15, 3, &rtai_uvec_handler);
 	rtai_critical_exit(flags);
 
+	hal_catch_event(hal_root_domain, HAL_SYSCALL_PROLOGUE, (void *)intercept_syscall_prologue);
+
 	if (rtai_cpufreq_arg == 0) {
 		struct hal_sysinfo_struct sysinfo;
 		hal_get_sysinfo(&sysinfo);
@@ -1807,6 +1831,8 @@ static void rtai_uninstall_archdep(void)
 	flags = rtai_critical_enter(NULL);
 	idt_table[RTAI_SYS_VECTOR] = rtai_sysvec;
 	rtai_critical_exit(flags);
+
+	hal_catch_event(hal_root_domain, HAL_SYSCALL_PROLOGUE, NULL);
 }
 
 int rtai_calibrate_8254 (void)
@@ -1989,6 +2015,10 @@ LAST_LINE_OF_RTAI_DOMAIN_ENTRY
 
 long rtai_catch_event (struct hal_domain_struct *from, unsigned long event, int (*handler)(unsigned long, void *))
 {
+	if (event == HAL_SYSCALL_PROLOGUE && handler) {
+		lxrt_intercept_syscall_prologue = (void *)handler;
+		return 0;
+	}
 	return (long)hal_catch_event(from, event, (void *)handler);
 }
 

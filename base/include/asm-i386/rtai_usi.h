@@ -75,9 +75,9 @@ static unsigned long (*usi_fun_entry[ ])(unsigned long, unsigned long *) = {
 	[_RESTORE_FLAGS]    = (void *)usi_restore_flags
 };
 
-#define IF_IS_A_USI_SRQ_CALL_IT() \
-        if (ax_srq > USI_SRQ_MASK) { \
-               	*dx_retval = usi_fun_entry[ax_srq & ~USI_SRQ_MASK](cx_args, &eflags); \
+#define IF_IS_A_USI_SRQ_CALL_IT(srq, args, retval, psr) \
+        if (srq > USI_SRQ_MASK) { \
+               	*retval = usi_fun_entry[srq & ~USI_SRQ_MASK](args, &(psr)); \
                 return 0; \
        	} \
 

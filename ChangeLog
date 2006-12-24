@@ -1,3 +1,13 @@
+2006-12-23  Paolo Mantegazza <mantegazza@aero.polimi.it>
+
+	* base/include/asm-i386/rtai_srq.h,
+	  base/include/asm-i386/rtai_usi.h,
+	  base/arch/i386/hal/hal.immed,
+	  base/sched/sched.c,
+	  base/arch/i386/Kconfig: 
+	  catching of syscall prologue in rtai_hal for full its symmetric 
+	  usage with RTAI own srqs also, when it is configured.
+
 2006-12-22  Emanuele Clerici (clerici@aero.polimi.it)
 
 	* base/include/rtai_netrpc.h: adapted to support new netrpc extensions.

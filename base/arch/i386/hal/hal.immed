@@ -1735,7 +1735,7 @@ static int intercept_syscall_prologue(unsigned long event, struct pt_regs *regs)
 		}
 		return 1;
 	}
-	return sched_intercept_syscall_prologue ? sched_intercept_syscall_prologue(event, regs) : 0;
+	return likely(sched_intercept_syscall_prologue) ? sched_intercept_syscall_prologue(event, regs) : 0;
 }
 
 asmlinkage int rtai_syscall_dispatcher (long bx, unsigned long cx_args, long long *dx_retval, long si, long di, long bp, unsigned long ax_srq, long ds, long es, long orig_eax, long eip, long cs, unsigned long eflags)

@@ -1716,7 +1716,7 @@ static inline long long rtai_usrq_dispatcher (unsigned long srq, unsigned long l
 #include <asm/rtai_usi.h>
 long long (*rtai_lxrt_dispatcher)(unsigned long, unsigned long, void *);
 
-static int (*lxrt_intercept_syscall_prologue)(unsigned long, struct pt_regs *);
+static int (*sched_intercept_syscall_prologue)(unsigned long, struct pt_regs *);
 
 static int intercept_syscall_prologue(unsigned long event, struct pt_regs *regs)
 {
@@ -1735,7 +1735,7 @@ static int intercept_syscall_prologue(unsigned long event, struct pt_regs *regs)
 		}
 		return 1;
 	}
-	return lxrt_intercept_syscall_prologue(event, regs);
+	return sched_intercept_syscall_prologue ? sched_intercept_syscall_prologue(event, regs) : 0;
 }
 
 asmlinkage int rtai_syscall_dispatcher (long bx, unsigned long cx_args, long long *dx_retval, long si, long di, long bp, unsigned long ax_srq, long ds, long es, long orig_eax, long eip, long cs, unsigned long eflags)
@@ -2015,8 +2015,8 @@ LAST_LINE_OF_RTAI_DOMAIN_ENTRY
 
 long rtai_catch_event (struct hal_domain_struct *from, unsigned long event, int (*handler)(unsigned long, void *))
 {
-	if (event == HAL_SYSCALL_PROLOGUE && handler) {
-		lxrt_intercept_syscall_prologue = (void *)handler;
+	if (event == HAL_SYSCALL_PROLOGUE) {
+		sched_intercept_syscall_prologue = (void *)handler;
 		return 0;
 	}
 	return (long)hal_catch_event(from, event, (void *)handler);

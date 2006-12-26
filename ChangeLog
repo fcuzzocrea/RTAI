@@ -5,7 +5,6 @@
 	* base/arch/i386/hal/hal.immed: ifdef redundant MODULE_LICENSE to
 	  avoid complaint with 2.4.xx.
 
-
 2006-12-26  Paolo Mantegazza <mantegazza@aero.polimi.it>
 
 	* base/include/rtai_sched.h,

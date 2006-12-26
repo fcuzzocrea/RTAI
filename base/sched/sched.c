@@ -608,34 +608,6 @@ do { \
 #define RESTORE_UNLOCK_LINUX(cpuid) \
 	do { rt_restore_switch_to_linux(sflags, cpuid);   } while (0)
 
-#define SELF_SUSP() \
-do { \
-	if (rt_current->state & RT_SCHED_SELFSUSP) { \
-		rem_ready_current(rt_current); \
-		if (!rt_scheduling[cpuid].locked) { \
-			rt_schedule(); \
-		} \
-	} \
-	if (rt_current->signal) { \
-		(*rt_current->signal)(); \
-	} \
-} while (0)
-
-#define SELF_SUSP_IN_IRQ() \
-do { \
-	if (rt_current->state & RT_SCHED_SELFSUSP) { \
-		rem_ready_current(rt_current); \
-		if (!rt_scheduling[cpuid].locked) { \
-			sched_get_global_lock(cpuid); \
-			rt_schedule(); \
-			sched_release_global_lock(cpuid); \
-		} \
-	} \
-	if (rt_current->signal) { \
-		(*rt_current->signal)(); \
-	} \
-} while (0)
-
 #ifdef LOCKED_LINUX_IN_IRQ_HANDLER
 #define SAVE_LOCK_LINUX_IN_IRQ(cpuid)
 #define RESTORE_UNLOCK_LINUX_IN_IRQ(cpuid)
@@ -832,8 +804,8 @@ static void rt_schedule_on_schedule_ipi(void)
 	sched_release_global_lock(cpuid);
 
 	if (new_task != rt_current) {
-		rt_scheduling[cpuid].rqsted = 1;
 		if (rt_scheduling[cpuid].locked) {
+			rt_scheduling[cpuid].rqsted = 1;
 			goto sched_exit;
 		}
 		if (USE_RTAI_TASKS && (!new_task->lnxtsk || !rt_current->lnxtsk)) {
@@ -863,7 +835,6 @@ static void rt_schedule_on_schedule_ipi(void)
 	}
 sched_exit:
 	rtai_cli();
-	SELF_SUSP_IN_IRQ();
 #if CONFIG_RTAI_BUSY_TIME_ALIGN
 	if (rt_current->trap_handler_data) {
 		rt_current->trap_handler_data = 0;
@@ -926,8 +897,8 @@ void rt_schedule(void)
 	sched_release_global_lock(cpuid);
 
 	if (new_task != rt_current) {
-		rt_scheduling[cpuid].rqsted = 1;
 		if (rt_scheduling[cpuid].locked) {
+			rt_scheduling[cpuid].rqsted = 1;
 			goto sched_exit;
 		}
 		if (USE_RTAI_TASKS && (!new_task->lnxtsk || !rt_current->lnxtsk)) {
@@ -997,13 +968,13 @@ sched_exit:
 	rtai_cli();
 	sched_get_global_lock(cpuid);
 sched_exit1:
-	SELF_SUSP();
 #if CONFIG_RTAI_BUSY_TIME_ALIGN
 	if (rt_current->trap_handler_data) {
 		rt_current->trap_handler_data = 0;
 		while(rdtsc() < rt_current->resume_time);
 	}
 #endif
+	return;
 }
 
 
@@ -1056,6 +1027,14 @@ void rt_sched_lock(void)
 	rtai_restore_flags(flags);
 }
 
+#define SCHED_UNLOCK_SCHEDULE(cpuid) \
+	do { \
+		rt_scheduling[cpuid].rqsted = 0; \
+		sched_get_global_lock(cpuid); \
+		rt_schedule(); \
+		sched_release_global_lock(cpuid); \
+	} while (0)
+
 
 void rt_sched_unlock(void)
 {
@@ -1065,9 +1044,7 @@ void rt_sched_unlock(void)
 	rtai_save_flags_and_cli(flags);
 	if (rt_scheduling[cpuid = rtai_cpuid()].locked && !(--rt_scheduling[cpuid].locked)) {
 		if (rt_scheduling[cpuid].rqsted > 0) {
-			sched_get_global_lock(cpuid);
-			rt_schedule();
-			sched_release_global_lock(cpuid);
+			SCHED_UNLOCK_SCHEDULE(cpuid);
 		}
 	} else {
 //		rt_printk("*** TOO MANY SCHED_UNLOCK ***\n");
@@ -1079,9 +1056,7 @@ void rt_sched_unlock(void)
 //#ifdef CONFIG_RTAI_SCHED_ISR_LOCK
 void rtai_handle_isched_lock (int cpuid) /* Called with interrupts off */
 {
-	sched_get_global_lock(cpuid);
-	rt_schedule();
-	sched_release_global_lock(cpuid);
+	SCHED_UNLOCK_SCHEDULE(cpuid);
 }
 //#endif /* CONFIG_RTAI_SCHED_ISR_LOCK */
 
@@ -1255,8 +1230,8 @@ static void rt_timer_handler(void)
 	sched_release_global_lock(cpuid);
 
 	if (new_task != rt_current) {
-		rt_scheduling[cpuid].rqsted = 1;
 		if (rt_scheduling[cpuid].locked) {
+			rt_scheduling[cpuid].rqsted = 1;
 			goto sched_exit;
 		}
 		if (USE_RTAI_TASKS && (!new_task->lnxtsk || !rt_current->lnxtsk)) {
@@ -1286,7 +1261,6 @@ static void rt_timer_handler(void)
         }
 sched_exit:
 	rtai_cli();
-	SELF_SUSP_IN_IRQ();
 }
 
 

@@ -79,7 +79,7 @@ static unsigned long (*usi_fun_entry[ ])(unsigned long, unsigned long *) = {
         if (srq > USI_SRQ_MASK) { \
                	*retval = usi_fun_entry[srq & ~USI_SRQ_MASK](args, &(psr)); \
                 return retpath; \
-       	} \
+       	}
 
 #endif /* __KERNEL__ */
 

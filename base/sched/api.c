@@ -458,7 +458,7 @@ RTAI_SYSCALL_MODE int rt_task_resume(RT_TASK *task)
 	flags = rt_global_save_flags_and_cli();
 	if (!(--task->suspdepth)) {
 		rem_timed_task(task);
-		if ((task->state &= ~(RT_SCHED_SUSPENDED | RT_SCHED_DELAYED | RT_SCHED_SELFSUSP)) == RT_SCHED_READY) {
+		if ((task->state &= ~(RT_SCHED_SUSPENDED | RT_SCHED_DELAYED)) == RT_SCHED_READY) {
 			task->blocked_on = NULL;
 			enq_ready_task(task);
 			RT_SCHEDULE(task, rtai_cpuid());

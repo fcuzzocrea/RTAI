@@ -66,8 +66,14 @@ static inline long long readtsc(void)
 
 #define NUM_ITERS  10
 
+#if LINUX_VERSION_CODE < KERNEL_VERSION(2,6,0)
+static spinlock_t tsc_sync_lock = SPIN_LOCK_UNLOCKED;
+static spinlock_t tsclock = SPIN_LOCK_UNLOCKED;
+#else
 static DEFINE_SPINLOCK(tsc_sync_lock);
 static DEFINE_SPINLOCK(tsclock);
+#endif
+
 static volatile long long go[SLAVE + 1];
 
 static void sync_master(void *arg)

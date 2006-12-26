@@ -79,7 +79,9 @@
 #endif /* CONFIG_PROC_FS */
 #include <stdarg.h>
 
+#ifndef MODULE_LICENSE
 MODULE_LICENSE("GPL");
+#endif
 
 static unsigned long rtai_cpufreq_arg = RTAI_CALIBRATED_CPU_FREQ;
 RTAI_MODULE_PARM(rtai_cpufreq_arg, ulong);

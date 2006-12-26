@@ -1722,7 +1722,7 @@ asmlinkage int rtai_syscall_dispatcher (long bx, unsigned long cx_args, long lon
 {
 	int cpuid;
 #ifdef USI_SRQ_MASK
-	IF_IS_A_USI_SRQ_CALL_IT();
+	IF_IS_A_USI_SRQ_CALL_IT(ax_srq, cx_args, dx_retval, eflags, 0);
 #endif
 	*dx_retval = ax_srq > RTAI_NR_SRQS ? rtai_lxrt_dispatcher(ax_srq, cx_args, &bx) : rtai_usrq_dispatcher(ax_srq, cx_args);
 	if (!in_hrt_mode(cpuid = rtai_cpuid())) {

@@ -1,3 +1,10 @@
+2006-12-26  Paolo Mantegazza <mantegazza@aero.polimi.it>
+
+	* base/arch/i386/hal/hal.c: fixed spinlocks definition to support
+	  TSCs synchronisation for 2.4.xx also.
+	* base/arch/i386/hal/hal.immed: ifdef redundant MODULE_LICENCE to
+	  avoid complint with 2.4.xx.
+
 2006-12-20  Emanuele Clerici <clerici@aero.polimi.it>
 
 	* base/ipc/netrpc/Makefile.kbuild: include path to rtdm.

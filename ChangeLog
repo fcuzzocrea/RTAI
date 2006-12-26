@@ -1,3 +1,13 @@
+2006-12-26  Paolo Mantegazza <mantegazza@aero.polimi.it>
+
+	* base/include/rtai_sched.h,
+	* base/include/rtai_schedcore.h,
+	* base/sched/api.c,
+	* base/sched/sched.c, get rid and clean up of RT_SCHED_SELFSUSP state 
+	  stuff, used no more.
+	* base/sched/sched.c: reworked sched locking to set/reset 
+	  rt_scheduling.rqsted more appropriately.
+
 2006-12-23  Paolo Mantegazza <mantegazza@aero.polimi.it>
 
 	* base/include/asm-i386/rtai_srq.h,
@@ -5,7 +15,8 @@
 	  base/arch/i386/hal/hal.immed,
 	  base/sched/sched.c,
 	  base/arch/i386/Kconfig: 
-	  catching of syscall prologue in rtai_hal for full symmetric usage 		  of Linux syscall mechaninsm, RTAI own srqs and APIs, when it is 
+	  catching of syscall prologue in rtai_hal for full symmetric usage
+	  of Linux syscall mechaninsm, RTAI own srqs and APIs, when it is 
 	  configured.
 
 2006-12-22  Emanuele Clerici (clerici@aero.polimi.it)

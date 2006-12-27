@@ -1057,7 +1057,7 @@ Optional Features:
  --enable-bits		Enable bits IPC support
  --enable-fifos		Enable fifo IPC support
  --enable-netrpc	Enable netrpc support
- --enable-netrpc-rtnet	Enable netrpc emulation of RTNet
+ --enable-netrpc-rtnet	Enable use of RTNet
  --enable-sem		Enable semaphore support
  --enable-msg		Enable messaging support
  --enable-mbx		Enable mailbox support
@@ -20080,7 +20080,7 @@ if test x$CONFIG_RTAI_NETRPC = xy ; then
 fi
 
 echo "$as_me:$LINENO: checking for netrpc emulation of RTNet" >&5
-echo $ECHO_N "checking for netrpc emulation of RTNet... $ECHO_C" >&6
+echo $ECHO_N "checking for netrpc use of RTNet... $ECHO_C" >&6
 # Check whether --enable-netrpc-rtnet or --disable-netrpc-rtnet was given.
 if test "${enable_netrpc_rtnet+set}" = set; then
   enableval="$enable_netrpc_rtnet"

@@ -360,7 +360,7 @@ fi
 
 AC_MSG_CHECKING(for netrpc emulation of RTNet)
 AC_ARG_ENABLE(netrpc-rtnet,
-	[ --enable-netrpc-rtnet	Enable netrpc emulation of RTNet],
+	[ --enable-netrpc-rtnet	Enable use of RTNet],
 	[case "$enableval" in
 	y | yes) CONFIG_RTAI_NETRPC_RTNET=y ;;
 	*) unset CONFIG_RTAI_NETRPC_RTNET ;;

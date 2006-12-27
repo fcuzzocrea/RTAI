@@ -14,9 +14,9 @@ RTAI though. See the related configuration helper.
 What above requires you to patch Linux just with patches found wihin this 
 distribution. Notice also that this release is for use with i386s only.
 
-On recent distributions the devices created by following this installation 
-procedure will disappear at each machine halting. So you have to restore them
-after each reboot. A short script containing:
+On recent distributions devices created by following this installation 
+procedure will disappear at each machine halting. So you have to restore 
+them after each reboot. A short script containing:
 ------------------------------ cut here -------------------------------------
 if test \! -c /dev/rtai_shm; then
         mknod -m 666 /dev/rtai_shm c 10 254
@@ -117,7 +117,6 @@ RTAI-specific switches are:
  --enable-compat	Enable compatibility mode
  --enable-module-debug	Enable debug information in kernel modules
  --enable-user-debug	Enable debug information in user-space programs
- --enable-sim		Build RTAI simulator (MVM)
 
 Some configuration targets in base/ can either produce a module,
 or be statically linked to the RTAI schedulers. Either pass "m" for
@@ -253,7 +252,7 @@ o libtool 1.5.8
 1.7 Using the integrated calibration tool
 -----------------------------------------
 
-RTAI 3.0 comes with a brand new calibration tool which should help you
+RTAI 3.x comes with a brand new calibration tool which should help you
 determining if your hardware platform is up to the hard real-time
 duties. You can find this tool under $installdir/calibration. Here is
 the output of this tool's help message for x86-based platforms:
@@ -290,8 +289,7 @@ OPTIONS:
 >1. patch and build a vanilla Linux kernel tree with the RTAI support as
     usual. Patches for x86 are available from
     vulcano/base/arch/i386/patches/. Apply only one of them
-    that matches the Linux kernel version ("hal" selects Adeos,
-    "legacy" selects the old RTHAL), like this:
+    that matches the Linux kernel version, like this:
     $ cd $linux-src-dir
     $ patch -p1 < base/arch/$arch/patches/patchfile
 

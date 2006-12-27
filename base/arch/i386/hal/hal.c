@@ -38,6 +38,12 @@
  *
  *@{*/
 
+
+#include <linux/module.h>
+#include <linux/delay.h>
+
+MODULE_LICENSE("GPL");
+
 #include <asm/rtai_hal.h>
 
 #if defined(CONFIG_SMP) && defined(CONFIG_RTAI_DIAG_TSC_SYNC)
@@ -45,12 +51,6 @@
 /*
 	Hacked from arch/ia64/kernel/smpboot.c.
 */
-
-#include <linux/kernel.h>
-#include <linux/module.h>
-#include <linux/delay.h>
-
-MODULE_LICENSE("GPL");
 
 volatile long rtai_tsc_ofst[RTAI_NR_CPUS];
 

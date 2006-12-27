@@ -78,7 +78,7 @@ RTAI-specific switches are:
  --enable-bits		Enable bits IPC support
  --enable-fifos		Enable fifo IPC support
  --enable-netrpc	Enable netrpc support
- --enable-netrpc-rtnet	Enable netrpc emulation of RTNet
+ --enable-netrpc-rtnet	Enable use of RTNet
  --enable-sem		Enable semaphore support
  --enable-msg		Enable messaging support
  --enable-mbx		Enable mailbox support
@@ -90,10 +90,8 @@ RTAI-specific switches are:
  --enable-usi		Enable user-space interrupt support
  --enable-watchdog	Enable watchdog support
  --enable-leds		Enable leds-based debugging support
- --enable-sched-up	Enable UP scheduler support
- --enable-sched-smp	Enable SMP scheduler support
- --enable-sched-mup	Enable MUP scheduler support
- --enable-sched-lxrt	Enable LXRT scheduler support
+ --enable-sched-lxrt	Enable scheduler support without RTAI own ktasks
+ --enable-ktasks-sched-lxrt     Enable scheduler support with RTAI own ktasks
  --enable-sched-lock-isr	Enable scheduler lock in ISRs
  --enable-sched-8254-latency=	Set 8254 tuning latency
  --enable-sched-apic-latency=	Set APIC tuning latency

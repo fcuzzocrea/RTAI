@@ -2425,29 +2425,18 @@ static int lxrt_intercept_syscall_prologue(unsigned long event, struct pt_regs *
 	if (unlikely(regs->LINUX_SYSCALL_NR >= RTAI_SYSCALL_NR)) {
 		long long retval;
 		int cpuid;
-	        if (likely(regs->LINUX_SYSCALL_NR == RTAI_SYSCALL_NR)) {
-			retval = rtai_lxrt_invoke(regs->RTAI_SYSCALL_CODE, (void *)regs->RTAI_SYSCALL_ARGS, regs);
-			SET_LXRT_RETVAL_IN_SYSCALL(regs, retval);
-	        } else {
-        	        unsigned long args[2] = { (unsigned long)current, (unsigned long)regs };
-			retval = regs->LINUX_SYSCALL_RETREG = rtai_lxrt_invoke(regs->LINUX_SYSCALL_NR, args, regs);
-	        }
+		retval = rtai_lxrt_invoke(regs->RTAI_SYSCALL_CODE, (void *)regs->RTAI_SYSCALL_ARGS, regs);
+		SET_LXRT_RETVAL_IN_SYSCALL(regs, retval);
 		if (unlikely(!in_hrt_mode(cpuid = rtai_cpuid()))) {
-#if 0
-			if (unlikely((int)retval == -RT_EINTR)) {
-				regs->LINUX_SYSCALL_NR = RTAI_FAKE_LINUX_SYSCALL;
-			}
-#endif
 			hal_test_and_fast_flush_pipeline(cpuid);
 			return 0;
 		}
 		return 1;
 	}
 
-	{ int cpuid;
+	{ RT_TASK *task; 
 
-	if (in_hrt_mode(cpuid = rtai_cpuid()) && regs->LINUX_SYSCALL_NR < NR_syscalls) {
-		RT_TASK *task = rt_smp_current[cpuid];
+	if (regs->LINUX_SYSCALL_NR < NR_syscalls && (task = current->rtai_tskext(TSKEXT0))) {
 		if (task->is_hard > 0) {
 			if (task->linux_syscall_server) {
 				task->linux_syscall_server = rt_exec_linux_syscall(task, (void *)task->linux_syscall_server, regs);

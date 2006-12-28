@@ -2418,13 +2418,12 @@ RT_TASK *lxrt_init_linux_server(RT_TASK *master_task)
 
 #endif
 
-static int lxrt_intercept_syscall_prologue(unsigned long event, struct pt_regs *regs)
+static int lxrt_intercept_syscall_prologue(struct pt_regs *regs)
 {
 	IN_INTERCEPT_IRQ_ENABLE(); {
-	int cpuid;
+	RT_TASK *task;
 
-	if (in_hrt_mode(cpuid = rtai_cpuid()) && regs->LINUX_SYSCALL_NR < NR_syscalls) {
-		RT_TASK *task = rt_smp_current[cpuid];
+	if (regs->LINUX_SYSCALL_NR < NR_syscalls && (task = current->rtai_tskext(TSKEXT0))) {
 		if (task->is_hard > 0) {
 			if (task->linux_syscall_server) {
 				task->linux_syscall_server = rt_exec_linux_syscall(task, (void *)task->linux_syscall_server, regs);

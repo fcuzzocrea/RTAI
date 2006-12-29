@@ -53,8 +53,8 @@ $ make menuconfig (dialog-based as in 24.1.x)
 Save your configuration, wait for the shell prompt to come back after
 the configuration script has fully finished, then run "make".
 
-2) Outside the source tree (preferred way). From your fresh build
-directory, either run:
+2) Outside the source tree. From your fresh build directory, 
+either run:
 
 $ make -f $source_tree/makefile srctree=$source_tree xconfig
 $ make -f $source_tree/makefile srctree=$source_tree gconfig

@@ -559,7 +559,7 @@ config RTAI_NETRPC
 	The NetRPC module will be called rtai_netrpc.o.
 
 config RTAI_NETRPC_RTNET
-	bool "Use RTNet"
+	bool "Enable NETRPC use of RTNet"
 	depends on RTAI_NETRPC
 	default n
 	help

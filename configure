@@ -20079,7 +20079,7 @@ if test x$CONFIG_RTAI_NETRPC = xy ; then
   RTAI_BUILTIN_MODLIST="$RTAI_BUILTIN_MODLIST ipc/netrpc"
 fi
 
-echo "$as_me:$LINENO: checking for netrpc emulation of RTNet" >&5
+echo "$as_me:$LINENO: checking for netrpc use of RTNet" >&5
 echo $ECHO_N "checking for netrpc use of RTNet... $ECHO_C" >&6
 # Check whether --enable-netrpc-rtnet or --disable-netrpc-rtnet was given.
 if test "${enable_netrpc_rtnet+set}" = set; then

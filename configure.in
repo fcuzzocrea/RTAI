@@ -358,9 +358,9 @@ if test x$CONFIG_RTAI_NETRPC = xy ; then
   RTAI_BUILTIN_MODLIST="$RTAI_BUILTIN_MODLIST ipc/netrpc"
 fi
 
-AC_MSG_CHECKING(for netrpc emulation of RTNet)
+AC_MSG_CHECKING(for netrpc use of RTNet)
 AC_ARG_ENABLE(netrpc-rtnet,
-	[ --enable-netrpc-rtnet	Enable use of RTNet],
+	[ --enable-netrpc-rtnet	Enable netrpc use of RTNet],
 	[case "$enableval" in
 	y | yes) CONFIG_RTAI_NETRPC_RTNET=y ;;
 	*) unset CONFIG_RTAI_NETRPC_RTNET ;;

@@ -1057,7 +1057,7 @@ Optional Features:
  --enable-bits		Enable bits IPC support
  --enable-fifos		Enable fifo IPC support
  --enable-netrpc	Enable netrpc support
- --enable-netrpc-rtnet	Enable use of RTNet
+ --enable-netrpc-rtnet	Enable netrpc use of RTNet
  --enable-sem		Enable semaphore support
  --enable-msg		Enable messaging support
  --enable-mbx		Enable mailbox support

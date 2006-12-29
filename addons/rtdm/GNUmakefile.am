@@ -30,7 +30,8 @@ rtai_rtdm$(modext): @RTAI_KBUILD_ENV@
 rtai_rtdm$(modext): $(librtdm_a_SOURCES) FORCE
 	@RTAI_KBUILD_TOP@ \
 	@RTAI_KBUILD_CMD@ rtai_extradef="@RTAI_KMOD_CFLAGS@" \
-	@RTAI_KBUILD_BOTTOM@
+	@RTAI_KBUILD_BOTTOM@ ; \
+	$(RM) -f FORCE
 
 clean-local:
 	@RTAI_KBUILD_CLEAN@

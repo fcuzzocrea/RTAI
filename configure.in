@@ -525,26 +525,27 @@ AC_ARG_ENABLE(lxrt-use-linux-syscall,
 	esac])
 AC_MSG_RESULT(${CONFIG_RTAI_LXRT_USE_LINUX_SYSCALL:-no})
 
-AC_ARG_ENABLE(sched-up,
-	[ --enable-sched-up	Enable UP scheduler support],
-	[case "$enableval" in
-	y | yes | m | mod | module) CONFIG_RTAI_SCHED_UP=y ;;
-	*) unset CONFIG_RTAI_SCHED_UP ;;
-	esac])
-
-AC_ARG_ENABLE(sched-smp,
-	[ --enable-sched-smp	Enable SMP scheduler support],
-	[case "$enableval" in
-	y | yes | m | mod | module) CONFIG_RTAI_SCHED_SMP=y ;;
-	*) unset CONFIG_RTAI_SCHED_SMP ;;
-	esac])
-
-AC_ARG_ENABLE(sched-mup,
-	[ --enable-sched-mup	Enable MUP scheduler support],
-	[case "$enableval" in
-	y | yes | m | mod | module) CONFIG_RTAI_SCHED_MUP=y ;;
-	*) unset CONFIG_RTAI_SCHED_MUP ;;
-	esac])
+dnl 2006-12-29 masarati@aero.polimi.it
+dnl AC_ARG_ENABLE(sched-up,
+dnl 	[ --enable-sched-up	Enable UP scheduler support],
+dnl 	[case "$enableval" in
+dnl 	y | yes | m | mod | module) CONFIG_RTAI_SCHED_UP=y ;;
+dnl 	*) unset CONFIG_RTAI_SCHED_UP ;;
+dnl 	esac])
+dnl 
+dnl AC_ARG_ENABLE(sched-smp,
+dnl 	[ --enable-sched-smp	Enable SMP scheduler support],
+dnl 	[case "$enableval" in
+dnl 	y | yes | m | mod | module) CONFIG_RTAI_SCHED_SMP=y ;;
+dnl 	*) unset CONFIG_RTAI_SCHED_SMP ;;
+dnl 	esac])
+dnl 
+dnl AC_ARG_ENABLE(sched-mup,
+dnl 	[ --enable-sched-mup	Enable MUP scheduler support],
+dnl 	[case "$enableval" in
+dnl 	y | yes | m | mod | module) CONFIG_RTAI_SCHED_MUP=y ;;
+dnl 	*) unset CONFIG_RTAI_SCHED_MUP ;;
+dnl 	esac])
 
 dnl CONFIG_RTAI_SCHED_LXRT has to be forced
 AC_ARG_ENABLE(sched-lxrt,
@@ -556,7 +557,7 @@ AC_ARG_ENABLE(sched-lxrt,
 
 dnl CONFIG_RTAI_KTASTS_SCHED_LXRT has to be forced
 AC_ARG_ENABLE(ktasks-sched-lxrt,
-	[ --enable-ktasks-sched-lxrt	Enable LXRT scheduler with kernel tasks support],
+	[ --enable-ktasks-sched-lxrt	Enable LXRT scheduler with RTAI own kernel tasks],
 	[case "$enableval" in
 	y | yes | m | mod | module) CONFIG_RTAI_KTASKS_SCHED_LXRT_=y ;;
 	*) echo "--enable-ktasks-sched-lxrt forced to \"yes\"" ; CONFIG_RTAI_KTASKS_SCHED_LXRT_=y ;;
@@ -567,22 +568,26 @@ dnl defaults and discarding preposterous settings here, previous user
 dnl selection is kept as long as it is sane.
 
 if test "$CONFIG_X86" = y; then
-  if test "$CONFIG_SMP" = y; then
-    # x86 with SMP kernel
-    test x$CONFIG_RTAI_SCHED_SMP = x && smp_forced="(forced)"
-    CONFIG_RTAI_SCHED_SMP=y
-    test x$CONFIG_RTAI_SCHED_UP = xy && up_forced="(forced)"
-    unset CONFIG_RTAI_SCHED_UP
-  else
+dnl   if test "$CONFIG_SMP" = y; then
+dnl     # x86 with SMP kernel
+dnl     test x$CONFIG_RTAI_SCHED_SMP = x && smp_forced="(forced)"
+dnl     CONFIG_RTAI_SCHED_SMP=y
+dnl     test x$CONFIG_RTAI_SCHED_UP = xy && up_forced="(forced)"
+dnl     unset CONFIG_RTAI_SCHED_UP
+dnl   else
+dnl     # x86 with UP kernel
+dnl     if test "$CONFIG_RTAI_SCHED_MUP" = y -o "$CONFIG_RTAI_SCHED_SMP" = y; then
+dnl        test x$CONFIG_RTAI_SCHED_SMP = xy && smp_forced="(forced)"
+dnl        unset CONFIG_RTAI_SCHED_SMP
+dnl        test x$CONFIG_RTAI_SCHED_MUP = xy && mup_forced="(forced)"
+dnl        unset CONFIG_RTAI_SCHED_MUP
+dnl     fi
+dnl     test x$CONFIG_RTAI_SCHED_UP = x && up_forced="(forced)"
+dnl     CONFIG_RTAI_SCHED_UP=y
+dnl     CONFIG_RTAI_CPUS=1
+dnl   fi
+  if test ! "$CONFIG_SMP" = y; then
     # x86 with UP kernel
-    if test "$CONFIG_RTAI_SCHED_MUP" = y -o "$CONFIG_RTAI_SCHED_SMP" = y; then
-       test x$CONFIG_RTAI_SCHED_SMP = xy && smp_forced="(forced)"
-       unset CONFIG_RTAI_SCHED_SMP
-       test x$CONFIG_RTAI_SCHED_MUP = xy && mup_forced="(forced)"
-       unset CONFIG_RTAI_SCHED_MUP
-    fi
-    test x$CONFIG_RTAI_SCHED_UP = x && up_forced="(forced)"
-    CONFIG_RTAI_SCHED_UP=y
     CONFIG_RTAI_CPUS=1
   fi
   if test x$CONFIG_X86_EMU486 = x -a x$CONFIG_X86_CMPXCHG = x; then
@@ -590,23 +595,23 @@ if test "$CONFIG_X86" = y; then
   fi
 else
   # non-x86
-  test x$CONFIG_RTAI_SCHED_UP = x && up_forced="(forced)"
-  CONFIG_RTAI_SCHED_UP=y
-  test x$CONFIG_RTAI_SCHED_SMP = xy && smp_forced="(forced)"
-  unset CONFIG_RTAI_SCHED_SMP
-  test x$CONFIG_RTAI_SCHED_MUP = xy && mup_forced="(forced)"
-  unset CONFIG_RTAI_SCHED_MUP
+dnl   test x$CONFIG_RTAI_SCHED_UP = x && up_forced="(forced)"
+dnl   CONFIG_RTAI_SCHED_UP=y
+dnl   test x$CONFIG_RTAI_SCHED_SMP = xy && smp_forced="(forced)"
+dnl   unset CONFIG_RTAI_SCHED_SMP
+dnl   test x$CONFIG_RTAI_SCHED_MUP = xy && mup_forced="(forced)"
+dnl   unset CONFIG_RTAI_SCHED_MUP
   CONFIG_RTAI_CPUS=1
 fi
 
-AC_MSG_CHECKING(for UP scheduler support)
-AC_MSG_RESULT([${CONFIG_RTAI_SCHED_UP:-no} $up_forced])
-AC_MSG_CHECKING(for SMP scheduler support)
-AC_MSG_RESULT([${CONFIG_RTAI_SCHED_SMP:-no} $smp_forced])
-AC_MSG_CHECKING(for MUP scheduler support)
-AC_MSG_RESULT([${CONFIG_RTAI_SCHED_MUP:-no} $mup_forced])
-AC_MSG_CHECKING(for LXRT scheduler support)
-AC_MSG_RESULT([${CONFIG_RTAI_SCHED_LXRT:-no} $lxrt_forced])
+dnl AC_MSG_CHECKING(for UP scheduler support)
+dnl AC_MSG_RESULT([${CONFIG_RTAI_SCHED_UP:-no} $up_forced])
+dnl AC_MSG_CHECKING(for SMP scheduler support)
+dnl AC_MSG_RESULT([${CONFIG_RTAI_SCHED_SMP:-no} $smp_forced])
+dnl AC_MSG_CHECKING(for MUP scheduler support)
+dnl AC_MSG_RESULT([${CONFIG_RTAI_SCHED_MUP:-no} $mup_forced])
+dnl AC_MSG_CHECKING(for LXRT scheduler support)
+dnl AC_MSG_RESULT([${CONFIG_RTAI_SCHED_LXRT:-no} $lxrt_forced])
 AC_MSG_CHECKING(for LXRT scheduler with kernel tasks support)
 AC_MSG_RESULT([${CONFIG_RTAI_KTASKS_SCHED_LXRT:-no} $lxrt_forced])
 
@@ -636,7 +641,7 @@ AC_MSG_RESULT(${CONFIG_RTAI_SCHED_ISR_LOCK:-no})
 
 AC_MSG_CHECKING(for RTC freq)
 AC_ARG_ENABLE(rtc-freq,
-	[ --enable-rtc-freq	Enable RTC freq],
+	[ --enable-rtc-freq	Enable RTC by setting its frequency (>1, power of 2)],
 	[case "$enableval" in
  changequote(,)dnl add a test for 0 or power of 2, <2-8192>
 	[0-9]*) CONFIG_RTAI_RTC_FREQ=$enableval ;;
@@ -651,7 +656,7 @@ AC_MSG_RESULT($CONFIG_RTAI_RTC_FREQ)
 
 AC_MSG_CHECKING(for long timed lists)
 AC_ARG_ENABLE(long-timed-lists,
-	[ --enable-long-timed-lists	Enable long timed lists],
+	[ --enable-long-timed-lists	Enable binary tree ordering for (long) timed lists],
 	[case "$enableval" in
 	y | yes) CONFIG_RTAI_LONG_TIMED_LIST=y ;;
 	*) unset CONFIG_RTAI_LONG_TIMED_LIST;;
@@ -1104,33 +1109,33 @@ AC_MSG_RESULT(${CONFIG_RTAI_USER_DEBUG:-no})
 
 dnl Catch sub-package flags
 
-AC_MSG_CHECKING(for RTAI simulator)
-AC_ARG_ENABLE(sim,
-	[ --enable-sim		Build RTAI simulator (MVM) ],
-	[case "$enableval" in
-	y | yes) CONFIG_RTAI_MVM=y ;;
-	*) unset CONFIG_RTAI_MVM ;;
-	esac])
-
-unset RTAI_MAYBE_SIMDIR
-if test \! -d $srcdir/rtai-sim; then
-    if test x$CONFIG_RTAI_MVM = xy; then
-        AC_MSG_ERROR([simulator is missing.])
-    fi
-    AC_MSG_RESULT([not present])
-else
-    if test x$CONFIG_RTAI_MVM = xy; then
-	export CONFIG_RTAI_MVM_DEBUG
-    	export CONFIG_RTAI_MVM_GCC_TARBALL
-    else
-	RTAI_MAYBE_SIMDIR=rtai-sim
-    fi
-    AC_MSG_RESULT(${CONFIG_RTAI_MVM:-no})
-fi
-if test x$arch_supports_sim = x -a x$CONFIG_RTAI_MVM = xy; then
-   AC_MSG_ERROR([simulator is not available on this architecture.])
-fi
-AC_SUBST(RTAI_MAYBE_SIMDIR)
+dnl AC_MSG_CHECKING(for RTAI simulator)
+dnl AC_ARG_ENABLE(sim,
+dnl 	[ --enable-sim		Build RTAI simulator (MVM) ],
+dnl 	[case "$enableval" in
+dnl 	y | yes) CONFIG_RTAI_MVM=y ;;
+dnl 	*) unset CONFIG_RTAI_MVM ;;
+dnl 	esac])
+dnl 
+dnl unset RTAI_MAYBE_SIMDIR
+dnl if test \! -d $srcdir/rtai-sim; then
+dnl     if test x$CONFIG_RTAI_MVM = xy; then
+dnl         AC_MSG_ERROR([simulator is missing.])
+dnl     fi
+dnl     AC_MSG_RESULT([not present])
+dnl else
+dnl     if test x$CONFIG_RTAI_MVM = xy; then
+dnl 	export CONFIG_RTAI_MVM_DEBUG
+dnl     	export CONFIG_RTAI_MVM_GCC_TARBALL
+dnl     else
+dnl 	RTAI_MAYBE_SIMDIR=rtai-sim
+dnl     fi
+dnl     AC_MSG_RESULT(${CONFIG_RTAI_MVM:-no})
+dnl fi
+dnl if test x$arch_supports_sim = x -a x$CONFIG_RTAI_MVM = xy; then
+dnl    AC_MSG_ERROR([simulator is not available on this architecture.])
+dnl fi
+dnl AC_SUBST(RTAI_MAYBE_SIMDIR)
 
 dnl We need to know this before building the APIC support
 dnl into the SMP scheduler for the x86 platform. Autoconf imposes
@@ -1422,9 +1427,9 @@ AM_CONDITIONAL(CONFIG_UCLINUX,[test "$CONFIG_UCLINUX" = y])
 AM_CONDITIONAL(CONFIG_SMP,[test "$CONFIG_SMP" = y])
 
 dnl Features (whether they are built-in or not)
-AM_CONDITIONAL(CONFIG_RTAI_SCHED_UP,[test -n "$CONFIG_RTAI_SCHED_UP"])
-AM_CONDITIONAL(CONFIG_RTAI_SCHED_MUP,[test -n "$CONFIG_RTAI_SCHED_MUP"])
-AM_CONDITIONAL(CONFIG_RTAI_SCHED_SMP,[test -n "$CONFIG_RTAI_SCHED_SMP"])
+dnl AM_CONDITIONAL(CONFIG_RTAI_SCHED_UP,[test -n "$CONFIG_RTAI_SCHED_UP"])
+dnl AM_CONDITIONAL(CONFIG_RTAI_SCHED_MUP,[test -n "$CONFIG_RTAI_SCHED_MUP"])
+dnl AM_CONDITIONAL(CONFIG_RTAI_SCHED_SMP,[test -n "$CONFIG_RTAI_SCHED_SMP"])
 AM_CONDITIONAL(CONFIG_RTAI_SCHED_LXRT,[test -n "$CONFIG_RTAI_SCHED_LXRT"])
 
 AM_CONDITIONAL(CONFIG_RTAI_TRACE,[test -n "$CONFIG_RTAI_TRACE"])
@@ -1470,7 +1475,7 @@ AM_CONDITIONAL(CONFIG_RTAI_DRIVERS_SERIAL,[test x$CONFIG_RTAI_DRIVERS_SERIAL = x
 AM_CONDITIONAL(CONFIG_RTAI_DRIVERS_16550A,[test x$CONFIG_RTAI_DRIVERS_16550A = xy])
 
 AM_CONDITIONAL(CONFIG_RTAI_LAB,[test x$CONFIG_RTAI_LAB = xy])
-AM_CONDITIONAL(CONFIG_RTAI_MVM,[test x$CONFIG_RTAI_MVM = xy])
+dnl AM_CONDITIONAL(CONFIG_RTAI_MVM,[test x$CONFIG_RTAI_MVM = xy])
 
 AM_CONDITIONAL(CONFIG_RTAI_TESTSUITE,[test x$CONFIG_RTAI_TESTSUITE = xy])
 
@@ -1840,8 +1845,8 @@ if test \! x$RTAI_MAYBE_DOCDIR = x; then
       ])
 fi
 
-if test x$CONFIG_RTAI_MVM = xy; then
-   AC_CONFIG_SUBDIRS(rtai-sim)
-fi
+dnl if test x$CONFIG_RTAI_MVM = xy; then
+dnl    AC_CONFIG_SUBDIRS(rtai-sim)
+dnl fi
 
 AC_OUTPUT()

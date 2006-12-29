@@ -28,8 +28,7 @@ makefile \
 README.INSTALL \
 README.ISOLCPUS \
 README.LXRT_EXTS_IN_USE \
-README.SMI \
-@RTAI_MAYBE_SIMDIR@
+README.SMI
 
 DISTCLEANFILES = .rtai_config .rtai_config.old .cfok .cfchanged
 

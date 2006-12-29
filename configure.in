@@ -91,7 +91,7 @@ RTAI_KCONFIG_FILE=$srcdir/base/arch/$RTAI_TARGET_ARCH/defconfig
 kconfig_type=default
 
 AC_ARG_WITH(kconfig-file,
-    [  --with-kconfig-file=<kconfig-file>      KConfig parameter file],
+    [  --with-kconfig-file=<kconfig-file>  KConfig parameter file],
     [
 	case "$withval" in
 	"" | y | ye | yes | n | no)
@@ -156,7 +156,7 @@ unset CONFIG_MODULES
 RTAI_LINUX_DIR=$CONFIG_RTAI_LINUXDIR
 
 AC_ARG_WITH(linux-dir,
-    [  --with-linux-dir=<linux-dir>      RTAI-enabled Linux kernel tree],
+    [  --with-linux-dir=<linux-dir>        RTAI-enabled Linux kernel tree],
     [
 	case "$withval" in
 	"" )
@@ -290,7 +290,7 @@ RTAI_BUILTIN_MODLIST=""
 
 AC_MSG_CHECKING(for trace support)
 AC_ARG_ENABLE(trace,
-	[ --enable-trace		Enable trace support],
+	[  --enable-trace          Enable trace support],
 	[case "$enableval" in
 	y | yes) CONFIG_RTAI_TRACE=y ;;
 	*) unset CONFIG_RTAI_TRACE ;;
@@ -304,7 +304,7 @@ fi
 
 AC_MSG_CHECKING(for math support)
 AC_ARG_ENABLE(math,
-	[ --enable-math		Enable math support],
+	[  --enable-math           Enable math support],
 	[case "$enableval" in
 	y | yes | b | builtin | built-in) CONFIG_RTAI_MATH=y ;;
 	m | mod | module) CONFIG_RTAI_MATH=m ;;
@@ -318,7 +318,7 @@ fi
 
 AC_MSG_CHECKING(for bits IPC support)
 AC_ARG_ENABLE(bits,
-	[ --enable-bits		Enable bits IPC support],
+	[  --enable-bits           Enable bits IPC support],
 	[case "$enableval" in
 	y | yes | b | builtin | built-in) CONFIG_RTAI_BITS=y ;;
 	m | mod | module) CONFIG_RTAI_BITS=m ;;
@@ -332,7 +332,7 @@ fi
 
 AC_MSG_CHECKING(for real-time fifos support)
 AC_ARG_ENABLE(fifos,
-	[ --enable-fifos		Enable fifo IPC support],
+	[  --enable-fifos          Enable fifo IPC support],
 	[case "$enableval" in
 	y | yes | b | builtin | built-in) CONFIG_RTAI_FIFOS=y ;;
 	m | mod | module) CONFIG_RTAI_FIFOS=m ;;
@@ -346,7 +346,7 @@ fi
 
 AC_MSG_CHECKING(for netrpc support)
 AC_ARG_ENABLE(netrpc,
-	[ --enable-netrpc	Enable netrpc support],
+	[  --enable-netrpc         Enable netrpc support],
 	[case "$enableval" in
 	y | yes | b | builtin | built-in) CONFIG_RTAI_NETRPC=y ;;
 	m | mod | module) CONFIG_RTAI_NETRPC=m ;;
@@ -360,7 +360,7 @@ fi
 
 AC_MSG_CHECKING(for netrpc use of RTNet)
 AC_ARG_ENABLE(netrpc-rtnet,
-	[ --enable-netrpc-rtnet	Enable netrpc use of RTNet],
+	[  --enable-netrpc-rtnet   Enable netrpc use of RTNet],
 	[case "$enableval" in
 	y | yes) CONFIG_RTAI_NETRPC_RTNET=y ;;
 	*) unset CONFIG_RTAI_NETRPC_RTNET ;;
@@ -369,7 +369,7 @@ AC_MSG_RESULT(${CONFIG_RTAI_NETRPC_RTNET:-no})
 
 AC_MSG_CHECKING(for semaphore support)
 AC_ARG_ENABLE(sem,
-	[ --enable-sem		Enable semaphore support],
+	[  --enable-sem            Enable semaphore support],
 	[case "$enableval" in
 	y | yes | b | builtin | built-in) CONFIG_RTAI_SEM=y ;;
 	m | mod | module) CONFIG_RTAI_SEM=m ;;
@@ -383,7 +383,7 @@ fi
 
 AC_MSG_CHECKING(for messaging support)
 AC_ARG_ENABLE(mbx,
-	[ --enable-msg		Enable messaging support],
+	[  --enable-msg            Enable messaging support],
 	[case "$enableval" in
 	y | yes | b | builtin | built-in) CONFIG_RTAI_MSG=y ;;
 	m | mod | module) CONFIG_RTAI_MSG=m ;;
@@ -397,7 +397,7 @@ fi
 
 AC_MSG_CHECKING(for mailbox support)
 AC_ARG_ENABLE(mbx,
-	[ --enable-mbx		Enable mailbox support],
+	[  --enable-mbx            Enable mailbox support],
 	[case "$enableval" in
 	y | yes | b | builtin | built-in) CONFIG_RTAI_MBX=y ;;
 	m | mod | module) CONFIG_RTAI_MBX=m ;;
@@ -411,7 +411,7 @@ fi
 
 AC_MSG_CHECKING(for typed mailbox support)
 AC_ARG_ENABLE(tbx,
-	[ --enable-tbx		Enable typed mailbox support],
+	[  --enable-tbx            Enable typed mailbox support],
 	[case "$enableval" in
 	y | yes | b | builtin | built-in) CONFIG_RTAI_TBX=y ;;
 	m | mod | module) CONFIG_RTAI_TBX=m ;;
@@ -425,7 +425,7 @@ fi
 
 AC_MSG_CHECKING(for POSIX-like message queue support)
 AC_ARG_ENABLE(mq,
-	[ --enable-mq		Enable POSIX-like message queue support],
+	[  --enable-mq             Enable POSIX-like message queue support],
 	[case "$enableval" in
 	y | yes | b | builtin | built-in) CONFIG_RTAI_MQ=y ;;
 	m | mod | module) CONFIG_RTAI_MQ=m ;;
@@ -439,7 +439,7 @@ fi
 
 AC_MSG_CHECKING(for shared memory support)
 AC_ARG_ENABLE(shm,
-	[ --enable-shm		Enable shared memory support],
+	[  --enable-shm            Enable shared memory support],
 	[case "$enableval" in
 	y | yes | b | builtin | built-in) CONFIG_RTAI_SHM=y ;;
 	m | mod | module) CONFIG_RTAI_SHM=m ;;
@@ -453,7 +453,7 @@ fi
 
 AC_MSG_CHECKING(for real-time malloc support)
 AC_ARG_ENABLE(malloc,
-	[ --enable-malloc		Enable real-time malloc support],
+	[  --enable-malloc         Enable real-time malloc support],
 	[case "$enableval" in
 	y | yes | b | builtin | built-in) CONFIG_RTAI_MALLOC=y ;;
 	m | mod | module) CONFIG_RTAI_MALLOC=m ;;
@@ -467,7 +467,7 @@ fi
 
 AC_MSG_CHECKING(for tasklets support)
 AC_ARG_ENABLE(tasklets,
-	[ --enable-tasklets	Enable tasklets support],
+	[  --enable-tasklets       Enable tasklets support],
 	[case "$enableval" in
 	y | yes | b | builtin | built-in) CONFIG_RTAI_TASKLETS=y ;;
 	m | mod | module) CONFIG_RTAI_TASKLETS=m ;;
@@ -481,7 +481,7 @@ fi
 
 AC_MSG_CHECKING(for user-space interrupt support)
 AC_ARG_ENABLE(usi,
-	[ --enable-usi		Enable user-space interrupt support],
+	[  --enable-usi            Enable user-space interrupt support],
 	[case "$enableval" in
 	y | yes | b | builtin | built-in) CONFIG_RTAI_USI=y ;;
 	m | mod | module) CONFIG_RTAI_USI=m ;;
@@ -495,7 +495,7 @@ fi
 
 AC_MSG_CHECKING(for watchdog support)
 AC_ARG_ENABLE(watchdog,
-	[ --enable-watchdog	Enable watchdog support],
+	[  --enable-watchdog       Enable watchdog support],
 	[case "$enableval" in
 	y | yes | m | mod | module) CONFIG_RTAI_WD=m ;;
 	*) unset CONFIG_RTAI_WD ;;
@@ -504,7 +504,7 @@ AC_MSG_RESULT(${CONFIG_RTAI_WD:-no})
 
 AC_MSG_CHECKING(for leds-based debugging support)
 AC_ARG_ENABLE(leds,
-	[ --enable-leds		Enable leds-based debugging support],
+	[  --enable-leds           Enable leds-based debugging support],
 	[case "$enableval" in
 	y | yes | b | builtin | built-in) CONFIG_RTAI_LEDS=y ;;
 	m | mod | module) CONFIG_RTAI_LEDS=m ;;
@@ -518,7 +518,7 @@ fi
 
 AC_MSG_CHECKING(whether LXRT wraps service calls through Linux syscalls)
 AC_ARG_ENABLE(lxrt-use-linux-syscall,
-	[ --enable-lxrt-use-linux-syscall	Wrap LXRT service calls throug Linux syscall mechanism],
+	[  --enable-lxrt-use-linux-syscall  Wrap LXRT service calls throug Linux syscall mechanism],
 	[case "$enableval" in
 	y | yes) CONFIG_RTAI_LXRT_USE_LINUX_SYSCALL=y ;;
 	*) unset CONFIG_RTAI_LXRT_USE_LINUX_SYSCALL ;;
@@ -549,7 +549,7 @@ dnl 	esac])
 
 dnl CONFIG_RTAI_SCHED_LXRT has to be forced
 AC_ARG_ENABLE(sched-lxrt,
-	[ --enable-sched-lxrt	Enable LXRT scheduler support],
+	[  --enable-sched-lxrt     Enable LXRT scheduler support],
 	[case "$enableval" in
 	y | yes | m | mod | module) CONFIG_RTAI_SCHED_LXRT_=y ;;
 	*) echo "--enable-sched-lxrt forced to \"yes\"" ; CONFIG_RTAI_SCHED_LXRT_=y ;;
@@ -557,7 +557,7 @@ AC_ARG_ENABLE(sched-lxrt,
 
 dnl CONFIG_RTAI_KTASTS_SCHED_LXRT has to be forced
 AC_ARG_ENABLE(ktasks-sched-lxrt,
-	[ --enable-ktasks-sched-lxrt	Enable LXRT scheduler with RTAI own kernel tasks],
+	[  --enable-ktasks-sched-lxrt       Enable LXRT scheduler with RTAI own kernel tasks],
 	[case "$enableval" in
 	y | yes | m | mod | module) CONFIG_RTAI_KTASKS_SCHED_LXRT_=y ;;
 	*) echo "--enable-ktasks-sched-lxrt forced to \"yes\"" ; CONFIG_RTAI_KTASKS_SCHED_LXRT_=y ;;
@@ -632,7 +632,7 @@ fi
 
 AC_MSG_CHECKING(for scheduler lock in ISRs)
 AC_ARG_ENABLE(sched-lock-isr,
-	[ --enable-sched-lock-isr	Enable scheduler lock in ISRs],
+	[  --enable-sched-lock-isr Enable scheduler lock in ISRs],
 	[case "$enableval" in
 	y | yes) CONFIG_RTAI_SCHED_ISR_LOCK=y ;;
 	*) unset CONFIG_RTAI_SCHED_ISR_LOCK ;;
@@ -641,7 +641,7 @@ AC_MSG_RESULT(${CONFIG_RTAI_SCHED_ISR_LOCK:-no})
 
 AC_MSG_CHECKING(for RTC freq)
 AC_ARG_ENABLE(rtc-freq,
-	[ --enable-rtc-freq	Enable RTC by setting its frequency (>1, power of 2)],
+	[  --enable-rtc-freq       Enable RTC by setting its frequency (>1, power of 2)],
 	[case "$enableval" in
  changequote(,)dnl add a test for 0 or power of 2, <2-8192>
 	[0-9]*) CONFIG_RTAI_RTC_FREQ=$enableval ;;
@@ -656,7 +656,7 @@ AC_MSG_RESULT($CONFIG_RTAI_RTC_FREQ)
 
 AC_MSG_CHECKING(for long timed lists)
 AC_ARG_ENABLE(long-timed-lists,
-	[ --enable-long-timed-lists	Enable binary tree ordering for (long) timed lists],
+	[  --enable-long-timed-lists        Enable binary tree ordering for (long) timed lists],
 	[case "$enableval" in
 	y | yes) CONFIG_RTAI_LONG_TIMED_LIST=y ;;
 	*) unset CONFIG_RTAI_LONG_TIMED_LIST;;
@@ -665,7 +665,7 @@ AC_MSG_RESULT(${CONFIG_RTAI_LONG_TIMED_LIST:-no})
 
 AC_MSG_CHECKING(for 8254 tuning latency)
 AC_ARG_ENABLE(sched-8254-latency,
-	[ --enable-sched-8254-latency	Set 8254 tuning latency],
+	[  --enable-sched-8254-latency      Set 8254 tuning latency],
 	[case "$enableval" in
  changequote(,)dnl
 	[0-9]*) CONFIG_RTAI_SCHED_8254_LATENCY=$enableval ;;
@@ -680,7 +680,7 @@ AC_MSG_RESULT($CONFIG_RTAI_SCHED_8254_LATENCY)
 
 AC_MSG_CHECKING(for APIC tuning latency)
 AC_ARG_ENABLE(sched-apic-latency,
-	[ --enable-sched-apic-latency	Set APIC tuning latency],
+	[  --enable-sched-apic-latency      Set APIC tuning latency],
 	[case "$enableval" in
  changequote(,)dnl
 	[0-9]*) CONFIG_RTAI_SCHED_APIC_LATENCY=$enableval ;;
@@ -695,7 +695,7 @@ AC_MSG_RESULT($CONFIG_RTAI_SCHED_APIC_LATENCY)
 
 AC_MSG_CHECKING(for maximum number of LXRT slots)
 AC_ARG_ENABLE(sched-lxrt-numslots,
-	[ --enable-sched-lxrt-numslots	Set maximum number of LXRT slots],
+	[  --enable-sched-lxrt-numslots     Set maximum number of LXRT slots],
 	[case "$enableval" in
  changequote(,)dnl
 	[0-9]*) CONFIG_RTAI_SCHED_LXRT_NUMSLOTS=$enableval ;;
@@ -710,7 +710,7 @@ AC_MSG_RESULT($CONFIG_RTAI_SCHED_LXRT_NUMSLOTS)
 
 AC_MSG_CHECKING(for maximum file descriptors in RTDM)
 AC_ARG_ENABLE(rtdm-fd-max,
-	      [ --enable-rtdm-fd-max        	Set maximum number of RTDM file descriptor slots],
+	      [  --enable-rtdm-fd-max    Set maximum number of RTDM file descriptor slots],
 	[case "$enableval" in
  changequote(,)dnl
 	[1-9][0-9]*) CONFIG_RTAI_RTDM_FD_MAX=$enableval ;;
@@ -732,7 +732,7 @@ AC_MSG_RESULT($CONFIG_RTAI_RTDM_FD_MAX)
 
 AC_MSG_CHECKING(for shared edge triggered interrupts in RTDM)
 AC_ARG_ENABLE(rtdm-edge-shirq,
-	      [ --enable-rtdm-edge-shirq	Enable shared edge triggered interrupts in RTDM],
+	      [  --enable-rtdm-edge-shirq         Enable shared edge triggered interrupts in RTDM],
 	[case "$enableval" in
 	y | yes) CONFIG_RTAI_RTDM_EDGE_SHIRQ=y ;;
 	*) unset CONFIG_RTAI_RTDM_EDGE_SHIRQ ;;
@@ -741,7 +741,7 @@ AC_MSG_RESULT(${CONFIG_RTAI_RTDM_EDGE_SHIRQ:-no})
 
 AC_MSG_CHECKING(for shared level triggered interrupts in RTDM)
 AC_ARG_ENABLE(rtdm-level-shirq,
-	      [ --enable-rtdm-level-shirq	Enable shared level triggered interrupts in RTDM],
+	      [  --enable-rtdm-level-shirq        Enable shared level triggered interrupts in RTDM],
 	[case "$enableval" in
 	y | yes) CONFIG_RTAI_RTDM_LEVEL_SHIRQ=y ;;
 	*) unset CONFIG_RTAI_RTDM_LEVEL_SHIRQ ;;
@@ -750,7 +750,7 @@ AC_MSG_RESULT(${CONFIG_RTAI_RTDM_LEVEL_SHIRQ:-no})
 
 AC_MSG_CHECKING(for RTDM debug)
 AC_ARG_ENABLE(debug-rtdm,
-	      [ --enable-debug-rtdm		Enable RTDM debug],
+	      [  --enable-debug-rtdm     Enable RTDM debug],
 	[case "$enableval" in
 	y | yes) CONFIG_RTAI_DEBUG_RTDM=y ;;
 	*) unset CONFIG_RTAI_DEBUG_RTDM ;;
@@ -759,7 +759,7 @@ AC_MSG_RESULT(${CONFIG_RTAI_DEBUG_RTDM:-no})
 
 AC_MSG_CHECKING(for Linux task priority alignment to RTAI)
 AC_ARG_ENABLE(align-priority,
-	      [ --enable-align-priority		Keep Linux task priority aligned to RTAI],
+	      [  --enable-align-priority Keep Linux task priority aligned to RTAI],
 	[case "$enableval" in
 	y | yes) CONFIG_CONFIG_RTAI_ALIGN_LINUX_PRIORITY=y ;;
 	*) unset CONFIG_CONFIG_RTAI_ALIGN_LINUX_PRIORITY ;;
@@ -768,7 +768,7 @@ AC_MSG_RESULT(${CONFIG_RTAI_ALIGN_LINUX_PRIORITY:-no})
 
 AC_MSG_CHECKING(for in-kernel C++ support)
 AC_ARG_ENABLE(cplusplus,
-	[ --enable-cplusplus	Build in-kernel C++ support],
+	[  --enable-cplusplus      Build in-kernel C++ support],
 	[case "$enableval" in
 	y | yes) CONFIG_RTAI_CPLUSPLUS=y ;;
 	*) unset CONFIG_RTAI_CPLUSPLUS ;;
@@ -777,7 +777,7 @@ AC_MSG_RESULT(${CONFIG_RTAI_CPLUSPLUS:-no})
 
 AC_MSG_CHECKING(for calibration frequency factor)
 AC_ARG_ENABLE(cal-freq-fact,
-	[ --enable-cal-freq-fact      	Set calibration frequency factor],
+	[  --enable-cal-freq-fact  Set calibration frequency factor],
 	[case "$enableval" in
  changequote(,)dnl
 	[0-9]*) CONFIG_RTAI_CAL_FREQS_FACT=$enableval ;;
@@ -806,7 +806,7 @@ CXXFLAGS="$save_CXXFLAGS"
 
 AC_MSG_CHECKING(for comedi support over LXRT)
 AC_ARG_ENABLE(comedi-lxrt,
-	[ --enable-comedi-lxrt	Enable comedi/LXRT support],
+	[  --enable-comedi-lxrt    Enable comedi/LXRT support],
 	[case "$enableval" in
 	y | yes) CONFIG_RTAI_COMEDI_LXRT=y ;;
 	*) unset CONFIG_RTAI_COMEDI_LXRT ;;
@@ -819,7 +819,7 @@ fi
 
 AC_MSG_CHECKING(for real-time serial driver)
 AC_ARG_ENABLE(serial,
-	[ --enable-serial	Build real-time serial driver],
+	[  --enable-serial         Build real-time serial driver],
 	[case "$enableval" in
 	y | yes) CONFIG_RTAI_DRIVERS_SERIAL=y ;;
 	*) unset CONFIG_RTAI_DRIVERS_SERIAL ;;
@@ -828,7 +828,7 @@ AC_MSG_RESULT(${CONFIG_RTAI_DRIVERS_SERIAL:-no})
 
 AC_MSG_CHECKING(for real-time serial driver)
 AC_ARG_ENABLE(16550a,
-	[ --enable-16550a Build real-time serial driver],
+	[  --enable-16550a         Build real-time serial driver],
 	[case "$enableval" in
 	y | yes) CONFIG_RTAI_DRIVERS_16550A=y ;;
 	*) unset CONFIG_RTAI_DRIVERS_16550A;;
@@ -837,7 +837,7 @@ AC_MSG_RESULT(${CONFIG_RTAI_DRIVERS_16550A:-no})
 
 AC_MSG_CHECKING(for testsuite)
 AC_ARG_ENABLE(testsuite,
-	[ --enable-testsuite	Build RTAI testsuite],
+	[  --enable-testsuite      Build RTAI testsuite],
 	[case "$enableval" in
 	y | yes) CONFIG_RTAI_TESTSUITE=y ;;
 	*) unset CONFIG_RTAI_TESTSUITE ;;
@@ -846,7 +846,7 @@ AC_MSG_RESULT(${CONFIG_RTAI_TESTSUITE:-no})
 
 AC_MSG_CHECKING(for RTAI-Lab)
 AC_ARG_ENABLE(rtailab,
-	[ --enable-rtailab	Build RTAI-Lab],
+	[  --enable-rtailab        Build RTAI-Lab],
 	[case "$enableval" in
 	y | yes) CONFIG_RTAI_LAB=y ;;
 	*) unset CONFIG_RTAI_LAB ;;
@@ -880,7 +880,7 @@ fi
 
 AC_MSG_CHECKING(for FPU support)
 AC_ARG_ENABLE(fpu,
-	[ --enable-fpu		Enable FPU support],
+	[  --enable-fpu            Enable FPU support],
 	[case "$enableval" in
 	y | yes) CONFIG_RTAI_FPU_SUPPORT=y ;;
 	*) unset CONFIG_RTAI_FPU_SUPPORT ;;
@@ -889,7 +889,7 @@ AC_MSG_RESULT(${CONFIG_RTAI_FPU_SUPPORT:-no})
 
 AC_MSG_CHECKING(for math C99 support)
 AC_ARG_ENABLE(math-c99,
-	[ --enable-math-c99	Enable math C99 support],
+	[  --enable-math-c99       Enable math C99 support],
 	[case "$enableval" in
 	y | yes) CONFIG_RTAI_MATH_C99=y ;;
 	*) unset CONFIG_RTAI_MATH_C99 ;;
@@ -898,7 +898,7 @@ AC_MSG_RESULT(${CONFIG_RTAI_MATH_C99:-no})
 
 AC_MSG_CHECKING(for vmalloc use in real-time malloc support)
 AC_ARG_ENABLE(malloc-vmalloc,
-	[ --enable-malloc-vmalloc	Enable vmalloc support in malloc],
+	[  --enable-malloc-vmalloc Enable vmalloc support in malloc],
 	[case "$enableval" in
 	y | yes) CONFIG_RTAI_MALLOC_VMALLOC=y ;;
 	*) unset CONFIG_RTAI_MALLOC_VMALLOC ;;
@@ -907,7 +907,7 @@ AC_MSG_RESULT(${CONFIG_RTAI_MALLOC_VMALLOC:-no})
 
 AC_MSG_CHECKING(for size of real-time malloc heap)
 AC_ARG_ENABLE(malloc-heap-size,
-	[ --enable-malloc-heap-size	Set size of real-time malloc heap],
+	[  --enable-malloc-heap-size        Set size of real-time malloc heap],
 	[case "$enableval" in
  changequote(,)dnl
 	[0-9]*) CONFIG_RTAI_MALLOC_HEAPSZ=$enableval ;;
@@ -922,7 +922,7 @@ AC_MSG_RESULT($CONFIG_RTAI_MALLOC_HEAPSZ)
 
 AC_MSG_CHECKING(for number of CPUs (SMP-only))
 AC_ARG_ENABLE(cpus,
-	[ --enable-cpus		Enable CPUs],
+	[  --enable-cpus           Enable CPUs],
 	[case "$enableval" in
  changequote(,)dnl
 	[1-8]) CONFIG_RTAI_CPUS=$enableval ;;
@@ -937,7 +937,7 @@ dnl
 
 AC_MSG_CHECKING(for diagnose out of sync MP-TSCs)
 AC_ARG_ENABLE(diag-tsc-sync,
-	      [ --enable-diag-tsc-sync		Enable diagnose out of sync MP-TSCs],
+	      [  --enable-diag-tsc-sync  Enable diagnose out of sync MP-TSCs],
 	[case "$enableval" in
 	y | yes) CONFIG_RTAI_DIAG_TSC_SYNC=y ;;
 	*) unset CONFIG_RTAI_DIAG_TSC_SYNC ;;
@@ -949,7 +949,7 @@ dnl what about larger CPU numbers (if at all possible)?
 dnl should we test for valid CPU number?
 AC_MSG_CHECKING(for master CPU for aligning MP-TSCs)
 AC_ARG_ENABLE(master-tsc-cpu,
-	[ --enable-master-tsc-cpu	Enable master TSC CPU],
+	[  --enable-master-tsc-cpu Enable master TSC CPU],
 	[case "$enableval" in
  changequote(,)dnl
         [0-7])
@@ -967,7 +967,7 @@ AC_MSG_RESULT(${CONFIG_RTAI_MASTER_TSC_CPU:0})
 
 AC_MSG_CHECKING(for tune out of sync MP-TSCs)
 AC_ARG_ENABLE(tune-tsc-sync,
-	      [ --enable-tune-tsc-sync		Enable tune out of sync MP-TSCs],
+	      [  --enable-tune-tsc-sync  Enable tune out of sync MP-TSCs],
 	[case "$enableval" in
 	y | yes) CONFIG_RTAI_TUNE_TSC_SYNC=y ;;
 	*) unset CONFIG_RTAI_TUNE_TSC_SYNC ;;
@@ -987,7 +987,7 @@ AC_SUBST(RTAI_MAYBE_DOCDIR)
 
 AC_MSG_CHECKING(for Doxygen documentation)
 AC_ARG_ENABLE(doc,
-	[ --enable-dox-doc	Build Doxygen documentation],
+	[  --enable-dox-doc        Build Doxygen documentation],
 	[case "$enableval" in
 	y | yes) CONFIG_RTAI_DOX_DOC=y ;;
 	*) unset CONFIG_RTAI_DOX_DOC ;;
@@ -1047,7 +1047,7 @@ DBX_DOC_INIT(doc/docbook, doc/generated, 4.2)
 
 AC_MSG_CHECKING(whether using LaTeX non-stop mode)
 AC_ARG_ENABLE(verbose-latex,
-        [ --enable-verbose-latex Uses LaTeX non-stop mode],
+        [  --enable-verbose-latex  Uses LaTeX non-stop mode],
         [case "$enableval" in
         y | yes) CONFIG_RTAI_DOC_LATEX_NONSTOP=y ;;
         *) unset CONFIG_RTAI_DOC_LATEX_NONSTOP ;;
@@ -1075,7 +1075,7 @@ fi
 
 AC_MSG_CHECKING(for LXRT inlining)
 AC_ARG_WITH(lxrt-inline,
-	[ --with-lxrt-inline	Set LXRT inlining mode (static|extern|none)],
+	[  --with-lxrt-inline      Set LXRT inlining mode (static|extern|none)],
 	[case "$withval" in
 	static) CONFIG_RTAI_LXRT_INLINE=1 ;;
 	extern) CONFIG_RTAI_LXRT_INLINE=2 ;;
@@ -1091,7 +1091,7 @@ AC_MSG_RESULT([$inline_type])
 
 AC_MSG_CHECKING(for debug symbols in kernel modules)
 AC_ARG_ENABLE(module-debug,
-	[ --enable-module-debug	Enable debug information in kernel modules],
+	[  --enable-module-debug   Enable debug information in kernel modules],
 	[case "$enableval" in
 	y | yes) CONFIG_RTAI_KMOD_DEBUG=y ;;
 	*) unset CONFIG_RTAI_KMOD_DEBUG ;;
@@ -1100,7 +1100,7 @@ AC_MSG_RESULT(${CONFIG_RTAI_KMOD_DEBUG:-no})
 
 AC_MSG_CHECKING(for debug symbols in user-space programs)
 AC_ARG_ENABLE(user-debug,
-	[ --enable-user-debug	Enable debug information in user-space programs],
+	[  --enable-user-debug     Enable debug information in user-space programs],
 	[case "$enableval" in
 	y | yes) CONFIG_RTAI_USER_DEBUG=y ;;
 	*) unset CONFIG_RTAI_USER_DEBUG ;;

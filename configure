@@ -1051,61 +1051,59 @@ Optional Features:
   --enable-fast-install[=PKGS]
                           optimize for fast installation [default=yes]
   --disable-libtool-lock  avoid locking (might break parallel builds)
- --enable-trace		Enable trace support
- --enable-math		Enable math support
- --enable-bits		Enable bits IPC support
- --enable-fifos		Enable fifo IPC support
- --enable-netrpc	Enable netrpc support
- --enable-netrpc-rtnet	Enable netrpc use of RTNet
- --enable-sem		Enable semaphore support
- --enable-msg		Enable messaging support
- --enable-mbx		Enable mailbox support
- --enable-tbx		Enable typed mailbox support
- --enable-mq		Enable POSIX-like message queue support
- --enable-shm		Enable shared memory support
- --enable-malloc		Enable real-time malloc support
- --enable-tasklets	Enable tasklets support
- --enable-usi		Enable user-space interrupt support
- --enable-watchdog	Enable watchdog support
- --enable-leds		Enable leds-based debugging support
- --enable-lxrt-use-linux-syscall	Wrap LXRT service calls throug Linux syscall mechanism
- --enable-sched-lxrt	Enable LXRT scheduler support
- --enable-ktasks-sched-lxrt	Enable LXRT scheduler with RTAI own kernel tasks
- --enable-sched-lock-isr	Enable scheduler lock in ISRs
- --enable-rtc-freq	Enable RTC by setting its frequency (>1, power of 2)
- --enable-long-timed-lists	Enable binary tree ordering for (long) timed lists
- --enable-sched-8254-latency	Set 8254 tuning latency
- --enable-sched-apic-latency	Set APIC tuning latency
- --enable-sched-lxrt-numslots	Set maximum number of LXRT slots
- --enable-rtdm-fd-max        	Set maximum number of RTDM file descriptor slots
- --enable-rtdm-edge-shirq	Enable shared edge triggered interrupts in RTDM
- --enable-rtdm-level-shirq	Enable shared level triggered interrupts in RTDM
- --enable-debug-rtdm		Enable RTDM debug
- --enable-align-priority		Keep Linux task priority aligned to RTAI
- --enable-cplusplus	Build in-kernel C++ support
- --enable-cal-freq-fact      	Set calibration frequency factor
- --enable-comedi-lxrt	Enable comedi/LXRT support
- --enable-serial	Build real-time serial driver
- --enable-16550a Build real-time serial driver
- --enable-testsuite	Build RTAI testsuite
- --enable-rtailab	Build RTAI-Lab
+  --enable-trace          Enable trace support
+  --enable-math           Enable math support
+  --enable-bits           Enable bits IPC support
+  --enable-fifos          Enable fifo IPC support
+  --enable-netrpc         Enable netrpc support
+  --enable-netrpc-rtnet   Enable netrpc use of RTNet
+  --enable-sem            Enable semaphore support
+  --enable-msg            Enable messaging support
+  --enable-mbx            Enable mailbox support
+  --enable-tbx            Enable typed mailbox support
+  --enable-mq             Enable POSIX-like message queue support
+  --enable-shm            Enable shared memory support
+  --enable-malloc         Enable real-time malloc support
+  --enable-tasklets       Enable tasklets support
+  --enable-usi            Enable user-space interrupt support
+  --enable-watchdog       Enable watchdog support
+  --enable-leds           Enable leds-based debugging support
+  --enable-lxrt-use-linux-syscall  Wrap LXRT service calls throug Linux syscall mechanism
+  --enable-sched-lxrt     Enable LXRT scheduler support
+  --enable-ktasks-sched-lxrt       Enable LXRT scheduler with RTAI own kernel tasks
+  --enable-sched-lock-isr Enable scheduler lock in ISRs
+  --enable-rtc-freq       Enable RTC by setting its frequency (>1, power of 2)
+  --enable-long-timed-lists        Enable binary tree ordering for (long) timed lists
+  --enable-sched-8254-latency      Set 8254 tuning latency
+  --enable-sched-apic-latency      Set APIC tuning latency
+  --enable-sched-lxrt-numslots     Set maximum number of LXRT slots
+  --enable-rtdm-fd-max    Set maximum number of RTDM file descriptor slots
+  --enable-rtdm-edge-shirq         Enable shared edge triggered interrupts in RTDM
+  --enable-rtdm-level-shirq        Enable shared level triggered interrupts in RTDM
+  --enable-debug-rtdm     Enable RTDM debug
+  --enable-align-priority Keep Linux task priority aligned to RTAI
+  --enable-cplusplus      Build in-kernel C++ support
+  --enable-cal-freq-fact  Set calibration frequency factor
+  --enable-comedi-lxrt    Enable comedi/LXRT support
+  --enable-serial         Build real-time serial driver
+  --enable-16550a         Build real-time serial driver
+  --enable-testsuite      Build RTAI testsuite
+  --enable-rtailab        Build RTAI-Lab
 
- --enable-fpu		Enable FPU support
- --enable-math-c99	Enable math C99 support
- --enable-malloc-vmalloc	Enable vmalloc support in malloc
- --enable-malloc-heap-size	Set size of real-time malloc heap
- --enable-cpus		Enable CPUs
- --enable-diag-tsc-sync		Enable diagnose out of sync MP-TSCs
- --enable-master-tsc-cpu	Enable master TSC CPU
- --enable-tune-tsc-sync		Enable tune out of sync MP-TSCs
- --enable-dox-doc	Build Doxygen documentation
---enable-dbx	Build Docbook XML documentation.
---enable-dbx-network	Try to access Docbook DTD and
-XSL stylesheets through network (default is to die if local installation can not
-be found by configure).
- --enable-verbose-latex Uses LaTeX non-stop mode
- --enable-module-debug	Enable debug information in kernel modules
- --enable-user-debug	Enable debug information in user-space programs
+  --enable-fpu            Enable FPU support
+  --enable-math-c99       Enable math C99 support
+  --enable-malloc-vmalloc Enable vmalloc support in malloc
+  --enable-malloc-heap-size        Set size of real-time malloc heap
+  --enable-cpus           Enable CPUs
+  --enable-diag-tsc-sync  Enable diagnose out of sync MP-TSCs
+  --enable-master-tsc-cpu Enable master TSC CPU
+  --enable-tune-tsc-sync  Enable tune out of sync MP-TSCs
+  --enable-dox-doc        Build Doxygen documentation
+  --enable-dbx            Build Docbook XML documentation.
+  --enable-dbx-network    Try to access Docbook DTD and XSL stylesheets through network (default is to die if local installation can not be found by configure).
+  --enable-verbose-latex  Uses LaTeX non-stop mode
+  --enable-module-debug   Enable debug information in kernel modules
+  --enable-user-debug     Enable debug information in user-space programs
 
 Optional Packages:
   --with-PACKAGE[=ARG]    use PACKAGE [ARG=yes]
@@ -1117,19 +1115,15 @@ Optional Packages:
                           both]
   --with-tags[=TAGS]
                           include additional configurations [automatic]
-  --with-kconfig-file=<kconfig-file>      KConfig parameter file
+  --with-kconfig-file=<kconfig-file>  KConfig parameter file
   --with-module-dir=<module-dir>      Installation directory for modules
-  --with-linux-dir=<linux-dir>      RTAI-enabled Linux kernel tree
-  --with-comedi              directory containing COMEDI
+  --with-linux-dir=<linux-dir>        RTAI-enabled Linux kernel tree
+  --with-comedi            directory containing COMEDI
   --with-x                use the X Window System
-  --with-efltk              directory containing EFLTK
---with-dbx-root	specify the Docbook XML root (that
-is, the directory where docbookx.dtd should be found). Default is to use
-well-known locations (or network if --enable-dbx-network was passed).
---with-dbx-xsl-root	specify the Docbook XML XSL
-stylesheet root. Default is to use well-known locations (or network if
---enable-dbx-network was passed)
- --with-lxrt-inline	Set LXRT inlining mode (static|extern|none)
+  --with-efltk            directory containing EFLTK
+  --with-dbx-root         specify the Docbook XML root (that is, the directory where docbookx.dtd should be found). Default is to use well-known locations (or network if --enable-dbx-network was passed).
+  --with-dbx-xsl-root     specify the Docbook XML XSL stylesheet root. Default is to use well-known locations (or network if --enable-dbx-network was passed)
+  --with-lxrt-inline      Set LXRT inlining mode (static|extern|none)
 
 Some influential environment variables:
   CC          C compiler command
@@ -4291,7 +4285,7 @@ ia64-*-hpux*)
   ;;
 *-*-irix6*)
   # Find out which ABI we are using.
-  echo '#line 4294 "configure"' > conftest.$ac_ext
+  echo '#line 4288 "configure"' > conftest.$ac_ext
   if { (eval echo "$as_me:$LINENO: \"$ac_compile\"") >&5
   (eval $ac_compile) 2>&5
   ac_status=$?
@@ -5406,7 +5400,7 @@ fi
 
 
 # Provide some information about the compiler.
-echo "$as_me:5409:" \
+echo "$as_me:5403:" \
      "checking for Fortran 77 compiler version" >&5
 ac_compiler=`set X $ac_compile; echo $2`
 { (eval echo "$as_me:$LINENO: \"$ac_compiler --version </dev/null >&5\"") >&5
@@ -6504,11 +6498,11 @@ else
    -e 's:.*FLAGS}? :&$lt_compiler_flag :; t' \
    -e 's: [^ ]*conftest\.: $lt_compiler_flag&:; t' \
    -e 's:$: $lt_compiler_flag:'`
-   (eval echo "\"\$as_me:6507: $lt_compile\"" >&5)
+   (eval echo "\"\$as_me:6501: $lt_compile\"" >&5)
    (eval "$lt_compile" 2>conftest.err)
    ac_status=$?
    cat conftest.err >&5
-   echo "$as_me:6511: \$? = $ac_status" >&5
+   echo "$as_me:6505: \$? = $ac_status" >&5
    if (exit $ac_status) && test -s "$ac_outfile"; then
      # The compiler can only warn and ignore the option if not recognized
      # So say no if there are warnings other than the usual output.
@@ -6766,11 +6760,11 @@ else
    -e 's:.*FLAGS}? :&$lt_compiler_flag :; t' \
    -e 's: [^ ]*conftest\.: $lt_compiler_flag&:; t' \
    -e 's:$: $lt_compiler_flag:'`
-   (eval echo "\"\$as_me:6769: $lt_compile\"" >&5)
+   (eval echo "\"\$as_me:6763: $lt_compile\"" >&5)
    (eval "$lt_compile" 2>conftest.err)
    ac_status=$?
    cat conftest.err >&5
-   echo "$as_me:6773: \$? = $ac_status" >&5
+   echo "$as_me:6767: \$? = $ac_status" >&5
    if (exit $ac_status) && test -s "$ac_outfile"; then
      # The compiler can only warn and ignore the option if not recognized
      # So say no if there are warnings other than the usual output.
@@ -6828,11 +6822,11 @@ else
    -e 's:.*FLAGS}? :&$lt_compiler_flag :; t' \
    -e 's: [^ ]*conftest\.: $lt_compiler_flag&:; t' \
    -e 's:$: $lt_compiler_flag:'`
-   (eval echo "\"\$as_me:6831: $lt_compile\"" >&5)
+   (eval echo "\"\$as_me:6825: $lt_compile\"" >&5)
    (eval "$lt_compile" 2>out/conftest.err)
    ac_status=$?
    cat out/conftest.err >&5
-   echo "$as_me:6835: \$? = $ac_status" >&5
+   echo "$as_me:6829: \$? = $ac_status" >&5
    if (exit $ac_status) && test -s out/conftest2.$ac_objext
    then
      # The compiler can only warn and ignore the option if not recognized
@@ -9068,7 +9062,7 @@ else
   lt_dlunknown=0; lt_dlno_uscore=1; lt_dlneed_uscore=2
   lt_status=$lt_dlunknown
   cat > conftest.$ac_ext <<EOF
-#line 9071 "configure"
+#line 9065 "configure"
 #include "confdefs.h"
 
 #if HAVE_DLFCN_H
@@ -9166,7 +9160,7 @@ else
   lt_dlunknown=0; lt_dlno_uscore=1; lt_dlneed_uscore=2
   lt_status=$lt_dlunknown
   cat > conftest.$ac_ext <<EOF
-#line 9169 "configure"
+#line 9163 "configure"
 #include "confdefs.h"
 
 #if HAVE_DLFCN_H
@@ -11414,11 +11408,11 @@ else
    -e 's:.*FLAGS}? :&$lt_compiler_flag :; t' \
    -e 's: [^ ]*conftest\.: $lt_compiler_flag&:; t' \
    -e 's:$: $lt_compiler_flag:'`
-   (eval echo "\"\$as_me:11417: $lt_compile\"" >&5)
+   (eval echo "\"\$as_me:11411: $lt_compile\"" >&5)
    (eval "$lt_compile" 2>conftest.err)
    ac_status=$?
    cat conftest.err >&5
-   echo "$as_me:11421: \$? = $ac_status" >&5
+   echo "$as_me:11415: \$? = $ac_status" >&5
    if (exit $ac_status) && test -s "$ac_outfile"; then
      # The compiler can only warn and ignore the option if not recognized
      # So say no if there are warnings other than the usual output.
@@ -11476,11 +11470,11 @@ else
    -e 's:.*FLAGS}? :&$lt_compiler_flag :; t' \
    -e 's: [^ ]*conftest\.: $lt_compiler_flag&:; t' \
    -e 's:$: $lt_compiler_flag:'`
-   (eval echo "\"\$as_me:11479: $lt_compile\"" >&5)
+   (eval echo "\"\$as_me:11473: $lt_compile\"" >&5)
    (eval "$lt_compile" 2>out/conftest.err)
    ac_status=$?
    cat out/conftest.err >&5
-   echo "$as_me:11483: \$? = $ac_status" >&5
+   echo "$as_me:11477: \$? = $ac_status" >&5
    if (exit $ac_status) && test -s out/conftest2.$ac_objext
    then
      # The compiler can only warn and ignore the option if not recognized
@@ -12845,7 +12839,7 @@ else
   lt_dlunknown=0; lt_dlno_uscore=1; lt_dlneed_uscore=2
   lt_status=$lt_dlunknown
   cat > conftest.$ac_ext <<EOF
-#line 12848 "configure"
+#line 12842 "configure"
 #include "confdefs.h"
 
 #if HAVE_DLFCN_H
@@ -12943,7 +12937,7 @@ else
   lt_dlunknown=0; lt_dlno_uscore=1; lt_dlneed_uscore=2
   lt_status=$lt_dlunknown
   cat > conftest.$ac_ext <<EOF
-#line 12946 "configure"
+#line 12940 "configure"
 #include "confdefs.h"
 
 #if HAVE_DLFCN_H
@@ -13828,11 +13822,11 @@ else
    -e 's:.*FLAGS}? :&$lt_compiler_flag :; t' \
    -e 's: [^ ]*conftest\.: $lt_compiler_flag&:; t' \
    -e 's:$: $lt_compiler_flag:'`
-   (eval echo "\"\$as_me:13831: $lt_compile\"" >&5)
+   (eval echo "\"\$as_me:13825: $lt_compile\"" >&5)
    (eval "$lt_compile" 2>conftest.err)
    ac_status=$?
    cat conftest.err >&5
-   echo "$as_me:13835: \$? = $ac_status" >&5
+   echo "$as_me:13829: \$? = $ac_status" >&5
    if (exit $ac_status) && test -s "$ac_outfile"; then
      # The compiler can only warn and ignore the option if not recognized
      # So say no if there are warnings other than the usual output.
@@ -13890,11 +13884,11 @@ else
    -e 's:.*FLAGS}? :&$lt_compiler_flag :; t' \
    -e 's: [^ ]*conftest\.: $lt_compiler_flag&:; t' \
    -e 's:$: $lt_compiler_flag:'`
-   (eval echo "\"\$as_me:13893: $lt_compile\"" >&5)
+   (eval echo "\"\$as_me:13887: $lt_compile\"" >&5)
    (eval "$lt_compile" 2>out/conftest.err)
    ac_status=$?
    cat out/conftest.err >&5
-   echo "$as_me:13897: \$? = $ac_status" >&5
+   echo "$as_me:13891: \$? = $ac_status" >&5
    if (exit $ac_status) && test -s out/conftest2.$ac_objext
    then
      # The compiler can only warn and ignore the option if not recognized
@@ -16012,11 +16006,11 @@ else
    -e 's:.*FLAGS}? :&$lt_compiler_flag :; t' \
    -e 's: [^ ]*conftest\.: $lt_compiler_flag&:; t' \
    -e 's:$: $lt_compiler_flag:'`
-   (eval echo "\"\$as_me:16015: $lt_compile\"" >&5)
+   (eval echo "\"\$as_me:16009: $lt_compile\"" >&5)
    (eval "$lt_compile" 2>conftest.err)
    ac_status=$?
    cat conftest.err >&5
-   echo "$as_me:16019: \$? = $ac_status" >&5
+   echo "$as_me:16013: \$? = $ac_status" >&5
    if (exit $ac_status) && test -s "$ac_outfile"; then
      # The compiler can only warn and ignore the option if not recognized
      # So say no if there are warnings other than the usual output.
@@ -16274,11 +16268,11 @@ else
    -e 's:.*FLAGS}? :&$lt_compiler_flag :; t' \
    -e 's: [^ ]*conftest\.: $lt_compiler_flag&:; t' \
    -e 's:$: $lt_compiler_flag:'`
-   (eval echo "\"\$as_me:16277: $lt_compile\"" >&5)
+   (eval echo "\"\$as_me:16271: $lt_compile\"" >&5)
    (eval "$lt_compile" 2>conftest.err)
    ac_status=$?
    cat conftest.err >&5
-   echo "$as_me:16281: \$? = $ac_status" >&5
+   echo "$as_me:16275: \$? = $ac_status" >&5
    if (exit $ac_status) && test -s "$ac_outfile"; then
      # The compiler can only warn and ignore the option if not recognized
      # So say no if there are warnings other than the usual output.
@@ -16336,11 +16330,11 @@ else
    -e 's:.*FLAGS}? :&$lt_compiler_flag :; t' \
    -e 's: [^ ]*conftest\.: $lt_compiler_flag&:; t' \
    -e 's:$: $lt_compiler_flag:'`
-   (eval echo "\"\$as_me:16339: $lt_compile\"" >&5)
+   (eval echo "\"\$as_me:16333: $lt_compile\"" >&5)
    (eval "$lt_compile" 2>out/conftest.err)
    ac_status=$?
    cat out/conftest.err >&5
-   echo "$as_me:16343: \$? = $ac_status" >&5
+   echo "$as_me:16337: \$? = $ac_status" >&5
    if (exit $ac_status) && test -s out/conftest2.$ac_objext
    then
      # The compiler can only warn and ignore the option if not recognized
@@ -18576,7 +18570,7 @@ else
   lt_dlunknown=0; lt_dlno_uscore=1; lt_dlneed_uscore=2
   lt_status=$lt_dlunknown
   cat > conftest.$ac_ext <<EOF
-#line 18579 "configure"
+#line 18573 "configure"
 #include "confdefs.h"
 
 #if HAVE_DLFCN_H
@@ -18674,7 +18668,7 @@ else
   lt_dlunknown=0; lt_dlno_uscore=1; lt_dlneed_uscore=2
   lt_status=$lt_dlunknown
   cat > conftest.$ac_ext <<EOF
-#line 18677 "configure"
+#line 18671 "configure"
 #include "confdefs.h"
 
 #if HAVE_DLFCN_H

@@ -29,7 +29,7 @@ AC_PROG_CC
 CFLAGS=""
 
 AC_ARG_WITH(CXX,
-    [  --with-cxx=compiler      use specific C++ compiler],
+    [  --with-cxx=compiler     use specific C++ compiler],
     [ case "$withval" in
 	"" | y | ye | yes | n | no)
 	    AC_MSG_ERROR([You must supply an argument to --with-cxx.])

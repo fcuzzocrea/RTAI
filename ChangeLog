@@ -1,3 +1,9 @@
+2007-01-02  Paolo Mantegazza <mantegazza@aero.polimi.it>
+
+	* base/ipc/mq/mq.c: msgsize checked without any lock, fixed queue 
+	  head resetting in receiving functions, ensured queue mutex is 
+	  unlocked always.
+
 2006-12-29  Pierangelo Masarati <masarati@aero.polimi.it>
 
 	* cleanup of configure

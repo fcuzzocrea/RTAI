@@ -460,10 +460,12 @@ RTAI_SYSCALL_MODE size_t _mq_receive(mqd_t mq, char *msg_buffer, size_t buflen, 
 		return -EBADF;
 	}
 	q = &rt_pqueue_descr[q_index];
+	if (buflen < q->data.attrs.mq_msgsize) {
+		return -EMSGSIZE;
+	}
 	if (can_access(q, FOR_READ) == FALSE) {
 		return -EINVAL;
 	}
-
 	if (is_blocking(q)) {
 		mq_mutex_lock(&q->mutex);
 	} else if (mq_mutex_trylock(&q->mutex) <= 0) {
@@ -494,19 +496,16 @@ RTAI_SYSCALL_MODE size_t _mq_receive(mqd_t mq, char *msg_buffer, size_t buflen, 
 	} else {
 		size = ERROR;
 	}
-
 	q->data.head = msg_ptr->hdr.next;
-	if(q->data.head == NULL) {
-		q->data.head = q->data.tail = q->data.base;
-	}
     	freenode(msg_ptr, &q->data);
 	msg_ptr->hdr.size = 0;
     	msg_ptr->hdr.next = NULL;
 	rt_pqueue_descr[q_index].data.attrs.mq_curmsgs--;
-
+	if(q->data.head == NULL) {
+		q->data.head = q->data.tail = q->data.nodes[0];
+	}
 	mq_cond_signal(&q->full_cond);
 	mq_mutex_unlock(&q->mutex);
-
 	return size;
 }
 
@@ -523,6 +522,9 @@ RTAI_SYSCALL_MODE size_t _mq_timedreceive(mqd_t mq, char *msg_buffer, size_t buf
 		return -EBADF;
 	}
 	q = &rt_pqueue_descr[q_index];
+	if (buflen < q->data.attrs.mq_msgsize) {
+		return -EMSGSIZE;
+	}
 	if (can_access(q, FOR_READ) == FALSE) {
 		return -EINVAL;
 	}
@@ -544,10 +546,6 @@ RTAI_SYSCALL_MODE size_t _mq_timedreceive(mqd_t mq, char *msg_buffer, size_t buf
 		}
 	}
 	msg_ptr = q->data.head;
-	if (buflen < q->data.attrs.mq_msgsize) {
-		mq_mutex_unlock(&q->mutex);
-		return -EMSGSIZE;
-	}
 	if (msg_ptr->hdr.size <= buflen) {
 		size = msg_ptr->hdr.size;
 		if (space) {
@@ -564,19 +562,16 @@ RTAI_SYSCALL_MODE size_t _mq_timedreceive(mqd_t mq, char *msg_buffer, size_t buf
 	} else {
 		size = ERROR;
 	}
-
 	q->data.head = msg_ptr->hdr.next;
-	if(q->data.head == NULL) {
-		q->data.head = q->data.tail = q->data.base;
-	}
     	freenode(msg_ptr, &q->data);
 	msg_ptr->hdr.size = 0;
 	msg_ptr->hdr.next = NULL;
 	rt_pqueue_descr[q_index].data.attrs.mq_curmsgs--;
-
+	if(q->data.head == NULL) {
+		q->data.head = q->data.tail = q->data.nodes[0];
+	}
 	mq_cond_signal(&q->full_cond);
 	mq_mutex_unlock(&q->mutex);
-
 	return size;
 }
 
@@ -755,9 +750,8 @@ RTAI_SYSCALL_MODE int mq_close(mqd_t mq)
         if (--rt_pqueue_descr[q_index].open_count <= 0 &&
  	    rt_pqueue_descr[q_index].marked_for_deletion == TRUE ) {
 		delete_queue(q_index);
-	} else {
-		mq_mutex_unlock(&rt_pqueue_descr[q_index].mutex);
 	}
+	mq_mutex_unlock(&rt_pqueue_descr[q_index].mutex);
 	mq_mutex_unlock(&pqueue_mutex);
         return OK;
 }
@@ -866,12 +860,12 @@ RTAI_SYSCALL_MODE int mq_unlink(char *mq_name)
 	if (rt_pqueue_descr[q_index].open_count > 0) {
 		strcpy(rt_pqueue_descr[q_index].q_name, "\0");
 		rt_pqueue_descr[q_index].marked_for_deletion = TRUE;
-		mq_mutex_unlock(&rt_pqueue_descr[q_index].mutex);
 		rtn = rt_pqueue_descr[q_index].open_count;
 	} else {
 		delete_queue(q_index);
 		rtn = OK;
 	}
+	mq_mutex_unlock(&rt_pqueue_descr[q_index].mutex);
 	mq_mutex_unlock(&pqueue_mutex);
 	return rtn;
 }

@@ -79,7 +79,6 @@ typedef struct msg_hdr {
 #define MSG_HDR_SIZE	(sizeof(MSG_HDR))
 
 typedef struct queue_control {
-    int nodind;
     void **nodes;
     void *base;		/* Pointer to the base of the queue in memory */
     void *head;		/* Pointer to the element at the front of the queue */

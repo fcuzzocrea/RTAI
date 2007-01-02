@@ -336,7 +336,7 @@ static int _broadcast(RT_MSGQ *mq, void *msg, int msg_size, int msgpri, int broa
 	return broadcast;
 }
 
-int _rt_msg_broadcast(RT_MSGQ *mq, void *msg, int msg_size, int msgpri, int space)
+RTAI_SYSCALL_MODE int _rt_msg_broadcast(RT_MSGQ *mq, void *msg, int msg_size, int msgpri, int space)
 {
 	int retval;
 
@@ -354,7 +354,7 @@ int _rt_msg_broadcast(RT_MSGQ *mq, void *msg, int msg_size, int msgpri, int spac
 	return _broadcast(mq, msg, msg_size, msgpri, -(mq->received.count + mq->receivers.count), space);
 }
 
-int _rt_msg_broadcast_if(RT_MSGQ *mq, void *msg, int msg_size, int msgpri, int space)
+RTAI_SYSCALL_MODE int _rt_msg_broadcast_if(RT_MSGQ *mq, void *msg, int msg_size, int msgpri, int space)
 {
 	if (rt_sem_wait_if(&mq->senders) <= 0) {
                 return 0;
@@ -370,7 +370,7 @@ int _rt_msg_broadcast_if(RT_MSGQ *mq, void *msg, int msg_size, int msgpri, int s
 	return _broadcast(mq, msg, msg_size, msgpri, -(mq->received.count + mq->receivers.count), space);
 }
 
-int _rt_msg_broadcast_until(RT_MSGQ *mq, void *msg, int msg_size, int msgpri, RTIME until, int space)
+RTAI_SYSCALL_MODE int _rt_msg_broadcast_until(RT_MSGQ *mq, void *msg, int msg_size, int msgpri, RTIME until, int space)
 {
 	int retval;
 
@@ -388,7 +388,7 @@ int _rt_msg_broadcast_until(RT_MSGQ *mq, void *msg, int msg_size, int msgpri, RT
 	return _broadcast(mq, msg, msg_size, msgpri, -(mq->received.count + mq->receivers.count), space);
 }
 
-int _rt_msg_broadcast_timed(RT_MSGQ *mq, void *msg, int msg_size, int msgpri, RTIME delay, int space)
+RTAI_SYSCALL_MODE int _rt_msg_broadcast_timed(RT_MSGQ *mq, void *msg, int msg_size, int msgpri, RTIME delay, int space)
 {
 	return _rt_msg_broadcast_until(mq, msg, msg_size, msgpri, get_time() + delay, space);
 }

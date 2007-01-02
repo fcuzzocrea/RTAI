@@ -497,9 +497,9 @@ RTAI_SYSCALL_MODE size_t _mq_receive(mqd_t mq, char *msg_buffer, size_t buflen, 
 		size = ERROR;
 	}
 	q->data.head = msg_ptr->hdr.next;
-    	freenode(msg_ptr, &q->data);
 	msg_ptr->hdr.size = 0;
     	msg_ptr->hdr.next = NULL;
+    	freenode(msg_ptr, &q->data);
 	rt_pqueue_descr[q_index].data.attrs.mq_curmsgs--;
 	if(q->data.head == NULL) {
 		q->data.head = q->data.tail = q->data.nodes[0];
@@ -563,9 +563,9 @@ RTAI_SYSCALL_MODE size_t _mq_timedreceive(mqd_t mq, char *msg_buffer, size_t buf
 		size = ERROR;
 	}
 	q->data.head = msg_ptr->hdr.next;
-    	freenode(msg_ptr, &q->data);
 	msg_ptr->hdr.size = 0;
 	msg_ptr->hdr.next = NULL;
+    	freenode(msg_ptr, &q->data);
 	rt_pqueue_descr[q_index].data.attrs.mq_curmsgs--;
 	if(q->data.head == NULL) {
 		q->data.head = q->data.tail = q->data.nodes[0];

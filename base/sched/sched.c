@@ -2448,9 +2448,9 @@ static int lxrt_intercept_syscall_prologue(unsigned long event, struct pt_regs *
 			SYSW_DIAG_MSG(rt_printk("\nFORCING IT SOFT (SYSCALL), PID = %d, SYSCALL = %d.\n", (task->lnxtsk)->pid, regs->LINUX_SYSCALL_NR););
 			give_back_to_linux(task, -1);
 			SKIP_IMMEDIATE_LINUX_SYSCALL();
+			if (signal_pending(task->lnxtsk)) return 0;
 			SYSW_DIAG_MSG(rt_printk("FORCED IT SOFT, CALLING LINUX (SYSCALL), PID = %d, SYSCALL = %d.\n", (task->lnxtsk)->pid, regs->LINUX_SYSCALL_NR););
 			regs->LINUX_SYSCALL_RETREG = sys_call_table[regs->LINUX_SYSCALL_NR](*regs);
-			if (signal_pending(task->lnxtsk)) return -1;
 			SYSW_DIAG_MSG(rt_printk("LINUX RETURNED, GOING BACK TO HARD (SYSLXRT), PID = %d.\n", current->pid););
 			steal_from_linux(task);
 			SYSW_DIAG_MSG(rt_printk("GONE BACK TO HARD (SYSLXRT),  PID = %d.\n", current->pid););

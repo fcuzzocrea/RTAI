@@ -1,9 +1,18 @@
+2007-01-03  Paolo Mantegazza <mantegazza@aero.polimi.it>
+
+	* base/include/rtai_tbx.h and 
+	* base/ipc/tbx/tbx.c: fixed missing support for Linux REGPARM of 
+	  broadcasting functions.
+	* base/ipc/mq/mq.c: use mq_curmsgs as an index in get/freeing nodes, 
+	  nodind is redundant; simplify a few tests.
+	* base/include/rtai_mq.h: get rid of redundant variable nodind.
+
 2007-01-02  Paolo Mantegazza <mantegazza@aero.polimi.it>
 
 	* base/ipc/mq/mq.c: msgsize checked without any lock, fixed queue 
 	  head resetting in receiving functions, ensured queue mutex is 
 	  unlocked always.
-	* base/include/rtai_mq.c: makes available POSIX compliant returns, 
+	* base/include/rtai_mq.h: makes available POSIX compliant returns, 
 	  by setting errno. It depends on the definition of the internal macro:
 	  USE_POSIX_ERRNO, which is set by default. Users used to getting errno
 	  directly should comment it off.

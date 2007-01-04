@@ -1,3 +1,10 @@
+2007-01-04  Paolo Mantegazza <mantegazza@aero.polimi.it>
+
+	* base/include/rtai_netrpc.h: safer support of receive buffer sizes
+	  in user space asynchronous support (rt_get_net_rpc_ret).
+	* base/ipc/netrpc.c: get rid of unused/redundant stuff in local 
+	  mbx support for asynchronous returns.
+
 2007-01-03  Paolo Mantegazza <mantegazza@aero.polimi.it>
 
 	* base/include/rtai_tbx.h and 

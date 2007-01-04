@@ -1349,26 +1349,32 @@ static inline int rt_get_net_rpc_ret(MBX *mbx, unsigned long long *retval, void 
 		default:
 			ret = -1;
 	}
+#if 1
 	if (!ret) {
 		*retval = reply.retval;
 		if (reply.wsize) {
+			char msg[reply.wsize];
+			rt_mbx_receive(mbx, msg, reply.wsize);
 			if (*msglen1 > reply.wsize) {
 				*msglen1 = reply.wsize;
 			}
-			rt_mbx_receive(mbx, msg1, *msglen1);
+			memcpy(msg1, msg, *msglen1);
 		} else {
 			*msglen1 = 0;
 		}
 		if (reply.w2size) {
+			char msg[reply.w2size];
+			rt_mbx_receive(mbx, msg, reply.w2size);
 			if (*msglen2 > reply.w2size) {
 				*msglen2 = reply.w2size;
 			}
-			rt_mbx_receive(mbx, msg2, *msglen2);
+			memcpy(msg2, msg, *msglen2);
 		} else {
 			*msglen2 = 0;
 		}
 		return 0;
 	}
+#endif
 	return ret;
 }
 

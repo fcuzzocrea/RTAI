@@ -1064,7 +1064,7 @@ void rtai_handle_isched_lock (int cpuid) /* Called with interrupts off */
 void *rt_get_lxrt_fun_entry(int index);
 static inline void sched_sem_signal(SEM *sem)
 {
-	((void (*)(SEM *))rt_get_lxrt_fun_entry(SEM_SIGNAL))(sem);
+	((RTAI_SYSCALL_MODE void (*)(SEM *, ...))rt_get_lxrt_fun_entry(SEM_SIGNAL))(sem);
 }
 
 int clr_rtext(RT_TASK *task)

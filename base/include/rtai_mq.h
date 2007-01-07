@@ -79,7 +79,6 @@ typedef struct msg_hdr {
 #define MSG_HDR_SIZE	(sizeof(MSG_HDR))
 
 typedef struct queue_control {
-    int nodind;
     void **nodes;
     void *base;		/* Pointer to the base of the queue in memory */
     void *head;		/* Pointer to the element at the front of the queue */
@@ -190,6 +189,10 @@ typedef int mqd_t;
 extern "C" {
 #endif /* __cplusplus */
 
+#define USE_POSIX_ERRNO
+
+#ifndef USE_POSIX_ERRNO
+
 RTAI_PROTO(mqd_t, mq_open,(char *mq_name, int oflags, mode_t permissions, struct mq_attr *mq_attr))
 {
 	struct {char *mq_name; int oflags; mode_t permissions; struct mq_attr *mq_attr; int namesize, attrsize; } arg = { mq_name, oflags, permissions, mq_attr, strlen(mq_name) + 1, sizeof(struct mq_attr) };
@@ -249,6 +252,121 @@ RTAI_PROTO(int, mq_timedsend,(mqd_t mq, const char *msg, size_t msglen, unsigned
 	struct { mqd_t mq; const char *msg; size_t msglen; unsigned int msgprio; const struct timespec *abstime; int space; } arg = { mq, msg, msglen, msgprio, abstime, 0 };
 	return rtai_lxrt(MQIDX, SIZARG, MQ_TIMEDSEND, &arg).i[LOW];
 }
+
+#else /* USE_POSIX_ERRNO */
+
+RTAI_PROTO(mqd_t, mq_open,(char *mq_name, int oflags, mode_t permissions, struct mq_attr *mq_attr))
+{
+	mqd_t retval;
+	struct {char *mq_name; int oflags; mode_t permissions; struct mq_attr *mq_attr; int namesize, attrsize; } arg = { mq_name, oflags, permissions, mq_attr, strlen(mq_name) + 1, sizeof(struct mq_attr) };
+	if ((retval = (mqd_t)rtai_lxrt(MQIDX, SIZARG, MQ_OPEN, &arg).i[LOW]) < 0) {
+		errno = -retval;
+		return (mqd_t)(-1);
+	}
+	return retval;
+}
+
+RTAI_PROTO(size_t, mq_receive,(mqd_t mq, char *msg_buffer, size_t buflen, unsigned int *msgprio))
+{
+	size_t retval;
+	struct { mqd_t mq; char *msg_buffer; size_t buflen; unsigned int *msgprio; int space; } arg = { mq, msg_buffer, buflen, msgprio, 0 };
+	if ((retval = (size_t)rtai_lxrt(MQIDX, SIZARG, MQ_RECEIVE, &arg).i[LOW]) < 0) {
+		errno = -retval;
+		return (size_t)(-1);
+	}
+	return retval;
+}
+
+RTAI_PROTO(int, mq_send,(mqd_t mq, const char *msg, size_t msglen, unsigned int msgprio))
+{
+	int retval;
+	struct { mqd_t mq; const char *msg; size_t msglen; unsigned int msgprio; int space; } arg = { mq, msg, msglen, msgprio, 0 };
+	if ((retval = rtai_lxrt(MQIDX, SIZARG, MQ_SEND, &arg).i[LOW]) < 0) {
+		errno = -retval;
+		return -1;
+	}
+	return 0;
+}
+
+RTAI_PROTO(int, mq_close,(mqd_t mq))
+{
+	int retval;
+	struct { mqd_t mq; } arg = { mq };
+	if ((retval = rtai_lxrt(MQIDX, SIZARG, MQ_CLOSE, &arg).i[LOW]) < 0) {
+		errno = -retval;
+		return -1;
+	}
+	return 0;
+}
+
+RTAI_PROTO(int, mq_getattr,(mqd_t mq, struct mq_attr *attrbuf))
+{
+	int retval;
+	struct { mqd_t mq; struct mq_attr *attrbuf; int attrsize; } arg = { mq, attrbuf, sizeof(struct mq_attr) };
+	if ((retval = rtai_lxrt(MQIDX, SIZARG, MQ_GETATTR, &arg).i[LOW]) < 0) {
+		errno = -retval;
+		return -1;
+	}
+	return 0;
+}
+
+RTAI_PROTO(int, mq_setattr,(mqd_t mq, const struct mq_attr *new_attrs, struct mq_attr *old_attrs))
+{
+	int retval;
+	struct { mqd_t mq; const struct mq_attr *new_attrs; struct mq_attr *old_attrs; int attrsize; } arg = { mq, new_attrs, old_attrs, sizeof(struct mq_attr) };
+	if ((retval = rtai_lxrt(MQIDX, SIZARG, MQ_SETATTR, &arg).i[LOW]) < 0) {
+		errno = -retval;
+		return -1;
+	}
+	return 0;
+}
+
+RTAI_PROTO(int, mq_notify,(mqd_t mq, const struct sigevent *notification))
+{
+	int retval;
+	struct { mqd_t mq; const struct sigevent *notification; int size; } arg = { mq, notification, sizeof(struct sigevent) };
+	if ((retval = rtai_lxrt(MQIDX, SIZARG, MQ_NOTIFY, &arg).i[LOW]) < 0) {
+		errno = -retval;
+		return -1;
+	}
+	return 0;
+}
+
+RTAI_PROTO(int, mq_unlink,(char *mq_name))
+{
+	int retval;
+	struct { char *mq_name; int size; } arg = { mq_name, strlen(mq_name) + 1};
+	if ((retval = rtai_lxrt(MQIDX, SIZARG, MQ_UNLINK, &arg).i[LOW]) < 0) {
+		errno = -retval;
+		return -1;
+	}
+	return 0;
+}
+
+RTAI_PROTO(size_t, mq_timedreceive,(mqd_t mq, char *msg_buffer, size_t buflen, unsigned int *msgprio, const struct timespec *abstime))
+{
+	size_t retval;
+	struct { mqd_t mq; char *msg_buffer; size_t buflen; unsigned int *msgprio; const struct timespec *abstime; int space; } arg = { mq, msg_buffer, buflen, msgprio, abstime, 0 };
+	return (size_t)rtai_lxrt(MQIDX, SIZARG, MQ_TIMEDRECEIVE, &arg).i[LOW];
+	if ((retval = (size_t)rtai_lxrt(MQIDX, SIZARG, MQ_TIMEDRECEIVE, &arg).i[LOW]) < 0) {
+		errno = -retval;
+		return (size_t)(-1);
+	}
+	return retval;
+}
+
+RTAI_PROTO(int, mq_timedsend,(mqd_t mq, const char *msg, size_t msglen, unsigned int msgprio, const struct timespec *abstime))
+{
+	int retval;
+	struct { mqd_t mq; const char *msg; size_t msglen; unsigned int msgprio; const struct timespec *abstime; int space; } arg = { mq, msg, msglen, msgprio, abstime, 0 };
+	if ((retval = rtai_lxrt(MQIDX, SIZARG, MQ_TIMEDSEND, &arg).i[LOW]) < 0) {
+		errno = -retval;
+		return -1;
+	}
+	return 0;
+}
+
+#endif /* !USE_POSIX_ERRNO */
 
 #ifdef __cplusplus
 }

@@ -1341,7 +1341,7 @@ static inline int rt_get_net_rpc_ret(MBX *mbx, unsigned long long *retval, void 
 {
 	struct { int wsize, w2size; unsigned long long retval; int myport;} reply;
 	int ret;
-	
+
 	switch (type) {
 		case MBX_RECEIVE:
 			ret = rt_mbx_receive(mbx, &reply, sizeof(reply));
@@ -1363,18 +1363,22 @@ static inline int rt_get_net_rpc_ret(MBX *mbx, unsigned long long *retval, void 
 	if (!ret) {
 		*retval = reply.retval;
 		if (reply.wsize) {
+			char msg[reply.wsize];
+			rt_mbx_receive(mbx, msg, reply.wsize);
 			if (*msglen1 > reply.wsize) {
 				*msglen1 = reply.wsize;
 			}
-			rt_mbx_receive(mbx, msg1, *msglen1);
+			memcpy(msg1, msg, *msglen1);
 		} else {
 			*msglen1 = 0;
 		}
 		if (reply.w2size) {
+			char msg[reply.w2size];
+			rt_mbx_receive(mbx, msg, reply.w2size);
 			if (*msglen2 > reply.w2size) {
 				*msglen2 = reply.w2size;
 			}
-			rt_mbx_receive(mbx, msg2, *msglen2);
+			memcpy(msg2, msg, *msglen2);
 		} else {
 			*msglen2 = 0;
 		}

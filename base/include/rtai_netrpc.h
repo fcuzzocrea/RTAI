@@ -1349,7 +1349,6 @@ static inline int rt_get_net_rpc_ret(MBX *mbx, unsigned long long *retval, void 
 		default:
 			ret = -1;
 	}
-#if 1
 	if (!ret) {
 		*retval = reply.retval;
 		if (reply.wsize) {
@@ -1374,7 +1373,6 @@ static inline int rt_get_net_rpc_ret(MBX *mbx, unsigned long long *retval, void 
 		}
 		return 0;
 	}
-#endif
 	return ret;
 }
 

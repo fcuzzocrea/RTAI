@@ -779,7 +779,6 @@ static inline void mbx_signal(MBX *mbx)
 		if (task->state != RT_SCHED_READY && (task->state &= ~(RT_SCHED_MBXSUSP | RT_SCHED_DELAYED)) == RT_SCHED_READY) {
 			enq_ready_task(task);
 			RT_SCHEDULE(task, rtai_cpuid());
-			rt_global_restore_flags(flags);
 		}
 	}
 	rt_global_restore_flags(flags);
@@ -787,7 +786,7 @@ static inline void mbx_signal(MBX *mbx)
 
 #define MOD_SIZE(indx) ((indx) < mbx->size ? (indx) : (indx) - mbx->size)
 
-static inline int mbxput(MBX *mbx, char **msg, int msg_size)
+static inline void mbxput(MBX *mbx, char **msg, int msg_size)
 {
 	unsigned long flags;
 	int tocpy;
@@ -808,7 +807,6 @@ static inline int mbxput(MBX *mbx, char **msg, int msg_size)
 		*msg     += tocpy;
 		mbx->lbyte = MOD_SIZE(mbx->lbyte + tocpy);
 	}
-	return msg_size;
 }
 
 static void mbx_send_if(MBX *mbx, void *msg, int msg_size)
@@ -822,13 +820,13 @@ static void mbx_send_if(MBX *mbx, void *msg, int msg_size)
 
 	flags = rt_global_save_flags_and_cli();
 	rt_current = RT_CURRENT;
-	if (mbx->sndsem.count && msg_size <= mbx->frbs) {
+	if (mbx->sndsem.count > 0 && msg_size <= mbx->frbs) {
 		mbx->sndsem.count = 0;
 		if (mbx->sndsem.type > 0) {
 			mbx->sndsem.owndby = rt_current;
 			enqueue_resqel(&mbx->sndsem.resq, rt_current);
 		}
-		rt_global_restore_flags (flags);
+		rt_global_restore_flags(flags);
 		mbxput(mbx, (char **)(&msg), msg_size);
 		mbx_signal(mbx);
 		rt_sem_signal(&mbx->sndsem);
@@ -837,6 +835,7 @@ static void mbx_send_if(MBX *mbx, void *msg, int msg_size)
 }
 
 #endif
+
 RTAI_SYSCALL_MODE unsigned long long rt_net_rpc(long fun_ext_timed, long type, void *args, int argsize, int space)
 {
 	char msg[MAX_MSG_SIZE];

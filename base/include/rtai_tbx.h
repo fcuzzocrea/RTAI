@@ -149,25 +149,25 @@ static inline int rt_msg_evdrp(RT_MSGQ *msgq, void *msg, int msg_size, int *msgp
 	return _rt_msg_evdrp(msgq, msg, msg_size, msgpri, 1);
 }
 
-int _rt_msg_broadcast(RT_MSGQ *msgq, void *msg, int msg_size, int msgpri, int space);
+RTAI_SYSCALL_MODE int _rt_msg_broadcast(RT_MSGQ *msgq, void *msg, int msg_size, int msgpri, int space);
 static inline int rt_msg_broadcast(RT_MSGQ *msgq, void *msg, int msg_size, int msgpri)
 {
 	return _rt_msg_broadcast(msgq, msg, msg_size, msgpri, 1);
 }
 
-int _rt_msg_broadcast_if(RT_MSGQ *msgq, void *msg, int msg_size, int msgpri, int space);
+RTAI_SYSCALL_MODE int _rt_msg_broadcast_if(RT_MSGQ *msgq, void *msg, int msg_size, int msgpri, int space);
 static inline int rt_msg_broadcast_if(RT_MSGQ *msgq, void *msg, int msg_size, int msgpri)
 {
 	return _rt_msg_broadcast_if(msgq, msg, msg_size, msgpri, 1);
 }
 
-int _rt_msg_broadcast_until(RT_MSGQ *msgq, void *msg, int msg_size, int msgpri, RTIME until, int space);
+RTAI_SYSCALL_MODE int _rt_msg_broadcast_until(RT_MSGQ *msgq, void *msg, int msg_size, int msgpri, RTIME until, int space);
 static inline int rt_msg_broadcast_until(RT_MSGQ *msgq, void *msg, int msg_size, int msgpri, RTIME until)
 {
 	return _rt_msg_broadcast_until(msgq, msg, msg_size, msgpri, until, 1);
 }
 
-int _rt_msg_broadcast_timed(RT_MSGQ *msgq, void *msg, int msg_size, int msgpri, RTIME delay, int space);
+RTAI_SYSCALL_MODE int _rt_msg_broadcast_timed(RT_MSGQ *msgq, void *msg, int msg_size, int msgpri, RTIME delay, int space);
 static inline int rt_msg_broadcast_delay(RT_MSGQ *msgq, void *msg, int msg_size, int msgpri, RTIME delay)
 {
 	return _rt_msg_broadcast_until(msgq, msg, msg_size, msgpri, delay, 1);

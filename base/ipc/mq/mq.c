@@ -109,8 +109,7 @@ static int name_to_id(char *name)
 {
 	int ind;
 	for (ind = 0; ind < MAX_PQUEUES; ind++) {
-		if ((strcmp(rt_pqueue_descr[ind].q_name, "")   != 0) && 
-		    (strcmp(rt_pqueue_descr[ind].q_name, name) == 0)) {
+		if (rt_pqueue_descr[ind].q_name[0] && !strcmp(rt_pqueue_descr[ind].q_name, name)) {
 			return ind;
 		}
 	} 
@@ -120,25 +119,25 @@ static int name_to_id(char *name)
 
 static inline mq_bool_t is_empty(struct queue_control *q)
 {
-	return q->attrs.mq_curmsgs == 0 ? TRUE : FALSE;
+	return !q->attrs.mq_curmsgs;
 }
 
 
 static inline mq_bool_t is_full(struct queue_control *q)
 {
-	return q->attrs.mq_curmsgs == q->attrs.mq_maxmsg ? TRUE : FALSE;
+	return q->attrs.mq_curmsgs == q->attrs.mq_maxmsg;
 }
 
 
 static inline MSG_HDR* getnode(Q_CTRL *queue)
 {
-	return queue->nodind < queue->attrs.mq_maxmsg ? queue->nodes[queue->nodind++] : NULL;
+	return queue->attrs.mq_curmsgs < queue->attrs.mq_maxmsg ? queue->nodes[queue->attrs.mq_curmsgs++] : NULL;
 }
 
 static inline int freenode(void *node, Q_CTRL *queue)
 {
-	if (queue->nodind > 0) {
-                queue->nodes[--queue->nodind] = node;
+	if (queue->attrs.mq_curmsgs > 0) {
+                queue->nodes[--queue->attrs.mq_curmsgs] = node;
                 return 0;
         }
         return -EINVAL;
@@ -193,7 +192,7 @@ static mq_bool_t is_blocking(MSG_QUEUE *q)
 	aces = ((QUEUE_CTRL)_rt_whoami()->mqueues)->q_access;
 	for (q_ind = 0; q_ind < MQ_OPEN_MAX; q_ind++) {
 		if (aces[q_ind].q_id == q->q_id) {
-			return (aces[q_ind].oflags & O_NONBLOCK) ? FALSE : TRUE;
+			return !(aces[q_ind].oflags & O_NONBLOCK);
 		}
 	}
 	return FALSE;
@@ -241,7 +240,6 @@ static inline void initialise_queue(Q_CTRL *q)
 
 	msg_size = q->attrs.mq_msgsize + sizeof(MSG_HDR);
 	msg_ptr = q->base;
-	q->nodind = 0;
 	q->nodes = msg_ptr + msg_size*q->attrs.mq_maxmsg; 
 	for (msg_ind = 0; msg_ind < q->attrs.mq_maxmsg; msg_ind++) {
 		q->nodes[msg_ind] = msg_ptr;
@@ -439,8 +437,6 @@ RTAI_SYSCALL_MODE mqd_t mq_open(char *mq_name, int oflags, mode_t permissions, s
 		return -ENOENT;
 	}
 	
-	TRACE_RTAI_POSIX(TRACE_RTAI_EV_POSIX_MQ_OPEN, rt_pqueue_descr[q_index].q_id, 0, 0);
-
 	// Return the message queue's id and mark it as open
 	rt_pqueue_descr[q_index].open_count++;
 	mq_mutex_unlock(&pqueue_mutex);
@@ -454,16 +450,16 @@ RTAI_SYSCALL_MODE size_t _mq_receive(mqd_t mq, char *msg_buffer, size_t buflen, 
 	MQMSG *msg_ptr;
 	MSG_QUEUE *q;
 
-	TRACE_RTAI_POSIX(TRACE_RTAI_EV_POSIX_MQ_RECV, mq, buflen, 0);
-
 	if (q_index < 0 || q_index >= MAX_PQUEUES) { 
 		return -EBADF;
 	}
 	q = &rt_pqueue_descr[q_index];
+	if (buflen < q->data.attrs.mq_msgsize) {
+		return -EMSGSIZE;
+	}
 	if (can_access(q, FOR_READ) == FALSE) {
 		return -EINVAL;
 	}
-
 	if (is_blocking(q)) {
 		mq_mutex_lock(&q->mutex);
 	} else if (mq_mutex_trylock(&q->mutex) <= 0) {
@@ -494,19 +490,15 @@ RTAI_SYSCALL_MODE size_t _mq_receive(mqd_t mq, char *msg_buffer, size_t buflen, 
 	} else {
 		size = ERROR;
 	}
-
 	q->data.head = msg_ptr->hdr.next;
-	if(q->data.head == NULL) {
-		q->data.head = q->data.tail = q->data.base;
-	}
-    	freenode(msg_ptr, &q->data);
 	msg_ptr->hdr.size = 0;
     	msg_ptr->hdr.next = NULL;
-	rt_pqueue_descr[q_index].data.attrs.mq_curmsgs--;
-
+    	freenode(msg_ptr, &q->data);
+	if(q->data.head == NULL) {
+		q->data.head = q->data.tail = q->data.nodes[0];
+	}
 	mq_cond_signal(&q->full_cond);
 	mq_mutex_unlock(&q->mutex);
-
 	return size;
 }
 
@@ -517,12 +509,13 @@ RTAI_SYSCALL_MODE size_t _mq_timedreceive(mqd_t mq, char *msg_buffer, size_t buf
 	MQMSG *msg_ptr;
 	MSG_QUEUE *q;
 
-	TRACE_RTAI_POSIX(TRACE_RTAI_EV_POSIX_MQ_RECV, mq, buflen, 0);
-
 	if (q_index < 0 || q_index >= MAX_PQUEUES) { 
 		return -EBADF;
 	}
 	q = &rt_pqueue_descr[q_index];
+	if (buflen < q->data.attrs.mq_msgsize) {
+		return -EMSGSIZE;
+	}
 	if (can_access(q, FOR_READ) == FALSE) {
 		return -EINVAL;
 	}
@@ -544,10 +537,6 @@ RTAI_SYSCALL_MODE size_t _mq_timedreceive(mqd_t mq, char *msg_buffer, size_t buf
 		}
 	}
 	msg_ptr = q->data.head;
-	if (buflen < q->data.attrs.mq_msgsize) {
-		mq_mutex_unlock(&q->mutex);
-		return -EMSGSIZE;
-	}
 	if (msg_ptr->hdr.size <= buflen) {
 		size = msg_ptr->hdr.size;
 		if (space) {
@@ -564,19 +553,15 @@ RTAI_SYSCALL_MODE size_t _mq_timedreceive(mqd_t mq, char *msg_buffer, size_t buf
 	} else {
 		size = ERROR;
 	}
-
 	q->data.head = msg_ptr->hdr.next;
-	if(q->data.head == NULL) {
-		q->data.head = q->data.tail = q->data.base;
-	}
-    	freenode(msg_ptr, &q->data);
 	msg_ptr->hdr.size = 0;
 	msg_ptr->hdr.next = NULL;
-	rt_pqueue_descr[q_index].data.attrs.mq_curmsgs--;
-
+    	freenode(msg_ptr, &q->data);
+	if(q->data.head == NULL) {
+		q->data.head = q->data.tail = q->data.nodes[0];
+	}
 	mq_cond_signal(&q->full_cond);
 	mq_mutex_unlock(&q->mutex);
-
 	return size;
 }
 
@@ -587,8 +572,6 @@ RTAI_SYSCALL_MODE int _mq_send(mqd_t mq, const char *msg, size_t msglen, unsigne
 	MSG_QUEUE *q;
 	MSG_HDR *this_msg;
 	mq_bool_t q_was_empty;
-
-	TRACE_RTAI_POSIX(TRACE_RTAI_EV_POSIX_MQ_SEND, mq, msglen, msgprio);
 
 	if (q_index < 0 || q_index >= MAX_PQUEUES) { 
 		return -EBADF;
@@ -622,7 +605,6 @@ RTAI_SYSCALL_MODE int _mq_send(mqd_t mq, const char *msg, size_t msglen, unsigne
 		return -EMSGSIZE;
 	}
 	q_was_empty = is_empty(&q->data);
-	q->data.attrs.mq_curmsgs++;
 	this_msg->size = msglen;
 	this_msg->priority = msgprio;
 	if (space) {
@@ -653,8 +635,6 @@ RTAI_SYSCALL_MODE int _mq_timedsend(mqd_t mq, const char *msg, size_t msglen, un
 	MSG_QUEUE *q;
 	MSG_HDR *this_msg;
 	mq_bool_t q_was_empty;
-
-	TRACE_RTAI_POSIX(TRACE_RTAI_EV_POSIX_MQ_SEND, mq, msglen, msgprio);
 
 	if (q_index < 0 || q_index >= MAX_PQUEUES) { 
 		return -EBADF;
@@ -693,7 +673,6 @@ RTAI_SYSCALL_MODE int _mq_timedsend(mqd_t mq, const char *msg, size_t msglen, un
 		return -EMSGSIZE;
 	}
 	q_was_empty = is_empty(&q->data);
-	q->data.attrs.mq_curmsgs++;
 	this_msg->size = msglen;
 	this_msg->priority = msgprio;
 	if (space) {
@@ -727,8 +706,6 @@ RTAI_SYSCALL_MODE int mq_close(mqd_t mq)
 	RT_TASK *this_task = _rt_whoami();
 	struct _pqueue_access_struct *task_queue_data_ptr;
 
-	TRACE_RTAI_POSIX(TRACE_RTAI_EV_POSIX_MQ_CLOSE, mq, 0, 0);
-
 	if (q_index < 0 || q_index >= MAX_PQUEUES) { 
 		return -EINVAL;
 	}
@@ -755,9 +732,8 @@ RTAI_SYSCALL_MODE int mq_close(mqd_t mq)
         if (--rt_pqueue_descr[q_index].open_count <= 0 &&
  	    rt_pqueue_descr[q_index].marked_for_deletion == TRUE ) {
 		delete_queue(q_index);
-	} else {
-		mq_mutex_unlock(&rt_pqueue_descr[q_index].mutex);
 	}
+	mq_mutex_unlock(&rt_pqueue_descr[q_index].mutex);
 	mq_mutex_unlock(&pqueue_mutex);
         return OK;
 }
@@ -766,8 +742,6 @@ RTAI_SYSCALL_MODE int mq_close(mqd_t mq)
 RTAI_SYSCALL_MODE int mq_getattr(mqd_t mq, struct mq_attr *attrbuf)
 {
 	int q_index = mq - 1;
-
-	TRACE_RTAI_POSIX(TRACE_RTAI_EV_POSIX_MQ_GET_ATTR, mq, 0, 0);
 
 	if (0 <= q_index && q_index < MAX_PQUEUES) { 
 		*attrbuf = rt_pqueue_descr[q_index].data.attrs;
@@ -783,8 +757,6 @@ RTAI_SYSCALL_MODE int mq_setattr(mqd_t mq, const struct mq_attr *new_attrs, stru
 	int q_ind;
 	RT_TASK *this_task = _rt_whoami();
 	struct _pqueue_access_struct *task_queue_data_ptr;
-
-	TRACE_RTAI_POSIX(TRACE_RTAI_EV_POSIX_MQ_SET_ATTR, mq, 0, 0);
 
 	if (q_index < 0 || q_index >= MAX_PQUEUES) {
 		return -EBADF;
@@ -823,8 +795,6 @@ RTAI_SYSCALL_MODE int mq_notify(mqd_t mq, const struct sigevent *notification)
 	int q_index = mq - 1;
 	int rtn;
 
-	TRACE_RTAI_POSIX(TRACE_RTAI_EV_POSIX_MQ_NOTIFY, mq, 0, 0);
-
 	if (q_index < 0 || q_index >= MAX_PQUEUES) {
 		return -EBADF;
 	}
@@ -856,8 +826,6 @@ RTAI_SYSCALL_MODE int mq_unlink(char *mq_name)
 	mq_mutex_lock(&pqueue_mutex);
 	q_index = name_to_id(mq_name);
 
-	TRACE_RTAI_POSIX(TRACE_RTAI_EV_POSIX_MQ_UNLINK, q_index, 0, 0);
-	
 	if (q_index < 0) {
 		mq_mutex_unlock(&pqueue_mutex);
 		return -ENOENT;
@@ -866,12 +834,12 @@ RTAI_SYSCALL_MODE int mq_unlink(char *mq_name)
 	if (rt_pqueue_descr[q_index].open_count > 0) {
 		strcpy(rt_pqueue_descr[q_index].q_name, "\0");
 		rt_pqueue_descr[q_index].marked_for_deletion = TRUE;
-		mq_mutex_unlock(&rt_pqueue_descr[q_index].mutex);
 		rtn = rt_pqueue_descr[q_index].open_count;
 	} else {
 		delete_queue(q_index);
 		rtn = OK;
 	}
+	mq_mutex_unlock(&rt_pqueue_descr[q_index].mutex);
 	mq_mutex_unlock(&pqueue_mutex);
 	return rtn;
 }

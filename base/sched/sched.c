@@ -2052,6 +2052,7 @@ void steal_from_linux(RT_TASK *rt_task)
 	struct task_struct *lnxtsk;
 
 	if (signal_pending(rt_task->lnxtsk)) {
+		rt_task->is_hard = -1;
 		return;
 	}
 	klistp = &wake_up_sth[rt_task->runnable_on_cpus];

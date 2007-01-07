@@ -1064,7 +1064,7 @@ void rtai_handle_isched_lock (int cpuid) /* Called with interrupts off */
 void *rt_get_lxrt_fun_entry(int index);
 static inline void sched_sem_signal(SEM *sem)
 {
-	((void (*)(SEM *))rt_get_lxrt_fun_entry(SEM_SIGNAL))(sem);
+	((RTAI_SYSCALL_MODE void (*)(SEM *, ...))rt_get_lxrt_fun_entry(SEM_SIGNAL))(sem);
 }
 
 int clr_rtext(RT_TASK *task)
@@ -2052,6 +2052,7 @@ void steal_from_linux(RT_TASK *rt_task)
 	struct task_struct *lnxtsk;
 
 	if (signal_pending(rt_task->lnxtsk)) {
+		rt_task->is_hard = -1;
 		return;
 	}
 	klistp = &wake_up_sth[rt_task->runnable_on_cpus];
@@ -2435,9 +2436,9 @@ static int lxrt_intercept_syscall_prologue(struct pt_regs *regs)
 			SYSW_DIAG_MSG(rt_printk("\nFORCING IT SOFT (SYSCALL), PID = %d, SYSCALL = %d.\n", (task->lnxtsk)->pid, regs->LINUX_SYSCALL_NR););
 			give_back_to_linux(task, -1);
 			SKIP_IMMEDIATE_LINUX_SYSCALL();
+			if (signal_pending(task->lnxtsk)) return 0;
 			SYSW_DIAG_MSG(rt_printk("FORCED IT SOFT, CALLING LINUX (SYSCALL), PID = %d, SYSCALL = %d.\n", (task->lnxtsk)->pid, regs->LINUX_SYSCALL_NR););
 			regs->LINUX_SYSCALL_RETREG = sys_call_table[regs->LINUX_SYSCALL_NR](*regs);
-			if (signal_pending(task->lnxtsk)) return -1;
 			SYSW_DIAG_MSG(rt_printk("LINUX RETURNED, GOING BACK TO HARD (SYSLXRT), PID = %d.\n", current->pid););
 			steal_from_linux(task);
 			SYSW_DIAG_MSG(rt_printk("GONE BACK TO HARD (SYSLXRT),  PID = %d.\n", current->pid););

@@ -35,6 +35,11 @@
  * @defgroup rpc Remote procedure call functions
  */
 
+#include <linux/kernel.h>
+#include <linux/module.h>
+#include <linux/errno.h>
+#include <linux/version.h>
+
 #include <rtai_schedcore.h>
 #include <rtai_prinher.h>
 

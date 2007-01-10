@@ -2285,7 +2285,7 @@ static int lxrt_intercept_schedule_head (unsigned long event, struct prev_next_t
 
 #endif  /* KERNEL_VERSION < 2.4.32 */
 
-static int lxrt_intercept_schedule_tail (unsigned event, void *nothing)
+static void lxrt_intercept_schedule_tail (unsigned event, void *nothing)
 
 {
 	IN_INTERCEPT_IRQ_ENABLE(); {
@@ -2320,7 +2320,6 @@ static int lxrt_intercept_schedule_tail (unsigned event, void *nothing)
     }
 #endif  /* KERNEL_VERSION < 2.4.32 */
 
-    return 0;
 } }
 
 struct sig_wakeup_t { struct task_struct *task; };

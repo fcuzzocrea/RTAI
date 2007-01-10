@@ -1,7 +1,12 @@
+2007-01-11  Paolo Mantegazza <mantegazza@aero.polimi.it>
+
+	* base/sched/sched.c: lxrt_intercept_schedule_tail needs not to return i
+	  anything, typed void.
+
 2007-01-10  Paolo Mantegazza <mantegazza@aero.polimi.it>
             Roberto Bucher <roberto.bucher@supsi.ch>
 	
-	* base/sched/sched.c: avoid suspends only if the task owns resource
+	* base/sched/api.c: avoid suspends only if the task owns resource
 	  semaphores, before it did not suspend if sent messages were pending 
 	  also.
 

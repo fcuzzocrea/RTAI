@@ -1,3 +1,10 @@
+2007-01-10  Paolo Mantegazza <mantegazza@aero.polimi.it>
+            Roberto Bucher <roberto.bucher@supsi.ch>
+
+	* base/sched/sched.c: avoid suspends only if the task owns resource
+	  semaphores, before it did not suspend if sent messages were pending
+	  also.
+
 2007-01-05  Paolo Mantegazza <mantegazza@aero.polimi.it>
 
 	* base/sched/sched.c: recast a, forgotten, dynamic link to 

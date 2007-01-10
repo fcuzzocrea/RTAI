@@ -1,3 +1,8 @@
+2007-01-11  Paolo Mantegazza <mantegazza@aero.polimi.it>
+
+	* base/sched/sched.c: lxrt_intercept_schedule_tail needs not to return
+	  anything, typed void.
+
 2007-01-10  Paolo Mantegazza <mantegazza@aero.polimi.it>
             Roberto Bucher <roberto.bucher@supsi.ch>
 

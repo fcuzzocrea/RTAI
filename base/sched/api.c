@@ -313,7 +313,7 @@ RTAI_SYSCALL_MODE int rt_task_suspend(RT_TASK *task)
 	}
 
 	flags = rt_global_save_flags_and_cli();
-	if (!task_owns_res(task)) {
+	if (!task_owns_sems(task)) {
 		if (task->suspdepth >= 0) {
 			if (!task->suspdepth) {
 				task->suspdepth++;
@@ -357,7 +357,7 @@ RTAI_SYSCALL_MODE int rt_task_suspend_if(RT_TASK *task)
 	}
 
 	flags = rt_global_save_flags_and_cli();
-	if (!task_owns_res(task) && task->suspdepth < 0) {
+	if (!task_owns_sems(task) && task->suspdepth < 0) {
 		task->suspdepth++;
 	}
 	rt_global_restore_flags(flags);
@@ -376,7 +376,7 @@ RTAI_SYSCALL_MODE int rt_task_suspend_until(RT_TASK *task, RTIME time)
 	}
 
 	flags = rt_global_save_flags_and_cli();
-	if (!task_owns_res(task)) {
+	if (!task_owns_sems(task)) {
 		if (task->suspdepth >= 0) {
 #ifdef CONFIG_SMP
 			int cpuid = rtai_cpuid();

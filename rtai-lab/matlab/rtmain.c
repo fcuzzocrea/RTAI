@@ -92,7 +92,7 @@ extern void rt_ODEUpdateContinuousStates(RTWSolverInfo *si);
 extern RT_MODEL *MODEL(void);
 static RT_MODEL *rtM;
 
-#define RTAILAB_VERSION         "3.4.5"
+#define RTAILAB_VERSION         "3.4.6"
 #define MAX_NTARGETS		1000
 #define MAX_NAMES_SIZE		256
 #define RUN_FOREVER		-1.0
@@ -452,8 +452,7 @@ static void *rt_BaseRate(void *args)
   if (UseHRT) {
     rt_make_hard_real_time();
   }
-  rt_send(rt_MainTask, 0);	
-  rt_task_suspend(rt_BaseRateTask);
+  rt_rpc(rt_MainTask,0,(void *)myname);
   rt_task_make_periodic(rt_BaseRateTask, rt_get_time() + rt_BaseRateTick, rt_BaseRateTick);
 
   while (!endBaseRate) {
@@ -911,7 +910,7 @@ static int_T rt_Main(RT_MODEL * (*model_name)(void), int_T priority)
     rt_task_suspend(rt_MainTask);
   }
   rt_receive(0, &msg);
-  rt_task_resume(rt_BaseRateTask);
+  rt_return(rt_BaseRateTask,0);
   IsRunning = 1;
   if (Verbose) {
     printf("Target is running.\n");

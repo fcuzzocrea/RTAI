@@ -1,3 +1,9 @@
+2007-01-11  Roberto Bucher <roberto.bucher@supsi.ch>
+
+	* /rtai-lab/scilab/rtmain.c,
+	*/rtai-lab/matlab/rtmain.c: : rt_rpc replaces rt_send+rt_task_suspend
+	in the rtBaseRate procedure.
+
 2007-01-11  Paolo Mantegazza <mantegazza@aero.polimi.it>
 
 	* base/sched/sched.c: lxrt_intercept_schedule_tail needs not to return

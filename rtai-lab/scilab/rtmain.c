@@ -40,7 +40,7 @@
 #include <rtai_mbx.h>
 #include <rtai_fifos.h>
 
-#define RTAILAB_VERSION         "3.4.5"
+#define RTAILAB_VERSION         "3.4.6"
 #define MAX_ADR_SRCH      500
 #define MAX_NAME_SIZE     256
 #define MAX_SCOPES        100
@@ -280,8 +280,7 @@ static void *rt_BaseRate(void *args)
     rt_make_hard_real_time();
   }
 
-  rt_send(rt_MainTask, 0);
-  rt_task_suspend(rt_BaseRateTask);
+  rt_rpc(rt_MainTask,0,(void *) name); 
   t0 = rt_get_cpu_time_ns();
   rt_task_make_periodic(rt_BaseRateTask, rt_get_time() + rt_BaseRateTick, rt_BaseRateTick);
   while (!endBaseRate) {
@@ -651,7 +650,7 @@ static int rt_Main(int priority)
   if (verbose) {
     printf("Target is running.\n");
   }
-  rt_task_resume(rt_BaseRateTask);
+  rt_return(rt_BaseRateTask,0);
   isRunning = 1;
   while (!endex && (!FinalTime || TIME < FinalTime)) {
     msleep(POLL_PERIOD);

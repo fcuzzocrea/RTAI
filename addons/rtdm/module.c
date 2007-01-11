@@ -590,7 +590,7 @@ int xnintr_init(xnintr_t *intr,
 	intr->isr = isr;
 	intr->iack = iack;
 	intr->cookie = NULL;
-	intr->name = name;
+	intr->name = name ? : "<unknown>";
 	intr->flags = flags;
 	intr->unhandled = 0;
 	memset(&intr->stat, 0, sizeof(intr->stat));

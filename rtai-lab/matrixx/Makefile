@@ -38,7 +38,11 @@ SRC =   rtmain.c   \
 	$(MATRIXX_DEV)/rtai_scope.c \
 	$(MATRIXX_DEV)/rtai_log.c \
 	$(MATRIXX_DEV)/rtai_meter.c \
-	$(MATRIXX_DEV)/rtai_led.c
+	$(MATRIXX_DEV)/rtai_led.c \
+	$(MATRIXX_DEV)/rtai_comedi_datain.c \
+	$(MATRIXX_DEV)/rtai_comedi_dataout.c \
+	$(MATRIXX_DEV)/rtai_comedi_dioin.c \
+	$(MATRIXX_DEV)/rtai_comedi_dioout.c
 
 
 %: %.c mxp mxp.c mxp.h $(SRC) rtmain.h

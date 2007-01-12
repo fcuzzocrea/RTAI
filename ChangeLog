@@ -13,6 +13,9 @@
 	* rtai-lab/matrixx/rtaidevs/*: palettes/icons to personalise RTAI 
 	  palettes/icons to personalise RTAI devices in SystemBuild.
 
+	* rtai-lab/matrixx/examples/DAQtest.rtf, IOtest.rtf: something to
+	  show IO (analogue/digital) at work.
+
 2007-01-11  Roberto Bucher <roberto.bucher@supsi.ch>
 
 	* /rtai-lab/scilab/rtmain.c,

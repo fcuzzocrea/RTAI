@@ -1,3 +1,18 @@
+2007-01-12  Mattia Mattaboni (mattaboni@aero.polimi.it)
+
+	* rtai-lab/matrixx/ Makefile, rtmain.c, rtmain.h: latest updates to 
+	  support IO devices (analogue/digital)
+
+	* rtai-lab/matrixx/devices/rtai_led.c, rtai_log.c, rtai_meter.c,
+	  rtai_scope.c: revised with some return checks more.
+
+	* rtai-lab/matrixx/devices/rtai_comedi_datain.c, rtai_comedi_dataout.c,
+	  rtai_comedi_dioin.c, rtai_comedi_dioout.c: new devices to support IO 
+	  (analogue/digital).
+
+	* rtai-lab/matrixx/rtaidevs/*: palettes/icons to personalise RTAI 
+	  palettes/icons to personalise RTAI devices in SystemBuild.
+
 2007-01-11  Roberto Bucher <roberto.bucher@supsi.ch>
 
 	* /rtai-lab/scilab/rtmain.c,

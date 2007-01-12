@@ -33,8 +33,17 @@
 
 #include "devices.h"
 
+
+extern void exit_on_error(void);
+
 extern int rtRegisterLogData(const char *, int ,int , int  );
-extern struct { char name[MAX_NAME_SIZE]; int nrow, ncol; int ID; MBX *mbx; char MBXname[MAX_NAME_SIZE];} rtaiLogData[MAX_SCOPES];
+extern struct {
+	char name[MAX_NAME_SIZE];
+	int nrow, ncol;
+	int ID;
+	MBX *mbx;
+	char MBXname[MAX_NAME_SIZE];
+	} rtaiLogData[MAX_SCOPES];
 extern int NLOGS;
 
 void rtai_log(
@@ -61,7 +70,7 @@ INFO,T,U,NU,X,XDOT,NX,Y,NY,RP,IP)
 	RT_INTEGER	       		NX      ;
 	RT_FLOAT  	       		Y[]     ;
 	RT_INTEGER	       		NY      ;
-	RT_FLOAT                   RP[]    ;	
+	RT_FLOAT                   RP[]    ;
 	RT_INTEGER                 IP[]    ;
 #endif
 {
@@ -69,9 +78,11 @@ INFO,T,U,NU,X,XDOT,NX,Y,NY,RP,IP)
 		char logName[10];
 		int nch = NU;
 		int nt=nch + 1;
-		
+
 		sprintf(logName,"LOG-%ld",IP[0]);
-		rtRegisterLogData(logName,1,nt,IP[0]);
+		if ( rtRegisterLogData(logName,1,nt,IP[0]) ) {
+			exit_on_error();
+		}
 	}
 	if(INFO->OUTPUTS)  {
 		int ntraces=NU+1;
@@ -79,7 +90,7 @@ INFO,T,U,NU,X,XDOT,NX,Y,NY,RP,IP)
 			float u[ntraces];
 		} data;
 		int i;
-		
+
 		data.u[0]=(float) T;
 		for (i = 0; i < NU; i++) {
 			data.u[i+1] = U[i];
@@ -91,7 +102,7 @@ INFO,T,U,NU,X,XDOT,NX,Y,NY,RP,IP)
 		RT_mbx_send_if(0, 0, rtaiLogData[i].mbx, &data, sizeof(data));
 	}
 	INFO->INIT = FALSE;
-	
+
 	return;
 }
 

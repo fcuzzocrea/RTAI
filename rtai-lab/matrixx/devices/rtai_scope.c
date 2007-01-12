@@ -33,8 +33,17 @@
 
 #include "devices.h"
 
+
+extern void exit_on_error(void);
+
 extern int rtRegisterScope(const char *, int , int  );
-extern struct { char name[MAX_NAME_SIZE]; int ntraces; int ID; MBX *mbx; char MBXname[MAX_NAME_SIZE];} rtaiScope[MAX_SCOPES];
+extern struct {
+	char name[MAX_NAME_SIZE];
+	int ntraces;
+	int ID;
+	MBX *mbx;
+	char MBXname[MAX_NAME_SIZE];
+	} rtaiScope[MAX_SCOPES];
 extern int NSCOPE;
 
 void rtai_scope(
@@ -68,9 +77,11 @@ INFO,T,U,NU,X,XDOT,NX,Y,NY,RP,IP)
 	if(INFO->INIT) {
 		char scopeName[10];
 		int nch = NU;
-		
+
 		sprintf(scopeName,"SCOPE-%ld",IP[0]);
-		rtRegisterScope(scopeName,nch,IP[0]);
+		if ( rtRegisterScope(scopeName,nch,IP[0])) {
+			exit_on_error();
+		}
 	}
 	if(INFO->OUTPUTS)  {
 		int ntraces=NU;
@@ -79,7 +90,7 @@ INFO,T,U,NU,X,XDOT,NX,Y,NY,RP,IP)
 			float u[ntraces];
 		} data;
 		int i;
-		
+
 		data.t=(float) T;
 		for (i = 0; i < ntraces; i++) {
 			data.u[i] = U[i];

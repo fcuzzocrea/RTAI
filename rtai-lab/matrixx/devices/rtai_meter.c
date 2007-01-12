@@ -33,8 +33,17 @@
 
 #include "devices.h"
 
+
+extern void exit_on_error(void);
+
 extern int rtRegisterMeter(const char *, int , int );
-extern struct { char name[MAX_NAME_SIZE]; int ntraces; int ID; MBX *mbx; char MBXname[MAX_NAME_SIZE];} rtaiMeter[MAX_METERS];
+extern struct {
+	char name[MAX_NAME_SIZE];
+	int ntraces;
+	int ID;
+	MBX *mbx;
+	char MBXname[MAX_NAME_SIZE];
+	} rtaiMeter[MAX_METERS];
 extern int NMETERS;
 
 void rtai_meter(
@@ -70,7 +79,9 @@ INFO,T,U,NU,X,XDOT,NX,Y,NY,RP,IP)
 		int nch = NU;
 
 		sprintf(meterName,"METER-%ld",IP[0]);
-		rtRegisterMeter(meterName,nch,IP[0]);
+		if( rtRegisterMeter(meterName,nch,IP[0]) ){
+			exit_on_error();
+		}
 	}
 	if(INFO->OUTPUTS)  {
 		float data;

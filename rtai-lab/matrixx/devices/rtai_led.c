@@ -33,8 +33,17 @@
 
 #include "devices.h"
 
+
+extern void exit_on_error(void);
+
 extern int rtRegisterLed(const char *, int , int );
-extern struct { char name[MAX_NAME_SIZE]; int nleds; int ID; MBX *mbx; char MBXname[MAX_NAME_SIZE];} rtaiLed[MAX_LEDS];
+extern struct {
+	char name[MAX_NAME_SIZE];
+	int nleds;
+	int ID;
+	MBX *mbx;
+	char MBXname[MAX_NAME_SIZE];
+	} rtaiLed[MAX_LEDS];
 extern int NLEDS;
 
 void rtai_led(
@@ -70,7 +79,9 @@ INFO,T,U,NU,X,XDOT,NX,Y,NY,RP,IP)
 		int nleds = NU;
 
 		sprintf(ledName,"LED-%ld",IP[0]);
-		rtRegisterLed(ledName,nleds,IP[0]);
+		if ( rtRegisterLed(ledName,nleds,IP[0]) ){
+			exit_on_error();
+		}
 	}
 	if(INFO->OUTPUTS)  {
 		unsigned int led_mask = 0;

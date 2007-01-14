@@ -1,3 +1,31 @@
+2007-01-15  Paolo Mantegazza <mantegazza@aero.polimi.it>
+
+	* base/arch/i385/Kconfig: added parameter to configure CLOCK_REALTIME 
+	  usage in a few RTAI native timing functions, to avoid a likely
+	  negligible overhead when it is not needed.
+	* base/sched/api.c: support CLOCK_REALTIME in rt_wait_until and 
+	  rt_make_periodic, using REALTIME2COUNT.
+	* base/ipc/sem.c: support CLOCK_REALTIME in rt_sem/cond_wait_until,
+	  using REALTIME2COUNT.
+	* base/include/rtai_posix.h: clock functions support for both 
+	  CLOCK_MONOTONIC and CLOCK_REALTIME.
+
+2007-01-14  Paolo Mantegazza <mantegazza@aero.polimi.it>
+
+	* base/include/rtai_sched.h: added declarations of functions: 
+	  rt_get_real_time and rt_get_real_time_ns.
+	* base/include/rtai_lxrt.h: added codes and calls from user space
+	  for functions: rt_get_real_time and rt_get_real_time_ns.
+	* base/include/rtai_schedcore.h: added macro REALTIME2COUNT, to 
+	  support timing functions called with real time arguments, but only
+	  if specifically configured.
+	* base/sched/sched.c: all start_rt_timer functions prepare epoch origin
+	  for possible real time support; added rt_get_real_time and 
+	  rt_get_real_time_ns.
+	* base/sched/api.c: expand rt_gettimeorig to generate epoch origin.
+	* base/sched/sys.c: support use of NULL argument in rt_gettimeorig,
+	  to update epoch origin from user space.
+
 2007-01-12  Mattia Mattaboni (mattaboni@aero.polimi.it)
 
 	* rtai-lab/matrixx/ Makefile, rtmain.c, rtmain.h: latest updates to 

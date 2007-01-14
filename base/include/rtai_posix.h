@@ -1240,13 +1240,17 @@ RTAI_PROTO(int, __wrap_pthread_condattr_setpshared, (pthread_condattr_t *attr, i
 
 RTAI_PROTO(int, __wrap_pthread_condattr_setclock, (pthread_condattr_t *condattr, clockid_t clockid))
 {
-        return clockid == CLOCK_MONOTONIC ? 0 : EINVAL;
+	if (clockid == CLOCK_MONOTONIC || clockid == CLOCK_REALTIME) {
+		((int *)condattr)[0] = clockid;
+		return 0;
+	}
+	return EINVAL;
 }
 
 RTAI_PROTO(int, __wrap_pthread_condattr_getclock, (pthread_condattr_t *condattr, clockid_t *clockid))
 {
         if (clockid) {
-                *clockid = CLOCK_MONOTONIC;
+		*clockid = ((int *)condattr)[0];
                 return 0;
         }
         return EINVAL;
@@ -1766,14 +1770,15 @@ RTAI_PROTO(int, __wrap_pthread_spin_unlock,(pthread_spinlock_t *lock))
 
 RTAI_PROTO(int, __wrap_clock_getres, (clockid_t clockid, struct timespec *res))
 {
-	if (clockid == CLOCK_MONOTONIC) {
+	if (clockid == CLOCK_MONOTONIC || clockid == CLOCK_REALTIME) {
 		res->tv_sec = 0;
 		if (!(res->tv_nsec = count2nano(1))) {
 			res->tv_nsec = 1;
 		}
 		return 0;
 	}
-	return ENOTSUP;
+	errno = -EINVAL;
+	return -1;
 }
 
 RTAI_PROTO(int, __wrap_clock_gettime, (clockid_t clockid, struct timespec *tp))
@@ -1781,40 +1786,78 @@ RTAI_PROTO(int, __wrap_clock_gettime, (clockid_t clockid, struct timespec *tp))
 	if (clockid == CLOCK_MONOTONIC) {
 		count2timespec(rt_get_time(), tp);
 		return 0;
+	} else if (clockid == CLOCK_REALTIME) {
+		count2timespec(rt_get_real_time(), tp);
+		return 0;
 	}
-	return ENOTSUP;
+	errno = -EINVAL;
+	return -1;
 }
 
 RTAI_PROTO(int, __wrap_clock_settime, (clockid_t clockid, const struct timespec *tp))
 {
-	return ENOTSUP;
+	if (clockid == CLOCK_REALTIME) {
+		int hs;
+		hs = MAKE_SOFT();
+		rt_gettimeorig(NULL);
+		MAKE_HARD(hs);
+		return 0;
+	}
+	errno = -ENOTSUP;
+	return -1;
 }
 
 RTAI_PROTO(int, __wrap_clock_nanosleep,(clockid_t clockid, int flags, const struct timespec *rqtp, struct timespec *rmtp))
 {
-	if (clockid == CLOCK_MONOTONIC) {
-		RTIME expire;
-		if (rqtp->tv_nsec >= 1000000000L || rqtp->tv_nsec < 0 || rqtp->tv_sec < 0) {
-			return -EINVAL;
-		}
-		rt_sleep_until(expire = flags ? timespec2count(rqtp) : rt_get_time() + timespec2count(rqtp));
-		if ((expire -= rt_get_time()) > 0) {
-			if (rmtp) {
-				count2timespec(expire, rmtp);
-			}
-			return -EINTR;
-		}
-        	return 0;
+	int canc_type;
+	RTIME expire;
+
+	if (clockid != CLOCK_MONOTONIC && clockid != CLOCK_REALTIME) {
+		return -ENOTSUP;
+        }
+
+	if (rqtp->tv_nsec >= 1000000000L || rqtp->tv_nsec < 0 || rqtp->tv_sec < 0) {
+		return -EINVAL;
 	}
-	return ENOTSUP;
+
+	pthread_setcanceltype(PTHREAD_CANCEL_ASYNCHRONOUS, &canc_type);
+
+	expire = timespec2count(rqtp);
+	if (clockid == CLOCK_MONOTONIC) {
+		if (flags != TIMER_ABSTIME) {
+			expire += rt_get_time();
+		}
+		rt_sleep_until(expire);
+        	expire -= rt_get_time();
+	} else {
+		if (flags != TIMER_ABSTIME) {
+			expire += rt_get_real_time();
+		}
+		rt_sleep_until(expire);
+		expire -= rt_get_real_time();
+	}
+	if (expire > 0) {
+		if (rmtp) {
+			count2timespec(expire, rmtp);
+		}
+		return  -EINTR;
+	}
+	
+	pthread_setcanceltype(canc_type, NULL);
+
+	return 0;
 }
 
 RTAI_PROTO(int, __wrap_nanosleep,(const struct timespec *rqtp, struct timespec *rmtp))
 {
+        int canc_type;
 	RTIME expire;
 	if (rqtp->tv_nsec >= 1000000000L || rqtp->tv_nsec < 0 || rqtp->tv_sec < 0) {
 		return -EINVAL;
 	}
+
+	pthread_setcanceltype(PTHREAD_CANCEL_ASYNCHRONOUS, &canc_type);
+
 	rt_sleep_until(expire = rt_get_time() + timespec2count(rqtp));
 	if ((expire -= rt_get_time()) > 0) {
 		if (rmtp) {
@@ -1822,6 +1865,9 @@ RTAI_PROTO(int, __wrap_nanosleep,(const struct timespec *rqtp, struct timespec *
 		}
 		return -EINTR;
 	}
+
+	pthread_setcanceltype(canc_type, NULL);
+
         return 0;
 }
 

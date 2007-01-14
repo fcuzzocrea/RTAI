@@ -39,6 +39,7 @@
 
 MODULE_LICENSE("GPL");
 
+extern struct epoch_struct boot_epoch;
 
 /* +++++++++++++++++++++ ALL SEMAPHORES TYPES SUPPORT +++++++++++++++++++++++ */
 
@@ -589,6 +590,8 @@ RTAI_SYSCALL_MODE int rt_sem_wait_until(SEM *sem, RTIME time)
 		return RTE_OBJINV;
 	}
 
+	REALTIME2COUNT(time);
+
 	flags = rt_global_save_flags_and_cli();
 	ASSIGN_RT_CURRENT;
 	if ((count = sem->count) <= 0) {
@@ -881,6 +884,9 @@ RTAI_SYSCALL_MODE int rt_cond_wait_until(CND *cnd, SEM *mtx, RTIME time)
 	if (cnd->magic != RT_SEM_MAGIC && mtx->magic != RT_SEM_MAGIC) {
 		return RTE_OBJINV;
 	}
+
+	REALTIME2COUNT(time);
+
 	flags = rt_global_save_flags_and_cli();
 	ASSIGN_RT_CURRENT;
 	if (mtx->owndby != rt_current) {

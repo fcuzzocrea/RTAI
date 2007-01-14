@@ -1325,6 +1325,7 @@ RTAI_SYSCALL_MODE RTIME start_rt_timer(int period)
 	rt_request_irq(RTAI_APIC_TIMER_IPI, (void *)rt_timer_handler, NULL, 0);
 	rt_request_rtc(CONFIG_RTAI_RTC_FREQ, NULL);
 	rt_sched_timed = 1;
+	rt_gettimeorig(NULL);
 	return 1LL;
 }
 
@@ -1359,6 +1360,7 @@ RTAI_SYSCALL_MODE RTIME start_rt_timer(int period)
 	linux_times = rt_smp_times;
 	rt_request_rtc(CONFIG_RTAI_RTC_FREQ, (void *)rt_timer_handler);
 	rt_sched_timed = 1;
+	rt_gettimeorig(NULL);
 	return 1LL;
 }
 
@@ -1419,6 +1421,7 @@ RTAI_SYSCALL_MODE RTIME start_rt_timer(int period)
 		setup_data[cpuid].count = count2nano(period);
 	}
 	start_rt_apic_timers(setup_data, rtai_cpuid());
+	rt_gettimeorig(NULL);
 	return setup_data[0].mode ? setup_data[0].count : period;
 }
 
@@ -1475,6 +1478,7 @@ RTAI_SYSCALL_MODE RTIME start_rt_timer(int period)
 #ifdef USE_LINUX_TIMER
 	rt_request_linux_irq(TIMER_8254_IRQ, recover_jiffies, "rtai_jif_chk", recover_jiffies);
 #endif
+	rt_gettimeorig(NULL);
         return period;
 
 #undef cpuid
@@ -1744,6 +1748,18 @@ RTAI_SYSCALL_MODE RTIME rt_get_time_ns_cpuid(unsigned int cpuid)
 RTIME rt_get_cpu_time_ns(void)
 {
 	return llimd(rdtsc(), 1000000000, tuned.cpu_freq);
+}
+
+extern struct epoch_struct boot_epoch;
+
+RTIME rt_get_real_time(void)
+{
+	return boot_epoch.time[boot_epoch.touse][0] + rtai_rdtsc();
+}
+
+RTIME rt_get_real_time_ns(void)
+{
+	return boot_epoch.time[boot_epoch.touse][1] + llimd(rtai_rdtsc(), 1000000000, tuned.cpu_freq);
 }
 
 /* +++++++++++++++++++++++++++ SECRET BACK DOORS ++++++++++++++++++++++++++++ */
@@ -2649,6 +2665,8 @@ static struct rt_native_fun_entry rt_sched_entries[] = {
 	{ { 0, usp_request_rtc },                   REQUEST_RTC },
 	{ { 0, rt_release_rtc },                    RELEASE_RTC },
 	{ { 0, rt_gettid },                         RT_GETTID },
+	{ { 0, rt_get_real_time },		    GET_REAL_TIME },
+	{ { 0, rt_get_real_time_ns },		    GET_REAL_TIME_NS },
 	{ { 0, 0 },			            000 }
 };
 

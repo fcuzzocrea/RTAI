@@ -654,18 +654,6 @@ config RTAI_TBX
 	Typed mailboxes depend on semaphores.
 	The module will be called rtai_tbx.o.
 
-
-config RTAI_MQ
-	tristate "POSIX-like message queues"
-	depends on RTAI_SEM
-	default y if RTAI_SEM=y
-	default m if RTAI_SEM=m
-	help
-	RTAI pqueues implements the message queues section of Posix 1003.1d. 
-	They provide kernel-safe message queues. Message queues depend on 
-	semaphores.
-	The module will be called rtai_mq.o.
-
 config RTAI_TASKLETS
 	tristate "Tasklets and async signals"
 	default m
@@ -706,6 +694,31 @@ config RTAI_TASKLETS
 	the making of two different modules. At the moment the related
 	services from user space are seen as LXRT expansions using slots
 	1 and 2 respectively.
+
+config RTAI_MQ
+	tristate "POSIX-like message queues"
+	depends on RTAI_SEM
+	default y if RTAI_SEM=y
+	default m if RTAI_SEM=m
+	help
+	RTAI pqueues implements the message queues section of Posix 1003.1d. 
+	They provide kernel-safe message queues. Message queues depend on 
+	semaphores.
+	The module will be called rtai_mq.o.
+
+config RTAI_CLOCK_REALTIME
+	bool "Support for Posix CLOCK_REALTIME APIs"
+	default y
+	help
+	The purpose here is mainly to activate the CLOCK_REALTIME timing 
+	support in a few RTAI native services used behind POSIX APIs.
+	CLOCK_REALTIME is the default POSIX timing option so it should be
+	enabled for a full POSIX support but, if you are either not using 
+	POSIX or can work with it using just the CLOCK_MONOTONIC timing, 
+	it would be better to avoid enabling this option. It will save you 
+	a test on a long long. Not to much of an overhead indeed, but why 
+	paying for it if not needed?
+	It is defaulted to "yes" just to stay on the safe side.
 
 endmenu
 

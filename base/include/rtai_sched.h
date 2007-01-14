@@ -344,6 +344,10 @@ RTAI_SYSCALL_MODE RTIME rt_get_time_ns_cpuid(unsigned cpuid);
 
 RTIME rt_get_cpu_time_ns(void);
 
+RTIME rt_get_real_time(void);
+
+RTIME rt_get_real_time_ns(void);
+
 int rt_get_prio(struct rt_task_struct *task);
 
 int rt_get_inher_prio(struct rt_task_struct *task);

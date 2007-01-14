@@ -318,8 +318,10 @@
 #define RELEASE_RTC                    215
 #define RT_GETTID                      216
 #define SET_NETRPC_TIMEOUT             217
+#define GET_REAL_TIME		       218
+#define GET_REAL_TIME_NS	       219
 
-#define MAX_LXRT_FUN                   220
+#define MAX_LXRT_FUN		       225
 
 // not recovered yet 
 // Qblk's 
@@ -962,6 +964,18 @@ RTAI_PROTO(RTIME,rt_get_time,(void))
 	return rtai_lxrt(BIDX, SIZARG, GET_TIME, &arg).rt;
 }
 
+RTAI_PROTO(RTIME, rt_get_real_time, (void))
+{
+	struct { unsigned long dummy; } arg;
+	return rtai_lxrt(BIDX, SIZARG, GET_REAL_TIME, &arg).rt;
+}
+
+RTAI_PROTO(RTIME, rt_get_real_time_ns, (void))
+{
+	struct { unsigned long dummy; } arg;
+	return rtai_lxrt(BIDX, SIZARG, GET_REAL_TIME_NS, &arg).rt;
+}
+
 RTAI_PROTO(RTIME,count2nano,(RTIME count))
 {
 	struct { RTIME count; } arg = { count };
@@ -1304,7 +1318,7 @@ RTAI_PROTO(int, rt_task_masked_unblock,(RT_TASK *task, unsigned long mask))
 
 #define rt_task_wakeup_sleeping(task, mask)  rt_task_masked_unblock(task, RT_SCHED_DELAYED)
 
-RTAI_PROTO(void,rt_get_exectime,(RT_TASK *task, RTIME *exectime))
+RTAI_PROTO(void, rt_get_exectime, (RT_TASK *task, RTIME *exectime))
 {
 	RTIME lexectime[] = { 0LL, 0LL, 0LL };
 	struct { RT_TASK *task; RTIME *lexectime; } arg = { task, lexectime };
@@ -1312,7 +1326,7 @@ RTAI_PROTO(void,rt_get_exectime,(RT_TASK *task, RTIME *exectime))
 	memcpy(exectime, lexectime, sizeof(lexectime));
 }
 
-RTAI_PROTO(void,rt_gettimeorig,(RTIME time_orig[]))
+RTAI_PROTO(void, rt_gettimeorig, (RTIME time_orig[]))
 {
 	struct { RTIME *time_orig; } arg = { time_orig };
 	rtai_lxrt(BIDX, SIZARG, GET_TIMEORIG, &arg);

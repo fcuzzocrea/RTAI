@@ -520,7 +520,7 @@ config RTAI_BITS
 	default m
 	help
 	Event flags are used to synchronize a task to the occurrence of 
-	multiple events. RTAI ues the term "bits" to stress the fact that
+	multiple events. RTAI uses the term "bits" to stress the fact that
 	events are just logical objects, i.e. a kind of digital I/O, 
 	nothing else being associated to them, e.g a count. 
 	So any synchronization based on them may be disjunctive, when any 

@@ -517,7 +517,7 @@ config RTAI_BITS
 	default m
 	help
 	Event flags are used to synchronize a task to the occurrence of 
-	multiple events. RTAI ues the term "bits" to stress the fact that
+	multiple events. RTAI uses the term "bits" to stress the fact that
 	events are just logical objects, i.e. a kind of digital I/O, 
 	nothing else being associated to them, e.g a count. 
 	So any synchronization based on them may be disjunctive, when any 
@@ -559,7 +559,7 @@ config RTAI_NETRPC
 	The NetRPC module will be called rtai_netrpc.o.
 
 config RTAI_NETRPC_RTNET
-	bool "Enable NETRPC use of RTNet"
+	bool "Use RTNet"
 	depends on RTAI_NETRPC
 	default n
 	help
@@ -650,7 +650,6 @@ config RTAI_TBX
 	    creating the typed mailbox.
 	Typed mailboxes depend on semaphores.
 	The module will be called rtai_tbx.o.
-
 
 config RTAI_MQ
 	tristate "POSIX-like message queues"

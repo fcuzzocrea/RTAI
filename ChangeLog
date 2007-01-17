@@ -42,10 +42,6 @@
 	* base/ipc/mq/mq.c: msgsize checked without any lock, fixed queue 
 	  head resetting in receiving functions, ensured queue mutex is 
 	  unlocked always.
-	* base/include/rtai_mq.h: makes available POSIX compliant returns, 
-	  by setting errno. It depends on the definition of the internal macro:
-	  USE_POSIX_ERRNO, which is set by default. Users used to getting errno
-	  directly should comment it off.
 	* base/sched/sched.c: do not execute Linux syscalls internally if a 
 	  signal is pending.
 
@@ -436,7 +432,7 @@
 
 	* base/ipc/sem/sem.c: deleted useless count keeping in cond_wait 
 	  functions.
-	* base/include/rtai_pmq.c: added to substitute rtai_mq.h to return 
+	* base/include/rtai_pmq.h: added to substitute rtai_mq.h to return 
 	  error values as required by POSIX.
 
 2006-08-31  Roberto Bucher <roberto.bucher@supsi.ch>

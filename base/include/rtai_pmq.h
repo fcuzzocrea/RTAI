@@ -32,7 +32,9 @@
 #include <rtai_sem.h>
 
 #define	MQ_OPEN_MAX	8	/* Maximum number of message queues per process */
+#ifndef MQ_PRIO_MAX
 #define	MQ_PRIO_MAX	32	/* Maximum number of message priorities */
+#endif
 #define	MQ_BLOCK	0	/* Flag to set queue into blocking mode */
 #define	MQ_NONBLOCK	1	/* Flag to set queue into non-blocking mode */
 #define MQ_NAME_MAX	80	/* Maximum length of a queue name string */

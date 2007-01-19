@@ -1929,13 +1929,12 @@ zcptr=cpr.sim.zcptr;
       ok=%f;x_message('sorry C file name not defined');
     end
 
+    TARGETDIR=SCI+'/macros/RTAI/RT_templates';
     if exists('TARGET_DIR') then
       [fd,ierr]=mopen(TARGET_DIR+'/'+target+'.gen','r');
       if ierr==0 then
 	 TARGETDIR=TARGET_DIR;
          mclose(fd);
-      else
-        TARGETDIR=SCI+'/macros/RTAI/RT_templates';
       end
     end
 

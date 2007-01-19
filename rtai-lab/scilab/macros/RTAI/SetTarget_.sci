@@ -39,13 +39,20 @@ function  SetTarget_()
           list('str',1,'str',1,'str',1),lab);
       if ~ok then break,end
 
+      TARGETDIR=SCI+'/macros/RTAI/RT_templates';
       if exists('TARGET_DIR') then
-        [fd,ierr]=mopen(TARGET_DIR+'/'+target+'.mak','r');
+        [fd,ierr]=mopen(TARGET_DIR+'/'+target+'.gen','r');
         if ierr==0 then
+	   TARGETDIR=TARGET_DIR;
            mclose(fd);
-        else
-	  ok = %f;
         end
+      end
+
+      [fd,ierr]=mopen(TARGETDIR+'/'+target+'.mak','r');
+      if ierr==0 then
+         mclose(fd);
+      else
+         ok = %f;
       end
 
       if ~ok then

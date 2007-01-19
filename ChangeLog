@@ -1,7 +1,13 @@
+2007-01-19  Roberto Bucher <roberto.bucher@supsi.ch>
+
+	* /rtai-lab/scilab/macros/RTAI/SetTarget_.sci,
+	*/rtai-lab/scilab/macros/RTAI/:RTAICodegen_.sci: Corrected bug with 
+	non existent TARGET_DIR.
+
 2007-01-11  Roberto Bucher <roberto.bucher@supsi.ch>
 
 	* /rtai-lab/scilab/rtmain.c,
-	*/rtai-lab/matlab/rtmain.c: : rt_rpc replaces rt_send+rt_task_suspend
+	*/rtai-lab/matlab/rtmain.c:  rt_rpc replaces rt_send+rt_task_suspend
 	in the rtBaseRate procedure.
 
 2007-01-11  Paolo Mantegazza <mantegazza@aero.polimi.it>

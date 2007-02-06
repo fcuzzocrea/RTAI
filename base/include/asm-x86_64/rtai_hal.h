@@ -157,6 +157,14 @@ static inline unsigned long long rtai_u64div32c(unsigned long long a,
 #endif /* CONFIG_X86_LOCAL_APIC */
 #include <rtai_trace.h>
 
+struct rtai_realtime_irq_s {
+        int (*handler)(unsigned irq, void *cookie);
+        void *cookie;
+        int retmode;
+        int cpumask;
+        int (*irq_ack)(unsigned int);
+};
+
 /*
  * Linux has this information in io_apic.c, but it does not export it;
  * on the other hand it should be fairly stable this way and so we try
@@ -315,12 +323,27 @@ extern volatile unsigned long rtai_cpu_realtime;
 extern volatile unsigned long rtai_cpu_lock;
 
 //#define RTAI_TASKPRI 0xf0  // simplest usage without changing Linux code base
-extern struct rtai_switch_data {
-	volatile unsigned long depth;
-	volatile unsigned long oldflags;
 #if defined(CONFIG_X86_LOCAL_APIC) && defined(RTAI_TASKPRI)
-	volatile unsigned long pridepth;
-//	volatile unsigned long taskpri;
+#define SET_TASKPRI(cpuid) \
+        if (!rtai_linux_context[cpuid].set_taskpri) { \
+                apic_write_around(APIC_TASKPRI, ((apic_read(APIC_TASKPRI) & ~APIC_TPRI_MASK) | RTAI_TASKPRI)); \
+                rtai_linux_context[cpuid].set_taskpri = 1; \
+        }
+#define CLR_TASKPRI(cpuid) \
+        if (rtai_linux_context[cpuid].set_taskpri) { \
+                apic_write_around(APIC_TASKPRI, (apic_read(APIC_TASKPRI) & ~APIC_TPRI_MASK)); \
+                rtai_linux_context[cpuid].set_taskpri = 0; \
+        }
+#else
+#define SET_TASKPRI(cpuid)
+#define CLR_TASKPRI(cpuid)
+#endif
+
+extern struct rtai_switch_data {
+	volatile unsigned long sflags;
+	volatile unsigned long lflags;
+#if defined(CONFIG_X86_LOCAL_APIC) && defined(RTAI_TASKPRI)
+	volatile unsigned long set_taskpri;
 #endif
 } rtai_linux_context[RTAI_NR_CPUS];
 
@@ -574,30 +597,31 @@ int rt_printk(const char *format, ...);
 int rt_printk_sync(const char *format, ...);
 
 extern struct hal_domain_struct rtai_domain;
+extern volatile unsigned long *ipipe_root_status[];
 
-static inline void rt_switch_to_real_time_notskpri(int cpuid)
-{
-	TRACE_RTAI_SWITCHTO_RT(cpuid);
-	if (!rtai_linux_context[cpuid].depth++) {
-		rtai_linux_context[cpuid].oldflags = xchg(&hal_root_domain->cpudata[cpuid].status, (1 << IPIPE_STALL_FLAG));
-//		hal_current_domain[cpuid] = &rtai_domain;
-//		test_and_set_bit(cpuid, &rtai_cpu_realtime);
-	}
-}
+#define _rt_switch_to_real_time(cpuid) \
+do { \
+        rtai_linux_context[cpuid].lflags = xchg(ipipe_root_status[cpuid], (1 << IPIPE_STALL_FLAG)); \
+        rtai_linux_context[cpuid].sflags = 1; \
+        hal_current_domain(cpuid) = &rtai_domain; \
+} while (0)
 
-static inline void rt_switch_to_linux_notskpri(int cpuid)
-{
-	TRACE_RTAI_SWITCHTO_LINUX(cpuid);
-	if (rtai_linux_context[cpuid].depth) {
-		if (!--rtai_linux_context[cpuid].depth) {
-//			test_and_clear_bit(cpuid, &rtai_cpu_realtime);
-//			hal_current_domain[cpuid] = hal_root_domain;
-			hal_root_domain->cpudata[cpuid].status = rtai_linux_context[cpuid].oldflags;
-		}
-		return;
-	}
-	rt_printk("*** ERROR: EXCESS LINUX_UNLOCK ***\n");
-}
+#define rt_switch_to_linux(cpuid) \
+do { \
+        if (rtai_linux_context[cpuid].sflags) { \
+                hal_current_domain(cpuid) = hal_root_domain; \
+                *ipipe_root_status[cpuid] = rtai_linux_context[cpuid].lflags; \
+                rtai_linux_context[cpuid].sflags = 0; \
+                CLR_TASKPRI(cpuid); \
+        } \
+} while (0)
+
+#define rt_switch_to_real_time(cpuid) \
+do { \
+        if (!rtai_linux_context[cpuid].sflags) { \
+                _rt_switch_to_real_time(cpuid); \
+        } \
+} while (0)
 
 #define rtai_get_intr_handler(v) \
 	((((unsigned long)idt_table[v].offset_high) << 32) | (((unsigned long)idt_table[v].offset_middle) << 16) | ((unsigned long)idt_table[v].offset_low))
@@ -607,41 +631,33 @@ static inline void rt_switch_to_linux_notskpri(int cpuid)
 do { \
 	int v; \
 	for (v = SPURIOUS_APIC_VECTOR + 1; v < 256; v++) { \
-		hal_virtualize_irq(hal_root_domain, v - FIRST_EXTERNAL_VECTOR, (void (*)(unsigned))rtai_get_intr_handler(v), ack_bad_irq, IPIPE_HANDLE_MASK); \
+		hal_virtualize_irq(hal_root_domain, v - FIRST_EXTERNAL_VECTOR, (void (*)(unsigned))rtai_get_intr_handler(v), (void *)ack_bad_irq, IPIPE_HANDLE_MASK); \
 	} \
 } while (0)
 
-#if defined(CONFIG_X86_LOCAL_APIC) && defined(RTAI_TASKPRI)
-static inline void rt_switch_to_real_time(int cpuid)
+static inline int rt_save_switch_to_real_time(int cpuid)
 {
-	TRACE_RTAI_SWITCHTO_RT(cpuid);
-	if (!rtai_linux_context[cpuid].pridepth++) {
-//		rtai_linux_context[cpuid].taskpri = apic_read(APIC_TASKPRI);
-		apic_write_around(APIC_TASKPRI, RTAI_TASKPRI);
-	}
-	rt_switch_to_real_time_notskpri(cpuid);
+        SET_TASKPRI(cpuid);
+        if (!rtai_linux_context[cpuid].sflags) {
+                _rt_switch_to_real_time(cpuid);
+                return 0;
+        }
+        return 1;
 }
 
-static inline void rt_switch_to_linux(int cpuid)
-{
-	TRACE_RTAI_SWITCHTO_LINUX(cpuid);
-	if (rtai_linux_context[cpuid].pridepth) {
-		if (!--rtai_linux_context[cpuid].pridepth) {
-//			apic_write_around(APIC_TASKPRI, rtai_linux_context[cpuid].taskpri);
-			apic_write_around(APIC_TASKPRI, 0);
-		}
-	}
-	rt_switch_to_linux_notskpri(cpuid);
-}
-#else
-#define rt_switch_to_real_time  rt_switch_to_real_time_notskpri
-#define rt_switch_to_linux      rt_switch_to_linux_notskpri
-#endif
+#define rt_restore_switch_to_linux(sflags, cpuid) \
+do { \
+        if (!sflags) { \
+                rt_switch_to_linux(cpuid); \
+        } else if (!rtai_linux_context[cpuid].sflags) { \
+                SET_TASKPRI(cpuid); \
+                _rt_switch_to_real_time(cpuid); \
+        } \
+} while (0)
 
-//#define in_hrt_mode(cpuid)  (test_bit(cpuid, &rtai_cpu_realtime))
-#define in_hrt_mode(cpuid)  (rtai_linux_context[cpuid].depth)
+#define in_hrt_mode(cpuid)  (rtai_linux_context[cpuid].sflags)
 
-#if defined(CONFIG_X86_LOCAL_APIC) && defined(RTAI_TASKPRI)
+#if defined(CONFIG_X86_LOCAL_APIC)
 static inline unsigned long save_and_set_taskpri(unsigned long taskpri)
 {
 	unsigned long saved_taskpri = apic_read(APIC_TASKPRI);
@@ -659,7 +675,6 @@ static inline void rt_set_timer_delay (int delay) {
         unsigned long flags;
         rtai_hw_save_flags_and_cli(flags);
 #ifdef CONFIG_X86_LOCAL_APIC
-//	apic_read(APIC_TMICT);
 	apic_write_around(APIC_TMICT, delay);
 #else /* !CONFIG_X86_LOCAL_APIC */
 	outb(delay & 0xff,0x40);
@@ -681,7 +696,7 @@ void rtai_set_linux_task_priority(struct task_struct *task,
 				  int policy,
 				  int prio);
 
-int rtai_catch_event (struct hal_domain_struct *ipd, unsigned long event, int (*handler)(unsigned long, void *));
+long rtai_catch_event (struct hal_domain_struct *ipd, unsigned long event, int (*handler)(unsigned long, void *));
 
 #endif /* __KERNEL__ && !__cplusplus */
 
@@ -744,9 +759,7 @@ void rtai_reset_gate_vector(unsigned vector, struct gate_struct e);
 void rt_do_irq(unsigned irq);
 
 int rt_request_linux_irq(unsigned irq,
-			 irqreturn_t (*handler)(int irq,
-			 void *dev_id,
-			 struct pt_regs *regs), 
+			 void *handler,
 			 char *name,
 			 void *dev_id);
 
@@ -754,6 +767,8 @@ int rt_free_linux_irq(unsigned irq,
 		      void *dev_id);
 
 void rt_pend_linux_irq(unsigned irq);
+
+RTAI_SYSCALL_MODE void usr_rt_pend_linux_irq(unsigned irq);
 
 void rt_pend_linux_srq(unsigned srq);
 

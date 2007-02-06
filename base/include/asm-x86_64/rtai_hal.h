@@ -42,6 +42,12 @@
 #ifndef _RTAI_ASM_X8664_HAL_H
 #define _RTAI_ASM_X8664_HAL_H
 
+#ifdef CONFIG_REGPARM
+#define RTAI_SYSCALL_MODE __attribute__((regparm(0)))
+#else
+#define RTAI_SYSCALL_MODE
+#endif
+
 #define LOCKED_LINUX_IN_IRQ_HANDLER
 #define UNWRAPPED_CATCH_EVENT
 
@@ -574,7 +580,7 @@ static inline void rt_switch_to_real_time_notskpri(int cpuid)
 	TRACE_RTAI_SWITCHTO_RT(cpuid);
 	if (!rtai_linux_context[cpuid].depth++) {
 		rtai_linux_context[cpuid].oldflags = xchg(&hal_root_domain->cpudata[cpuid].status, (1 << IPIPE_STALL_FLAG));
-		hal_current_domain[cpuid] = &rtai_domain;
+//		hal_current_domain[cpuid] = &rtai_domain;
 //		test_and_set_bit(cpuid, &rtai_cpu_realtime);
 	}
 }
@@ -585,7 +591,7 @@ static inline void rt_switch_to_linux_notskpri(int cpuid)
 	if (rtai_linux_context[cpuid].depth) {
 		if (!--rtai_linux_context[cpuid].depth) {
 //			test_and_clear_bit(cpuid, &rtai_cpu_realtime);
-			hal_current_domain[cpuid] = hal_root_domain;
+//			hal_current_domain[cpuid] = hal_root_domain;
 			hal_root_domain->cpudata[cpuid].status = rtai_linux_context[cpuid].oldflags;
 		}
 		return;

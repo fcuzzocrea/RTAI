@@ -19,17 +19,28 @@
 #ifndef _RTAI_ASM_X8664_ATOMIC_H
 #define _RTAI_ASM_X8664_ATOMIC_H
 
-#include <linux/bitops.h>
-#include <asm/atomic.h>
-
 #ifdef __KERNEL__
 
+#include <linux/bitops.h>
+#include <asm/atomic.h>
 #include <asm/system.h>
+
+#if LINUX_VERSION_CODE < KERNEL_VERSION(2,6,0)
 
 #define atomic_xchg(ptr,v)      xchg(ptr,v)
 #define atomic_cmpxchg(ptr,o,n) cmpxchg(ptr,o,n)
 
+#endif
+
 #else /* !__KERNEL__ */
+
+#ifdef CONFIG_SMP
+#define LOCK_PREFIX "lock ; "
+#else
+#define LOCK_PREFIX ""
+#endif
+
+#define atomic_t long
 
 struct __rtai_xchg_dummy { unsigned long a[100]; };
 #define __rtai_xg(x) ((struct __rtai_xchg_dummy *)(x))

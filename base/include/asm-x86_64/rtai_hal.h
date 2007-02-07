@@ -322,6 +322,8 @@ extern volatile unsigned long rtai_cpu_realtime;
 
 extern volatile unsigned long rtai_cpu_lock;
 
+#define apic_write_around apic_write
+
 //#define RTAI_TASKPRI 0xf0  // simplest usage without changing Linux code base
 #if defined(CONFIG_X86_LOCAL_APIC) && defined(RTAI_TASKPRI)
 #define SET_TASKPRI(cpuid) \
@@ -720,6 +722,17 @@ int rt_request_irq(unsigned irq,
 		   int retmode);
 
 int rt_release_irq(unsigned irq);
+
+int rt_set_irq_ack(unsigned int irq, int (*irq_ack)(unsigned int));
+
+static inline int rt_request_irq_wack(unsigned irq, int (*handler)(unsigned irq, void *cookie), void *cookie, int retmode, int (*irq_ack)(unsigned int))
+{
+        int retval;
+        if ((retval = rt_request_irq(irq, handler, cookie, retmode)) < 0) {
+                return retval;
+        }
+        return rt_set_irq_ack(irq, irq_ack);
+}
 
 void rt_set_irq_cookie(unsigned irq, void *cookie);
 

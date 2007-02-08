@@ -1159,23 +1159,23 @@ int errno;
 
 #ifdef __NR_socketcall
 
-//extern void *sys_call_table[];
+extern void *sys_call_table[];
 
-static _syscall3(int, poll, struct pollfd *, ufds, unsigned int, nfds, int, timeout)
+//static _syscall3(int, poll, struct pollfd *, ufds, unsigned int, nfds, int, timeout)
 static inline int kpoll(struct pollfd *ufds, unsigned int nfds, int timeout)
 {
 	SYSCALL_BGN();
-//	retval = ((int (*)(struct pollfd *, unsigned int, int))sys_call_table[__NR_poll])(ufds, nfds, timeout);
-	retval = poll(ufds, nfds, timeout);
+	retval = ((asmlinkage int (*)(struct pollfd *, unsigned int, int))sys_call_table[__NR_poll])(ufds, nfds, timeout);
+//	retval = poll(ufds, nfds, timeout);
 	SYSCALL_END();
 }
 
-static _syscall2(int, socketcall, int, call, void *, args)
+//static _syscall2(int, socketcall, int, call, void *, args)
 static inline int ksocketcall(int call, void *args)
 {
 	SYSCALL_BGN();
-//	retval = ((int (*)(int, void *))sys_call_table[__NR_socketcall])(call, args);
-	retval = socketcall(call, args);
+	retval = ((asmlinkage int (*)(int, void *))sys_call_table[__NR_socketcall])(call, args);
+//	retval = socketcall(call, args);
 	SYSCALL_END();
 }
 

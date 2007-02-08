@@ -1,3 +1,11 @@
+2007-02-09  Paolo Mantegazza <mantegazza@aero.polimi.it>
+
+	* base/sched/sched.c: avoid a deprecation for linux > 2.6.19.
+	* base/ipc/netrpc/netrpc.c: use sys call table directly to cope
+	  with missing _syscalls definitions for linux > 2.6.19.
+	* base/include/asm-i386/rtai_hal.h: force REGPARM always for 
+	  linux > 2.6.19.
+
 2007-01-19  Roberto Bucher <roberto.bucher@supsi.ch>
 
 	* /rtai-lab/scilab/macros/RTAI/SetTarget_.sci,
@@ -6,7 +14,7 @@
 
 2007-01-15  Paolo Mantegazza <mantegazza@aero.polimi.it>
 
-	* base/arch/i385/Kconfig: added parameter to configure CLOCK_REALTIME 
+	* base/arch/i386/Kconfig: added parameter to configure CLOCK_REALTIME 
 	  usage in a few RTAI native timing functions, to avoid a likely
 	  negligible overhead when it is not needed.
 	* base/sched/api.c: support CLOCK_REALTIME in rt_wait_until and 

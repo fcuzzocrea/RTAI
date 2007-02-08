@@ -38,7 +38,9 @@
 #ifndef _RTAI_ASM_I386_HAL_H
 #define _RTAI_ASM_I386_HAL_H
 
-#ifdef CONFIG_REGPARM
+#include <linux/version.h>
+
+#if defined(CONFIG_REGPARM) || LINUX_VERSION_CODE > KERNEL_VERSION(2,6,19)
 #define RTAI_SYSCALL_MODE __attribute__((regparm(0)))
 #else
 #define RTAI_SYSCALL_MODE

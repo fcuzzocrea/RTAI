@@ -1934,7 +1934,11 @@ static inline void detach_kthread(void)
 	current->pgrp    = 1;
 	current->tty     = NULL;
 #else
-	(current->signal)->session = 1;
+#if LINUX_VERSION_CODE > KERNEL_VERSION(2,6,19)
+	(current->signal)->__session = 1;
+#else
+	(current->signal)->session   = 1;
+#endif
 	(current->signal)->pgrp    = 1;
 	(current->signal)->tty     = NULL;
 #endif

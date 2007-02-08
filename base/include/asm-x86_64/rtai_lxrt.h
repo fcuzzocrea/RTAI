@@ -157,6 +157,45 @@ static inline void kthread_fun_long_jump(struct task_struct *lnxtsk)
 #define rt_copy_to_user    __copy_to_user_inatomic
 #define rt_put_user        __put_user
 
+/*
+ * Copy a null terminated string from userspace, from Linux lib/usercopy.c.
+ */
+
+#define __do_strncpy_from_user(dst,src,count,res)			   \
+do {									   \
+	long __d0, __d1, __d2;						   \
+	__asm__ __volatile__(						   \
+		"	testq %1,%1\n"					   \
+		"	jz 2f\n"					   \
+		"0:	lodsb\n"					   \
+		"	stosb\n"					   \
+		"	testb %%al,%%al\n"				   \
+		"	jz 1f\n"					   \
+		"	decq %1\n"					   \
+		"	jnz 0b\n"					   \
+		"1:	subq %1,%0\n"					   \
+		"2:\n"							   \
+		".section .fixup,\"ax\"\n"				   \
+		"3:	movq %5,%0\n"					   \
+		"	jmp 2b\n"					   \
+		".previous\n"						   \
+		".section __ex_table,\"a\"\n"				   \
+		"	.align 8\n"					   \
+		"	.quad 0b,3b\n"					   \
+		".previous"						   \
+		: "=r"(res), "=c"(count), "=&a" (__d0), "=&S" (__d1),	   \
+		  "=&D" (__d2)						   \
+		: "i"(-EFAULT), "0"(count), "1"(count), "3"(src), "4"(dst) \
+		: "memory");						   \
+} while (0)
+
+static inline long rt_strncpy_from_user(char *dst, const char __user *src, long count)
+{
+	long res;
+	__do_strncpy_from_user(dst, src, count, res);
+	return res;
+}
+
 #else /* !__KERNEL__ */
 
 /* NOTE: Keep the following routines unfold: this is a compiler

@@ -45,7 +45,8 @@
 #ifdef CONFIG_REGPARM
 #define RTAI_SYSCALL_MODE __attribute__((regparm(0)))
 #else
-#define RTAI_SYSCALL_MODE
+#define RTAI_SYSCALL_MODE __attribute__((regparm(0)))
+//#define RTAI_SYSCALL_MODE
 #endif
 
 #define LOCKED_LINUX_IN_IRQ_HANDLER
@@ -595,8 +596,8 @@ static inline unsigned long rt_global_save_flags_and_cli(void)
 
 #endif
 
-int rt_printk(const char *format, ...);
-int rt_printk_sync(const char *format, ...);
+asmlinkage int rt_printk(const char *format, ...);
+asmlinkage int rt_printk_sync(const char *format, ...);
 
 extern struct hal_domain_struct rtai_domain;
 extern volatile unsigned long *ipipe_root_status[];

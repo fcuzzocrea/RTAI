@@ -1912,7 +1912,6 @@ zcptr=cpr.sim.zcptr;
   
     rpat=stripblanks(rpat);
     rdnom=strsubst(rdnom,'-','_');
-    rpat=strsubst(rpat,'-','_');
 
     dirinfo=fileinfo(rpat)
     if dirinfo==[] then
@@ -2345,23 +2344,11 @@ function Makename=gen_make(name,files,libs)
   
   Makename=rpat+'/Makefile';
 
-  if (exists('TARGET') & TARGET== 'WINDOWS') then
-     Makename=Makename+'.mak'
-  end
-
   T=mgetl(TARGETDIR+'/'+makfil);
   T=strsubst(T,'$$MODEL$$',name);
-  if (exists('TARGET') & TARGET== 'WINDOWS') then
-    T=strsubst(T,'$$OBJ$$',strcat(files+'.obj',' '));
-    T=strsubst(T,'$$SCILAB_DIR$$',WSCI);
-  else 
-    T=strsubst(T,'$$OBJ$$',strcat(files+'.o',' '));
-    T=strsubst(T,'$$SCILAB_DIR$$',SCI);
-  end
+  T=strsubst(T,'$$OBJ$$',strcat(files+'.o',' '));
+  T=strsubst(T,'$$SCILAB_DIR$$',SCI);
   mputl(T,Makename)
-  if (exists('TARGET') & TARGET== 'WINDOWS') then
-    Makename=strsubst(Makename,'.mak','');
-  end
  
 endfunction
 
@@ -3770,10 +3757,10 @@ function ok = compile_standalone()
   wd = pwd();
   chdir(rpat);
 
-  if (exists('TARGET') & TARGET== 'WINDOWS') then
+  if getenv('WIN32','NO')=='OK' then
      unix_w('nmake -f Makefile.mak');
   else
-    unix_w('make')
+     unix_w('make')
   end
   chdir(wd);
   ok = %t;

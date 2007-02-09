@@ -1,3 +1,12 @@
+2007-02-09  Roberto Bucher <roberto.bucher@supsi.ch>
+
+	* /rtai-lab/scilab/macros/RTAI/SetTarget_.sci,
+	*/rtai-lab/scilab/macros/RTAI/:RTAICodegen_.sci: Corrected bug with 
+	non existent TARGET_DIR (again!).
+	*/rtai-lab/scilab/macros/RTAI/:RTAICodegen_.sci: Eliminated the string
+	substitution '-' -> '_' for the generation folder.
+
+
 2007-02-09  Paolo Mantegazza <mantegazza@aero.polimi.it>
 
 	* base/sched/sched.c: avoid a deprecation for linux > 2.6.19.

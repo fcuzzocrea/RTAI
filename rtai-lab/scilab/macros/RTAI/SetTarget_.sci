@@ -48,21 +48,11 @@ function  SetTarget_()
         end
       end
 
-      [fd,ierr]=mopen(TARGETDIR+'/'+target+'.mak','r');
+      [fd,ierr]=mopen(TARGETDIR+'/'+target+'.gen','r');
       if ierr==0 then
-         mclose(fd);
+        mclose(fd);
       else
-         ok = %f;
-      end
-
-      if ~ok then
-        [fd,ierr]=mopen(SCI+'/macros/RTAI/RT_templates/'+target+'.mak','r');
-        if ierr==0 then
-	  ok=%t
-          mclose(fd);
-        else
-          x_message('Target not valid');
-        end
+        ok=%f;x_message('Target not valid '+target+'.gen');
       end
       
       if grep(odefun,ode_x) == [] then

@@ -755,8 +755,13 @@ static RT_TASK *switch_rtai_tasks(RT_TASK *rt_current, RT_TASK *new_task, int cp
 	return NULL;
 }
 
+#if LINUX_VERSION_CODE > KERNEL_VERSION(2,6,19)
 #define lxrt_context_switch(prev, next, cpuid) \
-	do { _lxrt_context_switch(prev, next, cpuid); barrier(); } while (0)
+do { next->fpu_counter = 0; _lxrt_context_switch(prev, next, cpuid); barrier(); } while (0)
+#else
+#define lxrt_context_switch(prev, next, cpuid) \
+do { _lxrt_context_switch(prev, next, cpuid); barrier(); } while (0)
+#endif
 
 #ifdef CONFIG_SMP
 static void rt_schedule_on_schedule_ipi(void)

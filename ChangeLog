@@ -1,3 +1,7 @@
+2007-02-10  Paul Corner <paul_c@tuxcnc.org>
+
+	* base/iipc/fifos/fifos.c: fix udev related ifdefs.
+
 2007-02-10  Paolo Mantegazza <mantegazza@aero.polimi.it>
 
 	* base/sched/sched.c: task context switching compatibility with new 

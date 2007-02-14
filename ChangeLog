@@ -1,11 +1,11 @@
+2007-02-14  Paolo Mantegazza <mantegazza@aero.polimi.it>
+
+	* base/include/asm-i386/rtai_lxrt.h: task context switching 
+	  compatibility with new fpu support in linux > 2.6.19.
+
 2007-02-10  Paul Corner <paul_c@tuxcnc.org>
 
-	* base/iipc/fifos/fifos.c: fix udev related ifdefs.
-
-2007-02-10  Paolo Mantegazza <mantegazza@aero.polimi.it>
-
-	* base/sched/sched.c: task context switching compatibility with new 
-	  fpu support in linux > 2.6.19.
+	* base/ipc/fifos/fifos.c: fix udev related ifdefs.
 
 2007-02-09  Roberto Bucher <roberto.bucher@supsi.ch>
 

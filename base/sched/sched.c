@@ -2305,15 +2305,22 @@ static int lxrt_intercept_schedule_head (unsigned long event, struct prev_next_t
 
 #endif  /* KERNEL_VERSION < 2.4.32 */
 
-static void lxrt_intercept_schedule_tail (unsigned event, void *nothing)
+static int lxrt_intercept_schedule_tail (unsigned event, void *nothing)
 
 {
 	IN_INTERCEPT_IRQ_ENABLE(); {
 
 	int cpuid;
-	struct klist_t *klistp = &wake_up_sth[cpuid = smp_processor_id()];
-	while (klistp->out != klistp->in) {
-		fast_schedule(klistp->task[klistp->out++ & (MAX_WAKEUP_SRQ - 1)], current, cpuid);
+#if LINUX_VERSION_CODE < KERNEL_VERSION(2,6,11)
+	if (in_hrt_mode(cpuid = smp_processor_id())) {
+		return 1;
+	} else 
+#endif
+	{
+		struct klist_t *klistp = &wake_up_sth[cpuid];
+		while (klistp->out != klistp->in) {
+			fast_schedule(klistp->task[klistp->out++ & (MAX_WAKEUP_SRQ - 1)], current, cpuid);
+		}
 	}
 
 #if LINUX_VERSION_CODE < KERNEL_VERSION(2,4,32)
@@ -2340,7 +2347,7 @@ static void lxrt_intercept_schedule_tail (unsigned event, void *nothing)
     }
 #endif  /* KERNEL_VERSION < 2.4.32 */
 
-    return;
+    return 0;
 } }
 
 struct sig_wakeup_t { struct task_struct *task; };

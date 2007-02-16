@@ -111,7 +111,15 @@ do { \
 #define hal_set_printk_sync   adeos_set_printk_sync
 #define hal_set_printk_async  adeos_set_printk_async
 
-#define hal_schedule_back_root  __adeos_schedule_back_root
+#define hal_schedule_back_root(prev) \
+do { \
+	if ((prev)->rtai_tskext(HAL_ROOT_NPTDKEYS - 1)) { \
+		__adeos_schedule_back_root((prev)->rtai_tskext(HAL_ROOT_NPTDKEYS - 1)); \
+		(prev)->rtai_tskext(HAL_ROOT_NPTDKEYS - 1) = NULL; \
+	} else { \
+		__adeos_schedule_back_root(prev); \
+	} \
+} while (0)
 
 #define hal_processor_id  adeos_processor_id
 

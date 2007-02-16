@@ -50,10 +50,10 @@
 
 extern struct list_head __adeos_pipeline;
 
-#define hal_pipeline        __adeos_pipeline
-#define hal_domain_struct   adomain 
-#define hal_root_domain     adp_root 
-#define hal_current_domain  adp_cpu_current 
+#define hal_pipeline           __adeos_pipeline
+#define hal_domain_struct      adomain 
+#define hal_root_domain        adp_root 
+#define hal_current_domain(x)  adp_cpu_current[x] 
 
 #define hal_critical_enter  adeos_critical_enter
 #define hal_critical_exit   adeos_critical_exit

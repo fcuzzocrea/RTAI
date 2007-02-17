@@ -2310,9 +2310,9 @@ static int lxrt_intercept_schedule_tail (unsigned event, void *nothing)
 {
 	IN_INTERCEPT_IRQ_ENABLE(); {
 
-	int cpuid;
+	int cpuid = smp_processor_id();
 #if LINUX_VERSION_CODE < KERNEL_VERSION(2,6,11)
-	if (in_hrt_mode(cpuid = smp_processor_id())) {
+	if (in_hrt_mode(cpuid)) {
 		return 1;
 	} else 
 #endif

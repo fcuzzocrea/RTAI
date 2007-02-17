@@ -157,8 +157,10 @@ static inline void kthread_fun_long_jump(struct task_struct *lnxtsk)
 #define rt_copy_to_user    __copy_to_user_inatomic
 #define rt_put_user        __put_user
 
+#if LINUX_VERSION_CODE > KERNEL_VERSION(2,6,18)
+
 /*
- * Copy a null terminated string from userspace, from Linux lib/usercopy.c.
+ * From Linux lib/usercopy.c.
  */
 
 #define __do_strncpy_from_user(dst,src,count,res)			   \
@@ -195,6 +197,8 @@ static inline long rt_strncpy_from_user(char *dst, const char __user *src, long 
 	__do_strncpy_from_user(dst, src, count, res);
 	return res;
 }
+
+#endif
 
 #else /* !__KERNEL__ */
 

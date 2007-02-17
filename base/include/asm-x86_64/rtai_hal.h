@@ -42,12 +42,7 @@
 #ifndef _RTAI_ASM_X8664_HAL_H
 #define _RTAI_ASM_X8664_HAL_H
 
-#ifdef CONFIG_REGPARM
-#define RTAI_SYSCALL_MODE __attribute__((regparm(0)))
-#else
-#define RTAI_SYSCALL_MODE __attribute__((regparm(0)))
-//#define RTAI_SYSCALL_MODE
-#endif
+#define RTAI_SYSCALL_MODE //__attribute__((regparm(0)))
 
 #define LOCKED_LINUX_IN_IRQ_HANDLER
 #define UNWRAPPED_CATCH_EVENT
@@ -323,7 +318,9 @@ extern volatile unsigned long rtai_cpu_realtime;
 
 extern volatile unsigned long rtai_cpu_lock;
 
+#if LINUX_VERSION_CODE > KERNEL_VERSION(2,6,18)
 #define apic_write_around apic_write
+#endif
 
 //#define RTAI_TASKPRI 0xf0  // simplest usage without changing Linux code base
 #if defined(CONFIG_X86_LOCAL_APIC) && defined(RTAI_TASKPRI)

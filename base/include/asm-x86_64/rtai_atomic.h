@@ -1,4 +1,5 @@
 /*
+ * Copyright (C) 2007 Paolo Mantegazza <mantegazza@aero.polimi.it>.
  * Copyright (C) 2003 Philippe Gerum <rpm@xenomai.org>.
  *
  * This program is free software; you can redistribute it and/or

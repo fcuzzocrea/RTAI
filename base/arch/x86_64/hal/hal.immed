@@ -218,7 +218,7 @@ int rt_request_irq (unsigned irq, int (*handler)(unsigned irq, void *cookie), vo
 	rtai_realtime_irq[irq].handler = (void *)handler;
 	rtai_realtime_irq[irq].cookie  = cookie;
 	rtai_realtime_irq[irq].retmode = retmode ? 1 : 0;
-	rtai_realtime_irq[irq].irq_ack = hal_root_domain->irqs[irq].acknowledge;
+        rtai_realtime_irq[irq].irq_ack = hal_root_domain->irqs[irq].acknowledge;
 	rtai_critical_exit(flags);
 	if (IsolCpusMask && irq < IPIPE_NR_XIRQS) {
 		rtai_realtime_irq[irq].cpumask = rt_assign_irq_to_cpu(irq, IsolCpusMask);
@@ -486,7 +486,7 @@ void rt_disable_irq (unsigned irq)
  */
 void rt_mask_and_ack_irq (unsigned irq)
 {
-        rtai_irq_desc(irq)->ack(irq);
+	rtai_irq_desc(irq)->ack(irq);
 }
 
 static inline void _rt_end_irq (unsigned irq)
@@ -807,7 +807,7 @@ irqreturn_t rtai_broadcast_to_local_timers (int irq, void *dev_id, struct pt_reg
 #define RTAI_SCHED_ISR_LOCK() \
 	do { cpuid = rtai_cpuid(); } while (0)
 #define RTAI_SCHED_ISR_UNLOCK() \
-	do { 			   } while (0)
+	do {                       } while (0)
 #endif /* CONFIG_RTAI_SCHED_ISR_LOCK */
 
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,9)
@@ -895,6 +895,8 @@ void rtai_sched_on_ipi_handler (void);
 	"cmove  %rax,%rsp\n" \
 	"push   %rdi\n" \
         "call "SYMBOL_NAME_STR(_rtai_sched_on_ipi_handler)"\n\t" \
+	"test   %rax,%rax\n" \
+	"jnz  ret_from_intr\n" \
 	"pop    %rdi\n" \
 	"cli\n" \
 	"subl   $0x1,%gs:0x30\n" \
@@ -935,14 +937,14 @@ int _rtai_apic_timer_handler(void)
         unsigned long cpuid;
         unsigned long sflags;
 
-        RTAI_SCHED_ISR_LOCK();
+	RTAI_SCHED_ISR_LOCK();
         HAL_LOCK_LINUX();
         __ack_APIC_irq();
 //      rtai_realtime_irq[RTAI_APIC_TIMER_IPI].irq_ack(RTAI_APIC_TIMER_IPI);
 //      hal_root_domain->irqs[RTAI_APIC_TIMER_IPI].acknowledge(RTAI_APIC_TIMER_IPI);
         ((void (*)(void))rtai_realtime_irq[RTAI_APIC_TIMER_IPI].handler)();
         HAL_UNLOCK_LINUX();
-        RTAI_SCHED_ISR_UNLOCK();
+	RTAI_SCHED_ISR_UNLOCK();
 #if 1 //LINUX_VERSION_CODE < KERNEL_VERSION(2,6,0)
         if (!test_bit(IPIPE_STALL_FLAG, ipipe_root_status[cpuid])) {
                 rtai_sti();
@@ -982,6 +984,8 @@ void rtai_apic_timer_handler (void);
 	"cmove  %rax,%rsp\n" \
 	"push   %rdi\n" \
 	"call "SYMBOL_NAME_STR(_rtai_apic_timer_handler)"\n\t" \
+	"test   %rax,%rax\n" \
+	"jnz  ret_from_intr\n" \
 	"pop    %rdi\n" \
 	"cli\n" \
 	"subl   $0x1,%gs:0x30\n" \
@@ -1017,7 +1021,7 @@ int _rtai_8254_timer_handler(struct pt_regs *regs)
         ((void (*)(void))rtai_realtime_irq[RTAI_TIMER_8254_IRQ].handler)();
         HAL_UNLOCK_LINUX();
         RTAI_SCHED_ISR_UNLOCK();
-        if (test_and_clear_bit(cpuid, &hal_pended) && !test_bit(IPIPE_STALL_FLAG, ipipe_root_status[cpuid])) {
+	if (test_and_clear_bit(cpuid, &hal_pended) && !test_bit(IPIPE_STALL_FLAG, ipipe_root_status[cpuid])) {
 		rtai_sti();
 /* specific for the Linux tick, do not cre in a generic handler */
 		HAL_TICK_REGS.eflags = regs->eflags;
@@ -1033,7 +1037,7 @@ int _rtai_8254_timer_handler(struct pt_regs *regs)
 #endif
                 return 1;
         }
-        return 0;
+	return 0;
 }
 
 void rtai_8254_timer_handler (void);
@@ -1482,14 +1486,18 @@ void rt_setup_8254_tsc (void)
 	rtai_critical_exit(flags);
 }
 
-static int irqcnt;
-
 static int rtai_hirq_dispatcher (struct pt_regs *regs)
 {
-	unsigned long cpuid, vector, irq;
+	unsigned long cpuid, irq;
 
-        if (rtai_realtime_irq[irq = (vector = ~regs->orig_rax) >= FIRST_SYSTEM_VECTOR ? ipipe_apic_vector_irq(vector) : __get_cpu_var(vector_irq)[vector]].handler) {
+#if LINUX_VERSION_CODE < KERNEL_VERSION(2,6,19)
+        if (rtai_realtime_irq[irq = regs->orig_rax & 0xFF].handler) {
+#else
+        unsigned long vector = ~regs->orig_rax;
+        if (rtai_realtime_irq[irq = vector >= FIRST_SYSTEM_VECTOR ? ipipe_apic_vector_irq(vector) : __get_cpu_var(vector_irq)[vector]].handler) {
+#endif
                 unsigned long sflags;
+
                 RTAI_SCHED_ISR_LOCK();
                 HAL_LOCK_LINUX();
                 rtai_realtime_irq[irq].irq_ack(irq); mb();
@@ -1588,9 +1596,7 @@ long long (*rtai_lxrt_dispatcher)(unsigned long, unsigned long, void *);
 
 static int (*sched_intercept_syscall_prologue)(struct pt_regs *);
 
-static int syscnt;
 static int intercept_syscall_prologue(unsigned long event, struct pt_regs *regs){
-syscnt++;
         if (likely(regs->LINUX_SYSCALL_NR >= RTAI_SYSCALL_NR)) {
                 int cpuid;
                 unsigned long srq  = regs->LINUX_SYSCALL_REG1;
@@ -1619,6 +1625,7 @@ int rtai_syscall_dispatcher (struct pt_regs *regs)
 	*((unsigned long long *)regs->rdx) = (long)regs->rax > RTAI_NR_SRQS ? rtai_lxrt_dispatcher(regs->rax, regs->rcx, regs) : rtai_usrq_dispatcher(regs->rax, regs->rcx);
 	if (!in_hrt_mode(cpuid = rtai_cpuid())) {
 		hal_test_and_fast_flush_pipeline(cpuid);
+		return 1;
 	}
 	return 0;
 }
@@ -1648,11 +1655,13 @@ void rtai_uvec_handler (void);
 	"1:addl   $0x1,%gs:0x30\n" \
 	"mov    %gs:0x38,%rax\n" \
 	"cmove  %rax,%rsp\n" \
-	"sti\n" \
 	"push   %rdi\n" \
+	"sti\n" \
 	"call "SYMBOL_NAME_STR(rtai_syscall_dispatcher)"\n" \
-	"pop    %rdi\n" \
 	"cli\n" \
+	"test   %rax,%rax\n" \
+	"jnz  ret_from_intr\n" \
+	"pop    %rdi\n" \
 	"subl   $0x1,%gs:0x30\n" \
 	"lea    0x30(%rdi),%rsp\n" \
 	"mov    %gs:0x18,%rcx\n" \
@@ -1904,8 +1913,8 @@ static void rtai_proc_unregister (void)
 FIRST_LINE_OF_RTAI_DOMAIN_ENTRY
 {
 	{
-//		printk(KERN_INFO "RTAI[hal]: <%s> mounted over %s %s.\n", PACKAGE_VERSION, HAL_TYPE, HAL_VERSION_STRING);
-//		printk(KERN_INFO "RTAI[hal]: compiled with %s.\n", CONFIG_RTAI_COMPILER);
+		rt_printk(KERN_INFO "RTAI[hal]: <%s> mounted over %s %s.\n", PACKAGE_VERSION, HAL_TYPE, HAL_VERSION_STRING);
+		rt_printk(KERN_INFO "RTAI[hal]: compiled with %s.\n", CONFIG_RTAI_COMPILER);
 	}
 	for (;;) hal_suspend_domain();
 }
@@ -1933,6 +1942,9 @@ void ack_bad_irq(unsigned int irq)
         }
 #endif
 }
+
+static void rt_printk_srq_handler(void);
+#define RT_PRINTK_SRQ  1
 
 int __rtai_hal_init (void)
 {
@@ -1981,6 +1993,9 @@ int __rtai_hal_init (void)
 	rtai_proc_register();
 #endif
 
+	rtai_sysreq_table[RT_PRINTK_SRQ].k_handler = rt_printk_srq_handler;
+	set_bit(RT_PRINTK_SRQ, &rtai_sysreq_map);
+
 	hal_init_attr(&attr);
 	attr.name     = "RTAI";
 	attr.domid    = RTAI_DOMAIN_ID;
@@ -2027,15 +2042,17 @@ void __rtai_hal_exit (void)
 	for (trapnr = 0; trapnr < HAL_NR_FAULTS; trapnr++) {
 		hal_catch_event(hal_root_domain, trapnr, NULL);
 	}
+
+	clear_bit(RT_PRINTK_SRQ, &rtai_sysreq_map);
         hal_virtualize_irq(hal_root_domain, rtai_sysreq_virq, NULL, NULL, 0);
         hal_free_irq(rtai_sysreq_virq);
         rtai_uninstall_archdep();
 	
-        if (IsolCpusMask) {
-                for (trapnr = 0; trapnr < IPIPE_NR_XIRQS; trapnr++) {
-                        rt_reset_irq_to_sym_mode(trapnr);
-                }
-        }
+	if (IsolCpusMask) {
+		for (trapnr = 0; trapnr < IPIPE_NR_XIRQS; trapnr++) {
+			rt_reset_irq_to_sym_mode(trapnr);
+		}
+	}
 
 	printk(KERN_INFO "RTAI[hal]: unmounted.\n");
 	printk(KERN_INFO "RTAI[hal]: irqcnt %d syscnt %d.\n", irqcnt, syscnt);
@@ -2044,33 +2061,81 @@ void __rtai_hal_exit (void)
 module_init(__rtai_hal_init);
 module_exit(__rtai_hal_exit);
 
-#define VSNPRINTF_BUF 256
-asmlinkage int rt_printk(const char *fmt, ...)
-{
-        char buf[VSNPRINTF_BUF];
-        va_list args;
+#if 1
+/*
+ *  rt_printk.c, hacked from linux/kernel/printk.c.
+ *
+ * Modified for RT support, David Schleef.
+ *
+ * Adapted to RTAI, and restyled his own way by Paolo Mantegazza.
+ *
+ */
 
-        va_start(args, fmt);
-        vsnprintf(buf, VSNPRINTF_BUF, fmt, args);
-        va_end(args);
-        return printk("%s", buf);
+#define PRINTK_BUF_SIZE  (10000) // Test programs may generate much output. PC
+#define TEMP_BUF_SIZE	 (500)
+
+static char rt_printk_buf[PRINTK_BUF_SIZE];
+
+static int buf_front, buf_back;
+static char buf[TEMP_BUF_SIZE];
+
+int rt_printk (const char *fmt, ...)
+{
+	unsigned long flags;
+        static spinlock_t display_lock = SPIN_LOCK_UNLOCKED;
+	va_list args;
+	int len, i;
+
+        flags = rt_spin_lock_irqsave(&display_lock);
+	va_start(args, fmt);
+	len = vsprintf(buf, fmt, args);
+	va_end(args);
+	if ((buf_front + len) >= PRINTK_BUF_SIZE) {
+		i = PRINTK_BUF_SIZE - buf_front;
+		memcpy(rt_printk_buf + buf_front, buf, i);
+		memcpy(rt_printk_buf, buf + i, len - i);
+		buf_front = len - i;
+	} else {
+		memcpy(rt_printk_buf + buf_front, buf, len);
+		buf_front += len;
+	}
+        rt_spin_unlock_irqrestore(flags, &display_lock);
+	rt_pend_linux_srq(RT_PRINTK_SRQ);
+
+	return len;
 }
 
-asmlinkage int rt_sync_printk(const char *fmt, ...)
+static void rt_printk_srq_handler (void)
 {
-        char buf[VSNPRINTF_BUF];
+	int tmp;
+
+	while(1) {
+		tmp = buf_front;
+		if (buf_back > tmp) {
+			printk("%.*s", PRINTK_BUF_SIZE - buf_back, rt_printk_buf + buf_back);
+			buf_back = 0;
+		}
+		if (buf_back == tmp) {
+			break;
+		}
+		printk("%.*s", tmp - buf_back, rt_printk_buf + buf_back);
+		buf_back = tmp;
+	}
+}
+#else
+asmlinkage int rt_printk(const char *fmt, ...)
+{
         va_list args;
         int r;
 
         va_start(args, fmt);
-        vsnprintf(buf, VSNPRINTF_BUF, fmt, args);
+        r = vprintk(fmt, args);
         va_end(args);
-        hal_set_printk_sync(&rtai_domain);
-        r = printk("%s", buf);
-        hal_set_printk_async(&rtai_domain);
 
         return r;
 }
+static void rt_printk_srq_handler (void) { }
+#endif
 
 EXPORT_SYMBOL(rtai_realtime_irq);
 EXPORT_SYMBOL(rt_request_irq);
@@ -2087,10 +2152,10 @@ EXPORT_SYMBOL(rt_ack_irq);
 EXPORT_SYMBOL(rt_request_linux_irq);
 EXPORT_SYMBOL(rt_free_linux_irq);
 EXPORT_SYMBOL(rt_pend_linux_irq);
-EXPORT_SYMBOL(usr_rt_pend_linux_irq);
 EXPORT_SYMBOL(rt_request_srq);
 EXPORT_SYMBOL(rt_free_srq);
 EXPORT_SYMBOL(rt_pend_linux_srq);
+EXPORT_SYMBOL(usr_rt_pend_linux_irq);
 EXPORT_SYMBOL(rt_assign_irq_to_cpu);
 EXPORT_SYMBOL(rt_reset_irq_to_sym_mode);
 EXPORT_SYMBOL(rt_request_apic_timers);
@@ -2118,7 +2183,6 @@ EXPORT_SYMBOL(rt_times);
 EXPORT_SYMBOL(rt_smp_times);
 
 EXPORT_SYMBOL(rt_printk);
-EXPORT_SYMBOL(rt_sync_printk);
 
 EXPORT_SYMBOL(rtai_set_gate_vector);
 EXPORT_SYMBOL(rtai_reset_gate_vector);

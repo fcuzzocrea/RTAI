@@ -46,6 +46,7 @@
 #define LINUX_SYSCALL_REG5    edi
 #define LINUX_SYSCALL_REG6    ebp
 #define LINUX_SYSCALL_RETREG  eax
+#define LINUX_SYSCALL_FLAGS   eflags
 
 #define SET_LXRT_RETVAL_IN_SYSCALL(regs, retval) \
 	do { \

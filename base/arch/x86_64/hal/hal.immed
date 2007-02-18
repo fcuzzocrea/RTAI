@@ -1601,9 +1601,7 @@ static int (*sched_intercept_syscall_prologue)(struct pt_regs *);
 static int intercept_syscall_prologue(unsigned long event, struct pt_regs *regs){
         if (likely(regs->LINUX_SYSCALL_NR >= RTAI_SYSCALL_NR)) {
                 unsigned long srq  = regs->LINUX_SYSCALL_REG1;
-#ifdef USI_SRQ_MASK
-		IF_IS_A_USI_SRQ_CALL_IT(srq, regs->LINUX_SYSCALL_REG2, (long long *)regs->LINUX_SYSCALL_REG2, regs->LINUX_SYSCALL_FLAGS, 1);
-#endif
+		IF_IS_A_USI_SRQ_CALL_IT(srq, regs->LINUX_SYSCALL_REG2, (long long *)regs->LINUX_SYSCALL_REG3, regs->LINUX_SYSCALL_FLAGS, 1);
 		*((long long *)regs->LINUX_SYSCALL_REG3) = srq > RTAI_NR_SRQS ?
 rtai_lxrt_dispatcher(srq, regs->LINUX_SYSCALL_REG2, regs) : rtai_usrq_dispatcher(srq, regs->LINUX_SYSCALL_REG2);
                 if (!in_hrt_mode(srq = rtai_cpuid())) {
@@ -1617,14 +1615,11 @@ rtai_lxrt_dispatcher(srq, regs->LINUX_SYSCALL_REG2, regs) : rtai_usrq_dispatcher
 
 int rtai_syscall_dispatcher (struct pt_regs *regs)
 {
-	int cpuid;
-#ifdef USI_SRQ_MASK
-	long long *retval  = (void *)regs->LINUX_SYSCALL_REG3;
-	IF_IS_A_USI_SRQ_CALL_IT(regs->LINUX_SYSCALL_REG1, regs->LINUX_SYSCALL_REG2, retval, regs->eflags, 1);
-#endif
-	*((unsigned long long *)regs->rdx) = (long)regs->rax > RTAI_NR_SRQS ? rtai_lxrt_dispatcher(regs->rax, regs->rcx, regs) : rtai_usrq_dispatcher(regs->rax, regs->rcx);
-	if (!in_hrt_mode(cpuid = rtai_cpuid())) {
-		hal_test_and_fast_flush_pipeline(cpuid);
+	unsigned long srq = regs->rax;
+	IF_IS_A_USI_SRQ_CALL_IT(srq, regs->rcx, (long long *)regs->rdx; regs->eflags, 1);
+	*((long long *)regs->rdx) = srq > RTAI_NR_SRQS ? rtai_lxrt_dispatcher(srq, regs->rcx, regs) : rtai_usrq_dispatcher(srq, regs->rcx);
+	if (!in_hrt_mode(srq = rtai_cpuid())) {
+		hal_test_and_fast_flush_pipeline(srq);
 		return 1;
 	}
 	return 0;

@@ -1602,12 +1602,11 @@ static int intercept_syscall_prologue(unsigned long event, struct pt_regs *regs)
         if (likely(regs->LINUX_SYSCALL_NR >= RTAI_SYSCALL_NR)) {
                 int cpuid;
                 unsigned long srq  = regs->LINUX_SYSCALL_REG1;
-                unsigned long args = regs->LINUX_SYSCALL_REG2;
-                long long *retval  = (void *)regs->LINUX_SYSCALL_REG3;
 #ifdef USI_SRQ_MASK
-                IF_IS_A_USI_SRQ_CALL_IT(srq, args, retval, regs->eflags, 1);
+		IF_IS_A_USI_SRQ_CALL_IT(srq, regs->LINUX_SYSCALL_REG2, (long long *)regs->LINUX_SYSCALL_REG2, regs->LINUX_SYSCALL_FLAGS, 1);
 #endif
-                *retval = srq > RTAI_NR_SRQS ? rtai_lxrt_dispatcher(srq, args, regs) : rtai_usrq_dispatcher(srq, args);
+		*((long long *)regs->LINUX_SYSCALL_REG3) = srq > RTAI_NR_SRQS ?
+rtai_lxrt_dispatcher(srq, regs->LINUX_SYSCALL_REG2, regs) : rtai_usrq_dispatcher(srq, regs->LINUX_SYSCALL_REG2);
                 if (!in_hrt_mode(cpuid = rtai_cpuid())) {
                         hal_test_and_fast_flush_pipeline(cpuid);
                         return 0;

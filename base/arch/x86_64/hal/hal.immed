@@ -1607,6 +1607,7 @@ rtai_lxrt_dispatcher(srq, regs->LINUX_SYSCALL_REG2, regs) : rtai_usrq_dispatcher
                         hal_test_and_fast_flush_pipeline(srq);
                         return 0;
                 }
+		rtai_cli();
                 return 1;
         }
         return likely(sched_intercept_syscall_prologue != NULL) ? sched_intercept_syscall_prologue(regs) : 0;

@@ -30,6 +30,8 @@
 #ifndef _RTAI_ASM_X8664_VECTORS_H
 #define _RTAI_ASM_X8664_VECTORS_H
 
+#include <linux/version.h>
+
 #include <rtai_config.h>
 
 #define RTAI_APIC_HIGH_VECTOR  HAL_APIC_HIGH_VECTOR

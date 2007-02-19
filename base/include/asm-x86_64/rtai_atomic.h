@@ -28,8 +28,8 @@
 
 #if LINUX_VERSION_CODE < KERNEL_VERSION(2,6,11)
 
-#define atomic_xchg(ptr,v)      xchg(ptr,v)
-#define atomic_cmpxchg(ptr,o,n) cmpxchg((unsigned long *)(ptr),o,n)
+#define atomic_xchg(ptr, v)        xchg(ptr, v)
+#define atomic_cmpxchg(ptr, o, n)  cmpxchg((unsigned long *)(ptr), o, n)
 
 #endif
 
@@ -47,8 +47,7 @@ typedef struct { volatile int counter; } atomic_t;
 struct __rtai_xchg_dummy { unsigned long a[100]; };
 #define __rtai_xg(x) ((struct __rtai_xchg_dummy *)(x))
 
-static inline unsigned long atomic_xchg (volatile void *ptr,
-					 unsigned long x)
+static inline unsigned long atomic_xchg (volatile void *ptr, unsigned long x)
 {
     __asm__ __volatile__(LOCK_PREFIX "xchgq %0,%1"
 			 :"=r" (x)
@@ -57,9 +56,7 @@ static inline unsigned long atomic_xchg (volatile void *ptr,
     return x;
 }
 
-static inline unsigned long atomic_cmpxchg (volatile void *ptr,
-					    unsigned long o,
-					    unsigned long n)
+static inline unsigned long atomic_cmpxchg (volatile void *ptr, unsigned long o, unsigned long n)
 {
     unsigned long prev;
 

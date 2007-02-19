@@ -1814,11 +1814,12 @@ void (*rt_set_ihook (void (*hookfn)(int)))(int)
 #if LINUX_VERSION_CODE < KERNEL_VERSION(2,6,11)
 static int errno;
 
-static inline _syscall3(int, sched_setscheduler, pid_t,pid, int,policy, struct sched_param *,param)
+static _syscall3(int, sched_setscheduler, pid_t, pid, int, policy, struct sched_param *, param)
 #endif /* LINUX_VERSION_CODE < KERNEL_VERSION(2,6,11) */
 
 void rtai_set_linux_task_priority (struct task_struct *task, int policy, int prio)
 {
+	return; // FIXME, FIXME, FIXME
         int rc;
 #if LINUX_VERSION_CODE < KERNEL_VERSION(2,6,11)
         struct sched_param __user param;

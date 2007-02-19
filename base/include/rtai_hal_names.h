@@ -185,9 +185,9 @@ do { \
 
 static inline void *hal_set_irq_handler(void *hirq_dispatcher)
 {
-	extern void *saved_hal_irq_handler;
-	extern void *hal_irq_handler;
-	extern void *rtai_hirq_dispatcher;
+	void *saved_hal_irq_handler;
+	void *hal_irq_handler;
+	void *rtai_hirq_dispatcher;
 	if (saved_hal_irq_handler != hirq_dispatcher) {
 		saved_hal_irq_handler = hal_irq_handler;
 		hal_irq_handler = hirq_dispatcher;

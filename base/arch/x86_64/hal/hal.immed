@@ -824,7 +824,7 @@ irqreturn_t rtai_broadcast_to_local_timers (int irq, void *dev_id, struct pt_reg
 #define HAL_UNLOCK_LINUX()  do { rtai_cli(); *ipipe_root_status[cpuid] = sflags; } while (0)
 #endif
 
-#define __ALIGN_STR ".align 16,0x90"
+//#define __ALIGN_STR ".align 16,0x90"
 
 #ifndef STR
 #define __STR(x) #x
@@ -1482,7 +1482,7 @@ void rt_setup_8254_tsc (void)
 	rtai_critical_exit(flags);
 }
 
-static int rtai_hirq_dispatcher (struct pt_regs *regs)
+int rtai_hirq_dispatcher(struct pt_regs *regs)
 {
 	unsigned long cpuid, irq;
 
@@ -1512,7 +1512,6 @@ static int rtai_hirq_dispatcher (struct pt_regs *regs)
 		}
 	} else {
 		unsigned long lflags;
-irqcnt++;
                 lflags = xchg(ipipe_root_status[cpuid = rtai_cpuid()], (1 << IPIPE_STALL_FLAG));
 		rtai_realtime_irq[irq].irq_ack(irq); mb();
 //		hal_root_domain->irqs[irq].acknowledge(irq); mb();
@@ -1616,7 +1615,7 @@ rtai_lxrt_dispatcher(srq, regs->LINUX_SYSCALL_REG2, regs) : rtai_usrq_dispatcher
 int rtai_syscall_dispatcher (struct pt_regs *regs)
 {
 	unsigned long srq = regs->rax;
-	IF_IS_A_USI_SRQ_CALL_IT(srq, regs->rcx, (long long *)regs->rdx; regs->eflags, 1);
+	IF_IS_A_USI_SRQ_CALL_IT(srq, regs->rcx, (long long *)regs->rdx, regs->eflags, 1);
 	*((long long *)regs->rdx) = srq > RTAI_NR_SRQS ? rtai_lxrt_dispatcher(srq, regs->rcx, regs) : rtai_usrq_dispatcher(srq, regs->rcx);
 	if (!in_hrt_mode(srq = rtai_cpuid())) {
 		hal_test_and_fast_flush_pipeline(srq);
@@ -1820,10 +1819,34 @@ static inline _syscall3(int, sched_setscheduler, pid_t,pid, int,policy, struct s
 
 void rtai_set_linux_task_priority (struct task_struct *task, int policy, int prio)
 {
+        int rc;
+#if LINUX_VERSION_CODE < KERNEL_VERSION(2,6,11)
+        struct sched_param __user param;
+        mm_segment_t old_fs;
+
+        param.sched_priority = prio;
+        old_fs = get_fs();
+        set_fs(KERNEL_DS);
+        rc = sched_setscheduler(task->pid, policy, &param);
+        set_fs(old_fs);
+//#else
+//        struct sched_param param = { prio };
+//        rc = sched_setscheduler(task, policy, &param);
+//#endif
+
+        if (rc) {
+                printk("RTAI[hal]: sched_setscheduler(policy=%d,prio=%d) failed, code %d (%s -- pid=%d)\n", policy, prio, rc, task->comm, task->pid);
+        }
+
+	return;
+#else
+
         hal_set_linux_task_priority(task, policy, prio);
         if (task->rt_priority != prio || task->policy != policy) {
                 printk("RTAI[hal]: sched_setscheduler(policy = %d, prio = %d) failed, (%s -- pid = %d)\n", policy, prio, task->comm, task->pid);
         }
+
+#endif
 }
 
 #ifdef CONFIG_PROC_FS
@@ -1924,9 +1947,10 @@ long rtai_catch_event (struct hal_domain_struct *from, unsigned long event, int 
 	return (long)hal_catch_event(from, event, (void *)handler);
 }
 
-static void *saved_hal_irq_handler;
+void *saved_hal_irq_handler;
 extern void *hal_irq_handler;
 
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,11)
 #undef ack_bad_irq
 void ack_bad_irq(unsigned int irq)
 {
@@ -1937,6 +1961,7 @@ void ack_bad_irq(unsigned int irq)
         }
 #endif
 }
+#endif
 
 static void rt_printk_srq_handler(void);
 #define RT_PRINTK_SRQ  1
@@ -1979,8 +2004,7 @@ int __rtai_hal_init (void)
 
 	hal_virtualize_irq(hal_root_domain, rtai_sysreq_virq, &rtai_lsrq_dispatcher, NULL, IPIPE_HANDLE_MASK);
 
-        saved_hal_irq_handler = hal_irq_handler;
-	hal_irq_handler = rtai_hirq_dispatcher;
+	saved_hal_irq_handler = hal_set_irq_handler(rtai_hirq_dispatcher);
 
 	rtai_install_archdep();
 
@@ -2032,7 +2056,8 @@ void __rtai_hal_exit (void)
 #ifdef CONFIG_PROC_FS
 	rtai_proc_unregister();
 #endif
-	hal_irq_handler = saved_hal_irq_handler;
+	hal_set_irq_handler(saved_hal_irq_handler);
+
 	hal_unregister_domain(&rtai_domain);
 	for (trapnr = 0; trapnr < HAL_NR_FAULTS; trapnr++) {
 		hal_catch_event(hal_root_domain, trapnr, NULL);
@@ -2050,7 +2075,6 @@ void __rtai_hal_exit (void)
 	}
 
 	printk(KERN_INFO "RTAI[hal]: unmounted.\n");
-	printk(KERN_INFO "RTAI[hal]: irqcnt %d syscnt %d.\n", irqcnt, syscnt);
 }
 
 module_init(__rtai_hal_init);

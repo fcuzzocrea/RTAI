@@ -154,8 +154,13 @@ static inline void kthread_fun_long_jump(struct task_struct *lnxtsk)
 }
 #endif
 
-#define rt_copy_from_user  __copy_from_user_inatomic
-#define rt_copy_to_user    __copy_to_user_inatomic
+#if LINUX_VERSION_CODE < KERNEL_VERSION(2,6,19)
+#define rt_copy_from_user(a, b, c)  \
+        ( { int ret = __copy_from_user_inatomic(a, b, c); ret; } )
+#define rt_copy_to_user(a, b, c)  \
+        ( { int ret = __copy_to_user_inatomic(a, b, c); ret; } )
+#endif
+
 #define rt_put_user        __put_user
 
 #if LINUX_VERSION_CODE > KERNEL_VERSION(2,6,18)
@@ -198,6 +203,11 @@ static inline long rt_strncpy_from_user(char *dst, const char __user *src, long 
 	__do_strncpy_from_user(dst, src, count, res);
 	return res;
 }
+
+#else
+
+#define rt_strncpy_from_user(a, b, c)  \
+        ( { int ret = strncpy_from_user(a, b, c); ret; } )
 
 #endif
 

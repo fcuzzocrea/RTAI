@@ -29,7 +29,7 @@
 #if LINUX_VERSION_CODE < KERNEL_VERSION(2,6,11)
 
 #define atomic_xchg(ptr,v)      xchg(ptr,v)
-#define atomic_cmpxchg(ptr,o,n) cmpxchg(ptr,o,n)
+#define atomic_cmpxchg(ptr,o,n) cmpxchg((unsigned long *)(ptr),o,n)
 
 #endif
 

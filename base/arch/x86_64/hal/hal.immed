@@ -1482,7 +1482,7 @@ void rt_setup_8254_tsc (void)
 	rtai_critical_exit(flags);
 }
 
-int rtai_hirq_dispatcher(struct pt_regs *regs)
+static int rtai_hirq_dispatcher(struct pt_regs *regs)
 {
 	unsigned long cpuid, irq;
 
@@ -1949,7 +1949,7 @@ long rtai_catch_event (struct hal_domain_struct *from, unsigned long event, int 
 	return (long)hal_catch_event(from, event, (void *)handler);
 }
 
-void *saved_hal_irq_handler;
+static void *saved_hal_irq_handler;
 extern void *hal_irq_handler;
 
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,11)

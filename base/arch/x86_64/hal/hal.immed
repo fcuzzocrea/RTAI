@@ -2187,6 +2187,8 @@ EXPORT_SYMBOL(rt_set_trap_handler);
 EXPORT_SYMBOL(rd_8254_ts);
 EXPORT_SYMBOL(rt_setup_8254_tsc);
 EXPORT_SYMBOL(rt_set_ihook);
+EXPORT_SYMBOL(rt_set_irq_ack);
+//EXPORT_SYMBOL(ack_8259A_irq);
 
 EXPORT_SYMBOL(rtai_calibrate_8254);
 EXPORT_SYMBOL(rtai_broadcast_to_local_timers);

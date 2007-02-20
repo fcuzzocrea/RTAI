@@ -183,20 +183,6 @@ do { \
 
 #define hal_set_irq_affinity  ipipe_set_irq_affinity
 
-static inline void *hal_set_irq_handler(void *hirq_dispatcher)
-{
-	extern void *saved_hal_irq_handler;
-	extern void *rtai_hirq_dispatcher;
-	extern void *hal_irq_handler;
-	if (saved_hal_irq_handler != hirq_dispatcher) {
-		saved_hal_irq_handler = hal_irq_handler;
-		hal_irq_handler = hirq_dispatcher;
-		return saved_hal_irq_handler;
-	}
-	hal_irq_handler = hirq_dispatcher;
-	return rtai_hirq_dispatcher;
-}
-
 #define hal_propagate_event  ipipe_propagate_event
 
 #define hal_get_sysinfo  ipipe_get_sysinfo
@@ -268,6 +254,20 @@ do { \
 #endif
 
 #define hal_irq_handler     ipipe_irq_handler
+
+static inline void *hal_set_irq_handler(void *hirq_dispatcher)
+{
+	extern void *saved_hal_irq_handler;
+	extern void *rtai_hirq_dispatcher;
+	extern void *hal_irq_handler;
+	if (saved_hal_irq_handler != hirq_dispatcher) {
+		saved_hal_irq_handler = hal_irq_handler;
+		hal_irq_handler = hirq_dispatcher;
+		return saved_hal_irq_handler;
+	}
+	hal_irq_handler = hirq_dispatcher;
+	return rtai_hirq_dispatcher;
+}
 
 #define hal_tskext  ptd
 

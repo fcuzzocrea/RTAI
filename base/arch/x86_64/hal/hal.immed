@@ -824,7 +824,9 @@ irqreturn_t rtai_broadcast_to_local_timers (int irq, void *dev_id, struct pt_reg
 #define HAL_UNLOCK_LINUX()  do { rtai_cli(); *ipipe_root_status[cpuid] = sflags; } while (0)
 #endif
 
-//#define __ALIGN_STR ".align 16,0x90"
+#if LINUX_VERSION_CODE > KERNEL_VERSION(2,6,18)
+#define __ALIGN_STR ".align 16,0x90"
+#endif
 
 #ifndef STR
 #define __STR(x) #x
@@ -1821,8 +1823,8 @@ static _syscall3(int, sched_setscheduler, pid_t, pid, int, policy, struct sched_
 void rtai_set_linux_task_priority (struct task_struct *task, int policy, int prio)
 {
 	return; // FIXME, FIXME, FIXME
-        int rc;
 #if LINUX_VERSION_CODE < KERNEL_VERSION(2,6,11)
+        int rc;
         struct sched_param __user param;
         mm_segment_t old_fs;
 

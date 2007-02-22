@@ -1815,15 +1815,14 @@ void (*rt_set_ihook (void (*hookfn)(int)))(int)
 
 
 #if LINUX_VERSION_CODE < KERNEL_VERSION(2,6,11)
-static int errno;
+//static int errno;
 
-static _syscall3(int, sched_setscheduler, pid_t, pid, int, policy, struct sched_param *, param)
-#endif /* LINUX_VERSION_CODE < KERNEL_VERSION(2,6,11) */
+//static _syscall3(asmlinkage int, sched_setscheduler, pid_t, pid, int, policy, struct sched_param *, param)
+
+extern void *sys_call_table[];
 
 void rtai_set_linux_task_priority (struct task_struct *task, int policy, int prio)
 {
-	return; // FIXME, FIXME, FIXME
-#if LINUX_VERSION_CODE < KERNEL_VERSION(2,6,11)
         int rc;
         struct sched_param __user param;
         mm_segment_t old_fs;
@@ -1831,8 +1830,12 @@ void rtai_set_linux_task_priority (struct task_struct *task, int policy, int pri
         param.sched_priority = prio;
         old_fs = get_fs();
         set_fs(KERNEL_DS);
-        rc = sched_setscheduler(task->pid, policy, &param);
+
+        rc = ((int (*)(int, int, struct sched_param *))sys_call_table[__NR_sched_setscheduler])(task->pid, policy, &param);
+
+//	rc = sched_setscheduler(task->pid, policy, &param);
         set_fs(old_fs);
+
 //#else
 //        struct sched_param param = { prio };
 //        rc = sched_setscheduler(task, policy, &param);
@@ -1843,15 +1846,20 @@ void rtai_set_linux_task_priority (struct task_struct *task, int policy, int pri
         }
 
 	return;
+}
+
 #else
 
+void rtai_set_linux_task_priority (struct task_struct *task, int policy, int prio)
+{
         hal_set_linux_task_priority(task, policy, prio);
         if (task->rt_priority != prio || task->policy != policy) {
                 printk("RTAI[hal]: sched_setscheduler(policy = %d, prio = %d) failed, (%s -- pid = %d)\n", policy, prio, task->comm, task->pid);
         }
 
-#endif
 }
+
+#endif
 
 #ifdef CONFIG_PROC_FS
 

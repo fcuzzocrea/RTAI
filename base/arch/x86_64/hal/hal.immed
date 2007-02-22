@@ -1611,8 +1611,14 @@ rtai_lxrt_dispatcher(srq, regs->LINUX_SYSCALL_REG2, regs) : rtai_usrq_dispatcher
                 }
 		rtai_cli();
                 return 1;
-        }
-        return likely(sched_intercept_syscall_prologue != NULL) ? sched_intercept_syscall_prologue(regs) : 0;
+        } 
+	if (likely(sched_intercept_syscall_prologue != NULL)) {
+		if (sched_intercept_syscall_prologue(regs)) {
+			rtai_cli();
+	                return 1;
+		}
+	}
+	return 0;
 }
 
 int rtai_syscall_dispatcher (struct pt_regs *regs)

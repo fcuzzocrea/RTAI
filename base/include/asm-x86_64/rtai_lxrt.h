@@ -112,11 +112,11 @@ extern "C" {
 
 static inline void _lxrt_context_switch (struct task_struct *prev, struct task_struct *next, int cpuid)
 {
-	extern void context_switch(void *, void *, void *);
+	extern void *context_switch(void *, void *, void *);
 #if LINUX_VERSION_CODE > KERNEL_VERSION(2,6,18)
 	prev->fpu_counter = 0;
 #endif
-	context_switch(0, prev, next);
+	context_switch(NULL, prev, next);
 }
 
 #if 0

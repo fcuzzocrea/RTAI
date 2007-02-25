@@ -1,3 +1,19 @@
+2007-02-26  Paolo Mantegazza <mantegazza@aero.polimi.it>
+
+	* base/include/asm-i386/rtai_lxrt.h: rewrote Linux syscall server 
+	  creation and support function to allow both sync and async serving;
+	  added a function for changing sync_async mode and callback function.
+	* base/include/asm-i386/rtai_sched: changed Linux syscall server type 
+	  in task struct to support both sync and async serving.
+	* base/sched/sys.c: rewrote Linux syscall server creation to support 
+	  both sync and async serving.
+	* base/sched/api.c: rewrote Linux syscall server calling to support 
+	  both sync and async serving; added a function for changing 
+	  sync_async mode and callback.
+	* base/sched/sched.c: modified assignement of Linux syscall server 
+	  in task structure and call table to support both sync and async 
+	  serving.
+
 2007-02-25  Roberto Bucher <roberto.bucher@supsi.ch>
 
 	*/rtai-lab/scilab/macros/RTAI/:RTAICodegen_.sci: Some changes to

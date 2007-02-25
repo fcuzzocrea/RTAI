@@ -1,3 +1,8 @@
+2007-02-25  Roberto Bucher <roberto.bucher@supsi.ch>
+
+	*/rtai-lab/scilab/macros/RTAI/:RTAICodegen_.sci: Some changes to
+	run under Windows
+
 2007-02-14  Paolo Mantegazza <mantegazza@aero.polimi.it>
 
 	* base/include/asm-i386/rtai_lxrt.h: task context switching 

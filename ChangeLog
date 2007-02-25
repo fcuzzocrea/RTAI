@@ -1,3 +1,8 @@
+2007-02-25  Roberto Bucher <roberto.bucher@supsi.ch>
+
+	*/rtai-lab/scilab/macros/RTAI/:RTAICodegen_.sci: Some changes to
+	run under Windows
+
 2007-02-09  Roberto Bucher <roberto.bucher@supsi.ch>
 
 	* /rtai-lab/scilab/macros/RTAI/SetTarget_.sci,

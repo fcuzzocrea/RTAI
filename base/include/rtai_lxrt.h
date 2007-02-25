@@ -416,7 +416,7 @@
 #include <asm/ptrace.h>
 
 struct mode_regs { struct pt_regs regs; long mode; };
-struct linux_syscalls_list { long in, nr, sync; void *serv; struct mode_regs *moderegs; RT_TASK *task; void (*callback_fun)(long, long); long out, retval; };
+struct linux_syscalls_list { long in, nr, mode; void *serv; struct mode_regs *moderegs; RT_TASK *task; void (*callback_fun)(long, long); long out, retval; };
 
 #ifdef __KERNEL__
 
@@ -712,19 +712,19 @@ static void linux_syscall_server_fun(struct linux_syscalls_list *list)
 
 #endif /* __SUPPORT_LINUX_SERVER__ */
 
-RTAI_PROTO(void, rt_set_linux_syscall_mode, (int sync_async, void (*callback_fun)(long, long)))
+RTAI_PROTO(void, rt_set_linux_syscall_mode, (int mode, void (*callback_fun)(long, long)))
 {
-	struct { long sync_async; void * callback_fun; } arg = { sync_async, callback_fun };
+	struct { long mode; void * callback_fun; } arg = { mode, callback_fun };
 	rtai_lxrt(BIDX, SIZARG, SET_LINUX_SYSCALL_MODE, &arg);
 }
 
-RTAI_PROTO(int, rt_sync_async_linux_syscall_server_create, (RT_TASK *task, int sync_async, void (*callback_fun)(long, long), int nr_bufd_async_calls))
+RTAI_PROTO(int, rt_sync_async_linux_syscall_server_create, (RT_TASK *task, int mode, void (*callback_fun)(long, long), int nr_bufd_async_calls))
 {
 	if ((task || (task = (RT_TASK *)rtai_lxrt(BIDX, sizeof(RT_TASK *), RT_BUDDY, &task).v[LOW])) && nr_bufd_async_calls > 0) {
 		struct linux_syscalls_list syscalls;
 		syscalls.task         = task;
 		syscalls.callback_fun = callback_fun;
-		syscalls.sync         = sync_async;
+		syscalls.mode         = mode;
 		syscalls.nr           = nr_bufd_async_calls;
 		if (rt_thread_create((void *)linux_syscall_server_fun, &syscalls, 0) > 0) {
 			rtai_lxrt(BIDX, sizeof(RT_TASK *), SUSPEND, &task);

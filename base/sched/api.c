@@ -1945,26 +1945,26 @@ RTAI_SYSCALL_MODE void usp_request_rtc(int rtc_freq, void *handler)
 
 /* +++++++++++++++++ SUPPORT FOR THE LINUX SYSCALL SERVER +++++++++++++++++++ */
 
-RTAI_SYSCALL_MODE void rt_set_linux_syscall_mode(long sync_async, void (*callback_fun)(long, long))
+RTAI_SYSCALL_MODE void rt_set_linux_syscall_mode(long mode, void (*callback_fun)(long, long))
 {
 	rt_put_user(callback_fun, &(RT_CURRENT->linux_syscall_server)->callback_fun);
-	rt_put_user(sync_async, &(RT_CURRENT->linux_syscall_server)->sync);
+	rt_put_user(mode, &(RT_CURRENT->linux_syscall_server)->mode);
 }
 
 void rt_exec_linux_syscall(RT_TASK *rt_current, struct linux_syscalls_list *syscalls, struct pt_regs *regs)
 {
-	struct { long in, nr, sync; RT_TASK *serv; struct mode_regs *moderegs; } from;
+	struct { long in, nr, mode; RT_TASK *serv; struct mode_regs *moderegs; } from;
 
 	rt_copy_from_user(&from, syscalls, sizeof(from));
 	from.serv->priority = rt_current->priority + BASE_SOFT_PRIORITY;
-	rt_put_user(from.sync, &from.moderegs[from.in].mode);
+	rt_put_user(from.mode, &from.moderegs[from.in].mode);
 	rt_copy_to_user(&from.moderegs[from.in].regs, regs, sizeof(struct pt_regs));
 	if (++from.in >= from.nr) {
 		from.in = 0;
 	}
 	rt_put_user(from.in, &syscalls->in);
 	rt_task_resume(from.serv);
-	if (from.sync == SYNC_LINUX_SYSCALL) {
+	if (from.mode == SYNC_LINUX_SYSCALL) {
 		rt_task_suspend(rt_current);
 		rt_get_user(regs->LINUX_SYSCALL_RETREG, &syscalls->retval);
 	}

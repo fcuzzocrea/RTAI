@@ -312,8 +312,8 @@
 #define SCHED_LOCK		       209
 #define SCHED_UNLOCK		       210
 #define PEND_LINUX_IRQ		       211
-#define RECEIVE_LINUX_SYSCALL          212
-#define RETURN_LINUX_SYSCALL           213
+#define SET_LINUX_SYSCALL_MODE	       212
+/*#define RETURN_LINUX_SYSCALL         213 available */
 #define REQUEST_RTC                    214
 #define RELEASE_RTC                    215
 #define RT_GETTID                      216
@@ -409,6 +409,14 @@
 #define SRQ(x)   (((x) >> 12) & 0xFFF)
 #define NARG(x)  ((x) & (GT_NR_SYSCALLS - 1))
 #define INDX(x)  (((x) >> 24) & 0xF)
+
+#define SYNC_LINUX_SYSCALL   1
+#define ASYNC_LINUX_SYSCALL  0
+
+#include <asm/ptrace.h>
+
+struct mode_regs { struct pt_regs regs; long mode; };
+struct linux_syscalls_list { long in, nr, sync; void *serv; struct mode_regs *moderegs; RT_TASK *task; void (*callback_fun)(long, long); long out, retval; };
 
 #ifdef __KERNEL__
 
@@ -667,48 +675,66 @@ RTAI_PROTO(int, rt_thread_join, (int thread))
 #ifndef __SUPPORT_LINUX_SERVER__
 #define __SUPPORT_LINUX_SERVER__
 
-#include <asm/ptrace.h>
 #include <unistd.h>
+#include <sys/mman.h>
 
-static inline RT_TASK *rt_receive_linux_syscall(RT_TASK *task, struct pt_regs *regs)
+static void linux_syscall_server_fun(struct linux_syscalls_list *list)
 {
-	struct { RT_TASK *task; struct pt_regs *regs; } arg = { task, regs };
-	return (RT_TASK *)rtai_lxrt(BIDX, SIZARG, RECEIVE_LINUX_SYSCALL, &arg).v[LOW];
-}
+	struct linux_syscalls_list syscalls = *list;
 
-static inline void rt_return_linux_syscall(RT_TASK *task, unsigned long retval)
-{
-	struct { RT_TASK *task; unsigned long retval; } arg = { task, retval };
-	rtai_lxrt(BIDX, SIZARG, RETURN_LINUX_SYSCALL, &arg);
-}
+	syscalls.serv = &syscalls;
+	syscalls.in = syscalls.out = 0;
 
-#include <rtai_msg.h>
-static void linux_syscall_server_fun(RT_TASK *task)
-{
-        struct pt_regs regs;
-	if (rtai_lxrt(BIDX, sizeof(RT_TASK *), LINUX_SERVER_INIT, &task).i[LOW]) {
-//		rtai_lxrt(BIDX, sizeof(RT_TASK *), RESUME, &task);
+	if ((syscalls.serv = rtai_lxrt(BIDX, sizeof(struct linux_syscalls_list), LINUX_SERVER_INIT, &syscalls).v[LOW])) {
+		struct pt_regs *regs;
+		syscalls.moderegs = malloc(syscalls.nr*sizeof(struct mode_regs));
+		memset(syscalls.moderegs, syscalls.nr*sizeof(struct mode_regs), 0);
+                mlockall(MCL_CURRENT | MCL_FUTURE);
+		rtai_lxrt(BIDX, sizeof(RT_TASK *), RESUME, &syscalls.task);
 		for (;;) {
-			if (rt_receive_linux_syscall(task, &regs) == task) {
-				rt_return_linux_syscall(task, syscall(regs.LINUX_SYSCALL_NR, regs.LINUX_SYSCALL_REG1, regs.LINUX_SYSCALL_REG2, regs.LINUX_SYSCALL_REG3, regs.LINUX_SYSCALL_REG4, regs.LINUX_SYSCALL_REG5, regs.LINUX_SYSCALL_REG6));
+			if (abs(rtai_lxrt(BIDX, sizeof(RT_TASK *), SUSPEND, &syscalls.serv).i[LOW]) == RTE_UNBLKD) {
+				break;
+			}
+			regs = &syscalls.moderegs[syscalls.out].regs;
+			syscalls.retval = syscall(regs->LINUX_SYSCALL_NR, regs->LINUX_SYSCALL_REG1, regs->LINUX_SYSCALL_REG2, regs->LINUX_SYSCALL_REG3, regs->LINUX_SYSCALL_REG4, regs->LINUX_SYSCALL_REG5, regs->LINUX_SYSCALL_REG6);
+			if (syscalls.moderegs[syscalls.out].mode == SYNC_LINUX_SYSCALL) {
+				rtai_lxrt(BIDX, sizeof(RT_TASK *), RESUME, &syscalls.task);
+			} else if (syscalls.callback_fun) {
+				syscalls.callback_fun(regs->LINUX_SYSCALL_NR, syscalls.retval);
+			}
+			if (++syscalls.out >= syscalls.nr) {
+				syscalls.out = 0;
 			}
 		}
+		free(syscalls.moderegs);
         }
 }
 
 #endif /* __SUPPORT_LINUX_SERVER__ */
 
-RTAI_PROTO(int, rt_linux_syscall_server_create, (RT_TASK * task))
+RTAI_PROTO(void, rt_set_linux_syscall_mode, (int sync_async, void (*callback_fun)(long, long)))
 {
-//return rtai_lxrt(BIDX, sizeof(RT_TASK *), LINUX_SERVER_INIT, &task).i[LOW];
-	if (task || (task = (RT_TASK *)rtai_lxrt(BIDX, sizeof(RT_TASK *), RT_BUDDY, &task).v[LOW])) {
-		if (rt_thread_create((void *)linux_syscall_server_fun, task, 0) > 0) {
+	struct { long sync_async; void * callback_fun; } arg = { sync_async, callback_fun };
+	rtai_lxrt(BIDX, SIZARG, SET_LINUX_SYSCALL_MODE, &arg);
+}
+
+RTAI_PROTO(int, rt_sync_async_linux_syscall_server_create, (RT_TASK *task, int sync_async, void (*callback_fun)(long, long), int nr_bufd_async_calls))
+{
+	if ((task || (task = (RT_TASK *)rtai_lxrt(BIDX, sizeof(RT_TASK *), RT_BUDDY, &task).v[LOW])) && nr_bufd_async_calls > 0) {
+		struct linux_syscalls_list syscalls;
+		syscalls.task         = task;
+		syscalls.callback_fun = callback_fun;
+		syscalls.sync         = sync_async;
+		syscalls.nr           = nr_bufd_async_calls;
+		if (rt_thread_create((void *)linux_syscall_server_fun, &syscalls, 0) > 0) {
 			rtai_lxrt(BIDX, sizeof(RT_TASK *), SUSPEND, &task);
 			return 0;
 		}
 	}
 	return -1;
 }
+
+#define rt_linux_syscall_server_create(task)  rt_sync_async_linux_syscall_server_create(task, SYNC_LINUX_SYSCALL, NULL, 1);
 
 RTAI_PROTO(RT_TASK *, rt_thread_init, (unsigned long name, int priority, int max_msg_size, int policy, int cpus_allowed))
 {

@@ -1945,73 +1945,29 @@ RTAI_SYSCALL_MODE void usp_request_rtc(int rtc_freq, void *handler)
 
 /* +++++++++++++++++ SUPPORT FOR THE LINUX SYSCALL SERVER +++++++++++++++++++ */
 
-RT_TASK *rt_exec_linux_syscall(RT_TASK *rt_current, RT_TASK *task, struct pt_regs *regs)
+RTAI_SYSCALL_MODE void rt_set_linux_syscall_mode(long sync_async, void (*callback_fun)(long, long))
 {
-	unsigned long flags;
-
-	task->priority = rt_current->priority + BASE_SOFT_PRIORITY;
-	flags = rt_global_save_flags_and_cli();
-	if (task->state & RT_SCHED_RECEIVE) {
-		rt_current->msg = task->msg = (unsigned long)regs;
-		task->msg_queue.task = rt_current;
-		task->ret_queue.task = NULL;
-		task->state = RT_SCHED_READY;
-		enq_ready_task(task);
-		enqueue_blocked(rt_current, &task->ret_queue, 1);
-		rt_current->state |= RT_SCHED_RETURN;
-	} else {
-		rt_current->msg = (unsigned long)regs;
-                enqueue_blocked(rt_current, &task->msg_queue, 1);
-		rt_current->state |= RT_SCHED_RPC;
-	}
-	task->priority = rt_current->priority;
-	rem_ready_current(rt_current);
-	rt_current->msg_queue.task = task;
-	rt_schedule();
-	rt_global_restore_flags(flags);
-	return rt_current->msg_queue.task != rt_current ? NULL : task;
+	rt_put_user(callback_fun, &(RT_CURRENT->linux_syscall_server)->callback_fun);
+	rt_put_user(sync_async, &(RT_CURRENT->linux_syscall_server)->sync);
 }
 
-#include <asm/uaccess.h>
-RTAI_SYSCALL_MODE RT_TASK *rt_receive_linux_syscall(RT_TASK *task, struct pt_regs *regs)
+void rt_exec_linux_syscall(RT_TASK *rt_current, struct linux_syscalls_list *syscalls, struct pt_regs *regs)
 {
-	unsigned long flags;
-	RT_TASK *rt_current;
+	struct { long in, nr, sync; RT_TASK *serv; struct mode_regs *moderegs; } from;
 
-	flags = rt_global_save_flags_and_cli();
-	rt_current = rt_smp_current[rtai_cpuid()];
-	if ((task->state & RT_SCHED_RPC) && task->msg_queue.task == rt_current) {
-		dequeue_blocked(task);
-		*regs = *((struct pt_regs *)task->msg);
-		rt_current->msg_queue.task = task;
-		enqueue_blocked(task, &rt_current->ret_queue, 1);
-		task->state = (task->state & ~RT_SCHED_RPC) | RT_SCHED_RETURN;
-	} else {
-		rt_current->ret_queue.task = RTP_OBJREM;
-		rt_current->state |= RT_SCHED_RECEIVE;
-		rem_ready_current(rt_current);
-		rt_current->msg_queue.task = task != rt_current ? task : NULL;
-		rt_schedule();
-		*regs = *((struct pt_regs *)rt_current->msg);
+	rt_copy_from_user(&from, syscalls, sizeof(from));
+	from.serv->priority = rt_current->priority + BASE_SOFT_PRIORITY;
+	rt_put_user(from.sync, &from.moderegs[from.in].mode);
+	rt_copy_to_user(&from.moderegs[from.in].regs, regs, sizeof(struct pt_regs));
+	if (++from.in >= from.nr) {
+		from.in = 0;
 	}
-	rt_current->msg_queue.task = rt_current;
-	rt_global_restore_flags(flags);
-	return rt_current->ret_queue.task ? NULL : task;
-}
-
-RTAI_SYSCALL_MODE void rt_return_linux_syscall(RT_TASK *task, unsigned long retval)
-{
-	unsigned long flags;
-
-	((struct pt_regs *)task->msg)->LINUX_SYSCALL_RETREG = retval;
-	flags = rt_global_save_flags_and_cli();
-	dequeue_blocked(task);
-	task->msg = 0;
-	task->msg_queue.task = task;
-	if ((task->state &= ~RT_SCHED_RETURN) == RT_SCHED_READY) {
-		enq_ready_task(task);
+	rt_put_user(from.in, &syscalls->in);
+	rt_task_resume(from.serv);
+	if (from.sync == SYNC_LINUX_SYSCALL) {
+		rt_task_suspend(rt_current);
+		rt_get_user(regs->LINUX_SYSCALL_RETREG, &syscalls->retval);
 	}
-	rt_global_restore_flags(flags);
 }
 
 /* ++++++++++++++++++++ END OF COMMON FUNCTIONALITIES +++++++++++++++++++++++ */

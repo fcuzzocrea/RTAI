@@ -187,7 +187,8 @@ static inline void kthread_fun_long_jump(struct task_struct *lnxtsk)
 #define rt_strncpy_from_user(a, b, c)  \
 	( { int ret = strncpy_from_user(a, b, c); ret; } )
 #endif
-#define rt_put_user        __put_user
+#define rt_put_user  __put_user
+#define rt_get_user  __get_user
 
 #else /* !__KERNEL__ */
 

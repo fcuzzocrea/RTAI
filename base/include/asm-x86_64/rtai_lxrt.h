@@ -162,7 +162,8 @@ static inline void kthread_fun_long_jump(struct task_struct *lnxtsk)
 #define rt_copy_to_user(a, b, c)  \
         ( { int ret = __copy_to_user_inatomic(a, b, c); ret; } )
 
-#define rt_put_user        __put_user
+#define rt_put_user  __put_user
+#define rt_get_user  __get_user
 
 #if LINUX_VERSION_CODE < KERNEL_VERSION(2,6,19)
 

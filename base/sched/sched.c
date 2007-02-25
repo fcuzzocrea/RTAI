@@ -2454,7 +2454,7 @@ static int lxrt_intercept_syscall_prologue(struct pt_regs *regs)
 	if (regs->LINUX_SYSCALL_NR < NR_syscalls && (task = current->rtai_tskext(TSKEXT0))) {
 		if (task->is_hard > 0) {
 			if (task->linux_syscall_server) {
-				task->linux_syscall_server = rt_exec_linux_syscall(task, (void *)task->linux_syscall_server, regs);
+				rt_exec_linux_syscall(task, task->linux_syscall_server, regs);
 				return 1;
 			}
 			if (!systrans++) {
@@ -2648,8 +2648,7 @@ static struct rt_native_fun_entry rt_sched_entries[] = {
 	{ { 1, rt_task_suspend_until },		    SUSPEND_UNTIL },
 	{ { 1, rt_task_suspend_timed },		    SUSPEND_TIMED },
 	{ { 1, rt_task_resume },		    RESUME },
-	{ { 1, rt_receive_linux_syscall },          RECEIVE_LINUX_SYSCALL },
-	{ { 1, rt_return_linux_syscall  },          RETURN_LINUX_SYSCALL  },
+	{ { 1, rt_set_linux_syscall_mode },	    SET_LINUX_SYSCALL_MODE },
 	{ { 1, rt_irq_wait },			    IRQ_WAIT },
 	{ { 1, rt_irq_wait_if },		    IRQ_WAIT_IF },
 	{ { 1, rt_irq_wait_until },		    IRQ_WAIT_UNTIL },

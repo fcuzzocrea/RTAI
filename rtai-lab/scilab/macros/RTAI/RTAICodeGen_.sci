@@ -53,7 +53,11 @@ function [ok,Makename]=buildnewblock()
 
     Makename=gen_make(rdnom,files,archname)     
     //unlink if necessary
-    
+
+    if getenv('WIN32','NO')=='OK' then
+      rename(rpat,'Makefile.mak','.obj');  
+    end
+
     [a,b]=c_link(rdnom); while a ; ulink(b);[a,b]=c_link(rdnom);end
     ierr=execstr('libn=ilib_compile(''lib''+rdnom,Makename)','errcatch')
     if ierr<>0 then 

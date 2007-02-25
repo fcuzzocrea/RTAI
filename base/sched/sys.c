@@ -261,7 +261,7 @@ static int __task_delete(RT_TASK *rt_task)
 {
 	struct task_struct *process;
 	if (rt_task->linux_syscall_server) {
-		rt_task_masked_unblock(rt_task->linux_syscall_server, ~RT_SCHED_READY);
+		rt_task_masked_unblock(rt_task->linux_syscall_server->task, ~RT_SCHED_READY);
 	}
 	if (current == rt_task->lnxtsk && rt_task->is_hard > 0) {
 		give_back_to_linux(rt_task, 0);
@@ -554,12 +554,10 @@ static inline long long handle_lxrt_request (unsigned int lxsrq, long *arg, RT_T
 		}
 
 		case LINUX_SERVER_INIT: {
-extern RT_TASK *lxrt_init_linux_server(RT_TASK *master_task);
-//return (long)lxrt_init_linux_server(arg0.rt_task);
-			rtai_set_linux_task_priority(current, arg0.rt_task->lnxtsk->policy, arg0.rt_task->lnxtsk->rt_priority);
-			arg0.rt_task->linux_syscall_server = __task_init((unsigned long)arg0.rt_task, arg0.rt_task->base_priority >= BASE_SOFT_PRIORITY ? arg0.rt_task->base_priority - BASE_SOFT_PRIORITY : arg0.rt_task->base_priority, 0, 0, 1 << arg0.rt_task->runnable_on_cpus);
-			rt_task_resume(arg0.rt_task);
-			return (long)arg0.rt_task->linux_syscall_server;
+			struct arg { struct linux_syscalls_list syscalls; };
+			larg->syscalls.task->linux_syscall_server = larg->syscalls.serv;
+			rtai_set_linux_task_priority(current, (larg->syscalls.task)->lnxtsk->policy, (larg->syscalls.task)->lnxtsk->rt_priority);
+			return (long)__task_init((unsigned long)larg->syscalls.task, larg->syscalls.task->base_priority >= BASE_SOFT_PRIORITY ? larg->syscalls.task->base_priority - BASE_SOFT_PRIORITY : larg->syscalls.task->base_priority, 0, 0, 1 << larg->syscalls.task->runnable_on_cpus);
 		}
 
 	        default: {

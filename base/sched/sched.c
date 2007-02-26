@@ -1898,7 +1898,7 @@ static int rsvr_cnt[NR_RT_CPUS];
 #if USE_RTAI_TASKS
 #define RESERVOIR 0
 #else
-#define RESERVOIR 10
+#define RESERVOIR 11
 #endif
 static int Reservoir = RESERVOIR;
 RTAI_MODULE_PARM(Reservoir, int);

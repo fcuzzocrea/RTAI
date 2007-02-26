@@ -321,7 +321,7 @@ index 7d401b0..25812a5 100644
 +	
 +ENTRY(common_interrupt)
 +	XCPT_FRAME
-+	interrupt *ipipe_irq_handle
++	interrupt *ipipe_irq_handler
 +	testl %eax, %eax
 +	jnz ret_from_intr
 +	decl %gs:pda_irqcount

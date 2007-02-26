@@ -1898,7 +1898,7 @@ static int rsvr_cnt[NR_RT_CPUS];
 #if USE_RTAI_TASKS
 #define RESERVOIR 0
 #else
-#define RESERVOIR 6
+#define RESERVOIR 10
 #endif
 static int Reservoir = RESERVOIR;
 RTAI_MODULE_PARM(Reservoir, int);
@@ -2903,7 +2903,7 @@ static int __rtai_lxrt_init(void)
 #ifdef CONFIG_SMP
 	printk(KERN_INFO "RTAI[sched]: loaded (IMMEDIATE, MP, USER/KERNEL SPACE: <%s RTAI OWN KTASKs>", USE_RTAI_TASKS ? "with" : "without");
 #else
-	printk(KERN_INFO "RTAI[sched]: loaded (IMMEDIATE, UP, USER/KERNEL SPACE%s: ", USE_RTAI_TASKS ? "<with RTAI TASKs>" : "");
+	printk(KERN_INFO "RTAI[sched]: loaded (IMMEDIATE, UP, USER/KERNEL SPACE: <%s RTAI OWN KTASKs>", USE_RTAI_TASKS ? "with" : "without");
 #endif
 #ifdef CONFIG_RTAI_LXRT_USE_LINUX_SYSCALL
 	printk(", <uses LINUX SYSCALLs>");

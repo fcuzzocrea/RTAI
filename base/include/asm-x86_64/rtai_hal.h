@@ -247,8 +247,8 @@ static inline struct hal_domain_struct *get_domain_pointer(int n)
 #define hal_pend_domain_uncond(irq, domain, cpuid) \
 do { \
 	hal_irq_hits_pp(irq, domain, cpuid); \
-	__set_bit(irq & IPIPE_IRQ_IMASK, &domain->cpudata[cpuid].irq_pending_lo[irq >> IPIPE_IRQ_ISHIFT]); \
-	__set_bit(irq >> IPIPE_IRQ_ISHIFT, &domain->cpudata[cpuid].irq_pending_hi); \
+	__set_bit((irq) & IPIPE_IRQ_IMASK, &domain->cpudata[cpuid].irq_pending_lo[(irq) >> IPIPE_IRQ_ISHIFT]); \
+	__set_bit((irq) >> IPIPE_IRQ_ISHIFT, &domain->cpudata[cpuid].irq_pending_hi); \
 	test_and_set_bit(cpuid, &hal_pended); /* cautious, cautious */ \
 } while (0)
 

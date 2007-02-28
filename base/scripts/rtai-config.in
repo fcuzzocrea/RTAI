@@ -83,6 +83,9 @@ while test $# -gt 0; do
         --prefix)
             echo $RTAI_PREFIX
             ;;
+        --datarootdir)
+            echo $RTAI_PREFIX
+            ;;
         --config)
             echo $RTAI_CONFIG
             ;;

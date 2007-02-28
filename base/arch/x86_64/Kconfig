@@ -192,11 +192,11 @@ menu "Machine (x86_64)"
 
 config RTAI_DONT_DISPATCH_CORE_IRQS
 	bool "Direct vectoring of RTAI native interrupts"
-	depends on RTAI_EXTENDED
+#	depends on RTAI_EXTENDED
 	default y
 	help
-	RTAI dispatches real time interrupts immediately to achieve as a
-	low overhead as possible. Very important on low end CPUs. By
+	RTAI dispatches real time interrupts immediately to achieve as
+	low a overhead as possible. Very important on low end CPUs. By
 	setting this option it is possible to achieve a further improvement
 	by allowing hard RTAI internal timers and SMP interprocessor 
 	scheduling interrupts to be vectored directly to their handlers, 
@@ -226,6 +226,28 @@ config RTAI_CPUS
 
 	PAY ATTENTION: the default value is 2.
 
+#config RTAI_DIAG_TSC_SYNC
+#	bool "Diagnose out of sync MP-TSCs"
+#	default n
+#	help
+#	Check alignement of MP-TSCs, against a master CPU, and show them in
+#	the RTAI HAL proc file system (in TSC count units).
+#
+#config RTAI_MASTER_TSC_CPU
+#	depends on RTAI_DIAG_TSC_SYNC
+#	string "Define the master CPU for aligning MP-TSCs"
+#	default 0
+#	help
+#	Master CPU for diagnosis and correction of TSCs alignement.
+#
+#config RTAI_TUNE_TSC_SYNC
+#	depends on RTAI_DIAG_TSC_SYNC
+#	bool "Tune out of sync MP-TSCs"
+#	default n
+#	help
+#	Use offsets made available by enabling the out of sync diagnosis to
+#	keep readings of TSCs times as aligned as possible.
+#
 endmenu
 
 menu "Base system"
@@ -234,9 +256,9 @@ config RTAI_SCHED_LXRT_
 	bool "Kernel/User space scheduler without RTAI own kernel tasks (KEEP)"
 	default y
 	help
-	This scheduler supports hard real time for all Linux schedulable
-	objects, i.e. processes/threads/kthreads. All of RTAI APIs are 
-	available simmetrically inter/intra kernel and user space.
+	This scheduler (rtai_lxrt) supports hard real time for all Linux
+	schedulable objects, i.e. processes/threads/kthreads. All of RTAI 
+	APIs are available simmetrically inter/intra kernel and user space.
 
 	This configuration parameter is ignored by the build process and
 	this scheduler will be made anyhow, along with the related liblxrt.
@@ -245,9 +267,10 @@ config RTAI_KTASKS_SCHED_LXRT_
 	bool "Kernel/User space scheduler with RTAI own kernel tasks (KEEP)"
 	default y
 	help
-	After enabling this option, the scheduler supports not only hard
-	real time for all Linux schedulable objects, i.e.
-	processes/threads/kthreads, but also for RTAI own kernel tasks.
+	This scheduler (rtai_sched) supports not only hard real time for 
+	all Linux schedulable objects, i.e.  processes/threads/kthreads, 
+	but also for RTAI own kernel tasks. As such is the most complete
+	scheduler available within RTAI.
 
 	A secondary effect is that rt_task_init() will generate RTAI
 	own kernel tasks instead of real time hardened Linux kernel threads.
@@ -258,23 +281,29 @@ config RTAI_KTASKS_SCHED_LXRT_
 	Linux kernel threads must specifically use rt_task_init for the 
 	former and rt_thread_init for the latter.
 
+	For backward compatibility old named schedulers, i.e.: up, smp, mup,
+	ksched; are all linked to this one.
+
 	This configuration parameter is ignored by the build process and
 	this scheduler will be made anyhow, along with the related liblxrt.
 
-menu "Scheduler options"
+menu "Scheduling options"
 
-	depends on RTAI_EXTENDED
+#	depends on RTAI_EXTENDED
 
 config RTAI_SCHED_ISR_LOCK
-	bool "Disable rescheduling from ISRs"
+	bool "Disable immediate rescheduling from within ISRs"
 	default n
 	help
 	RTAI schedules as soon as a higher priority task is awaken in an 
 	interrupt handler, i.e. it does not wait to exit the handler itself.
-	This is the best way since a user that does not want it has just to
-	care calling any scheduling API at the very end of her/his handler.
-	Those not wanting to care when/where to call any scheduling API in
-	their handler should enable this options to be happy.
+	This is believed to be the best way, since a user that does not want 
+	it has just to care calling any scheduling API at the very end of 
+	her/his handler.
+	Those wanting to have any awaken higher priority task scheduled only
+	after exiting the ISR, regardless from where a scheduling API is
+	called within the handler, should disable immediate rescheduling 
+	from ISRs by enabling this configuration option.
 
 config RTAI_RTC_FREQ
 	string "Set RTC clock tick frequency and use RTC as the only timer"
@@ -337,16 +366,16 @@ config RTAI_SCHED_APIC_LATENCY
 
 config RTAI_SCHED_LXRT_NUMSLOTS
 	string "Number of registrable RTAI objects"
-	default 100
+	default 150
 	help
 	The maximum number of registrable objects in RTAI.
 
 config RTAI_MONITOR_EXECTIME
-	bool "Display RTAI task execution time (per thousands)"
+	bool "Display RTAI task execution time (per thousand)"
 	default y
 	help
 	If this option is enabled it is possible to see the time consumed by
-	hard real time tasks, in per thousands of the total time available, 
+	hard real time tasks, in per thousand of the total time available, 
 	by using the RTAI scheduler proc file, e.g. "cat /proc/rtai/scheduler".
 	Since this option uses the TSC it is better to avoid it in production
 	for x86 CPUs not having TSCs, i.e. 486s and some untrue 586s.
@@ -359,16 +388,38 @@ config RTAI_ALLOW_RR
 	in RTAI, after enabling such a mode on a task by task basis through a
 	call to a suitable scheduler function.
 
-config RTAI_ONE_SHOT
-	bool "One-shot timer mode"
+config RTAI_FULL_PRINHER
+	bool "Enable full priority inheritance"
 	default n
 	help
-	Set to enable one-shot timer mode as the default. If not set, the 
-	hard timer will run in periodic mode according to the period used 
-	in start_rt_timer().
-	Notice that whatever the default setting chosen it is possible to
-	override it by specifically calling either rt_set_oneshot_mode() or 
-	rt_set_periodic_mode() at run time.
+	In RTAI resource semaphores, aka mutexes, support two ways to
+	manage priority inheritance, both for resource semaphores and 
+	intertask messages, blocked sent or rpced, to a task owning any
+	resource semaphore already. Notice in fact that the task itself
+	becomes a kind of "de facto" resource when any task blocks on it
+	to exchange messages. 
+	Without enabling this option a task owning any resource will
+	recover its base priority only when it releases the very last
+	resource it owns. So full priority inheritance will work as
+	it is usually expected for a singly owned resource only because,
+	whenever a task achieves the ownership of more than one resource,
+	priority inheritance will become an adaptive dynamic priority
+	ceiling. In such a case in fact the task priority is increased
+	according to the highest priority task waiting on any resource
+	a task owns, itself included because of messages being exchanged
+	with it, but it will be returned to its base priority only when all
+	owned resources are released. This is a compromise design choice
+	aimed at avoiding searches for the new priority to be inheredited
+	across multiply owned resources and blocked tasks send/rpcing to
+	the task.
+	By enabling this configuration option instead you'll allow full
+	priority inheritance, so that when a task releases any resource
+	semaphore it owns it will acquire the priority of the most prioritary
+	task, either waiting on any resource semaphore that it is still
+	owned by the task or blocked send/rpcing to it.
+	The choice is dependent on your needs mostly. Just take into account
+	that the default dynamic priority ceiling is simpler, a bit more 
+	effective and less deadlock prone than full priority inheritance.
 
 config RTAI_BUSY_TIME_ALIGN
 	bool "Busy wait to ensure resume time alignment"
@@ -384,13 +435,66 @@ config RTAI_BUSY_TIME_ALIGN
 	waist in favour of precise schedule deadlines.
 	Do not set it if a hard periodic timer is to be used.
 
+config RTAI_LXRT_USE_LINUX_SYSCALL
+	bool "Use Linux syscall mechanism for RTAI calls from user space"
+	default n
+	help
+	With this option enabled, RTAI uses the Linux syscall mechanism
+	for its service calls, including RTAI own srqs, as provided by libc 
+	"syscall".  This may improve signal handling (and therefore debugging 
+	of RTAI applications), but has the drawback of a slight overhead. 
+
+	When direct inlining of RTAI syscalls is enabled, see the related
+	configuration options, it is still possible to force the use of 
+	the Linux syscall mechanism, even if this configuration parameter 
+	has not been set. Notice that RTAI own srqs are inlined always.
+	So, since it all depends on the definition of the USE_LINUX_SYSCALL 
+	macro, the only thing to do is to add:
+	#define USE_LINUX_SYSCALL
+	after all of the RTAI headers inclusion in any source file in which 
+	you want to use the Linux syscall mechanism, to be sure that the macro
+	USE_LINUX_SYSCALL will not be redifined afterward. In the same way 
+	when this parameter is set you can selectively revert to RTAI own 
+	syscall mechanism by defining:
+	#undef USE_LINUX_SYSCALL
+	after all of the RTAI headers inclusion in any source file in which 
+	you want to use the LXRT syscall mechanism.
+	RTAI will then operate in mixed mode selectively by using both 
+	its own and Linux syscall mechanisms.
+	
+	If in doubt, say no.
+
+config RTAI_ALIGN_LINUX_PRIORITY
+	bool "Keep Linux task priority aligned to RTAI"
+	default n
+	help
+
+	By enabling this option the RTAI scheduler will keep Linux tasks
+	execution priority aligned to its. Naturally this makes sense
+	either for Linux soft real time tasks enabled to use RTAI APIs, 
+	i.e. they issued rt_task_init/rt_task_init_schmod, or when RTAI 
+	hard real time tasks are given back to Linux. 
+
+config RTAI_ONE_SHOT
+	bool "One-shot timer mode"
+	default n
+	help
+	Set to enable one-shot timer mode as the default. If not set, the 
+	hard timer will run in periodic mode according to the period used 
+	in start_rt_timer().
+	Notice that whatever the default setting chosen it is possible to
+	override it by specifically calling either rt_set_oneshot_mode() or 
+	rt_set_periodic_mode() at run time.
+
 config RTAI_CAL_FREQS_FACT
 	string "Cure loosely calibrated frequencies - see help"
 	default 0
 	help
-	In oneshot mode using the APIC timer, i.e. always for SMP, a precise 
-	scheduling time depends also on the ratio cpu_freq/apic_freq. The best
-	results can be achieved by using the RTAI calibration tool. 
+	This configuration parameter is meaningful for the oneshot mode only
+	where it has two effects:
+	1 - in oneshot mode using the APIC timer, i.e. always for SMP, a 
+	precise scheduling time depends also on the ratio cpu_freq/apic_freq. 
+	The best results can be achieved by using the RTAI calibration tool. 
 	If no calibration is run one will rely on what Linux makes available 
 	by default, which could be not precise enough, especially for not so 
 	short timed intervals.
@@ -400,19 +504,23 @@ config RTAI_CAL_FREQS_FACT
 	even when relatively large idle periods are enconuntered, thus
 	limiting the overall latency with which long sleeping tasks might
 	be awaken in case of unprecise calibrations of the above cited
-	frequencies. The granted firing interval will be roughly equal to:
+	frequencies;
+	2 - in the case of very long timed list it will limit the search 
+	for the next firing time of widely scattered tasks with lowest 
+	priorities, thus avoiding useless scheduling delays. The granted 
+	firing interval will be roughly equal to:
 	1.0/(RTAI_CAL_FREQS_FACT + 2.0) (seconds).
 
 endmenu
 
-menu "IPC support"
+menu "Supported services"
 
 config RTAI_BITS
 	tristate "Event flags"
 	default m
 	help
 	Event flags are used to synchronize a task to the occurrence of 
-	multiple events. RTAI ues the term "bits" to stress the fact that
+	multiple events. RTAI uses the term "bits" to stress the fact that
 	events are just logical objects, i.e. a kind of digital I/O, 
 	nothing else being associated to them, e.g a count. 
 	So any synchronization based on them may be disjunctive, when any 
@@ -454,14 +562,16 @@ config RTAI_NETRPC
 	The NetRPC module will be called rtai_netrpc.o.
 
 config RTAI_NETRPC_RTNET
-	bool "Emulate RTNet"
+	bool "Use RTNet"
 	depends on RTAI_NETRPC
-	default y
+	default n
 	help
-	This enable RTNet like usage, using Linux soft networking support,
-	even when no RTNet is available. It can be used also when RTNet is
-	available. In such a case soft real time RTAI tasks will avoid 
-	loading the hard real time networking layer.
+	This enable support of RTNet in NETRPC. By setting this parameters hard 
+	real time will use RTNet automatically, while soft real time task will 
+	use Linux networking. With this parameter set the making of RTAI will 
+	work even if RTNet is not installed but you'll need RTNet to run it.
+	Notice that the initial linking and set up of remote port stubs is 
+	done in soft mode always.
 
 config RTAI_SHM
 	tristate "Shared memory"
@@ -544,6 +654,46 @@ config RTAI_TBX
 	Typed mailboxes depend on semaphores.
 	The module will be called rtai_tbx.o.
 
+config RTAI_TASKLETS
+	tristate "Tasklets and async signals"
+	default m
+	help
+
+	The tasklets module adds an interesting new feature along the
+	line, pioneered by RTAI, of a symmetric usage of all its
+	services inter-intra kernel and user space for both soft and
+	hard real-time. The new services provided can be useful when
+	you have many tasks, both in kernel and user space, needing to
+	execute specific functions. Such functions are called tasklets 
+	and can be of two kinds:
+        - a simple tasklet;
+        - timed tasklets (timers).
+	The tasklets implementation of timed tasklets relies on a
+	server support task that executes the related timer functions,
+	either in oneshot or periodic mode, on the base of their time
+	deadline and according to their user assigned priority.
+	As explained above, plain tasklets are just functions executed
+	depending on user defined events. Their execution needs no server 
+	and is simply triggered by calling the user specified tasklet
+	function at due time, either from a kernel task or interrupt
+	handler in charge of their execution when they are needed.
+	The module will be called rtai_tasklets.o.
+
+	Signals are much the same as tasklets and execute their handler
+	function whenever they are triggered by any task, including their
+	parent task. The notable difference against tasklets is that the
+	task they serve is blocked till any of its signal handler is 
+	executing. So they behave as standard signal handlers but without
+	the need to restart a blocked signalled task, since there is no
+	need to have it resumed to catch a signal. In fact signals can be 
+	seen as much as software generated interrupts. See their APIs
+	documentation in the code.
+	The module will be called rtai_signal.o.
+
+	Notice that, if the module version is chosen, this option activates
+	the making of two different modules. At the moment the related
+	services from user space are seen as LXRT expansions using slots
+	1 and 2 respectively.
 
 config RTAI_MQ
 	tristate "POSIX-like message queues"
@@ -556,9 +706,68 @@ config RTAI_MQ
 	semaphores.
 	The module will be called rtai_mq.o.
 
+config RTAI_CLOCK_REALTIME
+	bool "Support for Posix CLOCK_REALTIME APIs"
+	default y
+	help
+	The purpose here is mainly to activate the CLOCK_REALTIME timing 
+	support in a few RTAI native services used behind POSIX APIs.
+	CLOCK_REALTIME is the default POSIX timing option so it should be
+	enabled for a full POSIX support but, if you are either not using 
+	POSIX or can work with it using just the CLOCK_MONOTONIC timing, 
+	it would be better to avoid enabling this option. It will save you 
+	a test on a long long. Not too much of an overhead indeed, but why 
+	paying for it if not needed?
+	It is defaulted to "yes" just to stay on the safe side.
+
 endmenu
 
 menu "Other features"
+
+config RTAI_USE_NEWERR
+	bool "New return values of blocking RTAI APIs"
+	default n
+	help
+	Return values for RTAI blocking APIs are a bit sketchy. That 
+	is due to a long standing legacy dating back to DOS and 8 bits PCs,
+	when saving a few "if"s might have been important. Whatever one's 
+	opinion such a legacy has now been likely inheredited by many well
+	working existing RTAI applications, that might break with a new 
+	error return scheme. In any case a better set of error return values 
+	might be useful nowadays, so it has been added. With it one will be
+	able to correctly infer more detailed reasons for error returns i.e.:
+	- invalid requests (RTE_OBJINV),
+	- async unblocking (RTE_UNBLKD),
+	- timeouts (RTE_TIMOUT),
+	- timer overruns (RTE_TMROVRN),
+	- deletion of blocking objects (RTE_OBJREM).
+	Thus the new scheme has been made configurable to allow RTAI users
+	to choose what to do, without forcing any adaption for already 
+	existing working applications.
+
+config RTAI_IMMEDIATE_LINUX_SYSCALL
+	bool "Immediate Linux syscall in hard real time"
+	default y
+	help
+	This parameter allows to control RTAI behaviour when a Linux syscall
+	is made while in hard real time, according to the following two ways:
+	- 1) 	- if it is set RTAI will put the task back into Linux hands,
+		  i.e pass it to soft mode; 
+		- call the related sys service immediately, i.e. without 
+		  going through the Linux syscall path;
+		- put the task back to hard real time, so that it will return
+		  to user space in hard real time mode again.
+	- 2) 	- if it is not set RTAI will put the task back into Linux hands,
+		  i.e pass it to soft mode; 
+		- call the related sys service through the Linux syscall path;
+		- return to user space in soft real time mode;
+		- resume hard real time at the next call of an RTAI function.
+	The most efficient behaviour is 1 but 2 can be useful in relation to
+	specific RTAI users extensions.
+	It is remarked that nothing is changed if hard/soft transitions 
+	are called controlled by an application task through 
+	rtai_make_hard_real_time/rtai_make_soft_real_time.
+	The default is 1.
 
 config RTAI_MATH
 	bool "Math support"
@@ -603,31 +812,6 @@ config RTAI_MALLOC_HEAPSZ
 	RTAI pre-allocates a global heap as part of its initialization
 	chores. This parameter allows to define its size (in
 	kilobytes).
-
-config RTAI_TASKLETS
-	tristate "Tasklets"
-	default m
-	help
-
-	The tasklets module adds an interesting new feature along the
-	line, pioneered by RTAI, of a symmetric usage of all its
-	services inter-intra kernel and user space for both soft and
-	hard real-time. The new services provided can be useful when
-	you have many tasks, both in kernel and user space, that must
-	needs to execute some specific functions. Such tasks are called 
-	tasklets and can be of two kinds:
-        - a simple tasklet;
-        - timed tasklets (timers).
-	The tasklets implementation of timed tasklets relies on a
-	server support task that executes the related timer functions,
-	either in oneshot or periodic mode, on the base of their time
-	deadline and according to their user assigned priority.
-	As explained above, plain tasklets are just functions executed
-	depending on user defined events. Their execution needs no server 
-	and is simply triggered by calling the user specified tasklet
-	function at due time, either from a kernel task or interrupt
-	handler in charge of their execution when they are needed.
-	The module will be called rtai_tasklets.o.
 
 config RTAI_TRACE
 	bool "LTT support"
@@ -696,32 +880,6 @@ config RTAI_LEDS
 	help
 	The module will be called rtai_leds.o.
 
-config RTAI_LXRT_USE_LINUX_SYSCALL
-	bool "Wrap LXRT service calls through Linux syscall mechanism"
-	default n
-	help
-	With this option enabled, LXRT uses the Linux syscall mechanism
-	for service calls, as provided by libc "syscall".  This may improve 
-	signal handling (and therefore debugging of LXRT applications), but 
-	has the drawback of a slight overhead. 
-
-	When direct inlining of RTAI syscalls is enabled, see the related
-	configuration options, it is still possible to force the use of 
-	the Linux syscall mechanism, even if this configuration parameter 
-	has not been set. The only thing to do is to add:
-	#define USE_LINUX_SYSCALL
-	before any RTAI header inclusion, in any source file in which you
-	want to use the Linux syscall mechanism. In the same way when this
-	parameter is set you can selectively revert to LXRT own syscall
-	mechanism by defining:
-	#undef USE_LINUX_SYSCALL
-	before any RTAI header inclusion, in any source file in which you
-	want to use the LXRT syscall mechanism.
-	RTAI will then operate in mixed mode selectively by using both 
-	its own and Linux syscall mechanisms.
-	
-	If in doubt, say no.
-
 endmenu
 
 endmenu
@@ -762,6 +920,37 @@ config RTAI_RTDM
 	help
 	Real Time Drive Model specific implementation for RTAI.
 
+config RTAI_RTDM_FD_MAX
+	depends on RTAI_RTDM
+	string "Number of RTDM file descriptors"
+	default 128
+	help
+	The maximum number of file descriptors in RTDM.
+
+config RTAI_RTDM_EDGE_SHIRQ
+	depends on RTAI_RTDM
+        bool "Shared edge triggered interrupts"
+        default n
+        help
+        Make it possible for RTDM own interrupt handlers to manage shared
+	edge triggered interrupts.
+
+config RTAI_RTDM_LEVEL_SHIRQ
+	depends on RTAI_RTDM
+        bool "Shared level triggered interrupts"
+        default n
+        help
+        Make it possible for RTDM own interrupt handlers to manage shared
+	level triggered interrupts.
+
+config RTAI_DEBUG_RTDM
+	depends on RTAI_RTDM
+        bool "Enable some elementary RTDM debugging messages"
+        default n
+        help
+        Enable some elementary debugging of wrong requests to RTDM, in the 
+	form of messages asserting what's improper and where it's happening.
+
 menu "Drivers"
 
 config RTAI_DRIVERS_SERIAL
@@ -772,7 +961,7 @@ config RTAI_DRIVERS_SERIAL
 	The module will be called rtai_serial.o.
 
 config RTAI_DRIVERS_16550A
-	bool "RTDM base 16550A driver support"
+	bool "RTDM based 16550A driver support"
 	depends on RTAI_RTDM
 	default n
 	help

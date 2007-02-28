@@ -30,6 +30,9 @@
 /* Kconfig */
 #undef CONFIG_RTAI_CAL_FREQS_FACT
 
+/* Kconfig */
+#undef CONFIG_RTAI_CLOCK_REALTIME
+
 /* Compiler */
 #undef CONFIG_RTAI_COMPILER
 

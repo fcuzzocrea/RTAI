@@ -43,7 +43,7 @@
 #define RTAI_APIC_HIGH_IPI     (RTAI_APIC_HIGH_VECTOR - FIRST_EXTERNAL_VECTOR)
 #define RTAI_APIC_LOW_IPI      (RTAI_APIC_LOW_VECTOR - FIRST_EXTERNAL_VECTOR)
 
-#define RTAI_SYS_VECTOR        0xf6
+#define RTAI_SYS_VECTOR        0xF6
 
 #define __rtai_stringize0(_s_) #_s_
 #define __rtai_stringize(_s_)  __rtai_stringize0(_s_)

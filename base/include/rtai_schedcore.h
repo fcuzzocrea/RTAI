@@ -334,7 +334,7 @@ static inline void enq_ready_edf_task(RT_TASK *ready_task)
 
 struct epoch_struct { spinlock_t lock; volatile int touse; volatile RTIME time[2][2]; };
 
-#if 1 //def CONFIG_RTAI_CLOCK_REALTIME
+#ifdef CONFIG_RTAI_CLOCK_REALTIME
 #define REALTIME2COUNT(rtime) \
 	if (rtime > boot_epoch.time[boot_epoch.touse][0]) { \
 		rtime -= boot_epoch.time[boot_epoch.touse][0]; \

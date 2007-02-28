@@ -45,6 +45,10 @@
 
 #define RTAI_SYS_VECTOR        0xF6
 
+#if RTAI_APIC_HIGH_VECTOR == RTAI_SYS_VECTOR || RTAI_APIC_LOW_VECTOR == RTAI_SYS_VECTOR
+#error *** RTAI_SYS_VECTOR CONFLICTS WITH APIC VECTORS USED BY RTAI ***
+#endif
+
 #define __rtai_stringize0(_s_) #_s_
 #define __rtai_stringize(_s_)  __rtai_stringize0(_s_)
 #define __rtai_trap_call(_t_)  _t_

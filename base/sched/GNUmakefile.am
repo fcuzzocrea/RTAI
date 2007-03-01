@@ -109,10 +109,7 @@ install-exec-local: $(schedulers)
 		$(LN_S) $(main_scheduler)$(modext) $(DESTDIR)$(moduledir)/rtai_$$s$(modext) ; \
 	done
 
-if CONFIG_RTAI_SCHED_LXRT
-OPTDIRS = liblxrt
-endif # CONFIG_RTAI_SCHED_LXRT
-
-SUBDIRS = $(OPTDIRS)
+# liblxrt is always built
+SUBDIRS = liblxrt
 
 EXTRA_DIST = Makefile.kbuild sched.piped sched.immed

@@ -36,7 +36,9 @@ PRE_UNINSTALL = :
 POST_UNINSTALL = :
 build_triplet = @build@
 host_triplet = @host@
-@CONFIG_KBUILD_FALSE@am__append_1 = libsched_sched.a libsched_lxrt.a
+@CONFIG_KBUILD_FALSE@@CONFIG_X86_64_FALSE@am__append_1 = libsched_sched.a
+@CONFIG_X86_64_FALSE@am__append_2 = rtai_sched$(modext)
+@CONFIG_KBUILD_FALSE@am__append_3 = libsched_lxrt.a
 subdir = base/sched
 DIST_COMMON = $(srcdir)/GNUmakefile.am $(srcdir)/GNUmakefile.in \
 	$(srcdir)/Makefile.kbuild
@@ -57,8 +59,11 @@ am_libsched_lxrt_a_OBJECTS = libsched_lxrt_a-sched.$(OBJEXT) \
 	libsched_lxrt_a-sys.$(OBJEXT) libsched_lxrt_a-api.$(OBJEXT)
 libsched_lxrt_a_OBJECTS = $(am_libsched_lxrt_a_OBJECTS)
 libsched_sched_a_LIBADD =
-am_libsched_sched_a_OBJECTS = libsched_sched_a-sched.$(OBJEXT) \
-	libsched_sched_a-sys.$(OBJEXT) libsched_sched_a-api.$(OBJEXT)
+am__libsched_sched_a_SOURCES_DIST = sched.c sys.c api.c
+@CONFIG_X86_64_FALSE@am_libsched_sched_a_OBJECTS =  \
+@CONFIG_X86_64_FALSE@	libsched_sched_a-sched.$(OBJEXT) \
+@CONFIG_X86_64_FALSE@	libsched_sched_a-sys.$(OBJEXT) \
+@CONFIG_X86_64_FALSE@	libsched_sched_a-api.$(OBJEXT)
 libsched_sched_a_OBJECTS = $(am_libsched_sched_a_OBJECTS)
 DEFAULT_INCLUDES = -I. -I$(srcdir) -I$(top_builddir)
 depcomp = $(SHELL) $(top_srcdir)/base/config/autoconf/depcomp
@@ -72,7 +77,8 @@ CCLD = $(CC)
 LINK = $(LIBTOOL) --tag=CC --mode=link $(CCLD) $(AM_CFLAGS) $(CFLAGS) \
 	$(AM_LDFLAGS) $(LDFLAGS) -o $@
 SOURCES = $(libsched_lxrt_a_SOURCES) $(libsched_sched_a_SOURCES)
-DIST_SOURCES = $(libsched_lxrt_a_SOURCES) $(libsched_sched_a_SOURCES)
+DIST_SOURCES = $(libsched_lxrt_a_SOURCES) \
+	$(am__libsched_sched_a_SOURCES_DIST)
 RECURSIVE_TARGETS = all-recursive check-recursive dvi-recursive \
 	html-recursive info-recursive install-data-recursive \
 	install-exec-recursive install-info-recursive \
@@ -370,22 +376,29 @@ sysconfdir = @sysconfdir@
 target_alias = @target_alias@
 moduledir = @RTAI_MODULE_DIR@
 modext = @RTAI_MODULE_EXT@
-schedulers = rtai_sched$(modext) rtai_lxrt$(modext)
-legacy_schedulers = up mup smp ksched
-noinst_LIBRARIES = $(am__append_1)
+schedulers = $(am__append_2) rtai_lxrt$(modext)
+@CONFIG_X86_64_FALSE@main_scheduler = rtai_sched
+# $(main_scheduler) is the scheduler links are created from;
+# it is rtai_sched for all archs, except x86_64, where rtai_lxrt is used
+# $(legacy_schedulers) are all the schedulers that are generated
+# as links of $(main_scheduler); for x86_64, they are all but rtai_lxrt
+@CONFIG_X86_64_TRUE@main_scheduler = rtai_lxrt
+@CONFIG_X86_64_FALSE@legacy_schedulers = up mup smp ksched
+@CONFIG_X86_64_TRUE@legacy_schedulers = up mup smp ksched sched
+noinst_LIBRARIES = $(am__append_1) $(am__append_3)
 builtins = @RTAI_BUILTIN_MODLIST@
 @CONFIG_KBUILD_TRUE@builtins_srclist = $(wildcard $(foreach mod,$(builtins),$(patsubst %,$(top_srcdir)/base/%/*.[chS],$(mod))))
 @CONFIG_KBUILD_FALSE@builtins_objlist = $(foreach mod,$(builtins),$(patsubst %,../%/rtai_$(notdir $(mod)).o,$(mod)))
 
 # SCHED
-libsched_sched_a_SOURCES = sched.c sys.c api.c
-rtai_sched_extradef = -DUSE_RTAI_TASKS=1
-@CONFIG_KBUILD_FALSE@libsched_sched_a_AR = $(CROSS_COMPILE)ar cru
-@CONFIG_KBUILD_FALSE@libsched_sched_a_CPPFLAGS = \
-@CONFIG_KBUILD_FALSE@	@RTAI_KMOD_CFLAGS@ \
-@CONFIG_KBUILD_FALSE@	-DUSE_RTAI_TASKS=1 \
-@CONFIG_KBUILD_FALSE@	-I$(top_srcdir)/base/include \
-@CONFIG_KBUILD_FALSE@	-I../include
+@CONFIG_X86_64_FALSE@libsched_sched_a_SOURCES = sched.c sys.c api.c
+@CONFIG_X86_64_FALSE@rtai_sched_extradef = -DUSE_RTAI_TASKS=1
+@CONFIG_KBUILD_FALSE@@CONFIG_X86_64_FALSE@libsched_sched_a_AR = $(CROSS_COMPILE)ar cru
+@CONFIG_KBUILD_FALSE@@CONFIG_X86_64_FALSE@libsched_sched_a_CPPFLAGS = \
+@CONFIG_KBUILD_FALSE@@CONFIG_X86_64_FALSE@	@RTAI_KMOD_CFLAGS@ \
+@CONFIG_KBUILD_FALSE@@CONFIG_X86_64_FALSE@	-DUSE_RTAI_TASKS=1 \
+@CONFIG_KBUILD_FALSE@@CONFIG_X86_64_FALSE@	-I$(top_srcdir)/base/include \
+@CONFIG_KBUILD_FALSE@@CONFIG_X86_64_FALSE@	-I../include
 
 
 # LXRT
@@ -849,14 +862,14 @@ uninstall-info: uninstall-info-recursive
 @CONFIG_KBUILD_TRUE@	@RTAI_KBUILD_CLEAN@
 @CONFIG_KBUILD_TRUE@	@$(RM) -f $(foreach src,$(builtins_srclist),$(notdir $(src)))
 
-@CONFIG_KBUILD_TRUE@rtai_sched.ko: @RTAI_KBUILD_ENV@
-@CONFIG_KBUILD_TRUE@rtai_sched.ko: $(libsched_sched_a_SOURCES) $(builtins_srclist)
-@CONFIG_KBUILD_TRUE@	@RTAI_KBUILD_TOP@ \
-@CONFIG_KBUILD_TRUE@	@RTAI_KBUILD_CMD@ rtai_extradef="$(rtai_sched_extradef)" \
-@CONFIG_KBUILD_TRUE@	@RTAI_KBUILD_BOTTOM@
+@CONFIG_KBUILD_TRUE@@CONFIG_X86_64_FALSE@rtai_sched.ko: @RTAI_KBUILD_ENV@
+@CONFIG_KBUILD_TRUE@@CONFIG_X86_64_FALSE@rtai_sched.ko: $(libsched_sched_a_SOURCES) $(builtins_srclist)
+@CONFIG_KBUILD_TRUE@@CONFIG_X86_64_FALSE@	@RTAI_KBUILD_TOP@ \
+@CONFIG_KBUILD_TRUE@@CONFIG_X86_64_FALSE@	@RTAI_KBUILD_CMD@ rtai_extradef="$(rtai_sched_extradef)" \
+@CONFIG_KBUILD_TRUE@@CONFIG_X86_64_FALSE@	@RTAI_KBUILD_BOTTOM@
 
-@CONFIG_KBUILD_FALSE@rtai_sched.o: libsched_sched.a $(builtins_objlist)
-@CONFIG_KBUILD_FALSE@	$(CROSS_COMPILE)$(LD) --whole-archive $< -r -o $@ $(builtins_objlist)
+@CONFIG_KBUILD_FALSE@@CONFIG_X86_64_FALSE@rtai_sched.o: libsched_sched.a $(builtins_objlist)
+@CONFIG_KBUILD_FALSE@@CONFIG_X86_64_FALSE@	$(CROSS_COMPILE)$(LD) --whole-archive $< -r -o $@ $(builtins_objlist)
 
 @CONFIG_KBUILD_TRUE@rtai_lxrt.ko: @RTAI_KBUILD_ENV@
 @CONFIG_KBUILD_TRUE@rtai_lxrt.ko: $(libsched_lxrt_a_SOURCES) $(builtins_srclist)
@@ -872,7 +885,7 @@ all-local: $(schedulers)
 @CONFIG_RTAI_OLD_FASHIONED_BUILD_TRUE@	$(INSTALL_DATA) $^ $(top_srcdir)/modules
 @CONFIG_RTAI_OLD_FASHIONED_BUILD_TRUE@	for s in $(legacy_schedulers) ; do \
 @CONFIG_RTAI_OLD_FASHIONED_BUILD_TRUE@		rm -f $(top_srcdir)/modules/rtai_$$s$(modext) ; \
-@CONFIG_RTAI_OLD_FASHIONED_BUILD_TRUE@		$(LN_S) rtai_sched$(modext) $(top_srcdir)/modules/rtai_$$s$(modext) ; \
+@CONFIG_RTAI_OLD_FASHIONED_BUILD_TRUE@		$(LN_S) $(main_scheduler)$(modext) $(top_srcdir)/modules/rtai_$$s$(modext) ; \
 @CONFIG_RTAI_OLD_FASHIONED_BUILD_TRUE@	done
 
 install-exec-local: $(schedulers)
@@ -880,7 +893,7 @@ install-exec-local: $(schedulers)
 	$(INSTALL_DATA) $(schedulers) $(DESTDIR)$(moduledir)
 	for s in $(legacy_schedulers) ; do \
 		rm -f $(DESTDIR)$(moduledir)/rtai_$$s$(modext) ; \
-		$(LN_S) rtai_sched$(modext) $(DESTDIR)$(moduledir)/rtai_$$s$(modext) ; \
+		$(LN_S) $(main_scheduler)$(modext) $(DESTDIR)$(moduledir)/rtai_$$s$(modext) ; \
 	done
 # Tell versions [3.59,3.63) of GNU make to not export all variables.
 # Otherwise a system limit (for SysV at least) may be exceeded.

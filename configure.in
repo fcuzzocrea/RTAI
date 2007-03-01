@@ -560,97 +560,13 @@ AC_ARG_ENABLE(sched-lxrt,
 	*) echo "--enable-sched-lxrt forced to \"yes\"" ; CONFIG_RTAI_SCHED_LXRT_=y ;;
 	esac])
 
-dnl CONFIG_RTAI_KTASTS_SCHED_LXRT has to be forced
+dnl CONFIG_RTAI_KTASKS_SCHED_LXRT has to be forced
 AC_ARG_ENABLE(ktasks-sched-lxrt,
 	[ --enable-ktasks-sched-lxrt	Enable LXRT scheduler with kernel tasks support],
 	[case "$enableval" in
 	y | yes | m | mod | module) CONFIG_RTAI_KTASKS_SCHED_LXRT_=y ;;
 	*) echo "--enable-ktasks-sched-lxrt forced to \"yes\"" ; CONFIG_RTAI_KTASKS_SCHED_LXRT_=y ;;
 	esac])
-
-dnl Some sanity checks for scheduler settings. We are only rearranging
-dnl defaults and discarding preposterous settings here, previous user
-dnl selection is kept as long as it is sane.
-
-if test "$CONFIG_X86" = y; then
-  if test "$CONFIG_SMP" = y; then
-    # x86 with SMP kernel
-    test x$CONFIG_RTAI_SCHED_SMP = x && smp_forced="(forced)"
-    CONFIG_RTAI_SCHED_SMP=y
-    test x$CONFIG_RTAI_SCHED_UP = xy && up_forced="(forced)"
-    unset CONFIG_RTAI_SCHED_UP
-  else
-    # x86 with UP kernel
-    if test "$CONFIG_RTAI_SCHED_MUP" = y -o "$CONFIG_RTAI_SCHED_SMP" = y; then
-       test x$CONFIG_RTAI_SCHED_SMP = xy && smp_forced="(forced)"
-       unset CONFIG_RTAI_SCHED_SMP
-       test x$CONFIG_RTAI_SCHED_MUP = xy && mup_forced="(forced)"
-       unset CONFIG_RTAI_SCHED_MUP
-    fi
-    test x$CONFIG_RTAI_SCHED_UP = x && up_forced="(forced)"
-    CONFIG_RTAI_SCHED_UP=y
-    CONFIG_RTAI_CPUS=1
-  fi
-  if test x$CONFIG_X86_EMU486 = x -a x$CONFIG_X86_CMPXCHG = x; then
-     AC_MSG_ERROR([RTAI won't work on legacy i386 platforms (cmpxchg() is missing, need >= CONFIG_M486)])
-  fi
-else
-  if test "$CONFIG_X86_64" = y; then
-    if test "$CONFIG_SMP" = y; then
-      # x86_64 with SMP kernel
-      test x$CONFIG_RTAI_SCHED_SMP = x && smp_forced="(forced)"
-      CONFIG_RTAI_SCHED_SMP=y
-      test x$CONFIG_RTAI_SCHED_UP = xy && up_forced="(forced)"
-      unset CONFIG_RTAI_SCHED_UP
-    else
-      # x86_64 with UP kernel
-      if test "$CONFIG_RTAI_SCHED_MUP" = y -o "$CONFIG_RTAI_SCHED_SMP" = y; then
-        test x$CONFIG_RTAI_SCHED_SMP = xy && smp_forced="(forced)"
-        unset CONFIG_RTAI_SCHED_SMP
-        test x$CONFIG_RTAI_SCHED_MUP = xy && mup_forced="(forced)"
-        unset CONFIG_RTAI_SCHED_MUP
-      fi
-      test x$CONFIG_RTAI_SCHED_UP = x && up_forced="(forced)"
-      CONFIG_RTAI_SCHED_UP=y
-      CONFIG_RTAI_CPUS=1
-    fi
-  else
-    # non-x86
-    test x$CONFIG_RTAI_SCHED_UP = x && up_forced="(forced)"
-    CONFIG_RTAI_SCHED_UP=y
-    test x$CONFIG_RTAI_SCHED_SMP = xy && smp_forced="(forced)"
-    unset CONFIG_RTAI_SCHED_SMP
-    test x$CONFIG_RTAI_SCHED_MUP = xy && mup_forced="(forced)"
-    unset CONFIG_RTAI_SCHED_MUP
-    CONFIG_RTAI_CPUS=1
-  fi
-fi
-
-AC_MSG_CHECKING(for UP scheduler support)
-AC_MSG_RESULT([${CONFIG_RTAI_SCHED_UP:-no} $up_forced])
-AC_MSG_CHECKING(for SMP scheduler support)
-AC_MSG_RESULT([${CONFIG_RTAI_SCHED_SMP:-no} $smp_forced])
-AC_MSG_CHECKING(for MUP scheduler support)
-AC_MSG_RESULT([${CONFIG_RTAI_SCHED_MUP:-no} $mup_forced])
-AC_MSG_CHECKING(for LXRT scheduler support)
-AC_MSG_RESULT([${CONFIG_RTAI_SCHED_LXRT:-no} $lxrt_forced])
-AC_MSG_CHECKING(for LXRT scheduler with kernel tasks support)
-AC_MSG_RESULT([${CONFIG_RTAI_KTASKS_SCHED_LXRT:-no} $lxrt_forced])
-
-dnl they must be always enabled
-CONFIG_RTAI_SCHED_LXRT=y
-AC_DEFINE(CONFIG_RTAI_SCHED_LXRT,1,[define to enable LXRT scheduler support])
-if test x"$CONFIG_RTAI_SCHED_LXRT_" != xy ; then
-	echo ""
-	echo "	warning: RTAI_SCHED_LXRT must always be enabled; forced"
-	echo ""
-fi
-CONFIG_RTAI_KTASKS_SCHED_LXRT=y
-if test x"$CONFIG_RTAI_KTASKS_SCHED_LXRT_" != xy ; then
-	echo ""
-	echo "	warning: RTAI_KTASKS_SCHED_LXRT must always be enabled; forced"
-	echo ""
-fi
 
 AC_MSG_CHECKING(for scheduler lock in ISRs)
 AC_ARG_ENABLE(sched-lock-isr,

@@ -1,3 +1,10 @@
+2007-03-01  Pierangelo Masarati <masarati@aero.polimi.it>
+
+	* reworked scheduler build:
+		- rtai_lxrt/rtai_sched on all archs;
+		- rtai_lxrt only on x86_64
+		- all symlinks including legacy on all archs
+
 2007-03-01  Paolo Mantegazza <mantegazza@aero.polimi.it>
 
 	* base/ipc/msg/msg.c: cast macros to long, in msg_not_sent-received,
@@ -7,6 +14,10 @@
 
 	* addons/drivers/serial/rtai_serial.h: revised to be usable with 64 bits
 	  archs also.
+
+2007-02-28  Pierangelo Masarati <masarati@aero.polimi.it>
+
+	* revised x86_64 build (Kconfig, defconfig...).
 
 2007-02-26  Paolo Mantegazza <mantegazza@aero.polimi.it>
 

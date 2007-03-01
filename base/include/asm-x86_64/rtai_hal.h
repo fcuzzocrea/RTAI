@@ -47,9 +47,9 @@
 #define LOCKED_LINUX_IN_IRQ_HANDLER
 #define UNWRAPPED_CATCH_EVENT
 
-#include <asm/rtai_vectors.h>
-#include <rtai_types.h>
 #include <rtai_hal_names.h>
+#include <rtai_types.h>
+#include <asm/rtai_vectors.h>
 
 #ifdef CONFIG_SMP
 #define RTAI_NR_CPUS  CONFIG_RTAI_CPUS

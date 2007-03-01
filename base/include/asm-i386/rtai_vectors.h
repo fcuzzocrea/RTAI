@@ -30,6 +30,7 @@
 #ifndef _RTAI_ASM_I386_VECTORS_H
 #define _RTAI_ASM_I386_VECTORS_H
 
+#include <rtai_hal_names.h>
 #include <rtai_config.h>
 
 #ifdef CONFIG_X86_LOCAL_APIC

@@ -55,10 +55,10 @@ do { \
 	if ((retp = rt_current->blocked_on) != RTP_OBJREM) { \
 		set_task_prio_from_resq(task); \
 		dequeue_blocked(rt_current); \
-		task = (void *)(CONFIG_RTAI_USE_NEWERR ? ((likely(retp > RTP_HIGERR) ? RTE_TIMOUT : RTE_UNBLKD)) : 0); \
+		task = (void *)(long)(CONFIG_RTAI_USE_NEWERR ? ((likely(retp > RTP_HIGERR) ? RTE_TIMOUT : RTE_UNBLKD)) : 0); \
 	} else { \
 		rt_current->prio_passed_to = NULL; \
-		task = (void *)(CONFIG_RTAI_USE_NEWERR ? RTE_OBJREM : 0); \
+		task = (void *)(long)(CONFIG_RTAI_USE_NEWERR ? RTE_OBJREM : 0); \
 	} \
 	rt_current->msg_queue.task = rt_current; \
 } while (0)
@@ -66,7 +66,7 @@ do { \
 #define msg_not_received() \
 do { \
 	rt_current->ret_queue.task = NULL; \
-	task = (void *)(CONFIG_RTAI_USE_NEWERR ? (((void *)rt_current->blocked_on != RTP_UNBLKD) ? RTE_TIMOUT : RTE_UNBLKD) : 0); \
+	task = (void *)(long)(CONFIG_RTAI_USE_NEWERR ? (((void *)rt_current->blocked_on != RTP_UNBLKD) ? RTE_TIMOUT : RTE_UNBLKD) : 0); \
 } while (0)
 
 /* +++++++++++++++++++++++++++++ ASYNC SENDS ++++++++++++++++++++++++++++++++ */

@@ -1607,7 +1607,8 @@ static int intercept_syscall_prologue(unsigned long event, struct pt_regs *regs)
 rtai_lxrt_dispatcher(srq, regs->LINUX_SYSCALL_REG2, regs) : rtai_usrq_dispatcher(srq, regs->LINUX_SYSCALL_REG2);
                 if (!in_hrt_mode(srq = rtai_cpuid())) {
                         hal_test_and_fast_flush_pipeline(srq);
-                        return 0;
+			rtai_cli();
+			return 0;
                 }
 		rtai_cli();
                 return 1;
@@ -1618,6 +1619,7 @@ rtai_lxrt_dispatcher(srq, regs->LINUX_SYSCALL_REG2, regs) : rtai_usrq_dispatcher
 	                return 1;
 		}
 	}
+	rtai_cli();
 	return 0;
 }
 

@@ -195,7 +195,7 @@ extern "C" {
 RTAI_PROTO(mqd_t, mq_open,(char *mq_name, int oflags, mode_t permissions, struct mq_attr *mq_attr))
 {
 	int ret;
-	struct {char *mq_name; int oflags; mode_t permissions; struct mq_attr *mq_attr; int namesize, attrsize; } arg = { mq_name, oflags, permissions, mq_attr, strlen(mq_name) + 1, sizeof(struct mq_attr) };
+	struct {char *mq_name; long oflags; long permissions; struct mq_attr *mq_attr; long namesize, attrsize; } arg = { mq_name, oflags, permissions, mq_attr, strlen(mq_name) + 1, sizeof(struct mq_attr) };
 	if ((ret = (mqd_t)rtai_lxrt(MQIDX, SIZARG, MQ_OPEN, &arg).i[LOW]) >= 0) {
 		return ret;
 	}	
@@ -206,7 +206,7 @@ RTAI_PROTO(mqd_t, mq_open,(char *mq_name, int oflags, mode_t permissions, struct
 RTAI_PROTO(size_t, mq_receive,(mqd_t mq, char *msg_buffer, size_t buflen, unsigned int *msgprio))
 {
 	int oldtype, ret;
-	struct { mqd_t mq; char *msg_buffer; size_t buflen; unsigned int *msgprio; int space; } arg = { mq, msg_buffer, buflen, msgprio, 0 };
+	struct { long mq; char *msg_buffer; long buflen; unsigned int *msgprio; long space; } arg = { mq, msg_buffer, buflen, msgprio, 0 };
 	pthread_setcanceltype(PTHREAD_CANCEL_ASYNCHRONOUS, &oldtype);
 	pthread_testcancel();
 	ret = (size_t)rtai_lxrt(MQIDX, SIZARG, MQ_RECEIVE, &arg).i[LOW];
@@ -222,7 +222,7 @@ RTAI_PROTO(size_t, mq_receive,(mqd_t mq, char *msg_buffer, size_t buflen, unsign
 RTAI_PROTO(int, mq_send,(mqd_t mq, const char *msg, size_t msglen, unsigned int msgprio))
 {
 	int oldtype, ret;
-	struct { mqd_t mq; const char *msg; size_t msglen; unsigned int msgprio; int space; } arg = { mq, msg, msglen, msgprio, 0 };
+	struct { long mq; const char *msg; long msglen; unsigned long msgprio; long space; } arg = { mq, msg, msglen, msgprio, 0 };
 	pthread_setcanceltype(PTHREAD_CANCEL_ASYNCHRONOUS, &oldtype);
 	pthread_testcancel();
 	ret = rtai_lxrt(MQIDX, SIZARG, MQ_SEND, &arg).i[LOW];
@@ -238,7 +238,7 @@ RTAI_PROTO(int, mq_send,(mqd_t mq, const char *msg, size_t msglen, unsigned int 
 RTAI_PROTO(int, mq_close,(mqd_t mq))
 {
 	int ret;
-	struct { mqd_t mq; } arg = { mq };
+	struct { long mq; } arg = { mq };
 	if ((ret = rtai_lxrt(MQIDX, SIZARG, MQ_CLOSE, &arg).i[LOW]) >= 0) {
 		return ret;
 	}
@@ -249,7 +249,7 @@ RTAI_PROTO(int, mq_close,(mqd_t mq))
 RTAI_PROTO(int, mq_getattr,(mqd_t mq, struct mq_attr *attrbuf))
 {
 	int ret;
-	struct { mqd_t mq; struct mq_attr *attrbuf; int attrsize; } arg = { mq, attrbuf, sizeof(struct mq_attr) };
+	struct { long mq; struct mq_attr *attrbuf; long attrsize; } arg = { mq, attrbuf, sizeof(struct mq_attr) };
 	if ((ret = rtai_lxrt(MQIDX, SIZARG, MQ_GETATTR, &arg).i[LOW]) >= 0) {
 		return ret;
 	}
@@ -260,7 +260,7 @@ RTAI_PROTO(int, mq_getattr,(mqd_t mq, struct mq_attr *attrbuf))
 RTAI_PROTO(int, mq_setattr,(mqd_t mq, const struct mq_attr *new_attrs, struct mq_attr *old_attrs))
 {
 	int ret;
-	struct { mqd_t mq; const struct mq_attr *new_attrs; struct mq_attr *old_attrs; int attrsize; } arg = { mq, new_attrs, old_attrs, sizeof(struct mq_attr) };
+	struct { long mq; const struct mq_attr *new_attrs; struct mq_attr *old_attrs; long attrsize; } arg = { mq, new_attrs, old_attrs, sizeof(struct mq_attr) };
 	if ((ret = rtai_lxrt(MQIDX, SIZARG, MQ_SETATTR, &arg).i[LOW]) >= 0) {
 		return ret;
 	}
@@ -271,7 +271,7 @@ RTAI_PROTO(int, mq_setattr,(mqd_t mq, const struct mq_attr *new_attrs, struct mq
 RTAI_PROTO(int, mq_notify,(mqd_t mq, const struct sigevent *notification))
 {
 	int ret;
-	struct { mqd_t mq; const struct sigevent *notification; int size; } arg = { mq, notification, sizeof(struct sigevent) };
+	struct { long mq; const struct sigevent *notification; long size; } arg = { mq, notification, sizeof(struct sigevent) };
 	if ((ret = rtai_lxrt(MQIDX, SIZARG, MQ_NOTIFY, &arg).i[LOW]) >= 0) {
 		return ret;
 	}
@@ -282,7 +282,7 @@ RTAI_PROTO(int, mq_notify,(mqd_t mq, const struct sigevent *notification))
 RTAI_PROTO(int, mq_unlink,(char *mq_name))
 {
 	int ret;
-	struct { char *mq_name; int size; } arg = { mq_name, strlen(mq_name) + 1};
+	struct { char *mq_name; long size; } arg = { mq_name, strlen(mq_name) + 1};
 	if ((ret = rtai_lxrt(MQIDX, SIZARG, MQ_UNLINK, &arg).i[LOW]) >= 0) {
 		return ret;
 	}
@@ -293,7 +293,7 @@ RTAI_PROTO(int, mq_unlink,(char *mq_name))
 RTAI_PROTO(size_t, mq_timedreceive,(mqd_t mq, char *msg_buffer, size_t buflen, unsigned int *msgprio, const struct timespec *abstime))
 {
 	int oldtype, ret;
-	struct { mqd_t mq; char *msg_buffer; size_t buflen; unsigned int *msgprio; const struct timespec *abstime; int space; } arg = { mq, msg_buffer, buflen, msgprio, abstime, 0 };
+	struct { long mq; char *msg_buffer; long buflen; unsigned int *msgprio; const struct timespec *abstime; long space; } arg = { mq, msg_buffer, buflen, msgprio, abstime, 0 };
 	pthread_setcanceltype(PTHREAD_CANCEL_ASYNCHRONOUS, &oldtype);
 	pthread_testcancel();
 	ret = (size_t)rtai_lxrt(MQIDX, SIZARG, MQ_TIMEDRECEIVE, &arg).i[LOW];
@@ -309,7 +309,7 @@ RTAI_PROTO(size_t, mq_timedreceive,(mqd_t mq, char *msg_buffer, size_t buflen, u
 RTAI_PROTO(int, mq_timedsend,(mqd_t mq, const char *msg, size_t msglen, unsigned int msgprio, const struct timespec *abstime))
 {
 	int oldtype, ret;
-	struct { mqd_t mq; const char *msg; size_t msglen; unsigned int msgprio; const struct timespec *abstime; int space; } arg = { mq, msg, msglen, msgprio, abstime, 0 };
+	struct { long mq; const char *msg; long msglen; unsigned long msgprio; const struct timespec *abstime; long space; } arg = { mq, msg, msglen, msgprio, abstime, 0 };
 	pthread_setcanceltype(PTHREAD_CANCEL_ASYNCHRONOUS, &oldtype);
 	pthread_testcancel();
 	ret = rtai_lxrt(MQIDX, SIZARG, MQ_TIMEDSEND, &arg).i[LOW];

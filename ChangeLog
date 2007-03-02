@@ -1,3 +1,10 @@
+2007-03-02  Paolo Mantegazza <mantegazza@aero.polimi.it>
+
+	* base/sched/sched.c: make immediate internal Linux syscalls 
+	  architecture dependent through LXRT_DO_IMMEDIATE_LINUX_SYSCALL macro.
+	* base/include/asm-???/rtai_lxrt.h: define architecture spacific
+	  LXRT_DO_IMMEDIATE_LINUX_SYSCALL macro.
+
 2007-03-01  Pierangelo Masarati <masarati@aero.polimi.it>
 
 	* reworked scheduler build:

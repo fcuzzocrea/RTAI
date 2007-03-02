@@ -48,6 +48,11 @@
 #define LINUX_SYSCALL_RETREG  eax
 #define LINUX_SYSCALL_FLAGS   eflags
 
+#define LXRT_DO_IMMEDIATE_LINUX_SYSCALL(regs) \
+	do { \
+		regs->LINUX_SYSCALL_RETREG = sys_call_table[regs->LINUX_SYSCALL_NR](*regs);
+	} while (0)
+
 #define SET_LXRT_RETVAL_IN_SYSCALL(regs, retval) \
 	do { \
                 if (regs->RTAI_SYSCALL_RETPNT) { \

@@ -50,6 +50,12 @@
 #define LINUX_SYSCALL_RETREG  rax
 #define LINUX_SYSCALL_FLAGS   eflags
 
+#define LXRT_DO_IMMEDIATE_LINUX_SYSCALL(regs) \
+	do { \
+		regs->rcx = regs->r10; \
+		regs->LINUX_SYSCALL_RETREG = ((asmlinkage int (*)(long, ...))sys_call_table[regs->rax])(regs->rdi, regs->rsi, regs->rdx, regs->rcx, regs->rax, regs->r8, regs->r9, regs->r10, regs->r11, regs->rbx, regs->rbp, regs->r12, regs->r13, regs->r14, regs->r15); \
+	} while (0)
+
 #define SET_LXRT_RETVAL_IN_SYSCALL(regs, retval) \
 	do { \
                 if (regs->RTAI_SYSCALL_RETPNT) { \

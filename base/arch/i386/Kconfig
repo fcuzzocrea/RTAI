@@ -766,8 +766,7 @@ config RTAI_IMMEDIATE_LINUX_SYSCALL
 	specific RTAI users extensions.
 	It is remarked that nothing is changed if hard/soft transitions 
 	are called controlled by an application task through 
-	rtai_make_hard_real_time/rtai_make_soft_real_time.
-	The default is 1.
+	rt_make_hard_real_time/rt_make_soft_real_time.
 
 config RTAI_MATH
 	bool "Math support"

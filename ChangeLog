@@ -1,3 +1,8 @@
+2007-03-03  Paolo Mantegazza <mantegazza@aero.polimi.it>
+
+	* addons/comedi/rtai_comedi.h: enabled for use with 32/64 bits 
+	  architectures.
+
 2007-03-02  Paolo Mantegazza <mantegazza@aero.polimi.it>
 
 	* base/sched/sched.c: make immediate internal Linux syscalls 

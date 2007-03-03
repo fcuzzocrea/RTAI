@@ -315,7 +315,7 @@ static inline void rt_spwait_usr_callback(unsigned int tty, unsigned long *retva
 static void *callback_thread(void *farg)
 {
 	unsigned long retvals[6];
-	struct farg_t { int tty; void *callback_fun; int rxthrs, txthrs, code; RT_TASK *task; } *arg;
+	struct farg_t { long tty; void *callback_fun; long rxthrs, txthrs, code; RT_TASK *task; } *arg;
 
 	arg = (struct farg_t *)farg;
 	if (!(arg->task = rt_task_init_schmod((unsigned long)arg, 0, 0, 0, SCHED_FIFO, 0xF))) {

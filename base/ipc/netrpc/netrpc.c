@@ -688,7 +688,7 @@ RTAI_SYSCALL_MODE int rt_set_netrpc_timeout(int port, RTIME timeout)
 {
 	portslot[port].timeout = timeout;
 	return 0;
-	}
+}
 
 RTAI_SYSCALL_MODE RT_TASK *rt_find_asgn_stub(unsigned long long owner, int asgn)
 {

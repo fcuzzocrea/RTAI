@@ -32,6 +32,7 @@
 
 #include <linux/version.h>
 
+#include <rtai_hal_names.h>
 #include <rtai_config.h>
 
 #define RTAI_APIC_HIGH_VECTOR  IPIPE_SERVICE_VECTOR3 // HAL_APIC_HIGH_VECTOR
@@ -46,7 +47,7 @@
 #define RTAI_APIC_LOW_IPI      (RTAI_APIC_LOW_VECTOR - FIRST_EXTERNAL_VECTOR)
 #endif
 
-#define RTAI_SYS_VECTOR        0xF6
+#define RTAI_SYS_VECTOR        0xF5
 
 #if RTAI_APIC_HIGH_VECTOR == RTAI_SYS_VECTOR || RTAI_APIC_LOW_VECTOR == RTAI_SYS_VECTOR
 #error *** RTAI_SYS_VECTOR CONFLICTS WITH APIC VECTORS USED BY RTAI ***

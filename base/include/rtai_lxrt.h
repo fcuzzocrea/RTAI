@@ -604,7 +604,7 @@ RTAI_PROTO(unsigned long, rt_get_name, (void *adr))
 RTAI_PROTO(RT_TASK *, rt_task_init_schmod, (unsigned long name, int priority, int stack_size, int max_msg_size, int policy, int cpus_allowed))
 {
         struct sched_param mysched;
-        struct { unsigned long name; int priority, stack_size, max_msg_size, cpus_allowed; } arg = { name ? name : rt_get_name(NULL), priority, stack_size, max_msg_size, cpus_allowed };
+        struct { unsigned long name; long priority, stack_size, max_msg_size, cpus_allowed; } arg = { name ? name : rt_get_name(NULL), priority, stack_size, max_msg_size, cpus_allowed };
 
         mysched.sched_priority = sched_get_priority_max(policy) - priority;
         if (mysched.sched_priority < 1 ) {
@@ -865,13 +865,13 @@ RTAI_PROTO(int,rt_task_resume,(RT_TASK *task))
 
 RTAI_PROTO(void, rt_sched_lock, (void))
 {
-	struct { int dummy; } arg;
+	struct { long dummy; } arg;
 	rtai_lxrt(BIDX, SIZARG, SCHED_LOCK, &arg);
 }
 
 RTAI_PROTO(void, rt_sched_unlock, (void))
 {
-	struct { int dummy; } arg;
+	struct { long dummy; } arg;
 	rtai_lxrt(BIDX, SIZARG, SCHED_UNLOCK, &arg);
 }
 
@@ -1151,19 +1151,19 @@ RTAI_PROTO(RTIME,rt_get_time_ns_cpuid,(unsigned int cpuid))
 
 RTAI_PROTO(void,rt_boom,(void))
 {
-	struct { int dummy; } arg = { 0 };
+	struct { long dummy; } arg = { 0 };
 	rtai_lxrt(BIDX, SIZARG, RT_BOOM, &arg);
 }
 
 RTAI_PROTO(void,rt_mmgr_stats,(void))
 {
-	struct { int dummy; } arg = { 0 };
+	struct { long dummy; } arg = { 0 };
 	rtai_lxrt(BIDX, SIZARG, RT_MMGR_STATS, &arg);
 }
 
 RTAI_PROTO(void,rt_stomp,(void) )
 {
-	struct { int dummy; } arg = { 0 };
+	struct { long dummy; } arg = { 0 };
 	rtai_lxrt(BIDX, SIZARG, RT_STOMP, &arg);
 }
 
@@ -1360,7 +1360,7 @@ RTAI_PROTO(void, rt_gettimeorig, (RTIME time_orig[]))
 
 RTAI_PROTO(RT_TASK *,ftask_init,(unsigned long name, int priority))
 {
-	struct { unsigned long name; int priority, stack_size, max_msg_size, cpus_allowed; } arg = { name, priority, 0, 0, 0 };
+	struct { unsigned long name; long priority, stack_size, max_msg_size, cpus_allowed; } arg = { name, priority, 0, 0, 0 };
 	return (RT_TASK *)rtai_lxrt(BIDX, SIZARG, LXRT_TASK_INIT, &arg).v[LOW];
 }
 

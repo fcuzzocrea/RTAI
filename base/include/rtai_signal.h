@@ -89,7 +89,8 @@ static inline int rt_request_signal(long signal, void (*sighdl)(long, RT_TASK *)
 {
 	if (signal >= 0 && sighdl) {
 		struct sigsuprt_t arg = { NULL, rt_buddy(), signal, sighdl, rtai_lxrt(RTAI_SIGNALS_IDX, sizeof(void *), SIGNAL_HELPER, &arg.sigtask).i[LOW] };
-		if (rt_clone(signal_suprt_fun, &arg, SIGNAL_TASK_STACK_SIZE, 0) > 0) {
+//		if (rt_clone(signal_suprt_fun, &arg, SIGNAL_TASK_STACK_SIZE, 0) > 0) {
+		if (rt_thread_create(signal_suprt_fun, &arg, SIGNAL_TASK_STACK_SIZE)) {
 			return rtai_lxrt(RTAI_SIGNALS_IDX, sizeof(RT_TASK *), SIGNAL_HELPER, &arg.task).i[LOW];
 		}
 	}

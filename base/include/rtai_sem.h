@@ -233,7 +233,7 @@ extern "C" {
 
 RTAI_PROTO(SEM *, rt_typed_sem_init,(unsigned long name, int value, int type))
 {
-	struct { unsigned long name; int value, type; } arg = { name ? name : rt_get_name(NULL), value, type };
+	struct { unsigned long name; long value, type; } arg = { name ? name : rt_get_name(NULL), value, type };
 	return (SEM *)rtai_lxrt(BIDX, SIZARG, LXRT_SEM_INIT, &arg).v[LOW];
 }
 

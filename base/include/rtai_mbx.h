@@ -156,7 +156,7 @@ extern "C" {
 
 RTAI_PROTO(void *, rt_typed_mbx_init, (unsigned long name, int size, int qtype))
 {
-	struct { unsigned long name; int size; int qtype; } arg = { name, size, qtype };
+	struct { unsigned long name; long size; long qtype; } arg = { name, size, qtype };
 	return rtai_lxrt(BIDX, SIZARG, LXRT_MBX_INIT, &arg).v[LOW];
 }
 
@@ -184,7 +184,7 @@ RTAI_PROTO(int, rt_mbx_delete,(struct rt_mailbox *mbx))
 
 RTAI_PROTO(struct rt_mailbox *, rt_typed_named_mbx_init,(const char *name, int size, int type))
 {
-	struct { unsigned long name; int size, type; } arg = { nam2num(name), size, type };
+	struct { unsigned long name; long size, type; } arg = { nam2num(name), size, type };
 	return (struct rt_mailbox *)rtai_lxrt(BIDX, SIZARG, NAMED_MBX_INIT, &arg).v[LOW];
 }
 

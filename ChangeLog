@@ -1,3 +1,10 @@
+2007-03-04  Paolo Mantegazza <mantegazza@aero.polimi.it>
+
+	* base/sched/sched.c: clean an ifdef in wakeup_srq_handler that was
+	  for x86_64 only.
+	* base/include/rtai_schecore.h: check that virqs for waking up Linux 
+	  tasks are in sequence (i.e.: virq(i) = virq(0) + i).
+
 2007-03-03  Paolo Mantegazza <mantegazza@aero.polimi.it>
 
 	* addons/comedi/rtai_comedi.h: enabled for use with 32/64 bits 

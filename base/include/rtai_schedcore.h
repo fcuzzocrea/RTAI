@@ -178,6 +178,15 @@ do { \
 	int cpuid; \
 	for (cpuid = 0; cpuid < num_online_cpus(); cpuid++) { \
         	hal_virtualize_irq(hal_root_domain, wake_up_srq[cpuid].srq = hal_alloc_irq(), wake_up_srq_handler, NULL, IPIPE_HANDLE_FLAG); \
+		if ( wake_up_srq[cpuid].srq != (wake_up_srq[0].srq + cpuid)) { \
+			int i; \
+			for (i = 0; i <= cpuid; i++) { \
+				hal_virtualize_irq(hal_root_domain, wake_up_srq[i].srq, NULL, NULL, 0); \
+				hal_free_irq(wake_up_srq[i].srq); \
+			} \
+			printk("*** NON CONSECUTIVE WAKE UP SRQs, ABORTING ***\n"); \
+			return -1; \
+		} \
 	} \
 } while (0)
 

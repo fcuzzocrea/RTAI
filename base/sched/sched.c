@@ -2208,10 +2208,10 @@ static void wake_up_srq_handler(unsigned srq)
 #ifdef CONFIG_PREEMPT
 //	preempt_disable(); {
 #endif
-#ifdef CONFIG_X86_64
-	int cpuid = rtai_cpuid(); // something to fix, must return as below
-#else
+#ifdef CONFIG_SMP
 	int cpuid = srq - wake_up_srq[0].srq;
+#else
+	int cpuid = 0; // optimises, ok for x86_64-2.6.10, which can be UP only.
 #endif
 #if !defined(CONFIG_SMP) || LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,0)
 	WAKE_UP_TASKs(wake_up_hts);

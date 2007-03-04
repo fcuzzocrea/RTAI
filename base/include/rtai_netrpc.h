@@ -1339,7 +1339,7 @@ static inline int RT_mbx_receive_timed(unsigned long node, int port, MBX *mbx, v
 
 static inline int rt_get_net_rpc_ret(MBX *mbx, unsigned long long *retval, void *msg1, int *msglen1, void *msg2, int *msglen2, RTIME timeout, int type)
 {
-	struct { long wsize, w2size; unsigned long long retval; long myport;} reply;
+	struct { int wsize, w2size; unsigned long long retval; int myport;} reply;
 	int ret;
 
 	switch (type) {

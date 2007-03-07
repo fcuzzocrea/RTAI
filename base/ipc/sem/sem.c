@@ -29,6 +29,9 @@
  *
  *@{*/
 
+#include <linux/kernel.h>
+#include <linux/module.h>
+
 #include <asm/uaccess.h>
 
 #include <rtai_schedcore.h>

@@ -585,6 +585,49 @@ __attribute__((regparm(3))) void do_notify_resume(struct pt_regs *regs, void *_u
 #define RT_DO_SIGNAL(regs)  do_notify_resume(regs, NULL, (_TIF_SIGPENDING | _TIF_RESTORE_SIGMASK));
 #endif
 
+#if 1  // restructured 
+
+static inline void rt_do_signal(struct pt_regs *regs, RT_TASK *task)
+{
+	if (unlikely(task->unblocked)) {
+		if (task->is_hard > 0) {
+			give_back_to_linux(task, task->force_soft ? 0 : -1);
+		}
+#if 1
+		do {
+			unsigned long saved_eax = regs->LINUX_SYSCALL_RETREG;
+			regs->LINUX_SYSCALL_RETREG = -ERESTARTSYS; // -EINTR;
+			RT_DO_SIGNAL(regs);
+			regs->LINUX_SYSCALL_RETREG = saved_eax;
+			if (task->is_hard < 0) {
+				steal_from_linux(task);
+			}
+		} while (0);
+#endif
+		task->unblocked = task->force_soft = 0;
+		task->usp_flags &= ~FORCE_SOFT;
+		return;
+	}
+	force_soft(task);
+}
+
+long long rtai_lxrt_invoke (unsigned int lxsrq, void *arg, struct pt_regs *regs)
+{
+	RT_TASK *task;
+
+	if (likely((task = current->rtai_tskext(TSKEXT0)) != NULL)) {
+		long long retval;
+		rt_do_signal(regs, task);
+		retval = handle_lxrt_request(lxsrq, arg, task);
+		rt_do_signal(regs, task);
+		return retval;
+	} else {
+		return handle_lxrt_request(lxsrq, arg, task);
+	}
+}
+
+#else  // end restructured, begin old
+
 static inline int rt_do_signal(struct pt_regs *regs, RT_TASK *task)
 {
 	if (unlikely(task->unblocked)) {
@@ -630,6 +673,8 @@ long long rtai_lxrt_invoke (unsigned int lxsrq, void *arg, struct pt_regs *regs)
 		return handle_lxrt_request(lxsrq, arg, task);
 	}
 }
+
+#endif // end olf part of restructured
 
 int set_rt_fun_ext_index(struct rt_fun_entry *fun, int idx)
 {

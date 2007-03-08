@@ -288,7 +288,7 @@ static inline int get_stub(unsigned long long owner)
 	int i;
 	
 	flags = rt_spin_lock_irqsave(&stub_lock);
-	if (stubssp < MaxStubs) {
+	if (stubssp < MaxStubsMone) {
 		struct portslot_t *p;
 		i = 1;
 		while(((p = &portslot[i])->owner != owner)&&(i < MaxStubs)) {

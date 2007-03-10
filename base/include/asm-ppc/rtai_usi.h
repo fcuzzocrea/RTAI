@@ -75,12 +75,15 @@ static unsigned long (*usi_fun_entry[ ])(unsigned long, unsigned long *) = {
 	[_RESTORE_FLAGS]    = (void *)usi_restore_flags
 };
 
-#define IF_IS_A_USI_SRQ_CALL_IT() \
-        if (srq > USI_SRQ_MASK) { \
-		*(long long*)&regs->ARM_r0 \
-		    = usi_fun_entry[srq & ~USI_SRQ_MASK](arg, &regs->ARM_cpsr); \
-                return 1; \
-       	} \
+#ifdef USI_SRQ_MASK
+#define IF_IS_A_USI_SRQ_CALL_IT(srq, args, retval, psr, retpath) \
+	if (srq > USI_SRQ_MASK) { \
+		*retval = usi_fun_entry[srq & ~USI_SRQ_MASK](args, &(psr)); \
+		return retpath; \
+	}
+#else
+#define IF_IS_A_USI_SRQ_CALL_IT(srq, args, retval, psr, retpath)
+#endif
 
 #endif /* __KERNEL__ */
 

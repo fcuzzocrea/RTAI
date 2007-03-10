@@ -32,30 +32,34 @@
 #endif
 
 #define RTAI_SYSCALL_NR      0x70000000
-#define RTAI_SYSCALL_CODE    rdi
-#define RTAI_SYSCALL_ARGS    rsi
-#define RTAI_SYSCALL_RETPNT  rdx
+#define RTAI_SYSCALL_CODE    gpr[3]
+#define RTAI_SYSCALL_ARGS    gpr[4]
+#define RTAI_SYSCALL_RETPNT  gpr[5]
 
 #define RTAI_FAKE_LINUX_SYSCALL  39
 
 #define NR_syscalls __NR_syscall_max
 
 #define LINUX_SYSCALL_NR      gpr[0]
-#define LINUX_SYSCALL_REG1    gpr[1]
-#define LINUX_SYSCALL_REG2    gpr[2]
-#define LINUX_SYSCALL_REG3    gpr[3]
-#define LINUX_SYSCALL_REG4    gpr[4]
-#define LINUX_SYSCALL_REG5    gpr[5]
-#define LINUX_SYSCALL_REG6    gpr[6]
+#define LINUX_SYSCALL_REG1    gpr[3]
+#define LINUX_SYSCALL_REG2    gpr[4]
+#define LINUX_SYSCALL_REG3    gpr[5]
+#define LINUX_SYSCALL_REG4    gpr[6]
+#define LINUX_SYSCALL_REG5    gpr[7]
+#define LINUX_SYSCALL_REG6    gpr[8]
 #define LINUX_SYSCALL_RETREG  gpr[0]
 #define LINUX_SYSCALL_FLAGS   msr
 
 #define LXRT_DO_IMMEDIATE_LINUX_SYSCALL(regs) \
         do { \
+		regs->LINUX_SYSCALL_RETREG = ((asmlinkage int (*)(long, ...))sys_call_table[regs->LINUX_SYSCALL_NR])(regs->LINUX_SYSCALL_REG1, regs->LINUX_SYSCALL_REG2, regs->LINUX_SYSCALL_REG3, regs->LINUX_SYSCALL_REG4, regs->LINUX_SYSCALL_REG5, regs->LINUX_SYSCALL_REG6); \
         } while (0)
 
 #define SET_LXRT_RETVAL_IN_SYSCALL(regs, retval) \
         do { \
+		if (regs->RTAI_SYSCALL_RETPNT) { \
+			rt_copy_to_user((void *)regs->RTAI_SYSCALL_RETPNT, &retval, sizeof(retval)); \
+		} \
         } while (0)
 
 #define LOW   1

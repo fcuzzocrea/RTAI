@@ -48,8 +48,8 @@
 #define UNWRAPPED_CATCH_EVENT
 
 #include <rtai_hal_names.h>
-#include <rtai_types.h>
 #include <asm/rtai_vectors.h>
+#include <rtai_types.h>
 
 #ifdef CONFIG_SMP
 #define RTAI_NR_CPUS  CONFIG_RTAI_CPUS
@@ -206,7 +206,7 @@ static inline int ext_irq_vector(int irq)
 #define RTAI_LATENCY_APIC         CONFIG_RTAI_SCHED_APIC_LATENCY
 #define RTAI_SETUP_TIME_APIC      1000
 
-#define RTAI_TIME_LIMIT            0x7FFFFFFFFFFFFFFFLL
+#define RTAI_TIME_LIMIT            0x7000000000000000LL
 
 #define RTAI_IFLAG  9
 
@@ -262,9 +262,11 @@ do { \
 	} \
 } while (0)
 
+extern volatile unsigned long *ipipe_root_status[];
+
 #define hal_test_and_fast_flush_pipeline(cpuid) \
 do { \
-	if (!test_bit(IPIPE_STALL_FLAG, &hal_root_domain->cpudata[cpuid].status)) { \
+	if (!test_bit(IPIPE_STALL_FLAG, ipipe_root_status[cpuid])) { \
 		hal_fast_flush_pipeline(cpuid); \
 		rtai_sti(); \
 	} \
@@ -313,8 +315,6 @@ extern struct rt_times rt_times;
 extern struct rt_times rt_smp_times[RTAI_NR_CPUS];
 
 extern struct calibration_data rtai_tunables;
-
-extern volatile unsigned long rtai_cpu_realtime;
 
 extern volatile unsigned long rtai_cpu_lock;
 
@@ -597,7 +597,6 @@ asmlinkage int rt_printk(const char *format, ...);
 asmlinkage int rt_printk_sync(const char *format, ...);
 
 extern struct hal_domain_struct rtai_domain;
-extern volatile unsigned long *ipipe_root_status[];
 
 #define _rt_switch_to_real_time(cpuid) \
 do { \

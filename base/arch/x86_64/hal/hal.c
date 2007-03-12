@@ -38,6 +38,9 @@
  *
  *@{*/
 
+#include <linux/kernel.h>
+#include <linux/module.h>
+
 #include <asm/rtai_hal.h>
 
 #undef INCLUDED_BY_HAL_C

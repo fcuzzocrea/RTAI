@@ -38,8 +38,8 @@
  *
  *@{*/
 
-#include <linux/kernel.h>
 #include <linux/module.h>
+#include <linux/delay.h>
 
 #include <asm/rtai_hal.h>
 

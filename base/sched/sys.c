@@ -338,7 +338,7 @@ static inline long long handle_lxrt_request (unsigned int lxsrq, long *arg, RT_T
 		}
 
 		case LXRT_TASK_INIT: {
-			struct arg { unsigned long name; int prio, stack_size, max_msg_size, cpus_allowed; };
+			struct arg { unsigned long name; long prio, stack_size, max_msg_size, cpus_allowed; };
 			return (unsigned long) __task_init(arg0.name, larg->prio, larg->stack_size, larg->max_msg_size, larg->cpus_allowed);
 		}
 
@@ -351,7 +351,7 @@ static inline long long handle_lxrt_request (unsigned int lxsrq, long *arg, RT_T
 				return 0;
 			}
 			if ((arg0.sem = rt_malloc(sizeof(SEM)))) {
-				struct arg { unsigned long name; int cnt; int typ; };
+				struct arg { unsigned long name; long cnt; long typ; };
 				lxrt_typed_sem_init(arg0.sem, larg->cnt, larg->typ);
 				if (rt_register(larg->name, arg0.sem, IS_SEM, current)) {
 					return arg0.name;
@@ -375,7 +375,7 @@ static inline long long handle_lxrt_request (unsigned int lxsrq, long *arg, RT_T
 				return 0;
 			}
 			if ((arg0.mbx = rt_malloc(sizeof(MBX)))) {
-				struct arg { unsigned long name; int size; int qtype; };
+				struct arg { unsigned long name; long size; int qtype; };
 				if (lxrt_typed_mbx_init(arg0.mbx, larg->size, larg->qtype) < 0) {
 					rt_free(arg0.mbx);
 					return 0;
@@ -465,12 +465,12 @@ static inline long long handle_lxrt_request (unsigned int lxsrq, long *arg, RT_T
 			return 0;
 		}
 		case PRINT_TO_SCREEN: {
-			struct arg { char *display; int nch; };
+			struct arg { char *display; long nch; };
 			return rtai_print_to_screen("%s", larg->display);
 		}
 
 		case PRINTK: {
-			struct arg { char *display; int nch; };
+			struct arg { char *display; long nch; };
 			return rt_printk("%s", larg->display);
 		}
 
@@ -486,7 +486,7 @@ static inline long long handle_lxrt_request (unsigned int lxsrq, long *arg, RT_T
 		}
 
 		case HRT_USE_FPU: {
-			struct arg { RT_TASK *task; int use_fpu; };
+			struct arg { RT_TASK *task; long use_fpu; };
 			if(!larg->use_fpu) {
 				clear_lnxtsk_uses_fpu((larg->task)->lnxtsk);
 			} else {

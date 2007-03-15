@@ -775,7 +775,7 @@ config RTAI_IMMEDIATE_LINUX_SYSCALL
 config RTAI_MATH
 	bool "Math support"
 	depends on RTAI_FPU_SUPPORT
-	default y
+	default n
 
 config RTAI_MATH_C99
 	bool "C99 standard support"

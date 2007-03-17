@@ -38,7 +38,9 @@
 #ifndef _RTAI_ASM_I386_HAL_H
 #define _RTAI_ASM_I386_HAL_H
 
-#ifdef CONFIG_REGPARM
+#include <linux/version.h>
+
+#if defined(CONFIG_REGPARM) || LINUX_VERSION_CODE > KERNEL_VERSION(2,6,19)
 #define RTAI_SYSCALL_MODE __attribute__((regparm(0)))
 #else
 #define RTAI_SYSCALL_MODE
@@ -51,9 +53,9 @@
 #define LOCKED_LINUX_IN_IRQ_HANDLER
 #define DOMAIN_TO_STALL  (fusion_domain)
 
+#include <rtai_hal_names.h>
 #include <asm/rtai_vectors.h>
 #include <rtai_types.h>
-#include <rtai_hal_names.h>
 
 #ifdef CONFIG_SMP
 #define RTAI_NR_CPUS  CONFIG_RTAI_CPUS
@@ -280,8 +282,8 @@ static inline struct hal_domain_struct *get_domain_pointer(int n)
 #define hal_pend_domain_uncond(irq, domain, cpuid) \
 do { \
 	hal_irq_hits_pp(irq, domain, cpuid); \
-	__set_bit(irq & IPIPE_IRQ_IMASK, &domain->cpudata[cpuid].irq_pending_lo[irq >> IPIPE_IRQ_ISHIFT]); \
-	__set_bit(irq >> IPIPE_IRQ_ISHIFT, &domain->cpudata[cpuid].irq_pending_hi); \
+	__set_bit((irq) & IPIPE_IRQ_IMASK, &domain->cpudata[cpuid].irq_pending_lo[(irq) >> IPIPE_IRQ_ISHIFT]); \
+	__set_bit((irq) >> IPIPE_IRQ_ISHIFT, &domain->cpudata[cpuid].irq_pending_hi); \
 	test_and_set_bit(cpuid, &hal_pended); /* cautious, cautious */ \
 } while (0)
 

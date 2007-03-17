@@ -27,8 +27,6 @@
 #define TSKEXT2  (HAL_ROOT_NPTDKEYS - 2)
 #define TSKEXT3  (HAL_ROOT_NPTDKEYS - 1)
 
-#define HAL_PATCH_RELEASE_NUMBER(a, b, c)  (((a) << 16) | ((b) << 8) | (c))
-
 #if LINUX_VERSION_CODE < KERNEL_VERSION(2,4,32) || (LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,0) && LINUX_VERSION_CODE < KERNEL_VERSION(2,6,13))
 
 #define HAL_VERSION_STRING   ADEOS_VERSION_STRING
@@ -50,10 +48,10 @@
 
 extern struct list_head __adeos_pipeline;
 
-#define hal_pipeline        __adeos_pipeline
-#define hal_domain_struct   adomain 
-#define hal_root_domain     adp_root 
-#define hal_current_domain  adp_cpu_current 
+#define hal_pipeline           __adeos_pipeline
+#define hal_domain_struct      adomain 
+#define hal_root_domain        adp_root 
+#define hal_current_domain(x)  adp_cpu_current[x] 
 
 #define hal_critical_enter  adeos_critical_enter
 #define hal_critical_exit   adeos_critical_exit
@@ -111,7 +109,15 @@ do { \
 #define hal_set_printk_sync   adeos_set_printk_sync
 #define hal_set_printk_async  adeos_set_printk_async
 
-#define hal_schedule_back_root  __adeos_schedule_back_root
+#define hal_schedule_back_root(prev) \
+do { \
+	if ((prev)->rtai_tskext(HAL_ROOT_NPTDKEYS - 1)) { \
+		__adeos_schedule_back_root((prev)->rtai_tskext(HAL_ROOT_NPTDKEYS - 1)); \
+		(prev)->rtai_tskext(HAL_ROOT_NPTDKEYS - 1) = NULL; \
+	} else { \
+		__adeos_schedule_back_root(prev); \
+	} \
+} while (0)
 
 #define hal_processor_id  adeos_processor_id
 
@@ -153,7 +159,8 @@ do { \
 #define hal_pipeline        __ipipe_pipeline
 #define hal_domain_struct   ipipe_domain 
 #define hal_root_domain     ipipe_root_domain 
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,17) && IPIPE_RELEASE_NUMBER >= HAL_PATCH_RELEASE_NUMBER(1,5,1)
+
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,17)
 #define hal_current_domain(cpuid)  per_cpu(ipipe_percpu_domain, cpuid) 
 #else
 #define hal_current_domain(cpuid)  (ipipe_percpu_domain[cpuid])

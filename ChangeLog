@@ -1,3 +1,15 @@
+2007-03-17  Paolo Mantegazza <mantegazza@aero.polimi.it>
+
+	* upgrade to support Linux-2.6.20
+	* base/include/rtai_hal_names.h: fix an ifdef that contains an
+	  clause.
+	* base/include/asm-i386/rtai_hal.h: force REGPARM for Linux releases
+	  beyond 2.6.19, it is the only way for them.
+	* base/ipc/netrpc/netrpc.c: use syscall_table directly for soft
+	  sockets support, as unistd.d doesn not contains syscalls prototypes
+	  any more.
+	* base/sched/sched.c: fix a warninf for a depracated element name.
+
 2007-02-26 Pierangelo Masarati <masarati@aero.polimi.i>
 
 	* RTAI 3.5 release

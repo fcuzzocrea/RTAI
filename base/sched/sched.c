@@ -1918,7 +1918,11 @@ static inline void detach_kthread(void)
 	current->pgrp    = 1;
 	current->tty     = NULL;
 #else
-	(current->signal)->session = 1;
+#if LINUX_VERSION_CODE > KERNEL_VERSION(2,6,19)
+	(current->signal)->__session = 1;
+#else
+	(current->signal)->session   = 1;
+#endif
 	(current->signal)->pgrp    = 1;
 	(current->signal)->tty     = NULL;
 #endif
@@ -2887,7 +2891,7 @@ static int __rtai_lxrt_init(void)
 #ifdef CONFIG_SMP
 	printk(KERN_INFO "RTAI[sched]: loaded (IMMEDIATE, MP, USER/KERNEL SPACE: <%s RTAI OWN KTASKs>", USE_RTAI_TASKS ? "with" : "without");
 #else
-	printk(KERN_INFO "RTAI[sched]: loaded (IMMEDIATE, UP, USER/KERNEL SPACE%s: ", USE_RTAI_TASKS ? "<with RTAI TASKs>" : "");
+	printk(KERN_INFO "RTAI[sched]: loaded (IMMEDIATE, UP, USER/KERNEL SPACE: <%s RTAI OWN KTASKs>", USE_RTAI_TASKS ? "with" : "without");
 #endif
 #ifdef CONFIG_RTAI_LXRT_USE_LINUX_SYSCALL
 	printk(", <uses LINUX SYSCALLs>");

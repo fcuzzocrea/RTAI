@@ -712,3 +712,12 @@ void rtai_set_linux_task_priority(struct task_struct *task, int policy, int prio
 /*@}*/
 
 #endif /* !_RTAI_ASM_PPC_HAL_H */
+
+#ifndef _RTAI_HAL_XN_H
+#define _RTAI_HAL_XN_H
+
+#define __range_ok(addr, size) (__range_not_ok(addr,size) == 0)
+
+#define NON_RTAI_SCHEDULE(cpuid)  do { schedule(); } while (0)
+
+#endif /* !_RTAI_HAL_XN_H */

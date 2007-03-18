@@ -869,14 +869,50 @@ irqreturn_t rtai_broadcast_to_local_timers (int irq, void *dev_id, struct pt_reg
 #endif
 
 #if LINUX_VERSION_CODE > KERNEL_VERSION(2,6,19)
-#define __PUSH_GS              "pushl %gs\n\t"
-#define __POP_GS               "popl %gs\n\t"
-#define __LOAD_KERNEL_PDA(reg) "movl $"STR(__KERNEL_PDA)", %" #reg "; movl %" #reg ", %gs\n\t"
+#define __PUSH_GS          "pushl %gs\n\t"
+#define __POP_GS           "popl  %gs\n\t"
+#define __LOAD_KERNEL_PDA  "movl  $"STR(__KERNEL_PDA)",%edx; movl %edx,%gs\n\t"
 #else
 #define __PUSH_GS
 #define __POP_GS
-#define __LOAD_KERNEL_PDA(reg)
+#define __LOAD_KERNEL_PDA
 #endif
+
+#define DEFINE_VECTORED_ISR(name, fun) \
+	__asm__ ( \
+        "\n" __ALIGN_STR"\n\t" \
+        SYMBOL_NAME_STR(name) ":\n\t" \
+	"pushl $0\n\t" \
+	"cld\n\t" \
+        __PUSH_GS \
+        "pushl %es\n\t" \
+        "pushl %ds\n\t" \
+        "pushl %eax\n\t" \
+        "pushl %ebp\n\t" \
+	"pushl %edi\n\t" \
+        "pushl %esi\n\t" \
+        "pushl %edx\n\t" \
+        "pushl %ecx\n\t" \
+	"pushl %ebx\n\t" \
+	__LXRT_GET_DATASEG(edx) \
+        "movl %edx, %ds\n\t" \
+        "movl %edx, %es\n\t" \
+        __LOAD_KERNEL_PDA \
+        "call "SYMBOL_NAME_STR(fun)"\n\t" \
+        "testl %eax,%eax\n\t" \
+        "jnz  ret_from_intr\n\t" \
+        "popl %ebx\n\t" \
+        "popl %ecx\n\t" \
+        "popl %edx\n\t" \
+        "popl %esi\n\t" \
+	"popl %edi\n\t" \
+        "popl %ebp\n\t" \
+        "popl %eax\n\t" \
+        "popl %ds\n\t" \
+        "popl %es\n\t" \
+        __POP_GS \
+	"addl $4, %esp\n\t" \
+        "iret")
 
 #if CONFIG_RTAI_DONT_DISPATCH_CORE_IRQS
 
@@ -912,41 +948,8 @@ int _rtai_sched_on_ipi_handler(void)
 	return 0;
 }
 
-void rtai_sched_on_ipi_handler (void);
-	__asm__ ( \
-        "\n" __ALIGN_STR"\n\t" \
-        SYMBOL_NAME_STR(rtai_sched_on_ipi_handler) ":\n\t" \
-        "pushl $-1\n\t" \
-	"cld\n\t" \
-        __PUSH_GS \
-        "pushl %es\n\t" \
-        "pushl %ds\n\t" \
-        "pushl %eax\n\t" \
-        "pushl %ebp\n\t" \
-        "pushl %edi\n\t" \
-        "pushl %esi\n\t" \
-        "pushl %edx\n\t" \
-        "pushl %ecx\n\t" \
-        "pushl %ebx\n\t" \
-	__LXRT_GET_DATASEG(ecx) \
-        "movl %ecx, %ds\n\t" \
-        "movl %ecx, %es\n\t" \
-        __LOAD_KERNEL_PDA(ecx) \
-        "call "SYMBOL_NAME_STR(_rtai_sched_on_ipi_handler)"\n\t" \
-        "testl %eax,%eax\n\t" \
-        "jnz  ret_from_intr\n\t" \
-        "popl %ebx\n\t" \
-        "popl %ecx\n\t" \
-        "popl %edx\n\t" \
-        "popl %esi\n\t" \
-        "popl %edi\n\t" \
-        "popl %ebp\n\t" \
-        "popl %eax\n\t" \
-        "popl %ds\n\t" \
-        "popl %es\n\t" \
-        __POP_GS \
-        "addl $4,%esp\n\t" \
-        "iret");
+void rtai_sched_on_ipi_handler(void);
+DEFINE_VECTORED_ISR(rtai_sched_on_ipi_handler, _rtai_sched_on_ipi_handler);
 
 static struct desc_struct rtai_sched_on_ipi_sysvec;
 
@@ -987,41 +990,8 @@ int _rtai_apic_timer_handler(void)
 	return 0;
 }
 
-void rtai_apic_timer_handler (void);
-	__asm__ ( \
-        "\n" __ALIGN_STR"\n\t" \
-        SYMBOL_NAME_STR(rtai_apic_timer_handler) ":\n\t" \
-        "pushl $-1\n\t" \
-	"cld\n\t" \
-        __PUSH_GS \
-        "pushl %es\n\t" \
-        "pushl %ds\n\t" \
-        "pushl %eax\n\t" \
-        "pushl %ebp\n\t" \
-        "pushl %edi\n\t" \
-        "pushl %esi\n\t" \
-        "pushl %edx\n\t" \
-        "pushl %ecx\n\t" \
-        "pushl %ebx\n\t" \
-	__LXRT_GET_DATASEG(ecx) \
-        "movl %ecx, %ds\n\t" \
-        "movl %ecx, %es\n\t" \
-        __LOAD_KERNEL_PDA(ecx) \
-        "call "SYMBOL_NAME_STR(_rtai_apic_timer_handler)"\n\t" \
-        "testl %eax,%eax\n\t" \
-        "jnz  ret_from_intr\n\t" \
-        "popl %ebx\n\t" \
-        "popl %ecx\n\t" \
-        "popl %edx\n\t" \
-        "popl %esi\n\t" \
-        "popl %edi\n\t" \
-        "popl %ebp\n\t" \
-        "popl %eax\n\t" \
-        "popl %ds\n\t" \
-        "popl %es\n\t" \
-        __POP_GS \
-        "addl $4,%esp\n\t" \
-        "iret");
+void rtai_apic_timer_handler(void);
+DEFINE_VECTORED_ISR(rtai_apic_timer_handler, _rtai_apic_timer_handler);
 
 static struct desc_struct rtai_apic_timer_sysvec;
 
@@ -1055,41 +1025,8 @@ int _rtai_8254_timer_handler(struct pt_regs regs)
 	return 0;
 }
 
-void rtai_8254_timer_handler (void);
-	__asm__ ( \
-        "\n" __ALIGN_STR"\n\t" \
-        SYMBOL_NAME_STR(rtai_8254_timer_handler) ":\n\t" \
-        "pushl $-256\n\t" \
-	"cld\n\t" \
-        __PUSH_GS \
-        "pushl %es\n\t" \
-        "pushl %ds\n\t" \
-        "pushl %eax\n\t" \
-        "pushl %ebp\n\t" \
-        "pushl %edi\n\t" \
-        "pushl %esi\n\t" \
-        "pushl %edx\n\t" \
-        "pushl %ecx\n\t" \
-        "pushl %ebx\n\t" \
-	__LXRT_GET_DATASEG(ecx) \
-        "movl %ecx, %ds\n\t" \
-        "movl %ecx, %es\n\t" \
-        __LOAD_KERNEL_PDA(ecx) \
-        "call "SYMBOL_NAME_STR(_rtai_8254_timer_handler)"\n\t" \
-        "testl %eax,%eax\n\t" \
-        "jnz  ret_from_intr\n\t" \
-        "popl %ebx\n\t" \
-        "popl %ecx\n\t" \
-        "popl %edx\n\t" \
-        "popl %esi\n\t" \
-        "popl %edi\n\t" \
-        "popl %ebp\n\t" \
-        "popl %eax\n\t" \
-        "popl %ds\n\t" \
-        "popl %es\n\t" \
-        __POP_GS \
-        "addl $4,%esp\n\t" \
-        "iret");
+void rtai_8254_timer_handler(void);
+DEFINE_VECTORED_ISR(rtai_8254_timer_handler, _rtai_8254_timer_handler);
 
 static struct desc_struct rtai_8254_timer_sysvec;
 
@@ -1766,41 +1703,8 @@ asmlinkage int rtai_syscall_dispatcher (struct pt_regs regs)
 	return 0;
 }
 
-void rtai_uvec_handler (void);
-	__asm__ ( \
-        "\n" __ALIGN_STR"\n\t" \
-        SYMBOL_NAME_STR(rtai_uvec_handler) ":\n\t" \
-	"pushl $0\n\t" \
-	"cld\n\t" \
-        __PUSH_GS \
-        "pushl %es\n\t" \
-        "pushl %ds\n\t" \
-        "pushl %eax\n\t" \
-        "pushl %ebp\n\t" \
-	"pushl %edi\n\t" \
-        "pushl %esi\n\t" \
-        "pushl %edx\n\t" \
-        "pushl %ecx\n\t" \
-	"pushl %ebx\n\t" \
-	__LXRT_GET_DATASEG(ebx) \
-        "movl %ebx, %ds\n\t" \
-        "movl %ebx, %es\n\t" \
-        __LOAD_KERNEL_PDA(ebx) \
-        "call "SYMBOL_NAME_STR(rtai_syscall_dispatcher)"\n\t" \
-        "testl %eax,%eax\n\t" \
-        "jnz  ret_from_intr\n\t" \
-        "popl %ebx\n\t" \
-        "popl %ecx\n\t" \
-        "popl %edx\n\t" \
-        "popl %esi\n\t" \
-	"popl %edi\n\t" \
-        "popl %ebp\n\t" \
-        "popl %eax\n\t" \
-        "popl %ds\n\t" \
-        "popl %es\n\t" \
-        __POP_GS \
-	"addl $4, %esp\n\t" \
-        "iret");
+void rtai_uvec_handler(void);
+DEFINE_VECTORED_ISR(rtai_uvec_handler, rtai_syscall_dispatcher);
 
 struct desc_struct rtai_set_gate_vector (unsigned vector, int type, int dpl, void *handler)
 {

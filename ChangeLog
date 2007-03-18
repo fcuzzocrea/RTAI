@@ -2,7 +2,8 @@
 
         * base/arch/i386/hal/hal.immed: support for Linux > 2.6.19 in direct
           vectoring and RTAI proper syscalls, requires push/pop of gs and the
-          loading of KERNEL_PDA segment, a forgot to commit.
+          loading of KERNEL_PDA segment, a forgot to commiti; this new version
+	  avoids duplicated code for vectored isrs by using a macro.
 
 2007-03-15  Paolo Mantegazza <mantegazza@aero.polimi.it>
 

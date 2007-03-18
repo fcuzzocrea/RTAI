@@ -1,3 +1,9 @@
+2007-03-18  Paolo Mantegazza <mantegazza@aero.polimi.it>
+
+        * base/arch/i386/hal/hal.immed: support for Linux > 2.6.19 in direct
+          vectoring and RTAI proper syscalls, requires push/pop of gs and the
+          loading of KERNEL_PDA segment, a forgot to commit.
+
 2007-03-15  Paolo Mantegazza <mantegazza@aero.polimi.it>
 
 	* base/sched/sys.c: fixed a few remaining arguments list incongruences 

@@ -1754,11 +1754,11 @@ static int intercept_syscall_prologue(unsigned long event, struct pt_regs *regs)
 	return likely(sched_intercept_syscall_prologue != NULL) ? sched_intercept_syscall_prologue(regs) : 0;
 }
 
-asmlinkage int rtai_syscall_dispatcher (long bx, unsigned long cx_args, long long *dx_retval, long si, long di, long bp, unsigned long ax_srq, long ds, long es, long gs, long orig_eax, long eip, long cs, unsigned long eflags)
+asmlinkage int rtai_syscall_dispatcher (struct pt_regs regs)
 {
 	int cpuid;
-	IF_IS_A_USI_SRQ_CALL_IT(ax_srq, cx_args, dx_retval, eflags, 0);
-	*dx_retval = ax_srq > RTAI_NR_SRQS ? rtai_lxrt_dispatcher(ax_srq, cx_args, &bx) : rtai_usrq_dispatcher(ax_srq, cx_args);
+	IF_IS_A_USI_SRQ_CALL_IT(regs.eax, regs.ecx, (long long *)regs.edx, regs.eflags, 0);
+	*((long long *)regs.edx) = regs.eax > RTAI_NR_SRQS ? rtai_lxrt_dispatcher(regs.eax, regs.ecx, &regs) : rtai_usrq_dispatcher(regs.eax, regs.ecx);
 	if (!in_hrt_mode(cpuid = rtai_cpuid())) {
 		hal_test_and_fast_flush_pipeline(cpuid);
 		return 1;

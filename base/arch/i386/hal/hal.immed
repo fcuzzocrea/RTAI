@@ -1738,7 +1738,7 @@ static inline long long rtai_usrq_dispatcher (unsigned long srq, unsigned long l
 #include <asm/rtai_usi.h>
 long long (*rtai_lxrt_dispatcher)(unsigned long, unsigned long, void *);
 
-asmlinkage int rtai_syscall_dispatcher (long bx, unsigned long cx_args, long long *dx_retval, long si, long di, long bp, unsigned long ax_srq, long ds, long es, long orig_eax, long eip, long cs, unsigned long eflags)
+asmlinkage int rtai_syscall_dispatcher (long bx, unsigned long cx_args, long long *dx_retval, long si, long di, long bp, unsigned long ax_srq, long ds, long es, long gs, long orig_eax, long eip, long cs, unsigned long eflags)
 {
 	int cpuid;
 #ifdef USI_SRQ_MASK

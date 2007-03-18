@@ -868,6 +868,17 @@ irqreturn_t rtai_broadcast_to_local_timers (int irq, void *dev_id, struct pt_reg
 #define SYMBOL_NAME_STR(X) #X
 #endif
 
+
+#if LINUX_VERSION_CODE > KERNEL_VERSION(2,6,19)
+#define __PUSH_GS              "pushl %gs\n\t"
+#define __POP_GS               "popl %gs\n\t"
+#define __LOAD_KERNEL_PDA(reg) "movl $"STR(__KERNEL_PDA)", %" #reg "; movl %" #reg ", %gs\n\t"
+#else
+#define __PUSH_GS
+#define __POP_GS
+#define __LOAD_KERNEL_PDA(reg)
+#endif
+
 #if CONFIG_RTAI_DONT_DISPATCH_CORE_IRQS
 
 #define SET_INTR_GATE(vector, handler, save) \
@@ -908,6 +919,7 @@ void rtai_sched_on_ipi_handler (void);
         SYMBOL_NAME_STR(rtai_sched_on_ipi_handler) ":\n\t" \
         "pushl $-1\n\t" \
 	"cld\n\t" \
+	__PUSH_GS \
         "pushl %es\n\t" \
         "pushl %ds\n\t" \
         "pushl %eax\n\t" \
@@ -920,6 +932,7 @@ void rtai_sched_on_ipi_handler (void);
 	__LXRT_GET_DATASEG(ecx) \
         "movl %ecx, %ds\n\t" \
         "movl %ecx, %es\n\t" \
+	__LOAD_KERNEL_PDA(ecx)
         "call "SYMBOL_NAME_STR(_rtai_sched_on_ipi_handler)"\n\t" \
         "testl %eax,%eax\n\t" \
         "jnz  ret_from_intr\n\t" \
@@ -932,6 +945,7 @@ void rtai_sched_on_ipi_handler (void);
         "popl %eax\n\t" \
         "popl %ds\n\t" \
         "popl %es\n\t" \
+	__POP_GS \
         "addl $4,%esp\n\t" \
         "iret");
 
@@ -980,6 +994,7 @@ void rtai_apic_timer_handler (void);
         SYMBOL_NAME_STR(rtai_apic_timer_handler) ":\n\t" \
         "pushl $-1\n\t" \
 	"cld\n\t" \
+	__PUSH_GS \
         "pushl %es\n\t" \
         "pushl %ds\n\t" \
         "pushl %eax\n\t" \
@@ -992,6 +1007,7 @@ void rtai_apic_timer_handler (void);
 	__LXRT_GET_DATASEG(ecx) \
         "movl %ecx, %ds\n\t" \
         "movl %ecx, %es\n\t" \
+	__LOAD_KERNEL_PDA(ecx)
         "call "SYMBOL_NAME_STR(_rtai_apic_timer_handler)"\n\t" \
         "testl %eax,%eax\n\t" \
         "jnz  ret_from_intr\n\t" \
@@ -1004,6 +1020,7 @@ void rtai_apic_timer_handler (void);
         "popl %eax\n\t" \
         "popl %ds\n\t" \
         "popl %es\n\t" \
+	__POP_GS \
         "addl $4,%esp\n\t" \
         "iret");
 
@@ -1045,6 +1062,7 @@ void rtai_8254_timer_handler (void);
         SYMBOL_NAME_STR(rtai_8254_timer_handler) ":\n\t" \
         "pushl $-256\n\t" \
 	"cld\n\t" \
+	__PUSH_GS \
         "pushl %es\n\t" \
         "pushl %ds\n\t" \
         "pushl %eax\n\t" \
@@ -1057,6 +1075,7 @@ void rtai_8254_timer_handler (void);
 	__LXRT_GET_DATASEG(ecx) \
         "movl %ecx, %ds\n\t" \
         "movl %ecx, %es\n\t" \
+	__LOAD_KERNEL_PDA(ecx)
         "call "SYMBOL_NAME_STR(_rtai_8254_timer_handler)"\n\t" \
         "testl %eax,%eax\n\t" \
         "jnz  ret_from_intr\n\t" \
@@ -1069,6 +1088,7 @@ void rtai_8254_timer_handler (void);
         "popl %eax\n\t" \
         "popl %ds\n\t" \
         "popl %es\n\t" \
+	__POP_GS \
         "addl $4,%esp\n\t" \
         "iret");
 
@@ -1738,6 +1758,7 @@ void rtai_uvec_handler (void);
         SYMBOL_NAME_STR(rtai_uvec_handler) ":\n\t" \
 	"pushl $0\n\t" \
 	"cld\n\t" \
+        __PUSH_GS \
         "pushl %es\n\t" \
         "pushl %ds\n\t" \
         "pushl %eax\n\t" \
@@ -1750,6 +1771,7 @@ void rtai_uvec_handler (void);
 	__LXRT_GET_DATASEG(ebx) \
         "movl %ebx, %ds\n\t" \
         "movl %ebx, %es\n\t" \
+        __LOAD_KERNEL_PDA(ebx) \
         "call "SYMBOL_NAME_STR(rtai_syscall_dispatcher)"\n\t" \
         "testl %eax,%eax\n\t" \
         "jnz  ret_from_intr\n\t" \
@@ -1762,6 +1784,7 @@ void rtai_uvec_handler (void);
         "popl %eax\n\t" \
         "popl %ds\n\t" \
         "popl %es\n\t" \
+        __POP_GS \
 	"addl $4, %esp\n\t" \
         "iret");
 

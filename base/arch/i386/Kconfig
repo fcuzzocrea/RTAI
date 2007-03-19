@@ -769,7 +769,7 @@ config RTAI_IMMEDIATE_LINUX_SYSCALL
 	rt_make_hard_real_time/rt_make_soft_real_time.
 
 config RTAI_MATH
-	bool "Math support"
+	bool "Mathfun lib support in kernel"
 	depends on RTAI_FPU_SUPPORT
 	default y
 

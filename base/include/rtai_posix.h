@@ -227,7 +227,7 @@ typedef struct pthread_cookie {
 	RT_TASK task;
 	SEM sem;
 	void (*task_fun)(int);
-	int arg;
+	long arg;
 } pthread_cookie_t;
 
 #ifdef __cplusplus
@@ -455,9 +455,8 @@ static inline int pthread_create(pthread_t *thread, const pthread_attr_t *attr, 
 	if (cookie) {
 		(cookie->task).magic = 0;
 		cookie->task_fun = (void *)start_routine;
-		cookie->arg = (int)arg;
-		if (!rt_task_init(&cookie->task, (void *)posix_wrapper_fun, (int)cookie,
-				(attr) ? attr->stacksize : STACK_SIZE, (attr) ? attr->priority : RT_SCHED_LOWEST_PRIORITY, 1, 0)) {
+		cookie->arg = (long)arg;
+		if (!rt_task_init(&cookie->task, (void *)posix_wrapper_fun, (long)cookie, (attr) ? attr->stacksize : STACK_SIZE, (attr) ? attr->priority : RT_SCHED_LOWEST_PRIORITY, 1, 0)) {
 			*thread = &cookie->task;
 			rt_typed_sem_init(&cookie->sem, 0, BIN_SEM | FIFO_Q);
 			rt_task_resume(&cookie->task);

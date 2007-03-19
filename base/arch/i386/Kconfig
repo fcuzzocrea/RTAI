@@ -26,7 +26,7 @@ config RTAI_LINUXDIR
 	default "/usr/src/linux"
 	help
 	This variable contains the directory of your previously
-	patched Linux kernel. As explained before, you can changed the
+	patched Linux kernel. As explained before, you can change the
 	value of the Linux source tree which is fixed by default to
 	/usr/src/linux.  
 

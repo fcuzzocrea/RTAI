@@ -772,6 +772,10 @@ config RTAI_MATH
 	bool "Mathfuns support in kernel"
 	depends on RTAI_FPU_SUPPORT
 	default y
+	help
+	This parameter allows buiding a module containing math support 
+	functions for kernel space. It might be useful to avoid fighting
+	for the use of libc within the kernel.
 
 config RTAI_MATH_C99
 	bool "C99 standard support"

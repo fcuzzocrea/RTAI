@@ -230,7 +230,7 @@ static inline long rt_strncpy_from_user(char *dst, const char __user *src, long 
 static union rtai_lxrt_t _rtai_lxrt(long srq, void *arg)
 {
 	union rtai_lxrt_t retval;
-#ifdef USE_LINUX_SYSCALL
+#if 1 //def USE_LINUX_SYSCALL
 	syscall(RTAI_SYSCALL_NR, srq, arg, &retval);
 #else
 	RTAI_DO_TRAP(RTAI_SYS_VECTOR, retval, srq, arg);

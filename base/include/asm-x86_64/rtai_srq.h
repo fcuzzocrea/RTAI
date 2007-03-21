@@ -38,7 +38,7 @@
 static inline long long rtai_srq(long srq, unsigned long args)
 {
 	long long retval;
-#ifdef USE_LINUX_SYSCALL
+#if 1 //def USE_LINUX_SYSCALL
         syscall(RTAI_SRQ_SYSCALL_NR, srq, args, &retval);
 #else
         RTAI_DO_TRAP(RTAI_SYS_VECTOR, retval, srq, args);

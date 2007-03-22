@@ -192,7 +192,7 @@ static void net_resume_task(int sock, struct portslot_t *p)
 	if (all_ok) {
 		rt_sem_signal(&p->sem);
 	} else {
-		int i, rsize;
+		int i;
 		unsigned long flags;
 		struct par_t { int priority, base_priority, argsize, rsize, fun_ext_timed; long type; unsigned long long owner; long a[1]; } *par;
 		char msg[MAX_MSG_SIZE];
@@ -201,9 +201,7 @@ static void net_resume_task(int sock, struct portslot_t *p)
 		addr = (struct sockaddr*)&p->addr;
 		
 		if (my->is_hard) {
-			do {
-			rsize = hard_rt_recvfrom(p->socket[1], msg, MAX_MSG_SIZE, 0, addr, &i);
-			} while (rsize == -EAGAIN);
+			while (hard_rt_recvfrom(p->socket[1], msg, MAX_MSG_SIZE, 0, addr, &i) == -EAGAIN);
 		} else {
 			soft_rt_recvfrom(p->socket[0], msg, MAX_MSG_SIZE, 0, addr, &i);
 		}

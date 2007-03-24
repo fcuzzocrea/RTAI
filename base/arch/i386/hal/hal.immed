@@ -173,7 +173,11 @@ static int rtai_last_8254_counter2;
 
 static RTIME rtai_ts_8254;
 
+//#define RTAI_SYSCALLS_USE_HIRQ_DISPATCHER
+
+#ifndef RTAI_SYSCALLS_USE_HIRQ_DISPATCHER
 static struct desc_struct rtai_sysvec;
+#endif
 
 static RT_TRAP_HANDLER rtai_trap_handler;
 
@@ -1450,6 +1454,12 @@ static int rtai_hirq_dispatcher (struct pt_regs regs)
 	if (rtai_realtime_irq[irq = ~regs.orig_eax].handler) {
 #endif
 		unsigned long sflags;
+#ifdef RTAI_SYSCALLS_USE_HIRQ_DISPATCHER
+		if (irq == RTAI_SYS_IRQ) { 
+			asmlinkage int rtai_syscall_dispatcher(struct pt_regs *);
+			return rtai_syscall_dispatcher(&regs);
+		} 
+#endif
 		RTAI_SCHED_ISR_LOCK();
 		HAL_LOCK_LINUX();
 		rtai_realtime_irq[irq].irq_ack(irq); mb();
@@ -1691,6 +1701,19 @@ static int intercept_syscall_prologue(unsigned long event, struct pt_regs *regs)
 	return likely(sched_intercept_syscall_prologue != NULL) ? sched_intercept_syscall_prologue(regs) : 0;
 }
 
+#ifdef RTAI_SYSCALLS_USE_HIRQ_DISPATCHER
+asmlinkage int rtai_syscall_dispatcher (struct pt_regs *regs)
+{
+	unsigned long srq  = regs->eax;
+	IF_IS_A_USI_SRQ_CALL_IT(srq, regs->ecx, (long long *)regs->edx, regs->eflags, 0);
+	*((long long *)regs->edx) = srq > RTAI_NR_SRQS ? rtai_lxrt_dispatcher(srq, regs->ecx, &regs) : rtai_usrq_dispatcher(srq, regs->ecx);
+	if (!in_hrt_mode(srq = rtai_cpuid())) {
+		hal_test_and_fast_flush_pipeline(srq);
+		return 1;
+	}
+	return 0;
+}
+#else
 asmlinkage int rtai_syscall_dispatcher (struct pt_regs regs)
 {
 	int cpuid;
@@ -1705,6 +1728,7 @@ asmlinkage int rtai_syscall_dispatcher (struct pt_regs regs)
 
 void rtai_uvec_handler(void);
 DEFINE_VECTORED_ISR(rtai_uvec_handler, rtai_syscall_dispatcher);
+#endif
 
 struct desc_struct rtai_set_gate_vector (unsigned vector, int type, int dpl, void *handler)
 {
@@ -1721,12 +1745,18 @@ void rtai_reset_gate_vector (unsigned vector, struct desc_struct e)
 
 static void rtai_install_archdep (void)
 {
+
+#ifndef RTAI_SYSCALLS_USE_HIRQ_DISPATCHER
 	unsigned long flags;
 
 	flags = rtai_critical_enter(NULL);
     /* Backup and replace the sysreq vector. */
 	rtai_sysvec = rtai_set_gate_vector(RTAI_SYS_VECTOR, 15, 3, &rtai_uvec_handler);
 	rtai_critical_exit(flags);
+#else
+	idt_table[RTAI_SYS_VECTOR].b = ((idt_table[RTAI_SYS_VECTOR].b & 0xFFFF0000) | (0x8000 + ((3) << 13) + (15 << 8)));
+	rt_request_irq(RTAI_SYS_IRQ, (void *)rtai_syscall_dispatcher, 0, 1);
+#endif
 
 	hal_catch_event(hal_root_domain, HAL_SYSCALL_PROLOGUE, (void *)intercept_syscall_prologue);
 
@@ -1747,11 +1777,16 @@ static void rtai_install_archdep (void)
 
 static void rtai_uninstall_archdep(void)
 {
+#ifndef RTAI_SYSCALLS_USE_HIRQ_DISPATCHER
 	unsigned long flags;
 
 	flags = rtai_critical_enter(NULL);
 	idt_table[RTAI_SYS_VECTOR] = rtai_sysvec;
 	rtai_critical_exit(flags);
+#else
+	rt_release_irq(RTAI_SYS_IRQ);
+	idt_table[RTAI_SYS_VECTOR].b = ((idt_table[RTAI_SYS_VECTOR].b & 0xFFFF0000) | (0x8000 + ((0) << 13) + (14 << 8)));
+#endif
 
 	hal_catch_event(hal_root_domain, HAL_SYSCALL_PROLOGUE, NULL);
 }
@@ -1870,7 +1905,7 @@ static int rtai_read_proc (char *page, char **start, off_t off, int count, int *
 	PROC_PRINT("\n\n");
 
 	PROC_PRINT("** RTAI extension traps: \n\n");
-	PROC_PRINT("    SYSREQ=0x%x\n\n",RTAI_SYS_VECTOR);
+	PROC_PRINT("    SYSREQ=0x%x\n\n", RTAI_SYS_VECTOR);
 
 	none = 1;
 	PROC_PRINT("** RTAI SYSREQs in use: ");

@@ -826,7 +826,7 @@ new file mode 100644
 index 0000000..e1fe6f8
 --- /dev/null
 +++ b/arch/x86_64/kernel/ipipe.c
-@@ -0,0 +1,837 @@
+@@ -0,0 +1,839 @@
 +/*   -*- linux-c -*-
 + *   linux/arch/x86_64/kernel/ipipe.c
 + *
@@ -1326,6 +1326,7 @@ index 0000000..e1fe6f8
 +	if (__ipipe_syscall_watched_p(current, regs->orig_rax) &&
 +	    __ipipe_event_monitored_p(IPIPE_EVENT_SYSCALL) &&
 +	    __ipipe_dispatch_event(IPIPE_EVENT_SYSCALL,regs) > 0) {
++#if 0
 +		/* We might enter here over a non-root domain and exit
 +		 * over the root one as a result of the syscall
 +		 * (i.e. by recycling the register set of the current
@@ -1342,6 +1343,7 @@ index 0000000..e1fe6f8
 +			ipipe_unlock_cpu(flags);
 +			return -1;
 +		}
++#endif
 +		/* We need to perform the rest of the fast exit path
 +		 * with IRQs off, since we are going to switch back to
 +		 * the normal stack, so disable them now. */

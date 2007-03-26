@@ -803,8 +803,12 @@ irqreturn_t rtai_broadcast_to_local_timers (int irq, void *dev_id, struct pt_reg
 	unsigned long flags;
 
 	rtai_hw_save_flags_and_cli(flags);
+#ifdef CONFIG_SMP
 	apic_wait_icr_idle();
-	apic_write_around(APIC_ICR,APIC_DM_FIXED|APIC_DEST_ALLINC|LOCAL_TIMER_VECTOR);
+//	apic_write_around(APIC_ICR,APIC_DM_FIXED|APIC_DEST_ALLINC|LOCAL_TIMER_VECTOR);
+	apic_write_around(APIC_ICR,APIC_DM_FIXED|APIC_DEST_ALLBUT|LOCAL_TIMER_VECTOR);
+#endif
+	hal_pend_uncond(RTAI_APIC_TIMER_IPI, rtai_cpuid());
 	rtai_hw_restore_flags(flags);
 
 	return RTAI_LINUX_IRQ_HANDLED;

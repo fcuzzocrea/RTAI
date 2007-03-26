@@ -164,7 +164,7 @@ static int rtai_last_8254_counter2;
 
 static RTIME rtai_ts_8254;
 
-//#define RTAI_SYSCALLS_USE_HIRQ_DISPATCHER
+#define RTAI_SYSCALLS_USE_HIRQ_DISPATCHER
 
 #ifndef RTAI_SYSCALLS_USE_HIRQ_DISPATCHER
 static struct gate_struct rtai_sysvec;
@@ -1505,7 +1505,7 @@ static int rtai_hirq_dispatcher(struct pt_regs *regs)
 			int retval;
 			asmlinkage int rtai_syscall_dispatcher(struct pt_regs *);
 			rtai_sti();
-			retval = rtai_syscall_dispatcher(&regs);
+			retval = rtai_syscall_dispatcher(regs);
 			rtai_cli();
 			return retval;
 		}
@@ -1777,7 +1777,7 @@ static void rtai_install_archdep (void)
 	rtai_sysvec = rtai_set_gate_vector(RTAI_SYS_VECTOR, GATE_INTERRUPT, 3, rtai_uvec_handler);
 	rtai_critical_exit(flags);
 #else
-	idt_table[RTAI_SYS_VECTOR].type = 0xF;
+	idt_table[RTAI_SYS_VECTOR].type = 0xE;
 	idt_table[RTAI_SYS_VECTOR].dpl  = 0x3;
 	rt_request_irq(RTAI_SYS_IRQ, (void *)rtai_syscall_dispatcher, 0, 1);
 #endif

@@ -49,8 +49,11 @@
 #define RTAI_SYS_IRQ           (RTAI_SYS_VECTOR - FIRST_EXTERNAL_VECTOR)
 #endif
 
+#ifdef __KERNEL__
+#include <asm/hw_irq.h>
 #if RTAI_APIC_HIGH_VECTOR == RTAI_SYS_VECTOR || RTAI_APIC_LOW_VECTOR == RTAI_SYS_VECTOR
 #error *** RTAI_SYS_VECTOR CONFLICTS WITH APIC VECTORS USED BY RTAI ***
+#endif
 #endif
 
 #define __rtai_stringize0(_s_) #_s_

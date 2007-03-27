@@ -1164,7 +1164,7 @@ static inline int kpoll(struct pollfd *ufds, unsigned int nfds, int timeout)
 {
 	SYSCALL_BGN();
 	retval = ((asmlinkage int (*)(struct pollfd *, ... ))sys_call_table[__NR_poll])(ufds, nfds, timeout);
-//	retval = poll(ufds, nfds, timeout)
+//	retval = poll(ufds, nfds, timeout);
 	SYSCALL_END();
 }
 

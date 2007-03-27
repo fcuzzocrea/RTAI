@@ -1038,7 +1038,7 @@ extern void *sys_call_table[];
 static inline int kpoll(struct pollfd *ufds, unsigned int nfds, int timeout)
 {
 	SYSCALL_BGN();
-	retval = ((asmlinkage int (*)(struct pollfd *, unsigned int, int))sys_call_table[__NR_poll])(ufds, nfds, timeout);
+	retval = ((asmlinkage int (*)(struct pollfd *, ... ))sys_call_table[__NR_poll])(ufds, nfds, timeout);
 //	retval = poll(ufds, nfds, timeout);
 	SYSCALL_END();
 }
@@ -1047,7 +1047,7 @@ static inline int kpoll(struct pollfd *ufds, unsigned int nfds, int timeout)
 static inline int ksocketcall(int call, void *args)
 {
 	SYSCALL_BGN();
-	retval = ((asmlinkage int (*)(int, void *))sys_call_table[__NR_socketcall])(call, args);
+	retval = ((asmlinkage int (*)(int, ... ))sys_call_table[__NR_socketcall])(call, args);
 //	retval = socketcall(call, args);
 	SYSCALL_END();
 }

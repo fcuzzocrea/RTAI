@@ -43,10 +43,12 @@
 #define RTAI_APIC_HIGH_IPI     ipipe_apic_vector_irq(RTAI_APIC_HIGH_VECTOR)
 #define RTAI_APIC_LOW_IPI      ipipe_apic_vector_irq(RTAI_APIC_LOW_VECTOR)
 #define RTAI_SYS_IRQ           ipipe_apic_vector_irq(RTAI_SYS_VECTOR)
+#define LOCAL_TIMER_IPI        ipipe_apic_vector_irq(LOCAL_TIMER_VECTOR)
 #else
 #define RTAI_APIC_HIGH_IPI     (RTAI_APIC_HIGH_VECTOR - FIRST_EXTERNAL_VECTOR)
 #define RTAI_APIC_LOW_IPI      (RTAI_APIC_LOW_VECTOR - FIRST_EXTERNAL_VECTOR)
 #define RTAI_SYS_IRQ           (RTAI_SYS_VECTOR - FIRST_EXTERNAL_VECTOR)
+#define LOCAL_TIMER_IPI        (LOCAL_TIMER_VECTOR - FIRST_EXTERNAL_VECTOR)
 #endif
 
 #ifdef __KERNEL__

@@ -1,3 +1,9 @@
+2007-03-27  Paolo Mantegazza <mantegazza@aero.polimi.it>
+
+	* base/arch/ipc/netrpc/netrpc.c: force asmlinkage using a variable
+	  number of args for in kernel net syscalls, older compilers seem to
+	  have it not with just asmlinkage.
+
 2007-03-21  Paolo Mantegazza <mantegazza@aero.polimi.it>
 
 	* base/include/asm-i386/rtai_lxrt.h: care of fpu_counter for Linux 

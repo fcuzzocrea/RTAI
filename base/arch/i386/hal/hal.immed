@@ -1710,7 +1710,7 @@ asmlinkage int rtai_syscall_dispatcher (struct pt_regs *regs)
 {
 	unsigned long srq  = regs->eax;
 	IF_IS_A_USI_SRQ_CALL_IT(srq, regs->ecx, (long long *)regs->edx, regs->eflags, 0);
-	*((long long *)regs->edx) = srq > RTAI_NR_SRQS ? rtai_lxrt_dispatcher(srq, regs->ecx, &regs) : rtai_usrq_dispatcher(srq, regs->ecx);
+	*((long long *)regs->edx) = srq > RTAI_NR_SRQS ? rtai_lxrt_dispatcher(srq, regs->ecx, regs) : rtai_usrq_dispatcher(srq, regs->ecx);
 	if (!in_hrt_mode(srq = rtai_cpuid())) {
 		hal_test_and_fast_flush_pipeline(srq);
 		return 1;

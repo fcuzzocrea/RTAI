@@ -11,11 +11,8 @@
  *   Copyright &copy; 2001 Lineo, Inc, \n
  *   Copyright &copy; 2002 Wolfgang Grandegger. \n
  *
- *   RTAI/x86 rewrite over Adeos: \n
- *   Copyright &copy 2002 Philippe Gerum.
- *
- *   RTAI/PPC rewrite over Adeos: \n
- *   Copyright &copy 2004 Wolfgang Grandegger.
+ *   RTAI/PPC rewrite over hal-linux patches: \n
+ *   Copyright &copy 2006 Antonio Barbalace.
  *
  *   This program is free software; you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -33,15 +30,11 @@
  *   Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
  */
 
-/**
- * @addtogroup hal
- *@{*/
+
+#define RTAI_SYSCALL_MODE //__attribute__((regparm(0)))
 
 #ifndef _RTAI_ASM_PPC_HAL_H
 #define _RTAI_ASM_PPC_HAL_H
-
-#define LOCKED_LINUX_IN_IRQ_HANDLER
-#define UNWRAPPED_CATCH_EVENT
 
 #include <asm/rtai_vectors.h>
 #include <rtai_types.h>
@@ -52,6 +45,11 @@
 #else /* !CONFIG_SMP */
 #define RTAI_NR_CPUS  1
 #endif /* CONFIG_SMP */
+
+
+//---------------------------------------------------------------------------//
+//                         Matematichal primitives                           //
+//---------------------------------------------------------------------------//
 
 static inline int ffnz(unsigned long ul)
 {
@@ -64,8 +62,8 @@ static inline unsigned long long rtai_ullmul(unsigned long m0, unsigned long m1)
 {
 	unsigned long long res;
 	__asm__ __volatile__ ("mulhwu %0, %1, %2"
-			      : "=r" (((unsigned long *)(void *)&res)[0]) 
-			      : "%r" (m0), "r" (m1));
+			       : "=r" (((unsigned long *)(void *)&res)[0]) 
+			       : "%r" (m0), "r" (m1));
 	((unsigned long *)(void *)&res)[1] = m0*m1;
 	return res;
 }
@@ -84,43 +82,50 @@ static inline unsigned long long rtai_ulldiv(unsigned long long ull, unsigned lo
 		q += rh * (unsigned long long)qf + (ql = ((unsigned long *)(void *)&ull)[1] / uld);
 		ull = rh * rf + (((unsigned long *)(void *)&ull)[1] - ql * uld);
 	}
-	if (r) {
-		*r = ull;
-	}
+	*r = ull;
 	return q;
 }
 
-/* Returns (int)i = (int)i*(int)(mult)/(int)div. */
 static inline int rtai_imuldiv(int i, int mult, int div)
 {
+    /* Returns (int)i = (int)i*(int)(mult)/(int)div. */
 	unsigned long q, r;
 	q = rtai_ulldiv(rtai_ullmul(i, mult), div, &r);
 	return (r + r) > div ? q + 1 : q;
 }
 
-/* Returns (long long)ll = (int)ll*(int)(mult)/(int)div. */
 static inline unsigned long long rtai_llimd(unsigned long long ull, unsigned long mult, unsigned long div)
 {
+    /* Returns (long long)ll = (int)ll*(int)(mult)/(int)div. */
 	unsigned long long low;
 	unsigned long q, r;
     
 	low  = rtai_ullmul(((unsigned long *)(void *)&ull)[1], mult);	
-	q = rtai_ulldiv(rtai_ullmul(((unsigned long *)(void *)&ull)[0], mult) + ((unsigned long *)(void *)&low)[0], div, (unsigned long *)(void *)&low); low = rtai_ulldiv(low, div, &r);
+	q = rtai_ulldiv(rtai_ullmul(((unsigned long *)(void *)&ull)[0], mult) + ((unsigned long *)(void *)&low)[0], div, (unsigned long *)(void *)&low);
+	low = rtai_ulldiv(low, div, &r);
 	((unsigned long *)(void *)&low)[0] += q;
+    
 	return (r + r) > div ? low + 1 : low;
 }
 
-#if defined(__KERNEL__) && !defined(__cplusplus)
-#include <linux/sched.h>
-#include <asm/system.h>
-#include <asm/io.h>
-#include <asm/time.h>
-#include <asm/rtai_atomic.h>
-#include <asm/rtai_fpu.h>
-#include <rtai_trace.h>
 
-struct rtai_realtime_irq_s
-{
+//---------------------------------------------------------------------------//
+//                     Synchronization primitives                            //
+//---------------------------------------------------------------------------//
+
+#if defined(__KERNEL__) && !defined(__cplusplus)
+ #include <linux/sched.h>
+ #include <linux/interrupt.h>
+
+ #include <asm/system.h>
+ #include <asm/io.h>
+ #include <asm/time.h>
+
+ #include <asm/rtai_atomic.h>
+ #include <asm/rtai_fpu.h>
+ #include <rtai_trace.h>
+
+struct rtai_realtime_irq_s {
         int (*handler)(unsigned irq, void *cookie);
         void *cookie;
         int retmode;
@@ -128,54 +133,40 @@ struct rtai_realtime_irq_s
         int (*irq_ack)(unsigned int);
 };
 
-#define RTAI_DOMAIN_ID  0x9ac15d93  // nam2num("rtai_d")
-#define RTAI_NR_TRAPS   HAL_NR_FAULTS
-#define RTAI_NR_SRQS    32
+ #define RTAI_DOMAIN_ID  0x52544149
+ #define RTAI_NR_TRAPS   HAL_NR_FAULTS
+ #define RTAI_NR_SRQS    32
 
-#ifdef FIXME
-#define RTAI_APIC_TIMER_VECTOR    RTAI_APIC_HIGH_VECTOR
-#define RTAI_APIC_TIMER_IPI       RTAI_APIC_HIGH_IPI
-#define RTAI_SMP_NOTIFY_VECTOR    RTAI_APIC_LOW_VECTOR
-#define RTAI_SMP_NOTIFY_IPI       RTAI_APIC_LOW_IPI
-#endif
+ #define RTAI_TIMER_DECR_IRQ       IPIPE_VIRQ_BASE
+ #define RTAI_TIMER_8254_IRQ       RTAI_TIMER_DECR_IRQ
+ #define RTAI_FREQ_DECR            (rtai_tunables.cpu_freq)
+ #define RTAI_FREQ_8254            (rtai_tunables.cpu_freq)
+ #define RTAI_LATENCY_8254         CONFIG_RTAI_SCHED_8254_LATENCY
+ #define RTAI_SETUP_TIME_8254      500
 
-#define RTAI_TIMER_DECR_IRQ       IPIPE_VIRQ_BASE
-#define RTAI_TIMER_8254_IRQ       RTAI_TIMER_DECR_IRQ
-#define RTAI_FREQ_8254            (rtai_tunables.cpu_freq)
-#ifdef FIXME
-#define RTAI_APIC_ICOUNT	  ((RTAI_FREQ_APIC + HZ/2)/HZ)
-#define RTAI_COUNTER_2_LATCH      0xfffe
-#endif
-#define RTAI_LATENCY_8254         CONFIG_RTAI_SCHED_8254_LATENCY
-#define RTAI_SETUP_TIME_8254      500
+ #define RTAI_TIME_LIMIT           0x7000000000000000LL
 
-#ifdef FIXME
-#define RTAI_CALIBRATED_APIC_FREQ 0
-#define RTAI_FREQ_APIC            (rtai_tunables.apic_freq)
-#define RTAI_LATENCY_APIC         CONFIG_RTAI_SCHED_APIC_LATENCY
-#define RTAI_SETUP_TIME_APIC      1000
-#endif
+ #define RTAI_IFLAG  9
 
-#define RTAI_TIME_LIMIT           0x7FFFFFFFFFFFFFFFLL
-
-#define RTAI_IFLAG  15
-
-#define rtai_cpuid()      hal_processor_id()
-#define rtai_tskext(idx)  hal_tskext[idx]
+ #define rtai_cpuid()       hal_processor_id()
+ #define rtai_tskext(idx)   hal_tskext[idx]
 
 /* Use these to grant atomic protection when accessing the hardware */
-#define rtai_hw_cli()                  hal_hw_cli()
-#define rtai_hw_sti()                  hal_hw_sti()
-#define rtai_hw_save_flags_and_cli(x)  hal_hw_local_irq_save(x)
-#define rtai_hw_restore_flags(x)       hal_hw_local_irq_restore(x)
-#define rtai_hw_save_flags(x)          hal_hw_local_irq_flags(x)
+ #define rtai_hw_cli()                  hal_hw_cli()
+ #define rtai_hw_sti()                  hal_hw_sti()
+ #define rtai_hw_save_flags_and_cli(x)  hal_hw_local_irq_save(x)
+ #define rtai_hw_restore_flags(x)       hal_hw_local_irq_restore(x)
+ #define rtai_hw_save_flags(x)          hal_hw_local_irq_flags(x)
 
 /* Use these to grant atomic protection in hard real time code */
-#define rtai_cli()                  hal_hw_cli()
-#define rtai_sti()                  hal_hw_sti()
-#define rtai_save_flags_and_cli(x)  hal_hw_local_irq_save(x)
-#define rtai_restore_flags(x)       hal_hw_local_irq_restore(x)
-#define rtai_save_flags(x)          hal_hw_local_irq_flags(x)
+ #define rtai_cli()                  hal_hw_cli()
+ #define rtai_sti()                  hal_hw_sti()
+ #define rtai_save_flags_and_cli(x)  hal_hw_local_irq_save(x)
+ #define rtai_restore_flags(x)       hal_hw_local_irq_restore(x)
+ #define rtai_save_flags(x)          hal_hw_local_irq_flags(x)
+
+/* The only Linux irq flags manipulation lacking in its system.h */
+ #define local_irq_restore_nosync(flags, cpuid)  do { adp_root->cpudata[cpuid].status = flags; } while (0)
 
 extern volatile unsigned long hal_pended;
 
@@ -197,8 +188,8 @@ static inline struct hal_domain_struct *get_domain_pointer(int n)
 #define hal_pend_domain_uncond(irq, domain, cpuid) \
 do { \
 	hal_irq_hits_pp(irq, domain, cpuid); \
-	__set_bit(irq & IPIPE_IRQ_IMASK, &domain->cpudata[cpuid].irq_pending_lo[irq >> IPIPE_IRQ_ISHIFT]); \
-	__set_bit(irq >> IPIPE_IRQ_ISHIFT, &domain->cpudata[cpuid].irq_pending_hi); \
+	__set_bit((irq) & IPIPE_IRQ_IMASK, &domain->cpudata[cpuid].irq_pending_lo[(irq) >> IPIPE_IRQ_ISHIFT]); \
+	__set_bit((irq) >> IPIPE_IRQ_ISHIFT, &domain->cpudata[cpuid].irq_pending_hi); \
 	test_and_set_bit(cpuid, &hal_pended); /* cautious, cautious */ \
 } while (0)
 
@@ -212,8 +203,6 @@ do { \
 	} \
 } while (0)
 
-extern volatile unsigned long *ipipe_root_status[];
-
 #define hal_test_and_fast_flush_pipeline(cpuid) \
 do { \
        	if (!test_bit(IPIPE_STALL_FLAG, ipipe_root_status[cpuid])) { \
@@ -224,9 +213,9 @@ do { \
 
 #ifdef CONFIG_PREEMPT
 #define rtai_save_and_lock_preempt_count() \
-	do { int *prcntp, prcnt; prcnt = xchg(prcntp = &preempt_count(), 1);
+        do { int *prcntp, prcnt; prcnt = xchg(prcntp = &preempt_count(), 1);
 #define rtai_restore_preempt_count() \
-	     *prcntp = prcnt; } while (0)
+             *prcntp = prcnt; } while (0)
 #else
 #define rtai_save_and_lock_preempt_count();
 #define rtai_restore_preempt_count();
@@ -234,71 +223,46 @@ do { \
 
 typedef int (*rt_irq_handler_t)(unsigned irq, void *cookie);
 
-/* Bits from rtai_status. */
-#define RTAI_USE_APIC  0
-
 #define RTAI_CALIBRATED_CPU_FREQ   0
-#define RTAI_CPU_FREQ             (rtai_tunables.cpu_freq)
+#define RTAI_CPU_FREQ              (rtai_tunables.cpu_freq)
 
-static inline unsigned long long rtai_rdtsc (void)
-{
-	unsigned long long ts;
-	unsigned long chk;
-	/* See Motorola reference manual for 32 bits PPCs. */
-	__asm__ __volatile__ ("1: mftbu %0\n"
-			      "   mftb %1\n"
-			      "   mftbu %2\n"
-			      "   cmpw %2,%0\n"
-			      "   bne 1b\n"
-			      : "=r" (((unsigned long *)&ts)[0]), 
-			        "=r" (((unsigned long *)&ts)[1]), 
-			        "=r" (chk));
-	return ts;
-}
-
-struct calibration_data
-{
-	unsigned long cpu_freq;
-	unsigned long apic_freq;
-	int latency;
-	int setup_time_TIMER_CPUNIT;
-	int setup_time_TIMER_UNIT;
-	int timers_tol[RTAI_NR_CPUS];
-};
-
-struct apic_timer_setup_data
-{
-	int mode;
-	int count;
+struct calibration_data {
+    unsigned long cpu_freq;
+    unsigned long apic_freq;
+    int latency;
+    int setup_time_TIMER_CPUNIT;
+    int setup_time_TIMER_UNIT;
+    int timers_tol[RTAI_NR_CPUS];
 };
 
 extern struct rt_times rt_times;
-
 extern struct rt_times rt_smp_times[RTAI_NR_CPUS];
-
 extern struct calibration_data rtai_tunables;
-
 extern volatile unsigned long rtai_cpu_realtime;
-
 extern volatile unsigned long rtai_cpu_lock;
 
 #define SET_TASKPRI(cpuid)
 #define CLR_TASKPRI(cpuid)
 
 extern struct rtai_switch_data {
-        volatile unsigned long sflags;
-        volatile unsigned long lflags;
+	volatile unsigned long sflags;
+	volatile unsigned long lflags;
 } rtai_linux_context[RTAI_NR_CPUS];
+
 
 #ifdef CONFIG_SMP
 
+ #define SCHED_VECTOR  RTAI_SMP_NOTIFY_VECTOR
+ #define SCHED_IPI     RTAI_SMP_NOTIFY_IPI
+
 #ifdef CONFIG_PREEMPT
-#define rt_spin_lock(lock)    do { barrier(); _raw_spin_lock(lock); barrier(); } while (0)
-#define rt_spin_unlock(lock)  do { barrier(); _raw_spin_unlock(lock); barrier(); } while (0)
+ #define rt_spin_lock(lock)    do { barrier(); _raw_spin_lock(lock); barrier(); } while (0)
+ #define rt_spin_unlock(lock)  do { barrier(); _raw_spin_unlock(lock); barrier(); } while (0)
 #else /* !CONFIG_PREEMPT */
-#define rt_spin_lock(lock)    spin_lock(lock)
-#define rt_spin_unlock(lock)  spin_unlock(lock)
+ #define rt_spin_lock(lock)    spin_lock(lock)
+ #define rt_spin_unlock(lock)  spin_unlock(lock)
 #endif /* CONFIG_PREEMPT */
+
 
 static inline void rt_spin_lock_hw_irq(spinlock_t *lock)
 {
@@ -320,59 +284,53 @@ static inline unsigned long rt_spin_lock_hw_irqsave(spinlock_t *lock)
 	return flags;
 }
 
-static inline void rt_spin_unlock_hw_irqrestore(unsigned long flags, spinlock_t *lock) 
+static inline void rt_spin_unlock_hw_irqrestore(unsigned long flags, spinlock_t *lock)
 {
 	rt_spin_unlock(lock);
 	rtai_hw_restore_flags(flags);
 }
 
-static inline void rt_spin_lock_irq(spinlock_t *lock)
-{
-	rtai_cli();
-	rt_spin_lock(lock);
+static inline void rt_spin_lock_irq(spinlock_t *lock) {
+    rtai_cli();
+    rt_spin_lock(lock);
 }
 
-static inline void rt_spin_unlock_irq(spinlock_t *lock)
-{
- 	rt_spin_unlock(lock);
-	rtai_sti();
+static inline void rt_spin_unlock_irq(spinlock_t *lock) {
+    rt_spin_unlock(lock);
+    rtai_sti();
 }
 
-static inline unsigned long rt_spin_lock_irqsave(spinlock_t *lock)
-{
-	unsigned long flags;
-	rtai_save_flags_and_cli(flags);
-	rt_spin_lock(lock);
-	return flags;
+static inline unsigned long rt_spin_lock_irqsave(spinlock_t *lock) {
+    unsigned long flags;
+    rtai_save_flags_and_cli(flags);
+    rt_spin_lock(lock);
+    return flags;
 }
 
-static inline void rt_spin_unlock_irqrestore(unsigned long flags, spinlock_t *lock)
-{
-        rt_spin_unlock(lock);
-        rtai_restore_flags(flags);
+static inline void rt_spin_unlock_irqrestore(unsigned long flags, spinlock_t *lock) {
+	rt_spin_unlock(lock);
+	rtai_local_irq_restore(flags);
 }
 
-static inline void rt_get_global_lock(void)
-{
-	barrier();
-	rtai_cli();
-	if (!test_and_set_bit(hal_processor_id(), &rtai_cpu_lock)) {
-		while (test_and_set_bit(31, &rtai_cpu_lock)) {
-			cpu_relax();
-		}
-	}
-	barrier();
+static inline void rt_get_global_lock(void) {
+        barrier();
+        rtai_cli();
+        if (!test_and_set_bit(hal_processor_id(), &rtai_cpu_lock)) {
+                while (test_and_set_bit(31, &rtai_cpu_lock)) {
+                        cpu_relax();
+                }
+        }
+        barrier();
 }
 
-static inline void rt_release_global_lock(void)
-{
-	barrier();
-	rtai_cli();
-	if (test_and_clear_bit(hal_processor_id(), &rtai_cpu_lock)) {
-		test_and_clear_bit(31, &rtai_cpu_lock);
-		cpu_relax();
-	}
-	barrier();
+static inline void rt_release_global_lock(void) {
+        barrier();
+        rtai_cli();
+        if (test_and_clear_bit(hal_processor_id(), &rtai_cpu_lock)) {
+                test_and_clear_bit(31, &rtai_cpu_lock);
+                cpu_relax();
+        }
+        barrier();
 }
 
 /**
@@ -387,7 +345,7 @@ static inline void rt_release_global_lock(void)
  * rt_global_sti hard enables interrupts (sti) on the calling CPU and releases
  * the global lock.
  */
-static inline void rt_global_cli(void) 
+static inline void rt_global_cli(void)
 {
     rt_get_global_lock();
 }
@@ -398,7 +356,7 @@ static inline void rt_global_cli(void)
  * rt_global_sti hard enables interrupts (sti) on the calling CPU and releases
  * the global lock.
  */
-static inline void rt_global_sti(void) 
+static inline void rt_global_sti(void)
 {
     rt_release_global_lock();
     rtai_sti();
@@ -425,10 +383,9 @@ static volatile inline unsigned long rtai_save_flags_irqbit_and_cli(void)
  */
 static inline int rt_global_save_flags_and_cli(void)
 {
-        unsigned long flags;
-
         barrier();
-        flags = rtai_save_flags_irqbit_and_cli();
+        unsigned long flags = rtai_save_flags_irqbit_and_cli();
+
         if (!test_and_set_bit(hal_processor_id(), &rtai_cpu_lock)) {
                 while (test_and_set_bit(31, &rtai_cpu_lock)) {
                         cpu_relax();
@@ -449,12 +406,12 @@ static inline int rt_global_save_flags_and_cli(void)
  */
 static inline void rt_global_save_flags(unsigned long *flags)
 {
-	unsigned long hflags = rtai_save_flags_irqbit_and_cli();
+        unsigned long hflags = rtai_save_flags_irqbit_and_cli();
 
-	*flags = test_bit(hal_processor_id(), &rtai_cpu_lock) ? hflags : hflags | 1;
-	if (hflags) {
-		rtai_sti();
-	}
+        *flags = test_bit(hal_processor_id(), &rtai_cpu_lock) ? hflags : hflags | 1;
+        if (hflags) {
+                rtai_sti();
+        }
 }
 
 /**
@@ -510,10 +467,12 @@ static inline unsigned long rt_global_save_flags_and_cli(void)
 
 #define rt_global_save_flags(flags)     do { rtai_save_flags(*flags); } while (0)
 
-#endif
+#endif /* CONFIG_SMP */
 
-int rt_printk(const char *format, ...);
-int rt_printk_sync(const char *format, ...);
+
+//---------------------------------------------------------------------------//
+//                     domain switching routines                             //
+//---------------------------------------------------------------------------//
 
 extern struct hal_domain_struct rtai_domain;
 
@@ -541,13 +500,16 @@ do { \
 	} \
 } while (0)
 
+#define rtai_get_intr_handler(v)
+#define rtai_init_taskpri_irqs()
+
 static inline int rt_save_switch_to_real_time(int cpuid)
 {
 	SET_TASKPRI(cpuid);
 	if (!rtai_linux_context[cpuid].sflags) {
 		_rt_switch_to_real_time(cpuid);
 		return 0;
-	}
+	} 
 	return 1;
 }
 
@@ -561,141 +523,172 @@ do { \
 	} \
 } while (0)
 
-#define in_hrt_mode(cpuid)  (test_bit(cpuid, &rtai_cpu_realtime))
+#define in_hrt_mode(cpuid)  (rtai_linux_context[cpuid].sflags)
+
+//---------------------------------------------------------------------------//
+//                        Timer helper functions                             //
+//---------------------------------------------------------------------------//
+
+static inline unsigned long long rtai_rdtsc (void)
+{
+	unsigned long long ts;
+	unsigned long chk;
+	/* See Motorola reference manual for 32 bits PPCs. */
+	__asm__ __volatile__ ("1: mftbu %0\n"
+			      "   mftb %1\n"
+			      "   mftbu %2\n"
+			      "   cmpw %2,%0\n"
+			      "   bne 1b\n"
+			      : "=r" (((unsigned long *)&ts)[0]), 
+			        "=r" (((unsigned long *)&ts)[1]), 
+			        "=r" (chk));
+	return ts;
+}
 
 static inline void rt_set_timer_delay (int delay)
 {
-	/* NOTE: delay MUST be 0 if a periodic timer is being used. */
+    /* NOTE: delay MUST be 0 if a periodic timer is being used. */
 	if (delay == 0) {
 #ifdef CONFIG_40x
 		return;
 #else  /* !CONFIG_40x */
 		if ((delay = rt_times.intr_time - rtai_rdtsc()) <= 0) {
-			nt lost = 0;
+			int lost = 0;
 			do {
 				lost++;
 				rt_times.intr_time += (RTIME)rt_times.periodic_tick;
-			} while ((delay = rt_times.intr_time - rtai_rdtsc()) <= 0);
-			 printk("%d timer interrupt(s) lost\n", lost);
+			}
+			while ((delay = rt_times.intr_time - rtai_rdtsc()) <= 0);
 		}
 #endif /* CONFIG_40x */
 	}
 #ifdef CONFIG_40x
-    mtspr(SPRN_PIT, delay);
-#else
-    set_dec(delay);
-#endif
+	mtspr(SPRN_PIT, delay);
+#else /* !CONFIG_40x */
+	set_dec(delay);
+#endif /* CONFIG_40x */
 }
 
-    /* Private interface -- Internal use only */
 
+//---------------------------------------------------------------------------//
+//                     Private interface -- internal use only                //
+//---------------------------------------------------------------------------//
+
+unsigned long rtai_critical_enter(void (*synch)(void));
+void rtai_critical_exit(unsigned long flags);
+
+int rtai_calibrate_8254(void);
 void rtai_set_linux_task_priority(struct task_struct *task, int policy, int prio);
-
 long rtai_catch_event (struct hal_domain_struct *ipd, unsigned long event, int (*handler)(unsigned long, void *));
-
-#endif
 
 #endif /* __KERNEL__ && !__cplusplus */
 
-    /* Public interface */
+
+//---------------------------------------------------------------------------//
+//                           Public interface                                //
+//---------------------------------------------------------------------------//
+
+struct apic_timer_setup_data {
+    int mode;
+    int count;
+};
 
 #ifdef __KERNEL__
 
 #include <linux/kernel.h>
+ 
+#define rtai_print_to_screen rt_printk
 
 void *ll2a(long long ll, char *s);
 
 #ifdef __cplusplus
-extern "C" {
+ extern "C" {
 #endif /* __cplusplus */
 
+/*
+ * rt irq request/free modify functions
+ */
 int rt_request_irq(unsigned irq, int (*handler)(unsigned irq, void *cookie), void *cookie, int retmode);
-
 int rt_release_irq(unsigned irq);
-
+int rt_set_irq_ack(unsigned irq, int (*irq_ack)(unsigned int));
 void rt_set_irq_cookie(unsigned irq, void *cookie);
+void rt_set_irq_retmode(unsigned irq, int retmode);
 
-void rt_set_irq_retmode(unsigned irq, int fastret);
+static inline int rt_request_irq_wack(unsigned irq, int (*handler)(unsigned irq, void *cookie), void *cookie, int retmode, int (*irq_ack)(unsigned int))
+{
+	int retval;
+	if ((retval = rt_request_irq(irq, handler, cookie, retmode)) < 0) {
+		return retval;
+	}
+	return rt_set_irq_ack(irq, irq_ack);
+}
 
-/**
- * @name Programmable Interrupt Controllers (PIC) management functions.
- *
- *@{*/
+
+/*
+ * irq/PIC management functions.
+ */
+
 unsigned rt_startup_irq(unsigned irq);
-
 void rt_shutdown_irq(unsigned irq);
 
 void rt_enable_irq(unsigned irq);
-
 void rt_disable_irq(unsigned irq);
-
 void rt_mask_and_ack_irq(unsigned irq);
-
 void rt_unmask_irq(unsigned irq);
-
 void rt_ack_irq(unsigned irq);
-/*@}*/
+void rt_end_irq(unsigned irq);
 
-void rt_do_irq(unsigned irq);
 
-int rt_request_linux_irq(unsigned irq,
-			 irqreturn_t (*handler)(int irq,
-			 void *dev_id,
-			 struct pt_regs *regs), 
-			 char *name,
-			 void *dev_id);
+/*
+ * Linux related irq function
+ */
 
-int rt_free_linux_irq(unsigned irq,
-		      void *dev_id);
-
+int rt_request_linux_irq(unsigned irq, int (*handler)(int irq, void *dev_id, struct pt_regs *regs), char *name, void *dev_id);
+int rt_free_linux_irq(unsigned irq, void *dev_id);
 void rt_pend_linux_irq(unsigned irq);
-
-void rt_pend_linux_srq(unsigned srq);
-
-int rt_request_srq(unsigned label,
-		   void (*k_handler)(void),
-		   long long (*u_handler)(unsigned long));
-
-int rt_free_srq(unsigned srq);
-
-int rt_assign_irq_to_cpu(int irq,
-			 unsigned long cpus_mask);
-
-int rt_reset_irq_to_sym_mode(int irq);
-
-void rt_request_timer_cpuid(void (*handler)(void),
-			    unsigned tick,
-			    int cpuid);
-
-void rt_request_apic_timers(void (*handler)(void),
-			    struct apic_timer_setup_data *tmdata);
-
-void rt_free_apic_timers(void);
-
-int rt_request_timer(void (*handler)(void), unsigned tick, int use_apic);
-
-void rt_free_timer(void);
-
-#ifdef FIXME
-RT_TRAP_HANDLER rt_set_trap_handler(RT_TRAP_HANDLER handler);
-#endif
-
-#define rt_mount(void)
-
-#define rt_umount(void)
-
-void (*rt_set_ihook(void (*hookfn)(int)))(int);
-
-#define rt_printk printk /* This is safe over Adeos */
-
-unsigned long rtai_critical_enter(void (*synch)(void));
-
-void rtai_critical_exit(unsigned long flags);
-
 void rtai_set_linux_task_priority(struct task_struct *task, int policy, int prio);
 
+/*
+ * srq related function
+ */
+
+void rt_pend_linux_srq(unsigned srq);
+int rt_request_srq (unsigned label, void (*k_handler)(void), long long (*u_handler)(unsigned long));
+int rt_free_srq(unsigned srq);
+
+/* NOT JET IMPLEMENTED */
+#if 0
+int rt_assign_irq_to_cpu(int irq, unsigned long cpus_mask) { return 0; }
+int rt_reset_irq_to_sym_mode(int irq) { return 0; }
+void rt_request_timer_cpuid(void (*handler)(void), unsigned tick, int cpuid) { return 0; }
+#endif
+
+/*
+ * timer func
+ */
+
+int rt_request_timer(void (*handler)(void), unsigned tick, int use_apic);
+void rt_free_timer(void);
+
+/*
+ * setting trap/hook handler function
+ */
+
+RT_TRAP_HANDLER rt_set_trap_handler(RT_TRAP_HANDLER handler);
+void (*rt_set_ihook(void (*hookfn)(int)))(int);
+
+RTIME rd_8254_ts(void);
+void rt_setup_8254_tsc(void);
+
+/*
+ * real time printk
+ */
+
+int rt_printk(const char *format, ...);
+int rt_sync_printk(const char *format, ...);
+
 #ifdef __cplusplus
-}
+ }
 #endif /* __cplusplus */
 
 #endif /* __KERNEL__ */
@@ -703,15 +696,14 @@ void rtai_set_linux_task_priority(struct task_struct *task, int policy, int prio
 #include <asm/rtai_oldnames.h>
 
 #define RTAI_DEFAULT_TICK    100000
+
 #ifdef CONFIG_RTAI_TRACE
 #define RTAI_DEFAULT_STACKSZ 8192
 #else /* !CONFIG_RTAI_TRACE */
 #define RTAI_DEFAULT_STACKSZ 4092
 #endif /* CONFIG_RTAI_TRACE */
 
-/*@}*/
-
-#endif /* !_RTAI_ASM_PPC_HAL_H */
+#endif /* _RTAI_ASM_PPC_HAL_H */
 
 #ifndef _RTAI_HAL_XN_H
 #define _RTAI_HAL_XN_H
@@ -721,3 +713,4 @@ void rtai_set_linux_task_priority(struct task_struct *task, int policy, int prio
 #define NON_RTAI_SCHEDULE(cpuid)  do { schedule(); } while (0)
 
 #endif /* !_RTAI_HAL_XN_H */
+

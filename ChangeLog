@@ -1,6 +1,12 @@
+2007-03-29  Paolo Mantegazza <mantegazza@aero.polimi.it>
+
+        * base/arch/i386/hal/hal.immed and base/arch/x86_64/hal/hal.immed:
+	  function "rtai_broadcast_to_local_timers" broadcasts to ALLBUT 
+	  cpus and pends to Linux locally, to avoid a useless interrupt.
+
 2007-03-27  Paolo Mantegazza <mantegazza@aero.polimi.it>
 
-        * base/arch/ipc/netrpc/netrpc.c: force asmlinkage using a variable 
+        * base/ipc/netrpc/netrpc.c: force asmlinkage using a variable 
 	  number of args for in kernel net syscalls, older compilers seem to 
 	  have it not with just asmlinkage.
 
@@ -8,7 +14,7 @@
 
         * base/arch/i386/hal/hal.immed: support for Linux > 2.6.19 in direct
           vectoring and RTAI proper syscalls, requires push/pop of gs and the
-          loading of KERNEL_PDA segment, a forgot to commiti; this new version
+          loading of KERNEL_PDA segment, a forgot to commit; this new version
 	  avoids duplicated code for vectored isrs by using a macro.
 
 2007-03-15  Paolo Mantegazza <mantegazza@aero.polimi.it>

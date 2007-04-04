@@ -30,7 +30,7 @@ int soft_rt_recvfrom(int s,
 		     int len,
 		     unsigned int flags,
 		     struct sockaddr *from,
-		     int *fromlen);
+		     long *fromlen);
 
 int soft_rt_sendto(int s,
 		   const void *buf,

@@ -102,7 +102,7 @@ static struct rt_fun_entry *rt_net_rpc_fun_ext[MAX_DFUN_EXT];
 static unsigned long this_node[2];
 
 #define PRTSRVNAME  0xFFFFFFFF
-struct portslot_t { struct portslot_t *p; long task; int indx, socket[2], hard; unsigned long long owner; SEM sem; void *msg; struct sockaddr_in addr; MBX *mbx; unsigned long name;  RTIME timeout; int recovered; };
+struct portslot_t { struct portslot_t *p; long task; int indx, place, socket[2], hard; unsigned long long owner; SEM sem; void *msg; struct sockaddr_in addr; MBX *mbx; unsigned long name;  RTIME timeout; int recovered; };
 static spinlock_t portslot_lock = SPIN_LOCK_UNLOCKED;
 static volatile int portslotsp;
 
@@ -145,12 +145,40 @@ static inline int gvb_portslot(struct portslot_t *portslotp)
 
 	flags = rt_spin_lock_irqsave(&portslot_lock);
 	if (portslotsp > MaxStubs) {
-		portslot[--portslotsp].p = portslotp;
+		struct portslot_t *tmp_p;
+		int tmp_place;
+		tmp_p = portslot[--portslotsp].p;
+		tmp_place = portslotp->place;
+		portslotp->place = portslotsp;
+		portslot[portslotsp].p = portslotp;
+		tmp_p->place = tmp_place;
+		portslot[tmp_place].p = tmp_p;
 		rt_spin_unlock_irqrestore(flags, &portslot_lock);
 		return 0;
 	}
 	rt_spin_unlock_irqrestore(flags, &portslot_lock);
 	return -EINVAL;
+}
+
+static inline void check_portslot(unsigned long node, int port, struct portslot_t **p)
+{
+//	unsigned long flags;
+	int i;
+	struct portslot_t *p_old;
+	
+	p_old = *p; 
+//	flags = rt_spin_lock_irqsave(&portslot_lock);
+	for (i = MaxStubs; i < portslotsp; i++) {
+		if (portslot[i].p->addr.sin_port == htons(port) && portslot[i].p->addr.sin_addr.s_addr == node) {
+			*p = portslot[i].p;
+			break;
+		}	
+	}
+//	rt_spin_unlock_irqrestore(flags, &portslot_lock);
+	if (p_old != *p)	{
+		gvb_portslot(p_old);
+	}
+	
 }
 
 #define NETRPC_TIMER_FREQ 50
@@ -192,7 +220,7 @@ static void net_resume_task(int sock, struct portslot_t *p)
 	if (all_ok) {
 		rt_sem_signal(&p->sem);
 	} else {
-		int i;
+		long i;
 		unsigned long flags;
 		struct par_t { int priority, base_priority, argsize, rsize, fun_ext_timed; long type; unsigned long long owner; long a[1]; } *par;
 		char msg[MAX_MSG_SIZE];
@@ -289,7 +317,7 @@ static inline int get_stub(unsigned long long owner)
 	if (stubssp < MaxStubsMone) {
 		struct portslot_t *p;
 		i = 1;
-		while(((p = &portslot[i])->owner != owner) && (i < MaxStubsMone)) {
+		while(((p = portslot[i].p)->owner != owner) && (i < stubssp)) {
 			i++;
 		}
 		if (p->owner != owner) {
@@ -312,10 +340,17 @@ static inline int gvb_stub(int slot, unsigned long long owner)
 	if (stubssp > 1) {
 		if (slot > 0 && slot < MaxStubs) {
 			if (portslot[slot].owner == owner) {
+				struct portslot_t *tmp_p;
+				int tmp_place;
 				task = (RT_TASK *)portslot[slot].task;
 				portslot[slot].task = 0;
 				portslot[slot].owner = 0;
-				portslot[--stubssp].p = &portslot[slot];
+				tmp_p = portslot[--stubssp].p;
+				tmp_place = portslot[slot].place;
+				portslot[slot].place = stubssp;
+				portslot[stubssp].p = &portslot[slot];
+				tmp_p->place = tmp_place;
+				portslot[tmp_place].p = tmp_p;
 				slot += BASEPORT;
 				rt_spin_unlock_irqrestore(flags, &stub_lock);
 				if (task->is_hard) {
@@ -328,6 +363,8 @@ static inline int gvb_stub(int slot, unsigned long long owner)
 				slot = !portslot[slot].owner ? slot+BASEPORT : -ENXIO;
 				rt_spin_unlock_irqrestore(flags, &stub_lock);
 			}
+		} else {
+			rt_spin_unlock_irqrestore(flags, &stub_lock);
 		}		
 		return slot;
 	}
@@ -342,7 +379,7 @@ static inline int find_stub(unsigned long long owner)
 	struct portslot_t *p;
 	i = 1;
 	flags = rt_spin_lock_irqsave(&stub_lock);
-	while(((p = &portslot[i])->owner != owner)&&(i < MaxStubs)) {
+	while(((p = portslot[i].p)->owner != owner) && (i < stubssp)) {
 		i++;
 	}
 	rt_spin_unlock_irqrestore(flags, &stub_lock);
@@ -356,7 +393,7 @@ static void soft_stub_fun(struct portslot_t *portslotp)
 	RT_TASK *task;
 	SEM *sem;
         struct par_t { int priority, base_priority, argsize, rsize, fun_ext_timed; long type; unsigned long long owner; long a[1]; } *par;
-	int wsize, w2size, sock;
+	long wsize, w2size, sock;
 	long *a;
 	long type;
 
@@ -365,7 +402,7 @@ static void soft_stub_fun(struct portslot_t *portslotp)
 	sem  = &portslotp->sem;
 	a = (par = (void *)msg)->a;
 	task = (RT_TASK *)portslotp->task;
-	sprintf(current->comm, "SFTSTB-%d", sock);
+	sprintf(current->comm, "SFTSTB-%ld", sock);
 	
 recvrys:
 
@@ -450,7 +487,7 @@ static void hard_stub_fun(struct portslot_t *portslotp)
 	RT_TASK *task;
 	SEM *sem;
     struct par_t { int priority, base_priority, argsize, rsize, fun_ext_timed; long type; unsigned long long owner; long a[1]; } *par;
-	int wsize, w2size, sock;
+	long wsize, w2size, sock;
 	long *a;
 	long type;
 	addr = (struct sockaddr *)&portslotp->addr;
@@ -459,7 +496,7 @@ static void hard_stub_fun(struct portslot_t *portslotp)
 	a = (par = (void *)msg)->a;
 	task = (RT_TASK *)portslotp->task;
 	if (task->lnxtsk) {
-		sprintf(current->comm, "HRDSTB-%d", sock);
+		sprintf(current->comm, "HRDSTB-%ld", sock);
 	}
 	
 recvryh:
@@ -539,7 +576,7 @@ recvryh:
 static void port_server_fun(RT_TASK *port_server)
 {
 	short recovered;
-	int i, rsize;
+	long i, rsize;
 	RT_TASK *task;
 	struct sockaddr *addr;
 	struct req_rel_msg msg;
@@ -615,10 +652,9 @@ static int mod_timer_srq;
 RTAI_SYSCALL_MODE int rt_send_req_rel_port(unsigned long node, int op, unsigned long id, MBX *mbx, int hard)
 {
 	RT_TASK *task;
-	int i, msgsize;
+	long i, msgsize;
 	struct portslot_t *portslotp;
 	struct req_rel_msg msg;
-
 
 	if (!node || (op && (op < MaxStubs || op >= MaxSocks))) {
 		return -EINVAL;
@@ -665,6 +701,7 @@ RTAI_SYSCALL_MODE int rt_send_req_rel_port(unsigned long node, int op, unsigned 
 				gvb_portslot(portslotp);
 				return op;
 			} else {
+				check_portslot(node, msg.port, &portslotp);
 				portslotp->sem.count = 0;
 				portslotp->sem.queue.prev = portslotp->sem.queue.next = &portslotp->sem.queue;
 				portslotp->hard = msg.hard;
@@ -838,12 +875,12 @@ RTAI_SYSCALL_MODE unsigned long long rt_net_rpc(long fun_ext_timed, long type, v
 {
 	char msg[MAX_MSG_SIZE];
 	struct reply_t { int wsize, w2size; unsigned long long retval; int myport; char msg[1]; } *reply;
-	int rsize, port;
+	long rsize, port;
 	struct portslot_t *portslotp;
 
 	if ((port = PORT(fun_ext_timed)) > 0) {
 		if ((portslotp = portslot + port)->task < 0) {
-			int i;
+			long i;
 			struct sockaddr addr;
 			
 			if (portslotp->timeout) {
@@ -877,7 +914,7 @@ RTAI_SYSCALL_MODE unsigned long long rt_net_rpc(long fun_ext_timed, long type, v
 			if (!rt_sem_wait_if(&portslotp->sem)) {
 				return 0;
 			} else {
-				int i;
+				long i;
 				struct sockaddr addr;
 				
 				if ((rsize = portslotp->hard ? hard_rt_recvfrom(portslotp->socket[1], msg, MAX_MSG_SIZE, 0, &addr, &i) : soft_rt_recvfrom(portslotp->socket[0], msg, MAX_MSG_SIZE, 0, &addr, &i))) {
@@ -1128,7 +1165,7 @@ int soft_rt_sendto(int sock, const void *msg, int msglen, unsigned int sflags, s
 	return -1;
 }
 
-int soft_rt_recvfrom(int sock, void *msg, int msglen, unsigned int flags, struct sockaddr *from, int *fromlen)
+int soft_rt_recvfrom(int sock, void *msg, int msglen, unsigned int flags, struct sockaddr *from, long *fromlen)
 {
 	if (sock >= 0 && sock < MaxSocks) {
 		if (msglen > socks[sock].recvd) {
@@ -1619,7 +1656,7 @@ int __rtai_netrpc_init(void)
 
 	for (i = 0; i < MaxSocks; i++) {
 		portslot[i].p = portslot + i;
-		portslot[i].indx = i;
+		portslot[i].indx = portslot[i].place = i;
 		SPRT_ADDR.sin_port = htons(BASEPORT + i);
 		portslot[i].addr = SPRT_ADDR;
 		portslot[i].socket[0] = soft_rt_socket(AF_INET, SOCK_DGRAM, 0);

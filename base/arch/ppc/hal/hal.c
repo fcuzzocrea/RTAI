@@ -68,6 +68,8 @@ MODULE_LICENSE("GPL");
 static unsigned long rtai_cpufreq_arg = RTAI_CALIBRATED_CPU_FREQ;
 RTAI_MODULE_PARM(rtai_cpufreq_arg, ulong);
 
+#define RTAI_NR_IRQS  IPIPE_NR_XIRQS
+
 static int PrintFpuTrap = 0;
 RTAI_MODULE_PARM(PrintFpuTrap, int);
 static int PrintFpuInit = 0;
@@ -710,7 +712,7 @@ static int rtai_hirq_dispatcher(struct pt_regs *regs)
 	unsigned long cpuid;
 	int irq;
 
-	if ((irq = ppc_md.get_irq(regs)) >= HAL_NR_IRQS) {
+	if ((irq = ppc_md.get_irq(regs)) >= RTAI_NR_IRQS) {
 		spurious_interrupts_h++;
 		return 0;
 	} else if (irq < 0) {

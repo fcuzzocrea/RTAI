@@ -1029,7 +1029,7 @@ static int rtai_read_proc (char *page, char **start, off_t off, int count, int *
 	PROC_PRINT("\n** RTAI/ppc over ADEOS/ipipe:\n\n");
 	PROC_PRINT("    Decr. Frequency: %lu\n", rtai_tunables.cpu_freq);
 	PROC_PRINT("    Decr. Latency: %d ns\n", RTAI_LATENCY_8254);
-	PROC_PRINT/"    Decr. Setup Time: %d ns\n", RTAI_SETUP_TIME_8254);
+	PROC_PRINT("    Decr. Setup Time: %d ns\n", RTAI_SETUP_TIME_8254);
 
 	none = 1;
 	PROC_PRINT("\n** Real-time IRQs used by RTAI: ");
@@ -1059,7 +1059,7 @@ static int rtai_read_proc (char *page, char **start, off_t off, int count, int *
 	PROC_PRINT("** RTAI SYSREQs in use: \n");
     	for (i = 0; i < RTAI_NR_SRQS; i++) {
 		if (rtai_sysreq_table[i].k_handler || rtai_sysreq_table[i].u_handler || rtai_sysreq_table[i].label) {
-			PROC_PRINT("    #%d label:%u\n", i, rtai_sysreq_table[i].label);
+			PROC_PRINT("    #%d label:%lu\n", i, rtai_sysreq_table[i].label);
 			none = 0;
 		}
         }
@@ -1223,7 +1223,7 @@ int __rtai_hal_init (void)
 void __rtai_hal_exit (void)
 {
 	int trapnr;
-	unsigned flags;
+	unsigned long flags;
 
 #ifdef CONFIG_PROC_FS
 	rtai_proc_unregister();

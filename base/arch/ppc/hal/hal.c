@@ -551,7 +551,7 @@ void rt_pend_linux_srq (unsigned srq)
 
 #define NR_EXCEPT 48
 
-extern unsigned long intercept_table[NR_EXCEPT][];
+extern unsigned long *intercept_table[NR_EXCEPT];
 static unsigned long old_intercept_table[NR_EXCEPT][2];
 
 
@@ -565,7 +565,7 @@ unsigned long long rtai_set_gate_vector (unsigned vector, void *handler, void *r
 	old_intercept_table[vector][1] = intercept_table[vector][1];
 	intercept_table[vector][0] = handler ? (unsigned long)handler : old_intercept_table[vector][0];
 	intercept_table[vector][1] = rethandler ? (unsigned long)rethandler : old_intercept_table[vector][1];
-	return (unsigned long long)old_intercept_table[vector];
+	return (unsigned long long)(unsigned long)old_intercept_table[vector];
 }
 
 /*
@@ -636,7 +636,7 @@ int rt_request_timer (void (*handler)(void), unsigned tick, int use_apic)
 		rt_times.linux_time = rt_times.tick_time + rt_times.linux_tick;
 		rt_times.periodic_tick = tick;
 
-		printk("[rt_request_timer.periodic]:\n linux_tick %i, periodic_tick %i,\n intr_time %lu, linux_time %lu, tick_time %lu\n",
+		printk("[rt_request_timer.periodic]:\n linux_tick %i, periodic_tick %i,\n intr_time %lld, linux_time %lld, tick_time %lld\n",
 			(int)rt_times.linux_tick,
 			(int)rt_times.periodic_tick,
 			(long long)rt_times.intr_time,
@@ -654,7 +654,7 @@ int rt_request_timer (void (*handler)(void), unsigned tick, int use_apic)
 		rt_times.linux_time = rt_times.tick_time + rt_times.linux_tick;
 		rt_times.periodic_tick = rt_times.linux_tick;
 
-		printk("[rt_request_timer.oneshot]:\n linux_tick %i, periodic_tick %i,\n intr_time %lu, linux_time %lu, tick_time %lu\n",
+		printk("[rt_request_timer.oneshot]:\n linux_tick %i, periodic_tick %i,\n intr_time %lld, linux_time %lld, tick_time %lld\n",
 			(int)rt_times.linux_tick,
 			(int)rt_times.periodic_tick,
 			(long long)rt_times.intr_time,

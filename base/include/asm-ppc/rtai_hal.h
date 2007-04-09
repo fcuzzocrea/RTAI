@@ -488,7 +488,7 @@ do { \
 #define rt_switch_to_linux(cpuid) \
 do { \
 	if (rtai_linux_context[cpuid].sflags) { \
-		hal_current_domain[cpuid] = hal_root_domain; \
+		hal_current_domain(cpuid) = hal_root_domain; \
 		*ipipe_root_status[cpuid] = rtai_linux_context[cpuid].lflags; \
 		rtai_linux_context[cpuid].sflags = 0; \
 		CLR_TASKPRI(cpuid); \

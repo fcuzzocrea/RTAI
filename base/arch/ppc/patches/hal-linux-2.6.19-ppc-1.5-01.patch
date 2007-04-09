@@ -6563,6 +6563,9 @@
 - 
 - 	return prev;
 - }
+
+EXPORT_SYMBOL(context_switch);
+
 -@@ -3324,12 +3337,16 @@ asmlinkage void __sched schedule(void)
 +@@ -3324,12 +3326,16 @@
   	long *switch_count;

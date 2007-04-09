@@ -551,7 +551,7 @@ void rt_pend_linux_srq (unsigned srq)
 
 #define NR_EXCEPT 48
 
-extern long *intercept_table[NR_EXCEPT];
+extern unsigned long intercept_table[NR_EXCEPT][];
 static unsigned long old_intercept_table[NR_EXCEPT][2];
 
 
@@ -559,13 +559,13 @@ static unsigned long old_intercept_table[NR_EXCEPT][2];
  * rtai_set_gate_vector (more correctly rtai_set_trap_vector)
  */
 
-long long rtai_set_gate_vector (unsigned vector, void *handler, void *rethandler)
+unsigned long long rtai_set_gate_vector (unsigned vector, void *handler, void *rethandler)
 {
 	old_intercept_table[vector][0] = intercept_table[vector][0];
 	old_intercept_table[vector][1] = intercept_table[vector][1];
-	intercept_table[vector][0] = handler ? handler : old_intercept_table[vector][0];
-	intercept_table[vector][1] = rethandler ? rethandler : old_intercept_table[vector][1];
-	return (long long)old_intercept_table[vector];
+	intercept_table[vector][0] = handler ? (unsigned long)handler : old_intercept_table[vector][0];
+	intercept_table[vector][1] = rethandler ? (unsigned long)rethandler : old_intercept_table[vector][1];
+	return (unsigned long long)old_intercept_table[vector];
 }
 
 /*
@@ -576,8 +576,8 @@ void rtai_reset_gate_vector (unsigned vector, unsigned *handler, unsigned *retha
 {
 	if (!(((unsigned long)handler | old_intercept_table[vector][0]) && ((unsigned long)rethandler | old_intercept_table[vector][1])))
 		return;
-	intercept_table[vector][0] = handler ? rethandler : old_intercept_table[vector][0];
-	intercept_table[vector][1] = handler ? rethandler : old_intercept_table[vector][1];
+	intercept_table[vector][0] = handler ? (unsigned long)rethandler : old_intercept_table[vector][0];
+	intercept_table[vector][1] = handler ? (unsigned long)rethandler : old_intercept_table[vector][1];
 }
 
 

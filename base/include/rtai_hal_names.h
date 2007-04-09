@@ -160,7 +160,8 @@ do { \
 #define hal_domain_struct   ipipe_domain 
 #define hal_root_domain     ipipe_root_domain 
 
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,17)
+// temporary fix for using PPC
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,17) || (defined(CONFIG_PPC) && LINUX_VERSION_CODE > KERNEL_VERSION(2,6,13))
 #define hal_current_domain(cpuid)  per_cpu(ipipe_percpu_domain, cpuid) 
 #else
 #define hal_current_domain(cpuid)  (ipipe_percpu_domain[cpuid])

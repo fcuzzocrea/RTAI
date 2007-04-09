@@ -77,13 +77,6 @@ RTAI_MODULE_PARM(PrintFpuInit, int);
 static unsigned long IsolCpusMask = 0;
 RTAI_MODULE_PARM(IsolCpusMask, ulong);
 
-
-/* define section */
-// irq + virtual irq
-#define RTAI_NR_IRQS  IPIPE_NR_IRQS
-// irq (without virtual irq) note RTAI_NR_XIRQS==IPIPE_NR_XIRQS==NR_IRQS
-#define RTAI_NR_XIRQS IPIPE_NR_XIRQS
-
 struct { volatile int locked, rqsted; } rt_scheduling[RTAI_NR_CPUS];
 
 #ifdef CONFIG_RTAI_SCHED_ISR_LOCK
@@ -424,7 +417,7 @@ int rt_request_linux_irq (unsigned irq, irqreturn_t (*handler)(int irq, void *de
 {
 	unsigned long flags;
 
-	if (irq >= RTAI_NR_XIRQS || !handler) {
+	if (irq >= RTAI_NR_IRQS || !handler) {
 		return -EINVAL;
 	}
 

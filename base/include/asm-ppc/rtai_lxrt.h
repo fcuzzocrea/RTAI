@@ -149,7 +149,7 @@ static inline union rtai_lxrt_t rtai_lxrt(long dynx, long lsize, long srq, void 
 	return _rtai_lxrt(ENCODE_LXRT_REQ(dynx, srq, lsize), arg);
 }
 
-#define rtai_iopl()  do { extern int iopl(int); iopl(3); } while (0)
+#define rtai_iopl()  do { } while (0)
 
 #endif /* __KERNEL__ */
 

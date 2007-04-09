@@ -6335,3 +6335,294 @@
  	} while (pgd++, addr = next, addr != end);
  	flush_cache_vmap((unsigned long) area->addr, end);
  	return err;
+
+
+#if 0
+
+--- hal-linux-2.6.19-ppc-1.5-01.patch	2007-04-07 18:12:09.000000000 +0200
++++ /home/rtai-cvs/xenomai/ksrc/arch/powerpc/patches/adeos-ipipe-2.6.19-ppc-1.5-01.patch	2006-12-19 20:38:16.000000000 +0100
+@@ -238,22 +238,6 @@
+  
+  	/* Alignment Interrupt */
+  	ALIGNMENT_EXCEPTION
+-@@ -771,6 +775,15 @@ exception_stack_top:
+- cmd_line:
+- 	.space	512
+- 
+-+	.globl intercept_table
+-+intercept_table:
+-+	.long 0, 0, i0x200, i0x300, i0x400, i0x500, i0x600, i0x700
+-+	.long i0x800, i0x900, 0, 0, 0, i0xd00, 0, 0
+-+	.long 0, 0, 0, i0x1300, 0, 0, 0, 0
+-+	.long 0, 0, 0, 0, 0, 0, 0, 0
+-+	.long 0, 0, 0, 0, 0, 0, 0, 0
+-+	.long 0, 0, 0, 0, 0, 0, 0, 0
+-+
+- /*
+-  * Room for two PTE pointers, usually the kernel and current user pointers
+-  * to their respective root page table.
+ + diff -u linux-2.6.19/arch/ppc/kernel/head_4xx.S.ORIG linux-2.6.19/arch/ppc/kernel/head_4xx.S
+ --- linux-2.6.19/arch/ppc/kernel/head_4xx.S.ORIG	2006-11-29 22:57:37.000000000 +0100
+ +++ linux-2.6.19/arch/ppc/kernel/head_4xx.S	2006-12-13 14:01:45.607978213 +0100
+@@ -294,22 +278,6 @@
+  
+  #if 0
+  /* NOTE:
+-@@ -1014,6 +1028,15 @@ exception_stack_top:
+- cmd_line:
+- 	.space	512
+- 
+-+	.globl intercept_table
+-+intercept_table:
+-+	.long 0, 0, i0x200, i0x300, i0x400, i0x500, i0x600, i0x700
+-+	.long i0x800, i0x900, 0, 0, 0, i0xd00, 0, 0
+-+	.long 0, 0, 0, i0x1300, 0, 0, 0, 0
+-+	.long 0, 0, 0, 0, 0, 0, 0, 0
+-+	.long 0, 0, 0, 0, 0, 0, 0, 0
+-+	.long 0, 0, 0, 0, 0, 0, 0, 0
+-+
+- /* Room for two PTE pointers, usually the kernel and current user pointers
+-  * to their respective root page table.
+-  */
+ + diff -u linux-2.6.19/arch/ppc/kernel/head_8xx.S.ORIG linux-2.6.19/arch/ppc/kernel/head_8xx.S
+ --- linux-2.6.19/arch/ppc/kernel/head_8xx.S.ORIG	2006-11-29 22:57:37.000000000 +0100
+ +++ linux-2.6.19/arch/ppc/kernel/head_8xx.S	2006-12-13 14:01:45.613977508 +0100
+@@ -349,22 +317,6 @@
+  
+  	EXCEPTION(0xa00, Trap_0a, unknown_exception, EXC_XFER_EE)
+  	EXCEPTION(0xb00, Trap_0b, unknown_exception, EXC_XFER_EE)
+-@@ -919,6 +932,15 @@ swapper_pg_dir:
+- cmd_line:
+- 	.space	512
+- 
+-+	.globl intercept_table
+-+intercept_table:
+-+	.long 0, 0, i0x200, i0x300, i0x400, i0x500, i0x600, i0x700
+-+	.long i0x800, i0x900, 0, 0, 0, i0xd00, 0, 0
+-+	.long 0, 0, 0, i0x1300, 0, 0, 0, 0
+-+	.long 0, 0, 0, 0, 0, 0, 0, 0
+-+	.long 0, 0, 0, 0, 0, 0, 0, 0
+-+	.long 0, 0, 0, 0, 0, 0, 0, 0
+-+
+- /* Room for two PTE table poiners, usually the kernel and current user
+-  * pointer to their respective root page table (pgdir).
+-  */
+ + diff -u linux-2.6.19/arch/ppc/kernel/head_booke.h.ORIG linux-2.6.19/arch/ppc/kernel/head_booke.h
+ --- linux-2.6.19/arch/ppc/kernel/head_booke.h.ORIG	2006-11-29 22:57:37.000000000 +0100
+ +++ linux-2.6.19/arch/ppc/kernel/head_booke.h	2006-12-13 14:01:45.618976920 +0100
+@@ -420,22 +372,6 @@
+  
+  	/* Alignment Interrupt */
+  	ALIGNMENT_EXCEPTION
+-@@ -1056,6 +1060,15 @@ exception_stack_top:
+- cmd_line:
+- 	.space	512
+- 
+-+	.globl intercept_table
+-+intercept_table:
+-+	.long 0, 0, i0x200, i0x300, i0x400, i0x500, i0x600, i0x700
+-+	.long i0x800, i0x900, 0, 0, 0, i0xd00, 0, 0
+-+	.long 0, 0, 0, i0x1300, 0, 0, 0, 0
+-+	.long 0, 0, 0, 0, 0, 0, 0, 0
+-+	.long 0, 0, 0, 0, 0, 0, 0, 0
+-+	.long 0, 0, 0, 0, 0, 0, 0, 0
+-+
+- /*
+-  * Room for two PTE pointers, usually the kernel and current user pointers
+-  * to their respective root page table.
+ + diff -u linux-2.6.19/arch/ppc/kernel/head.S.ORIG linux-2.6.19/arch/ppc/kernel/head.S
+ --- linux-2.6.19/arch/ppc/kernel/head.S.ORIG	2006-11-29 22:57:37.000000000 +0100
+ +++ linux-2.6.19/arch/ppc/kernel/head.S	2006-12-13 14:01:45.628975745 +0100
+@@ -476,17 +412,6 @@
+  
+  	EXCEPTION(0xa00, Trap_0a, unknown_exception, EXC_XFER_EE)
+  	EXCEPTION(0xb00, Trap_0b, unknown_exception, EXC_XFER_EE)
+-@@ -1350,8 +1364,8 @@ cmd_line:
+- 
+- 	.globl intercept_table
+- intercept_table:
+--	.long 0, 0, i0x200, i0x300, i0x400, 0, i0x600, i0x700
+--	.long i0x800, 0, 0, 0, 0, i0xd00, 0, 0
+-+	.long 0, 0, i0x200, i0x300, i0x400, i0x500, i0x600, i0x700
+-+	.long i0x800, i0x900, 0, 0, 0, i0xd00, 0, 0
+- 	.long 0, 0, 0, i0x1300, 0, 0, 0, 0
+- 	.long 0, 0, 0, 0, 0, 0, 0, 0
+- 	.long 0, 0, 0, 0, 0, 0, 0, 0
+ + diff -u linux-2.6.19/arch/ppc/kernel/ipipe-core.c.ORIG linux-2.6.19/arch/ppc/kernel/ipipe-core.c
+ --- linux-2.6.19/arch/ppc/kernel/ipipe-core.c.ORIG	2006-12-13 14:01:45.633975157 +0100
+ +++ linux-2.6.19/arch/ppc/kernel/ipipe-core.c	2006-12-13 14:01:45.634975039 +0100
+@@ -838,7 +763,7 @@
+ + diff -u linux-2.6.19/arch/ppc/kernel/ipipe-root.c.ORIG linux-2.6.19/arch/ppc/kernel/ipipe-root.c
+ --- linux-2.6.19/arch/ppc/kernel/ipipe-root.c.ORIG	2006-12-13 14:01:45.647973511 +0100
+ +++ linux-2.6.19/arch/ppc/kernel/ipipe-root.c	2006-12-13 14:01:45.648973394 +0100
+-@@ -0,0 +1,492 @@
++@@ -0,0 +1,488 @@
+ +/* -*- linux-c -*-
+ + * linux/arch/ppc/kernel/ipipe-root.c
+ + *
+@@ -1310,10 +1235,6 @@
+ +
+ +extern unsigned long context_map[];
+ +
+-+EXPORT_SYMBOL(__ipipe_tick_regs);
+-+extern void *sys_call_table;
+-+EXPORT_SYMBOL(sys_call_table);
+-+
+ +EXPORT_SYMBOL_GPL(__switch_to);
+ +EXPORT_SYMBOL_GPL(show_stack);
+ +EXPORT_SYMBOL_GPL(atomic_set_mask);
+@@ -3121,7 +3042,7 @@
+ + diff -u linux-2.6.19/kernel/ipipe/core.c.ORIG linux-2.6.19/kernel/ipipe/core.c
+ --- linux-2.6.19/kernel/ipipe/core.c.ORIG	2006-12-13 14:01:45.845950236 +0100
+ +++ linux-2.6.19/kernel/ipipe/core.c	2006-12-13 14:01:45.846950118 +0100
+-@@ -0,0 +1,1050 @@
++@@ -0,0 +1,1049 @@
+ +/* -*- linux-c -*-
+ + * linux/kernel/ipipe/core.c
+ + *
+@@ -3755,7 +3676,6 @@
+ +
+ +int fastcall __ipipe_dispatch_event (unsigned event, void *data)
+ +{
+-+extern long intercept_table[][2]; void *handler; if (intercept_table[5][1] != __ipipe_grab_irq && (handler = ipipe_root_domain->evhand[event])) { return ((int (*)(unsigned long, void *))handler)(event, data); } else {
+ +	struct ipipe_domain *start_domain, *this_domain, *next_domain;
+ +	ipipe_event_handler_t evhand;
+ +	struct list_head *pos, *npos;
+@@ -3816,7 +3736,7 @@
+ +	ipipe_unlock_cpu(flags);
+ +
+ +	return !propagate;
+-+} }
+++}
+ +
+ +/*
+ + * __ipipe_dispatch_wired -- Wired interrupt dispatcher. Wired
+@@ -6074,7 +5994,7 @@
+ + diff -u linux-2.6.19/kernel/sched.c.ORIG linux-2.6.19/kernel/sched.c
+ --- linux-2.6.19/kernel/sched.c.ORIG	2006-11-29 22:57:37.000000000 +0100
+ +++ linux-2.6.19/kernel/sched.c	2006-12-13 14:01:45.893944593 +0100
+-@@ -1391,7 +1391,7 @@ static int try_to_wake_up(struct task_st
++@@ -1391,7 +1391,7 @@
+  
+  	rq = task_rq_lock(p, &flags);
+  	old_state = p->state;
+@@ -6083,7 +6003,7 @@
+  		goto out;
+  
+  	if (p->array)
+-@@ -1809,19 +1809,25 @@ asmlinkage void schedule_tail(struct tas
++@@ -1809,6 +1809,8 @@
+  #endif
+  	if (current->set_child_tid)
+  		put_user(current->pid, current->set_child_tid);
+@@ -6092,51 +6012,7 @@
+  }
+  
+  /*
+-  * context_switch - switch to the new MM and the new
+-  * thread's register state.
+-  */
+--static inline struct task_struct *
+-+struct task_struct *
+- context_switch(struct rq *rq, struct task_struct *prev,
+- 	       struct task_struct *next)
+- {
+- 	struct mm_struct *mm = next->mm;
+- 	struct mm_struct *oldmm = prev->active_mm;
+- 
+-+if (!rq) {
+-+	switch_mm(oldmm, next->active_mm, next);
+-+	if (!mm) enter_lazy_tlb(oldmm, next);
+-+} else {
+- 	if (!mm) {
+- 		next->active_mm = oldmm;
+- 		atomic_inc(&oldmm->mm_count);
+-@@ -1834,6 +1840,7 @@ context_switch(struct rq *rq, struct tas
+- 		WARN_ON(rq->prev_mm);
+- 		rq->prev_mm = oldmm;
+- 	}
+-+}
+- 	/*
+- 	 * Since the runqueue lock will be released by the next
+- 	 * task (which is an invalid locking op but in the case
+-@@ -1841,11 +1848,17 @@ context_switch(struct rq *rq, struct tas
+- 	 * do an early lockdep release here:
+- 	 */
+- #ifndef __ARCH_WANT_UNLOCKED_CTXSW
+-+#ifdef CONFIG_IPIPE
+-+if (rq)
+-+#endif /* CONFIG_IPIPE */
+- 	spin_release(&rq->lock.dep_map, 1, _THIS_IP_);
+- #endif
+- 
+- 	/* Here we just switch the register state and the stack. */
+- 	switch_to(prev, next, prev);
+-+#ifdef CONFIG_IPIPE
+-+	current->ptd[IPIPE_ROOT_NPTDKEYS - 1] = prev;
+-+#endif /* CONFIG_IPIPE */
+- 
+- 	return prev;
+- }
+-@@ -3324,12 +3337,16 @@ asmlinkage void __sched schedule(void)
++@@ -3324,12 +3326,16 @@
+  	long *switch_count;
+  	struct rq *rq;
+  
+@@ -6154,7 +6030,7 @@
+  		printk(KERN_ERR "BUG: scheduling while atomic: "
+  			"%s/0x%08x/%d\n",
+  			current->comm, preempt_count(), current->pid);
+-@@ -3337,8 +3354,13 @@ asmlinkage void __sched schedule(void)
++@@ -3337,8 +3343,13 @@
+  	}
+  	profile_hit(SCHED_PROFILING, __builtin_return_address(0));
+  
+@@ -6168,16 +6044,16 @@
+  	prev = current;
+  	release_kernel_lock(prev);
+  need_resched_nonpreemptible:
+-@@ -3456,6 +3478,8 @@ switch_tasks:
++@@ -3456,6 +3467,8 @@
+  		prepare_task_switch(rq, next);
+  		prev = context_switch(rq, prev, next);
+  		barrier();
+ + 		if (task_hijacked(prev))
+-+ 		    return; __ipipe_dispatch_event(IPIPE_FIRST_EVENT - 2, 0);
+++ 		    return;
+  		/*
+  		 * this_rq must be evaluated again because prev may have moved
+  		 * CPUs since it called schedule(), thus the 'rq' on its stack
+-@@ -3469,7 +3493,7 @@ switch_tasks:
++@@ -3469,7 +3482,7 @@
+  	if (unlikely(reacquire_kernel_lock(prev) < 0))
+  		goto need_resched_nonpreemptible;
+  	preempt_enable_no_resched();
+@@ -6186,7 +6062,7 @@
+  		goto need_resched;
+  }
+  EXPORT_SYMBOL(schedule);
+-@@ -3487,6 +3511,11 @@ asmlinkage void __sched preempt_schedule
++@@ -3487,6 +3500,11 @@
+  	struct task_struct *task = current;
+  	int saved_lock_depth;
+  #endif
+@@ -6198,7 +6074,7 @@
+  	/*
+  	 * If there is a non-zero preempt_count or interrupts are disabled,
+  	 * we do not want to preempt the current task.  Just return..
+-@@ -4185,6 +4214,7 @@ recheck:
++@@ -4185,6 +4203,7 @@
+  		deactivate_task(p, rq);
+  	oldprio = p->prio;
+  	__setscheduler(p, policy, param->sched_priority);
+@@ -6206,7 +6082,7 @@
+  	if (array) {
+  		__activate_task(p, rq);
+  		/*
+-@@ -6950,3 +6980,50 @@ void set_curr_task(int cpu, struct task_
++@@ -6950,3 +6969,50 @@
+  }
+  
+  #endif
+
+#endif

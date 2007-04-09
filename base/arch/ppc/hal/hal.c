@@ -663,7 +663,7 @@ int rt_request_timer (void (*handler)(void), unsigned tick, int use_apic)
 
 	// request an IRQ and register it
 	rt_release_irq(RTAI_TIMER_DECR_IRQ);
-	retval = rt_request_irq(RTAI_TIMER_DECR_IRQ, handler, NULL, 0);
+	retval = rt_request_irq(RTAI_TIMER_DECR_IRQ, (void *)handler, NULL, 0);
 
 	// pass throught ipipe: register immediate timer_trap handler
 	// on i386 for a periodic mode is rt_set_timer_delay(tick); -> is set rate generator at tick; in one shot set LATCH all for the 8254 timer. Here is the same.

@@ -203,6 +203,8 @@ do { \
 	} \
 } while (0)
 
+extern volatile unsigned long *ipipe_root_status[];
+
 #define hal_test_and_fast_flush_pipeline(cpuid) \
 do { \
        	if (!test_bit(IPIPE_STALL_FLAG, ipipe_root_status[cpuid])) { \
@@ -480,7 +482,7 @@ extern struct hal_domain_struct rtai_domain;
 do { \
 	rtai_linux_context[cpuid].lflags = xchg(ipipe_root_status[cpuid], (1 << IPIPE_STALL_FLAG)); \
 	rtai_linux_context[cpuid].sflags = 1; \
-	hal_current_domain[cpuid] = &rtai_domain; \
+	hal_current_domain(cpuid) = &rtai_domain; \
 } while (0)
 
 #define rt_switch_to_linux(cpuid) \

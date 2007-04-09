@@ -26,8 +26,12 @@
 #include <linux/bitops.h>
 #include <asm/system.h>
 
-#define atomic_xchg(ptr,v)      xchg(ptr,v)
-#define atomic_cmpxchg(ptr,o,n) cmpxchg(ptr,o,n)
+#define atomic_xchg(ptr, v)  xchg(ptr,v)
+static __inline__ unsigned long atomic_cmpxchg(void *ptr, unsigned long o, unsigned long n)
+{
+	unsigned long *p = ptr;
+	return cmpxchg(p, o, n);
+}
 
 #else /* !__KERNEL__ */
 
@@ -132,7 +136,11 @@ __cmpxchg(volatile void *ptr, unsigned long old, unsigned long new, int size)
 				    (unsigned long)_n_, sizeof(*(ptr))); \
   })
 
-#define atomic_cmpxchg(ptr,o,n) cmpxchg(ptr,o,n)
+static __inline__ unsigned long atomic_cmpxchg(void *ptr, unsigned long o, unsigned long n)
+{
+	unsigned long *p = ptr;
+	return cmpxchg(p, o, n);
+}
 
 #endif /* __KERNEL__ */
 

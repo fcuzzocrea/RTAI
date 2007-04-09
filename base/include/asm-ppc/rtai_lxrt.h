@@ -25,6 +25,10 @@
 
 #include <asm/rtai_vectors.h>
 
+#ifndef CONFIG_RTAI_INTERNAL_LXRT_SUPPORT
+#if CONFIG_RTAI_INTERNAL_LXRT_SUPPORT
+#endif
+
 #ifdef CONFIG_RTAI_LXRT_USE_LINUX_SYSCALL
 #define USE_LINUX_SYSCALL
 #else
@@ -38,7 +42,7 @@
 
 #define RTAI_FAKE_LINUX_SYSCALL  39
 
-#define NR_syscalls __NR_syscall_max
+//#define NR_syscalls __NR_syscall_max
 
 #define LINUX_SYSCALL_NR      gpr[0]
 #define LINUX_SYSCALL_REG1    gpr[3]
@@ -85,7 +89,6 @@ extern "C" {
 
 #ifdef __KERNEL__
 
-#include <asm/segment.h>
 #include <asm/mmu_context.h>
 
 static inline void _lxrt_context_switch (struct task_struct *prev, struct task_struct *next, int cpuid)
@@ -133,7 +136,7 @@ static inline void kthread_fun_long_jump(struct task_struct *lnxtsk)
 static union rtai_lxrt_t _rtai_lxrt(long srq, void *arg)
 {
 	union rtai_lxrt_t retval;
-#ifdef USE_LINUX_SYSCALL
+#if 1 //def USE_LINUX_SYSCALL
 	syscall(RTAI_SYSCALL_NR, srq, arg, &retval);
 #else
 	RTAI_DO_TRAP(RTAI_SYS_VECTOR, retval, srq, arg);

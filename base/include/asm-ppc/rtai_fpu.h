@@ -23,8 +23,8 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA.
 
 typedef struct ppc_fpu_env { unsigned long fpu_reg[66]; } FPU_ENV;
 
-#define save_cr0_and_clts(x)
-#define restore_cr0(x)
+#define save_fpcr_and_enable_fpu(x)
+#define restore_fpcr(x)
 #define enable_fpu()
 
 #ifdef CONFIG_RTAI_FPU_SUPPORT

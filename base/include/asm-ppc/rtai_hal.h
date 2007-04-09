@@ -648,6 +648,7 @@ void rt_end_irq(unsigned irq);
 int rt_request_linux_irq(unsigned irq, int (*handler)(int irq, void *dev_id, struct pt_regs *regs), char *name, void *dev_id);
 int rt_free_linux_irq(unsigned irq, void *dev_id);
 void rt_pend_linux_irq(unsigned irq);
+RTAI_SYSCALL_MODE void usr_rt_pend_linux_irq(unsigned irq);
 void rtai_set_linux_task_priority(struct task_struct *task, int policy, int prio);
 
 /*

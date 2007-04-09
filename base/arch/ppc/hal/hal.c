@@ -55,9 +55,9 @@
 
 
 #ifdef CONFIG_PROC_FS
-  #include <linux/stat.h>
-  #include <linux/proc_fs.h>
-  #include <rtai_proc_fs.h>
+#include <linux/stat.h>
+#include <linux/proc_fs.h>
+#include <rtai_proc_fs.h>
 #endif /* CONFIG_PROC_FS */
 
 #include <stdarg.h>
@@ -729,7 +729,7 @@ static int rtai_hirq_dispatcher(struct pt_regs *regs)
 
 		if (rtai_realtime_irq[irq].retmode) {
 			return 0;
-		} else if (!test_and_clear_bit(cpuid, &hal_pended) || test_bit(IPIPE_STALL_FLAG, ipipe_root_status[cpuid]))
+		} else if (!test_and_clear_bit(cpuid, &hal_pended) || test_bit(IPIPE_STALL_FLAG, ipipe_root_status[cpuid])) {
 				return 0;
 		}
 	} else {
@@ -930,7 +930,7 @@ asmlinkage int rtai_syscall_dispatcher (struct pt_regs *regs)
 {
 	unsigned long srq = regs->gpr[0];
 
-	IF_IS_A_USI_SRQ_CALL_IT(srq, regs->rcx, (long long *)regs->rdx, regs->eflags, 1);
+	IF_IS_A_USI_SRQ_CALL_IT(srq, regs->gpr[4], (long long *)regs->gpr[5], regs->msr, 1);
 
         *((long long *)regs->gpr[3]) = srq > RTAI_NR_SRQS ? rtai_lxrt_dispatcher(srq, regs->gpr[4], regs) : rtai_usrq_dispatcher(srq, regs->gpr[4]);
 
@@ -1028,7 +1028,7 @@ static int rtai_read_proc (char *page, char **start, off_t off, int count, int *
 
 	PROC_PRINT("\n** RTAI/ppc over ADEOS/ipipe:\n\n");
 	PROC_PRINT("    Decr. Frequency: %lu\n", rtai_tunables.cpu_freq);
-	PROC_PRINT("    Decr. Latency: %d ns\n", RTAI_LATENCY_8254
+	PROC_PRINT("    Decr. Latency: %d ns\n", RTAI_LATENCY_8254);
 	PROC_PRINT/"    Decr. Setup Time: %d ns\n", RTAI_SETUP_TIME_8254);
 
 	none = 1;

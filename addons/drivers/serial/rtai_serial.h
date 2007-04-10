@@ -85,6 +85,8 @@
 
 #ifdef __KERNEL__
 
+#include <linux/errno.h>
+
 #include <rtai.h>
 
 RTAI_SYSCALL_MODE int rt_spopen(unsigned int tty, unsigned int baud, unsigned int numbits, unsigned int stopbits, unsigned int parity, int mode, int fifotrig);

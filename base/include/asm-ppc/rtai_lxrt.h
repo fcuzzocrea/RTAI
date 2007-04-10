@@ -36,19 +36,19 @@
 #endif
 
 #define LINUX_SYSCALL_NR      gpr[0]
-#define LINUX_SYSCALL_ARG1    gpr[3]
-#define LINUX_SYSCALL_ARG2    gpr[4]
-#define LINUX_SYSCALL_ARG3    gpr[5]
-#define LINUX_SYSCALL_ARG4    gpr[6]
-#define LINUX_SYSCALL_ARG5    gpr[7]
-#define LINUX_SYSCALL_ARG6    gpr[8]
+#define LINUX_SYSCALL_REG1    gpr[3]
+#define LINUX_SYSCALL_REG2    gpr[4]
+#define LINUX_SYSCALL_REG3    gpr[5]
+#define LINUX_SYSCALL_REG4    gpr[6]
+#define LINUX_SYSCALL_REG5    gpr[7]
+#define LINUX_SYSCALL_REG6    gpr[8]
 #define LINUX_SYSCALL_RETREG  gpr[3]
 #define LINUX_SYSCALL_FLAGS   msr
 
 #define RTAI_SYSCALL_NR      0x70000000
-#define RTAI_SYSCALL_CODE    LINUX_SYSCALL_ARG1
-#define RTAI_SYSCALL_ARGS    LINUX_SYSCALL_ARG2
-#define RTAI_SYSCALL_RETPNT  LINUX_SYSCALL_ARG3
+#define RTAI_SYSCALL_CODE    LINUX_SYSCALL_REG1
+#define RTAI_SYSCALL_ARGS    LINUX_SYSCALL_REG2
+#define RTAI_SYSCALL_RETPNT  LINUX_SYSCALL_REG3
 
 //#define RTAI_FAKE_LINUX_SYSCALL  39
 
@@ -56,7 +56,7 @@
 
 #define LXRT_DO_IMMEDIATE_LINUX_SYSCALL(regs) \
         do { \
-		regs->LINUX_SYSCALL_RETREG = ((asmlinkage int (*)(long, ...))sys_call_table[regs->LINUX_SYSCALL_NR])(regs->LINUX_SYSCALL_ARG1, regs->LINUX_SYSCALL_ARG2, regs->LINUX_SYSCALL_ARG3, regs->LINUX_SYSCALL_ARG4, regs->LINUX_SYSCALL_ARG5, regs->LINUX_SYSCALL_ARG6); \
+		regs->LINUX_SYSCALL_RETREG = ((asmlinkage int (*)(long, ...))sys_call_table[regs->LINUX_SYSCALL_NR])(regs->LINUX_SYSCALL_REG1, regs->LINUX_SYSCALL_REG2, regs->LINUX_SYSCALL_REG3, regs->LINUX_SYSCALL_REG4, regs->LINUX_SYSCALL_REG5, regs->LINUX_SYSCALL_REG6); \
         } while (0)
 
 #define SET_LXRT_RETVAL_IN_SYSCALL(regs, retval) \
@@ -138,9 +138,9 @@ static inline void kthread_fun_long_jump(struct task_struct *lnxtsk)
 #include <sys/syscall.h>
 #include <unistd.h>
 
-static inline long long __rtai_lxrt(unsigned long arg0, unsigned long arg1, unsigned long arg2)
+static inline union rtai_lxrt_t __rtai_lxrt(unsigned long arg0, unsigned long arg1, unsigned long arg2)
 { 
-	unsigned long long __sc_ret;
+	union rtai_lxrt_t __sc_ret;
 	{
 		register unsigned long __sc_0  __asm__ ("r0");
 		register unsigned long __sc_3  __asm__ ("r3");
@@ -159,8 +159,8 @@ static inline long long __rtai_lxrt(unsigned long arg0, unsigned long arg1, unsi
 			: "cr0", "ctr", "memory",
 			  "r9", "r10","r11", "r12");
 
-		((unsigned long *)&__sc_ret)[0] = __sc_3;
-		((unsigned long *)&__sc_ret)[1] = __sc_4;
+		__sc_ret.i[0] = __sc_3;
+		__sc_ret.i[1] = __sc_4;
 	}
 	return __sc_ret;
 }
@@ -171,7 +171,7 @@ static union rtai_lxrt_t _rtai_lxrt(long srq, void *arg)
 #if 1 //def USE_LINUX_SYSCALL
 	syscall(RTAI_SYSCALL_NR, srq, arg, &retval);
 #else
-	retval = (union rtai_lxrt_t)__rtai_lxrt(RTAI_SYSCALL_NR, srq, arg);
+	retval = __rtai_lxrt(RTAI_SYSCALL_NR, srq, arg);
 #endif
 	return retval;
 }

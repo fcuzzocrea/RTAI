@@ -659,12 +659,9 @@ void rt_pend_linux_srq(unsigned srq);
 int rt_request_srq (unsigned label, void (*k_handler)(void), long long (*u_handler)(unsigned long));
 int rt_free_srq(unsigned srq);
 
-/* NOT JET IMPLEMENTED */
-#if 0
 int rt_assign_irq_to_cpu(int irq, unsigned long cpus_mask) { return 0; }
 int rt_reset_irq_to_sym_mode(int irq) { return 0; }
 void rt_request_timer_cpuid(void (*handler)(void), unsigned tick, int cpuid) { return 0; }
-#endif
 
 /*
  * timer func

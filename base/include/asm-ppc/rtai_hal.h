@@ -661,7 +661,7 @@ int rt_free_srq(unsigned srq);
 
 int rt_assign_irq_to_cpu(int irq, unsigned long cpus_mask);
 int rt_reset_irq_to_sym_mode(int irq);
-void rt_request_timer_cpuid(void (*handler)(void), unsigned tick, int cpuid)
+void rt_request_timer_cpuid(void (*handler)(void), unsigned tick, int cpuid);
 
 /*
  * timer func

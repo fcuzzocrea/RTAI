@@ -39,7 +39,7 @@
 static inline long long rtai_srq(long srq, unsigned long args)
 {
 	long long retval;
-#ifdef USE_LINUX_SYSCALL
+#if 1 //def USE_LINUX_SYSCALL
         syscall(RTAI_SRQ_SYSCALL_NR, srq, args, &retval);
 #else
 	register unsigned long __sc_0 __asm__ ("r0");

@@ -138,7 +138,7 @@ static inline void kthread_fun_long_jump(struct task_struct *lnxtsk)
 #include <sys/syscall.h>
 #include <unistd.h>
 
-static inline long long __rtai_lxrt(unsigned long arg0,unsigned long arg1,unsigned long arg2)
+static inline long long __rtai_lxrt(unsigned long arg0, unsigned long arg1, unsigned long arg2)
 { 
 	unsigned long long __sc_ret;
 	{

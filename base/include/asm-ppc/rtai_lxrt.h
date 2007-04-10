@@ -35,28 +35,28 @@
 #undef USE_LINUX_SYSCALL
 #endif
 
-#define RTAI_SYSCALL_NR      0x70000000
-#define RTAI_SYSCALL_CODE    gpr[3]
-#define RTAI_SYSCALL_ARGS    gpr[4]
-#define RTAI_SYSCALL_RETPNT  gpr[5]
+#define LINUX_SYSCALL_NR      gpr[0]
+#define LINUX_SYSCALL_ARG1    gpr[3]
+#define LINUX_SYSCALL_ARG2    gpr[4]
+#define LINUX_SYSCALL_ARG3    gpr[5]
+#define LINUX_SYSCALL_ARG4    gpr[6]
+#define LINUX_SYSCALL_ARG5    gpr[7]
+#define LINUX_SYSCALL_ARG6    gpr[8]
+#define LINUX_SYSCALL_RETREG  gpr[3]
+#define LINUX_SYSCALL_FLAGS   msr
 
-#define RTAI_FAKE_LINUX_SYSCALL  39
+#define RTAI_SYSCALL_NR      0x70000000
+#define RTAI_SYSCALL_CODE    LINUX_SYSCALL_ARG1
+#define RTAI_SYSCALL_ARGS    LINUX_SYSCALL_ARG2
+#define RTAI_SYSCALL_RETPNT  LINUX_SYSCALL_ARG3
+
+//#define RTAI_FAKE_LINUX_SYSCALL  39
 
 //#define NR_syscalls __NR_syscall_max
 
-#define LINUX_SYSCALL_NR      gpr[0]
-#define LINUX_SYSCALL_REG1    gpr[3]
-#define LINUX_SYSCALL_REG2    gpr[4]
-#define LINUX_SYSCALL_REG3    gpr[5]
-#define LINUX_SYSCALL_REG4    gpr[6]
-#define LINUX_SYSCALL_REG5    gpr[7]
-#define LINUX_SYSCALL_REG6    gpr[8]
-#define LINUX_SYSCALL_RETREG  gpr[0]
-#define LINUX_SYSCALL_FLAGS   msr
-
 #define LXRT_DO_IMMEDIATE_LINUX_SYSCALL(regs) \
         do { \
-		regs->LINUX_SYSCALL_RETREG = ((asmlinkage int (*)(long, ...))sys_call_table[regs->LINUX_SYSCALL_NR])(regs->LINUX_SYSCALL_REG1, regs->LINUX_SYSCALL_REG2, regs->LINUX_SYSCALL_REG3, regs->LINUX_SYSCALL_REG4, regs->LINUX_SYSCALL_REG5, regs->LINUX_SYSCALL_REG6); \
+		regs->LINUX_SYSCALL_RETREG = ((asmlinkage int (*)(long, ...))sys_call_table[regs->LINUX_SYSCALL_NR])(regs->LINUX_SYSCALL_ARG1, regs->LINUX_SYSCALL_ARG2, regs->LINUX_SYSCALL_ARG3, regs->LINUX_SYSCALL_ARG4, regs->LINUX_SYSCALL_ARG5, regs->LINUX_SYSCALL_ARG6); \
         } while (0)
 
 #define SET_LXRT_RETVAL_IN_SYSCALL(regs, retval) \
@@ -75,13 +75,18 @@
 #define TIMER_LATENCY     RTAI_LATENCY_8254
 #define TIMER_SETUP_TIME  RTAI_SETUP_TIME_8254
 #define ONESHOT_SPAN      ((0x7FFF*(CPU_FREQ/TIMER_FREQ))/(CONFIG_RTAI_CAL_FREQS_FACT + 1)) //(0x7FFF*(CPU_FREQ/TIMER_FREQ))
-#define update_linux_timer(cpuid)  hal_pend_uncond(TIMER_8254_IRQ, cpuid)
+#define update_linux_timer(cpuid) \
+	do { hal_pend_uncond(TIMER_8254_IRQ, cpuid); } while (0)
 
 union rtai_lxrt_t {
     RTIME rt;
-    long i[1];
-    void *v[1];
+    long i[2];
+    void *v[2];
 };
+
+#ifndef THREAD_SIZE
+#define THREAD_SIZE  8192    /* 2 pages */
+#endif
 
 #ifdef __cplusplus
 extern "C" {
@@ -133,13 +138,40 @@ static inline void kthread_fun_long_jump(struct task_struct *lnxtsk)
 #include <sys/syscall.h>
 #include <unistd.h>
 
+static inline long long __rtai_lxrt(unsigned long arg0,unsigned long arg1,unsigned long arg2)
+{ 
+	unsigned long long __sc_ret;
+	{
+		register unsigned long __sc_0  __asm__ ("r0");
+		register unsigned long __sc_3  __asm__ ("r3");
+		register unsigned long __sc_4  __asm__ ("r4");
+		
+		__sc_0 = arg0;
+		__sc_3 = arg1;
+		__sc_4 = arg2;
+
+		__asm__ __volatile__
+			("sc           \n\t"
+			: "=&r" (__sc_0),
+			  "=&r" (__sc_3),  "=&r" (__sc_4)
+			: "0" (__sc_0), 
+			  "1" (__sc_3), "2" (__sc_4)
+			: "cr0", "ctr", "memory",
+			  "r9", "r10","r11", "r12");
+
+		((unsigned long *)&__sc_ret)[0] = __sc_3;
+		((unsigned long *)&__sc_ret)[1] = __sc_4;
+	}
+	return __sc_ret;
+}
+
 static union rtai_lxrt_t _rtai_lxrt(long srq, void *arg)
 {
 	union rtai_lxrt_t retval;
 #if 1 //def USE_LINUX_SYSCALL
 	syscall(RTAI_SYSCALL_NR, srq, arg, &retval);
 #else
-	RTAI_DO_TRAP(RTAI_SYS_VECTOR, retval, srq, arg);
+	retval = (union rtai_lxrt_t)__rtai_lxrt(RTAI_SYSCALL_NR, srq, arg);
 #endif
 	return retval;
 }
@@ -158,3 +190,51 @@ static inline union rtai_lxrt_t rtai_lxrt(long dynx, long lsize, long srq, void 
 #endif /* __cplusplus */
 
 #endif /* !_RTAI_ASM_PPC_LXRT_H */
+
+#if 0 // to be checked
+#include <linux/slab.h>
+
+#if 0 // optimised (?)
+static inline void kthread_fun_set_jump(struct task_struct *lnxtsk)
+{
+	lnxtsk->rtai_tskext(TSKEXT2) =
+		 kmalloc(sizeof(struct thread_struct) + (lnxtsk->thread.esp & ~(THREAD_SIZE - 1)) + THREAD_SIZE - lnxtsk->thread.esp,
+		 GFP_KERNEL);
+	*((struct thread_struct *)lnxtsk->rtai_tskext(TSKEXT2)) = lnxtsk->thread;
+	memcpy(lnxtsk->rtai_tskext(TSKEXT2) + sizeof(struct thread_struct)/* + sizeof(struct thread_info)*/,
+		(void *)(lnxtsk->thread.esp),
+		(lnxtsk->thread.esp & ~(THREAD_SIZE - 1)) + THREAD_SIZE - lnxtsk->thread.esp);
+}
+
+static inline void kthread_fun_long_jump(struct task_struct *lnxtsk)
+{
+	lnxtsk->thread = *((struct thread_struct *)lnxtsk->rtai_tskext(TSKEXT2));
+	memcpy((void *)lnxtsk->thread.esp,
+		lnxtsk->rtai_tskext(TSKEXT2) + sizeof(struct thread_struct)/* + sizeof(struct thread_info)*/,
+		(lnxtsk->thread.esp & ~(THREAD_SIZE - 1)) + THREAD_SIZE - lnxtsk->thread.esp);
+}
+#else  // brute force
+#include <asm/thread_info.h>
+
+//this solution could be used in i386 too...
+
+// This function save the current thread_struct and stack of the task
+static inline void kthread_fun_set_jump(struct task_struct *lnxtsk)
+{
+	lnxtsk->rtai_tskext(TSKEXT2) = kmalloc(sizeof(struct thread_struct) + THREAD_SIZE, GFP_KERNEL);
+	*((struct thread_struct *)lnxtsk->rtai_tskext(TSKEXT2)) = lnxtsk->thread;
+// Page 85 Understanding the Linux Kernel tell that all the architecture stack have at the bottom the struct thread_info so...
+// GPR is the small data area pointer and point to the thread_info of the process
+// note: this copy the thread_info struct too
+	memcpy(lnxtsk->rtai_tskext(TSKEXT2) + sizeof(struct thread_struct), (void*) lnxtsk->thread_info, THREAD_SIZE);
+}
+
+// This function RESTORE the thread_struct and stack of the task
+static inline void kthread_fun_long_jump(struct task_struct *lnxtsk)
+{
+	lnxtsk->thread = *((struct thread_struct *)lnxtsk->rtai_tskext(TSKEXT2));
+// this copy the thread_info struct too
+	memcpy((void*) lnxtsk->thread_info, lnxtsk->rtai_tskext(TSKEXT2) + sizeof(struct thread_struct), THREAD_SIZE);
+}
+#endif
+#endif

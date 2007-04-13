@@ -1848,7 +1848,7 @@
 +
 +int fastcall __ipipe_dispatch_event (unsigned event, void *data)
 +{
-+extern long __ipipe_grab_irq; extern long intercept_table[][2]; void *handler; if (intercept_table[5][1] != __ipipe_grab_irq && (handler = ipipe_root_domain->evhand[event])) { return ((int (*)(unsigned long, void *))handler)(event, data); } else {
++extern unsigned long *intercept_table[], __ipipe_grab_irq; void *handler; if (*intercept_table[0x5] != __ipipe_grab_irq && (handler = ipipe_root_domain->evhand[event])) { return ((int (*)(unsigned long, void *))handler)(event, data); } else {
 +	struct ipipe_domain *start_domain, *this_domain, *next_domain;
 +	ipipe_event_handler_t evhand;
 +	struct list_head *pos, *npos;

@@ -576,7 +576,7 @@ void rtai_reset_gate_vector (unsigned vector, unsigned *handler, unsigned *retha
 }
 
 
-int timer_ack_err = 0;
+static void decr_timer_handler(void);
 
 /* this can be a prototype for a handler pending something for Linux */
 int rtai_decr_timer_handler(struct pt_regs *regs)
@@ -586,7 +586,7 @@ int rtai_decr_timer_handler(struct pt_regs *regs)
 
 	RTAI_SCHED_ISR_LOCK();
 	HAL_LOCK_LINUX();
-	((void (*)(void))rtai_realtime_irq[RTAI_TIMER_DECR_IRQ].handler)();
+	decr_timer_handler();
 	HAL_UNLOCK_LINUX();
 	RTAI_SCHED_ISR_UNLOCK();
 	if (test_and_clear_bit(cpuid, &hal_pended) && !test_bit(IPIPE_STALL_FLAG, ipipe_root_status[cpuid])) {
@@ -663,7 +663,7 @@ int rt_request_timer (void (*handler)(void), unsigned tick, int use_apic)
 
 	// request an IRQ and register it
 	rt_release_irq(RTAI_TIMER_DECR_IRQ);
-	retval = rt_request_irq(RTAI_TIMER_DECR_IRQ, (void *)handler, NULL, 0);
+	decr_timer_handler = handler;
 
 	// pass throught ipipe: register immediate timer_trap handler
 	// on i386 for a periodic mode is rt_set_timer_delay(tick); -> is set rate generator at tick; in one shot set LATCH all for the 8254 timer. Here is the same.
@@ -683,7 +683,6 @@ void rt_free_timer (void)
 {
 	unsigned long flags;
 
-	rt_release_irq(RTAI_TIMER_DECR_IRQ);
 	rtai_save_flags_and_cli(flags);
 #ifdef CONFIG_40x
 	/* Re-enable the PIT auto-reload mode */

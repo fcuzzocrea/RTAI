@@ -576,7 +576,7 @@ void rtai_reset_gate_vector (unsigned vector, unsigned *handler, unsigned *retha
 }
 
 
-static void decr_timer_handler(void);
+static void (*decr_timer_handler)(void);
 
 /* this can be a prototype for a handler pending something for Linux */
 int rtai_decr_timer_handler(struct pt_regs *regs)

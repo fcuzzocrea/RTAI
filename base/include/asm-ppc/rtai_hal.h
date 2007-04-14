@@ -554,13 +554,8 @@ static inline void rt_set_timer_delay (int delay)
 #ifdef CONFIG_40x
 		return;
 #else  /* !CONFIG_40x */
-		if ((delay = rt_times.intr_time - rtai_rdtsc()) <= 0) {
-			int lost = 0;
-			do {
-				lost++;
-				rt_times.intr_time += (RTIME)rt_times.periodic_tick;
-			}
-			while ((delay = rt_times.intr_time - rtai_rdtsc()) <= 0);
+		while ((delay = rt_times.intr_time - rtai_rdtsc()) <= 0) {
+			rt_times.intr_time += rt_times.periodic_tick;
 		}
 #endif /* CONFIG_40x */
 	}

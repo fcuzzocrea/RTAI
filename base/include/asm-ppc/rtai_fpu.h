@@ -143,7 +143,7 @@ static inline void __restore_fpenv(FPU_ENV *env)
         do { /*init_xfpu();*/ tsk->used_math = 1; set_tsk_used_fpu(tsk); } while(0)
 
 #define restore_fpu(tsk) \
-        do { restore_fpenv_lxrt((tsk)); set_tsk_used_fpu(tsk); } while (0)
+        do { restore_fpenv_lxrt((tsk)); /*set_tsk_used_fpu(tsk);*/ } while (0)
 
 #define set_tsk_used_fpu(t)  do {  } while(0)
 
@@ -157,6 +157,12 @@ static inline void __restore_fpenv(FPU_ENV *env)
 
 #endif
 
+#define clear_lnxtsk_uses_fpu(lnxtsk) \
+        do { clear_stopped_child_used_math(lnxtsk); } while(0)
+
+#define lnxtsk_uses_fpu(lnxtsk)  (tsk_used_math(lnxtsk))
+
+#define init_hard_fpu(lnxtsk)
 
 #endif
 

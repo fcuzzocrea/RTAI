@@ -65,6 +65,9 @@
 /* kernel module tricks */
 MODULE_LICENSE("GPL");
 
+#define INTR_VECTOR  5
+#define DECR_VECTOR  9
+
 static unsigned long rtai_cpufreq_arg = RTAI_CALIBRATED_CPU_FREQ;
 RTAI_MODULE_PARM(rtai_cpufreq_arg, ulong);
 
@@ -546,35 +549,39 @@ void rt_pend_linux_srq (unsigned srq)
 
 #define NR_EXCEPT 48
 
-extern unsigned long *intercept_table[NR_EXCEPT];
-static unsigned long old_intercept_table[NR_EXCEPT][2];
-
+struct intercept_entry { unsigned long handler, rethandler; };
+extern struct intercept_entry *intercept_table[];
+static struct intercept_entry old_intercept_table[NR_EXCEPT];
 
 /*
  * rtai_set_gate_vector (more correctly rtai_set_trap_vector)
  */
 
-unsigned long long rtai_set_gate_vector (unsigned vector, void *handler, void *rethandler)
+struct intercept_entry rtai_set_gate_vector(unsigned vector, void *handler, void *rethandler)
 {
-	old_intercept_table[vector][0] = intercept_table[vector][0];
-	old_intercept_table[vector][1] = intercept_table[vector][1];
-	intercept_table[vector][0] = handler ? (unsigned long)handler : old_intercept_table[vector][0];
-	intercept_table[vector][1] = rethandler ? (unsigned long)rethandler : old_intercept_table[vector][1];
-	return (unsigned long long)(unsigned long)old_intercept_table[vector];
+	old_intercept_table[vector].handler    = intercept_table[vector]->handler;
+	old_intercept_table[vector].rethandler = intercept_table[vector]->rethandler;
+	if (handler) {
+		intercept_table[vector]->handler    = (unsigned long)handler;
+	}
+	if (rethandler) {
+		intercept_table[vector]->rethandler = (unsigned long)rethandler;
+	}
+	return old_intercept_table[vector];
 }
 
 /*
  * rtai_reset_gate_vector (rtai_reset_trap_vector)
  */
 
-void rtai_reset_gate_vector (unsigned vector, unsigned *handler, unsigned *rethandler)
+void rtai_reset_gate_vector (unsigned vector, unsigned long handler, unsigned long rethandler)
 {
-	if (!(((unsigned long)handler | old_intercept_table[vector][0]) && ((unsigned long)rethandler | old_intercept_table[vector][1])))
+	if (!((handler | old_intercept_table[vector].handler) && (rethandler | old_intercept_table[vector].rethandler))) {
 		return;
-	intercept_table[vector][0] = handler ? (unsigned long)rethandler : old_intercept_table[vector][0];
-	intercept_table[vector][1] = handler ? (unsigned long)rethandler : old_intercept_table[vector][1];
+	}
+	intercept_table[vector]->handler    = handler    ? handler    : old_intercept_table[vector].handler;
+	intercept_table[vector]->rethandler = rethandler ? rethandler : old_intercept_table[vector].rethandler;
 }
-
 
 static void (*decr_timer_handler)(void);
 
@@ -615,7 +622,6 @@ int rt_reset_irq_to_sym_mode (int irq) { return 0; }
 int rt_request_timer (void (*handler)(void), unsigned tick, int use_apic)
 {
 	unsigned long flags;
-	int retval;
 
 	rtai_save_flags_and_cli(flags);
 
@@ -630,13 +636,6 @@ int rt_request_timer (void (*handler)(void), unsigned tick, int use_apic)
 		rt_times.intr_time = rt_times.tick_time + tick;
 		rt_times.linux_time = rt_times.tick_time + rt_times.linux_tick;
 		rt_times.periodic_tick = tick;
-
-		printk("[rt_request_timer.periodic]:\n linux_tick %i, periodic_tick %i,\n intr_time %lld, linux_time %lld, tick_time %lld\n",
-			(int)rt_times.linux_tick,
-			(int)rt_times.periodic_tick,
-			(long long)rt_times.intr_time,
-			(long long)rt_times.linux_time,
-			(long long)rt_times.tick_time);
 #ifdef CONFIG_40x
 		/* Set the PIT auto-reload mode */
 		mtspr(SPRN_TCR, mfspr(SPRN_TCR) | TCR_ARE);
@@ -648,13 +647,6 @@ int rt_request_timer (void (*handler)(void), unsigned tick, int use_apic)
 		rt_times.intr_time = rt_times.tick_time + rt_times.linux_tick;
 		rt_times.linux_time = rt_times.tick_time + rt_times.linux_tick;
 		rt_times.periodic_tick = rt_times.linux_tick;
-
-		printk("[rt_request_timer.oneshot]:\n linux_tick %i, periodic_tick %i,\n intr_time %lld, linux_time %lld, tick_time %lld\n",
-			(int)rt_times.linux_tick,
-			(int)rt_times.periodic_tick,
-			(long long)rt_times.intr_time,
-			(long long)rt_times.linux_time,
-			(long long)rt_times.tick_time);
 #ifdef CONFIG_40x
 		/* Disable the PIT auto-reload mode */
 		mtspr(SPRN_TCR, mfspr(SPRN_TCR) & ~TCR_ARE);
@@ -668,10 +660,10 @@ int rt_request_timer (void (*handler)(void), unsigned tick, int use_apic)
 	// pass throught ipipe: register immediate timer_trap handler
 	// on i386 for a periodic mode is rt_set_timer_delay(tick); -> is set rate generator at tick; in one shot set LATCH all for the 8254 timer. Here is the same.
 	rt_set_timer_delay(rt_times.periodic_tick);
-	rtai_set_gate_vector(0x09, rtai_decr_timer_handler, 0);
+	rtai_set_gate_vector(DECR_VECTOR, rtai_decr_timer_handler, 0);
 
 	rtai_restore_flags(flags);
-	return retval;
+	return 0;
 }
 
 
@@ -690,7 +682,7 @@ void rt_free_timer (void)
 	/* Set the PIT reload value and just let it run. */
 	mtspr(SPRN_PIT, tb_ticks_per_jiffy);
 #endif /* CONFIG_40x */
-	rtai_reset_gate_vector(0x09, 0, 0);
+	rtai_reset_gate_vector(DECR_VECTOR, 0, 0);
 	rtai_restore_flags(flags);
 }
 
@@ -804,8 +796,6 @@ static int rtai_trap_fault (unsigned event, void *evdata)
 	}
 
 	if (event == 2) { /* if Altivec unavailable */
-		struct task_struct *linux_task = current;
-
 /*
 		rtai_hw_cli(); // in task context, so we can be preempted 
 		if (lnxtsk_uses_fpu(linux_task)) {
@@ -940,16 +930,12 @@ asmlinkage int rtai_syscall_dispatcher (struct pt_regs *regs)
         return 0;
 }
 
-static unsigned long rtai_sysvec;
-
-
 /*
  * rtai_install_archdep
  */
 
 static void rtai_install_archdep (void)
 {
-	unsigned long flags;
 	struct hal_sysinfo_struct sysinfo;
 
 #if !defined(USE_LINUX_SYSCALL) && !defined(CONFIG_RTAI_LXRT_USE_LINUX_SYSCALL)	
@@ -1177,7 +1163,7 @@ int __rtai_hal_init (void)
 	hal_virtualize_irq(hal_root_domain, rtai_sysreq_virq, &rtai_lsrq_dispatcher, NULL, IPIPE_HANDLE_MASK);
 
 	// save the old the irq dispatcher and set rtai dispatcher ext intr
-	rtai_set_gate_vector(5, rtai_hirq_dispatcher, 0);
+	rtai_set_gate_vector(INTR_VECTOR, rtai_hirq_dispatcher, 0);
 
 	// architecture dependent RTAI installation
 	rtai_install_archdep();
@@ -1230,7 +1216,7 @@ void __rtai_hal_exit (void)
 
 	// restore old irq handler (__ipipe_grab_irq_intr)
 	rtai_save_flags_and_cli(flags);
-	rtai_reset_gate_vector(0x05, 0, 0);
+	rtai_reset_gate_vector(INTR_VECTOR, 0, 0);
 	rtai_restore_flags(flags);
 
 	// unregister RTAI domain

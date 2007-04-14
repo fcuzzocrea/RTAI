@@ -686,6 +686,16 @@ void rt_free_timer (void)
 	rtai_restore_flags(flags);
 }
 
+void rt_request_rtc(long rtc_freq, void *handler)
+{
+	rt_printk("*** RTC NOT IMPLEMENTED YET ON THIS ARCH ***\n");
+}
+
+void rt_release_rtc(void)
+{
+	rt_printk("*** RTC NOT IMPLEMENTED YET ON THIS ARCH ***\n");
+}
+
 
 /*
  * rtai_hirq_dispatcher
@@ -1349,6 +1359,8 @@ EXPORT_SYMBOL(rt_free_apic_timers);
 
 EXPORT_SYMBOL(rt_request_timer);
 EXPORT_SYMBOL(rt_free_timer);
+EXPORT_SYMBOL(rt_request_rtc);
+EXPORT_SYMBOL(rt_release_rtc);
 
 EXPORT_SYMBOL(rt_set_trap_handler);
 EXPORT_SYMBOL(rt_set_ihook);

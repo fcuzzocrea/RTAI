@@ -665,6 +665,9 @@ void rt_request_timer_cpuid(void (*handler)(void), unsigned tick, int cpuid);
 int rt_request_timer(void (*handler)(void), unsigned tick, int use_apic);
 void rt_free_timer(void);
 
+void rt_request_rtc(long rtc_freq, void *handler);
+void rt_release_rtc(void);
+
 /*
  * setting trap/hook handler function
  */

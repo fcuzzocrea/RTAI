@@ -298,7 +298,7 @@ static inline long long handle_lxrt_request (unsigned int lxsrq, long *arg, RT_T
 {
 #define larg ((struct arg *)arg)
 
-	union {unsigned long name; RT_TASK *rt_task; SEM *sem; MBX *mbx; RWL *rwl; SPL *spl; } arg0;
+	union {unsigned long name; RT_TASK *rt_task; SEM *sem; MBX *mbx; RWL *rwl; SPL *spl; int i; void *p; long long ll; } arg0;
 	int srq;
 
 	if (likely((srq = SRQ(lxsrq)) < MAX_LXRT_FUN)) {
@@ -330,20 +330,24 @@ static inline long long handle_lxrt_request (unsigned int lxsrq, long *arg, RT_T
 	arg0.name = arg[0];
 	switch (srq) {
 		case LXRT_GET_ADR: {
-			return (unsigned long)rt_get_adr(arg0.name);
+			arg0.p = rt_get_adr(arg0.name);
+			return arg0.ll;
 		}
 
 		case LXRT_GET_NAME: {
-			return rt_get_name((void *)arg0.name);
+			arg0.name = rt_get_name(arg0.p);
+			return arg0.ll;
 		}
 
 		case LXRT_TASK_INIT: {
 			struct arg { unsigned long name; long prio, stack_size, max_msg_size, cpus_allowed; };
-			return (unsigned long) __task_init(arg0.name, larg->prio, larg->stack_size, larg->max_msg_size, larg->cpus_allowed);
+			arg0.rt_task = __task_init(arg0.name, larg->prio, larg->stack_size, larg->max_msg_size, larg->cpus_allowed);
+			return arg0.ll;
 		}
 
 		case LXRT_TASK_DELETE: {
-			return __task_delete(arg0.rt_task ? arg0.rt_task : task);
+			arg0.i = __task_delete(arg0.rt_task ? arg0.rt_task : task);
+			return arg0.ll;
 		}
 
 		case LXRT_SEM_INIT: {
@@ -354,7 +358,7 @@ static inline long long handle_lxrt_request (unsigned int lxsrq, long *arg, RT_T
 				struct arg { unsigned long name; long cnt; long typ; };
 				lxrt_typed_sem_init(arg0.sem, larg->cnt, larg->typ);
 				if (rt_register(larg->name, arg0.sem, IS_SEM, current)) {
-					return arg0.name;
+					return arg0.ll;
 				} else {
 					rt_free(arg0.sem);
 				}
@@ -364,10 +368,12 @@ static inline long long handle_lxrt_request (unsigned int lxsrq, long *arg, RT_T
 
 		case LXRT_SEM_DELETE: {
 			if (lxrt_sem_delete(arg0.sem)) {
-				return -EFAULT;
+				arg0.i = -EFAULT;
+				return arg0.ll;
 			}
 			rt_free(arg0.sem);
-			return rt_drg_on_adr(arg0.sem);
+			arg0.i = rt_drg_on_adr(arg0.sem);
+			return arg0.ll;
 		}
 
 		case LXRT_MBX_INIT: {
@@ -381,7 +387,7 @@ static inline long long handle_lxrt_request (unsigned int lxsrq, long *arg, RT_T
 					return 0;
 				}
 				if (rt_register(larg->name, arg0.mbx, IS_MBX, current)) {
-					return arg0.name;
+					return arg0.ll;
 				} else {
 					rt_free(arg0.mbx);
 				}
@@ -391,10 +397,12 @@ static inline long long handle_lxrt_request (unsigned int lxsrq, long *arg, RT_T
 
 		case LXRT_MBX_DELETE: {
 			if (lxrt_mbx_delete(arg0.mbx)) {
-				return -EFAULT;
+				arg0.i = -EFAULT;
+				return arg0.ll;
 			}
 			rt_free(arg0.mbx);
-			return rt_drg_on_adr(arg0.mbx);
+			arg0.i = rt_drg_on_adr(arg0.mbx);
+			return arg0.ll;
 		}
 
 		case LXRT_RWL_INIT: {
@@ -405,7 +413,7 @@ static inline long long handle_lxrt_request (unsigned int lxsrq, long *arg, RT_T
 				struct arg { unsigned long name; long type; };
 				lxrt_typed_rwl_init(arg0.rwl, larg->type);
 				if (rt_register(larg->name, arg0.rwl, IS_SEM, current)) {
-					return arg0.name;
+					return arg0.ll;
 				} else {
 					rt_free(arg0.rwl);
 				}
@@ -415,10 +423,12 @@ static inline long long handle_lxrt_request (unsigned int lxsrq, long *arg, RT_T
 
 		case LXRT_RWL_DELETE: {
 			if (lxrt_rwl_delete(arg0.rwl)) {
-				return -EFAULT;
+				arg0.i = -EFAULT;
+				return arg0.ll;
 			}
 			rt_free(arg0.rwl);
-			return rt_drg_on_adr(arg0.rwl);
+			arg0.i = rt_drg_on_adr(arg0.rwl);
+			return arg0.ll;
 		}
 
 		case LXRT_SPL_INIT: {
@@ -429,7 +439,7 @@ static inline long long handle_lxrt_request (unsigned int lxsrq, long *arg, RT_T
 				struct arg { unsigned long name; };
 				lxrt_spl_init(arg0.spl);
 				if (rt_register(larg->name, arg0.spl, IS_SEM, current)) {
-					return arg0.name;
+					return arg0.ll;
 				} else {
 					rt_free(arg0.spl);
 				}
@@ -439,10 +449,12 @@ static inline long long handle_lxrt_request (unsigned int lxsrq, long *arg, RT_T
 
 		case LXRT_SPL_DELETE: {
 			if (lxrt_spl_delete(arg0.spl)) {
-				return -EFAULT;
+				arg0.i = -EFAULT;
+				return arg0.ll;
 			}
 			rt_free(arg0.spl);
-			return rt_drg_on_adr(arg0.spl);
+			arg0.i = rt_drg_on_adr(arg0.spl);
+			return arg0.ll;
 		}
 
 		case MAKE_HARD_RT: {
@@ -466,12 +478,14 @@ static inline long long handle_lxrt_request (unsigned int lxsrq, long *arg, RT_T
 		}
 		case PRINT_TO_SCREEN: {
 			struct arg { char *display; long nch; };
-			return rtai_print_to_screen("%s", larg->display);
+			arg0.i = rtai_print_to_screen("%s", larg->display);
+			return arg0.ll;
 		}
 
 		case PRINTK: {
 			struct arg { char *display; long nch; };
-			return rt_printk("%s", larg->display);
+			arg0.i = rt_printk("%s", larg->display);
+			return arg0.ll;
 		}
 
 		case NONROOT_HRT: {
@@ -482,7 +496,8 @@ static inline long long handle_lxrt_request (unsigned int lxsrq, long *arg, RT_T
 		}
 
 		case RT_BUDDY: {
-			return task && current->rtai_tskext(TSKEXT1) == current ? (unsigned long)(task) : 0;
+			arg0.rt_task = task && current->rtai_tskext(TSKEXT1) == current ? task : NULL;
+			return arg0.ll;
 		}
 
 		case HRT_USE_FPU: {
@@ -496,7 +511,8 @@ static inline long long handle_lxrt_request (unsigned int lxsrq, long *arg, RT_T
 		}
 
                 case GET_USP_FLAGS: {
-                        return arg0.rt_task->usp_flags;
+                        arg0.name = arg0.rt_task->usp_flags;
+			return arg0.ll;
                 }
                 case SET_USP_FLAGS: {
                         struct arg { RT_TASK *task; unsigned long flags; };
@@ -506,7 +522,8 @@ static inline long long handle_lxrt_request (unsigned int lxsrq, long *arg, RT_T
                 }
 
                 case GET_USP_FLG_MSK: {
-                        return arg0.rt_task->usp_flags_mask;
+                        arg0.name = arg0.rt_task->usp_flags_mask;
+			return arg0.ll;
                 }
 
                 case SET_USP_FLG_MSK: {
@@ -523,14 +540,15 @@ static inline long long handle_lxrt_request (unsigned int lxsrq, long *arg, RT_T
 					if ((arg0.rt_task->force_soft = (arg0.rt_task->is_hard != 0) && FORCE_SOFT)) {
 						rt_do_force_soft(arg0.rt_task);
 					}
-                                        return (unsigned long)arg0.rt_task;
+					return arg0.ll;
                                 }
                         }
                         return 0;
                 }
 
 		case IS_HARD: {
-			return arg0.rt_task || (arg0.rt_task = current->rtai_tskext(TSKEXT0)) ? arg0.rt_task->is_hard : 0;
+			arg0.i = arg0.rt_task || (arg0.rt_task = current->rtai_tskext(TSKEXT0)) ? arg0.rt_task->is_hard : 0;
+			return arg0.ll;
 		}
 		case GET_EXECTIME: {
 			struct arg { RT_TASK *task; RTIME *exectime; };
@@ -557,12 +575,14 @@ static inline long long handle_lxrt_request (unsigned int lxsrq, long *arg, RT_T
 			struct arg { struct linux_syscalls_list syscalls; };
 			larg->syscalls.task->linux_syscall_server = larg->syscalls.serv;
 			rtai_set_linux_task_priority(current, (larg->syscalls.task)->lnxtsk->policy, (larg->syscalls.task)->lnxtsk->rt_priority);
-			return (long)__task_init((unsigned long)larg->syscalls.task, larg->syscalls.task->base_priority >= BASE_SOFT_PRIORITY ? larg->syscalls.task->base_priority - BASE_SOFT_PRIORITY : larg->syscalls.task->base_priority, 0, 0, 1 << larg->syscalls.task->runnable_on_cpus);
+			arg0.rt_task = __task_init((unsigned long)larg->syscalls.task, larg->syscalls.task->base_priority >= BASE_SOFT_PRIORITY ? larg->syscalls.task->base_priority - BASE_SOFT_PRIORITY : larg->syscalls.task->base_priority, 0, 0, 1 << larg->syscalls.task->runnable_on_cpus);
+			return arg0.ll;
 		}
 
 	        default: {
 		    rt_printk("RTAI/LXRT: Unknown srq #%d\n", srq);
-		    return -ENOSYS;
+		    arg0.i = -ENOSYS;
+		    return arg0.ll;
 		}
 	}
 	return 0;

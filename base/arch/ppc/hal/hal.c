@@ -1138,6 +1138,8 @@ long rtai_catch_event (struct hal_domain_struct *from, unsigned long event, int 
  * __rtai_hal_init, Execution Domain: Linux
  */
 
+extern int ipipe_events_diverted;
+
 int __rtai_hal_init (void)
 {
 	int trapnr, halinv;
@@ -1176,6 +1178,7 @@ int __rtai_hal_init (void)
 	rtai_set_gate_vector(INTR_VECTOR, rtai_hirq_dispatcher, 0);
 
 	// architecture dependent RTAI installation
+	ipipe_events_diverted = 1;
 	rtai_install_archdep();
 
 #ifdef CONFIG_PROC_FS
@@ -1243,6 +1246,7 @@ void __rtai_hal_exit (void)
 
 	// archdep uninstall
 	rtai_uninstall_archdep();
+	ipipe_events_diverted = 1;
 
 	// log RTAI unmounted
 	printk(KERN_INFO "RTAI[hal]: unmounted.\n");

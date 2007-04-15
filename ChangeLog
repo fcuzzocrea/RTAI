@@ -1,6 +1,11 @@
+2007-04-16  Paolo Mantegazza <mantegazza@aero.polimi.it>
+
+	* base/sched/sys.c: ensure correct returns in the switch part of 
+	  lxrt invoke whatever the endianess.
+
 2007-04-12  Paolo Mantegazza <mantegazza@aero.polimi.it>
 
-	* base/include/rtai_lxrt.h; switch to soft mode if in rt_thread_create
+	* base/include/rtai_lxrt.h: switch to soft mode if in rt_thread_create
 	  a thread is created while being in hard mode, recovering it after
 	  thread creation.
 

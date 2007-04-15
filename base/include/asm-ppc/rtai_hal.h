@@ -31,14 +31,17 @@
  */
 
 
-#define RTAI_SYSCALL_MODE //__attribute__((regparm(0)))
-
 #ifndef _RTAI_ASM_PPC_HAL_H
 #define _RTAI_ASM_PPC_HAL_H
 
+#define RTAI_SYSCALL_MODE //__attribute__((regparm(0)))
+
+#define LOCKED_LINUX_IN_IRQ_HANDLER
+#define UNWRAPPED_CATCH_EVENT
+
+#include <rtai_hal_names.h>
 #include <asm/rtai_vectors.h>
 #include <rtai_types.h>
-#include <rtai_hal_names.h>
 
 #ifdef CONFIG_SMP
 #define RTAI_NR_CPUS  CONFIG_RTAI_CPUS
@@ -48,7 +51,7 @@
 
 
 //---------------------------------------------------------------------------//
-//                         Matematichal primitives                           //
+//                         Mathematical primitives                           //
 //---------------------------------------------------------------------------//
 
 static inline int ffnz(unsigned long ul)

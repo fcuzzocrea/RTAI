@@ -1246,7 +1246,7 @@ void __rtai_hal_exit (void)
 
 	// archdep uninstall
 	rtai_uninstall_archdep();
-	ipipe_events_diverted = 1;
+	ipipe_events_diverted = 0;
 
 	// log RTAI unmounted
 	printk(KERN_INFO "RTAI[hal]: unmounted.\n");

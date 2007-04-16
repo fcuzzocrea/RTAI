@@ -3121,7 +3121,7 @@
 + diff -u linux-2.6.19/kernel/ipipe/core.c.ORIG linux-2.6.19/kernel/ipipe/core.c
 --- linux-2.6.19/kernel/ipipe/core.c.ORIG	2006-12-13 14:01:45.845950236 +0100
 +++ linux-2.6.19/kernel/ipipe/core.c	2006-12-13 14:01:45.846950118 +0100
-@@ -0,0 +1,1050 @@
+@@ -0,0 +1,1053 @@
 +/* -*- linux-c -*-
 + * linux/kernel/ipipe/core.c
 + *
@@ -3753,9 +3753,12 @@
 +
 +/* __ipipe_dispatch_event() -- Low-level event dispatcher. */
 +
++int ipipe_events_diverted;
++EXPORT_SYMBOL(ipipe_events_diverted);
++
 +int fastcall __ipipe_dispatch_event (unsigned event, void *data)
 +{
-+extern long __ipipe_grab_irq; extern long intercept_table[][2]; void *handler; if (intercept_table[5][1] != __ipipe_grab_irq && (handler = ipipe_root_domain->evhand[event])) { return ((int (*)(unsigned long, void *))handler)(event, data); } else {
++void *handler; if (ipipe_events_diverted && (handler = ipipe_root_domain->evhand[event])) { return ((int (*)(unsigned long, void *))handler)(event, data); } else {
 +	struct ipipe_domain *start_domain, *this_domain, *next_domain;
 +	ipipe_event_handler_t evhand;
 +	struct list_head *pos, *npos;

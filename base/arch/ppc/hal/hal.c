@@ -465,7 +465,7 @@ void rt_pend_linux_irq (unsigned irq)
 {
 	unsigned long flags;
 	rtai_save_flags_and_cli(flags);
-		hal_pend_uncond(irq, rtai_cpuid());
+	hal_pend_uncond(irq, rtai_cpuid());
 	rtai_restore_flags(flags);
 }
 

@@ -76,7 +76,7 @@
 #define TIMER_SETUP_TIME  RTAI_SETUP_TIME_8254
 #define ONESHOT_SPAN      ((0x7FFF*(CPU_FREQ/TIMER_FREQ))/(CONFIG_RTAI_CAL_FREQS_FACT + 1)) //(0x7FFF*(CPU_FREQ/TIMER_FREQ))
 #define update_linux_timer(cpuid) \
-	do { hal_pend_uncond(TIMER_8254_IRQ, cpuid); } while (0)
+	do { disarm_decr[cpuid] = 1; hal_pend_uncond(TIMER_8254_IRQ, cpuid); } while (0)
 
 union rtai_lxrt_t {
     RTIME rt;

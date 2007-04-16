@@ -246,11 +246,6 @@ int rt_request_irq(unsigned irq, int (*handler)(unsigned irq, void *cookie), voi
 	}
 
 	flags = rtai_critical_enter(NULL);
-
-	if(irq == RTAI_TIMER_DECR_IRQ) {
-		disarm_decr[rtai_cpuid()] = 1;
-	}
-
 	rtai_realtime_irq[irq].handler = (void *)handler;
 	rtai_realtime_irq[irq].cookie  = cookie;
 	rtai_realtime_irq[irq].retmode = retmode ? 1 : 0;
@@ -279,10 +274,6 @@ int rt_release_irq (unsigned irq)
 	flags = rtai_critical_enter(NULL);
 	rtai_realtime_irq[irq].handler = NULL;
 	rtai_realtime_irq[irq].irq_ack = hal_root_domain->irqs[irq].acknowledge;
-
-	if(irq == RTAI_TIMER_DECR_IRQ) {
-		disarm_decr[rtai_cpuid()] = 0;
-	}
 	rtai_critical_exit(flags);
 
 	if (IsolCpusMask && irq < IPIPE_NR_XIRQS) {
@@ -659,6 +650,7 @@ int rt_request_timer (void (*handler)(void), unsigned tick, int use_apic)
 
 	// pass throught ipipe: register immediate timer_trap handler
 	// on i386 for a periodic mode is rt_set_timer_delay(tick); -> is set rate generator at tick; in one shot set LATCH all for the 8254 timer. Here is the same.
+	disarm_decr[rtai_cpuid()] = 1;
 	rt_set_timer_delay(rt_times.periodic_tick);
 	rtai_set_gate_vector(DECR_VECTOR, rtai_decr_timer_handler, 0);
 
@@ -683,6 +675,7 @@ void rt_free_timer (void)
 	mtspr(SPRN_PIT, tb_ticks_per_jiffy);
 #endif /* CONFIG_40x */
 	rtai_reset_gate_vector(DECR_VECTOR, 0, 0);
+	disarm_decr[rtai_cpuid()] = 0;
 	rtai_restore_flags(flags);
 }
 

@@ -37,7 +37,7 @@ if CONFIG_KBUILD
 rtai_math.ko: @RTAI_KBUILD_ENV@
 rtai_math.ko: $(libmath_a_SOURCES)
 	@RTAI_KBUILD_TOP@ \
-	@RTAI_KBUILD_CMD@ rtai_extradef="@RTAI_FP_CFLAGS@" \
+	@RTAI_KBUILD_CMD@ rtai_extradef="@RTAI_FP_CFLAGS@" rtai_extraopt="@RTAI_TARGET_ARCH_OPTS@" \
 	@RTAI_KBUILD_BOTTOM@
 
 clean-local:

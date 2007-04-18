@@ -6374,3 +6374,43 @@
 +
  #endif /* _PPC_PGALLOC_H */
  #endif /* __KERNEL__ */
+--- 2.6.14/include/asm-ppc/mv64x60.h    2005-10-28 02:02:08.000000000 +0200
++++ 2.6.14-ipipe/include/asm-ppc/mv64x60.h    2006-07-18 17:59:59.000000000 +0200
+@@ -254,9 +254,9 @@ extern inline void
+ mv64x60_write(struct mv64x60_handle *bh, u32 offset, u32 val) {
+ 	ulong	flags;
+ 
+-	spin_lock_irqsave(&mv64x60_lock, flags);
++	spin_lock_irqsave_hw(&mv64x60_lock, flags);
+ 	out_le32(bh->v_base + offset, val);
+-	spin_unlock_irqrestore(&mv64x60_lock, flags);
++	spin_unlock_irqrestore_hw(&mv64x60_lock, flags);
+ }
+ 
+ extern inline u32
+@@ -264,9 +264,9 @@ mv64x60_read(struct mv64x60_handle *bh, 
+ 	ulong	flags;
+ 	u32     reg;
+ 
+-	spin_lock_irqsave(&mv64x60_lock, flags);
++	spin_lock_irqsave_hw(&mv64x60_lock, flags);
+ 	reg = in_le32(bh->v_base + offset);
+-	spin_unlock_irqrestore(&mv64x60_lock, flags);
++	spin_unlock_irqrestore_hw(&mv64x60_lock, flags);
+ 	return reg;
+ }
+ 
+@@ -276,11 +276,11 @@ mv64x60_modify(struct mv64x60_handle *bh
+ 	u32	reg;
+ 	ulong	flags;
+ 
+-	spin_lock_irqsave(&mv64x60_lock, flags);
++	spin_lock_irqsave_hw(&mv64x60_lock, flags);
+ 	reg = in_le32(bh->v_base + offs) & (~mask);
+ 	reg |= data & mask;
+ 	out_le32(bh->v_base + offs, reg);
+-	spin_unlock_irqrestore(&mv64x60_lock, flags);
++	spin_unlock_irqrestore_hw(&mv64x60_lock, flags);
+ }
+ 
+ #define	mv64x60_set_bits(bh, offs, bits) mv64x60_modify(bh, offs, ~0, bits)

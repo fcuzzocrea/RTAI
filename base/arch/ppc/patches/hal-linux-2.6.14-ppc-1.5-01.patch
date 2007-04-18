@@ -6110,7 +6110,7 @@
  #define mask_irq(irq) ({if (irq_desc[irq].handler && irq_desc[irq].handler->disable) irq_desc[irq].handler->disable(irq);})
 --- 2.6.14/include/asm-ppc/ipipe.h	1970-01-01 01:00:00.000000000 +0100
 +++ 2.6.14-ipipe/include/asm-ppc/ipipe.h	2006-10-15 21:57:28.000000000 +0200
-@@ -0,0 +1,213 @@
+@@ -0,0 +1,214 @@
 +/* -*- linux-c -*-
 + * include/asm-ppc/ipipe.h
 + *
@@ -6143,6 +6143,7 @@
 +#include <asm/irq.h>
 +#include <asm/bitops.h>
 +#include <asm/time.h>
++#include <asm-generic/percpu.h>
 +#include <linux/list.h>
 +#include <linux/cpumask.h>
 +#include <linux/threads.h>

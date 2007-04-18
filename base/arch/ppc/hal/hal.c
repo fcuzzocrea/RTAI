@@ -722,7 +722,7 @@ static int rtai_hirq_dispatcher(struct pt_regs *regs)
 		RTAI_SCHED_ISR_UNLOCK();
 
 		if (rtai_realtime_irq[irq].retmode || !test_and_clear_bit(cpuid, &hal_pended) || test_bit(IPIPE_STALL_FLAG, ipipe_root_status[cpuid])) {
-				return 0
+			return 0;
 		}
 	} else {
 		unsigned long lflags;

@@ -52,7 +52,11 @@ extern void __restore_fpenv(void *fpenv);
 #define restore_fpenv_lxrt(t) restore_task_fpenv(t)
 
 #define restore_fpu(tsk) \
-        do { giveup_fpu(last_task_used_math); __restore_fpenv((tsk)->thread.fpr); } while (0)
+        do { \
+		giveup_fpu(last_task_used_math); \
+		__restore_fpenv((tsk)->thread.fpr); \
+		last_task_used_math = tsk; \
+	} while (0)
 
 #define init_fpu(tsk) \
         do { restore_fpu(tsk); } while(0)

@@ -1384,3 +1384,7 @@ EXPORT_SYMBOL(ipipe_root_status);
 
 void up_task_sw(void *, void *);
 EXPORT_SYMBOL(up_task_sw);
+void __save_fpenv(FPU_ENV *fpenv);
+EXPORT_SYMBOL(__save_fpenv);
+void __restore_fpenv(FPU_ENV *fpenv);
+EXPORT_SYMBOL(__restore_fpenv);

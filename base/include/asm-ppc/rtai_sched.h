@@ -1,6 +1,6 @@
 /*
-COPYRIGHT (C) 2000  Paolo Mantegazza (mantegazza@aero.polimi.it)
-                    Stuart Hughes    (shughes@zentropix.com)
+COPYRIGHT (C) 2000-2007  Paolo Mantegazza (mantegazza@aero.polimi.it)
+              2000       Stuart Hughes    (shughes@zentropix.com)
 
 This library is free software; you can redistribute it and/or
 modify it under the terms of the GNU Lesser General Public
@@ -47,9 +47,9 @@ do { \
 	*(task->stack - 36) = RTAI_MSR_FLAGS;		\
 } while(0)
 
-#define DEFINE_LINUX_CR0
+#define DEFINE_LINUX_CR0      static unsigned long linux_cr0;
 
-#define DEFINE_LINUX_SMP_CR0
+#define DEFINE_LINUX_SMP_CR0  static unsigned long linux_smp_cr0[NR_RT_CPUS];
 
 #ifdef CONFIG_RTAI_FPU_SUPPORT
 #define init_task_fpenv(task) \

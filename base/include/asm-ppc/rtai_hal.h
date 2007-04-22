@@ -149,7 +149,7 @@ struct rtai_realtime_irq_s {
 
  #define RTAI_TIME_LIMIT           0x7000000000000000LL
 
- #define RTAI_IFLAG  9
+ #define RTAI_IFLAG  15
 
  #define rtai_cpuid()       hal_processor_id()
  #define rtai_tskext(idx)   hal_tskext[idx]

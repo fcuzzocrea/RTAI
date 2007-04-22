@@ -21,8 +21,6 @@
 
 #include <rtai_config.h>
 
-#ifdef CONFIG_RTAI_INTERNAL_LXRT_SUPPORT
-
 #include <rtai_registry.h>
 #include <rtai_lxrt.h>
 #include <rtai_sem.h>
@@ -1466,7 +1464,5 @@ static inline int rt_get_net_rpc_ret(MBX *mbx, unsigned long long *retval, void 
 
 #define rt_release_port(node, port) \
 	rt_send_req_rel_port(node, port, 0, 0, 0) 
-
-#endif /* CONFIG_RTAI_INTERNAL_LXRT_SUPPORT */
 
 #endif /* !_RTAI_NETRPC_H */

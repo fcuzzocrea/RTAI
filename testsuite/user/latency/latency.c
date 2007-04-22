@@ -140,8 +140,6 @@ int main(int argc, char *argv[])
 					svt = rt_get_cpu_time_ns();
 				}
 			}
-			outb(i = 1 - i, 0x378);
-
 			if (diff < min_diff) {
 				min_diff = diff;
 			}

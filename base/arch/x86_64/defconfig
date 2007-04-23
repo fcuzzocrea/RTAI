@@ -31,12 +31,6 @@ CONFIG_RTAI_CPUS="2"
 #
 
 #
-# Native RTAI schedulers
-#
-CONFIG_RTAI_SCHED_LXRT_=y
-CONFIG_RTAI_KTASKS_SCHED_LXRT_=y
-
-#
 # IPC support
 #
 CONFIG_RTAI_BITS=m
@@ -76,3 +70,8 @@ CONFIG_RTAI_DRIVERS_SERIAL=y
 # RTAI Lab
 #
 # CONFIG_RTAI_LAB is not set
+#
+
+# Testing
+#
+CONFIG_RTAI_TESTSUITE=y

@@ -198,8 +198,6 @@ struct rt_times rt_times;
 struct rtai_switch_data rtai_linux_context[RTAI_NR_CPUS];
 struct rt_times rt_smp_times[RTAI_NR_CPUS];
 
-static int spurious_interrupts, spurious_interrupts_h, spurious_interrupts_l;
-
 
 /* 
  * rtai_critical_enter
@@ -694,20 +692,15 @@ void rt_release_rtc(void)
  * rtai_hirq_dispatcher
  */
 
+static int spurious_interrupts;
+
 static int rtai_hirq_dispatcher(struct pt_regs *regs)
 {
 	unsigned long cpuid;
 	int irq;
 
 	if ((irq = ppc_md.get_irq(regs)) >= RTAI_NR_IRQS) {
-		spurious_interrupts_h++;
-		return 0;
-	} else if (irq < 0) {
-		if (irq != -2) {
-			spurious_interrupts_l++;
-		} else {
-			spurious_interrupts++;
-		}
+		spurious_interrupts++;
 		return 0;
 	}
 
@@ -1031,9 +1024,7 @@ static int rtai_read_proc (char *page, char **start, off_t off, int count, int *
 	PROC_PRINT("** RTAI extension traps: \n\n");
 	PROC_PRINT("    SYSREQ=0x%x\n", 0xC00);
 
-	PROC_PRINT("    IRQ spurious (<0)=%d\n", spurious_interrupts_l);
-	PROC_PRINT("    IRQ spurious (>=HAL_NR_IRQ)=%d\n", spurious_interrupts_h);
-	PROC_PRINT("    IRQ spurious (-2)=%d\n", spurious_interrupts);
+	PROC_PRINT("    IRQ spurious = %d\n", spurious_interrupts);
 	PROC_PRINT("\n");
 
 	none = 1;

@@ -1384,7 +1384,10 @@ EXPORT_SYMBOL(ipipe_root_status);
 
 void up_task_sw(void *, void *);
 EXPORT_SYMBOL(up_task_sw);
+
+#ifdef CONFIG_RTAI_FPU_SUPPORT
 void __save_fpenv(void *fpenv);
 EXPORT_SYMBOL(__save_fpenv);
 void __restore_fpenv(void *fpenv);
 EXPORT_SYMBOL(__restore_fpenv);
+#endif

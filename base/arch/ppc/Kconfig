@@ -798,7 +798,7 @@ config RTAI_MALLOC
 config RTAI_MALLOC_VMALLOC
 	bool "Use vmalloc() support"
 	depends on RTAI_MALLOC
-	default y
+	default n
 	help
 	RTAI's malloc support offers two different ways to allocate memory 
 	chunks, i.e. kmalloc and vmalloc.
@@ -814,7 +814,7 @@ config RTAI_MALLOC_VMALLOC
 config RTAI_MALLOC_HEAPSZ
 	string "Size of the global heap (Kbytes)"
 	depends on RTAI_MALLOC
-	default 2048
+	default 128
 	help
 	RTAI pre-allocates a global heap as part of its initialization
 	chores. This parameter allows to define its size (in

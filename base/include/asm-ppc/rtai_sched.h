@@ -23,19 +23,8 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA.
 
 extern void up_task_sw(void *, void *);
 
-#ifdef CONFIG_RTAI_ADEOS
-#define rt_switch_to(new_task) \
-do { \
-	unsigned long flags; \
-	rtai_hw_lock(flags); \
-	up_task_sw(&rt_current, (new_task)); \
-	rtai_hw_unlock(flags); \
-} while(0)
-#define	RTAI_MSR_FLAGS	(MSR_KERNEL | MSR_FP | MSR_EE)
-#else  /* !CONFIG_RTAI_ADEOS */
-#define rt_switch_to(new_task) up_task_sw(&rt_current, (new_task))
+//#define rt_switch_to(new_task) up_task_sw(&rt_current, (new_task))
 #define	RTAI_MSR_FLAGS	(MSR_KERNEL | MSR_FP)
-#endif  /* CONFIG_RTAI_ADEOS */
 
 #define rt_exchange_tasks(oldtask, newtask) up_task_sw(&(oldtask), (new_task))
 

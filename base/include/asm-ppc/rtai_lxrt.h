@@ -98,11 +98,21 @@ extern "C" {
 
 static inline void _lxrt_context_switch (struct task_struct *prev, struct task_struct *next, int cpuid)
 {
+#if LINUX_VERSION_CODE < KERNEL_VERSION(2,6,0)
+	extern void context_switch(void *, void *);
+	struct mm_struct *oldmm = prev->active_mm;
+	switch_mm(oldmm, next->active_mm, next, cpuid);
+	if (!next->mm) {
+		enter_lazy_tlb(oldmm, next, cpuid);
+	}
+	context_switch(prev, next);
+#else /* >= 2.6.0 */
         extern void *context_switch(void *, void *, void *);
 #if LINUX_VERSION_CODE > KERNEL_VERSION(2,6,18)
         prev->fpu_counter = 0;
 #endif
         context_switch(NULL, prev, next);
+#endif /* < 2.6.0 */
 }
 
 #define IN_INTERCEPT_IRQ_ENABLE()   do { } while (0)

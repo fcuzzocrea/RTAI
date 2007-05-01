@@ -49,6 +49,7 @@
 #define RTAI_NR_CPUS  1
 #endif /* CONFIG_SMP */
 
+#define NETRPC_ALIGN_RTIME(i) (1 - i%2)
 
 //---------------------------------------------------------------------------//
 //                         Mathematical primitives                           //

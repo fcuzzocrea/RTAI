@@ -461,7 +461,12 @@ recvrys:
 				} else {
 					arg.w2size = 0;
 				}
+#ifndef NETRPC_ALIGN_RTIME
 				if ((wsize = TIMED(par->fun_ext_timed) - 1) >= 0) {
+#else
+				if ((wsize = TIMED(par->fun_ext_timed)) > 0) {
+					wsize += (NETRPC_ALIGN_RTIME(wsize) - 1);
+#endif
 					*((long long *)(a + wsize)) = nano2count(*((long long *)(a + wsize)));
 				}
 				arg.retval = soft_rt_genfun_call(task, rt_net_rpc_fun_ext[EXT(par->fun_ext_timed)][FUN(par->fun_ext_timed)].fun, a, par->argsize);
@@ -554,7 +559,12 @@ recvryh:
 				} else {
 					arg.w2size = 0;
 				}
+#ifndef NETRPC_ALIGN_RTIME
 				if ((wsize = TIMED(par->fun_ext_timed) - 1) >= 0) {
+#else
+				if ((wsize = TIMED(par->fun_ext_timed)) > 0) {
+					wsize += (NETRPC_ALIGN_RTIME(wsize) - 1);
+#endif
 					*((long long *)(a + wsize)) = nano2count(*((long long *)(a + wsize)));
 				}
 				arg.retval = ((long long (*)(long, ...))rt_net_rpc_fun_ext[EXT(par->fun_ext_timed)][FUN(par->fun_ext_timed)].fun)(RTAI_FUN_A);
@@ -871,12 +881,15 @@ static void mbx_send_if(MBX *mbx, void *msg, int msg_size)
 
 #endif
 
-RTAI_SYSCALL_MODE unsigned long long rt_net_rpc(long fun_ext_timed, long type, void *args, int argsize, int space)
+#define RETURN_I(l, retval)  do { retval.i = l; return retval.rt; } while (0)
+
+RTAI_SYSCALL_MODE long long _rt_net_rpc(long fun_ext_timed, long type, void *args, int argsize, int space)
 {
 	char msg[MAX_MSG_SIZE];
 	struct reply_t { int wsize, w2size; unsigned long long retval; int myport; char msg[1]; } *reply;
 	long rsize, port;
 	struct portslot_t *portslotp;
+	union rtai_netrpc_t retval;
 
 	if ((port = PORT(fun_ext_timed)) > 0) {
 		if ((portslotp = portslot + port)->task < 0) {
@@ -885,7 +898,7 @@ RTAI_SYSCALL_MODE unsigned long long rt_net_rpc(long fun_ext_timed, long type, v
 			
 			if (portslotp->timeout) {
 				if(rt_sem_wait_timed(&portslotp->sem,portslotp->timeout) == RTE_TIMOUT)
-					return(RTE_NETIMOUT);
+					RETURN_I(RTE_NETIMOUT, retval);
 			} else {
 				rt_sem_wait(&portslotp->sem);
 			}
@@ -895,15 +908,16 @@ RTAI_SYSCALL_MODE unsigned long long rt_net_rpc(long fun_ext_timed, long type, v
 				}
 				if((reply = (void *)msg)->myport) {
 				if (reply->myport<0) {
-						return -RTE_CHGPORTERR;	
+						RETURN_I(-RTE_CHGPORTERR, retval);	
 					}
 					portslotp->addr.sin_port = htons(reply->myport);
 					portslotp->sem.count = 0;
 					portslotp->sem.queue.prev = portslotp->sem.queue.next = &portslotp->sem.queue;
 					portslotp->owner = reply->retval;
 					portslotp->name = (unsigned long)(_rt_whoami());
-					return -RTE_CHGPORTOK;
+					RETURN_I(-RTE_CHGPORTOK, retval);
 				}
+rt_printk(">>>>> %lu %d\n", (unsigned long)reply->msg - (unsigned long)&reply->wsize, rsize);
 				mbx_send_if(portslotp->mbx, msg, rsize);
 			}
 			portslotp->task = 1;
@@ -923,7 +937,7 @@ RTAI_SYSCALL_MODE unsigned long long rt_net_rpc(long fun_ext_timed, long type, v
 					}
 						if((reply = (void *)msg)->myport) {
 							if (reply->myport<0) {
-								return -RTE_CHGPORTERR;	
+								RETURN_I(-RTE_CHGPORTERR, retval);
 							}
 
 								portslotp->addr.sin_port = htons(reply->myport);
@@ -931,7 +945,7 @@ RTAI_SYSCALL_MODE unsigned long long rt_net_rpc(long fun_ext_timed, long type, v
 								portslotp->sem.queue.prev = portslotp->sem.queue.next = &portslotp->sem.queue;
 								portslotp->owner = reply->retval;
 								portslotp->name = (unsigned long)(_rt_whoami());
-								return -RTE_CHGPORTOK;
+								RETURN_I(-RTE_CHGPORTOK, retval);
 						}
 					mbx_send_if(portslotp->mbx, msg, rsize);
 				}
@@ -941,7 +955,7 @@ RTAI_SYSCALL_MODE unsigned long long rt_net_rpc(long fun_ext_timed, long type, v
 		}
 	}
 	if (FUN(fun_ext_timed) == SYNC_NET_RPC) {
-		return 1;
+		RETURN_I(1, retval);
 	}
 	if (NEED_TO_R(type)) {
 		rsize = USP_RSZ1(type);
@@ -984,7 +998,7 @@ RTAI_SYSCALL_MODE unsigned long long rt_net_rpc(long fun_ext_timed, long type, v
 
 		if (portslotp->timeout) {
 			if(rt_sem_wait_timed(&portslotp->sem,portslotp->timeout) == RTE_TIMOUT)
-				return(-RTE_NETIMOUT);
+				RETURN_I(-RTE_NETIMOUT, retval);
 		} else {
 			rt_sem_wait(&portslotp->sem);
 		}
@@ -994,14 +1008,14 @@ RTAI_SYSCALL_MODE unsigned long long rt_net_rpc(long fun_ext_timed, long type, v
 		}
 		if((reply = (void *)msg)->myport) {
 			if (reply->myport < 0) {
-				return -RTE_CHGPORTERR;	
+				RETURN_I(-RTE_CHGPORTERR, retval);	
 			}
 			portslotp->addr.sin_port = htons(reply->myport);
 			portslotp->sem.count = 0;
 			portslotp->sem.queue.prev = portslotp->sem.queue.next = &portslotp->sem.queue;
 			portslotp->owner = reply->retval;
 			portslotp->name = (unsigned long)(_rt_whoami());
-			return -RTE_CHGPORTOK;
+			RETURN_I(-RTE_CHGPORTOK, retval);
 		} else {
 			if (reply->wsize) {
 				if (space) {
@@ -1082,7 +1096,7 @@ RTAI_SYSCALL_MODE unsigned long rt_set_this_node(const char *ddn, unsigned long 
 /* +++++++++++++++++++++++++++ NETRPC ENTRIES +++++++++++++++++++++++++++++++ */
 
 struct rt_native_fun_entry rt_netrpc_entries[] = {
-    { { 1, rt_net_rpc           },	NETRPC },
+    { { 1, _rt_net_rpc           },	NETRPC },
     { { 0, rt_set_netrpc_timeout   },	SET_NETRPC_TIMEOUT },
 	{ { 1, rt_send_req_rel_port },	SEND_REQ_REL_PORT },
 	{ { 0, ddn2nl               },	DDN2NL },
@@ -1720,7 +1734,7 @@ EXPORT_SYMBOL(rt_send_req_rel_port);
 EXPORT_SYMBOL(rt_find_asgn_stub);
 EXPORT_SYMBOL(rt_rel_stub);
 EXPORT_SYMBOL(rt_waiting_return);
-EXPORT_SYMBOL(rt_net_rpc);
+EXPORT_SYMBOL(_rt_net_rpc);
 EXPORT_SYMBOL(rt_get_net_rpc_ret);
 EXPORT_SYMBOL(rt_set_this_node);
 EXPORT_SYMBOL(rt_set_netrpc_timeout);

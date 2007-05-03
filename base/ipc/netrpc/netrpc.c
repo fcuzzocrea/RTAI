@@ -917,7 +917,6 @@ RTAI_SYSCALL_MODE long long _rt_net_rpc(long fun_ext_timed, long type, void *arg
 					portslotp->name = (unsigned long)(_rt_whoami());
 					RETURN_I(-RTE_CHGPORTOK, retval);
 				}
-rt_printk(">>>>> %lu %d\n", (unsigned long)reply->msg - (unsigned long)&reply->wsize, rsize);
 				mbx_send_if(portslotp->mbx, msg, rsize);
 			}
 			portslotp->task = 1;

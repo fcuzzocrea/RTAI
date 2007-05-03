@@ -1,3 +1,8 @@
+2007-05-02  Paolo Mantegazza <mantegazza@aero.polimi.it>
+
+	* base/include/rtai_netrpc.h,
+	* base/ipc/netrpc.c: made arch independent with respect to endiannes.
+
 2007-04-16  Paolo Mantegazza <mantegazza@aero.polimi.it>
 
 	* base/sched/sys.c: ensure correct returns in the switch part of 

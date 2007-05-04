@@ -641,21 +641,21 @@ RTAI_PROTO(int, rt_thread_create,(void *fun, void *args, int stack_size))
         pthread_attr_init(&attr);
 	int hs;
 
-	extern inline int rt_is_hard_real_time(RT_TASK *);
-	extern inline void rt_make_hard_real_time(void);
-	extern inline void rt_make_soft_real_time(void);
-
         if (pthread_attr_setstacksize(&attr, stack_size > RT_THREAD_STACK_MIN ? stack_size : RT_THREAD_STACK_MIN)) {
                 return -1;
         }
-	if ((hs = rt_is_hard_real_time(NULL))) {
-		rt_make_soft_real_time();
+	{
+		struct { unsigned long dummy; } arg = { 0 };
+		if ((hs = rtai_lxrt(BIDX, SIZARG, IS_HARD, &arg).i[LOW])) {
+			rtai_lxrt(BIDX, SIZARG, MAKE_SOFT_RT, &arg);
+		}
 	}
 	if (pthread_create(&thread, &attr, (void *(*)(void *))fun, args)) {
 		thread = -1;
 	}
 	if (hs) {
-		rt_make_hard_real_time();
+	        struct { unsigned long dummy; } arg;
+        	rtai_lxrt(BIDX, SIZARG, MAKE_HARD_RT, &arg);
 	}
 	return thread;
 }

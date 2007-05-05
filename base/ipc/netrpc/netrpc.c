@@ -907,7 +907,7 @@ RTAI_SYSCALL_MODE long long _rt_net_rpc(long fun_ext_timed, long type, void *arg
 					rsize = decode(portslotp, msg, rsize, RPC_RCV);
 				}
 				if((reply = (void *)msg)->myport) {
-				if (reply->myport<0) {
+					if (reply->myport < 0) {
 						RETURN_I(-RTE_CHGPORTERR, retval);	
 					}
 					portslotp->addr.sin_port = htons(reply->myport);
@@ -917,7 +917,8 @@ RTAI_SYSCALL_MODE long long _rt_net_rpc(long fun_ext_timed, long type, void *arg
 					portslotp->name = (unsigned long)(_rt_whoami());
 					RETURN_I(-RTE_CHGPORTOK, retval);
 				}
-				mbx_send_if(portslotp->mbx, msg, rsize);
+				mbx_send_if(portslotp->mbx, msg, offsetof(struct reply_t, msg) + reply->wsize + reply->w2size);
+//				mbx_send_if(portslotp->mbx, msg, rsize);
 			}
 			portslotp->task = 1;
 		}
@@ -946,7 +947,8 @@ RTAI_SYSCALL_MODE long long _rt_net_rpc(long fun_ext_timed, long type, void *arg
 								portslotp->name = (unsigned long)(_rt_whoami());
 								RETURN_I(-RTE_CHGPORTOK, retval);
 						}
-					mbx_send_if(portslotp->mbx, msg, rsize);
+					mbx_send_if(portslotp->mbx, msg, offsetof(struct reply_t, msg) + reply->wsize + reply->w2size);
+//					mbx_send_if(portslotp->mbx, msg, rsize);
 				}
 			}
 		} else {
@@ -1039,10 +1041,11 @@ RTAI_SYSCALL_MODE long long _rt_net_rpc(long fun_ext_timed, long type, void *arg
 
 int rt_get_net_rpc_ret(MBX *mbx, unsigned long long *retval, void *msg1, int *msglen1, void *msg2, int *msglen2, RTIME timeout, int type)
 {
-	struct { int wsize, w2size; unsigned long long retval; int myport;} reply;
+	struct reply_t { int wsize, w2size; unsigned long long retval; int myport; char msg[1]; } reply;
 	int ret;
 
-	if ((ret = ((int (*)(MBX *, ...))rt_net_rpc_fun_ext[NET_RPC_EXT][type].fun)(mbx, &reply, sizeof(reply), timeout))) {
+//	if ((ret = ((int (*)(MBX *, ...))rt_net_rpc_fun_ext[NET_RPC_EXT][type].fun)(mbx, &reply, sizeof(reply), timeout))) {
+	if ((ret = ((int (*)(MBX *, ...))rt_net_rpc_fun_ext[NET_RPC_EXT][type].fun)(mbx, &reply, offsetof(struct reply_t, msg), timeout))) {
 		return ret;
 	}
 	*retval = reply.retval;

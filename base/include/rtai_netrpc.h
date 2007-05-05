@@ -1349,26 +1349,34 @@ static inline int RT_mbx_receive_timed(unsigned long node, int port, MBX *mbx, v
 	return rt_mbx_receive_timed(mbx, msg, msg_size, nano2count(delay));
 } 
 
+#include <stddef.h>
+
 static inline int rt_get_net_rpc_ret(MBX *mbx, unsigned long long *retval, void *msg1, int *msglen1, void *msg2, int *msglen2, RTIME timeout, int type)
 {
-	struct { int wsize, w2size; unsigned long long retval; int myport;} reply;
+	struct reply_t { int wsize, w2size; unsigned long long retval; int myport; char msg[1]; } reply;
+//	struct { int wsize, w2size; unsigned long long retval; int myport;} reply;
 	int ret;
 
 	switch (type) {
 		case MBX_RECEIVE:
-			ret = rt_mbx_receive(mbx, &reply, sizeof(reply));
+			ret = rt_mbx_receive(mbx, &reply, offsetof(struct reply_t, msg));
+//			ret = rt_mbx_receive(mbx, &reply, sizeof(reply));
 			break;
 		case MBX_RECEIVE_WP:
-			ret = rt_mbx_receive_wp(mbx, &reply, sizeof(reply));
+			ret = rt_mbx_receive_wp(mbx, &reply, offsetof(struct reply_t, msg));
+//			ret = rt_mbx_receive_wp(mbx, &reply, sizeof(reply));
 			break;
 		case MBX_RECEIVE_IF:
-			ret = rt_mbx_receive_if(mbx, &reply, sizeof(reply));
+			ret = rt_mbx_receive_if(mbx, &reply, offsetof(struct reply_t, msg));
+//			ret = rt_mbx_receive_if(mbx, &reply, sizeof(reply));
 			break;
 		case MBX_RECEIVE_UNTIL:
-			ret = rt_mbx_receive_until(mbx, &reply, sizeof(reply), timeout);
+			ret = rt_mbx_receive_until(mbx, &reply, offsetof(struct reply_t, msg), timeout);
+//			ret = rt_mbx_receive_until(mbx, &reply, sizeof(reply), timeout);
 			break;
 		case MBX_RECEIVE_TIMED:
-			ret = rt_mbx_receive_timed(mbx, &reply, sizeof(reply), timeout);
+			ret = rt_mbx_receive_timed(mbx, &reply, offsetof(struct reply_t, msg), timeout);
+//			ret = rt_mbx_receive_timed(mbx, &reply, sizeof(reply), timeout);
 		default:
 			ret = -1;
 	}

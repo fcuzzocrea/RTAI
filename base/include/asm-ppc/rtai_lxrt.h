@@ -143,6 +143,10 @@ static inline void kthread_fun_long_jump(struct task_struct *lnxtsk)
 #define rt_strncpy_from_user(a, b, c)  \
 	( { int ret = strncpy_from_user(a, b, c); ret; } )
 
+//#define RTAI_DO_LINUX_SIGNAL
+extern int FASTCALL(do_signal(sigset_t *oldset, struct pt_regs *regs));
+#define RT_DO_SIGNAL(regs)  do_signal(NULL, regs)
+
 #else /* !__KERNEL__ */
 
 #include <sys/syscall.h>

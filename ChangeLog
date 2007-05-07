@@ -2,8 +2,8 @@
 	    Paolo Mantegazza <mantegazza@aero.polimi.it>
             	
 	* base/include/asm-ppc,
-	  base/arch/ppc: support of RTAI for PPC fulluy upgraded to Linux 
-	  2.6.xx, i.e. kernel and user space.
+	  base/arch/ppc: support of RTAI for PPC fully upgraded to Linux 
+	  2.6.xx, i.e. kernel and user space are now working for PPC also.
 
 2007-05-05  Paolo Mantegazza <mantegazza@aero.polimi.it>
 

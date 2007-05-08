@@ -1634,14 +1634,8 @@ int __rtai_netrpc_init(void)
 {
 	int i;
 
-	for (i = 8*sizeof(unsigned long) - 1; !test_bit(i, &MaxStubs); i--);
-	if ((1 << i) != MaxStubs) {
-		printk("MAX_STUBS (%lu): must be a power of 2.\n", MaxStubs);
-		MaxStubs = 1 << (i + 1);
-		printk("MAX_STUBS (%lu): forced to a power of 2.\n", MaxStubs);
-	}
 	MaxStubsMone = MaxStubs - 1;
-    if ((mod_timer_srq = rt_request_srq(0xbadbeef1, do_mod_timer, 0)) < 0) {
+	if ((mod_timer_srq = rt_request_srq(0xbadbeef1, do_mod_timer, 0)) < 0) {
 		printk("MOD_TIMER: no sysrq available.\n");
 		return mod_timer_srq;
 	}

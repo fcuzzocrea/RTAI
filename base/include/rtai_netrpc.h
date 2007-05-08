@@ -27,8 +27,8 @@
 #include <rtai_mbx.h>
 #include <rtai_msg.h>
 
-#define MAX_STUBS     16  // _M_U_S_T___B_E___P_O_W_E_R___O_F___2_
-#define MAX_SOCKS     16
+#define MAX_STUBS     20
+#define MAX_SOCKS     20
 #define MAX_MSG_SIZE  1500
 
 #define NET_RPC_EXT  0

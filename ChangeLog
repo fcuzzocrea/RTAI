@@ -1,3 +1,8 @@
+2007-05-08  Paolo Mantegazza <mantegazza@aero.polimi.it>
+
+	* base/include/rtai_netrpc.h and base/ipc/netrcp.c: cleaned undue 
+	  constraint on the number of stubs being power of 2.
+
 2007-05-06  Antonio Barbalace <barbalace@igi.cnr.it>
 	    Paolo Mantegazza <mantegazza@aero.polimi.it>
             	

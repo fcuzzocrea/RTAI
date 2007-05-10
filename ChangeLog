@@ -1,7 +1,7 @@
 2007-05-10  Roberto Bucher <roberto.bucher@supsi.ch>
 
 	* rtai-lab/matlab/rtai.tmf: Some changes needed for Matlab
-	>= 2006b (thanks to Emanuele Clerici)
+	  >= 2006b (thanks to Emanuele Clerici)
 
 2007-05-08  Emanuele Clerici (clerici@aero.polimi.it)
 

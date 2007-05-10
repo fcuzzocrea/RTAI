@@ -1,3 +1,19 @@
+2007-05-11  Paolo Mantegazza <mantegazza@aero.polimi.it>
+            	
+	* base/malloc/malloc.c: set system allocation support as a variable in 
+	  the calling args list of any function needing it.
+	* base/include/rtai_malloc.h: divert rt_malloc/free to kmalloc/free if 
+	  RTAI mallocing is not configured, define new prototypes with type
+	  of Linux allocation support.
+	* base/include/rtai_schedcore.h: sched_malloc/free needed no more.
+	* base/sched/sched.c: use a specific allocation for kernel stacks of 
+	  RTAI proper kernel tasks.
+	* base/tasklests/tasklests.c: get rid of useless sched_malloc/free 
+	  defines and use rt_malloc/free instead.
+	* base/ipc/shm/shm.c: use the new rtheap_init call prototype.
+	* base/ipc/mbx/mbx.c: use rt_malloc in place of the now dead 
+	  sched_malloc.
+
 2007-05-10  Roberto Bucher <roberto.bucher@supsi.ch>
 
 	* rtai-lab/matlab/rtai.tmf: Some changes needed for Matlab

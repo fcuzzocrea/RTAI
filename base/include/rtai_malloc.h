@@ -123,8 +123,13 @@ extern rtheap_t rtai_global_heap;
 #define rtheap_page_count(heap)  ((heap)->npages)
 #define rtheap_used_mem(heap)    ((heap)->ubytes)
 
-#define rt_malloc(sz)  rtheap_alloc(&rtai_global_heap,sz,0)
-#define rt_free(p)     rtheap_free(&rtai_global_heap,p)
+#ifdef CONFIG_RTAI_MALLOC
+#define rt_malloc(sz)  rtheap_alloc(&rtai_global_heap, sz, 0)
+#define rt_free(p)     rtheap_free(&rtai_global_heap, p)
+#else
+#define rt_malloc(sz)  kmalloc(sz, GFP_KERNEL)
+#define rt_free(p)     kfree(p)
+#endif
 
 #ifdef __cplusplus
 extern "C" {
@@ -134,19 +139,13 @@ int __rtai_heap_init(void);
 
 void __rtai_heap_exit(void);
 
-int rtheap_init(rtheap_t *heap,
-		void *heapaddr,
-		u_long heapsize,
-		u_long pagesize);
+int rtheap_init(rtheap_t *heap, void *heapaddr, u_long heapsize, u_long pagesize, int suprt);
 
-void rtheap_destroy(rtheap_t *heap);
+void rtheap_destroy(rtheap_t *heap, int suprt);
 
-void *rtheap_alloc(rtheap_t *heap,
-		   u_long size,
-		   int flags);
+void *rtheap_alloc(rtheap_t *heap, u_long size, int flags);
 
-int rtheap_free(rtheap_t *heap,
-		void *block);
+int rtheap_free(rtheap_t *heap, void *block);
 
 #ifdef __cplusplus
 }

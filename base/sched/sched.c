@@ -222,6 +222,19 @@ do { \
 
 /* ++++++++++++++++++++++++++++++++ TASKS ++++++++++++++++++++++++++++++++++ */
 
+#ifdef CONFIG_RTAI_MALLOC
+int rtai_kstack_heap_size = 128*1024;
+RTAI_MODULE_PARM(rtai_kstack_heap_size, int);
+
+static rtheap_t rtai_kstack_heap;
+
+#define rt_kstack_alloc(sz)  rtheap_alloc(&rtai_kstack_heap, sz, 0)
+#define rt_kstack_free(p)    rtheap_free(&rtai_kstack_heap, p)
+#else
+#define rt_kstack_alloc(sz)  rt_malloc(sz)
+#define rt_kstack_free(p)    rt_free(p)
+#endif
+
 static int tasks_per_cpu[NR_RT_CPUS] = { 0, };
 
 int get_min_tasks_cpuid(void)
@@ -380,7 +393,7 @@ int rt_task_init_cpuid(RT_TASK *task, void (*rt_thread)(long), long data, int st
 	if (task->magic == RT_TASK_MAGIC || cpuid >= NR_RT_CPUS || priority < 0) {
 		return -EINVAL;
 	} 
-	if (!(st = (long *)sched_malloc(stack_size))) {
+	if (!(st = (long *)rt_kstack_alloc(stack_size))) {
 		return -ENOMEM;
 	}
 	if (lxrt_wdog_task[cpuid] && lxrt_wdog_task[cpuid] != task 
@@ -1576,7 +1589,7 @@ extern void krtai_objects_release(void);
 static void frstk_srq_handler(void)
 {
         while (frstk_srq.out != frstk_srq.in) {
-		sched_free(frstk_srq.mp[frstk_srq.out++ & (MAX_FRESTK_SRQ - 1)]);
+		rt_kstack_free(frstk_srq.mp[frstk_srq.out++ & (MAX_FRESTK_SRQ - 1)]);
 	}
 }
 
@@ -2829,6 +2842,13 @@ static int __rtai_lxrt_init(void)
 	int cpuid, retval;
 	
 	sched_mem_init();
+#ifdef CONFIG_RTAI_MALLOC
+	rtai_kstack_heap_size = (rtai_kstack_heap_size + PAGE_SIZE - 1) & ~(PAGE_SIZE - 1);
+	if (rtheap_init(&rtai_kstack_heap, NULL, rtai_kstack_heap_size, PAGE_SIZE, GFP_KERNEL)) {
+		printk(KERN_INFO "RTAI[malloc]: failed to initialize the kernel stacks heap (size=%d bytes).\n", rtai_kstack_heap_size);
+		return 1;
+	}
+#endif
 	rt_registry_alloc();
 
 	for (cpuid = 0; cpuid < NR_RT_CPUS; cpuid++) {
@@ -2935,6 +2955,9 @@ proc_unregister:
 #endif
 mem_end:
 	sched_mem_end();
+#ifdef CONFIG_RTAI_MALLOC
+	rtheap_destroy(&rtai_kstack_heap, GFP_KERNEL);
+#endif
 	rt_registry_free();
 	goto exit;
 }
@@ -2960,6 +2983,9 @@ static void __rtai_lxrt_exit(void)
 	}
 	rt_free_sched_ipi();
 	sched_mem_end();
+#ifdef CONFIG_RTAI_MALLOC
+	rtheap_destroy(&rtai_kstack_heap, GFP_KERNEL);
+#endif
 	rt_registry_free();
 	current->state = TASK_INTERRUPTIBLE;
 	schedule_timeout(HZ/10);

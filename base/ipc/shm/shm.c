@@ -565,7 +565,7 @@ static RTAI_SYSCALL_MODE void rt_set_heap(unsigned long name, void *adr)
 	size = ((abs(rt_get_type(name)) - sizeof(rtheap_t) - (hptr - heap)) & PAGE_MASK);
 	heap = hptr + size;
 	if (!atomic_cmpxchg((atomic_t *)hptr, 0, name)) {
-		rtheap_init(heap, hptr, size, PAGE_SIZE);
+		rtheap_init(heap, hptr, size, PAGE_SIZE, 0);
 	}
 	RTAI_TASK(return);
 	if (name == GLOBAL_HEAP_ID) {

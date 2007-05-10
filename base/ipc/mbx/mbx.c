@@ -300,7 +300,7 @@ RTAI_SYSCALL_MODE int _rt_mbx_evdrp(MBX *mbx, void *msg, int msg_size, int space
  */
 RTAI_SYSCALL_MODE int rt_typed_mbx_init(MBX *mbx, int size, int type)
 {
-	if (!(mbx->bufadr = sched_malloc(size))) { 
+	if (!(mbx->bufadr = rt_malloc(size))) { 
 		return -ENOMEM;
 	}
 	rt_typed_sem_init(&(mbx->sndsem), 1, type & 3 ? type : BIN_SEM | type);
@@ -377,7 +377,7 @@ RTAI_SYSCALL_MODE int rt_mbx_delete(MBX *mbx)
 	while (mbx->waiting_task) {
 		mbx_delete_signal(mbx);
 	}
-	sched_free(mbx->bufadr); 
+	rt_free(mbx->bufadr); 
 	return 0;
 }
 

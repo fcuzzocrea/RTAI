@@ -90,14 +90,6 @@
 
 MODULE_LICENSE("GPL");
 
-#ifdef CONFIG_RTAI_MALLOC
-#define sched_malloc(size)      rt_malloc((size))
-#define sched_free(adr)         rt_free((adr))
-#else
-#define sched_malloc(size)      kmalloc((size), GFP_KERNEL)
-#define sched_free(adr)         kfree((adr))
-#endif
-
 DEFINE_LINUX_CR0
 
 #ifdef CONFIG_SMP
@@ -704,7 +696,7 @@ static void rt_timers_manager(long cpuid)
 struct rt_tasklet_struct *rt_init_tasklet(void)
 {
 	struct rt_tasklet_struct *tasklet;
-	tasklet = sched_malloc(sizeof(struct rt_tasklet_struct));
+	tasklet = rt_malloc(sizeof(struct rt_tasklet_struct));
 	memset(tasklet, 0, sizeof(struct rt_tasklet_struct));
 	return tasklet;
 }
@@ -749,7 +741,7 @@ RTAI_SYSCALL_MODE int rt_delete_tasklet(struct rt_tasklet_struct *tasklet)
 	rt_copy_to_user(tasklet->usptasklet, tasklet, sizeof(struct rt_tasklet_struct));
 	rt_task_resume(tasklet->task);
 	thread = tasklet->thread;	
-	sched_free(tasklet);
+	rt_free(tasklet);
 	return thread;	
 }
 

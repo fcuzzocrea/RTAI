@@ -215,23 +215,19 @@ extern int rt_smp_oneshot_timer[];
 extern volatile int rt_sched_timed;
 
 #ifdef CONFIG_RTAI_MALLOC
-#define sched_malloc(size)		rt_malloc((size))
-#define sched_free(adr)			rt_free((adr))
-#ifndef CONFIG_RTAI_MALLOC_BUILTIN
-#define sched_mem_init()
-#define sched_mem_end()
-#else  /* CONFIG_RTAI_MALLOC_BUILTIN */
+#ifdef CONFIG_RTAI_MALLOC_BUILTIN
 #define sched_mem_init() \
 	{ if(__rtai_heap_init() != 0) { \
                 return(-ENOMEM); \
         } }
-#define sched_mem_end()		__rtai_heap_exit()
+#define sched_mem_end()	 __rtai_heap_exit()
+#else  /* CONFIG_RTAI_MALLOC_BUILTIN */
+#define sched_mem_init()
+#define sched_mem_end()
 #endif /* !CONFIG_RTAI_MALLOC_BUILTIN */
 #define call_exit_handlers(task)	        __call_exit_handlers(task)
 #define set_exit_handler(task, fun, arg1, arg2)	__set_exit_handler(task, fun, arg1, arg2)
 #else  /* !CONFIG_RTAI_MALLOC */
-#define sched_malloc(size)	kmalloc((size), GFP_KERNEL)
-#define sched_free(adr)		kfree((adr))
 #define sched_mem_init()
 #define sched_mem_end()
 #define call_exit_handlers(task)

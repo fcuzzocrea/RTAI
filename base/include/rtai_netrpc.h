@@ -1381,7 +1381,9 @@ static inline int rt_get_net_rpc_ret(MBX *mbx, unsigned long long *retval, void 
 			ret = -1;
 	}
 	if (!ret) {
-		*retval = reply.retval;
+		union { unsigned long ul; unsigned long long ull; } u;
+		u.ull = reply.retval;
+		*retval = u.ull == u.ul ? u.ul : u.ull;
 		if (reply.wsize) {
 			char msg[reply.wsize];
 			rt_mbx_receive(mbx, msg, reply.wsize);

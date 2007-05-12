@@ -787,8 +787,11 @@ config RTAI_MALLOC
 	default y
 	help
 	RTAI provides a real-time implementation of malloc(). This allows 
-	real-time tasks to allocate and to free memory safely whilst executing
-	in the real-time domain.
+	real-time tasks to allocate and free memory safely while executing
+	in the real-time domain. If it is not enabled kernel's kmalloc will
+	be used. So disabling this option is acceptable if you'll care 
+	to do any allocation while in Linux context only, i.e. at modules
+	initialisation.
 	The module will be called rtai_malloc.o.
 
 config RTAI_MALLOC_VMALLOC
@@ -802,7 +805,7 @@ config RTAI_MALLOC_VMALLOC
 	- it is simpler to share allocated buffers with user space;
 	- it doesn't have the size restrictions of kmalloc.
 	The reasons for using kmalloc:
-	- it is faster (not important since it as to be used in sof real time);
+	- it is faster (not important since it as to be used in soft real time);
 	- it exhibits contiguous buffer addressing needed for DMA controllers 
 	  which don't have scattering/gathering capability.
 	The default is using kmalloc()

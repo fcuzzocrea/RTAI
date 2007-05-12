@@ -214,7 +214,7 @@ static int rtai_shm_f_ioctl(struct inode *inode, struct file *file, unsigned int
 			TRACE_RTAI_SHM(TRACE_RTAI_EV_SHM_GET_SIZE, arg, cmd, current->pid);
 			return rt_shm_size((unsigned long *)((unsigned long *)arg)[0]);
 		}
-#if 1 //def CONFIG_RTAI_MALLOC
+#ifdef CONFIG_RTAI_MALLOC
 		case HEAP_SET: {
 			static RTAI_SYSCALL_MODE void rt_set_heap(unsigned long, void *);
 			rt_set_heap(((unsigned long *)arg)[0], (void *)((unsigned long *)arg)[1]);

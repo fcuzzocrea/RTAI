@@ -165,7 +165,7 @@ do { \
 static atomic_t rtai_sync_count = ATOMIC_INIT(1);
 static volatile int rtai_sync_level;
 static unsigned rtai_sysreq_virq;
-struct rtai_realtime_irq_s rtai_realtime_irq[RTAI_NR_IRQS];  // declared in base/include/asm-i386/rtai_hal.h
+struct rtai_realtime_irq_s rtai_realtime_irq[RTAI_NR_IRQS];  // declared in base/include/asm-ppc/rtai_hal.h
 volatile unsigned long *ipipe_root_status[RTAI_NR_CPUS];
 struct calibration_data rtai_tunables;
 

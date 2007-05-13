@@ -414,12 +414,12 @@ int rt_request_linux_irq (unsigned irq, irqreturn_t (*handler)(int irq, void *de
 	}
 
 	rtai_save_flags_and_cli(flags);
-		spin_lock(&irq_desc[irq].lock);
-			if (rtai_linux_irq[irq].count++ == 0 && irq_desc[irq].action) {
-				rtai_linux_irq[irq].flags = irq_desc[irq].action->flags;
-				irq_desc[irq].action->flags |= SA_SHIRQ;
-			}
-		spin_unlock(&irq_desc[irq].lock);
+	spin_lock(&irq_desc[irq].lock);
+	if (rtai_linux_irq[irq].count++ == 0 && irq_desc[irq].action) {
+		rtai_linux_irq[irq].flags = irq_desc[irq].action->flags;
+		irq_desc[irq].action->flags |= SA_SHIRQ;
+	}
+	spin_unlock(&irq_desc[irq].lock);
 	rtai_restore_flags(flags);
 
 	request_irq(irq, handler, SA_SHIRQ, name, dev_id);
@@ -441,13 +441,13 @@ int rt_free_linux_irq (unsigned irq, void *dev_id)
 	}
 
 	rtai_save_flags_and_cli(flags);
-		free_irq(irq, dev_id);
-	
-		spin_lock(&irq_desc[irq].lock);
-			if (--rtai_linux_irq[irq].count == 0 && irq_desc[irq].action) {
-				irq_desc[irq].action->flags = rtai_linux_irq[irq].flags;
-			}
-		spin_unlock(&irq_desc[irq].lock);
+	free_irq(irq, dev_id);
+
+	spin_lock(&irq_desc[irq].lock);
+	if (--rtai_linux_irq[irq].count == 0 && irq_desc[irq].action) {
+		irq_desc[irq].action->flags = rtai_linux_irq[irq].flags;
+	}
+	spin_unlock(&irq_desc[irq].lock);
 	
 	rtai_restore_flags(flags);
 
@@ -501,8 +501,7 @@ int rt_request_srq (unsigned label, void (*k_handler)(void), long long (*u_handl
 		rtai_sysreq_table[srq].k_handler = k_handler;
 		rtai_sysreq_table[srq].u_handler = u_handler;
 		rtai_sysreq_table[srq].label = label;
-	}
-	else {
+	} else {
 		srq = -EBUSY;
 	}
 	rtai_restore_flags(flags);
@@ -531,7 +530,7 @@ void rt_pend_linux_srq (unsigned srq)
 		unsigned long flags;
 		set_bit(srq, &rtai_sysreq_pending);
 		rtai_save_flags_and_cli(flags);
-			hal_pend_uncond(rtai_sysreq_virq, rtai_cpuid());
+		hal_pend_uncond(rtai_sysreq_virq, rtai_cpuid());
 		rtai_restore_flags(flags);
 	}
 }
@@ -856,8 +855,7 @@ static inline long long rtai_usrq_dispatcher (unsigned long srq, unsigned long l
 
 	if (srq > 0 && srq < RTAI_NR_SRQS && test_bit(srq, &rtai_sysreq_map) && rtai_sysreq_table[srq].u_handler) {
 		return rtai_sysreq_table[srq].u_handler(label);
-	}
-	else {
+	} else {
 		for (srq = 1; srq < RTAI_NR_SRQS; srq++) {
 			if (test_bit(srq, &rtai_sysreq_map) && rtai_sysreq_table[srq].label == label) {
 				return (long long)srq;

@@ -199,6 +199,10 @@ static struct vm_operations_struct rtai_shm_vm_ops = {
 	close: 	rtai_shm_vm_close
 };
 
+#ifdef CONFIG_RTAI_MALLOC
+static RTAI_SYSCALL_MODE void rt_set_heap(unsigned long, void *);
+#endif
+
 static int rtai_shm_f_ioctl(struct inode *inode, struct file *file, unsigned int cmd, unsigned long arg)
 {
 	switch (cmd) {
@@ -216,7 +220,6 @@ static int rtai_shm_f_ioctl(struct inode *inode, struct file *file, unsigned int
 		}
 #ifdef CONFIG_RTAI_MALLOC
 		case HEAP_SET: {
-			static RTAI_SYSCALL_MODE void rt_set_heap(unsigned long, void *);
 			rt_set_heap(((unsigned long *)arg)[0], (void *)((unsigned long *)arg)[1]);
 			return 0;
 		}

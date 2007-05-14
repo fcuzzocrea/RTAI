@@ -806,7 +806,7 @@ config RTAI_MALLOC_VMALLOC
 	- it is simpler to share allocated buffers with user space;
 	- it doesn't have the size restrictions of kmalloc.
 	The reasons for using kmalloc:
-	- it is faster (not important since it as to be used in sof real time);
+	- it is faster (not important since it as to be used in soft real time);
 	- it exhibits contiguous buffer addressing needed for DMA controllers 
 	  which don't have scattering/gathering capability.
 	The default is using kmalloc()

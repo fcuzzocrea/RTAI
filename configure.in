@@ -1147,10 +1147,6 @@ if test x$CONFIG_RTAI_USI = xy ; then
    fi
 fi
 
-if test x$CONFIG_RTAI_COMEDI_LXRT = xy -a x$CONFIG_RTAI_SCHED_LXRT = x ; then
-   AC_MSG_ERROR([--enable-comedi-lxrt requires --enable-sched-lxrt])
-fi
-
 dnl Built-in math support is not currently available with Kbuild-built
 dnl kernels due to bad dependencies on user-space headers we really
 dnl need to fix first. So we leave in place all the config machinery

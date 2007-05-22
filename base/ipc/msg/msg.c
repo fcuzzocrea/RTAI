@@ -1601,7 +1601,7 @@ RTAI_SYSCALL_MODE RT_TASK *rt_returnx(RT_TASK *task, void *msg, int size)
  * the CPUs RTAI runs on 0xFFFF is not an address that can be used by
  * any RTAI task, so it is should be always safe.
  */
-RTAI_SYSCALL_MODE RT_TASK *rt_evdrpx(RT_TASK *task, void *msg, int size, int *len)
+RTAI_SYSCALL_MODE RT_TASK *rt_evdrpx(RT_TASK *task, void *msg, int size, long *len)
 {
 	struct mcb_t *mcb;
 	if ((task = rt_evdrp(task, (unsigned long *)&mcb))) {
@@ -1652,7 +1652,7 @@ RTAI_SYSCALL_MODE RT_TASK *rt_evdrpx(RT_TASK *task, void *msg, int size, int *le
  * the CPUs RTAI runs on 0xFFFF is not an address that can be used by
  * any RTAI task, so it is should be always safe.
  */
-RTAI_SYSCALL_MODE RT_TASK *rt_receivex(RT_TASK *task, void *msg, int size, int *len)
+RTAI_SYSCALL_MODE RT_TASK *rt_receivex(RT_TASK *task, void *msg, int size, long *len)
 {
 	struct mcb_t *mcb;
 	if ((task = rt_receive(task, (unsigned long *)&mcb))) {
@@ -1703,7 +1703,7 @@ RTAI_SYSCALL_MODE RT_TASK *rt_receivex(RT_TASK *task, void *msg, int size, int *
  * the CPUs RTAI runs on 0xFFFF is not an address that can be used by
  * any RTAI task, so it is should be always safe.
  */
-RTAI_SYSCALL_MODE RT_TASK *rt_receivex_if(RT_TASK *task, void *msg, int size, int *len)
+RTAI_SYSCALL_MODE RT_TASK *rt_receivex_if(RT_TASK *task, void *msg, int size, long *len)
 {
 	struct mcb_t *mcb;
 	if ((task = rt_receive_if(task, (unsigned long *)&mcb))) {
@@ -1760,7 +1760,7 @@ RTAI_SYSCALL_MODE RT_TASK *rt_receivex_if(RT_TASK *task, void *msg, int size, in
  * the CPUs RTAI runs on 0xFFFF is not an address that can be used by
  * any RTAI task, so it is should be always safe.
  */
-RTAI_SYSCALL_MODE RT_TASK *rt_receivex_until(RT_TASK *task, void *msg, int size, int *len, RTIME time)
+RTAI_SYSCALL_MODE RT_TASK *rt_receivex_until(RT_TASK *task, void *msg, int size, long *len, RTIME time)
 {
 	struct mcb_t *mcb;
 	if ((task = rt_receive_until(task, (unsigned long *)&mcb, time))) {
@@ -1817,7 +1817,7 @@ RTAI_SYSCALL_MODE RT_TASK *rt_receivex_until(RT_TASK *task, void *msg, int size,
  * the CPUs RTAI runs on 0xFFFF is not an address that can be used by
  * any RTAI task, so it is should be always safe.
  */
-RTAI_SYSCALL_MODE RT_TASK *rt_receivex_timed(RT_TASK *task, void *msg, int size, int *len, RTIME delay)
+RTAI_SYSCALL_MODE RT_TASK *rt_receivex_timed(RT_TASK *task, void *msg, int size, long *len, RTIME delay)
 {
 	struct mcb_t *mcb;
 	if ((task = rt_receive_timed(task, (unsigned long *)&mcb, delay))) {

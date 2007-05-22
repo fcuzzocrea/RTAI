@@ -1,7 +1,13 @@
+2007-05-22  Roberto Bucher <roberto.bucher@supsi.ch>
+
+	* rtai-lab/scilab/rtai4_comedi_data*.sci: Changed the name
+	  of the variable range to comedi_range to avoid conflicts
+	  with a scilab function.
+
 2007-05-10  Roberto Bucher <roberto.bucher@supsi.ch>
 
 	* rtai-lab/matlab/rtai.tmf: Some changes needed for Matlab
-	  >= 2006b (thanks to Emanuele Clerici)
+	  >= 2006b (thanks to Emanuele Clerici).
 
 2007-03-27  Paolo Mantegazza <mantegazza@aero.polimi.it>
 

@@ -903,14 +903,6 @@ CONFIG_UCLINUX_TRUE
 CONFIG_UCLINUX_FALSE
 CONFIG_SMP_TRUE
 CONFIG_SMP_FALSE
-CONFIG_RTAI_SCHED_UP_TRUE
-CONFIG_RTAI_SCHED_UP_FALSE
-CONFIG_RTAI_SCHED_MUP_TRUE
-CONFIG_RTAI_SCHED_MUP_FALSE
-CONFIG_RTAI_SCHED_SMP_TRUE
-CONFIG_RTAI_SCHED_SMP_FALSE
-CONFIG_RTAI_SCHED_LXRT_TRUE
-CONFIG_RTAI_SCHED_LXRT_FALSE
 CONFIG_RTAI_TRACE_TRUE
 CONFIG_RTAI_TRACE_FALSE
 CONFIG_RTAI_MATH_TRUE
@@ -1034,7 +1026,6 @@ RTAI_KBUILD_BOTTOM
 RTAI_KBUILD_CMD
 RTAI_KBUILD_CLEAN
 RTAI_KBUILD_DISTCLEAN
-CONFIG_RTAI_SCHED_LXRT
 RTAI_POSIX_WRAP
 CONFIG_RTAI_LINUXDIR
 CONFIG_RTAI_ADDONS_TRUE
@@ -1670,10 +1661,6 @@ Optional Features:
  --enable-watchdog	Enable watchdog support
  --enable-leds		Enable leds-based debugging support
  --enable-lxrt-use-linux-syscall	Wrap LXRT service calls throug Linux syscall mechanism
- --enable-sched-up	Enable UP scheduler support
- --enable-sched-smp	Enable SMP scheduler support
- --enable-sched-mup	Enable MUP scheduler support
- --enable-sched-lxrt	Enable LXRT scheduler support
  --enable-ktasks-sched-lxrt	Enable LXRT scheduler with kernel tasks support
  --enable-sched-lock-isr	Enable scheduler lock in ISRs
  --enable-rtc-freq	Enable RTC freq
@@ -5241,7 +5228,7 @@ ia64-*-hpux*)
   ;;
 *-*-irix6*)
   # Find out which ABI we are using.
-  echo '#line 5244 "configure"' > conftest.$ac_ext
+  echo '#line 5231 "configure"' > conftest.$ac_ext
   if { (eval echo "$as_me:$LINENO: \"$ac_compile\"") >&5
   (eval $ac_compile) 2>&5
   ac_status=$?
@@ -7664,11 +7651,11 @@ else
    -e 's:.*FLAGS}\{0,1\} :&$lt_compiler_flag :; t' \
    -e 's: [^ ]*conftest\.: $lt_compiler_flag&:; t' \
    -e 's:$: $lt_compiler_flag:'`
-   (eval echo "\"\$as_me:7667: $lt_compile\"" >&5)
+   (eval echo "\"\$as_me:7654: $lt_compile\"" >&5)
    (eval "$lt_compile" 2>conftest.err)
    ac_status=$?
    cat conftest.err >&5
-   echo "$as_me:7671: \$? = $ac_status" >&5
+   echo "$as_me:7658: \$? = $ac_status" >&5
    if (exit $ac_status) && test -s "$ac_outfile"; then
      # The compiler can only warn and ignore the option if not recognized
      # So say no if there are warnings other than the usual output.
@@ -7932,11 +7919,11 @@ else
    -e 's:.*FLAGS}\{0,1\} :&$lt_compiler_flag :; t' \
    -e 's: [^ ]*conftest\.: $lt_compiler_flag&:; t' \
    -e 's:$: $lt_compiler_flag:'`
-   (eval echo "\"\$as_me:7935: $lt_compile\"" >&5)
+   (eval echo "\"\$as_me:7922: $lt_compile\"" >&5)
    (eval "$lt_compile" 2>conftest.err)
    ac_status=$?
    cat conftest.err >&5
-   echo "$as_me:7939: \$? = $ac_status" >&5
+   echo "$as_me:7926: \$? = $ac_status" >&5
    if (exit $ac_status) && test -s "$ac_outfile"; then
      # The compiler can only warn and ignore the option if not recognized
      # So say no if there are warnings other than the usual output.
@@ -8036,11 +8023,11 @@ else
    -e 's:.*FLAGS}\{0,1\} :&$lt_compiler_flag :; t' \
    -e 's: [^ ]*conftest\.: $lt_compiler_flag&:; t' \
    -e 's:$: $lt_compiler_flag:'`
-   (eval echo "\"\$as_me:8039: $lt_compile\"" >&5)
+   (eval echo "\"\$as_me:8026: $lt_compile\"" >&5)
    (eval "$lt_compile" 2>out/conftest.err)
    ac_status=$?
    cat out/conftest.err >&5
-   echo "$as_me:8043: \$? = $ac_status" >&5
+   echo "$as_me:8030: \$? = $ac_status" >&5
    if (exit $ac_status) && test -s out/conftest2.$ac_objext
    then
      # The compiler can only warn and ignore the option if not recognized
@@ -10488,7 +10475,7 @@ else
   lt_dlunknown=0; lt_dlno_uscore=1; lt_dlneed_uscore=2
   lt_status=$lt_dlunknown
   cat > conftest.$ac_ext <<EOF
-#line 10491 "configure"
+#line 10478 "configure"
 #include "confdefs.h"
 
 #if HAVE_DLFCN_H
@@ -10588,7 +10575,7 @@ else
   lt_dlunknown=0; lt_dlno_uscore=1; lt_dlneed_uscore=2
   lt_status=$lt_dlunknown
   cat > conftest.$ac_ext <<EOF
-#line 10591 "configure"
+#line 10578 "configure"
 #include "confdefs.h"
 
 #if HAVE_DLFCN_H
@@ -12956,11 +12943,11 @@ else
    -e 's:.*FLAGS}\{0,1\} :&$lt_compiler_flag :; t' \
    -e 's: [^ ]*conftest\.: $lt_compiler_flag&:; t' \
    -e 's:$: $lt_compiler_flag:'`
-   (eval echo "\"\$as_me:12959: $lt_compile\"" >&5)
+   (eval echo "\"\$as_me:12946: $lt_compile\"" >&5)
    (eval "$lt_compile" 2>conftest.err)
    ac_status=$?
    cat conftest.err >&5
-   echo "$as_me:12963: \$? = $ac_status" >&5
+   echo "$as_me:12950: \$? = $ac_status" >&5
    if (exit $ac_status) && test -s "$ac_outfile"; then
      # The compiler can only warn and ignore the option if not recognized
      # So say no if there are warnings other than the usual output.
@@ -13060,11 +13047,11 @@ else
    -e 's:.*FLAGS}\{0,1\} :&$lt_compiler_flag :; t' \
    -e 's: [^ ]*conftest\.: $lt_compiler_flag&:; t' \
    -e 's:$: $lt_compiler_flag:'`
-   (eval echo "\"\$as_me:13063: $lt_compile\"" >&5)
+   (eval echo "\"\$as_me:13050: $lt_compile\"" >&5)
    (eval "$lt_compile" 2>out/conftest.err)
    ac_status=$?
    cat out/conftest.err >&5
-   echo "$as_me:13067: \$? = $ac_status" >&5
+   echo "$as_me:13054: \$? = $ac_status" >&5
    if (exit $ac_status) && test -s out/conftest2.$ac_objext
    then
      # The compiler can only warn and ignore the option if not recognized
@@ -14630,11 +14617,11 @@ else
    -e 's:.*FLAGS}\{0,1\} :&$lt_compiler_flag :; t' \
    -e 's: [^ ]*conftest\.: $lt_compiler_flag&:; t' \
    -e 's:$: $lt_compiler_flag:'`
-   (eval echo "\"\$as_me:14633: $lt_compile\"" >&5)
+   (eval echo "\"\$as_me:14620: $lt_compile\"" >&5)
    (eval "$lt_compile" 2>conftest.err)
    ac_status=$?
    cat conftest.err >&5
-   echo "$as_me:14637: \$? = $ac_status" >&5
+   echo "$as_me:14624: \$? = $ac_status" >&5
    if (exit $ac_status) && test -s "$ac_outfile"; then
      # The compiler can only warn and ignore the option if not recognized
      # So say no if there are warnings other than the usual output.
@@ -14734,11 +14721,11 @@ else
    -e 's:.*FLAGS}\{0,1\} :&$lt_compiler_flag :; t' \
    -e 's: [^ ]*conftest\.: $lt_compiler_flag&:; t' \
    -e 's:$: $lt_compiler_flag:'`
-   (eval echo "\"\$as_me:14737: $lt_compile\"" >&5)
+   (eval echo "\"\$as_me:14724: $lt_compile\"" >&5)
    (eval "$lt_compile" 2>out/conftest.err)
    ac_status=$?
    cat out/conftest.err >&5
-   echo "$as_me:14741: \$? = $ac_status" >&5
+   echo "$as_me:14728: \$? = $ac_status" >&5
    if (exit $ac_status) && test -s out/conftest2.$ac_objext
    then
      # The compiler can only warn and ignore the option if not recognized
@@ -16964,11 +16951,11 @@ else
    -e 's:.*FLAGS}\{0,1\} :&$lt_compiler_flag :; t' \
    -e 's: [^ ]*conftest\.: $lt_compiler_flag&:; t' \
    -e 's:$: $lt_compiler_flag:'`
-   (eval echo "\"\$as_me:16967: $lt_compile\"" >&5)
+   (eval echo "\"\$as_me:16954: $lt_compile\"" >&5)
    (eval "$lt_compile" 2>conftest.err)
    ac_status=$?
    cat conftest.err >&5
-   echo "$as_me:16971: \$? = $ac_status" >&5
+   echo "$as_me:16958: \$? = $ac_status" >&5
    if (exit $ac_status) && test -s "$ac_outfile"; then
      # The compiler can only warn and ignore the option if not recognized
      # So say no if there are warnings other than the usual output.
@@ -17232,11 +17219,11 @@ else
    -e 's:.*FLAGS}\{0,1\} :&$lt_compiler_flag :; t' \
    -e 's: [^ ]*conftest\.: $lt_compiler_flag&:; t' \
    -e 's:$: $lt_compiler_flag:'`
-   (eval echo "\"\$as_me:17235: $lt_compile\"" >&5)
+   (eval echo "\"\$as_me:17222: $lt_compile\"" >&5)
    (eval "$lt_compile" 2>conftest.err)
    ac_status=$?
    cat conftest.err >&5
-   echo "$as_me:17239: \$? = $ac_status" >&5
+   echo "$as_me:17226: \$? = $ac_status" >&5
    if (exit $ac_status) && test -s "$ac_outfile"; then
      # The compiler can only warn and ignore the option if not recognized
      # So say no if there are warnings other than the usual output.
@@ -17336,11 +17323,11 @@ else
    -e 's:.*FLAGS}\{0,1\} :&$lt_compiler_flag :; t' \
    -e 's: [^ ]*conftest\.: $lt_compiler_flag&:; t' \
    -e 's:$: $lt_compiler_flag:'`
-   (eval echo "\"\$as_me:17339: $lt_compile\"" >&5)
+   (eval echo "\"\$as_me:17326: $lt_compile\"" >&5)
    (eval "$lt_compile" 2>out/conftest.err)
    ac_status=$?
    cat out/conftest.err >&5
-   echo "$as_me:17343: \$? = $ac_status" >&5
+   echo "$as_me:17330: \$? = $ac_status" >&5
    if (exit $ac_status) && test -s out/conftest2.$ac_objext
    then
      # The compiler can only warn and ignore the option if not recognized
@@ -20604,42 +20591,6 @@ fi
 
 { echo "$as_me:$LINENO: result: ${CONFIG_RTAI_LXRT_USE_LINUX_SYSCALL:-no}" >&5
 echo "${ECHO_T}${CONFIG_RTAI_LXRT_USE_LINUX_SYSCALL:-no}" >&6; }
-
-# Check whether --enable-sched-up was given.
-if test "${enable_sched_up+set}" = set; then
-  enableval=$enable_sched_up; case "$enableval" in
-	y | yes | m | mod | module) CONFIG_RTAI_SCHED_UP=y ;;
-	*) unset CONFIG_RTAI_SCHED_UP ;;
-	esac
-fi
-
-
-# Check whether --enable-sched-smp was given.
-if test "${enable_sched_smp+set}" = set; then
-  enableval=$enable_sched_smp; case "$enableval" in
-	y | yes | m | mod | module) CONFIG_RTAI_SCHED_SMP=y ;;
-	*) unset CONFIG_RTAI_SCHED_SMP ;;
-	esac
-fi
-
-
-# Check whether --enable-sched-mup was given.
-if test "${enable_sched_mup+set}" = set; then
-  enableval=$enable_sched_mup; case "$enableval" in
-	y | yes | m | mod | module) CONFIG_RTAI_SCHED_MUP=y ;;
-	*) unset CONFIG_RTAI_SCHED_MUP ;;
-	esac
-fi
-
-
-# Check whether --enable-sched-lxrt was given.
-if test "${enable_sched_lxrt+set}" = set; then
-  enableval=$enable_sched_lxrt; case "$enableval" in
-	y | yes | m | mod | module) CONFIG_RTAI_SCHED_LXRT_=y ;;
-	*) echo "--enable-sched-lxrt forced to \"yes\"" ; CONFIG_RTAI_SCHED_LXRT_=y ;;
-	esac
-fi
-
 
 # Check whether --enable-ktasks-sched-lxrt was given.
 if test "${enable_ktasks_sched_lxrt+set}" = set; then
@@ -24149,12 +24100,6 @@ echo "$as_me: error: --enable-usi=y requires --enable-sem=y and --enable-tasklet
    fi
 fi
 
-if test x$CONFIG_RTAI_COMEDI_LXRT = xy -a x$CONFIG_RTAI_SCHED_LXRT = x ; then
-   { { echo "$as_me:$LINENO: error: --enable-comedi-lxrt requires --enable-sched-lxrt" >&5
-echo "$as_me: error: --enable-comedi-lxrt requires --enable-sched-lxrt" >&2;}
-   { (exit 1); exit 1; }; }
-fi
-
 if test x$CONFIG_KBUILD = xy -a x$CONFIG_RTAI_MATH = xy ; then
    { { echo "$as_me:$LINENO: error: Built-in math support is not currently available with Linux >= 2.6.x" >&5
 echo "$as_me: error: Built-in math support is not currently available with Linux >= 2.6.x" >&2;}
@@ -24718,47 +24663,6 @@ if test "$CONFIG_SMP" = y; then
 else
   CONFIG_SMP_TRUE='#'
   CONFIG_SMP_FALSE=
-fi
-
-
-
-
-if test -n "$CONFIG_RTAI_SCHED_UP"; then
-  CONFIG_RTAI_SCHED_UP_TRUE=
-  CONFIG_RTAI_SCHED_UP_FALSE='#'
-else
-  CONFIG_RTAI_SCHED_UP_TRUE='#'
-  CONFIG_RTAI_SCHED_UP_FALSE=
-fi
-
-
-
-if test -n "$CONFIG_RTAI_SCHED_MUP"; then
-  CONFIG_RTAI_SCHED_MUP_TRUE=
-  CONFIG_RTAI_SCHED_MUP_FALSE='#'
-else
-  CONFIG_RTAI_SCHED_MUP_TRUE='#'
-  CONFIG_RTAI_SCHED_MUP_FALSE=
-fi
-
-
-
-if test -n "$CONFIG_RTAI_SCHED_SMP"; then
-  CONFIG_RTAI_SCHED_SMP_TRUE=
-  CONFIG_RTAI_SCHED_SMP_FALSE='#'
-else
-  CONFIG_RTAI_SCHED_SMP_TRUE='#'
-  CONFIG_RTAI_SCHED_SMP_FALSE=
-fi
-
-
-
-if test -n "$CONFIG_RTAI_SCHED_LXRT"; then
-  CONFIG_RTAI_SCHED_LXRT_TRUE=
-  CONFIG_RTAI_SCHED_LXRT_FALSE='#'
-else
-  CONFIG_RTAI_SCHED_LXRT_TRUE='#'
-  CONFIG_RTAI_SCHED_LXRT_FALSE=
 fi
 
 
@@ -25574,7 +25478,6 @@ RTAI_POSIX_WRAP=`for f in \`cat "${srcdir}/base/posix/POSIX_WRAPS"\`; do echo -n
 
 
 
-
 ac_config_files="$ac_config_files GNUmakefile base/GNUmakefile base/arch/GNUmakefile base/include/GNUmakefile base/ipc/GNUmakefile base/sched/GNUmakefile base/sched/liblxrt/GNUmakefile base/scripts/GNUmakefile base/scripts/rtai-config base/scripts/rtai-load base/arch/i386/GNUmakefile base/arch/i386/hal/GNUmakefile base/arch/i386/calibration/GNUmakefile base/arch/i386/calibration/setsmi base/include/asm-i386/GNUmakefile base/arch/x86_64/GNUmakefile base/arch/x86_64/hal/GNUmakefile base/arch/x86_64/calibration/GNUmakefile base/include/asm-x86_64/GNUmakefile base/arch/arm/GNUmakefile base/arch/arm/hal/GNUmakefile base/include/asm-arm/GNUmakefile base/arch/ppc/GNUmakefile base/arch/ppc/hal/GNUmakefile base/include/asm-ppc/GNUmakefile base/ipc/bits/GNUmakefile base/ipc/fifos/GNUmakefile base/ipc/netrpc/GNUmakefile base/ipc/shm/GNUmakefile base/ipc/sem/GNUmakefile base/ipc/msg/GNUmakefile base/ipc/mbx/GNUmakefile base/ipc/tbx/GNUmakefile base/ipc/mq/GNUmakefile base/math/GNUmakefile base/malloc/GNUmakefile base/tasklets/GNUmakefile base/trace/GNUmakefile base/wd/GNUmakefile base/usi/GNUmakefile base/leds/GNUmakefile base/posix/GNUmakefile"
 
 
@@ -25833,34 +25736,6 @@ if test -z "${CONFIG_SMP_TRUE}" && test -z "${CONFIG_SMP_FALSE}"; then
   { { echo "$as_me:$LINENO: error: conditional \"CONFIG_SMP\" was never defined.
 Usually this means the macro was only invoked conditionally." >&5
 echo "$as_me: error: conditional \"CONFIG_SMP\" was never defined.
-Usually this means the macro was only invoked conditionally." >&2;}
-   { (exit 1); exit 1; }; }
-fi
-if test -z "${CONFIG_RTAI_SCHED_UP_TRUE}" && test -z "${CONFIG_RTAI_SCHED_UP_FALSE}"; then
-  { { echo "$as_me:$LINENO: error: conditional \"CONFIG_RTAI_SCHED_UP\" was never defined.
-Usually this means the macro was only invoked conditionally." >&5
-echo "$as_me: error: conditional \"CONFIG_RTAI_SCHED_UP\" was never defined.
-Usually this means the macro was only invoked conditionally." >&2;}
-   { (exit 1); exit 1; }; }
-fi
-if test -z "${CONFIG_RTAI_SCHED_MUP_TRUE}" && test -z "${CONFIG_RTAI_SCHED_MUP_FALSE}"; then
-  { { echo "$as_me:$LINENO: error: conditional \"CONFIG_RTAI_SCHED_MUP\" was never defined.
-Usually this means the macro was only invoked conditionally." >&5
-echo "$as_me: error: conditional \"CONFIG_RTAI_SCHED_MUP\" was never defined.
-Usually this means the macro was only invoked conditionally." >&2;}
-   { (exit 1); exit 1; }; }
-fi
-if test -z "${CONFIG_RTAI_SCHED_SMP_TRUE}" && test -z "${CONFIG_RTAI_SCHED_SMP_FALSE}"; then
-  { { echo "$as_me:$LINENO: error: conditional \"CONFIG_RTAI_SCHED_SMP\" was never defined.
-Usually this means the macro was only invoked conditionally." >&5
-echo "$as_me: error: conditional \"CONFIG_RTAI_SCHED_SMP\" was never defined.
-Usually this means the macro was only invoked conditionally." >&2;}
-   { (exit 1); exit 1; }; }
-fi
-if test -z "${CONFIG_RTAI_SCHED_LXRT_TRUE}" && test -z "${CONFIG_RTAI_SCHED_LXRT_FALSE}"; then
-  { { echo "$as_me:$LINENO: error: conditional \"CONFIG_RTAI_SCHED_LXRT\" was never defined.
-Usually this means the macro was only invoked conditionally." >&5
-echo "$as_me: error: conditional \"CONFIG_RTAI_SCHED_LXRT\" was never defined.
 Usually this means the macro was only invoked conditionally." >&2;}
    { (exit 1); exit 1; }; }
 fi
@@ -27010,14 +26885,6 @@ CONFIG_UCLINUX_TRUE!$CONFIG_UCLINUX_TRUE$ac_delim
 CONFIG_UCLINUX_FALSE!$CONFIG_UCLINUX_FALSE$ac_delim
 CONFIG_SMP_TRUE!$CONFIG_SMP_TRUE$ac_delim
 CONFIG_SMP_FALSE!$CONFIG_SMP_FALSE$ac_delim
-CONFIG_RTAI_SCHED_UP_TRUE!$CONFIG_RTAI_SCHED_UP_TRUE$ac_delim
-CONFIG_RTAI_SCHED_UP_FALSE!$CONFIG_RTAI_SCHED_UP_FALSE$ac_delim
-CONFIG_RTAI_SCHED_MUP_TRUE!$CONFIG_RTAI_SCHED_MUP_TRUE$ac_delim
-CONFIG_RTAI_SCHED_MUP_FALSE!$CONFIG_RTAI_SCHED_MUP_FALSE$ac_delim
-CONFIG_RTAI_SCHED_SMP_TRUE!$CONFIG_RTAI_SCHED_SMP_TRUE$ac_delim
-CONFIG_RTAI_SCHED_SMP_FALSE!$CONFIG_RTAI_SCHED_SMP_FALSE$ac_delim
-CONFIG_RTAI_SCHED_LXRT_TRUE!$CONFIG_RTAI_SCHED_LXRT_TRUE$ac_delim
-CONFIG_RTAI_SCHED_LXRT_FALSE!$CONFIG_RTAI_SCHED_LXRT_FALSE$ac_delim
 CONFIG_RTAI_TRACE_TRUE!$CONFIG_RTAI_TRACE_TRUE$ac_delim
 CONFIG_RTAI_TRACE_FALSE!$CONFIG_RTAI_TRACE_FALSE$ac_delim
 CONFIG_RTAI_MATH_TRUE!$CONFIG_RTAI_MATH_TRUE$ac_delim
@@ -27056,6 +26923,14 @@ CONFIG_RTAI_MATH_BUILTIN_TRUE!$CONFIG_RTAI_MATH_BUILTIN_TRUE$ac_delim
 CONFIG_RTAI_MATH_BUILTIN_FALSE!$CONFIG_RTAI_MATH_BUILTIN_FALSE$ac_delim
 CONFIG_RTAI_BITS_BUILTIN_TRUE!$CONFIG_RTAI_BITS_BUILTIN_TRUE$ac_delim
 CONFIG_RTAI_BITS_BUILTIN_FALSE!$CONFIG_RTAI_BITS_BUILTIN_FALSE$ac_delim
+CONFIG_RTAI_FIFOS_BUILTIN_TRUE!$CONFIG_RTAI_FIFOS_BUILTIN_TRUE$ac_delim
+CONFIG_RTAI_FIFOS_BUILTIN_FALSE!$CONFIG_RTAI_FIFOS_BUILTIN_FALSE$ac_delim
+CONFIG_RTAI_NETRPC_BUILTIN_TRUE!$CONFIG_RTAI_NETRPC_BUILTIN_TRUE$ac_delim
+CONFIG_RTAI_NETRPC_BUILTIN_FALSE!$CONFIG_RTAI_NETRPC_BUILTIN_FALSE$ac_delim
+CONFIG_RTAI_SEM_BUILTIN_TRUE!$CONFIG_RTAI_SEM_BUILTIN_TRUE$ac_delim
+CONFIG_RTAI_SEM_BUILTIN_FALSE!$CONFIG_RTAI_SEM_BUILTIN_FALSE$ac_delim
+CONFIG_RTAI_MSG_BUILTIN_TRUE!$CONFIG_RTAI_MSG_BUILTIN_TRUE$ac_delim
+CONFIG_RTAI_MSG_BUILTIN_FALSE!$CONFIG_RTAI_MSG_BUILTIN_FALSE$ac_delim
 _ACEOF
 
   if test `sed -n "s/.*$ac_delim\$/X/p" conf$$subs.sed | grep -c X` = 97; then
@@ -27097,14 +26972,6 @@ _ACEOF
 ac_delim='%!_!# '
 for ac_last_try in false false false false false :; do
   cat >conf$$subs.sed <<_ACEOF
-CONFIG_RTAI_FIFOS_BUILTIN_TRUE!$CONFIG_RTAI_FIFOS_BUILTIN_TRUE$ac_delim
-CONFIG_RTAI_FIFOS_BUILTIN_FALSE!$CONFIG_RTAI_FIFOS_BUILTIN_FALSE$ac_delim
-CONFIG_RTAI_NETRPC_BUILTIN_TRUE!$CONFIG_RTAI_NETRPC_BUILTIN_TRUE$ac_delim
-CONFIG_RTAI_NETRPC_BUILTIN_FALSE!$CONFIG_RTAI_NETRPC_BUILTIN_FALSE$ac_delim
-CONFIG_RTAI_SEM_BUILTIN_TRUE!$CONFIG_RTAI_SEM_BUILTIN_TRUE$ac_delim
-CONFIG_RTAI_SEM_BUILTIN_FALSE!$CONFIG_RTAI_SEM_BUILTIN_FALSE$ac_delim
-CONFIG_RTAI_MSG_BUILTIN_TRUE!$CONFIG_RTAI_MSG_BUILTIN_TRUE$ac_delim
-CONFIG_RTAI_MSG_BUILTIN_FALSE!$CONFIG_RTAI_MSG_BUILTIN_FALSE$ac_delim
 CONFIG_RTAI_MBX_BUILTIN_TRUE!$CONFIG_RTAI_MBX_BUILTIN_TRUE$ac_delim
 CONFIG_RTAI_MBX_BUILTIN_FALSE!$CONFIG_RTAI_MBX_BUILTIN_FALSE$ac_delim
 CONFIG_RTAI_TBX_BUILTIN_TRUE!$CONFIG_RTAI_TBX_BUILTIN_TRUE$ac_delim
@@ -27182,7 +27049,6 @@ RTAI_KBUILD_BOTTOM!$RTAI_KBUILD_BOTTOM$ac_delim
 RTAI_KBUILD_CMD!$RTAI_KBUILD_CMD$ac_delim
 RTAI_KBUILD_CLEAN!$RTAI_KBUILD_CLEAN$ac_delim
 RTAI_KBUILD_DISTCLEAN!$RTAI_KBUILD_DISTCLEAN$ac_delim
-CONFIG_RTAI_SCHED_LXRT!$CONFIG_RTAI_SCHED_LXRT$ac_delim
 RTAI_POSIX_WRAP!$RTAI_POSIX_WRAP$ac_delim
 CONFIG_RTAI_LINUXDIR!$CONFIG_RTAI_LINUXDIR$ac_delim
 CONFIG_RTAI_ADDONS_TRUE!$CONFIG_RTAI_ADDONS_TRUE$ac_delim
@@ -27192,7 +27058,7 @@ LIBOBJS!$LIBOBJS$ac_delim
 LTLIBOBJS!$LTLIBOBJS$ac_delim
 _ACEOF
 
-  if test `sed -n "s/.*$ac_delim\$/X/p" conf$$subs.sed | grep -c X` = 93; then
+  if test `sed -n "s/.*$ac_delim\$/X/p" conf$$subs.sed | grep -c X` = 84; then
     break
   elif $ac_last_try; then
     { { echo "$as_me:$LINENO: error: could not make $CONFIG_STATUS" >&5

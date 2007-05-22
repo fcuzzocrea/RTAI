@@ -460,7 +460,7 @@ RTAI_PROTO(int, rt_Send,(pid_t pid, void *smsg, void *rmsg, size_t ssize, size_t
 
 RTAI_PROTO(pid_t, rt_Receive,(pid_t pid, void *msg, size_t maxsize, void *msglen))
 {
-	struct { long pid; void *msg; long maxsize; void *msglen;}
+	struct { long pid; void *msg; long maxsize; size_t *msglen;}
 	arg = { pid, msg, maxsize, msglen };
 	return (pid_t) rtai_lxrt(BIDX, SIZARG, RT_RECEIVE, &arg).i[LOW];
 }

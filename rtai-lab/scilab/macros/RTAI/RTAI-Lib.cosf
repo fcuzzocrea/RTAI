@@ -3,7 +3,8 @@ scs_m=scicos_diagram()
 scs_m.props=tlist(..
 ["params","wpar","title","tol","tf","context","void1","options","void2","void3",..
 "doc"],[600,450,0,0,600,450],..
-["RTAI-Lib","SCI/macros/RTAI/"],..
+["RTAI-Lib",..
+"/home/bucher/sviluppo/rtai_distro/vulcano/rtai-lab/scilab/macros/RTAI/"],..
 [0.0001,0.000001,1.000E-10,100001,0,0],100000," ",[],..
 tlist(["scsopt","3D","Background","Link","ID","Cmap"],list(%t,33),[8,1],[1,5],..
 list([5,1],[4,1]),[0.8,0.8,0.8]),[],[],list())
@@ -185,7 +186,7 @@ scs_m.objs(14)=mlist(["Block","graphics","model","gui","doc"],..
                mlist(..
                ["graphics","orig","sz","flip","exprs","pin","pout","pein","peout",..
                "gr_i","id","in_implicit","out_implicit"],[387.79762,304.82143],..
-               [60,40],%t,["0","comedi0","0","0"],[],0,0,[],..
+               [60,40],%t,["0";"comedi0";"0";"0"],[],0,0,[],..
                list(..
                "xstringb(orig(1),orig(2),[''COMEDI A/D'';name+'' CH-''+string(ch)],sz(1),sz(2),''fill'');",..
                8),"",[],"E"),..
@@ -198,7 +199,7 @@ scs_m.objs(14)=mlist(["Block","graphics","model","gui","doc"],..
 scs_m.objs(15)=mlist(["Block","graphics","model","gui","doc"],..
                mlist(..
                ["graphics","orig","sz","flip","exprs","pin","pout","pein","peout",..
-               "gr_i","id","in_implicit","out_implicit"],[390.02976,244.55357],..
+               "gr_i","id","in_implicit","out_implicit"],[387.27066,249.73821],..
                [60,40],%t,["0","comedi0","0","0"],0,[],0,[],..
                list(..
                "xstringb(orig(1),orig(2),[''COMEDI D/A'';name+'' CH-''+string(ch)],sz(1),sz(2),''fill'');",..
@@ -212,7 +213,7 @@ scs_m.objs(15)=mlist(["Block","graphics","model","gui","doc"],..
 scs_m.objs(16)=mlist(["Block","graphics","model","gui","doc"],..
                mlist(..
                ["graphics","orig","sz","flip","exprs","pin","pout","pein","peout",..
-               "gr_i","id","in_implicit","out_implicit"],[391.51786,188.00595],..
+               "gr_i","id","in_implicit","out_implicit"],[386.5262,190.11632],..
                [60,40],%t,["0","comedi0"],[],0,0,[],..
                list(..
                "xstringb(orig(1),orig(2),[''COMEDI DI'';name+'' CH-''+string(ch)],sz(1),sz(2),''fill'');",..

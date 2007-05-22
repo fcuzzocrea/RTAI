@@ -1,3 +1,9 @@
+2007-05-22  Paolo Mantegazza <mantegazza@aero.polimi.it>
+            	
+	* base/include/rtai_msg.h, rtai_netrpc.h and 
+	  base/ipc/msg.c: use a pointer to a long for the received msg length 
+	  in extended evdrp and receive.
+
 2007-05-22  Roberto Bucher <roberto.bucher@supsi.ch>
 
 	* rtai-lab/scilab/rtai4_comedi_data*.sci: Changed the name

@@ -1,3 +1,9 @@
+2007-05-22  Roberto Bucher <roberto.bucher@supsi.ch>
+
+	* rtai-lab/scilab/rtai4_comedi_data*.sci: Changed the name
+	  of the variable range to comedi_range to avoid conflicts
+	  with a scilab function.
+
 2007-05-12  Paolo Mantegazza <mantegazza@aero.polimi.it>
             	
 	* base/ipc/shm.c: enable heap shearing parts only if 
@@ -1634,7 +1640,7 @@
 	* sched/api.c: fixed a wrong test in function "hash_rem_adr" that
 	  caused an unconditional deletion of counted registrations also.
 
-2005-07-15  Ignacio García Pérez <iggarpe@terra.es>
+2005-07-15  Ignacio Garcï¿½a Pï¿½rez <iggarpe@terra.es>
 
 	* base/include/asm-i386/rtai_hal.immed: fixed a very bad misnaming 
 	  in interrupt flags manipulating macros.

@@ -321,6 +321,9 @@
 #define GET_REAL_TIME		       218
 #define GET_REAL_TIME_NS	       219
 
+#define MQ_USP_NOTIFY		       220
+#define MQ_WAIT_NOTIFIER	       221
+
 #define MAX_LXRT_FUN		       225
 
 // not recovered yet 
@@ -655,7 +658,7 @@ RTAI_PROTO(int, rt_thread_create,(void *fun, void *args, int stack_size))
 	}
 	if (hs) {
 	        struct { unsigned long dummy; } arg;
-        	rtai_lxrt(BIDX, SIZARG, MAKE_HARD_RT, &arg);
+		rtai_lxrt(BIDX, SIZARG, MAKE_HARD_RT, &arg);
 	}
 	return thread;
 }

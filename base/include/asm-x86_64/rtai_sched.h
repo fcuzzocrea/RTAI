@@ -22,12 +22,21 @@
 
 #define rt_exchange_tasks(oldtask, newtask) \
 	__asm__ __volatile__( \
+	"pushfq \n\t" \
 	"pushq %%rax\n\t" \
 	"pushq %%rbp\n\t" \
 	"pushq %%rdi\n\t" \
 	"pushq %%rsi\n\t" \
 	"pushq %%rdx\n\t" \
 	"pushq %%rcx\n\t" \
+        "pushq %%r8\n" \
+        "pushq %%r9\n" \
+        "pushq %%r10\n" \
+        "pushq %%r11\n" \
+        "pushq %%r12\n" \
+        "pushq %%r13\n" \
+        "pushq %%r14\n" \
+        "pushq %%r15\n" \
 	"pushq %%rbx\n\t" \
 	"pushq $1f\n\t" \
 	"movq (%%rcx), %%rbx\n\t" \
@@ -36,14 +45,24 @@
 	"movq %%rdx, (%%rcx)\n\t" \
 	"ret\n\t" \
 "1:	popq %%rbx\n\t \
+        popq %%r15\n\t \
+        popq %%r14\n\t \
+        popq %%r13\n\t \
+        popq %%r12\n\t \
+        popq %%r11\n\t \
+        popq %%r10\n\t \
+        popq %%r9\n\t \
+        popq %%r8\n\t \
 	popq %%rcx\n\t \
 	popq %%rdx\n\t \
 	popq %%rsi\n\t \
 	popq %%rdi\n\t \
 	popq %%rbp\n\t \
-	popq %%rax\n\t" \
+	popq %%rax\n\t \
+	popfq \n\t" \
 	: \
-	: "c" (&oldtask), "d" (newtask) \
+	: "rcx" (&oldtask), "rdx" (newtask) \
+	: "rcx", "rdx", "memory" \
 	);
 
 #define init_arch_stack() \

@@ -28,7 +28,7 @@ MODULE_LICENSE("GPL");
 
 #define RT_SIGNALS ((struct rt_signal_t *)task->rt_signals)
 
-RTAI_SYSCALL_MODE static int rt_request_signal_(RT_TASK *sigtask, RT_TASK *task, long signal)
+RTAI_SYSCALL_MODE int rt_request_signal_(RT_TASK *sigtask, RT_TASK *task, long signal)
 {
 	int retval;
 	if (signal >= 0 && sigtask && task) {

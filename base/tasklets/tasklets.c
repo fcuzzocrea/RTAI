@@ -90,6 +90,8 @@
 
 MODULE_LICENSE("GPL");
 
+extern struct epoch_struct boot_epoch;
+
 DEFINE_LINUX_CR0
 
 #ifdef CONFIG_SMP
@@ -106,7 +108,7 @@ DEFINE_LINUX_CR0
 
 
 static struct rt_tasklet_struct timers_list[NUM_CPUS] =
-{ { &timers_list[0], &timers_list[0], RT_SCHED_LOWEST_PRIORITY, 0, 0, RT_TIME_END, 0LL, 0, 0, 0, 
+{ { &timers_list[0], &timers_list[0], RT_SCHED_LOWEST_PRIORITY, 0, 0, RT_TIME_END, 0LL, 0, 0, 0, 0,
 #ifdef  CONFIG_RTAI_LONG_TIMED_LIST
 0, NULL, NULL, { NULL } 
 #endif
@@ -137,6 +139,8 @@ static struct rt_fun_entry rt_tasklet_fun[] = {
 	{ 0, rt_wait_tasklet_is_hard },	   	//  13
 	{ 0, rt_set_tasklet_priority },  	//  14
 	{ 0, rt_register_task },	  	//  15
+	{ 0, rt_get_timer_times },   	//  16	
+	{ 0, rt_get_timer_overrun }   	//  17	
 };
 
 #ifdef _CONFIG_RTAI_LONG_TIMED_LIST
@@ -457,15 +461,26 @@ RTAI_SYSCALL_MODE int rt_insert_timer(struct rt_tasklet_struct *timer, int prior
 	RT_TASK *timer_manager;
 
 // timer initialization
-	if (!handler) {
-		return -EINVAL;
-	}
 	timer->uses_fpu    = 0;
-	timer->priority    = priority;
+	
+	if (pid >= 0) {
+		if (!handler) {
+			return -EINVAL;
+		}
+		timer->handler   = handler;	
+		timer->data 			 = data;
+	} else {
+		if (!(timer->handler) || (int)timer->handler == 1) {
+			timer->handler   = (void *)1;	
+			timer->data 		 = data;
+		}		
+	}
+	
+	timer->priority    = priority;	
+	REALTIME2COUNT(firing_time)
 	timer->firing_time = firing_time;
 	timer->period      = period;
-	timer->handler     = handler;
-	timer->data        = data;
+	
 	if (!pid) {
 		timer->task = 0;
 		timer->cpuid = cpuid = NUM_CPUS > 1 ? rtai_cpuid() : 0;
@@ -610,6 +625,22 @@ RTAI_SYSCALL_MODE void rt_set_timer_period(struct rt_tasklet_struct *timer, RTIM
 	rt_spin_unlock_irqrestore(flags, lock);
 }
 
+RTAI_SYSCALL_MODE void rt_get_timer_times(struct rt_tasklet_struct *timer, RTIME timer_times[])
+{
+	RTIME firing;
+	
+	firing = -rt_get_time();
+	firing += timer->firing_time;
+		
+	timer_times[0] = firing > 0 ? firing : -1;
+	timer_times[1] = timer->period;
+}
+
+RTAI_SYSCALL_MODE RTIME rt_get_timer_overrun(struct rt_tasklet_struct *timer)
+{
+	return timer->overrun;
+}
+
 static int TimersManagerPrio = 0;
 RTAI_MODULE_PARM(TimersManagerPrio, int);
 
@@ -630,7 +661,8 @@ static void rt_timers_manager(long cpuid)
 	timer_tol = tuned.timers_tol[LIST_CPUID];
 
 	while (1) {
-		rt_sleep_until((timerl->next)->firing_time);
+		int retval;
+		retval = rt_sleep_until((timerl->next)->firing_time);
 //		now = timer_manager->resume_time + timer_tol;
 		now = rt_get_time() + timer_tol;
 // find all the timers to be fired, in priority order
@@ -659,6 +691,8 @@ static void rt_timers_manager(long cpuid)
 			} else {
 				set_timer_firing_time(timer, timer->firing_time + timer->period);
 			}
+	//	if (retval != RTE_TMROVRN) {
+			tmr->overrun = 0;
 			if (!timer->task) {
 				if (!used_fpu && timer->uses_fpu) {
 					used_fpu = 1;
@@ -669,6 +703,9 @@ static void rt_timers_manager(long cpuid)
 			} else {
 				rt_task_resume(timer->task);
 			}
+	//	} else {
+	//		tmr->overrun++;
+	//	}
 		}
 		if (used_fpu) {
 			restore_fpenv(timer_manager->fpu_reg);
@@ -810,4 +847,6 @@ EXPORT_SYMBOL(rt_init_tasklet);
 EXPORT_SYMBOL(rt_register_task);
 EXPORT_SYMBOL(rt_wait_tasklet_is_hard);
 EXPORT_SYMBOL(rt_delete_tasklet);
+EXPORT_SYMBOL(rt_get_timer_times);
+EXPORT_SYMBOL(rt_get_timer_overrun);
 #endif /* CONFIG_KBUILD */

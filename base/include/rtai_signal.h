@@ -49,7 +49,7 @@ struct sigsuprt_t { RT_TASK *sigtask; RT_TASK *task; long signal; void (*sighdl)
 
 int rt_request_signal(long signal, void (*sighdl)(long, RT_TASK *));
 
-RTAI_SYSCALL_MODE static int rt_request_signal_(RT_TASK *sigtask, RT_TASK *task, long signal);
+RTAI_SYSCALL_MODE int rt_request_signal_(RT_TASK *sigtask, RT_TASK *task, long signal);
 
 RTAI_SYSCALL_MODE int rt_release_signal(long signal, RT_TASK *task);
 

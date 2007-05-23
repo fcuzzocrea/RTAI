@@ -51,6 +51,8 @@
 #define WAIT_IS_HARD	13
 #define SET_TSK_PRI	14
 #define REG_TASK   	15
+#define GET_TMR_TIM	16
+#define GET_TMR_OVRN	17
 
 struct rt_task_struct;
 
@@ -67,6 +69,7 @@ struct rt_tasklet_struct {
 	int thread;
 	struct rt_task_struct *task;
 	struct rt_tasklet_struct *usptasklet;
+	int overrun;
 #ifdef  CONFIG_RTAI_LONG_TIMED_LIST
 	rb_root_t rbr;
 	rb_node_t rbn;
@@ -172,6 +175,10 @@ RTAI_SYSCALL_MODE void rt_set_timer_firing_time(struct rt_tasklet_struct *timer,
 
 RTAI_SYSCALL_MODE void rt_set_timer_period(struct rt_tasklet_struct *timer, RTIME period);
 
+RTAI_SYSCALL_MODE void rt_get_timer_times(struct rt_tasklet_struct *timer, RTIME timer_times[]);
+
+RTAI_SYSCALL_MODE RTIME rt_get_timer_overrun(struct rt_tasklet_struct *timer);
+
 #define rt_fast_set_timer_period(t, p) \
 do { \
    (t)->period = (p); \
@@ -257,6 +264,7 @@ struct rt_tasklet_struct {
 	int thread;
 	struct rt_task_struct *task;
 	struct rt_tasklet_struct *usptasklet;
+	int overrun;
 #ifdef  CONFIG_RTAI_LONG_TIMED_LIST
 	struct { void *rb_parent; int rb_color; void *rb_right, *rb_left; } rbn;
 	struct { void *rb_node; } rbr;
@@ -284,8 +292,7 @@ static int support_tasklet(void *tasklet)
 	rt_make_hard_real_time();
 	while (1) {
 		rt_task_suspend(task);
-		if ((arg.handler = (void*)usptasklet.handler)) {
-			rtai_lxrt(TSKIDX, SIZARG, SET_HDL, &arg);
+		if (usptasklet.handler) {
 			usptasklet.handler(usptasklet.data);
 		} else {
 			break;
@@ -369,6 +376,22 @@ RTAI_PROTO(void, rt_set_timer_period,(struct rt_tasklet_struct *timer, RTIME per
 {
 	struct { struct rt_tasklet_struct *timer; RTIME period; } arg = { timer, period };
 	rtai_lxrt(TSKIDX, SIZARG, SET_PER, &arg);
+}
+
+RTAI_PROTO(void, rt_get_timer_times,(struct rt_tasklet_struct *timer, RTIME timer_times[]))
+{
+	if (timer_times) {
+		  RTIME ltimer_times[2];
+			struct { struct rt_tasklet_struct *timer; RTIME *timer_times; } arg = { timer, ltimer_times };
+	    rtai_lxrt(TSKIDX, SIZARG, GET_TMR_TIM, &arg);
+	    memcpy(timer_times, ltimer_times, sizeof(ltimer_times));
+	}
+}
+
+RTAI_PROTO(RTIME, rt_get_timer_overrun,(struct rt_tasklet_struct *timer ))
+{
+	struct { struct rt_tasklet_struct *timer; } arg = { timer };
+	return rtai_lxrt(TSKIDX, SIZARG, GET_TMR_OVRN, &arg).rt;
 }
 
 RTAI_PROTO(int, rt_set_tasklet_handler,(struct rt_tasklet_struct *tasklet, void (*handler)(unsigned long)))

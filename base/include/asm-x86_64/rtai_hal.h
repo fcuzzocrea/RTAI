@@ -65,9 +65,13 @@ static __inline__ unsigned long ffnz (unsigned long word) {
     return word;
 }
 
-static inline unsigned long long rtai_ulldiv (unsigned long long ull,
-					      unsigned long uld,
-					      unsigned long *r) {
+static inline unsigned long long rtai_ulldiv(unsigned long long ull, unsigned long uld, unsigned long *r)
+{
+	if (r) {
+		*r = ull%uld;
+	}
+	return ull/uld;
+#if 0
     /*
      * Fixed by Marco Morandini <morandini@aero.polimi.it> to work
      * with the -fnostrict-aliasing and -O2 combination using GCC
@@ -93,6 +97,7 @@ static inline unsigned long long rtai_ulldiv (unsigned long long ull,
 	*r = p.ull;
 
     return q.ull;
+#endif
 }
 
 static inline long rtai_imuldiv (long i, long mult, long div) {

@@ -73,6 +73,7 @@ static __inline__ unsigned long ffnz (unsigned long word) {
 }
 #endif
 
+#if 0
 static inline unsigned long long rtai_ulldiv (unsigned long long ull,
 					      unsigned long uld,
 					      unsigned long *r) {
@@ -102,6 +103,18 @@ static inline unsigned long long rtai_ulldiv (unsigned long long ull,
 
     return q.ull;
 }
+#else
+#include <asm/div64.h>
+static inline unsigned long long rtai_ulldiv (unsigned long long ull, unsigned long uld, unsigned long *r)
+{
+	if (r) {
+		*r = do_div(ull, uld);
+		return ull;
+	}
+	do_div(ull, uld);
+	return ull;
+}
+#endif
 
 static inline int rtai_imuldiv (int i, int mult, int div) {
 

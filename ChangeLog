@@ -1,3 +1,20 @@
+2007-05-25  Emanuele Clerici <clerici@aero.polimi.it>
+
+	* base/include/rtai_lxrt.h: added syscall numbers for Posix MQ
+	  notification from user space.
+	* base/include/rtai_signal.h: added a few declarations to allow using
+	  RTAI signals for Posix MQ notification.
+	* base/include/rtai_tasklets.h: added extensions for using RTAI 
+	  tasklets to support Posix timers.
+	* base/include/rtai_posix.h: revised kernel space part for
+	  compatibility with user space references, added Posix timers.
+        * base/tasklets/signal.c: added a few controls more, support for MQ
+	  specific notification, moved a couple of declarations to the
+	  rtai_signal.h.
+	* base/tasklets/tasklets.c: added extensions for using tasklets to
+	  support Posix timers.
+	* base/posix/POSIX_WRAPS: added due wrappers for timers.
+
 2007-05-24  Paolo Mantegazza <mantegazza@aero.polimi.it>
             	
 	* base/include/asm-x86_64/rtai_hal.h: simplify rtai_ulldiv, on a 64 

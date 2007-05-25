@@ -108,9 +108,9 @@ DEFINE_LINUX_CR0
 
 
 static struct rt_tasklet_struct timers_list[NUM_CPUS] =
-{ { &timers_list[0], &timers_list[0], RT_SCHED_LOWEST_PRIORITY, 0, 0, RT_TIME_END, 0LL, 0, 0, 0, 0,
+{ { &timers_list[0], &timers_list[0], RT_SCHED_LOWEST_PRIORITY, 0, 0, RT_TIME_END, 0LL, NULL, 0UL, 0UL, 0, NULL, NULL, 0, 
 #ifdef  CONFIG_RTAI_LONG_TIMED_LIST
-0, NULL, NULL, { NULL } 
+{ NULL } 
 #endif
 }, };
 
@@ -139,8 +139,19 @@ static struct rt_fun_entry rt_tasklet_fun[] = {
 	{ 0, rt_wait_tasklet_is_hard },	   	//  13
 	{ 0, rt_set_tasklet_priority },  	//  14
 	{ 0, rt_register_task },	  	//  15
-	{ 0, rt_get_timer_times },   	//  16	
-	{ 0, rt_get_timer_overrun }   	//  17	
+	{ 0, rt_get_timer_times },		//  16	
+	{ 0, rt_get_timer_overrun },		//  17	
+		
+/* Posix timers support */	
+
+	{ 0, rt_ptimer_create },		//  18
+	{ 0, rt_ptimer_settime },		//  19
+	{ 0, rt_ptimer_overrun },		//  20
+	{ 0, rt_ptimer_gettime },		//  21
+	{ 0, rt_ptimer_delete }			//  22	
+	
+/* End Posix timers support */
+	
 };
 
 #ifdef _CONFIG_RTAI_LONG_TIMED_LIST
@@ -470,9 +481,9 @@ RTAI_SYSCALL_MODE int rt_insert_timer(struct rt_tasklet_struct *timer, int prior
 		timer->handler   = handler;	
 		timer->data 			 = data;
 	} else {
-		if (!(timer->handler) || (int)timer->handler == 1) {
-			timer->handler   = (void *)1;	
-			timer->data 		 = data;
+		if (timer->handler != NULL || timer->handler == (void *)1) {
+			timer->handler = (void *)1;	
+			timer->data    = data;
 		}		
 	}
 	
@@ -782,6 +793,149 @@ RTAI_SYSCALL_MODE int rt_delete_tasklet(struct rt_tasklet_struct *tasklet)
 	return thread;	
 }
 
+/*
+ * Posix Timers support function
+ */
+ 
+ 
+static int PosixTimers = POSIX_TIMERS;
+RTAI_MODULE_PARM(PosixTimers, int);
+
+static spinlock_t ptimer_lock = SPIN_LOCK_UNLOCKED;
+static volatile int ptimer_index;
+struct ptimer_list { int t_indx, p_idx; struct ptimer_list *p_ptr; struct rt_tasklet_struct *timer;} *posix_timer;
+
+static int init_ptimers(void)
+{
+	int i;
+	
+	if (!(posix_timer = (struct ptimer_list *)kmalloc((PosixTimers)*sizeof(struct ptimer_list), GFP_KERNEL))) {
+		printk("Init MODULE no memory for Posix Timer's list.\n");
+		return -ENOMEM;
+	}
+	for (i = 0; i < PosixTimers; i++) {
+		posix_timer[i].t_indx = posix_timer[i].p_idx = i;
+		posix_timer[i].p_ptr = posix_timer + i;
+	}
+	return 0;
+
+}
+
+static void cleanup_ptimers(void)
+{
+	kfree(posix_timer);
+} 
+ 
+static inline int get_ptimer_indx(struct rt_tasklet_struct *timer)
+{
+	unsigned long flags;
+
+	flags = rt_spin_lock_irqsave(&ptimer_lock);
+	if (ptimer_index < PosixTimers) {
+		struct ptimer_list *p;
+		p = posix_timer[ptimer_index++].p_ptr;
+		p->timer = timer;
+		rt_spin_unlock_irqrestore(flags, &ptimer_lock);
+		return p->t_indx;
+	}
+	rt_spin_unlock_irqrestore(flags, &ptimer_lock);
+	return 0;
+}
+
+static inline int gvb_ptimer_indx(int itimer)
+{
+	unsigned long flags;
+
+	flags = rt_spin_lock_irqsave(&ptimer_lock);
+	if (itimer < PosixTimers) {
+		struct ptimer_list *tmp_p;
+		int tmp_place;
+		tmp_p = posix_timer[--ptimer_index].p_ptr;
+		tmp_place = posix_timer[itimer].p_idx;
+		posix_timer[itimer].p_idx = ptimer_index;
+		posix_timer[ptimer_index].p_ptr = &posix_timer[itimer];
+		tmp_p->p_idx = tmp_place;
+		posix_timer[tmp_place].p_ptr = tmp_p;
+		rt_spin_unlock_irqrestore(flags, &ptimer_lock);
+		return 0;
+	}
+	rt_spin_unlock_irqrestore(flags, &ptimer_lock);
+	return -EINVAL;
+}
+
+RTAI_SYSCALL_MODE timer_t rt_ptimer_create(struct rt_tasklet_struct *timer, void (*handler)(unsigned long), unsigned long data, long pid, long thread)
+{
+	if (thread) {
+		rt_wait_tasklet_is_hard(timer, (int)thread);
+	}
+	timer->next = timer;
+	timer->prev = timer;
+	timer->data = data;
+	timer->handler = handler;
+	return get_ptimer_indx(timer);
+}
+EXPORT_SYMBOL(rt_ptimer_create);
+
+RTAI_SYSCALL_MODE void rt_ptimer_settime(timer_t timer, const struct itimerspec *value, unsigned long data, long flags)
+{
+	struct rt_tasklet_struct *tasklet;
+	RTIME now;
+	
+	tasklet = posix_timer[timer].timer;
+	rt_remove_timer(tasklet);
+	now = rt_get_time();
+	if (flags == TIMER_ABSTIME)	{
+		if (timespec2count(&(value->it_value)) < now) {
+			now -= timespec2count (&(value->it_value));
+		}else {
+			now = 0;
+		}
+	}	
+	if (timespec2count ( &(value->it_value)) > 0) {
+		if (data) {
+			rt_insert_timer(tasklet, 0, now + timespec2count ( &(value->it_value) ), timespec2count ( &(value->it_interval) ), NULL, data, -1);
+		} else {
+			rt_insert_timer(tasklet, 0, now + timespec2count ( &(value->it_value) ), timespec2count ( &(value->it_interval) ), tasklet->handler, tasklet->data, 0);
+		}
+	}
+}
+EXPORT_SYMBOL(rt_ptimer_settime);
+
+RTAI_SYSCALL_MODE int rt_ptimer_overrun(timer_t timer)
+{
+	return rt_get_timer_overrun(posix_timer[timer].timer);
+}
+EXPORT_SYMBOL(rt_ptimer_overrun);
+
+RTAI_SYSCALL_MODE void rt_ptimer_gettime(timer_t timer, RTIME timer_times[])
+{
+	rt_get_timer_times(posix_timer[timer].timer, timer_times);
+}
+EXPORT_SYMBOL(rt_ptimer_gettime);
+
+RTAI_SYSCALL_MODE int rt_ptimer_delete(timer_t timer, long space)
+{
+	struct rt_tasklet_struct *tasklet;
+	int rtn = 0;
+	
+	tasklet = posix_timer[timer].timer;
+	gvb_ptimer_indx(timer);
+	rt_remove_tasklet(tasklet);	
+	if (space) {
+		tasklet->handler = 0;
+		rt_copy_to_user(tasklet->usptasklet, tasklet, sizeof(struct rt_tasklet_struct));
+		rt_task_resume(tasklet->task);
+		rtn = tasklet->thread;	
+	} 
+	rt_free(tasklet);
+	return rtn;
+}		
+EXPORT_SYMBOL(rt_ptimer_delete);
+
+ /*
+ * End Posix timers support function
+ */
+
 static int TaskletsStacksize = TASKLET_STACK_SIZE;
 RTAI_MODULE_PARM(TaskletsStacksize, int);
 
@@ -791,11 +945,16 @@ int __rtai_tasklets_init(void)
 {
 	RT_TASK *rt_linux_tasks[NR_RT_CPUS];
 	int cpuid;
+	
+	if (init_ptimers())	{
+		return -ENOMEM;
+	}	
 
 	rt_base_linux_task = rt_get_base_linux_task(rt_linux_tasks);
         if(rt_base_linux_task->task_trap_handler[0]) {
                 if(((int (*)(void *, int))rt_base_linux_task->task_trap_handler[0])(rt_tasklet_fun, TSKIDX)) {
                         printk("Recompile your module with a different index\n");
+                        cleanup_ptimers();
                         return -EACCES;
                 }
         }
@@ -819,6 +978,7 @@ void __rtai_tasklets_exit(void)
         if(rt_base_linux_task->task_trap_handler[1]) {
                 ((int (*)(void *, int))rt_base_linux_task->task_trap_handler[1])(rt_tasklet_fun, TSKIDX);
         }
+	cleanup_ptimers();    
 	printk(KERN_INFO "RTAI[tasklets]: unloaded.\n");
 }
 

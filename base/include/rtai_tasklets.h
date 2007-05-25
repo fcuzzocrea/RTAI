@@ -54,6 +54,18 @@
 #define GET_TMR_TIM	16
 #define GET_TMR_OVRN	17
 
+/* Posix timers support */
+
+#define PTIMER_CREATE   18
+#define PTIMER_SETTIME  19
+#define PTIMER_OVERRUN  20
+#define PTIMER_GETTIME  21
+#define PTIMER_DELETE   22
+
+#define POSIX_TIMERS    128
+
+/* End Posix timers support */
+
 struct rt_task_struct;
 
 #define TASKLET_STACK_SIZE  8196
@@ -178,6 +190,20 @@ RTAI_SYSCALL_MODE void rt_set_timer_period(struct rt_tasklet_struct *timer, RTIM
 RTAI_SYSCALL_MODE void rt_get_timer_times(struct rt_tasklet_struct *timer, RTIME timer_times[]);
 
 RTAI_SYSCALL_MODE RTIME rt_get_timer_overrun(struct rt_tasklet_struct *timer);
+
+/* Posix timers support */
+
+RTAI_SYSCALL_MODE timer_t rt_ptimer_create(struct rt_tasklet_struct *timer, void (*handler)(unsigned long), unsigned long data, long pid, long thread);
+
+RTAI_SYSCALL_MODE void rt_ptimer_settime(timer_t timer, const struct itimerspec *value, unsigned long data, long flags);
+
+RTAI_SYSCALL_MODE int rt_ptimer_overrun(timer_t timer);
+
+RTAI_SYSCALL_MODE void rt_ptimer_gettime(timer_t timer, RTIME timer_times[]);
+
+RTAI_SYSCALL_MODE int rt_ptimer_delete(timer_t timer, long space);
+
+/* End Posix timers support */
 
 #define rt_fast_set_timer_period(t, p) \
 do { \

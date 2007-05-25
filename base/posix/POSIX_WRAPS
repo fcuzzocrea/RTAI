@@ -1,3 +1,9 @@
+timer_create
+timer_delete
+timer_getoverrun
+timer_gettime
+timer_settime
+
 clock_getres
 clock_gettime
 clock_settime

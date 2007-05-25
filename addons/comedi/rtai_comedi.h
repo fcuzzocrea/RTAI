@@ -286,6 +286,7 @@ RTAI_PROTO(int, comedi_dio_bitfield,(void *dev, unsigned int subdev, unsigned in
 {
         int retval;
 	unsigned int lbits;
+	lbits = *bits;
         struct { void *dev; unsigned long subdev; unsigned long mask; unsigned int *bits; } arg = { dev, subdev, mask, &lbits };
 	retval = rtai_lxrt(FUN_COMEDI_LXRT_INDX, COMEDI_LXRT_SIZARG, _KCOMEDI_DIO_BITFIELD, &arg).i[LOW];
 	*bits = lbits;

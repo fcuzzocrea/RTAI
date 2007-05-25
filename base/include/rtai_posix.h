@@ -10,7 +10,7 @@
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
  * Lesser General Public License for more details.
-
+ *
  * You should have received a copy of the GNU Lesser General Public
  * License along with this library; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA.
@@ -110,60 +110,11 @@
 #define pthread_detach_rt(thread)
 #define pthread_setconcurrency_rt(level)
 
-#define pthread_mutexattr_init_rt(attr)
-#define pthread_mutexattr_destroy_rt(attr)
-#define pthread_mutexattr_getpshared_rt(attr, pshared)
-#define pthread_mutexattr_setpshared_rt(attr, pshared)
-#define pthread_mutexattr_settype_rt(attr, kind)
-#define pthread_mutexattr_gettype_rt(attr, kind)
-
-#define pthread_condattr_init_rt(attr)
-#define pthread_condattr_destroy_rt(attr)
-#define pthread_condattr_getpshared_rt(attr, pshared)
-#define pthread_condattr_setpshared_rt(attr, pshared)
-
-#ifdef __USE_XOPEN2
-#define pthread_barrierattr_getpshared_rt(attr, pshared)
-#define pthread_barrierattr_setpshared_rt(attr, pshared)
-#endif
-
-#define pthread_rwlockattr_init_rt(attr)
-#define pthread_rwlockattr_destroy_rt(attr)
-#define pthread_rwlockattr_getpshared_rt( ttr, pshared)
-#define pthread_rwlockattr_setpshared_rt(attr, pshared)
-#define pthread_rwlockattr_getkind_np_rt(attr, pref)
-#define pthread_rwlockattr_setkind_np_rt(attr, pref)
-
-
 #ifdef __KERNEL__
 
 /*
  * KERNEL DO NOTHING FUNCTIONS (FOR RTAI HARD REAL TIME)
  */
-
-#define pthread_mutexattr_init(attr)
-#define pthread_mutexattr_destroy(attr)
-#define pthread_mutexattr_getpshared(attr, pshared)
-#define pthread_mutexattr_setpshared(attr, pshared)
-#define pthread_mutexattr_settype(attr, kind)
-#define pthread_mutexattr_gettype(attr, kind)
-
-#define pthread_condattr_init(attr)
-#define pthread_condattr_destroy(attr)
-#define pthread_condattr_getpshared(attr, pshared)
-#define pthread_condattr_setpshared(attr, pshared)
-
-#ifdef __USE_XOPEN2
-#define pthread_barrierattr_getpshared(attr, pshared)
-#define pthread_barrierattr_setpshared(attr, pshared)
-#endif
-
-#define pthread_rwlockattr_init(attr)
-#define pthread_rwlockattr_destroy(attr)
-#define pthread_rwlockattr_getpshared( ttr, pshared)
-#define pthread_rwlockattr_setpshared(attr, pshared)
-#define pthread_rwlockattr_getkind_np(attr, pref)
-#define pthread_rwlockattr_setkind_np(attr, pref)
 
 #define pthread_setcanceltype_rt(type, oldtype)
 #define pthread_setcancelstate_rt(state, oldstate)
@@ -184,6 +135,15 @@
 #include <rtai_rwl.h>
 #include <rtai_spl.h>
 #include <rtai_sem.h>
+#include <rtai_sched.h>
+#include <rtai_schedcore.h>
+
+
+#define SET_ADR(s)     (((void **)s)[0])
+
+#define RTAI_PNAME_MAXSZ  6
+#define PTHREAD_BARRIER_SERIAL_THREAD -1
+
 
 #ifndef MAX_PRIO
 #define MIN_PRIO  99
@@ -194,25 +154,25 @@
 #define STACK_SIZE     8192
 #define RR_QUANTUM_NS  1000000
 
-typedef struct rt_semaphore sem_t;
+typedef struct { SEM sem; } sem_t;
 
-typedef struct rt_semaphore pthread_mutex_t;
+typedef struct { SEM mutex; } pthread_mutex_t;
 
 typedef unsigned long pthread_mutexattr_t;
 
-typedef struct rt_semaphore pthread_cond_t;
+typedef struct { SEM cond; } pthread_cond_t;
 
 typedef unsigned long pthread_condattr_t;
 
-typedef struct rt_semaphore pthread_barrier_t;
+typedef union { SEM barrier; } pthread_barrier_t;
 
-typedef int pthread_barrierattr_t;
+typedef unsigned long pthread_barrierattr_t;
 
-typedef RWL pthread_rwlock_t;
+typedef union { RWL rwlock; } pthread_rwlock_t;
 
-typedef int pthread_rwlockattr_t;
+typedef unsigned long pthread_rwlockattr_t;
 
-typedef struct rt_spl_t pthread_spinlock_t;
+typedef unsigned long pthread_spinlock_t;
 
 typedef struct rt_task_struct *pthread_t;
 
@@ -234,10 +194,78 @@ typedef struct pthread_cookie {
 extern "C" {
 #endif /* __cplusplus */
 
+/*
+ * SEMAPHORES
+ */
+
+static inline sem_t *sem_open(const char *namein, int oflags, int value, int type)
+{
+	char nametmp[RTAI_PNAME_MAXSZ + 1];
+	int i;
+	if (strlen(namein) > RTAI_PNAME_MAXSZ) {
+		return (sem_t *)-ENAMETOOLONG;
+	}
+	
+	for(i = 0; i < strlen(namein); i++) {
+		if ((nametmp[i] = namein [i]) >= 'a' && nametmp[i] <= 'z') nametmp[i] += 'A' - 'a';
+	}
+	nametmp[i]='\0';
+	if (!oflags || value <= SEM_TIMOUT) {
+		SEM *tsem; 
+		unsigned long handle = 0UL;
+		if ((tsem = _rt_typed_named_sem_init(nam2num(nametmp), value, type, &handle))) {
+			if ((handle) && (oflags == (O_CREAT | O_EXCL))) 	{
+				return (sem_t *)-EEXIST;
+			}
+			return (sem_t *)tsem;
+		}
+		return (sem_t *)-ENOSPC;
+	}
+	return (sem_t *)-EINVAL;
+}
+
+static inline int sem_close(sem_t *sem)
+{
+	if (rt_sem_wait_if(&sem->sem)< 0) {
+		return -EBUSY;
+	}
+	rt_named_sem_delete(&sem->sem);
+	
+	rt_free(sem);
+	
+	return  0;
+}
+
+static inline int sem_unlink(const char *namein)
+{
+	char nametmp[RTAI_PNAME_MAXSZ + 1];
+	int i;
+	SEM *sem;
+	if (strlen(namein) > RTAI_PNAME_MAXSZ) {
+		return -ENAMETOOLONG;
+	}
+	
+	for(i = 0; i < strlen(namein); i++) {
+		if ((nametmp[i] = namein [i]) >= 'a' && nametmp[i] <= 'z') nametmp[i] += 'A' - 'a';
+	}
+	nametmp[i]='\0';
+	sem = rt_get_adr_cnt(nam2num(nametmp));
+	if (sem) {
+		if (rt_sem_wait_if(sem) >= 0) {
+			rt_sem_signal(sem);
+			rt_named_sem_delete(sem);
+			return  0;
+		}
+		return -EBUSY;
+	}
+	return -ENOENT;
+}
+
+
 static inline int sem_init(sem_t *sem, int pshared, unsigned int value)
 {
 	if (value < SEM_TIMOUT) {
-		rt_typed_sem_init(sem, value, CNT_SEM | PRIO_Q);
+		rt_typed_sem_init(&sem->sem, value, CNT_SEM | PRIO_Q);
 		return 0;
 	}
 	return -EINVAL;
@@ -245,191 +273,412 @@ static inline int sem_init(sem_t *sem, int pshared, unsigned int value)
 
 static inline int sem_destroy(sem_t *sem)
 {
-	if (rt_sem_wait_if(sem) >= 0) {
-		rt_sem_signal(sem);
-		return rt_sem_delete(sem);
+	if (rt_sem_wait_if(&sem->sem) >= 0) {
+		rt_sem_signal(&sem->sem);
+		rt_sem_delete(&sem->sem);
+		return  0;
 	}
 	return -EBUSY;
 }
 
 static inline int sem_wait(sem_t *sem)
 {
-	return rt_sem_wait(sem) < SEM_TIMOUT ? 0 : -1;
+	return rt_sem_wait(&sem->sem) < SEM_TIMOUT ? 0 : -1;
 }
 
 static inline int sem_trywait(sem_t *sem)
-{
-	return rt_sem_wait_if(sem) > 0 ? 0 : -EAGAIN;
+{	
+	return rt_sem_wait_if(&sem->sem) > 0 ? 0 : -EAGAIN;
 }
 
 static inline int sem_timedwait(sem_t *sem, const struct timespec *abstime)
-{
-	return rt_sem_wait_until(sem, timespec2count(abstime)) < SEM_TIMOUT ? 0 : -1;
+{	
+	return rt_sem_wait_until(&sem->sem, timespec2count(abstime)) < SEM_TIMOUT ? 0 : -ETIMEDOUT;
 }
 
 static inline int sem_post(sem_t *sem)
 {
-	return rt_sem_signal(sem) < SEM_TIMOUT ? 0 : -ERANGE;
+	return rt_sem_signal(&sem->sem) < SEM_TIMOUT ? 0 : -ERANGE;
 }
 
 static inline int sem_getvalue(sem_t *sem, int *sval)
 {
-	if ((*sval = rt_sem_wait_if(sem)) > 0) {
-		rt_sem_signal(sem);
-	}
+	*sval = rt_sem_count(&sem->sem);
 	return 0;
 }
 
+/*
+ * MUTEXES
+ */
+ 
+enum {
+  PTHREAD_PROCESS_PRIVATE,
+#define PTHREAD_PROCESS_PRIVATE PTHREAD_PROCESS_PRIVATE
+  PTHREAD_PROCESS_SHARED
+#define PTHREAD_PROCESS_SHARED  PTHREAD_PROCESS_SHARED
+};
+
+enum
+{
+  PTHREAD_MUTEX_TIMED_NP,
+  PTHREAD_MUTEX_RECURSIVE_NP,
+  PTHREAD_MUTEX_ERRORCHECK_NP,
+  PTHREAD_MUTEX_ADAPTIVE_NP,
+  PTHREAD_MUTEX_NORMAL = PTHREAD_MUTEX_TIMED_NP,
+  PTHREAD_MUTEX_RECURSIVE = PTHREAD_MUTEX_RECURSIVE_NP,
+  PTHREAD_MUTEX_ERRORCHECK = PTHREAD_MUTEX_ERRORCHECK_NP,
+  PTHREAD_MUTEX_DEFAULT = PTHREAD_MUTEX_NORMAL,
+  PTHREAD_MUTEX_FAST_NP = PTHREAD_MUTEX_TIMED_NP
+};
+
+#define RTAI_MUTEX_DEFAULT    (1 << 0)
+#define RTAI_MUTEX_ERRCHECK   (1 << 1)
+#define RTAI_MUTEX_RECURSIVE  (1 << 2)
+#define RTAI_MUTEX_PSHARED    (1 << 3)
+ 
 static inline int pthread_mutex_init(pthread_mutex_t *mutex, const pthread_mutexattr_t *mutexattr)
 {
-	rt_typed_sem_init(mutex, 1, RES_SEM);
+	rt_typed_sem_init(&mutex->mutex,  !mutexattr || (((long *)mutexattr)[0] & RTAI_MUTEX_DEFAULT) ? RESEM_BINSEM : (((long *)mutexattr)[0] & RTAI_MUTEX_ERRCHECK) ? RESEM_CHEKWT : RESEM_RECURS, RES_SEM);
 	return 0;
 }
 
 static inline int pthread_mutex_destroy(pthread_mutex_t *mutex)
 {
-	if (rt_sem_wait_if(mutex) > 0) {
-		rt_sem_signal(mutex);
-		return rt_sem_delete(mutex);
+	if (rt_sem_wait_if(&mutex->mutex) >= 0) {
+		rt_sem_signal(&mutex->mutex);
+		rt_sem_delete(&mutex->mutex);
+		return  0;
 	}
-	return -EBUSY;
+	return -EBUSY;	
 }
 
 static inline int pthread_mutex_lock(pthread_mutex_t *mutex)
 {
-	return rt_sem_wait(mutex) < SEM_TIMOUT ? 0 : -EINVAL;
+	return rt_sem_wait(&mutex->mutex) < SEM_TIMOUT ? 0 : -EINVAL;
 }
 
 static inline int pthread_mutex_timedlock(pthread_mutex_t *mutex, const struct timespec *abstime)
 {
-	return rt_sem_wait_until(mutex, timespec2count(abstime)) < SEM_TIMOUT ? 0 : -1;
+	return rt_sem_wait_until(&mutex->mutex, timespec2count(abstime)) < SEM_TIMOUT ? 0 : -1;
 }
 
 static inline int pthread_mutex_trylock(pthread_mutex_t *mutex)
 {
-	return rt_sem_wait_if(mutex) > 0 ? 0 : -EBUSY;
+	return rt_sem_wait_if(&mutex->mutex) > 0 ? 0 : -EBUSY;
 }
 
 static inline int pthread_mutex_unlock(pthread_mutex_t *mutex)
 {
-	return rt_sem_signal(mutex) > 0 ? 0 : -EINVAL;
+	return rt_sem_signal(&mutex->mutex) >= 0 ? 0 : -EINVAL;
 }
+
+static inline int pthread_mutexattr_init(pthread_mutexattr_t *attr)
+{
+	((long *)attr)[0] = RTAI_MUTEX_DEFAULT;
+	return 0;
+}
+
+static inline int pthread_mutexattr_destroy(pthread_mutexattr_t *attr)
+{
+	return 0;
+}
+
+static inline int pthread_mutexattr_getpshared(const pthread_mutexattr_t *attr, int *pshared)
+{	
+	*pshared = (((long *)attr)[0] & RTAI_MUTEX_PSHARED) != 0 ? PTHREAD_PROCESS_SHARED : PTHREAD_PROCESS_PRIVATE;
+	return 0;
+}
+
+static inline int pthread_mutexattr_setpshared(pthread_mutexattr_t *attr, int pshared)
+{
+	if (pshared == PTHREAD_PROCESS_PRIVATE || pshared == PTHREAD_PROCESS_SHARED) {
+		if (pshared == PTHREAD_PROCESS_PRIVATE) {
+			((long *)attr)[0] &= ~RTAI_MUTEX_PSHARED;
+		} else {
+			((long *)attr)[0] |= RTAI_MUTEX_PSHARED;
+		}
+		return 0;
+	}
+	return -EINVAL;
+}
+
+static inline int pthread_mutexattr_settype(pthread_mutexattr_t *attr, int kind)
+{
+	switch (kind) {
+		case PTHREAD_MUTEX_DEFAULT:
+			((long *)attr)[0] = (((long *)attr)[0] & ~(RTAI_MUTEX_RECURSIVE | RTAI_MUTEX_ERRCHECK)) | RTAI_MUTEX_DEFAULT;
+			break;
+		case PTHREAD_MUTEX_ERRORCHECK:
+			((long *)attr)[0] = (((long *)attr)[0] & ~(RTAI_MUTEX_RECURSIVE | RTAI_MUTEX_DEFAULT)) | RTAI_MUTEX_ERRCHECK;
+			break;
+		case PTHREAD_MUTEX_RECURSIVE:
+			((long *)attr)[0] = (((long *)attr)[0] & ~(RTAI_MUTEX_DEFAULT | RTAI_MUTEX_ERRCHECK)) | RTAI_MUTEX_RECURSIVE;
+			break;
+		default:
+			return -EINVAL;
+	}
+	return 0;
+}
+
+static inline int pthread_mutexattr_gettype(const pthread_mutexattr_t *attr, int *kind)
+{
+	switch (((long *)attr)[0] & (RTAI_MUTEX_DEFAULT | RTAI_MUTEX_ERRCHECK | RTAI_MUTEX_RECURSIVE)) {
+		case RTAI_MUTEX_DEFAULT:
+			*kind = PTHREAD_MUTEX_DEFAULT;
+			break;
+		case RTAI_MUTEX_ERRCHECK:
+			*kind = PTHREAD_MUTEX_ERRORCHECK;
+			break;
+		case RTAI_MUTEX_RECURSIVE:
+			*kind = PTHREAD_MUTEX_RECURSIVE;
+			break;
+	}
+	return 0;
+}
+
+/*
+ * CONDVARS
+ */
 
 static inline int pthread_cond_init(pthread_cond_t *cond, const pthread_condattr_t *cond_attr)
 {
-        return sem_init(cond, BIN_SEM, 0);
+	rt_typed_sem_init(&cond->cond, 0,  BIN_SEM | PRIO_Q);
+	return 0;
 }
 
 static inline int pthread_cond_destroy(pthread_cond_t *cond)
 {
-        return sem_destroy((sem_t *)cond);
+	if (rt_sem_wait_if(&cond->cond) < 0) {
+		return -EBUSY;
+	}
+	rt_sem_delete(&cond->cond);
+	return  0;	
 }
 
 static inline int pthread_cond_signal(pthread_cond_t *cond)
 {
-	return rt_cond_signal((sem_t *)cond);
+	return rt_sem_signal(&cond->cond);
 }
 
 static inline int pthread_cond_broadcast(pthread_cond_t *cond)
 {
-	return rt_sem_broadcast(cond);
+	return rt_sem_broadcast(&cond->cond);
 }
 
 static inline int pthread_cond_wait(pthread_cond_t *cond, pthread_mutex_t *mutex)
 {
-	return rt_cond_wait(cond, mutex);
+	return rt_cond_wait(&cond->cond, &mutex->mutex);
 }
 
 static inline int pthread_cond_timedwait(pthread_cond_t *cond, pthread_mutex_t *mutex, const struct timespec *abstime)
 {
-	return rt_cond_wait_until(cond, mutex, timespec2count(abstime)) < SEM_TIMOUT ? 0 : -ETIMEDOUT;
+	return rt_cond_wait_until(&cond->cond, &mutex->mutex, timespec2count(abstime)) < SEM_TIMOUT ? 0 : -ETIMEDOUT;
 }
+
+static inline int pthread_condattr_init(unsigned long *attr)
+{
+	((long *)attr)[0] = 0;
+	return 0;
+}
+
+static inline int pthread_condattr_destroy(pthread_condattr_t *attr)
+{
+	return 0;
+}
+
+static inline int pthread_condattr_getpshared(const pthread_condattr_t *attr, int *pshared)
+{
+	*pshared = (((long *)attr)[0] & RTAI_MUTEX_PSHARED) != 0 ? PTHREAD_PROCESS_SHARED : PTHREAD_PROCESS_PRIVATE;
+        return 0;
+}
+
+static inline int pthread_condattr_setpshared(pthread_condattr_t *attr, int pshared)
+{
+	if (pshared == PTHREAD_PROCESS_PRIVATE || pshared == PTHREAD_PROCESS_SHARED) {
+		if (pshared == PTHREAD_PROCESS_PRIVATE) {
+			((long *)attr)[0] &= ~RTAI_MUTEX_PSHARED;
+		} else {
+			((long *)attr)[0] |= RTAI_MUTEX_PSHARED;
+		}
+		return 0;
+	}
+	return -EINVAL;
+}
+
+static inline int pthread_condattr_setclock(pthread_condattr_t *condattr, clockid_t clockid)
+{
+	if (clockid == CLOCK_MONOTONIC || clockid == CLOCK_REALTIME) {
+		((int *)condattr)[0] = clockid;
+		return 0;
+	}
+	return -EINVAL;
+}
+
+static inline int pthread_condattr_getclock(pthread_condattr_t *condattr, clockid_t *clockid)
+{
+        if (clockid) {
+		*clockid = ((int *)condattr)[0];
+                return 0;
+        }
+        return -EINVAL;
+}
+
+/*
+ * BARRIER
+ */
 
 static inline int pthread_barrier_init(pthread_barrier_t *barrier, const pthread_barrierattr_t *attr, unsigned int count)
 {
-	return sem_init(barrier, CNT_SEM, count);
+	if (count > 0) {
+		rt_typed_sem_init(&barrier->barrier, count, CNT_SEM | PRIO_Q);
+		return 0;
+	}
+	return -EINVAL;
 }
 
 static inline int pthread_barrier_destroy(pthread_barrier_t *barrier)
 {
-	return sem_destroy(barrier);
+	if (rt_sem_wait_if(&barrier->barrier) < 0) {
+		return -EBUSY;
+	}
+	return rt_sem_delete(&barrier->barrier) == RT_OBJINV ? -EINVAL : 0;
 }
 
 static inline int pthread_barrier_wait(pthread_barrier_t *barrier)
 {
-	return rt_sem_wait_barrier(barrier);
+	return rt_sem_wait_barrier(&barrier->barrier);
 }
+
+static inline int wrap_pthread_barrierattr_init(pthread_barrierattr_t *attr)
+{
+	((long *)attr)[0] = PTHREAD_PROCESS_PRIVATE;
+	return 0;
+}
+
+static inline int pthread_barrierattr_destroy(pthread_barrierattr_t *attr)
+{
+	return 0;
+}
+
+static inline int pthread_barrierattr_setpshared(pthread_barrierattr_t *attr, int pshared)
+{
+	if (pshared == PTHREAD_PROCESS_PRIVATE || pshared == PTHREAD_PROCESS_SHARED) {
+		((long *)attr)[0] = pshared;
+		return 0;
+	}
+	return -EINVAL;
+}
+
+static inline int wrap_pthread_barrierattr_getpshared(const pthread_barrierattr_t *attr, int *pshared)
+{
+	*pshared = ((long *)attr)[0];
+	return 0;
+}
+
+/*
+ * RWLOCKS
+ */
 
 static inline int pthread_rwlock_init(pthread_rwlock_t *rwlock, const pthread_rwlockattr_t *attr)
 {
-	return rt_rwl_init((RWL *)rwlock);
+	return rt_rwl_init(&rwlock->rwlock);
 }
 
 static inline int pthread_rwlock_destroy(pthread_rwlock_t *rwlock)
 {
-	return rt_rwl_delete((RWL *)rwlock);
+	return rt_rwl_delete(&rwlock->rwlock);
 }
 
 static inline int pthread_rwlock_rdlock(pthread_rwlock_t *rwlock)
 {
-	return rt_rwl_rdlock((RWL *)rwlock);
+	if (rt_rwl_rdlock(&rwlock->rwlock)) {
+			return -EDEADLK;
+	}
+	return 0;
 }
 
 static inline int pthread_rwlock_tryrdlock(pthread_rwlock_t *rwlock)
 {
-	return rt_rwl_rdlock_if((RWL *)rwlock);
+	if (rt_rwl_rdlock_if(&rwlock->rwlock)) {
+		return -EBUSY;
+	}
+	return 0;
 }
 
 static inline int pthread_rwlock_timedrdlock(pthread_rwlock_t *rwlock, struct timespec *abstime)
 {
-	return rt_rwl_rdlock_until((RWL *)rwlock, timespec2count(abstime));
+	return rt_rwl_rdlock_until(&rwlock->rwlock, timespec2count(abstime));
 }
 
 static inline int pthread_rwlock_wrlock(pthread_rwlock_t *rwlock)
 {
-	return rt_rwl_wrlock((RWL *)rwlock);
+	return rt_rwl_wrlock(&rwlock->rwlock);
 }
 
 static inline int pthread_rwlock_trywrlock(pthread_rwlock_t *rwlock)
 {
-	return rt_rwl_wrlock_if((RWL *)rwlock);
+	if (rt_rwl_wrlock_if(&rwlock->rwlock)) {
+		return -EBUSY;
+	}
+	return 0;	
 }
 
 static inline int pthread_rwlock_timedwrlock(pthread_rwlock_t *rwlock, struct timespec *abstime)
 {
-	return rt_rwl_wrlock_until((RWL *)rwlock, timespec2count(abstime));
+	return rt_rwl_wrlock_until(&rwlock->rwlock, timespec2count(abstime));
 }
 
 static inline int pthread_rwlock_unlock(pthread_rwlock_t *rwlock)
 {
-	return rt_rwl_unlock((RWL *)rwlock);
+	return rt_rwl_unlock(&rwlock->rwlock);
 }
 
-static inline int pthread_spin_init(pthread_spinlock_t *lock)
+static inline int pthread_rwlockattr_init(pthread_rwlockattr_t *attr)
 {
-	return rt_spl_init((SPL *)lock);
+	((long *)attr)[0] = 0;
+	return 0;
 }
 
-static inline int pthread_spin_destroy(pthread_spinlock_t *lock)
+static inline int pthread_rwlockattr_destroy(pthread_rwlockattr_t *attr)
 {
-	return rt_spl_delete((SPL *)lock);
+	return 0;
 }
 
-static inline int pthread_spin_lock(pthread_spinlock_t *lock)
+static inline int pthread_rwlockattr_getpshared(const pthread_rwlockattr_t *attr, int *pshared)
 {
-	return rt_spl_lock((SPL *)lock);
+        *pshared = (((long *)attr)[0] & RTAI_MUTEX_PSHARED) != 0 ? PTHREAD_PROCESS_SHARED : PTHREAD_PROCESS_PRIVATE;
+        return 0;
+
+	return 0;
 }
 
-static inline int pthread_spin_trylock(pthread_spinlock_t *lock)
+static inline int pthread_rwlockattr_setpshared(pthread_rwlockattr_t *attr, int pshared)
 {
-	return rt_spl_lock_if((SPL *)lock);
+        if (pshared == PTHREAD_PROCESS_PRIVATE || pshared == PTHREAD_PROCESS_SHARED) {
+                if (pshared == PTHREAD_PROCESS_PRIVATE) {
+                        ((long *)attr)[0] &= ~RTAI_MUTEX_PSHARED;
+                } else {
+                        ((long *)attr)[0] |= RTAI_MUTEX_PSHARED;
+                }
+                return 0;
+        }
+        return -EINVAL;
 }
 
-static inline int pthread_spin_unlock(pthread_spinlock_t *lock)
+static inline int pthread_rwlockattr_getkind_np(const pthread_rwlockattr_t *attr, int *pref)
 {
-	return rt_spl_unlock((SPL *)lock);
+	return 0;
 }
 
+static inline int pthread_rwlockattr_setkind_np(pthread_rwlockattr_t *attr, int pref)
+{
+	return 0;
+}
+
+/*
+ * SCHEDULING
+ */
+ 
 static inline int get_max_priority(int policy)
 {
 	return MAX_PRIO;
@@ -460,11 +709,11 @@ static inline int pthread_create(pthread_t *thread, const pthread_attr_t *attr, 
 			*thread = &cookie->task;
 			rt_typed_sem_init(&cookie->sem, 0, BIN_SEM | FIFO_Q);
 			rt_task_resume(&cookie->task);
-        		return 0;
+		return 0;
 		}
 	}
 	rt_free(cookie);
-       	return ENOMEM;
+    return -ENOMEM;
 }
 
 static inline int pthread_yield(void)
@@ -479,22 +728,27 @@ static inline void pthread_exit(void *retval)
 	rt_task = rt_whoami();
 	rt_sem_broadcast((SEM *)(rt_task + 1));
 	rt_sem_delete((SEM *)(rt_task + 1));
+	rt_task->retval = (long)retval;
 	rt_task_suspend(rt_task);
 }
 
 static inline int pthread_join(pthread_t thread, void **thread_return)
 {
 	int retval1, retval2;
-	if (rt_whoami()->priority != RT_SCHED_LINUX_PRIORITY)
+	long retval_thread;
+	if (rt_whoami()->priority != RT_SCHED_LINUX_PRIORITY){
 		retval1 = rt_sem_wait((SEM *)(thread + 1));
-	else {
+	} else {
 		while ((retval1 = rt_sem_wait_if((SEM *)(thread + 1))) <= 0) {
 			set_current_state(TASK_INTERRUPTIBLE);
 			schedule_timeout(HZ/10);
 		}
 	}
-	if (retval1 != 0xFFFF)
-		retval1 = 0;
+	retval1 = 0;
+	retval_thread = ((RT_TASK *)thread)->retval;
+	if (thread_return) {
+		*thread_return = (void *)retval_thread;
+	}
 	retval2 = rt_task_delete(thread);
 	rt_free(thread);
 	return (retval1) ? retval1 : retval2;
@@ -538,7 +792,7 @@ static inline int pthread_attr_destroy(pthread_attr_t *attr)
 static inline int pthread_attr_setschedparam(pthread_attr_t *attr, const struct sched_param *param)
 {
 	if(param->sched_priority < MIN_PRIO || param->sched_priority > MAX_PRIO) {
-		return(EINVAL);
+		return(-EINVAL);
 	}
 	attr->priority = MAX_PRIO - param->sched_priority;
 	return 0;
@@ -553,7 +807,7 @@ static inline int pthread_attr_getschedparam(const pthread_attr_t *attr, struct 
 static inline int pthread_attr_setschedpolicy(pthread_attr_t *attr, int policy)
 {
 	if(policy != SCHED_FIFO && policy != SCHED_RR) {
-		return EINVAL;
+		return -EINVAL;
 	}
 	if ((attr->policy = policy) == SCHED_RR) {
 		rt_set_sched_policy(rt_whoami(), SCHED_RR, attr->rr_quantum_ns);
@@ -611,6 +865,71 @@ static inline void pthread_testcancel(void)
 	pthread_exit(NULL);
 }
 
+/*
+ * SPINLOCKS
+ */
+
+static inline int pthread_spin_init(pthread_spinlock_t *lock, int pshared)
+{
+	if (lock) {
+		*lock = 0UL;
+		return 0;
+	}
+	return -EINVAL;
+}
+
+static inline int pthread_spin_destroy(pthread_spinlock_t *lock)
+{
+	if (lock) {
+		if (*lock) {
+			return -EBUSY;
+		}
+		*lock = 0UL;
+		return 0;
+	}
+	return -EINVAL;
+}
+
+static inline int pthread_spin_lock(pthread_spinlock_t *lock)
+{
+	if (lock) {
+		unsigned long tid;
+		if (((unsigned long *)lock)[0] == (tid = (unsigned long)(pthread_self()))) {
+			return -EDEADLOCK;
+		}
+		while (atomic_cmpxchg((atomic_t *)lock, 0, tid));
+		return 0;
+	}
+	return -EINVAL;
+}
+
+static inline int pthread_spin_trylock(pthread_spinlock_t *lock)
+{
+	if (lock) {
+		unsigned long tid;
+		tid = (unsigned long)(pthread_self());
+		return atomic_cmpxchg((atomic_t *)lock, 0, tid) ? -EBUSY : 0;
+	}
+	return -EINVAL;
+}
+
+static inline int pthread_spin_unlock(pthread_spinlock_t *lock)
+{
+	if (lock) {
+#if 0
+		*lock = 0UL;
+		return 0;
+#else
+		if (*lock != (unsigned long)pthread_self()) {
+			return -EPERM;
+		}
+		*lock = 0UL;
+		return 0;
+#endif
+	}
+	return -EINVAL;
+}
+
 static inline int clock_getres(int clockid, struct timespec *res)
 {
 	res->tv_sec = 0;
@@ -664,6 +983,79 @@ static inline int nanosleep(const struct timespec *rqtp, struct timespec *rmtp)
         return 0;
 }
 
+/*
+ * TIMERS
+ */
+ 
+struct rt_handler_support {
+	void (*_function)(sigval_t); 
+	sigval_t funarg;
+};
+
+void handler_wrpr(unsigned long sup_data)
+{
+	((struct rt_handler_support *)sup_data)->_function(((struct rt_handler_support *)sup_data)->funarg);
+}
+
+static inline int timer_create(clockid_t clockid, struct sigevent *evp, timer_t *timerid)
+{
+	struct rt_tasklet_struct *timer;
+	struct rt_handler_support *handler_data;			
+		
+	if (clockid != CLOCK_MONOTONIC && clockid != CLOCK_REALTIME) {
+		return -EINTR; 
+	}	
+	if (evp == NULL) {
+		return -EINTR; 
+	} else {
+		if (evp->sigev_notify == SIGEV_SIGNAL) {
+			return -EINTR; 
+		} else if (evp->sigev_notify == SIGEV_THREAD) {
+			timer = rt_malloc(sizeof(struct rt_tasklet_struct));
+			handler_data = rt_malloc(sizeof(struct rt_handler_support));
+			handler_data->funarg = evp->sigev_value;
+			handler_data->_function = evp->_sigev_un._sigev_thread._function;
+			*timerid = rt_ptimer_create(timer, handler_wrpr, (unsigned long)handler_data, 1, 0);
+		} else {
+			return -EINTR; 
+		}
+	}
+		
+	return 0;
+}
+
+static inline int timer_getoverrun(timer_t timerid)
+{
+	return rt_ptimer_overrun(timerid);
+}
+
+static inline int timer_gettime(timer_t timerid, struct itimerspec *value)
+{
+	RTIME timer_times[2];
+	
+	rt_ptimer_gettime(timerid, timer_times);
+	count2timespec( timer_times[0], &(value->it_value) );
+	count2timespec( timer_times[1], &(value->it_interval) );
+	
+	return 0;
+}
+
+static inline int timer_settime(timer_t timerid, int flags, const struct itimerspec *value,  struct itimerspec *ovalue)
+{
+	if (ovalue != NULL) {
+		timer_gettime(timerid, ovalue);
+	}	
+	rt_ptimer_settime(timerid, value, 0, flags);
+
+	return 0;
+}
+
+static inline int timer_delete(timer_t timerid)
+{
+	rt_ptimer_delete(timerid, 0);
+	return 0;	
+}
+
 #ifdef __cplusplus
 }
 #endif /* __cplusplus */
@@ -697,8 +1089,13 @@ struct task_struct;
 #define DEC_VAL(s)     atomic_dec_and_test((atomic_t *)&(((void **)s)[1]))
 #define TST_VAL(s)     (((void **)s)[1])
 
+#define LINUX_SIGNAL  32
+#define LINUX_RT_SIGNAL  32
+
 #include <asm/rtai_atomic.h>
 #include <rtai_sem.h>
+#include <rtai_signal.h>
+#include <rtai_tasklets.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -1869,6 +2266,134 @@ RTAI_PROTO(int, __wrap_nanosleep,(const struct timespec *rqtp, struct timespec *
 
         return 0;
 }
+
+/*
+ * TIMER
+ */
+ 
+static int support_posix_timer(void *data)
+{
+	RT_TASK *task;
+	struct rt_tasklet_struct usptasklet;
+	struct data_stru { struct rt_tasklet_struct *tasklet; long signum; } data_struct;
+	
+	data_struct=*(struct data_stru *)data;
+
+	if (!(task = rt_thread_init((unsigned long)data_struct.tasklet, 98, 0, SCHED_FIFO, 0xF))) {
+		printf("CANNOT INIT POSIX TIMER SUPPORT TASKLET\n");
+		return -1;
+	} else {
+		struct { struct rt_tasklet_struct *tasklet, *usptasklet; RT_TASK *task; } reg = { data_struct.tasklet, &usptasklet, task };
+		rtai_lxrt(TSKIDX, sizeof(reg), REG_TASK, &reg);
+	}
+
+	mlockall(MCL_CURRENT | MCL_FUTURE);
+	rt_make_hard_real_time();
+	
+	if (data_struct.signum)	{
+		while (1) {
+			rt_task_suspend(task);
+			if (usptasklet.handler) {
+				pthread_kill((pthread_t)usptasklet.data, data_struct.signum);
+			} else {
+				break;
+			}
+		}
+	} else {	
+		while (1) {	
+			rt_task_suspend(task);
+			if (usptasklet.handler) {
+			((void (*)(sigval_t))usptasklet.handler)((sigval_t)(int)usptasklet.data);
+			} else {
+				break;
+			}
+		}
+	}
+	
+	rtai_sti();
+	rt_make_soft_real_time();
+	rt_task_delete(task);
+
+	return 0;
+}
+
+RTAI_PROTO (int, __wrap_timer_create, (clockid_t clockid, struct sigevent *evp, timer_t *timerid))
+{
+	void (*handler)(unsigned long) = ((void *) 1);
+	int pid = -1;
+	unsigned long data = 0;
+	struct { struct rt_tasklet_struct *tasklet; long signum; } data_supfun;
+	
+	if (clockid != CLOCK_MONOTONIC && clockid != CLOCK_REALTIME) {
+		errno = ENOTSUP;
+		return -1;
+	}
+		
+	if (evp == NULL) {
+			data_supfun.signum = SIGALRM;
+	} else {
+		if (evp->sigev_notify == SIGEV_SIGNAL) {
+			data_supfun.signum = evp->sigev_signo;
+			data = (unsigned long)evp->sigev_value.sival_ptr;
+		} else if (evp->sigev_notify == SIGEV_THREAD) {
+			data_supfun.signum = 0;
+			data = (unsigned long)evp->sigev_value.sival_int;
+			handler = (void (*)(unsigned long)) evp->_sigev_un._sigev_thread._function;
+			pid = 1;
+		}
+	}
+
+	struct { struct rt_tasklet_struct *timer; void (*handler)(unsigned long); unsigned long data; long pid; long thread; } arg = { NULL, handler, data, pid, 0 };
+	arg.timer = (struct rt_tasklet_struct*)rtai_lxrt(TSKIDX, SIZARG, INIT, &arg).v[LOW];
+	data_supfun.tasklet = arg.timer; 
+	arg.thread = rt_thread_create((void *)support_posix_timer, &data_supfun, TASKLET_STACK_SIZE);
+	*timerid = rtai_lxrt(TSKIDX, SIZARG, PTIMER_CREATE, &arg).i[LOW];
+	
+	return 0;
+}
+
+RTAI_PROTO (int, __wrap_timer_gettime, (timer_t timerid, struct itimerspec *value))
+{
+	RTIME timer_times[2];
+	
+	struct { timer_t timer; RTIME *timer_times; } arg = { timerid, timer_times };
+	rtai_lxrt(TSKIDX, SIZARG, PTIMER_GETTIME, &arg);
+	
+	count2timespec( timer_times[0], &(value->it_value) );
+	count2timespec( timer_times[1], &(value->it_interval) );
+	
+	return 0;
+}
+
+RTAI_PROTO (int, __wrap_timer_settime, (timer_t timerid, int flags, const struct itimerspec *value,  struct itimerspec *ovalue))
+{
+	if (ovalue != NULL) {
+		__wrap_timer_gettime(timerid, ovalue);
+	}
+	struct { timer_t timer; const struct itimerspec *value; unsigned long data; long flags; } arg = { timerid, value, pthread_self(), flags};
+	rtai_lxrt(TSKIDX, SIZARG, PTIMER_SETTIME, &arg);
+	
+	return 0;
+}
+
+RTAI_PROTO (int, __wrap_timer_getoverrun, (timer_t timerid))
+{
+	struct { timer_t timer; } arg = { timerid };
+	return rtai_lxrt(TSKIDX, SIZARG, PTIMER_OVERRUN, &arg).rt;
+}
+
+RTAI_PROTO (int, __wrap_timer_delete, (timer_t timerid))
+{
+	int thread;
+	
+	struct { timer_t timer; long space;} arg_del = { timerid, 1 };
+	if ((thread = rtai_lxrt(TSKIDX, sizeof(arg_del), PTIMER_DELETE, &arg_del).i[LOW])) {
+		rt_thread_join(thread);
+	}
+	
+	return 0;	
+}
+
 
 /*
  * FUNCTIONS (LIKELY) SAFELY USABLE IN HARD REAL TIME "AS THEY ARE", 

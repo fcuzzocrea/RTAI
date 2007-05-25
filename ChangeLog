@@ -1,3 +1,9 @@
+2007-05-25  Lennart.C. Karssen <l.c.karssen@phys.uu.nl>
+            Paolo Mantegazza <mantegazza@aero.polimi.it>
+
+	* addons/comedi/rtai_comedi.h: fixed a missing initialisation of the
+	  local (on stack) copy of bits in comedi_dio_bitfield.
+
 2007-05-22  Roberto Bucher <roberto.bucher@supsi.ch>
 
 	* rtai-lab/scilab/rtai4_comedi_data*.sci: Changed the name

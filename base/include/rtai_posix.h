@@ -2131,7 +2131,7 @@ RTAI_PROTO(int, __wrap_pthread_spin_lock,(pthread_spinlock_t *lock))
 		if (((pid_t *)lock)[0] == (tid = _pthread_gettid_np())) {
 			return EDEADLOCK;
 		}
-		while ((void *)atomic_cmpxchg(lock, 0, tid));
+		while (atomic_cmpxchg((void *)lock, 0, tid));
 		return 0;
 	}
 	return EINVAL;

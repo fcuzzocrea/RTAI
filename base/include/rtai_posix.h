@@ -2131,7 +2131,7 @@ RTAI_PROTO(int, __wrap_pthread_spin_lock,(pthread_spinlock_t *lock))
 		if (((pid_t *)lock)[0] == (tid = _pthread_gettid_np())) {
 			return EDEADLOCK;
 		}
-		while (atomic_cmpxchg(lock, 0, tid));
+		while ((void *)atomic_cmpxchg(lock, 0, tid));
 		return 0;
 	}
 	return EINVAL;
@@ -2140,7 +2140,7 @@ RTAI_PROTO(int, __wrap_pthread_spin_lock,(pthread_spinlock_t *lock))
 RTAI_PROTO(int, __wrap_pthread_spin_trylock,(pthread_spinlock_t *lock))
 {
 	if (lock) {
-		return atomic_cmpxchg(lock, 0, _pthread_gettid_np()) ? EBUSY : 0;
+		return atomic_cmpxchg((void *)lock, 0, _pthread_gettid_np()) ? EBUSY : 0;
 	}
 	return EINVAL;
 }
@@ -2347,7 +2347,7 @@ RTAI_PROTO (int, __wrap_timer_create, (clockid_t clockid, struct sigevent *evp, 
 	arg.timer = (struct rt_tasklet_struct*)rtai_lxrt(TSKIDX, SIZARG, INIT, &arg).v[LOW];
 	data_supfun.tasklet = arg.timer; 
 	arg.thread = rt_thread_create((void *)support_posix_timer, &data_supfun, TASKLET_STACK_SIZE);
-	*timerid = rtai_lxrt(TSKIDX, SIZARG, PTIMER_CREATE, &arg).i[LOW];
+	*timerid = (timer_t)rtai_lxrt(TSKIDX, SIZARG, PTIMER_CREATE, &arg).i[LOW];
 	
 	return 0;
 }

@@ -321,8 +321,8 @@
 #define GET_REAL_TIME		       218
 #define GET_REAL_TIME_NS	       219
 
-#define MQ_USP_NOTIFY		       220
-#define MQ_WAIT_NOTIFIER	       221
+#define MQ_REG_USP_NOTIFIER		       220
+
 
 #define MAX_LXRT_FUN		       225
 

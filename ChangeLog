@@ -1,3 +1,9 @@
+2007-05-25  Emanuele Clerici <clerici@aero.polimi.it>
+
+	* base/include/rtai_pmq.h and rtai_mq.h: added declarations for 
+	  notify support.
+	* base/ipc/mq.c: added notify support.
+
 2007-05-25  Lennart.C. Karssen <l.c.karssen@phys.uu.nl>
 	    Paolo Mantegazza <mantegazza@aero.polimi.it>
 

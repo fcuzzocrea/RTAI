@@ -22,6 +22,7 @@
 
 #include <rtai_schedcore.h>
 #include <rtai_signal.h>
+#include <rtai_mq.h>
 
 MODULE_LICENSE("GPL");
 #define MODULE_NAME "RTAI_SIGNALS"
@@ -33,7 +34,8 @@ RTAI_SYSCALL_MODE int rt_request_signal_(RT_TASK *sigtask, RT_TASK *task, long s
 	int retval;
 	if (signal >= 0 && sigtask && task) {
 		if (!task->rt_signals) {
-			task->rt_signals = rt_malloc((MAXSIGNALS + 1)*sizeof(struct rt_signal_t));
+			task->rt_signals = rt_malloc((MAXSIGNALS + MAX_PQUEUES)*sizeof(struct rt_signal_t));
+			memset(task->rt_signals, 0, ((MAXSIGNALS + MAX_PQUEUES)*sizeof(struct rt_signal_t)));
 			task->pstate = 0;
 		}
 		RT_SIGNALS[signal].flags = (1 << SIGNAL_ENBIT);

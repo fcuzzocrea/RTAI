@@ -47,7 +47,20 @@ MODULE_LICENSE("GPL");
 #define mq_mutex_t                  SEM
 #define mq_mutex_init(mutex, attr)  rt_typed_sem_init(mutex, 1, BIN_SEM | PRIO_Q)
 #define mq_mutex_unlock             rt_sem_signal
-#define mq_mutex_lock               rt_sem_wait
+#define mq_mutex_lock(mutex) \
+	do { \
+		if (abs(rt_sem_wait(mutex)) >= RTE_LOWERR) { \
+			return -EBADF; \
+		} \
+	} while (0)		
+#define mq_mutex_timedlock(mutex, abstime) \
+	do { \
+		RTIME t = timespec2count(abstime); \
+		int ret; \
+		if (abs(ret = rt_sem_wait_until(mutex, t)) >= RTE_LOWERR) { \
+			return ret == RTE_TIMOUT ? -ETIMEDOUT : -EBADF; \
+		} \
+	} while (0)
 #define mq_mutex_trylock            rt_sem_wait_if
 #define mq_mutex_destroy            rt_sem_delete
 #define mq_cond_init(cond, attr)    rt_sem_init(cond, 0)
@@ -283,7 +296,7 @@ static void signal_suprt_fun_mq(void *fun_arg)
 	arg.sigtask = RT_CURRENT;
 	if (!rt_request_signal_(arg.sigtask, arg.task, (arg.mq + MAXSIGNALS))) {
 		while (rt_wait_signal(arg.sigtask, arg.task)) {
-			rt_pqueue_descr[arg.mq - 1].notify.data._sigev_un._sigev_thread._function((sigval_t)rt_pqueue_descr[arg.mq - 1].notify.data.sigev_value.sival_int);
+			rt_pqueue_descr[arg.mq - 1].notify.data._sigev_un._sigev_thread._function((sigval_t)rt_pqueue_descr[arg.mq - 1].notify.data.sigev_value.sival_ptr);
 		}
 	} else {
 		rt_task_resume(arg.task);
@@ -542,7 +555,8 @@ RTAI_SYSCALL_MODE size_t _mq_timedreceive(mqd_t mq, char *msg_buffer, size_t buf
 	int q_index = mq - 1, size;
 	MQMSG *msg_ptr;
 	MSG_QUEUE *q;
-
+	struct timespec time;
+	
 	if (q_index < 0 || q_index >= MAX_PQUEUES) { 
 		return -EBADF;
 	}
@@ -553,18 +567,17 @@ RTAI_SYSCALL_MODE size_t _mq_timedreceive(mqd_t mq, char *msg_buffer, size_t buf
 	if (can_access(q, FOR_READ) == FALSE) {
 		return -EINVAL;
 	}
+	if (!space) {
+		rt_copy_from_user(&time, abstime, sizeof(struct timespec));
+		abstime = &time;
+	}
 	if (is_blocking(q)) {
-		mq_mutex_lock(&q->mutex);
+		mq_mutex_timedlock(&q->mutex, abstime);
 	} else if (mq_mutex_trylock(&q->mutex) <= 0) {
 		return -EAGAIN;
 	}
 	while (is_empty(&q->data)) {
 		if (is_blocking(q)) {
-			struct timespec time;
-			if (!space) {
-				rt_copy_from_user(&time, abstime, sizeof(struct timespec));
-				abstime = &time;
-			}
 			mq_cond_timedwait(&q->emp_cond, &q->mutex, abstime);
 		} else {
 			return -EAGAIN;
@@ -663,6 +676,7 @@ RTAI_SYSCALL_MODE int _mq_timedsend(mqd_t mq, const char *msg, size_t msglen, un
 	MSG_QUEUE *q;
 	MSG_HDR *this_msg;
 	mq_bool_t q_was_empty;
+	struct timespec time;
 
 	if (q_index < 0 || q_index >= MAX_PQUEUES) { 
 		return -EBADF;
@@ -673,20 +687,19 @@ RTAI_SYSCALL_MODE int _mq_timedsend(mqd_t mq, const char *msg, size_t msglen, un
 	}
 	if (msgprio > MQ_PRIO_MAX) {
 		return -EINVAL;
+	}			
+	if (!space) {
+		rt_copy_from_user(&time, abstime, sizeof(struct timespec));
+		abstime = &time;
 	}
 	if (is_blocking(q)) {
-		mq_mutex_lock(&q->mutex);
+		mq_mutex_timedlock(&q->mutex, abstime);
 	} else if (mq_mutex_trylock(&q->mutex) <= 0) {
 		return -EAGAIN;
 	}
 	q_was_empty = is_empty(&q->data);
 	while (is_full(&q->data)) {
 		if (is_blocking(q)) {
-			struct timespec time;
-			if (!space) {
-				rt_copy_from_user(&time, abstime, sizeof(struct timespec));
-				abstime = &time;
-			}
 			mq_cond_timedwait(&q->full_cond, &q->mutex, abstime);
 		} else {
 			mq_mutex_unlock(&q->mutex);
@@ -813,12 +826,13 @@ RTAI_SYSCALL_MODE int mq_setattr(mqd_t mq, const struct mq_attr *new_attrs, stru
 }
 EXPORT_SYMBOL(mq_setattr);
 
-RTAI_SYSCALL_MODE void mq_reg_usp_notifier(mqd_t mq, RT_TASK *task, struct sigevent *usp_notification)
+RTAI_SYSCALL_MODE int mq_reg_usp_notifier(mqd_t mq, RT_TASK *task, struct sigevent *usp_notification)
 {
 	mq_mutex_lock(&rt_pqueue_descr[mq -1].mutex);
 	((QUEUE_CTRL)task->mqueues)->q_access[mq -1].usp_notifier = usp_notification;
 	rt_copy_to_user(usp_notification, &rt_pqueue_descr[mq -1].notify.data, sizeof(struct sigevent));
 	mq_mutex_unlock(&rt_pqueue_descr[mq -1].mutex);
+	return 0;
 }
 
 RTAI_SYSCALL_MODE int _mq_notify(mqd_t mq, RT_TASK *task, long space, long rem, const struct sigevent *notification)

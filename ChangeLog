@@ -1,4 +1,9 @@
-2007-05-25  Emanuele Clerici <clerici@aero.polimi.it>
+2007-06-01  Emanuele Clerici <clerici@aero.polimi.it>
+
+	* base/ipc/mq.c: check possible return error of mutex locking and
+	  use timed mutex locks in timed send/receive.
+
+2007-05-30  Emanuele Clerici <clerici@aero.polimi.it>
 
 	* base/include/rtai_pmq.h and rtai_mq.h: added declarations for 
 	  notify support.

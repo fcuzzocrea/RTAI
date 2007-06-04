@@ -1,3 +1,14 @@
+2007-05-06  Antonio Barbalace <barbalace@igi.cnr.it>
+	    Paolo Mantegazza <mantegazza@aero.polimi.it>
+            	
+	* base/sched/sched.c: use unsigned long in place of int for 
+	  rt_smp_linux_cr0, to work with for 64 bits archs also.
+
+2007-05-06  Antonio Barbalace <barbalace@igi.cnr.it>
+            	
+	* base/include/asm-x86_64/rtai_sched.h: fixed support for context
+	  switches of RTAI own kernel tasks.
+
 2007-06-01  Emanuele Clerici <clerici@aero.polimi.it>
 
 	* base/ipc/mq.c: check possible return error of mutex locking and

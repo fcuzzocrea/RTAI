@@ -219,7 +219,7 @@ typedef struct rt_fifo_struct {
 	char name[RTF_NAMELEN+1];
 } FIFO;
 
-#if 0 //defined(CONFIG_SYSFS) && defined(CONFIG_DEVFS_SYSFS) && !CONFIG_DEVFS_FS
+#if defined(CONFIG_SYSFS) || (defined(CONFIG_DEVFS_SYSFS) && !CONFIG_DEVFS_FS)
 static class_t *fifo_class = NULL;
 #endif
 
@@ -1715,7 +1715,7 @@ int __rtai_fifos_init(void)
 {
 	int minor;
 
-#if 0 //defined(CONFIG_SYSFS) && defined(CONFIG_DEVFS_SYSFS) && !CONFIG_DEVFS_FS
+#if defined(CONFIG_SYSFS) || (defined(CONFIG_DEVFS_SYSFS) && !CONFIG_DEVFS_FS)
 	fifo_class = class_create(THIS_MODULE, "rtai_fifos");
 	if (!fifo_class) {
 		printk("RTAI-FIFO: cannot register major %d.\n", RTAI_FIFOS_MAJOR);
@@ -1809,7 +1809,8 @@ void __rtai_fifos_exit(void)
 	devfs_unregister_chrdev(RTAI_FIFOS_MAJOR,"rtai_fifo");
 #endif  /* LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,0) || !CONFIG_DEVFS_FS */
 #else /* !CONFIG_DEVFS_FS */
-#if 0 //defined(CONFIG_SYSFS) && defined(CONFIG_DEVFS_SYSFS) && !CONFIG_DEVFS_FS
+	unregister_chrdev(RTAI_FIFOS_MAJOR,"rtai_fifo");
+#if defined(CONFIG_SYSFS) || (defined(CONFIG_DEVFS_SYSFS) && !CONFIG_DEVFS_FS)
 	{
 		int minor;
 		for (minor = 0; minor < MAX_FIFOS; minor++) {
@@ -1818,7 +1819,6 @@ void __rtai_fifos_exit(void)
 	}
 	class_destroy(fifo_class);
 #endif /* CONFIG_SYSFS */
-	unregister_chrdev(RTAI_FIFOS_MAJOR,"rtai_fifo");
 #endif /* CONFIG_DEVFS_FS */
 
 	if (rtf_free_srq(fifo_srq) < 0) {

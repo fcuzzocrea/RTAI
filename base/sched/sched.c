@@ -34,8 +34,7 @@ ACKNOWLEDGMENTS:
 #define CONFIG_RTAI_CAL_FREQS_FACT    0
 #endif
 
-#undef USE_RTAI_TASKS
-#define USE_RTAI_TASKS    1
+//#define USE_RTAI_TASKS    0
 
 #include <linux/module.h>
 #include <linux/kernel.h>

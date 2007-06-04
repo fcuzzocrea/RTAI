@@ -100,7 +100,7 @@ struct klist_t wake_up_srq[NR_RT_CPUS];
 
 extern struct { volatile int locked, rqsted; } rt_scheduling[];
 
-static int rt_smp_linux_cr0[NR_RT_CPUS];
+static unsigned long rt_smp_linux_cr0[NR_RT_CPUS];
 
 static RT_TASK *rt_smp_fpu_task[NR_RT_CPUS];
 

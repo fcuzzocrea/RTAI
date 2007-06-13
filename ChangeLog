@@ -1,3 +1,10 @@
+2007-06-12  Antonio Barbalace <barbalace@igi.cnr.it>
+
+	* base/include/asm-x86_64:rtai_sched.h: multiversion, the one to be 
+	  used to be decided yet.
+	* base/arch/x86_64/hal/hal.immed and base/arch/i386/hal/hal.immed: 
+	  added rt_end_eoi_irq for APIC interrupts.
+
 2007-06-07  Roberto Bucher <roberto.bucher@supsi.ch>
 
 	* rtai-lab/scilab/devices/*.c: Added copyright lines in the sources.

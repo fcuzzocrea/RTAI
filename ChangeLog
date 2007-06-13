@@ -1,3 +1,9 @@
+2007-06-13  Pierangelo Masarati <masarati@aero.polimi.it>
+	    Antonio Barbalace <barbalace@igi.cnr.it>
+
+	* x86_64 scheduler build back to mainstream:
+		- rtai_lxrt/rtai_sched on x86_64 as on all other archs
+
 2007-06-12  Antonio Barbalace <barbalace@igi.cnr.it>
 
 	* base/include/asm-x86_64:rtai_sched.h: multiversion, the one to be 

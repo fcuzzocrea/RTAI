@@ -617,6 +617,25 @@ void rt_end_irq (unsigned irq)
 	_rt_end_irq(irq);
 }
 
+static inline void rt_end_eoi_irq (unsigned irq)
+{
+        BEGIN_PIC();
+        if (
+#ifdef CONFIG_X86_IO_APIC
+            !IO_APIC_IRQ(irq) ||
+#endif /* CONFIG_X86_IO_APIC */
+            !(irq_desc[irq].status & (IRQ_DISABLED | IRQ_INPROGRESS))) {
+                hal_unlock_irq(hal_root_domain, irq);
+        }
+#ifdef CONFIG_X86_IO_APIC && LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,19)
+        rtai_irq_desc(irq)->eoi(irq);
+#else /* !(CONFIG_X86_IO_APIC && LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,19))
+*/
+        rtai_irq_desc(irq)->end(irq);
+#endif
+        END_PIC();
+}
+
 /**
  * Install shared Linux interrupt handler.
  *

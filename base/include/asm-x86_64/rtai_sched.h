@@ -221,6 +221,7 @@
 	);
 #endif
 
+#if 0
 // mov -4 instruction
 #define rt_exchange_tasks(oldtask, newtask) \
 	__asm__ __volatile__( \

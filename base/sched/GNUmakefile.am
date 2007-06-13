@@ -9,13 +9,13 @@ schedulers =
 # it is rtai_sched for all archs, except x86_64, where rtai_lxrt is used
 # $(legacy_schedulers) are all the schedulers that are generated
 # as links of $(main_scheduler); for x86_64, they are all but rtai_lxrt
-if CONFIG_X86_64
-main_scheduler = rtai_lxrt
-legacy_schedulers = up mup smp ksched sched
-else # CONFIG_X86_64
+#if CONFIG_X86_64
+#main_scheduler = rtai_lxrt
+#legacy_schedulers = up mup smp ksched sched
+#else # CONFIG_X86_64
 main_scheduler = rtai_sched
 legacy_schedulers = up mup smp ksched
-endif # CONFIG_X86_64
+#endif # CONFIG_X86_64
 
 noinst_LIBRARIES =
 builtins = @RTAI_BUILTIN_MODLIST@
@@ -31,7 +31,7 @@ builtins_objlist = $(foreach mod,$(builtins),$(patsubst %,../%/rtai_$(notdir $(m
 endif # CONFIG_KBUILD
 
 # SCHED
-if !CONFIG_X86_64
+#if !CONFIG_X86_64
 libsched_sched_a_SOURCES = sched.c sys.c api.c
 
 rtai_sched_extradef = -DUSE_RTAI_TASKS=1
@@ -58,7 +58,7 @@ libsched_sched_a_CPPFLAGS = \
 endif # CONFIG_KBUILD
 
 schedulers += rtai_sched$(modext)
-endif # !CONFIG_X86_64
+#endif # !CONFIG_X86_64
 
 # LXRT
 libsched_lxrt_a_SOURCES = sched.c sys.c api.c

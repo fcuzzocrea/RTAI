@@ -1705,7 +1705,11 @@ void __rtai_netrpc_exit(void)
 	rt_sem_delete(&timer_sem);
 	for (i = 0; i < MaxStubs; i++) {
 		if (portslot[i].task) {
-			rt_task_delete((RT_TASK *)portslot[i].task);
+			if (portslot[i].hard) {
+				rt_task_delete((RT_TASK *)portslot[i].task);
+			} else {
+				soft_kthread_delete((RT_TASK *)portslot[i].task);
+			}
 		}
 	}
 	for (i = 0; i < MaxSocks; i++) {

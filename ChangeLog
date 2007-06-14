@@ -1,3 +1,8 @@
+2007-06-14  Paolo Mantegazza <mantegazza@aero.polimi.it>
+            	
+	* base/ipc/netrpc.c: care of stubs being soft/hard when deleting 
+	  those left behind at module exit.
+
 2007-06-13  Pierangelo Masarati <masarati@aero.polimi.it>
 	    Antonio Barbalace <barbalace@igi.cnr.it>
 

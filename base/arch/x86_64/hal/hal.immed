@@ -582,7 +582,7 @@ void rt_end_irq (unsigned irq)
 	_rt_end_irq(irq);
 }
 
-static inline void rt_end_eoi_irq (unsigned irq)
+static inline void rt_eoi_irq (unsigned irq)
 {
 	BEGIN_PIC();
 	if (

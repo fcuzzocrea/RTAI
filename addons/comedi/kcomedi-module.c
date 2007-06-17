@@ -20,7 +20,6 @@
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
  */
 
-
 /**
  * This file is the kernel module counterpart of the KComedi-LXRT support.
  * It will be compiled to a rtai_comedi.o kernel module.
@@ -90,7 +89,7 @@ RTAI_SYSCALL_MODE char *rt_comedi_get_driver_name(void *dev, char *name)
 
 RTAI_SYSCALL_MODE char *rt_comedi_get_board_name(void *dev, char *name)
 {
-  void *p;  
+  void *p;
   if ((p = comedi_get_board_name((void *)dev)) != 0) {
     strncpy(name, p, COMEDI_NAMELEN);
     return name;
@@ -99,9 +98,9 @@ RTAI_SYSCALL_MODE char *rt_comedi_get_board_name(void *dev, char *name)
 }
 
 RTAI_SYSCALL_MODE unsigned int rt_comedi_wait(SEM *sem, int *semcnt)
-{ 
+{
   int count;
-  count = rt_sem_wait(sem); 
+  count = rt_sem_wait(sem);
   if (semcnt) {
     *semcnt = count;
   }
@@ -109,9 +108,9 @@ RTAI_SYSCALL_MODE unsigned int rt_comedi_wait(SEM *sem, int *semcnt)
 }
 
 RTAI_SYSCALL_MODE unsigned int rt_comedi_wait_if(SEM *sem, int *semcnt)
-{ 
+{
   int count;
-  count = rt_sem_wait_if(sem); 
+  count = rt_sem_wait_if(sem);
   if (semcnt) {
     *semcnt = count;
   }
@@ -121,7 +120,7 @@ RTAI_SYSCALL_MODE unsigned int rt_comedi_wait_if(SEM *sem, int *semcnt)
 RTAI_SYSCALL_MODE unsigned int rt_comedi_wait_until(SEM *sem, RTIME until, int *semcnt)
 {
   int count;
-  count = rt_sem_wait_until(sem, until); 
+  count = rt_sem_wait_until(sem, until);
   if (semcnt) {
     *semcnt = count;
   }
@@ -131,7 +130,7 @@ RTAI_SYSCALL_MODE unsigned int rt_comedi_wait_until(SEM *sem, RTIME until, int *
 RTAI_SYSCALL_MODE unsigned int rt_comedi_wait_timed(SEM *sem, RTIME delay, int *semcnt)
 {
   int count;
-  count = rt_sem_wait_timed(sem, delay); 
+  count = rt_sem_wait_timed(sem, delay);
   if (semcnt) {
     *semcnt = count;
   }
@@ -348,7 +347,7 @@ static struct rt_fun_entry rtai_comedi_fun[] = {
 
   /*
   ,[_KCOMEDI_GET_RANGETYPE]       = { 0, _comedi_get_rangetype }
-  */ 
+  */
 
   ,[_KCOMEDI_GET_SUBDEVICE_FLAGS] = { 0, _comedi_get_subdevice_flags }
   ,[_KCOMEDI_GET_KRANGE]          = { 0, _comedi_get_krange }

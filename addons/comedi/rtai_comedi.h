@@ -135,25 +135,25 @@ RTAI_PROTO(int, comedi_close,(void *dev))
 
 RTAI_PROTO(int, comedi_lock,(void *dev, unsigned int subdev))
 {
-        struct { void *dev; unsigned int subdev; } arg = { dev, subdev };
+        struct { void *dev; unsigned long subdev; } arg = { dev, subdev };
         return rtai_lxrt(FUN_COMEDI_LXRT_INDX, COMEDI_LXRT_SIZARG, _KCOMEDI_LOCK, &arg).i[LOW];
 }
 
 RTAI_PROTO(int, comedi_unlock,(void *dev, unsigned int subdev))
 {
-        struct { void *dev; unsigned int subdev; } arg = { dev, subdev };
+        struct { void *dev; unsigned long subdev; } arg = { dev, subdev };
         return rtai_lxrt(FUN_COMEDI_LXRT_INDX, COMEDI_LXRT_SIZARG, _KCOMEDI_UNLOCK, &arg).i[LOW];
 }
 
 RTAI_PROTO(int, comedi_cancel,(void *dev, unsigned int subdev))
 {
-        struct { void *dev; unsigned int subdev; } arg = { dev, subdev };
+        struct { void *dev; unsigned long subdev; } arg = { dev, subdev };
         return rtai_lxrt(FUN_COMEDI_LXRT_INDX, COMEDI_LXRT_SIZARG, _KCOMEDI_CANCEL, &arg).i[LOW];
 }
 
 RTAI_PROTO(int, rt_comedi_register_callback,(void *dev, unsigned int subdev, unsigned int mask, SEM *sem))
 {
-        struct { void *dev; unsigned int subdev; unsigned int mask; SEM *sem; } arg = { dev, subdev, mask, sem };
+        struct { void *dev; unsigned long subdev; unsigned long mask; SEM *sem; } arg = { dev, subdev, mask, sem };
         return rtai_lxrt(FUN_COMEDI_LXRT_INDX, COMEDI_LXRT_SIZARG, _KCOMEDI_REGISTER_CALLBACK, &arg).i[LOW];
 }
 
@@ -163,7 +163,7 @@ RTAI_PROTO(unsigned int, rt_comedi_wait,(SEM *sem, int *semcnt))
 {
 	int lsemcnt;
 	unsigned int retval;
-        struct { SEM *sem; int *semcnt; int size; } arg = { sem, &lsemcnt, sizeof(int *) };
+        struct { SEM *sem; int *semcnt; long size; } arg = { sem, &lsemcnt, sizeof(int *) };
         retval = rtai_lxrt(FUN_COMEDI_LXRT_INDX, COMEDI_LXRT_SIZARG, _KCOMEDI_WAIT, &arg).i[LOW];
 	if (semcnt) {
 		*semcnt = lsemcnt;
@@ -175,7 +175,7 @@ RTAI_PROTO(unsigned int, rt_comedi_wait_if,(SEM *sem, int *semcnt))
 {
 	int lsemcnt;
 	unsigned int retval;
-        struct { SEM *sem; int *semcnt; int size; } arg = { sem, &lsemcnt, sizeof(int *) };
+        struct { SEM *sem; int *semcnt; long size; } arg = { sem, &lsemcnt, sizeof(int *) };
         retval = rtai_lxrt(FUN_COMEDI_LXRT_INDX, COMEDI_LXRT_SIZARG, _KCOMEDI_WAIT_IF, &arg).i[LOW];
 	if (semcnt) {
 		*semcnt = lsemcnt;
@@ -187,7 +187,7 @@ RTAI_PROTO(unsigned int, rt_comedi_wait_until,(SEM *sem, RTIME until, int *semcn
 {
 	int lsemcnt;
 	unsigned int retval;
-        struct { SEM *sem; RTIME until; int *semcnt; int size; } arg = { sem, until, &lsemcnt, sizeof(int *) };
+        struct { SEM *sem; RTIME until; int *semcnt; long size; } arg = { sem, until, &lsemcnt, sizeof(int *) };
         retval = rtai_lxrt(FUN_COMEDI_LXRT_INDX, COMEDI_LXRT_SIZARG, _KCOMEDI_WAIT_UNTIL, &arg).i[LOW];
 	if (semcnt) {
 		*semcnt = lsemcnt;
@@ -199,7 +199,7 @@ RTAI_PROTO(unsigned int, rt_comedi_wait_timed,(SEM *sem, RTIME delay, int *semcn
 {
 	int lsemcnt;
 	unsigned int retval;
-        struct { SEM *sem; RTIME delay; int *semcnt; int size; } arg = { sem, delay, &lsemcnt, sizeof(int *) };
+        struct { SEM *sem; RTIME delay; int *semcnt; long size; } arg = { sem, delay, &lsemcnt, sizeof(int *) };
         retval = rtai_lxrt(FUN_COMEDI_LXRT_INDX, COMEDI_LXRT_SIZARG, _KCOMEDI_WAIT_TIMED, &arg).i[LOW];
 	if (semcnt) {
 		*semcnt = lsemcnt;
@@ -226,7 +226,7 @@ RTAI_PROTO(int, comedi_trigger,(void *dev, unsigned int subdev, comedi_trig *it)
 
 RTAI_PROTO(int, comedi_data_write,(void *dev, unsigned int subdev, unsigned int chan, unsigned int range, unsigned int aref, lsampl_t data))
 {
-	struct { void *dev; unsigned int subdev; unsigned int chan; unsigned int range; unsigned int aref; lsampl_t data; } arg = { dev, subdev, chan, range, aref, data };
+	struct { void *dev; unsigned long subdev; unsigned long chan; unsigned long range; unsigned long aref; long data; } arg = { dev, subdev, chan, range, aref, data };
 	return rtai_lxrt(FUN_COMEDI_LXRT_INDX, COMEDI_LXRT_SIZARG, _KCOMEDI_DATA_WRITE, &arg).i[LOW];
 }
 
@@ -234,7 +234,7 @@ RTAI_PROTO(int, comedi_data_read,(void *dev, unsigned int subdev, unsigned int c
 {
 	int retval;
 	lsampl_t ldata;
-	struct { void *dev; unsigned int subdev; unsigned int chan; unsigned int range; unsigned int aref; lsampl_t *data; } arg = { dev, subdev, chan, range, aref, &ldata };
+	struct { void *dev; unsigned long subdev; unsigned long chan; unsigned long range; unsigned long aref; lsampl_t *data; } arg = { dev, subdev, chan, range, aref, &ldata };
 	retval = rtai_lxrt(FUN_COMEDI_LXRT_INDX, COMEDI_LXRT_SIZARG, _KCOMEDI_DATA_READ, &arg).i[LOW];
 	memcpy(data, &ldata, sizeof(lsampl_t));
 	return retval;
@@ -244,7 +244,7 @@ RTAI_PROTO(int, comedi_data_read_delayed,(void *dev, unsigned int subdev, unsign
 {
 	int retval;
 	lsampl_t ldata;
-	struct { void *dev; unsigned int subdev; unsigned int chan; unsigned int range; unsigned int aref; lsampl_t *data; unsigned int nanosec;} arg = { dev, subdev, chan, range, aref, &ldata, nanosec };
+	struct { void *dev; unsigned long subdev; unsigned long chan; unsigned long range; unsigned long aref; lsampl_t *data; unsigned long nanosec;} arg = { dev, subdev, chan, range, aref, &ldata, nanosec };
 	retval = rtai_lxrt(FUN_COMEDI_LXRT_INDX, COMEDI_LXRT_SIZARG, _KCOMEDI_DATA_READ_DELAYED, &arg).i[LOW];
 	memcpy(data, &ldata, sizeof(lsampl_t));
 	return retval;
@@ -254,7 +254,7 @@ RTAI_PROTO(int, comedi_data_read_hint,(void *dev, unsigned int subdev, unsigned 
 {
 	int retval;
 	//lsampl_t ldata;
-	struct { void *dev; unsigned int subdev; unsigned int chan; unsigned int range; unsigned int aref;} arg = { dev, subdev, chan, range, aref};
+	struct { void *dev; unsigned long subdev; unsigned long chan; unsigned long range; unsigned long aref;} arg = { dev, subdev, chan, range, aref};
 	retval = rtai_lxrt(FUN_COMEDI_LXRT_INDX, COMEDI_LXRT_SIZARG, _KCOMEDI_DATA_READ_HINT, &arg).i[LOW];
 	//memcpy(data, &ldata, sizeof(lsampl_t));
 	return retval;
@@ -262,7 +262,7 @@ RTAI_PROTO(int, comedi_data_read_hint,(void *dev, unsigned int subdev, unsigned 
 
 RTAI_PROTO(int, comedi_dio_config,(void *dev, unsigned int subdev, unsigned int chan, unsigned int io))
 {
-	struct { void *dev; unsigned int subdev; unsigned int chan; unsigned int io; } arg = { dev, subdev, chan, io };
+	struct { void *dev; unsigned long subdev; unsigned long chan; unsigned long io; } arg = { dev, subdev, chan, io };
         return rtai_lxrt(FUN_COMEDI_LXRT_INDX, COMEDI_LXRT_SIZARG, _KCOMEDI_DIO_CONFIG, &arg).i[LOW];
 }
 
@@ -270,7 +270,7 @@ RTAI_PROTO(int, comedi_dio_read,(void *dev, unsigned int subdev, unsigned int ch
 {
         int retval;
 	unsigned int lval;
-        struct { void *dev; unsigned int subdev; unsigned int chan; unsigned int *val; } arg = { dev, subdev, chan, &lval };
+        struct { void *dev; unsigned long subdev; unsigned long chan; unsigned int *val; } arg = { dev, subdev, chan, &lval };
 	retval = rtai_lxrt(FUN_COMEDI_LXRT_INDX, COMEDI_LXRT_SIZARG, _KCOMEDI_DIO_READ, &arg).i[LOW];
 	*val = lval;
 	return retval;
@@ -278,7 +278,7 @@ RTAI_PROTO(int, comedi_dio_read,(void *dev, unsigned int subdev, unsigned int ch
 
 RTAI_PROTO(int, comedi_dio_write,(void *dev, unsigned int subdev, unsigned int chan, unsigned int val))
 {
-        struct { void *dev; unsigned int subdev; unsigned int chan; unsigned int val; } arg = { dev, subdev, chan, val };
+        struct { void *dev; unsigned long subdev; unsigned long chan; unsigned long val; } arg = { dev, subdev, chan, val };
 	return rtai_lxrt(FUN_COMEDI_LXRT_INDX, COMEDI_LXRT_SIZARG, _KCOMEDI_DIO_WRITE, &arg).i[LOW];
 }
 
@@ -287,7 +287,7 @@ RTAI_PROTO(int, comedi_dio_bitfield,(void *dev, unsigned int subdev, unsigned in
         int retval;
 	unsigned int lbits;
 	lbits = *bits;
-        struct { void *dev; unsigned int subdev; unsigned int mask; unsigned int *bits; } arg = { dev, subdev, mask, &lbits };
+        struct { void *dev; unsigned long subdev; unsigned long mask; unsigned int *bits; } arg = { dev, subdev, mask, &lbits };
 	retval = rtai_lxrt(FUN_COMEDI_LXRT_INDX, COMEDI_LXRT_SIZARG, _KCOMEDI_DIO_BITFIELD, &arg).i[LOW];
 	*bits = lbits;
 	return retval;
@@ -331,31 +331,31 @@ RTAI_PROTO(char *, rt_comedi_get_board_name,(void *dev, char *name))
 
 RTAI_PROTO(int, comedi_get_subdevice_type,(void *dev, unsigned int subdev))
 {
-        struct { void *dev; unsigned int subdev; } arg = { dev, subdev };
+        struct { void *dev; unsigned long subdev; } arg = { dev, subdev };
         return rtai_lxrt(FUN_COMEDI_LXRT_INDX, COMEDI_LXRT_SIZARG, _KCOMEDI_GET_SUBDEVICE_TYPE, &arg).i[LOW];
 }
 
 RTAI_PROTO(int, comedi_find_subdevice_by_type,(void *dev, int type, unsigned int subd))
 {
-        struct { void *dev; int type; unsigned int subd; } arg = { dev, type, subd };
+        struct { void *dev; long type; unsigned long subd; } arg = { dev, type, subd };
         return rtai_lxrt(FUN_COMEDI_LXRT_INDX, COMEDI_LXRT_SIZARG, _KCOMEDI_FIND_SUBDEVICE_TYPE, &arg).i[LOW];
 }
 
 RTAI_PROTO(int, comedi_get_n_channels,(void *dev, unsigned int subdev))
 {
-        struct { void *dev; unsigned int subdev; } arg = { dev, subdev };
+        struct { void *dev; unsigned long subdev; } arg = { dev, subdev };
         return rtai_lxrt(FUN_COMEDI_LXRT_INDX, COMEDI_LXRT_SIZARG, _KCOMEDI_GET_N_CHANNELS, &arg).i[LOW];
 }
 
 RTAI_PROTO(lsampl_t, comedi_get_maxdata,(void *dev, unsigned int subdev, unsigned int chan))
 {
-        struct { void *dev; unsigned int subdev; unsigned int chan;} arg = { dev, subdev, chan };
+        struct { void *dev; unsigned long subdev; unsigned long chan;} arg = { dev, subdev, chan };
         return (lsampl_t)rtai_lxrt(FUN_COMEDI_LXRT_INDX, COMEDI_LXRT_SIZARG, _KCOMEDI_GET_MAXDATA, &arg).i[LOW];
 }
 
 RTAI_PROTO(int, comedi_get_n_ranges,(void *dev, unsigned int subdev, unsigned int chan))
 {
-        struct { void *dev; unsigned int subdev; unsigned int chan;} arg = { dev, subdev, chan };
+        struct { void *dev; unsigned long subdev; unsigned long chan;} arg = { dev, subdev, chan };
         return rtai_lxrt(FUN_COMEDI_LXRT_INDX, COMEDI_LXRT_SIZARG, _KCOMEDI_GET_N_RANGES, &arg).i[LOW];
 }
 
@@ -371,7 +371,7 @@ RTAI_PROTO(int, comedi_do_insn,(void *dev, comedi_insn *insn))
 
 RTAI_PROTO(int, comedi_poll,(void *dev, unsigned int subdev))
 {
-	struct { void *dev; unsigned int subdev; } arg = { dev, subdev };
+	struct { void *dev; unsigned long subdev; } arg = { dev, subdev };
 	return rtai_lxrt(FUN_COMEDI_LXRT_INDX, COMEDI_LXRT_SIZARG, _KCOMEDI_POLL, &arg).i[LOW];
 }
 
@@ -379,7 +379,7 @@ RTAI_PROTO(int, comedi_get_krange,(void *dev, unsigned int subdev, unsigned int 
 {
 	int retval;
 	comedi_krange lkrange;
-	struct { void *dev; unsigned int subdev; unsigned int chan; unsigned int range; comedi_krange *krange; } arg = { dev, subdev, chan, range, &lkrange };
+	struct { void *dev; unsigned long subdev; unsigned long chan; unsigned long range; comedi_krange *krange; } arg = { dev, subdev, chan, range, &lkrange };
 	retval = rtai_lxrt(FUN_COMEDI_LXRT_INDX, COMEDI_LXRT_SIZARG, _KCOMEDI_GET_KRANGE, &arg).i[LOW];
 	memcpy(krange, &lkrange, sizeof(comedi_krange));
 	return retval;
@@ -391,7 +391,7 @@ RTAI_PROTO(comedi_cmd *, rt_comedi_alloc_cmd,(unsigned int **chanlist, unsigned 
 	comedi_cmd *cmd;
 	comedi_cmd *p;
 
-	struct { unsigned int chanlist_len, data_len; unsigned long *ofst; } arg = { chanlist_len, data_len, ofst };
+	struct { unsigned long chanlist_len, data_len; unsigned long *ofst; } arg = { chanlist_len, data_len, ofst };
 	name = rtai_lxrt(FUN_COMEDI_LXRT_INDX, COMEDI_LXRT_SIZARG, _KCOMEDI_ALLOC_CMD, &arg).i[LOW];
 	cmd = p = (comedi_cmd *)rtai_malloc(name, 1);
         *chanlist = cmd->chanlist = (unsigned int *)((char *)p + ofst[0]);

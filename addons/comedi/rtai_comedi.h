@@ -331,7 +331,7 @@ RTAI_PROTO(char *, rt_comedi_get_board_name,(void *dev, char *name))
 
 RTAI_PROTO(int, comedi_get_subdevice_type,(void *dev, unsigned int subdev))
 {
-        struct { void *dev; unsigned int subdev; } arg = { dev, subdev };
+        struct { void *dev; unsigned long subdev; } arg = { dev, subdev };
         return rtai_lxrt(FUN_COMEDI_LXRT_INDX, COMEDI_LXRT_SIZARG, _KCOMEDI_GET_SUBDEVICE_TYPE, &arg).i[LOW];
 }
 

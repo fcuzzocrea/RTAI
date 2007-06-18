@@ -162,7 +162,7 @@ static RTAI_SYSCALL_MODE unsigned long rt_comedi_free_cmd(struct rt_cmd *cmd)
   return kcmd->name;
 }
 
-#ifdef CONFIG_REGPARM
+#if defined(CONFIG_REGPARM) || LINUX_VERSION_CODE > KERNEL_VERSION(2,6,19)
 
 static RTAI_SYSCALL_MODE void *_comedi_open(const char *filename)
 {
@@ -356,7 +356,7 @@ static struct rt_fun_entry rtai_comedi_fun[] = {
   ,[_KCOMEDI_MAP]                 = { 0, _comedi_map }
   ,[_KCOMEDI_UNMAP]               = { 0, _comedi_unmap }
 
-#else /* !CONFIG_REGPARM */
+#else /* !(defined(CONFIG_REGPARM) || LINUX_VERSION_CODE > KERNEL_VERSION(2,6,19)) */
 
 static struct rt_fun_entry rtai_comedi_fun[] = {
    [_KCOMEDI_OPEN]                = { 0, comedi_open }
@@ -403,7 +403,7 @@ static struct rt_fun_entry rtai_comedi_fun[] = {
   ,[_KCOMEDI_MAP]                 = { 0, comedi_map }
   ,[_KCOMEDI_UNMAP]               = { 0, comedi_unmap }
 
-#endif /* CONFIG_REGPARM */
+#endif /* defined(CONFIG_REGPARM) || LINUX_VERSION_CODE > KERNEL_VERSION(2,6,19) */
 
   ,[_KCOMEDI_REGISTER_CALLBACK]   = { 0, rt_comedi_register_callback }
   ,[_KCOMEDI_COMMAND]             = { 0, rt_comedi_command }

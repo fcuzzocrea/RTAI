@@ -1,3 +1,10 @@
+2007-06-19  Roberto Bucher <roberto.bucher@supsi.ch>
+
+	* rtai-lab/scilab/macros/Makefile: Changed the scilab version to 4.1.1.
+
+	* rtai-lab/scilab/macros/RTAI/CodeGen_.sci: Eliminated some unused
+	  functions.
+
 2007-06-07  Roberto Bucher <roberto.bucher@supsi.ch>
 
 	* rtai-lab/scilab/devices/*.c: Added copyright lines in the sources.

@@ -2170,81 +2170,6 @@ function [CCode,FCode]=gen_blocks()
 endfunction
 
 //==========================================================================
-
-function ok=gen_ccode();
-//Generates the C code for new block simulation
-  
-//Copyright INRIA
-//Author : Rachid Djenidi
-// Modified for RTAI by Paolo Mantegazza (mantegazza@aero.polimi.it
-// and Roberto Bucher (roberto.bucher@die.supsi.ch)
-  [CCode,FCode]=gen_blocks()
-
-  if FCode<>[] then
-    ierr=execstr('mputl(FCode,rpat+''/''+rdnom+''f.f'')','errcatch')
-    if ierr<>0 then
-      message(lasterror())
-      ok=%f
-      return
-    end
-  end
-
-  if CCode<>[] then
-    CCode = [
-          '#include <math.h>';
-          '#include <stdlib.h>';
-          '#include <scicos/scicos_block.h>';
-          '#ifdef MODEL';
-          '#include <devices.h>';
-          '#endif';
-	  '';
-	  CCode];
-    ierr=execstr('mputl(CCode,rpat+''/''+rdnom+''_Cblocks.c'')','errcatch')
-    if ierr<>0 then
-      message(lasterror())
-      ok=%f
-      return
-    end
-  end
-
-  nact=size(act,'*');
-  ncap=size(cap,'*');
-  if (nact+ncap)~=0 then
-    created=fileinfo(rpat+'/'+rdnom+'_io.c')
-    reponse=1;
-    if created~=[] then
-      reponse=1;
-      reponse=x_message(['File: ""'+rdnom+'_io.c"" already exists,';'do you want to replace it ?'],['Yes','No']);
-    end
-    if reponse==1 |  reponse==[] then
-      Code=['#include '"'+SCI+'/routines/machine.h'"';
-	    make_actuator(%t);
-	    make_sensor(%t)]
-      ierr=execstr('mputl(Code,rpat+''/''+rdnom+''_io.c'')','errcatch')
-    end
-  else
-    ierr=execstr('mputl([],rpat+''/''+rdnom+''_io.c'')','errcatch')
-  end  
-  if ierr<>0 then
-    message(lasterror())
-    ok=%f
-    return
-  end
-
-  Code=[make_decl_standalone()
-	Protostalone;
-	make_static_standalone()
-        make_standalone()]
-  ierr=execstr('mputl(Code,rpat+''/''+rdnom+''_standalone.c'')','errcatch')
-  if ierr<>0 then
-    message(lasterror())
-    ok=%f
-    return
-  end
-endfunction
-
-//==========================================================================
-
   
 function ok=gen_gui();
 //creates the Scicos GUI function associated with the new block
@@ -2353,7 +2278,7 @@ function Makename=gen_make(name,files,libs)
   T=strsubst(T,'$$OBJ$$',strcat(files+'.o',' '));
   T=strsubst(T,'$$SCILAB_DIR$$',SCI);
   mputl(T,Makename)
- 
+
 endfunction
 
 //==========================================================================
@@ -3427,7 +3352,6 @@ Code=[Code
       '{ '
       '  /* int iwa[1]={0}; */'
       '  int phase=2;'
-      '  neq='+string(nX)+';'
       '  C2F(dset)(&neq, &c_b14,xcdot , &c__1);'
       '  '+rdnom+'odoit(t, '+rdnom+'_block_outtb,'+rdnom+'_iwa,phase,xcdot, xc, xcdot);'
       ' '
@@ -3753,25 +3677,6 @@ endfunction
   
 //==========================================================================
 
-function ok = compile_standalone()
-//compile rt standalone executable for standalone
-// 22.01.2004
-//Author : Roberto Bucher (roberto.bucher@die.supsi.ch)
-  xinfo('Compiling standalone');
-  wd = pwd();
-  chdir(rpat);
-
-  if getenv('WIN32','NO')=='OK' then
-     unix_w('nmake -f Makefile.mak');
-  else
-     unix_w('make')
-  end
-  chdir(wd);
-  ok = %t;
-endfunction	
-
-//==========================================================================
-
 function Code=make_putevs()
   //RN
   Code=['int '+rdnom+'_putevs(t, evtnb, ierr)';
@@ -3794,5 +3699,37 @@ function Code=make_putevs()
 	'  pointi = *evtnb;'
 	'  return 0;'
 	'} ']
+endfunction
+
+//==========================================================================
+
+function ok = compile_standalone()
+//compile rt standalone executable for standalone
+// 22.01.2004
+//Author : Roberto Bucher (roberto.bucher@die.supsi.ch)
+  xinfo('Compiling standalone');
+  wd = pwd();
+  chdir(rpat);
+
+  if getenv('WIN32','NO')=='OK' then
+     unix_w('nmake -f Makefile.mak');
+  else
+     unix_w('make')
+  end
+  chdir(wd);
+  ok = %t;
+endfunction	
+
+//==========================================================================
+
+function rename(folder,newname,ext)
+oldname=folder+'/Makefile';
+newname=folder+'/'+newname;
+T=mgetl(oldname);
+T=strsubst(T,'.obj','.o');
+T=strsubst(T,'.o',ext);
+T=strsubst(T,SCI,WSCI);
+mputl(T,newname);
+mdelete(oldname);
 endfunction
 

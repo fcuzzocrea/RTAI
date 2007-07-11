@@ -81,7 +81,13 @@
 #define TIMER_LATENCY     RTAI_LATENCY_APIC
 #define TIMER_SETUP_TIME  RTAI_SETUP_TIME_APIC
 #define ONESHOT_SPAN      (CPU_FREQ/(CONFIG_RTAI_CAL_FREQS_FACT + 2)) //(0x7FFFFFFFLL*(CPU_FREQ/TIMER_FREQ))
+#ifdef CONFIG_GENERIC_CLOCKEVENTS
+#define USE_LINUX_TIMER
+#define update_linux_timer(cpuid) \
+	do {  hal_pend_uncond(ipipe_apic_vector_irq(LOCAL_TIMER_VECTOR), cpuid); } while (0)
+#else /* !CONFIG_GENERIC_CLOCKEVENTS */
 #define update_linux_timer(cpuid)
+#endif /* CONFIG_GENERIC_CLOCKEVENTS */
 
 #else /* !CONFIG_X86_LOCAL_APIC */
 

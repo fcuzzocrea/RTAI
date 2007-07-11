@@ -833,9 +833,22 @@ irqreturn_t rtai_broadcast_to_local_timers (int irq, void *dev_id, struct pt_reg
 	return RTAI_LINUX_IRQ_HANDLED;
 } 
 
+#ifdef CONFIG_GENERIC_CLOCKEVENTS
+
+static inline int REQUEST_LINUX_IRQ_BROADCAST_TO_APIC_TIMERS(void)
+{
+	return 0;
+}
+
+#define FREE_LINUX_IRQ_BROADCAST_TO_APIC_TIMERS();
+
+#else
+
 #define REQUEST_LINUX_IRQ_BROADCAST_TO_APIC_TIMERS()  rt_request_linux_irq(RTAI_TIMER_8254_IRQ, &rtai_broadcast_to_local_timers, "rtai_broadcast", &rtai_broadcast_to_local_timers)
 
 #define FREE_LINUX_IRQ_BROADCAST_TO_APIC_TIMERS()     rt_free_linux_irq(RTAI_TIMER_8254_IRQ, &rtai_broadcast_to_local_timers)
+
+#endif
 
 #else
 
@@ -895,13 +908,17 @@ irqreturn_t rtai_broadcast_to_local_timers (int irq, void *dev_id, struct pt_reg
 #define SYMBOL_NAME_STR(X) #X
 #endif
 
-#if LINUX_VERSION_CODE > KERNEL_VERSION(2,6,19)
-#define __PUSH_GS          "pushl %gs\n\t"
-#define __POP_GS           "popl  %gs\n\t"
+#if LINUX_VERSION_CODE > KERNEL_VERSION(2,6,20)
+#define __PUSH_FGS          "pushl %fs\n\t"
+#define __POP_FGS           "popl  %fs\n\t"
+#define __LOAD_KERNEL_PDA  "movl  $"STR(__KERNEL_PERCPU)",%edx; movl %edx,%fs\n\t"
+#elif LINUX_VERSION_CODE > KERNEL_VERSION(2,6,19)
+#define __PUSH_FGS          "pushl %gs\n\t"
+#define __POP_FGS           "popl  %gs\n\t"
 #define __LOAD_KERNEL_PDA  "movl  $"STR(__KERNEL_PDA)",%edx; movl %edx,%gs\n\t"
 #else
-#define __PUSH_GS
-#define __POP_GS
+#define __PUSH_FGS
+#define __POP_FGS
 #define __LOAD_KERNEL_PDA
 #endif
 
@@ -911,7 +928,7 @@ irqreturn_t rtai_broadcast_to_local_timers (int irq, void *dev_id, struct pt_reg
         SYMBOL_NAME_STR(name) ":\n\t" \
 	"pushl $0\n\t" \
 	"cld\n\t" \
-        __PUSH_GS \
+        __PUSH_FGS \
         "pushl %es\n\t" \
         "pushl %ds\n\t" \
         "pushl %eax\n\t" \
@@ -937,7 +954,7 @@ irqreturn_t rtai_broadcast_to_local_timers (int irq, void *dev_id, struct pt_reg
         "popl %eax\n\t" \
         "popl %ds\n\t" \
         "popl %es\n\t" \
-        __POP_GS \
+        __POP_FGS \
 	"addl $4, %esp\n\t" \
         "iret")
 

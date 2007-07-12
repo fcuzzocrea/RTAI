@@ -1476,12 +1476,6 @@ static int rt_linux_hrt_next_shot(unsigned long delay, struct ipipe_tick_device 
 	return 0;
 }
 
-#ifdef CONFIG_X86_LOCAL_APIC
-#define HRT_LINUX_TIMER_NAME  "lapic"
-#else
-#define HRT_LINUX_TIMER_NAME  "pit"
-#endif
-
 static int rtai_request_tickdev(void)
 {
 	int mode, cpuid;

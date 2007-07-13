@@ -1440,8 +1440,10 @@ static void rt_linux_hrt_set_mode(enum clock_event_mode mode, struct ipipe_tick_
 	int cpuid = rtai_cpuid();
 
 	if (mode == CLOCK_EVT_MODE_ONESHOT || mode == CLOCK_EVT_MODE_SHUTDOWN) {
+rt_printk("SET MODE O-S %d %d %d\n", mode, CLOCK_EVT_MODE_ONESHOT, CLOCK_EVT_MODE_SHUTDOWN);
 		rt_times.linux_tick = 0;
 	} else if (mode == CLOCK_EVT_MODE_PERIODIC) {
+rt_printk("SET MODE P %d %d\n", mode, CLOCK_EVT_MODE_PERIODIC);
 		rtai_cli();
 		rt_times.linux_tick = nano2count_cpuid((1000000000 + HZ/2)/HZ, cpuid);
 		rt_times.linux_time = rt_get_time_cpuid(cpuid) + rt_times.linux_tick;
@@ -1482,8 +1484,10 @@ static int rtai_request_tickdev(void)
 	for (cpuid = 0; cpuid < NR_RT_CPUS; cpuid++) {
 		mode = ipipe_request_tickdev(HRT_LINUX_TIMER_NAME, rt_linux_hrt_set_mode, rt_linux_hrt_next_shot, cpuid);
 		if (mode == CLOCK_EVT_MODE_PERIODIC) {
+rt_printk("REQUEST P %d %d %lld %lld\n", mode, CLOCK_EVT_MODE_PERIODIC, rt_times.linux_tick, nano2count_cpuid((1000000000 + HZ/2)/HZ, cpuid));
 //			rt_times.linux_tick = nano2count_cpuid((1000000000 + HZ/2)/HZ, cpuid);
 		} else if (mode == CLOCK_EVT_MODE_UNUSED || mode == CLOCK_EVT_MODE_ONESHOT) {
+rt_printk("REQUEST U-S %d %d %d\n", mode, CLOCK_EVT_MODE_ONESHOT, CLOCK_EVT_MODE_SHUTDOWN);
 			rt_times.linux_tick = 0;
 		} else {
 			return mode;
@@ -1650,6 +1654,7 @@ void stop_rt_timer(void)
 		rt_time_h = RT_TIME_END;
 		rt_smp_oneshot_timer[0] = 0;
 	}
+	rtai_release_tickdev();
 }
 
 #endif /* CONFIG_SMP */

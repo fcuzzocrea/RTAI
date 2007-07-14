@@ -1,15 +1,23 @@
+2007-07-15  Paolo Mantegazza <mantegazza@aero.polimi.it>
+
+	* base/arch/i386/hal/hal.immed: added support for using hard timers
+	  without any RTAI scheduler, in periodic mode only; needed mainly
+	  to keep some existing tests working.
+	* base/include/asm-i386/rtai_hal.h: added declarations for the use
+	  of what above.
+
 2007-07-11  Paolo Mantegazza <mantegazza@aero.polimi.it>
 
-	base/include/asm-i386/rtai_fpu.h: thread_info disappeared from
-	post Linux 2.6.20, use task_thread_info instead.
-	base/include/asm-i386/rtai_hal.h: copy Linux do_div locally.
-	base/include/asm-i386/rtai_vectors.h: include header to get a macro 
-	from the patch.
-	base/include/asm-i386/rtai_lxrt.h: add macro to pend local apic 
-	interrupts to Linux when it uses clockevents.
-	base/arch/i386/hal/hal.immed: add macro for a dummy bradcast to local 
-	apics when Linux uses clockevents.
-	base/sched/sched.c: add support for Linux clockevents.
+	* base/include/asm-i386/rtai_fpu.h: thread_info disappeared from
+	  post Linux 2.6.20, use task_thread_info instead.
+	* base/include/asm-i386/rtai_hal.h: copy Linux do_div locally.
+	* base/include/asm-i386/rtai_vectors.h: include header to get a macro 
+	  from the patch.
+	* base/include/asm-i386/rtai_lxrt.h: add macro to pend local apic 
+	  interrupts to Linux when it uses clockevents.
+	* base/arch/i386/hal/hal.immed: add macro for a dummy bradcast to 
+	  local apics when Linux uses clockevents.
+	* base/sched/sched.c: add support for Linux clockevents.
 
 2007-06-19  Roberto Bucher <roberto.bucher@supsi.ch>
 

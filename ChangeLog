@@ -1,3 +1,14 @@
+2007-07-20  Paolo Mantegazza <mantegazza@aero.polimi.it>
+
+	* base/include/asm-i386/rtai_hal.h: remove declarations for 
+	  request/release of Linux hrt tickdev, needed nomore.
+	* base/arch/i386/hal/hal.immed: request/release of Linux hrt tickdev 
+	  unified here, function pointers for hrt mode and oneshot setting 
+	  declared and exported so that sched.c can set them later.
+	* base/sched/sched.c: request/release of linux hrt moved to hal.immed,
+	  initialise hrt mode and oneshot setting pointers exported from 
+	  hal.immed.
+
 2007-07-15  Paolo Mantegazza <mantegazza@aero.polimi.it>
 
 	* base/arch/i386/hal/hal.immed: added support for using hard timers

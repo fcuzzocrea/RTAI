@@ -933,10 +933,6 @@ int rt_request_timer(void (*handler)(void), unsigned tick, int use_apic);
 
 void rt_free_timer(void);
 
-int rtai_test_request_tickdev(void);
-
-void rtai_test_release_tickdev(void);
-
 RT_TRAP_HANDLER rt_set_trap_handler(RT_TRAP_HANDLER handler);
 
 void rt_release_rtc(void);

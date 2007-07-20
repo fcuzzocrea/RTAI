@@ -109,6 +109,10 @@ static inline void rtai_setup_oneshot_apic (unsigned count, unsigned vector)
 	apic_write(APIC_TMICT, count);
 }
 
+static int rtai_request_tickdev(void);
+
+static void rtai_release_tickdev(void);
+
 #if LINUX_VERSION_CODE < KERNEL_VERSION(2,4,32) || (LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,0) && LINUX_VERSION_CODE < KERNEL_VERSION(2,6,9))
 #define __ack_APIC_irq  ack_APIC_irq
 #endif
@@ -1157,6 +1161,7 @@ void rt_request_apic_timers (void (*handler)(void), struct apic_timer_setup_data
 	TRACE_RTAI_TIMER(TRACE_RTAI_EV_TIMER_REQUEST_APIC,handler,0);
 
 	flags = rtai_critical_enter(rtai_critical_sync);
+	rtai_request_tickdev();
 	rtai_sync_level = 1;
 	rtai_timers_sync_time = rtai_rdtsc() + rtai_imuldiv(LATCH, rtai_tunables.cpu_freq, RTAI_FREQ_8254);
 	for (cpuid = 0; cpuid < RTAI_NR_CPUS; cpuid++) {
@@ -1216,6 +1221,7 @@ void rt_free_apic_timers(void)
 
 	FREE_LINUX_IRQ_BROADCAST_TO_APIC_TIMERS();
 	flags = rtai_critical_enter(rtai_critical_sync);
+	rtai_release_tickdev();
 	rtai_sync_level = 3;
 	rtai_setup_periodic_apic(RTAI_APIC_ICOUNT,LOCAL_TIMER_VECTOR);
 	RESET_INTR_GATE(RTAI_APIC_TIMER_VECTOR, rtai_apic_timer_sysvec);
@@ -1353,6 +1359,7 @@ int rt_request_timer (void (*handler)(void), unsigned tick, int use_apic)
 
 	used_apic = use_apic;
 	rtai_save_flags_and_cli(flags);
+	rtai_request_tickdev();
 	rt_times.tick_time = rtai_rdtsc();
     	if (tick > 0) {
 		rt_times.linux_tick = use_apic ? RTAI_APIC_ICOUNT : LATCH;
@@ -1412,6 +1419,7 @@ void rt_free_timer (void)
 	TRACE_RTAI_TIMER(TRACE_RTAI_EV_TIMER_FREE,0,0);
 
 	rtai_save_flags_and_cli(flags);
+	rtai_release_tickdev();
 	if (used_apic) {
 		FREE_LINUX_IRQ_BROADCAST_TO_APIC_TIMERS();
 		rtai_setup_periodic_apic(RTAI_APIC_ICOUNT, LOCAL_TIMER_VECTOR);
@@ -2307,15 +2315,13 @@ EXPORT_SYMBOL(rt_reset_sched_ipi_gate);
 
 /*@}*/
 
-/* 
- * what below serves RTAI examples only and
- * assume that RTAI is in periodic mode always
- */
-
-#ifdef CONFIG_GENERIC_CLOCKEVENTS
-
 #include <linux/clockchips.h>
 #include <linux/ipipe_tickdev.h>
+
+void (*rt_linux_hrt_set_mode)(enum clock_event_mode, struct ipipe_tick_device *);
+int (*rt_linux_hrt_next_shot)(unsigned long, struct ipipe_tick_device *);
+
+#ifdef CONFIG_GENERIC_CLOCKEVENTS
 
 #ifdef CONFIG_SMP
 #define TEST_LINUX_TICK  RTAI_APIC_ICOUNT
@@ -2323,7 +2329,12 @@ EXPORT_SYMBOL(rt_reset_sched_ipi_gate);
 #define TEST_LINUX_TICK  (used_apic ? RTAI_APIC_ICOUNT : LATCH)
 #endif 
 
-static void rt_linux_hrt_set_mode(enum clock_event_mode mode, struct ipipe_tick_device *hrt_dev)
+/* 
+ * _rt_linux_hrt_set_mode and _rt_linux_hrt_next_shot below should serve 
+ * RTAI examples only and assume that RTAI is in periodic mode always
+ */
+
+static void _rt_linux_hrt_set_mode(enum clock_event_mode mode, struct ipipe_tick_device *hrt_dev)
 {
 	if (mode == CLOCK_EVT_MODE_PERIODIC) {
 		rtai_cli();
@@ -2335,19 +2346,24 @@ static void rt_linux_hrt_set_mode(enum clock_event_mode mode, struct ipipe_tick_
 	}
 }
 
-static int rt_linux_hrt_next_shot(unsigned long delay, struct ipipe_tick_device *hrt_dev)
+static int _rt_linux_hrt_next_shot(unsigned long delay, struct ipipe_tick_device *hrt_dev)
 {
 	rt_times.linux_time = llimd(rtai_rdtsc(), tuned.cpu_freq, used_apic ? RTAI_APIC_ICOUNT : LATCH) + llimd(delay, used_apic ? RTAI_APIC_ICOUNT : LATCH, 1000000000);
 	return 0;
 }
 
-int rtai_test_request_tickdev(void)
+static int rtai_request_tickdev(void)
 {
 	int mode, cpuid;
 	for (cpuid = 0; cpuid < NR_RT_CPUS; cpuid++) {
-		mode = ipipe_request_tickdev(HRT_LINUX_TIMER_NAME, rt_linux_hrt_set_mode, rt_linux_hrt_next_shot, cpuid);
+		if ((void *)rt_linux_hrt_set_mode == (void *)rt_linux_hrt_next_shot) {
+			mode = ipipe_request_tickdev(HRT_LINUX_TIMER_NAME, rt_linux_hrt_set_mode, rt_linux_hrt_next_shot, cpuid);
+		} else {
+			mode = ipipe_request_tickdev(HRT_LINUX_TIMER_NAME, _rt_linux_hrt_set_mode, _rt_linux_hrt_next_shot, cpuid);
+		}
 		if (mode == CLOCK_EVT_MODE_PERIODIC) {
 			rt_times.linux_tick = TEST_LINUX_TICK;
+//			rt_times.linux_tick = nano2count_cpuid((1000000000 + HZ/2)/HZ, cpuid);
 		} else if (mode == CLOCK_EVT_MODE_UNUSED || mode == CLOCK_EVT_MODE_ONESHOT) {
 			rt_times.linux_tick = 0;
 		} else {
@@ -2357,7 +2373,7 @@ int rtai_test_request_tickdev(void)
 	return 0;
 }
 
-void rtai_test_release_tickdev(void)
+static void rtai_release_tickdev(void)
 {
 	int cpuid;
 	for (cpuid = 0; cpuid < NR_RT_CPUS; cpuid++) {
@@ -2367,11 +2383,12 @@ void rtai_test_release_tickdev(void)
 
 #else /* !CONFIG_GENERIC_CLOCKEVENTS */
 
-int rtai_test_request_tickdev(void)   { return 0; }
+static int rtai_request_tickdev(void)   { return 0; }
 
-void rtai_test_release_tickdev(void)  {  return;  }
+static void rtai_release_tickdev(void)  {  return;  }
 
 #endif /* CONFIG_GENERIC_CLOCKEVENTS */
 
-EXPORT_SYMBOL(rtai_test_request_tickdev);
-EXPORT_SYMBOL(rtai_test_release_tickdev);
+EXPORT_SYMBOL(rt_linux_hrt_set_mode);
+EXPORT_SYMBOL(rt_linux_hrt_next_shot);
+EXPORT_SYMBOL(rtai_force_jiffies_timer);

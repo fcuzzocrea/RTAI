@@ -2391,4 +2391,3 @@ static void rtai_release_tickdev(void)  {  return;  }
 
 EXPORT_SYMBOL(rt_linux_hrt_set_mode);
 EXPORT_SYMBOL(rt_linux_hrt_next_shot);
-EXPORT_SYMBOL(rtai_force_jiffies_timer);

@@ -1429,13 +1429,15 @@ RTAI_SYSCALL_MODE void start_rt_apic_timers(struct apic_timer_setup_data *setup_
 
 #else /* !CONFIG_RTAI_RTC_FREQ */
 
-
 #ifdef CONFIG_GENERIC_CLOCKEVENTS
 
 #include <linux/clockchips.h>
 #include <linux/ipipe_tickdev.h>
 
-static void rt_linux_hrt_set_mode(enum clock_event_mode mode, struct ipipe_tick_device *hrt_dev)
+extern void *rt_linux_hrt_set_mode;
+extern void *rt_linux_hrt_next_shot;
+
+static void _rt_linux_hrt_set_mode(enum clock_event_mode mode, struct ipipe_tick_device *hrt_dev)
 {
 	int cpuid = rtai_cpuid();
 
@@ -1449,7 +1451,7 @@ static void rt_linux_hrt_set_mode(enum clock_event_mode mode, struct ipipe_tick_
 	}
 }
 
-static int rt_linux_hrt_next_shot(unsigned long delay, struct ipipe_tick_device *hrt_dev)
+static int _rt_linux_hrt_next_shot(unsigned long delay, struct ipipe_tick_device *hrt_dev)
 {
 	int cpuid = rtai_cpuid();
 
@@ -1476,36 +1478,6 @@ static int rt_linux_hrt_next_shot(unsigned long delay, struct ipipe_tick_device 
 	return 0;
 }
 
-static int rtai_request_tickdev(void)
-{
-	int mode, cpuid;
-	for (cpuid = 0; cpuid < NR_RT_CPUS; cpuid++) {
-		mode = ipipe_request_tickdev(HRT_LINUX_TIMER_NAME, rt_linux_hrt_set_mode, rt_linux_hrt_next_shot, cpuid);
-		if (mode == CLOCK_EVT_MODE_PERIODIC) {
-//			rt_times.linux_tick = nano2count_cpuid((1000000000 + HZ/2)/HZ, cpuid);
-		} else if (mode == CLOCK_EVT_MODE_UNUSED || mode == CLOCK_EVT_MODE_ONESHOT) {
-			rt_times.linux_tick = 0;
-		} else {
-			return mode;
-		}
-	}
-	return 0;
-}
-
-static void rtai_release_tickdev(void)
-{
-	int cpuid;
-	for (cpuid = 0; cpuid < NR_RT_CPUS; cpuid++) {
-		ipipe_release_tickdev(cpuid);
-	}
-}
-
-#else /* !CONFIG_GENERIC_CLOCKEVENTS */
-
-#define rtai_request_tickdev()  (0)
-
-#define rtai_release_tickdev()
-
 #endif /* CONFIG_GENERIC_CLOCKEVENTS */
 
 #ifdef CONFIG_SMP
@@ -1515,10 +1487,6 @@ RTAI_SYSCALL_MODE void start_rt_apic_timers(struct apic_timer_setup_data *setup_
 	unsigned long flags, cpuid;
 
 	rt_request_apic_timers(rt_timer_handler, setup_data);
-	if (rtai_request_tickdev()) {
-		rt_free_apic_timers();
-		return;
-	}
 	flags = rt_global_save_flags_and_cli();
 	for (cpuid = 0; cpuid < NR_RT_CPUS; cpuid++) {
 		if (setup_data[cpuid].mode > 0) {
@@ -1566,7 +1534,6 @@ void stop_rt_timer(void)
 			oneshot_running = 0;
 		}
 	}
-	rtai_release_tickdev();
 }
 
 #else /* !CONFIG_SMP */
@@ -1596,10 +1563,6 @@ RTAI_SYSCALL_MODE RTIME start_rt_timer(int period)
 		rt_request_timer(rt_timer_handler, !TIMER_TYPE && period > LATCH ? LATCH: period, TIMER_TYPE);
                 tuned.timers_tol[0] = rt_half_tick = (rt_times.periodic_tick + 1)>>1;
         }
-	if (rtai_request_tickdev()) {
-		rt_free_timer();
-		return 0;
-	}
 	rt_sched_timed = 1;
 	rt_smp_times[cpuid].linux_tick    = rt_times.linux_tick;
 	rt_smp_times[cpuid].tick_time     = rt_times.tick_time;
@@ -1650,7 +1613,6 @@ void stop_rt_timer(void)
 		rt_time_h = RT_TIME_END;
 		rt_smp_oneshot_timer[0] = 0;
 	}
-	rtai_release_tickdev();
 }
 
 #endif /* CONFIG_SMP */
@@ -3063,6 +3025,10 @@ static int __rtai_lxrt_init(void)
 	retval = rtai_init_features(); /* see rtai_schedcore.h */
 
 exit:
+#ifdef CONFIG_GENERIC_CLOCKEVENTS
+	rt_linux_hrt_set_mode  = _rt_linux_hrt_set_mode;
+	rt_linux_hrt_next_shot = _rt_linux_hrt_next_shot;
+#endif
 	return retval;
 free_sched_ipi:
 	rt_free_sched_ipi();
@@ -3084,6 +3050,11 @@ mem_end:
 static void __rtai_lxrt_exit(void)
 {
 	unregister_reboot_notifier(&lxrt_notifier_reboot);
+
+#ifdef CONFIG_GENERIC_CLOCKEVENTS
+	rt_linux_hrt_set_mode  = NULL;
+	rt_linux_hrt_next_shot = NULL;
+#endif
 
 	lxrt_killall();
 

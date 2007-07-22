@@ -1161,7 +1161,6 @@ void rt_request_apic_timers (void (*handler)(void), struct apic_timer_setup_data
 	TRACE_RTAI_TIMER(TRACE_RTAI_EV_TIMER_REQUEST_APIC,handler,0);
 
 	flags = rtai_critical_enter(rtai_critical_sync);
-	rtai_request_tickdev();
 	rtai_sync_level = 1;
 	rtai_timers_sync_time = rtai_rdtsc() + rtai_imuldiv(LATCH, rtai_tunables.cpu_freq, RTAI_FREQ_8254);
 	for (cpuid = 0; cpuid < RTAI_NR_CPUS; cpuid++) {
@@ -1207,6 +1206,7 @@ void rt_request_apic_timers (void (*handler)(void), struct apic_timer_setup_data
 		}
 	}
 
+	rtai_request_tickdev();
 	rtai_critical_exit(flags);
 }
 
@@ -1359,7 +1359,6 @@ int rt_request_timer (void (*handler)(void), unsigned tick, int use_apic)
 
 	used_apic = use_apic;
 	rtai_save_flags_and_cli(flags);
-	rtai_request_tickdev();
 	rt_times.tick_time = rtai_rdtsc();
     	if (tick > 0) {
 		rt_times.linux_tick = use_apic ? RTAI_APIC_ICOUNT : LATCH;
@@ -1403,6 +1402,7 @@ int rt_request_timer (void (*handler)(void), unsigned tick, int use_apic)
 			SET_INTR_GATE(ext_irq_vector(RTAI_TIMER_8254_IRQ), rtai_8254_timer_handler, rtai_8254_timer_sysvec);
 		}
 	}
+	rtai_request_tickdev();
 	rtai_restore_flags(flags);
 	return retval;
 }
@@ -2362,7 +2362,7 @@ static int rtai_request_tickdev(void)
 			mode = ipipe_request_tickdev(HRT_LINUX_TIMER_NAME, _rt_linux_hrt_set_mode, _rt_linux_hrt_next_shot, cpuid);
 		}
 		if (mode == CLOCK_EVT_MODE_PERIODIC) {
-			rt_times.linux_tick = TEST_LINUX_TICK;
+//			rt_times.linux_tick = TEST_LINUX_TICK;
 //			rt_times.linux_tick = nano2count_cpuid((1000000000 + HZ/2)/HZ, cpuid);
 		} else if (mode == CLOCK_EVT_MODE_UNUSED || mode == CLOCK_EVT_MODE_ONESHOT) {
 			rt_times.linux_tick = 0;

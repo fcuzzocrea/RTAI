@@ -1445,7 +1445,7 @@ static void _rt_linux_hrt_set_mode(enum clock_event_mode mode, struct ipipe_tick
 		rt_times.linux_tick = 0;
 	} else if (mode == CLOCK_EVT_MODE_PERIODIC) {
 		rtai_cli();
-//		rt_times.linux_tick = nano2count_cpuid((1000000000 + HZ/2)/HZ, cpuid);
+		rt_times.linux_tick = nano2count_cpuid((1000000000 + HZ/2)/HZ, cpuid);
 		rt_times.linux_time = rt_get_time_cpuid(cpuid) + rt_times.linux_tick;
 		rtai_sti();
 	}
@@ -1538,7 +1538,7 @@ void stop_rt_timer(void)
 
 #else /* !CONFIG_SMP */
 
-#ifdef USE_LINUX_TIMER
+#if defined(USE_LINUX_TIMER) && !defined(CONFIG_GENERIC_CLOCKEVENTS)
 #define TIMER_TYPE 0
 #else
 #define TIMER_TYPE 1

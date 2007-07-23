@@ -2315,13 +2315,13 @@ EXPORT_SYMBOL(rt_reset_sched_ipi_gate);
 
 /*@}*/
 
+#ifdef CONFIG_GENERIC_CLOCKEVENTS
+
 #include <linux/clockchips.h>
 #include <linux/ipipe_tickdev.h>
 
 void (*rt_linux_hrt_set_mode)(enum clock_event_mode, struct ipipe_tick_device *);
 int (*rt_linux_hrt_next_shot)(unsigned long, struct ipipe_tick_device *);
-
-#ifdef CONFIG_GENERIC_CLOCKEVENTS
 
 #ifdef CONFIG_SMP
 #define TEST_LINUX_TICK  RTAI_APIC_ICOUNT
@@ -2382,6 +2382,9 @@ static void rtai_release_tickdev(void)
 }
 
 #else /* !CONFIG_GENERIC_CLOCKEVENTS */
+
+void (*rt_linux_hrt_set_mode)(int clock_event_mode, void *);
+int (*rt_linux_hrt_next_shot)(unsigned long, void *);
 
 static int rtai_request_tickdev(void)   { return 0; }
 

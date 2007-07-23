@@ -2356,7 +2356,7 @@ static int rtai_request_tickdev(void)
 {
 	int mode, cpuid;
 	for (cpuid = 0; cpuid < NR_RT_CPUS; cpuid++) {
-		if ((void *)rt_linux_hrt_set_mode == (void *)rt_linux_hrt_next_shot) {
+		if ((void *)rt_linux_hrt_set_mode != (void *)rt_linux_hrt_next_shot) {
 			mode = ipipe_request_tickdev(HRT_LINUX_TIMER_NAME, rt_linux_hrt_set_mode, rt_linux_hrt_next_shot, cpuid);
 		} else {
 			mode = ipipe_request_tickdev(HRT_LINUX_TIMER_NAME, _rt_linux_hrt_set_mode, _rt_linux_hrt_next_shot, cpuid);

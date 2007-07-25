@@ -231,7 +231,7 @@ diff --exclude .pc --exclude patches -uNrp 2.6.22/arch/x86_64/kernel/entry.S 2.6
  	movq RIP-ARGOFFSET(%rsp),%rcx
  	CFI_REGISTER	rip,rcx
  	RESTORE_ARGS 0,-ARG_SKIP,1
-@@ -517,12 +541,79 @@ END(stub_rt_sigreturn)
+@@ -517,14 +541,85 @@ END(stub_rt_sigreturn)
  	 * We entered an interrupt context - irqs are off:
  	 */
  	TRACE_IRQS_OFF
@@ -309,9 +309,15 @@ diff --exclude .pc --exclude patches -uNrp 2.6.22/arch/x86_64/kernel/entry.S 2.6
  	interrupt do_IRQ
 +#endif /* !CONFIG_IPIPE */	
  	/* 0(%rsp): oldrsp-ARGOFFSET */
+++#ifdef CONFIG_IPIPE
+++ENTRY(ret_from_intr)
+++#else
  ret_from_intr:
+++#endif
  	cli	
-@@ -552,17 +643,15 @@ retint_swapgs:	 	
+ 	TRACE_IRQS_OFF
+ 	decl %gs:pda_irqcount
+@@ -552,17 +647,15 @@ retint_swapgs:	 	
  	/*
  	 * The iretq could re-enable interrupts:
  	 */
@@ -330,7 +336,7 @@ diff --exclude .pc --exclude patches -uNrp 2.6.22/arch/x86_64/kernel/entry.S 2.6
  restore_args:
  	RESTORE_ARGS 0,8,0						
  iret_label:	
-@@ -625,7 +714,7 @@ ENTRY(retint_kernel)
+@@ -625,7 +718,7 @@ ENTRY(retint_kernel)
  	jnc  retint_restore_args
  	bt   $9,EFLAGS-ARGOFFSET(%rsp)	/* interrupts off? */
  	jnc  retint_restore_args
@@ -339,7 +345,7 @@ diff --exclude .pc --exclude patches -uNrp 2.6.22/arch/x86_64/kernel/entry.S 2.6
  	jmp exit_intr
  #endif	
  
-@@ -634,7 +723,27 @@ END(common_interrupt)
+@@ -634,7 +727,27 @@ END(common_interrupt)
  	
  /*
   * APIC interrupts.
@@ -368,7 +374,7 @@ diff --exclude .pc --exclude patches -uNrp 2.6.22/arch/x86_64/kernel/entry.S 2.6
  	.macro apicinterrupt num,func
  	INTR_FRAME
  	pushq $~(\num)
-@@ -643,6 +752,7 @@ END(common_interrupt)
+@@ -643,6 +756,7 @@ END(common_interrupt)
  	jmp ret_from_intr
  	CFI_ENDPROC
  	.endm
@@ -376,7 +382,7 @@ diff --exclude .pc --exclude patches -uNrp 2.6.22/arch/x86_64/kernel/entry.S 2.6
  
  ENTRY(thermal_interrupt)
  	apicinterrupt THERMAL_APIC_VECTOR,smp_thermal_interrupt
-@@ -667,10 +777,12 @@ END(invalidate_interrupt\num)
+@@ -667,10 +781,12 @@ END(invalidate_interrupt\num)
  	INVALIDATE_ENTRY 1
  	INVALIDATE_ENTRY 2
  	INVALIDATE_ENTRY 3
@@ -389,7 +395,7 @@ diff --exclude .pc --exclude patches -uNrp 2.6.22/arch/x86_64/kernel/entry.S 2.6
  
  ENTRY(call_function_interrupt)
  	apicinterrupt CALL_FUNCTION_VECTOR,smp_call_function_interrupt
-@@ -695,31 +807,39 @@ END(spurious_interrupt)
+@@ -695,31 +811,39 @@ END(spurious_interrupt)
  /*
   * Exception entry points.
   */ 		
@@ -432,7 +438,7 @@ diff --exclude .pc --exclude patches -uNrp 2.6.22/arch/x86_64/kernel/entry.S 2.6
  	SAVE_ALL
  	cld
  	movl $1,%ebx
-@@ -739,6 +859,16 @@ END(spurious_interrupt)
+@@ -739,6 +863,16 @@ END(spurious_interrupt)
  	.if \ist
  	subq	$EXCEPTION_STKSZ, per_cpu__init_tss + TSS_ist + (\ist - 1) * 8(%rbp)
  	.endif
@@ -449,7 +455,7 @@ diff --exclude .pc --exclude patches -uNrp 2.6.22/arch/x86_64/kernel/entry.S 2.6
  	call \sym
  	.if \ist
  	addq	$EXCEPTION_STKSZ, per_cpu__init_tss + TSS_ist + (\ist - 1) * 8(%rbp)
-@@ -747,6 +877,12 @@ END(spurious_interrupt)
+@@ -747,6 +881,12 @@ END(spurious_interrupt)
  	.if \irqtrace
  	TRACE_IRQS_OFF
  	.endif
@@ -462,7 +468,7 @@ diff --exclude .pc --exclude patches -uNrp 2.6.22/arch/x86_64/kernel/entry.S 2.6
  	.endm
  
  	/*
-@@ -766,6 +902,10 @@ END(spurious_interrupt)
+@@ -766,6 +906,10 @@ END(spurious_interrupt)
  paranoid_exit\trace:
  	testl %ebx,%ebx				/* swapgs needed? */
  	jnz paranoid_restore\trace
@@ -473,7 +479,7 @@ diff --exclude .pc --exclude patches -uNrp 2.6.22/arch/x86_64/kernel/entry.S 2.6
  	testl $3,CS(%rsp)
  	jnz   paranoid_userspace\trace
  paranoid_swapgs\trace:
-@@ -865,7 +1005,19 @@ error_sti:	
+@@ -865,7 +1009,19 @@ error_sti:	
  	movq %rsp,%rdi
  	movq ORIG_RAX(%rsp),%rsi	/* get error code */ 
  	movq $-1,ORIG_RAX(%rsp)
@@ -493,7 +499,7 @@ diff --exclude .pc --exclude patches -uNrp 2.6.22/arch/x86_64/kernel/entry.S 2.6
  	/* ebx:	no swapgs flag (1: don't need swapgs, 0: need it) */	 
  error_exit:		
  	movl %ebx,%eax		
-@@ -883,7 +1035,9 @@ error_exit:		
+@@ -883,7 +1039,9 @@ error_exit:		
  	 * The iret might restore flags:
  	 */
  	TRACE_IRQS_IRETQ
@@ -504,7 +510,7 @@ diff --exclude .pc --exclude patches -uNrp 2.6.22/arch/x86_64/kernel/entry.S 2.6
  	RESTORE_ARGS 0,8,0						
  	jmp iret_label
  	CFI_ENDPROC
-@@ -1025,19 +1179,19 @@ ENTRY(kernel_execve)
+@@ -1025,19 +1183,19 @@ ENTRY(kernel_execve)
  ENDPROC(kernel_execve)
  
  KPROBE_ENTRY(page_fault)
@@ -528,7 +534,7 @@ diff --exclude .pc --exclude patches -uNrp 2.6.22/arch/x86_64/kernel/entry.S 2.6
  END(device_not_available)
  
  	/* runs on exception stack */
-@@ -1045,7 +1199,7 @@ KPROBE_ENTRY(debug)
+@@ -1045,7 +1203,7 @@ KPROBE_ENTRY(debug)
   	INTR_FRAME
  	pushq $0
  	CFI_ADJUST_CFA_OFFSET 8		
@@ -537,7 +543,7 @@ diff --exclude .pc --exclude patches -uNrp 2.6.22/arch/x86_64/kernel/entry.S 2.6
  	paranoidexit
  KPROBE_END(debug)
  
-@@ -1067,29 +1221,29 @@ KPROBE_ENTRY(int3)
+@@ -1067,29 +1225,29 @@ KPROBE_ENTRY(int3)
   	INTR_FRAME
   	pushq $0
   	CFI_ADJUST_CFA_OFFSET 8
@@ -573,7 +579,7 @@ diff --exclude .pc --exclude patches -uNrp 2.6.22/arch/x86_64/kernel/entry.S 2.6
  END(reserved)
  
  	/* runs on exception stack */
-@@ -1101,11 +1255,11 @@ ENTRY(double_fault)
+@@ -1101,11 +1259,11 @@ ENTRY(double_fault)
  END(double_fault)
  
  ENTRY(invalid_TSS)
@@ -587,7 +593,7 @@ diff --exclude .pc --exclude patches -uNrp 2.6.22/arch/x86_64/kernel/entry.S 2.6
  END(segment_not_present)
  
  	/* runs on exception stack */
-@@ -1117,19 +1271,19 @@ ENTRY(stack_segment)
+@@ -1117,19 +1275,19 @@ ENTRY(stack_segment)
  END(stack_segment)
  
  KPROBE_ENTRY(general_protection)

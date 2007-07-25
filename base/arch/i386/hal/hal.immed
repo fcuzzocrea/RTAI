@@ -88,6 +88,10 @@ RTAI_MODULE_PARM(rtai_cpufreq_arg, ulong);
 
 #define RTAI_NR_IRQS  IPIPE_NR_XIRQS
 
+static int rtai_request_tickdev(void);
+
+static void rtai_release_tickdev(void);
+
 #ifdef CONFIG_X86_LOCAL_APIC
 
 static unsigned long rtai_apicfreq_arg = RTAI_CALIBRATED_APIC_FREQ;
@@ -108,10 +112,6 @@ static inline void rtai_setup_oneshot_apic (unsigned count, unsigned vector)
 	apic_read(APIC_TMICT);
 	apic_write(APIC_TMICT, count);
 }
-
-static int rtai_request_tickdev(void);
-
-static void rtai_release_tickdev(void);
 
 #if LINUX_VERSION_CODE < KERNEL_VERSION(2,4,32) || (LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,0) && LINUX_VERSION_CODE < KERNEL_VERSION(2,6,9))
 #define __ack_APIC_irq  ack_APIC_irq

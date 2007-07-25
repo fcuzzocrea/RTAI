@@ -1,3 +1,8 @@
+2007-07-26  Paolo Mantegazza <mantegazza@aero.polimi.it>
+
+	* base/arch/x86-64/hal/hal.immed: modified to support CLOCKEVENTS, 
+	  i.e. Linux > 2.6.20, following latest i386 scheme.
+
 2007-07-24  Paolo Mantegazza <mantegazza@aero.polimi.it>
 
 	* base/sched/sched.c: TIMER_TYPE macro must be set depend on 

@@ -127,7 +127,8 @@ typedef union i387_union FPU_ENV;
 #define lnxtsk_uses_fpu(lnxtsk)  ((lnxtsk)->used_math)
 
 #define set_lnxtsk_using_fpu(lnxtsk) \
-        do { (lnxtsk)->thread_info->status |= TS_USEDFPU; } while(0)
+	do { task_thread_info(lnxtsk)->status |= TS_USEDFPU; } while(0)
+//	do { (lnxtsk)->thread_info->status |= TS_USEDFPU; } while(0)
 
 #endif /* LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,0) && LINUX_VERSION_CODE < KERNEL_VERSION(2,6,11) */
 
@@ -141,7 +142,8 @@ typedef union i387_union FPU_ENV;
 #define lnxtsk_uses_fpu(lnxtsk)  (tsk_used_math(lnxtsk))
 
 #define set_lnxtsk_using_fpu(lnxtsk) \
-        do { (lnxtsk)->thread_info->status |= TS_USEDFPU; } while(0)
+	do { task_thread_info(lnxtsk)->status |= TS_USEDFPU; } while(0)
+//	do { (lnxtsk)->thread_info->status |= TS_USEDFPU; } while(0)
 
 #endif /* LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,11) */
 

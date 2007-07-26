@@ -1,3 +1,12 @@
+2007-07-27  Paolo Mantegazza <mantegazza@aero.polimi.it>
+
+	* base/arch/i385/hal/hal.immed, 
+	* base/arch/x86-64/hal/hal.immed: use IRQF_SHARED in place of SA_SHIRQ
+	  it will avoid depracation warnings with the most recent Linux
+	  versions.
+	* base/include/rtai_wrappers: set defined IRQF_SHARED to SA_SHIRQ for
+	  older Linux version still using it.
+
 2007-07-26  Paolo Mantegazza <mantegazza@aero.polimi.it>
 
 	* base/arch/x86-64/hal/hal.immed: modified to support CLOCKEVENTS, 

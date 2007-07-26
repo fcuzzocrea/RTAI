@@ -309,11 +309,11 @@ diff --exclude .pc --exclude patches -uNrp 2.6.22/arch/x86_64/kernel/entry.S 2.6
  	interrupt do_IRQ
 +#endif /* !CONFIG_IPIPE */	
  	/* 0(%rsp): oldrsp-ARGOFFSET */
-++#ifdef CONFIG_IPIPE
-++ENTRY(ret_from_intr)
-++#else
++#ifdef CONFIG_IPIPE
++ENTRY(ret_from_intr)
++#else
  ret_from_intr:
-++#endif
++#endif
  	cli	
  	TRACE_IRQS_OFF
  	decl %gs:pda_irqcount
@@ -787,7 +787,7 @@ diff --exclude .pc --exclude patches -uNrp 2.6.22/arch/x86_64/kernel/io_apic.c 2
 diff --exclude .pc --exclude patches -uNrp 2.6.22/arch/x86_64/kernel/ipipe.c 2.6.22-x86_64/arch/x86_64/kernel/ipipe.c
 --- 2.6.22/arch/x86_64/kernel/ipipe.c	1970-01-01 01:00:00.000000000 +0100
 +++ 2.6.22-x86_64/arch/x86_64/kernel/ipipe.c	2007-07-13 22:21:50.000000000 +0200
-@@ -0,0 +1,842 @@
+@@ -0,0 +1,845 @@
 +/*   -*- linux-c -*-
 + *   linux/arch/x86_64/kernel/ipipe.c
 + *
@@ -1614,6 +1614,9 @@ diff --exclude .pc --exclude patches -uNrp 2.6.22/arch/x86_64/kernel/ipipe.c 2.6
 +EXPORT_SYMBOL(ipipe_trigger_irq);
 +EXPORT_SYMBOL(ipipe_get_sysinfo);
 +EXPORT_SYMBOL(ipipe_tune_timer);
++#ifdef CONFIG_X86_LOCAL_APIC
++EXPORT_SYMBOL(apic_wait_icr_idle);
++#endif
 +
 +EXPORT_SYMBOL_GPL(irq_desc);
 +struct task_struct *__switch_to(struct task_struct *prev_p,
@@ -4253,7 +4256,7 @@ diff --exclude .pc --exclude patches -uNrp 2.6.22/kernel/ipipe/Makefile 2.6.22-x
 diff --exclude .pc --exclude patches -uNrp 2.6.22/kernel/ipipe/core.c 2.6.22-x86_64/kernel/ipipe/core.c
 --- 2.6.22/kernel/ipipe/core.c	1970-01-01 01:00:00.000000000 +0100
 +++ 2.6.22-x86_64/kernel/ipipe/core.c	2007-07-13 22:21:50.000000000 +0200
-@@ -0,0 +1,1616 @@
+@@ -0,0 +1,1617 @@
 +/* -*- linux-c -*-
 + * linux/kernel/ipipe/core.c
 + *

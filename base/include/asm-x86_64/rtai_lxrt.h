@@ -23,6 +23,8 @@
 
 #include <linux/version.h>
 
+#include <asm/asm-offsets.h>
+
 #include <asm/rtai_vectors.h>
 
 #ifdef CONFIG_RTAI_LXRT_USE_LINUX_SYSCALL

@@ -1,7 +1,12 @@
 2007-07-26  Paolo Mantegazza <mantegazza@aero.polimi.it>
 
 	* base/arch/x86-64/hal/hal.immed: modified to support CLOCKEVENTS, 
-	  i.e. Linux > 2.6.20, following latest i386 scheme.
+	* base/include/asm-x86_64/rtai_fpu.h: thread_info disappeared from
+	  post Linux 2.6.20, use task_thread_info instead.
+	* base/include/asm-x86_64/rtai_lxrt.h: include asm-x86-64/asm-offests.h 
+	  to ensure "__NR_syscall_max" is available.
+	* base/include/asm-x86_64/rtai_vectors.h: test correct definition of 
+	  RTAI_SYS_VECTOR in "__KERNEL__" only.
 
 2007-07-24  Paolo Mantegazza <mantegazza@aero.polimi.it>
 

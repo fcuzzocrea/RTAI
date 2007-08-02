@@ -1,3 +1,11 @@
+2007-08-03  Paolo Mantegazza <mantegazza@aero.polimi.it>
+
+	* base/addons/rtdm/core.c, core.h, device.c, device.h, drvlib.c,
+	  module.c, proc.c, rtdm.h, rtdm_driver.h, rtserial.h, xn.h, 
+	  internal.h: updated to the last.
+	* base/addons/drivers/16550A/16550A.c, 16550A_io.h, 16550A_pnp.h:
+	  updated to the last.
+
 2007-08-02  Paolo Mantegazza <mantegazza@aero.polimi.it>
 
 	* base/tasklets/tasklets.c: reworked and shortened reinsertion of 

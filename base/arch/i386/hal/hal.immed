@@ -218,7 +218,7 @@ void rtai_critical_exit (unsigned long flags)
 	hal_critical_exit(flags);
 }
 
-static unsigned long IsolCpusMask = 0;
+unsigned long IsolCpusMask = 0;
 RTAI_MODULE_PARM(IsolCpusMask, ulong);
 
 int rt_request_irq (unsigned irq, int (*handler)(unsigned irq, void *cookie), void *cookie, int retmode)
@@ -2312,6 +2312,8 @@ EXPORT_SYMBOL(ipipe_root_status);
 EXPORT_SYMBOL(rt_set_sched_ipi_gate);
 EXPORT_SYMBOL(rt_reset_sched_ipi_gate);
 #endif
+
+EXPORT_SYMBOL(IsolCpusMask);
 
 /*@}*/
 

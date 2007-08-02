@@ -5,6 +5,8 @@
  * @note Copyright (C) 2005 Jan Kiszka <jan.kiszka@web.de>
  * @note Copyright (C) 2005 Joerg Langenberg <joerg.langenberg@gmx.net>
  *
+ * with adaptions for RTAI by Paolo Mantegazza <mantegazza@aero.polimi.it>
+ *
  * RTAI is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License as published by
  * the Free Software Foundation; either version 2 of the License, or
@@ -26,13 +28,17 @@
  * @{
  */
 
-#include <linux/module.h>
+#include <linux/delay.h>
 
-#include <rtdm/rtdm_driver.h>
 
-#include "rtdm/core.h"
-#include "rtdm/device.h"
 
+
+
+
+#include "rtdm/internal.h"
+
+
+#define CLOSURE_RETRY_PERIOD    100 /* ms */
 
 #define FD_BITMAP_SIZE  ((RTDM_FD_MAX + BITS_PER_LONG-1) / BITS_PER_LONG)
 
@@ -41,9 +47,7 @@ struct rtdm_fildes      fildes_table[RTDM_FD_MAX] =
 static unsigned long    used_fildes[FD_BITMAP_SIZE];
 int                     open_fildes;    /* amount of used descriptors */
 
-#ifdef CONFIG_SMP
-xnlock_t                rt_fildes_lock = XNARCH_LOCK_UNLOCKED;
-#endif /* !CONFIG_SMP */
+DEFINE_XNLOCK(rt_fildes_lock);
 
 
 /**
@@ -96,9 +100,11 @@ struct rtdm_dev_context *rtdm_context_get(int fd)
 static int create_instance(struct rtdm_device *device,
                            struct rtdm_dev_context **context_ptr,
                            struct rtdm_fildes **fildes_ptr,
+                           rtdm_user_info_t *user_info,
                            int nrt_mem)
 {
     struct rtdm_dev_context *context;
+
     int                     fd;
     spl_t                   s;
 
@@ -154,6 +160,13 @@ static int create_instance(struct rtdm_device *device,
     context->ops = &device->ops;
     atomic_set(&context->close_lock_count, 0);
 
+
+
+
+
+    context->reserved.owner = NULL;
+
+
     return 0;
 }
 
@@ -203,7 +216,7 @@ int _rtdm_open(rtdm_user_info_t *user_info, const char *path, int oflag)
     if (!device)
         goto err_out;
 
-    ret = create_instance(device, &context, &fildes, nrt_mode);
+    ret = create_instance(device, &context, &fildes, user_info, nrt_mode);
     if (ret != 0)
         goto cleanup_out;
 
@@ -250,7 +263,7 @@ int _rtdm_socket(rtdm_user_info_t *user_info, int protocol_family,
     if (!device)
         goto err_out;
 
-    ret = create_instance(device, &context, &fildes, nrt_mode);
+    ret = create_instance(device, &context, &fildes, user_info, nrt_mode);
     if (ret != 0)
         goto cleanup_out;
 
@@ -281,7 +294,7 @@ int _rtdm_socket(rtdm_user_info_t *user_info, int protocol_family,
 }
 
 
-int _rtdm_close(rtdm_user_info_t *user_info, int fd, int forced)
+int _rtdm_close(rtdm_user_info_t *user_info, int fd)
 {
     struct rtdm_dev_context *context;
     spl_t                   s;
@@ -292,6 +305,7 @@ int _rtdm_close(rtdm_user_info_t *user_info, int fd, int forced)
     if (unlikely((unsigned int)fd >= RTDM_FD_MAX))
         goto err_out;
 
+ again:
     xnlock_get_irqsave(&rt_fildes_lock, s);
 
     context = fildes_table[fd].context;
@@ -302,8 +316,6 @@ int _rtdm_close(rtdm_user_info_t *user_info, int fd, int forced)
     }
 
     set_bit(RTDM_CLOSING, &context->context_flags);
-    if (forced)
-        set_bit(RTDM_FORCED_CLOSING, &context->context_flags);
     rtdm_context_lock(context);
 
     xnlock_put_irqrestore(&rt_fildes_lock, s);
@@ -328,15 +340,25 @@ int _rtdm_close(rtdm_user_info_t *user_info, int fd, int forced)
 
     XENO_ASSERT(RTDM, !rthal_local_irq_test(), rthal_local_irq_enable(););
 
-    if (unlikely(ret < 0))
+    if (unlikely(ret == -EAGAIN) && !rtdm_in_rt_context()) {
+        rtdm_context_unlock(context);
+        msleep(CLOSURE_RETRY_PERIOD);
+        goto again;
+    } else if (unlikely(ret < 0))
         goto unlock_out;
 
     xnlock_get_irqsave(&rt_fildes_lock, s);
 
-    if (unlikely((atomic_read(&context->close_lock_count) > 1) && !forced)) {
+    if (unlikely(atomic_read(&context->close_lock_count) > 1)) {
         xnlock_put_irqrestore(&rt_fildes_lock, s);
-        ret = -EAGAIN;
-        goto unlock_out;
+
+        if (rtdm_in_rt_context()) {
+            ret = -EAGAIN;
+            goto unlock_out;
+        }
+        rtdm_context_unlock(context);
+        msleep(CLOSURE_RETRY_PERIOD);
+        goto again;
     }
 
     cleanup_instance(context->device, context, &fildes_table[fd],
@@ -354,8 +376,36 @@ int _rtdm_close(rtdm_user_info_t *user_info, int fd, int forced)
 }
 
 
-#define MAJOR_FUNCTION_WRAPPER(operation, args...)                          \
-{                                                                           \
+void cleanup_owned_contexts(void *owner)
+{
+    struct rtdm_dev_context *context;
+    unsigned int            fd;
+    int                     ret;
+    spl_t                   s;
+
+
+    for (fd = 0; fd < RTDM_FD_MAX; fd++) {
+        xnlock_get_irqsave(&rt_fildes_lock, s);
+
+        context = fildes_table[fd].context;
+        if (context && context->reserved.owner != owner)
+            context = NULL;
+
+        xnlock_put_irqrestore(&rt_fildes_lock, s);
+
+        if (context) {
+            if (XENO_DEBUG(RTDM))
+                xnprintf("RTDM: closing file descriptor %d.\n", fd);
+
+            ret = _rtdm_close(NULL, fd);
+            XENO_ASSERT(RTDM, ret >= 0 || ret == -EBADF, ;);
+        }
+    }
+}
+
+
+#define MAJOR_FUNCTION_WRAPPER_TH(operation, args...)                       \
+do {                                                                        \
     struct rtdm_dev_context *context;                                       \
     struct rtdm_operations  *ops;                                           \
     int                     ret;                                            \
@@ -373,13 +423,20 @@ int _rtdm_close(rtdm_user_info_t *user_info, int fd, int forced)
     else                                                                    \
         ret = ops->operation##_nrt(context, user_info, args);               \
                                                                             \
-    XENO_ASSERT(RTDM, !rthal_local_irq_test(), rthal_local_irq_enable(););  \
-                                                                            \
+    XENO_ASSERT(RTDM, !rthal_local_irq_test(), rthal_local_irq_enable();)
+
+#define MAJOR_FUNCTION_WRAPPER_BH()                                         \
     rtdm_context_unlock(context);                                           \
                                                                             \
  err_out:                                                                   \
     return ret;                                                             \
-}
+} while (0)
+
+#define MAJOR_FUNCTION_WRAPPER(operation, args...)                          \
+do {                                                                        \
+    MAJOR_FUNCTION_WRAPPER_TH(operation, args);                             \
+    MAJOR_FUNCTION_WRAPPER_BH();                                            \
+} while (0)
 
 
 int _rtdm_ioctl(rtdm_user_info_t *user_info, int fd, int request, ...)
@@ -392,7 +449,22 @@ int _rtdm_ioctl(rtdm_user_info_t *user_info, int fd, int request, ...)
     arg = va_arg(args, void *);
     va_end(args);
 
-    MAJOR_FUNCTION_WRAPPER(ioctl, request, arg);
+    MAJOR_FUNCTION_WRAPPER_TH(ioctl, (unsigned int)request, arg);
+
+    if (unlikely(ret < 0) && (unsigned int)request == RTIOC_DEVICE_INFO) {
+        struct rtdm_device *dev = context->device;
+        struct rtdm_device_info dev_info;
+
+        dev_info.device_flags = dev->device_flags;
+        dev_info.device_class = dev->device_class;
+        dev_info.device_sub_class = dev->device_sub_class;
+        dev_info.profile_version = dev->profile_version;
+
+        ret = rtdm_safe_copy_to_user(user_info, arg, &dev_info,
+                                     sizeof(dev_info));
+    }
+
+    MAJOR_FUNCTION_WRAPPER_BH();
 }
 
 
@@ -803,13 +875,6 @@ int rt_dev_socket(int protocol_family, int socket_type, int protocol);
  * @note If the matching rt_dev_open() or rt_dev_socket() call took place in
  * non-real-time context, rt_dev_close() must be issued within non-real-time
  * as well. Otherwise, the call will fail.
- *
- * @note Killing a real-time task that is blocked on some device operation can
- * lead to stalled file descriptors. To avoid such scenarios, always close the
- * device before explicitely terminating any real-time task which may use it.
- * To cleanup a stalled file descriptor, send its number to the @c open_fildes
- * /proc entry, e.g. via
- * @code #> echo 3 > /proc/rtai/rtdm/open_fildes @endcode
  *
  * Environments:
  *

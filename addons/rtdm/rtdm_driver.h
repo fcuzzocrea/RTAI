@@ -82,10 +82,6 @@ struct rtdm_dev_context;
 /** Set by RTDM when the device is being closed. */
 #define RTDM_CLOSING                1
 
-/** Set by RTDM if the device has to be closed regardless of possible pending
- *  locks held by other users. */
-#define RTDM_FORCED_CLOSING         2
-
 /** Lowest bit number the driver developer can use freely */
 #define RTDM_USER_CONTEXT_FLAG      8   /* first user-definable flag */
 /** @} Context Flags */
@@ -98,7 +94,7 @@ struct rtdm_dev_context;
  * @{
  */
 /** Version of struct rtdm_device */
-#define RTDM_DEVICE_STRUCT_VER      3
+#define RTDM_DEVICE_STRUCT_VER      4
 
 /** Version of struct rtdm_dev_context */
 #define RTDM_CONTEXT_STRUCT_VER     3
@@ -323,6 +319,10 @@ struct rtdm_operations {
     /** @} Message-Oriented Device Operations */
 };
 
+struct rtdm_devctx_reserved {
+    void                            *owner;
+};
+
 /**
  * @brief Device context
  *
@@ -337,15 +337,23 @@ struct rtdm_operations {
 struct rtdm_dev_context {
     /** Context flags, see @ref ctx_flags "Context Flags" for details */
     unsigned long                   context_flags;
+
     /** Associated file descriptor */
     int                             fd;
+
     /** Lock counter of context, held while structure is referenced by an
      *  operation handler */
     atomic_t                        close_lock_count;
+
     /** Set of active device operation handlers */
     struct rtdm_operations          *ops;
+
     /** Reference to owning device */
     struct rtdm_device              *device;
+
+    /** Data stored by RTDM inside a device context (internal use only) */
+    struct rtdm_devctx_reserved     reserved;
+
     /** Begin of driver defined context data structure */
     char                            dev_private[0];
 };
@@ -403,6 +411,8 @@ struct rtdm_device {
     /** Device sub-class, see RTDM_SUBCLASS_xxx definition in the
      *  @ref profiles "Device Profiles" */
     int                             device_sub_class;
+    /** Supported device profile version */
+    int                             profile_version;
     /** Informational driver name (reported via /proc) */
     const char                      *driver_name;
     /** Driver version, see @ref drv_versioning "Driver Versioning" defines */
@@ -458,6 +468,7 @@ int rtdm_dev_unregister(struct rtdm_device* device, unsigned int poll_delay);
 
 struct rtdm_dev_context *rtdm_context_get(int fd);
 
+#ifndef DOXYGEN_CPP /* Avoid static inline tags for RTDM in doxygen */
 static inline void rtdm_context_lock(struct rtdm_dev_context *context)
 {
     atomic_inc(&context->close_lock_count);
@@ -470,10 +481,19 @@ static inline void rtdm_context_unlock(struct rtdm_dev_context *context)
 
 
 /* --- clock services --- */
+
+
+
 static inline nanosecs_abs_t rtdm_clock_read(void)
 {
     return rt_get_time_ns();
 }
+
+static inline nanosecs_abs_t rtdm_clock_read_monotonic(void)
+{
+   return rt_get_time_ns();
+}
+#endif /* !DOXYGEN_CPP */
 
 
 /* --- spin lock services --- */
@@ -500,7 +520,7 @@ static inline nanosecs_abs_t rtdm_clock_read(void)
  *
  * @param code_block Commands to be executed atomically
  *
- * @note It is not allowed to leave the code block explicitely by using
+ * @note It is not allowed to leave the code block explicitly by using
  * @c break, @c return, @c goto, etc. This would leave the global lock held
  * during the code block execution in an inconsistent state. Moreover, do not
  * embed complex operations into the code bock. Consider that they will be
@@ -519,13 +539,23 @@ static inline nanosecs_abs_t rtdm_clock_read(void)
  *
  * Rescheduling: possible, depends on functions called within @a code_block.
  */
+#ifdef DOXYGEN_CPP /* Beautify doxygen output */
+#define RTDM_EXECUTE_ATOMICALLY(code_block)     \
+{                                               \
+    <ENTER_ATOMIC_SECTION>                      \
+    code_block;                                 \
+    <LEAVE_ATOMIC_SECTION>                      \
+}
+#else /* This is how it really works */
 #define RTDM_EXECUTE_ATOMICALLY(code_block)	\
-do {						\
-        unsigned long flags;			\
-	flags = rt_global_save_flags_and_cli();	\
-	code_block;				\
-	rt_global_restore_flags(flags);		\
-} while (0)
+{						\
+    spl_t   s;                                  \
+                                                \
+    s = rt_global_save_flags_and_cli();		\
+    code_block;					\
+    rt_global_restore_flags(s);			\
+}
+#endif
 /** @} Global Lock across Scheduler Invocation */
 
 /*!
@@ -739,17 +769,11 @@ typedef int (*rtdm_irq_handler_t)(rtdm_irq_t *irq_handle);
 #define rtdm_irq_get_arg(irq_handle, type)  ((type *)irq_handle->cookie)
 /** @} rtdmirq */
 
-static inline int rtdm_irq_request(rtdm_irq_t *irq_handle,
-                                   unsigned int irq_no,
-                                   rtdm_irq_handler_t handler,
-                                   unsigned long flags,
-                                   const char *device_name,
-                                   void *arg)
-{
-    xnintr_init(irq_handle, device_name, irq_no, handler, NULL, flags);
-    return xnintr_attach(irq_handle, arg);
-}
+int rtdm_irq_request(rtdm_irq_t *irq_handle, unsigned int irq_no,
+                     rtdm_irq_handler_t handler, unsigned long flags,
+                     const char *device_name, void *arg);
 
+#ifndef DOXYGEN_CPP /* Avoid static inline tags for RTDM in doxygen */
 static inline int rtdm_irq_free(rtdm_irq_t *irq_handle)
 {
     return xnintr_detach(irq_handle);
@@ -764,6 +788,7 @@ static inline int rtdm_irq_disable(rtdm_irq_t *irq_handle)
 {
     return xnintr_disable(irq_handle);
 }
+#endif /* !DOXYGEN_CPP */
 
 
 /* --- non-real-time signalling services --- */
@@ -778,26 +803,29 @@ typedef unsigned                    rtdm_nrtsig_t;
 /**
  * Non-real-time signal handler
  *
- * @param[in] nrt_sig signal handle as returned by rtdm_nrtsig_init()
+ * @param[in] nrt_sig Signal handle as returned by rtdm_nrtsig_init()
+ * @param[in] arg Argument as passed to rtdm_nrtsig_init()
  *
  * @note The signal handler will run in soft-IRQ context of the non-real-time
  * subsystem. Note the implications of this context, e.g. no invocation of
  * blocking operations.
  */
-typedef void (*rtdm_nrtsig_handler_t)(rtdm_nrtsig_t nrt_sig);
+typedef void (*rtdm_nrtsig_handler_t)(rtdm_nrtsig_t nrt_sig, void *arg);
 /** @} nrtsignal */
 
 
+#ifndef DOXYGEN_CPP /* Avoid static inline tags for RTDM in doxygen */
 static inline int rtdm_nrtsig_init(rtdm_nrtsig_t *nrt_sig,
-                                   rtdm_nrtsig_handler_t handler)
+                                   rtdm_nrtsig_handler_t handler, void *arg)
 {
     *nrt_sig = hal_alloc_irq();
 
     if (*nrt_sig == 0)
         return -EAGAIN;
 
-    hal_virtualize_irq(hal_root_domain, *nrt_sig, handler, NULL,
-                       IPIPE_HANDLE_MASK);
+    rthal_virtualize_irq(hal_root_domain, *nrt_sig, handler, arg, NULL,
+                         IPIPE_HANDLE_MASK);
+
     return 0;
 }
 
@@ -810,9 +838,76 @@ static inline void rtdm_nrtsig_pend(rtdm_nrtsig_t *nrt_sig)
 {
     hal_pend_uncond(*nrt_sig, rtai_cpuid());
 }
+#endif /* !DOXYGEN_CPP */
 
 
-/* --- task and timing services --- */
+/* --- timer services --- */
+
+/*!
+ * @addtogroup rtdmtimer
+ * @{
+ */
+
+typedef xntimer_t                   rtdm_timer_t;
+
+/**
+ * Timer handler
+ *
+ * @param[in] timer Timer handle as returned by rtdm_timer_init()
+ */
+typedef void (*rtdm_timer_handler_t)(rtdm_timer_t *timer);
+
+/*!
+ * @anchor RTDM_TIMERMODE_xxx   @name RTDM_TIMERMODE_xxx
+ * Timer operation modes
+ * @{
+ */
+enum rtdm_timer_mode {
+    /** Monotonic timer with relative timeout */
+    RTDM_TIMERMODE_RELATIVE = XN_RELATIVE,
+    /** Monotonic timer with absolute timeout */
+    RTDM_TIMERMODE_ABSOLUTE = XN_ABSOLUTE,
+    /** Adjustable timer with absolute timeout */
+    RTDM_TIMERMODE_REALTIME = XN_REALTIME
+};
+/** @} RTDM_TIMERMODE_xxx */
+
+/** @} rtdmtimer */
+
+#ifndef DOXYGEN_CPP /* Avoid broken doxygen output */
+#define rtdm_timer_init(timer, handler, name) \
+({ \
+    xntimer_init((timer), handler); \
+    xntimer_set_name((timer), (name)); \
+    0; \
+})
+#endif /* !DOXYGEN_CPP */
+
+void rtdm_timer_destroy(rtdm_timer_t *timer);
+
+int rtdm_timer_start(rtdm_timer_t *timer, nanosecs_abs_t expiry,
+                     nanosecs_rel_t interval, enum rtdm_timer_mode mode);
+
+void rtdm_timer_stop(rtdm_timer_t *timer);
+
+#ifndef DOXYGEN_CPP /* Avoid static inline tags for RTDM in doxygen */
+static inline int rtdm_timer_start_in_handler(rtdm_timer_t *timer,
+                                              nanosecs_abs_t expiry,
+                                              nanosecs_rel_t interval,
+                                              enum rtdm_timer_mode mode)
+{
+    return xntimer_start(timer, xntbase_ns2ticks(rtdm_tbase, expiry),
+                         xntbase_ns2ticks(rtdm_tbase, interval), mode);
+}
+
+static inline void rtdm_timer_stop_in_handler(rtdm_timer_t *timer)
+{
+    xntimer_stop(timer);
+}
+#endif /* !DOXYGEN_CPP */
+
+
+/* --- task services --- */
 /*!
  * @addtogroup rtdmtask
  * @{
@@ -850,6 +945,9 @@ int rtdm_task_init(rtdm_task_t *task, const char *name,
                    rtdm_task_proc_t task_proc, void *arg,
                    int priority, nanosecs_rel_t period);
 
+void rtdm_task_busy_sleep(nanosecs_rel_t delay);
+
+#ifndef DOXYGEN_CPP /* Avoid static inline tags for RTDM in doxygen */
 static inline void rtdm_task_destroy(rtdm_task_t *task)
 {
     rt_task_delete(task);
@@ -859,19 +957,25 @@ void rtdm_task_join_nrt(rtdm_task_t *task, unsigned int poll_delay);
 
 static inline void rtdm_task_set_priority(rtdm_task_t *task, int priority)
 {
+
     rt_change_prio(task, priority);
 }
 
 static inline int rtdm_task_set_period(rtdm_task_t *task,
                                        nanosecs_rel_t period)
 {
-    return rt_task_make_periodic_relative_ns(task, period > 0 ? 0 : RT_TIME_END, period > 0 ? period : 0);
+    if (period < 0)
+        period = 0;
+    return rt_task_make_periodic_relative_ns(task, 0, period);
 
 }
 
 static inline int rtdm_task_unblock(rtdm_task_t *task)
 {
-    return rt_task_masked_unblock(task, ~RT_SCHED_READY);
+    int res = rt_task_masked_unblock(task, ~RT_SCHED_READY);
+
+
+    return res;
 }
 
 static inline rtdm_task_t *rtdm_task_current(void)
@@ -893,138 +997,137 @@ static inline int rtdm_task_wait_period(void)
     return rt_sched_timed ? -ETIMEDOUT : -EIDRM;
 }
 
-int rtdm_task_sleep(nanosecs_rel_t delay);
-int rtdm_task_sleep_until(nanosecs_abs_t wakeup_time);
-void rtdm_task_busy_sleep(nanosecs_rel_t delay);
+static inline int rtdm_task_sleep(nanosecs_rel_t delay)
+{
+        if (delay < 0) {
+                return 0;
+        }
+        if (delay < 0) {
+                delay = RT_TIME_END;
+        }
+        if (rt_sleep(nano2count(delay)) && _rt_whoami()->unblocked) {
+                return -EINTR;
+        }
+        return 0;
+}
+
+static inline int
+rtdm_task_sleep_abs(nanosecs_abs_t wakeup_date, enum rtdm_timer_mode mode)
+{
+    /* For the sake of a consistent API usage... */
+    if (mode != RTDM_TIMERMODE_ABSOLUTE && mode != RTDM_TIMERMODE_REALTIME)
+        return -EINVAL;
+    if (rt_sleep_until(nano2count(wakeup_date)) && _rt_whoami()->unblocked) {
+        return -EINTR;
+    }
+    return 0;
+
+}
+
+/* rtdm_task_sleep_abs shall be used instead */
+static inline int __deprecated
+rtdm_task_sleep_until(nanosecs_abs_t wakeup_time)
+{
+    if (rt_sleep_until(nano2count(wakeup_time)) && _rt_whoami()->unblocked) {
+        return -EINTR;
+    }
+    return 0;
+}
+#endif /* !DOXYGEN_CPP */
 
 
 /* --- timeout sequences */
 
 typedef nanosecs_abs_t              rtdm_toseq_t;
 
-static inline void rtdm_toseq_init(rtdm_toseq_t *timeout_seq,
-                                   nanosecs_rel_t timeout)
-{
-    *timeout_seq = rt_get_time() + nano2count(timeout);
-}
+
+void rtdm_toseq_init(rtdm_toseq_t *timeout_seq, nanosecs_rel_t timeout);
 
 
 /* --- event services --- */
 
 typedef struct {
-    unsigned long                   pending;
-    struct rt_semaphore             synch_base;
+    struct rt_semaphore synch_base; unsigned long pending;
 } rtdm_event_t;
 
-static inline void rtdm_event_init(rtdm_event_t *event, unsigned long pending)
-{
-    event->pending = pending;
-    rt_typed_sem_init(&event->synch_base, 0, BIN_SEM | PRIO_Q);
-}
+#define RTDM_EVENT_PENDING          XNSYNCH_SPARE1
 
-static inline void rtdm_event_destroy(rtdm_event_t *event)
-{
-    rt_sem_delete(&event->synch_base);
-}
-
+void rtdm_event_init(rtdm_event_t *event, unsigned long pending);
 int rtdm_event_wait(rtdm_event_t *event);
 int rtdm_event_timedwait(rtdm_event_t *event, nanosecs_rel_t timeout,
                          rtdm_toseq_t *timeout_seq);
 void rtdm_event_signal(rtdm_event_t *event);
+
+void rtdm_event_clear(rtdm_event_t *event);
+
+#ifndef DOXYGEN_CPP /* Avoid static inline tags for RTDM in doxygen */
+
 
 static inline void rtdm_event_pulse(rtdm_event_t *event)
 {
     rt_sem_broadcast(&event->synch_base);
 }
 
-static inline void rtdm_event_clear(rtdm_event_t *event)
+static inline void rtdm_event_destroy(rtdm_event_t *event)
 {
-    event->pending = 0;
+    rt_sem_delete(&event->synch_base);
 }
+#endif /* !DOXYGEN_CPP */
 
-
-/* --- common to events, sems and mtxes --- */
-
-static inline int _sem_wait(void *sem)
-{
-	if (rt_sem_wait(sem) < SEM_TIMOUT) {
-		return 0;
-	}
-	return _rt_whoami()->unblocked ? -EINTR : -EIDRM;
-}
-
-static inline int _sem_wait_timed(void *sem, nanosecs_rel_t timeout, rtdm_toseq_t *timeout_seq)
-{
-	int ret;
-
-	if (timeout < 0) {
-		return (ret = rt_sem_wait_if(sem)) > 0 ? 0 : ret != RTE_OBJINV ? -EWOULDBLOCK : -EIDRM;
-	}
-	if (!timeout) {
-		/* infinite timeout */
-		ret = rt_sem_wait(sem);
-	} else {
-		/* timeout sequence, i.e. abs timeout, or relative timeout */
-		ret = timeout_seq ? rt_sem_wait_until(sem, *timeout_seq) : rt_sem_wait_timed(sem, nano2count(timeout)); 
-	}
-	if (ret < SEM_TIMOUT) {
-		return 0;
-	}
-	if (ret == SEM_TIMOUT) {
-		return -ETIMEDOUT;
-	}
-	return _rt_whoami()->unblocked ? -EINTR : -EIDRM;
-}
-
-static inline void _sem_signal(void *sem)
-{
-	rt_sem_signal(sem);
-}
 
 /* --- semaphore services --- */
 
 typedef struct rt_semaphore  rtdm_sem_t;
 
-static inline void rtdm_sem_init(rtdm_sem_t *sem, unsigned long value)
-{
-    rt_typed_sem_init(sem, value, CNT_SEM | PRIO_Q);
-}
 
-static inline void rtdm_sem_destroy(rtdm_sem_t *sem)
-{
-    rt_sem_delete(sem);
-}
 
+
+void rtdm_sem_init(rtdm_sem_t *sem, unsigned long value);
 int rtdm_sem_down(rtdm_sem_t *sem);
 int rtdm_sem_timeddown(rtdm_sem_t *sem, nanosecs_rel_t timeout,
                        rtdm_toseq_t *timeout_seq);
 void rtdm_sem_up(rtdm_sem_t *sem);
+
+#ifndef DOXYGEN_CPP /* Avoid static inline tags for RTDM in doxygen */
+static inline void rtdm_sem_destroy(rtdm_sem_t *sem)
+{
+    rt_sem_delete(sem);
+}
+#endif /* !DOXYGEN_CPP */
 
 
 /* --- mutex services --- */
 
 typedef SEM rtdm_mutex_t;
 
-static inline void rtdm_mutex_init(rtdm_mutex_t *mutex)
+
+
+void rtdm_mutex_init(rtdm_mutex_t *mutex);
+int rtdm_mutex_lock(rtdm_mutex_t *mutex);
+int rtdm_mutex_timedlock(rtdm_mutex_t *mutex, nanosecs_rel_t timeout,
+                         rtdm_toseq_t *timeout_seq);
+
+#ifndef DOXYGEN_CPP /* Avoid static inline tags for RTDM in doxygen */
+static inline void rtdm_mutex_unlock(rtdm_mutex_t *mutex)
 {
-    rt_typed_sem_init(mutex, 1, RES_SEM | PRIO_Q);
+
+
+
+    rt_sem_signal(mutex);
 }
 
 static inline void rtdm_mutex_destroy(rtdm_mutex_t *mutex)
 {
-	rt_sem_delete(mutex);
+    rt_sem_delete(mutex);
 }
-
-int rtdm_mutex_lock(rtdm_mutex_t *mutex);
-int rtdm_mutex_timedlock(rtdm_mutex_t *mutex, nanosecs_rel_t timeout,
-                         rtdm_toseq_t *timeout_seq);
-void rtdm_mutex_unlock(rtdm_mutex_t *mutex);
+#endif /* !DOXYGEN_CPP */
 
 
 /* --- utility functions --- */
 
 #define rtdm_printk(format, ...)    printk(format, ##__VA_ARGS__)
 
+#ifndef DOXYGEN_CPP /* Avoid static inline tags for RTDM in doxygen */
 static inline void *rtdm_malloc(size_t size)
 {
     return xnmalloc(size);
@@ -1035,8 +1138,9 @@ static inline void rtdm_free(void *ptr)
     xnfree(ptr);
 }
 
+#if 1 // #ifdef CONFIG_XENO_OPT_PERVASIVE
 int rtdm_mmap_to_user(rtdm_user_info_t *user_info,
-	              void *src_addr, size_t len,
+                      void *src_addr, size_t len,
                       int prot, void **pptr,
                       struct vm_operations_struct *vm_ops,
                       void *vm_private_data);
@@ -1098,11 +1202,24 @@ static inline int rtdm_strncpy_from_user(rtdm_user_info_t *user_info,
         return -EFAULT;
     return __xn_strncpy_from_user(user_info, dst, src, count);
 }
+#else /* !CONFIG_XENO_OPT_PERVASIVE */
+/* Define void user<->kernel services that simply fail */
+#define rtdm_mmap_to_user(...)          ({ -ENOSYS; })
+#define rtdm_munmap(...)                ({ -ENOSYS; })
+#define rtdm_read_user_ok(...)          ({ 0; })
+#define rtdm_rw_user_ok(...)            ({ 0; })
+#define rtdm_copy_from_user(...)        ({ -ENOSYS; })
+#define rtdm_safe_copy_from_user(...)   ({ -ENOSYS; })
+#define rtdm_copy_to_user(...)          ({ -ENOSYS; })
+#define rtdm_safe_copy_to_user(...)     ({ -ENOSYS; })
+#define rtdm_strncpy_from_user(...)     ({ -ENOSYS; })
+#endif /* CONFIG_XENO_OPT_PERVASIVE */
 
 static inline int rtdm_in_rt_context(void)
 {
-	return (_rt_whoami()->is_hard > 0);
+    return (_rt_whoami()->is_hard > 0);
 }
+#endif /* !DOXYGEN_CPP */
 
 int rtdm_exec_in_rt(struct rtdm_dev_context *context,
                     rtdm_user_info_t *user_info, void *arg,

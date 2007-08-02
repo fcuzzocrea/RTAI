@@ -6,6 +6,8 @@
  * @note Copyright (C) 2005 Joerg Langenberg <joerg.langenberg@gmx.net>
  * @note Copyright (C) 2005 Paolo Mantegazza <mantegazza@aero.polimi.it>
  *
+ * with adaptions for RTAI by Paolo Mantegazza <mantegazza@aero.polimi.it>
+ *
  * RTAI is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License as published by
  * the Free Software Foundation; either version 2 of the License, or
@@ -35,10 +37,11 @@
 #include <asm/io.h>
 #include <asm/pgtable.h>
 #include <linux/delay.h>
+#include <linux/mman.h>
 #include <linux/highmem.h>
 
-#include <rtai_sched.h>
 #include <rtdm/rtdm_driver.h>
+
 
 /*!
  * @ingroup driverapi
@@ -58,7 +61,7 @@
  *
  * @note The system timer may have to be started to obtain valid results.
  * Whether this happens automatically or is controlled by the
- * application depends on the RTDM host environment.
+ * application (as with RTAI) depends on the RTDM host environment.
  *
  * Environments:
  *
@@ -72,6 +75,32 @@
  * Rescheduling: never.
  */
 nanosecs_abs_t rtdm_clock_read(void);
+
+/**
+ * @brief Get monotonic time
+ *
+ * @return The monotonic time in nanoseconds is returned
+ *
+ * @note The resolution of this service depends on the system timer. In
+ * particular, if the system timer is running in periodic mode, the return
+ * value will be limited to multiples of the timer tick period.
+ *
+ * @note The system timer may have to be started to obtain valid results.
+ * Whether this happens automatically or is controlled by the
+ * application (as with RTAI) depends on the RTDM host environment.
+ *
+ * Environments:
+ *
+ * This service can be called from:
+ *
+ * - Kernel module initialization/cleanup code
+ * - Interrupt service routine
+ * - Kernel-based task
+ * - User-space task (RT, non-RT)
+ *
+ * Rescheduling: never.
+ */
+nanosecs_abs_t rtdm_clock_read_monotonic(void);
 #endif /* DOXYGEN_CPP */
 /** @} */
 
@@ -95,7 +124,7 @@ nanosecs_abs_t rtdm_clock_read(void);
  * @param[in] arg Custom argument passed to @c task_proc() on entry
  * @param[in] priority Priority of the task, see also
  * @ref taskprio "Task Priority Range"
- * @param[in] period Period in nanosecons of a cyclic task, 0 for non-cyclic
+ * @param[in] period Period in nanoseconds of a cyclic task, 0 for non-cyclic
  * mode
  *
  * @return 0 on success, otherwise negative error code
@@ -173,7 +202,7 @@ void rtdm_task_set_priority(rtdm_task_t *task, int priority);
  * @brief Adjust real-time task period
  *
  * @param[in,out] task Task handle as returned by rtdm_task_init()
- * @param[in] period New period in nanosecons of a cyclic task, 0 for
+ * @param[in] period New period in nanoseconds of a cyclic task, 0 for
  * non-cyclic mode
  *
  * Environments:
@@ -244,14 +273,113 @@ int rtdm_task_unblock(rtdm_task_t *task);
  * Rescheduling: never.
  */
 rtdm_task_t *rtdm_task_current(void);
+
+/**
+ * @brief Sleep a specified amount of time
+ *
+ * @param[in] delay Delay in nanoseconds, see @ref RTDM_TIMEOUT_xxx for
+ * special values.
+ *
+ * @return 0 on success, otherwise:
+ *
+ * - -EINTR is returned if calling task has been unblock by a signal or
+ * explicitly via rtdm_task_unblock().
+ *
+ * - -EPERM @e may be returned if an illegal invocation environment is
+ * detected.
+ *
+ * Environments:
+ *
+ * This service can be called from:
+ *
+ * - Kernel-based task
+ * - User-space task (RT)
+ *
+ * Rescheduling: always.
+ */
+int rtdm_task_sleep(nanosecs_rel_t delay);
+
+/**
+ * @brief Sleep until a specified absolute time
+ *
+ * @deprecated Use rtdm_task_sleep_abs instead!
+ *
+ * @param[in] wakeup_time Absolute timeout in nanoseconds
+ *
+ * @return 0 on success, otherwise:
+ *
+ * - -EINTR is returned if calling task has been unblock by a signal or
+ * explicitly via rtdm_task_unblock().
+ *
+ * - -EPERM @e may be returned if an illegal invocation environment is
+ * detected.
+ *
+ * Environments:
+ *
+ * This service can be called from:
+ *
+ * - Kernel-based task
+ * - User-space task (RT)
+ *
+ * Rescheduling: always, unless the specified time already passed.
+ */
+int rtdm_task_sleep_until(nanosecs_abs_t wakeup_time);
+
+/**
+ * @brief Sleep until a specified absolute time
+ *
+ * @param[in] wakeup_time Absolute timeout in nanoseconds
+ * @param[in] mode Selects the timer mode, see RTDM_TIMERMODE_xxx for details
+ *
+ * @return 0 on success, otherwise:
+ *
+ * - -EINTR is returned if calling task has been unblock by a signal or
+ * explicitly via rtdm_task_unblock().
+ *
+ * - -EPERM @e may be returned if an illegal invocation environment is
+ * detected.
+ *
+ * - -EINVAL is returned if an invalid parameter was passed.
+ *
+ * Environments:
+ *
+ * This service can be called from:
+ *
+ * - Kernel-based task
+ * - User-space task (RT)
+ *
+ * Rescheduling: always, unless the specified time already passed.
+ */
+int rtdm_task_sleep_abs(nanosecs_abs_t wakeup_time,
+                        enum rtdm_timer_mode mode);
+
 #endif /* DOXYGEN_CPP */
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 /**
  * @brief Wait on a real-time task to terminate
  *
  * @param[in,out] task Task handle as returned by rtdm_task_init()
- * @param[in] poll_delay Polling delay in milliseconds
+ * @param[in] poll_delay Delay in milliseconds between periodic tests for the
+ * state of the real-time task. This parameter is ignored if the termination
+ * is internally realised without polling.
  *
  * @note Passing the same task handle to RTDM services after the completion of
  * this function is not allowed.
@@ -284,77 +412,12 @@ void rtdm_task_join_nrt(rtdm_task_t *task, unsigned int poll_delay)
 EXPORT_SYMBOL(rtdm_task_join_nrt);
 
 
-/**
- * @brief Sleep a specified amount of time
- *
- * @param[in] delay Delay in nanoseconds, see @ref RTDM_TIMEOUT_xxx for
- * special values.
- *
- * @return 0 on success, otherwise:
- *
- * - -EINTR is returned if calling task has been unblock by a signal or
- * explicitely via rtdm_task_unblock().
- *
- * - -EPERM @e may be returned if an illegal invocation environment is
- * detected.
- *
- * Environments:
- *
- * This service can be called from:
- *
- * - Kernel-based task
- * - User-space task (RT)
- *
- * Rescheduling: always.
- */
-int rtdm_task_sleep(nanosecs_rel_t delay)
-{
-	if (delay < 0) {
-	        return 0;
-	}
-	if (delay < 0) {
-		delay = RT_TIME_END;
-	}
-	if (rt_sleep(nano2count(delay)) && _rt_whoami()->unblocked) {
-		return -EINTR;
-	}
-	return 0;
-}
-
-EXPORT_SYMBOL(rtdm_task_sleep);
 
 
-/**
- * @brief Sleep until a specified absolute time
- *
- * @param[in] wakeup_time Absolute timeout in nanoseconds
- *
- * @return 0 on success, otherwise:
- *
- * - -EINTR is returned if calling task has been unblock by a signal or
- * explicitely via rtdm_task_unblock().
- *
- * - -EPERM @e may be returned if an illegal invocation environment is
- * detected.
- *
- * Environments:
- *
- * This service can be called from:
- *
- * - Kernel-based task
- * - User-space task (RT)
- *
- * Rescheduling: always, unless the specified time already passed.
- */
-int rtdm_task_sleep_until(nanosecs_abs_t wakeup_time)
-{
-	if (rt_sleep_until(nano2count(wakeup_time)) && _rt_whoami()->unblocked) {
-		return -EINTR;
-	}
-	return 0;
-}
 
-EXPORT_SYMBOL(rtdm_task_sleep_until);
+
+
+
 
 
 /**
@@ -379,11 +442,230 @@ EXPORT_SYMBOL(rtdm_task_sleep_until);
  */
 void rtdm_task_busy_sleep(nanosecs_rel_t delay)
 {
+
+
+
 	rt_busy_sleep(delay);
 }
 
 EXPORT_SYMBOL(rtdm_task_busy_sleep);
 /** @} */
+
+
+
+/*!
+ * @ingroup driverapi
+ * @defgroup rtdmtimer Timer Services
+ * @{
+ */
+
+#ifdef DOXYGEN_CPP /* Only used for doxygen doc generation */
+/**
+ * @brief Initialise a timer
+ *
+ * @param[in,out] timer Timer handle
+ * @param[in] handler Handler to be called on timer expiry
+ * @param[in] name Optional timer name
+ *
+ * @return 0 on success, otherwise negative error code
+ *
+ * Environments:
+ *
+ * This service can be called from:
+ *
+ * - Kernel module initialization/cleanup code
+ * - Kernel-based task
+ * - User-space task (RT, non-RT)
+ *
+ * Rescheduling: never.
+ */
+int rtdm_timer_init(rtdm_timer_t *timer, rtdm_timer_handler_t handler,
+                    const char *name);
+#endif /* DOXYGEN_CPP */
+
+
+/**
+ * @brief Destroy a timer
+ *
+ * @param[in,out] timer Timer handle as returned by rtdm_timer_init()
+ *
+ * Environments:
+ *
+ * This service can be called from:
+ *
+ * - Kernel module initialization/cleanup code
+ * - Kernel-based task
+ * - User-space task (RT, non-RT)
+ *
+ * Rescheduling: never.
+ */
+void rtdm_timer_destroy(rtdm_timer_t *timer)
+{
+ 
+
+
+
+    xntimer_destroy(timer);
+
+}
+
+EXPORT_SYMBOL(rtdm_timer_destroy);
+
+
+/**
+ * @brief Start a timer
+ *
+ * @param[in,out] timer Timer handle as returned by rtdm_timer_init()
+ * @param[in] expiry Firing time of the timer, @c mode defines if relative or
+ * absolute
+ * @param[in] interval Relative reload value, > 0 if the timer shall work in
+ * periodic mode with the specific interval, 0 for one-shot timers
+ * @param[in] mode Defines the operation mode, see @ref RTDM_TIMERMODE_xxx for
+ * possible values
+ *
+ * @return 0 on success, otherwise:
+ *
+ * - -ETIMEDOUT is returned if @c expiry describes an absolute date in the
+ * past.
+ *
+ * Environments:
+ *
+ * This service can be called from:
+ *
+ * - Kernel module initialization/cleanup code
+ * - Interrupt service routine
+ * - Kernel-based task
+ * - User-space task (RT, non-RT)
+ *
+ * Rescheduling: never.
+ */
+int rtdm_timer_start(rtdm_timer_t *timer, nanosecs_abs_t expiry,
+                      nanosecs_rel_t interval, enum rtdm_timer_mode mode)
+{
+ 
+    int err;
+
+
+
+    err = xntimer_start(timer, xntbase_ns2ticks(rtdm_tbase, expiry),
+                        xntbase_ns2ticks(rtdm_tbase, interval), mode);
+
+
+    return err;
+}
+
+EXPORT_SYMBOL(rtdm_timer_start);
+
+
+/**
+ * @brief Stop a timer
+ *
+ * @param[in,out] timer Timer handle as returned by rtdm_timer_init()
+ *
+ * Environments:
+ *
+ * This service can be called from:
+ *
+ * - Kernel module initialization/cleanup code
+ * - Interrupt service routine
+ * - Kernel-based task
+ * - User-space task (RT, non-RT)
+ *
+ * Rescheduling: never.
+ */
+void rtdm_timer_stop(rtdm_timer_t *timer)
+{
+ 
+
+
+
+    xntimer_stop(timer);
+
+}
+
+EXPORT_SYMBOL(rtdm_timer_stop);
+
+
+#ifdef DOXYGEN_CPP /* Only used for doxygen doc generation */
+/**
+ * @brief Start a timer from inside a timer handler
+ *
+ * @param[in,out] timer Timer handle as returned by rtdm_timer_init()
+ * @param[in] expiry Firing time of the timer, @c mode defines if relative or
+ * absolute
+ * @param[in] interval Relative reload value, > 0 if the timer shall work in
+ * periodic mode with the specific interval, 0 for one-shot timers
+ * @param[in] mode Defines the operation mode, see @ref RTDM_TIMERMODE_xxx for
+ * possible values
+ *
+ * @return 0 on success, otherwise:
+ *
+ * - -ETIMEDOUT is returned if @c expiry describes an absolute date in the
+ * past.
+ *
+ * Environments:
+ *
+ * This service can be called from:
+ *
+ * - Timer handler
+ *
+ * Rescheduling: never.
+ */
+int rtdm_timer_start_in_handler(rtdm_timer_t *timer, nanosecs_abs_t expiry,
+                                nanosecs_rel_t interval,
+                                enum rtdm_timer_mode mode);
+
+/**
+ * @brief Stop a timer from inside a timer handler
+ *
+ * @param[in,out] timer Timer handle as returned by rtdm_timer_init()
+ *
+ * Environments:
+ *
+ * This service can be called from:
+ *
+ * - Timer handler
+ *
+ * Rescheduling: never.
+ */
+void rtdm_timer_stop_in_handler(rtdm_timer_t *timer);
+#endif /* DOXYGEN_CPP */
+/** @} */
+
+
+
+/* --- RTAI proper common to events, sems and mtxes --- */
+
+static inline int _sem_wait(void *sem)
+{
+	if (rt_sem_wait(sem) < SEM_TIMOUT) {
+		return 0;
+	}
+	return _rt_whoami()->unblocked ? -EINTR : -EIDRM;
+}
+
+static inline int _sem_wait_timed(void *sem, nanosecs_rel_t timeout, rtdm_toseq_t *timeout_seq)
+{
+	int ret;
+
+	if (timeout < 0) {
+		return (ret = rt_sem_wait_if(sem)) > 0 ? 0 : ret != RTE_OBJINV ? -EWOULDBLOCK : -EIDRM;
+	}
+	if (!timeout) {
+		/* infinite timeout */
+		ret = rt_sem_wait(sem);
+	} else {
+		/* timeout sequence, i.e. abs timeout, or relative timeout */
+		ret = timeout_seq ? rt_sem_wait_until(sem, *timeout_seq) : rt_sem_wait_timed(sem, nano2count(timeout)); 
+	}
+	if (ret < SEM_TIMOUT) {
+		return 0;
+	}
+	if (ret == SEM_TIMOUT) {
+		return -ETIMEDOUT;
+	}
+	return _rt_whoami()->unblocked ? -EINTR : -EIDRM;
+}
 
 
 /*!
@@ -397,7 +679,6 @@ EXPORT_SYMBOL(rtdm_task_busy_sleep);
  * @{
  */
 
-#ifdef DOXYGEN_CPP /* Only used for doxygen doc generation */
 /**
  * @brief Initialise a timeout sequence
  *
@@ -465,14 +746,21 @@ int device_service_routine(...)
  *
  * This service can be called from:
  *
- * - Kernel module initialization/cleanup code
  * - Kernel-based task
- * - User-space task (RT, non-RT)
+ * - User-space task (RT)
  *
  * Rescheduling: never.
  */
-void rtdm_toseq_init(rtdm_toseq_t *timeout_seq, nanosecs_rel_t timeout);
-#endif /* DOXYGEN_CPP */
+void rtdm_toseq_init(rtdm_toseq_t *timeout_seq, nanosecs_rel_t timeout)
+{
+
+
+
+
+    *timeout_seq = rt_get_time() + nano2count(timeout);
+}
+
+EXPORT_SYMBOL(rtdm_toseq_init);
 /** @} */
 
 /*!
@@ -480,7 +768,6 @@ void rtdm_toseq_init(rtdm_toseq_t *timeout_seq, nanosecs_rel_t timeout);
  * @{
  */
 
-#ifdef DOXYGEN_CPP /* Only used for doxygen doc generation */
 /**
  * @brief Initialise an event
  *
@@ -497,8 +784,25 @@ void rtdm_toseq_init(rtdm_toseq_t *timeout_seq, nanosecs_rel_t timeout);
  *
  * Rescheduling: never.
  */
-void rtdm_event_init(rtdm_event_t *event, unsigned long pending);
+void rtdm_event_init(rtdm_event_t *event, unsigned long pending)
+{
 
+
+
+
+
+
+
+
+
+    event->pending = pending;
+    rt_typed_sem_init(&event->synch_base, 0, BIN_SEM | PRIO_Q);
+}
+
+EXPORT_SYMBOL(rtdm_event_init);
+
+
+#ifdef DOXYGEN_CPP /* Only used for doxygen doc generation */
 /**
  * @brief Destroy an event
  *
@@ -564,6 +868,10 @@ void rtdm_event_signal(rtdm_event_t *event)
 {
 	unsigned long flags;
 
+
+
+
+
 	flags = rt_global_save_flags_and_cli();
 	__set_bit(0, &event->pending);
 	rt_sem_broadcast(&event->synch_base);
@@ -584,7 +892,7 @@ EXPORT_SYMBOL(rtdm_event_signal);
  * @return 0 on success, otherwise:
  *
  * - -EINTR is returned if calling task has been unblock by a signal or
- * explicitely via rtdm_task_unblock().
+ * explicitly via rtdm_task_unblock().
  *
  * - -EIDRM is returned if @a event has been destroyed.
  *
@@ -632,7 +940,7 @@ EXPORT_SYMBOL(rtdm_event_wait);
  * @param[in] timeout Relative timeout in nanoseconds, see
  * @ref RTDM_TIMEOUT_xxx for special values
  * @param[in,out] timeout_seq Handle of a timeout sequence as returned by
- * rtdm_toseq_init() or rtdm_toseq_absinit(), or NULL
+ * rtdm_toseq_init() or NULL
  *
  * @return 0 on success, otherwise:
  *
@@ -640,7 +948,7 @@ EXPORT_SYMBOL(rtdm_event_wait);
  * within the specified amount of time.
  *
  * - -EINTR is returned if calling task has been unblock by a signal or
- * explicitely via rtdm_task_unblock().
+ * explicitly via rtdm_task_unblock().
  *
  * - -EIDRM is returned if @a event has been destroyed.
  *
@@ -675,6 +983,42 @@ int rtdm_event_timedwait(rtdm_event_t *event, nanosecs_rel_t timeout,
 	return ret;
 }
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 EXPORT_SYMBOL(rtdm_event_timedwait);
 
 
@@ -694,7 +1038,17 @@ EXPORT_SYMBOL(rtdm_event_timedwait);
  *
  * Rescheduling: never.
  */
-void rtdm_event_clear(rtdm_event_t *event);
+void rtdm_event_clear(rtdm_event_t *event)
+{
+
+
+
+
+
+
+
+    event->pending = 0;
+}
 
 EXPORT_SYMBOL(rtdm_event_clear);
 /** @} */
@@ -706,7 +1060,6 @@ EXPORT_SYMBOL(rtdm_event_clear);
  * @{
  */
 
-#ifdef DOXYGEN_CPP /* Only used for doxygen doc generation */
 /**
  * @brief Initialise a semaphore
  *
@@ -723,8 +1076,24 @@ EXPORT_SYMBOL(rtdm_event_clear);
  *
  * Rescheduling: never.
  */
-void rtdm_sem_init(rtdm_sem_t *sem, unsigned long value);
+void rtdm_sem_init(rtdm_sem_t *sem, unsigned long value)
+{
 
+
+
+
+
+
+
+
+
+   rt_typed_sem_init(sem, value, CNT_SEM | PRIO_Q);
+}
+
+EXPORT_SYMBOL(rtdm_sem_init);
+
+
+#ifdef DOXYGEN_CPP /* Only used for doxygen doc generation */
 /**
  * @brief Destroy a semaphore
  *
@@ -754,9 +1123,12 @@ void rtdm_sem_destroy(rtdm_sem_t *sem);
  * @return 0 on success, otherwise:
  *
  * - -EINTR is returned if calling task has been unblock by a signal or
- * explicitely via rtdm_task_unblock().
+ * explicitly via rtdm_task_unblock().
  *
  * - -EIDRM is returned if @a sem has been destroyed.
+ *
+ * - -EPERM @e may be returned if an illegal invocation environment is
+ * detected.
  *
  * Environments:
  *
@@ -769,7 +1141,7 @@ void rtdm_sem_destroy(rtdm_sem_t *sem);
  */
 int rtdm_sem_down(rtdm_sem_t *sem)
 {
-	return _sem_wait(sem);
+    return _sem_wait(sem);
 }
 
 EXPORT_SYMBOL(rtdm_sem_down);
@@ -786,7 +1158,7 @@ EXPORT_SYMBOL(rtdm_sem_down);
  * @param[in] timeout Relative timeout in nanoseconds, see
  * @ref RTDM_TIMEOUT_xxx for special values
  * @param[in,out] timeout_seq Handle of a timeout sequence as returned by
- * rtdm_toseq_init() or rtdm_toseq_absinit(), or NULL
+ * rtdm_toseq_init() or NULL
  *
  * @return 0 on success, otherwise:
  *
@@ -797,9 +1169,12 @@ EXPORT_SYMBOL(rtdm_sem_down);
  * value is currently not positive.
  *
  * - -EINTR is returned if calling task has been unblock by a signal or
- * explicitely via rtdm_task_unblock().
+ * explicitly via rtdm_task_unblock().
  *
  * - -EIDRM is returned if @a sem has been destroyed.
+ *
+ * - -EPERM @e may be returned if an illegal invocation environment is
+ * detected.
  *
  * Environments:
  *
@@ -813,7 +1188,48 @@ EXPORT_SYMBOL(rtdm_sem_down);
 int rtdm_sem_timeddown(rtdm_sem_t *sem, nanosecs_rel_t timeout,
                        rtdm_toseq_t *timeout_seq)
 {
-	return _sem_wait_timed(sem, timeout, timeout_seq);
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    return _sem_wait_timed(sem, timeout, timeout_seq);
 }
 
 EXPORT_SYMBOL(rtdm_sem_timeddown);
@@ -840,7 +1256,17 @@ EXPORT_SYMBOL(rtdm_sem_timeddown);
  */
 void rtdm_sem_up(rtdm_sem_t *sem)
 {
-	_sem_signal(sem);
+
+
+
+
+
+
+
+
+
+
+	rt_sem_signal(sem);
 }
 
 EXPORT_SYMBOL(rtdm_sem_up);
@@ -853,7 +1279,6 @@ EXPORT_SYMBOL(rtdm_sem_up);
  * @{
  */
 
-#ifdef DOXYGEN_CPP /* Only used for doxygen doc generation */
 /**
  * @brief Initialise a mutex
  *
@@ -873,8 +1298,23 @@ EXPORT_SYMBOL(rtdm_sem_up);
  *
  * Rescheduling: never.
  */
-void rtdm_mutex_init(rtdm_mutex_t *mutex);
+void rtdm_mutex_init(rtdm_mutex_t *mutex)
+{
 
+
+
+
+
+
+
+
+    rt_typed_sem_init(mutex, 1, RES_SEM | PRIO_Q);
+}
+
+EXPORT_SYMBOL(rtdm_mutex_init);
+
+
+#ifdef DOXYGEN_CPP /* Only used for doxygen doc generation */
 /**
  * @brief Destroy a mutex
  *
@@ -891,7 +1331,6 @@ void rtdm_mutex_init(rtdm_mutex_t *mutex);
  * Rescheduling: possible.
  */
 void rtdm_mutex_destroy(rtdm_mutex_t *mutex);
-#endif /* DOXYGEN_CPP */
 
 /**
  * @brief Release a mutex
@@ -906,16 +1345,12 @@ void rtdm_mutex_destroy(rtdm_mutex_t *mutex);
  * This service can be called from:
  *
  * - Kernel-based task
- * - User-space task (RT, non-RT)
+ * - User-space task (RT)
  *
  * Rescheduling: possible.
  */
-void rtdm_mutex_unlock(rtdm_mutex_t *mutex)
-{
-	_sem_signal(mutex);
-}
-
-EXPORT_SYMBOL(rtdm_mutex_unlock);
+void rtdm_mutex_unlock(rtdm_mutex_t *mutex);
+#endif /* DOXYGEN_CPP */
 
 
 /**
@@ -944,9 +1379,7 @@ EXPORT_SYMBOL(rtdm_mutex_unlock);
  */
 int rtdm_mutex_lock(rtdm_mutex_t *mutex)
 {
-	int retval;
-	while ((retval = _sem_wait(mutex)) == -EINTR);
-	return retval;
+    int retval; while ((retval = _sem_wait(mutex)) == -EINTR); return retval;
 }
 
 EXPORT_SYMBOL(rtdm_mutex_lock);
@@ -962,7 +1395,7 @@ EXPORT_SYMBOL(rtdm_mutex_lock);
  * @param[in] timeout Relative timeout in nanoseconds, see
  * @ref RTDM_TIMEOUT_xxx for special values
  * @param[in,out] timeout_seq Handle of a timeout sequence as returned by
- * rtdm_toseq_init() or rtdm_toseq_absinit(), or NULL
+ * rtdm_toseq_init() or NULL
  *
  * @return 0 on success, otherwise:
  *
@@ -999,13 +1432,51 @@ int rtdm_mutex_timedlock(rtdm_mutex_t *mutex, nanosecs_rel_t timeout,
 	return retval;
 }
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 EXPORT_SYMBOL(rtdm_mutex_timedlock);
 /** @} */
 
 /** @} Synchronisation services */
 
-
-#ifdef DOXYGEN_CPP /* Only used for doxygen doc generation */
 
 /*!
  * @ingroup driverapi
@@ -1016,12 +1487,14 @@ EXPORT_SYMBOL(rtdm_mutex_timedlock);
 /**
  * @brief Register an interrupt handler
  *
+ * This function registers the provided handler with an IRQ line and enables
+ * the line.
+ *
  * @param[in,out] irq_handle IRQ handle
  * @param[in] irq_no Line number of the addressed IRQ
  * @param[in] handler Interrupt handler
  * @param[in] flags Registration flags, see @ref RTDM_IRQTYPE_xxx for details
- * @param[in] device_name Optional device name to show up in real-time IRQ
- * lists (not yet implemented)
+ * @param[in] device_name Device name to show up in real-time IRQ lists
  * @param[in] arg Pointer to be passed to the interrupt handler on invocation
  *
  * @return 0 on success, otherwise:
@@ -1029,9 +1502,6 @@ EXPORT_SYMBOL(rtdm_mutex_timedlock);
  * - -EINVAL is returned if an invalid parameter was passed.
  *
  * - -EBUSY is returned if the specified IRQ line is already in use.
- *
- * @note To receive interrupts on the requested line, you have to call
- * rtdm_irq_enable() after registering the handler.
  *
  * Environments:
  *
@@ -1045,8 +1515,26 @@ EXPORT_SYMBOL(rtdm_mutex_timedlock);
  */
 int rtdm_irq_request(rtdm_irq_t *irq_handle, unsigned int irq_no,
                      rtdm_irq_handler_t handler, unsigned long flags,
-                     const char *device_name, void *arg);
+                     const char *device_name, void *arg)
+{
 
+
+
+
+
+
+
+
+
+
+
+    xnintr_init(irq_handle, device_name, irq_no, handler, NULL, flags);
+    return xnintr_attach(irq_handle, arg);
+}
+
+EXPORT_SYMBOL(rtdm_irq_request);
+
+#ifdef DOXYGEN_CPP /* Only used for doxygen doc generation */
 /**
  * @brief Release an interrupt handler
  *
@@ -1105,8 +1593,12 @@ int rtdm_irq_enable(rtdm_irq_t *irq_handle);
  * Rescheduling: never.
  */
 int rtdm_irq_disable(rtdm_irq_t *irq_handle);
+#endif /* DOXYGEN_CPP */
+
 /** @} Interrupt Management Services */
 
+
+#ifdef DOXYGEN_CPP /* Only used for doxygen doc generation */
 
 /*!
  * @ingroup driverapi
@@ -1125,6 +1617,7 @@ int rtdm_irq_disable(rtdm_irq_t *irq_handle);
  *
  * @param[in,out] nrt_sig Signal handle
  * @param[in] handler Non-real-time signal handler
+ * @param[in] arg Custom argument passed to @c handler() on each invocation
  *
  * @return 0 on success, otherwise:
  *
@@ -1140,7 +1633,8 @@ int rtdm_irq_disable(rtdm_irq_t *irq_handle);
  *
  * Rescheduling: never.
  */
-int rtdm_nrtsig_init(rtdm_nrtsig_t *nrt_sig, rtdm_nrtsig_handler_t handler);
+int rtdm_nrtsig_init(rtdm_nrtsig_t *nrt_sig, rtdm_nrtsig_handler_t handler,
+                     void *arg);
 
 /**
  * @brief Release a non-realtime signal handler
@@ -1187,6 +1681,7 @@ void rtdm_nrtsig_pend(rtdm_nrtsig_t *nrt_sig);
  * @defgroup util Utility Services
  * @{
  */
+
 
 struct rtdm_mmap_data {
     void *src_vaddr;
@@ -1314,7 +1809,7 @@ static int rtdm_do_mmap(rtdm_user_info_t *user_info,
  * rtdm_iomap_to_user() instead.
  *
  * @note RTDM supports two models for unmapping the user memory range again.
- * One is explicite unmapping via rtdm_munmap(), either performed when the
+ * One is explicit unmapping via rtdm_munmap(), either performed when the
  * user requests it via an IOCTL etc. or when the related device is closed.
  * The other is automatic unmapping, triggered by the user invoking standard
  * munmap() or by the termination of the related process. To track release of
@@ -1379,7 +1874,7 @@ EXPORT_SYMBOL(rtdm_mmap_to_user);
  * detected.
  *
  * @note RTDM supports two models for unmapping the user memory range again.
- * One is explicite unmapping via rtdm_munmap(), either performed when the
+ * One is explicit unmapping via rtdm_munmap(), either performed when the
  * user requests it via an IOCTL etc. or when the related device is closed.
  * The other is automatic unmapping, triggered by the user invoking standard
  * munmap() or by the termination of the related process. To track release of
@@ -1452,6 +1947,7 @@ int rtdm_munmap(rtdm_user_info_t *user_info, void *ptr, size_t len)
 }
 
 EXPORT_SYMBOL(rtdm_munmap);
+
 
 
 #ifdef DOXYGEN_CPP /* Only used for doxygen doc generation */

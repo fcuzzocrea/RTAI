@@ -43,11 +43,10 @@
  */
 
 #include <linux/module.h>
+#include <linux/cpumask.h>
 
 #include <rtdm/rtdm.h>
-#include <rtdm/core.h>
-#include <rtdm/device.h>
-#include <rtdm/proc.h>
+#include <rtdm/internal.h>
 #include <rtdm/rtdm_driver.h>
 
 MODULE_DESCRIPTION("Real-Time Driver Model");
@@ -95,7 +94,7 @@ static RTAI_SYSCALL_MODE int sys_rtdm_socket(long protocol_family, long socket_t
 
 static RTAI_SYSCALL_MODE int sys_rtdm_close(long fd, long forced)
 {
-	return _rtdm_close(current, fd, forced);
+	return _rtdm_close(current, fd);
 }
 
 static RTAI_SYSCALL_MODE int sys_rtdm_ioctl(long fd, long request, void *arg)
@@ -155,8 +154,6 @@ static struct rt_fun_entry rtdm[] = {
 
 #endif /* TRUE_LXRT_WAY */
 
-xnlock_t nklock = XNARCH_LOCK_UNLOCKED;
-
 /* This is needed because RTDM interrupt handlers:
  * - do no want immediate in handler rescheduling, RTAI can be configured
  *   to act in the same way but might not have been enabled to do so; 
@@ -195,131 +192,47 @@ extern void rtai_handle_isched_lock(int);
         do { rtai_cli(); } while (0)
 #endif /* CONFIG_RTAI_SCHED_ISR_LOCK */
 
-#define XNINTR_MAX_UNHANDLED  1000
+#define XNINTR_MAX_UNHANDLED	1000
 
-#ifdef CONFIG_SMP
-xnlock_t intrlock;
-#endif /* CONFIG_SMP */
+DEFINE_PRIVATE_XNLOCK(intrlock);
 
-static void xnintr_irq_handler(unsigned irq, void *cookie)
-{
+static void xnintr_irq_handler(unsigned irq, void *cookie);
 
-	xnintr_t *intr = (xnintr_t *)cookie;
+#ifdef CONFIG_RTAI_RTDM_SHIRQ
 
+typedef struct xnintr_irq {
 
-	int s;
-
-	xnarch_memory_barrier();
-
-
-
-
-
-	RTAI_SCHED_ISR_LOCK();
-	s = intr->isr(intr);
-
-	if (unlikely(s == XN_ISR_NONE)) {
-		if (++intr->unhandled == XNINTR_MAX_UNHANDLED) {
-			xnlogerr("%s: IRQ%d not handled. Disabling IRQ "
-				 "line.\n", __FUNCTION__, irq);
-			s |= XN_ISR_NOENABLE;
-		}
-	} else {
-		xnstat_counter_inc(&intr->stat[xnsched_cpu(sched)].hits);
-
-
-
-		intr->unhandled = 0;
-	}
-
-	if (s & XN_ISR_PROPAGATE)
-		xnarch_chain_irq(irq);
-	else if (!(s & XN_ISR_NOENABLE))
-		xnarch_end_irq(irq);
-
-	RTAI_SCHED_ISR_UNLOCK();
-
-
-
-
-
-
-
-
-
-
-
-
-
-}
-
-
-
-
-
-
-
-
-
-
-
-#if defined(CONFIG_RTAI_RTDM_LEVEL_SHIRQ) ||defined(CONFIG_RTAI_RTDM_EDGE_SHIRQ)
-
-typedef struct xnintr_shirq {
+	DECLARE_XNLOCK(lock);
 
 	xnintr_t *handlers;
 	int unhandled;
-#ifdef CONFIG_SMP
-	atomic_counter_t active;
-#endif
 
-} xnintr_shirq_t;
+} ____cacheline_aligned_in_smp xnintr_irq_t;
 
-static xnintr_shirq_t xnshirqs[RTHAL_NR_IRQS];
+static xnintr_irq_t xnirqs[RTHAL_NR_IRQS];
 
-static inline void xnintr_shirq_lock(xnintr_shirq_t *shirq)
+static inline xnintr_t *xnintr_shirq_first(unsigned irq)
 {
-#ifdef CONFIG_SMP
-	xnarch_before_atomic_inc();
-	xnarch_atomic_inc(&shirq->active);
-#endif
+	return xnirqs[irq].handlers;
 }
 
-static inline void xnintr_shirq_unlock(xnintr_shirq_t *shirq)
+static inline xnintr_t *xnintr_shirq_next(xnintr_t *prev)
 {
-#ifdef CONFIG_SMP
-	xnarch_atomic_dec(&shirq->active);
-	xnarch_after_atomic_dec();
-#endif
+	return prev->next;
 }
 
-void xnintr_synchronize(xnintr_t *intr)
-{
-#ifdef CONFIG_SMP
-	xnintr_shirq_t *shirq = &xnshirqs[intr->irq];
-
-	while (xnarch_atomic_get(&shirq->active))
-		cpu_relax();
-	xnarch_memory_barrier();
-#endif
-}
-
-#if defined(CONFIG_RTAI_RTDM_LEVEL_SHIRQ)
-
-
-
-
-
+/*
+ * Low-level interrupt handler dispatching the user-defined ISRs for
+ * shared interrupts -- Called with interrupts off.
+ */
 static void xnintr_shirq_handler(unsigned irq, void *cookie)
 {
 
 
 
-	xnintr_shirq_t *shirq = &xnshirqs[irq];
+	xnintr_irq_t *shirq = &xnirqs[irq];
 	xnintr_t *intr;
 	int s = 0;
-
-	xnarch_memory_barrier();
 
 
 
@@ -327,7 +240,7 @@ static void xnintr_shirq_handler(unsigned irq, void *cookie)
 
 	RTAI_SCHED_ISR_LOCK();
 
-	xnintr_shirq_lock(shirq);
+	xnlock_get(&shirq->lock);
 	intr = shirq->handlers;
 
 	while (intr) {
@@ -336,19 +249,19 @@ static void xnintr_shirq_handler(unsigned irq, void *cookie)
 		ret = intr->isr(intr);
 		s |= ret;
 
-                if (ret & XN_ISR_HANDLED) {
-                        xnstat_counter_inc(
-                                &intr->stat[xnsched_cpu(sched)].hits);
+		if (ret & XN_ISR_HANDLED) {
+			xnstat_counter_inc(
+				&intr->stat[xnsched_cpu(sched)].hits);
 
 
 
 
-                }
+		}
 
-                intr = intr->next;
+		intr = intr->next;
 	}
 
-	xnintr_shirq_unlock(shirq);
+	xnlock_put(&shirq->lock);
 
 	if (unlikely(s == XN_ISR_NONE)) {
 		if (++shirq->unhandled == XNINTR_MAX_UNHANDLED) {
@@ -357,7 +270,7 @@ static void xnintr_shirq_handler(unsigned irq, void *cookie)
 			s |= XN_ISR_NOENABLE;
 		}
 	} else
-                shirq->unhandled = 0;
+		shirq->unhandled = 0;
 
 	if (s & XN_ISR_PROPAGATE)
 		xnarch_chain_irq(irq);
@@ -371,14 +284,10 @@ static void xnintr_shirq_handler(unsigned irq, void *cookie)
 
 }
 
-#endif /* CONFIG_RTAI_RTDM_LEVEL_SHIRQ */
-
-#if defined(CONFIG_RTAI_RTDM_EDGE_SHIRQ)
-
-
-
-
-
+/*
+ * Low-level interrupt handler dispatching the user-defined ISRs for
+ * shared edge-triggered interrupts -- Called with interrupts off.
+ */
 static void xnintr_edge_shirq_handler(unsigned irq, void *cookie)
 {
 	const int MAX_EDGEIRQ_COUNTER = 128;
@@ -386,11 +295,9 @@ static void xnintr_edge_shirq_handler(unsigned irq, void *cookie)
 
 
 
-	xnintr_shirq_t *shirq = &xnshirqs[irq];
+	xnintr_irq_t *shirq = &xnirqs[irq];
 	xnintr_t *intr, *end = NULL;
 	int s = 0, counter = 0;
-
-	xnarch_memory_barrier();
 
 
 
@@ -398,7 +305,7 @@ static void xnintr_edge_shirq_handler(unsigned irq, void *cookie)
 
 	RTAI_SCHED_ISR_LOCK();
 
-	xnintr_shirq_lock(shirq);
+	xnlock_get(&shirq->lock);
 	intr = shirq->handlers;
 
 	while (intr != end) {
@@ -413,14 +320,14 @@ static void xnintr_edge_shirq_handler(unsigned irq, void *cookie)
 
 		if (code == XN_ISR_HANDLED) {
 			end = NULL;
-                        xnstat_counter_inc(
-                                &intr->stat[xnsched_cpu(sched)].hits);
+			xnstat_counter_inc(
+				&intr->stat[xnsched_cpu(sched)].hits);
 
 
 
 
-		} else if (code == XN_ISR_NONE && end == NULL)
-			end = intr;
+                } else if (end == NULL)
+                        end = intr;
 
 		if (counter++ > MAX_EDGEIRQ_COUNTER)
 			break;
@@ -429,7 +336,7 @@ static void xnintr_edge_shirq_handler(unsigned irq, void *cookie)
 			intr = shirq->handlers;
 	}
 
-	xnintr_shirq_unlock(shirq);
+	xnlock_put(&shirq->lock);
 
 	if (counter > MAX_EDGEIRQ_COUNTER)
 		xnlogerr
@@ -457,11 +364,9 @@ static void xnintr_edge_shirq_handler(unsigned irq, void *cookie)
 
 }
 
-#endif /* CONFIG_RTAI_RTDM_EDGE_SHIRQ */
-
 static inline int xnintr_irq_attach(xnintr_t *intr)
 {
-	xnintr_shirq_t *shirq = &xnshirqs[intr->irq];
+	xnintr_irq_t *shirq = &xnirqs[intr->irq];
 	xnintr_t *prev, **p = &shirq->handlers;
 	int err;
 
@@ -479,8 +384,7 @@ static inline int xnintr_irq_attach(xnintr_t *intr)
 			(intr->flags & XN_ISR_EDGE)))
 			return -EBUSY;
 
-
-
+		/* Get a position at the end of the list to insert the new element. */
 		while (prev) {
 			p = &prev->next;
 			prev = *p;
@@ -491,17 +395,9 @@ static inline int xnintr_irq_attach(xnintr_t *intr)
 
 		if (intr->flags & XN_ISR_SHARED) {
 			if (intr->flags & XN_ISR_EDGE)
-#if defined(CONFIG_RTAI_RTDM_EDGE_SHIRQ)
 				handler = &xnintr_edge_shirq_handler;
-#else /* !CONFIG_RTAI_RTDM_EDGE_SHIRQ */
-				return -ENOSYS;
-#endif /* CONFIG_RTAI_RTDM_EDGE_SHIRQ */
 			else
-#if defined(CONFIG_RTAI_RTDM_LEVEL_SHIRQ)
 				handler = &xnintr_shirq_handler;
-#else /* !CONFIG_RTAI_RTDM_LEVEL_SHIRQ */
-				return -ENOSYS;
-#endif /* CONFIG_RTAI_RTDM_LEVEL_SHIRQ */
 
 		}
 		shirq->unhandled = 0;
@@ -513,8 +409,10 @@ static inline int xnintr_irq_attach(xnintr_t *intr)
 
 	__setbits(intr->flags, XN_ISR_ATTACHED);
 
-	/* Add a given interrupt object. */
 	intr->next = NULL;
+
+	/* Add the given interrupt object. No need to synchronise with the IRQ
+	   handler, we are only extending the chain. */
 	*p = intr;
 
 	return 0;
@@ -522,7 +420,7 @@ static inline int xnintr_irq_attach(xnintr_t *intr)
 
 static inline int xnintr_irq_detach(xnintr_t *intr)
 {
-	xnintr_shirq_t *shirq = &xnshirqs[intr->irq];
+	xnintr_irq_t *shirq = &xnirqs[intr->irq];
 	xnintr_t *e, **p = &shirq->handlers;
 	int err = 0;
 
@@ -536,8 +434,12 @@ static inline int xnintr_irq_detach(xnintr_t *intr)
 
 	while ((e = *p) != NULL) {
 		if (e == intr) {
-			/* Remove a given interrupt object from the list. */
+			/* Remove the given interrupt object from the list. */
+			xnlock_get(&shirq->lock);
 			*p = e->next;
+			xnlock_put(&shirq->lock);
+
+
 
 			/* Release the IRQ line if this was the last user */
 			if (shirq->handlers == NULL)
@@ -553,19 +455,27 @@ static inline int xnintr_irq_detach(xnintr_t *intr)
 	return err;
 }
 
-int xnintr_mount(void)
-{
-	int i;
-	for (i = 0; i < RTHAL_NR_IRQS; ++i) {
-		xnshirqs[i].handlers = NULL;
+#else /* !CONFIG_RTAI_RTDM_SHIRQ */
+
 #ifdef CONFIG_SMP
-		atomic_set(&xnshirqs[i].active, 0);
-#endif
-	}
-	return 0;
+typedef struct xnintr_irq {
+
+	DECLARE_XNLOCK(lock);
+
+} ____cacheline_aligned_in_smp xnintr_irq_t;
+
+static xnintr_irq_t xnirqs[RTHAL_NR_IRQS];
+#endif /* CONFIG_SMP */
+
+static inline xnintr_t *xnintr_shirq_first(unsigned irq)
+{
+	return xnarch_get_irq_cookie(irq);
 }
 
-#else /* !CONFIG_RTAI_RTDM_LEVEL_SHIRQ && !CONFIG_RTAI_RTDM_EDGE_SHIRQ */
+static inline xnintr_t *xnintr_shirq_next(xnintr_t *prev)
+{
+	return NULL;
+}
 
 static inline int xnintr_irq_attach(xnintr_t *intr)
 {
@@ -574,13 +484,91 @@ static inline int xnintr_irq_attach(xnintr_t *intr)
 
 static inline int xnintr_irq_detach(xnintr_t *intr)
 {
-	return xnarch_release_irq(intr->irq);
+	int irq = intr->irq, err;
+
+	xnlock_get(&xnirqs[irq].lock);
+	err = xnarch_release_irq(irq);
+	xnlock_put(&xnirqs[irq].lock);
+
+
+
+	return err;
 }
 
-void xnintr_synchronize(xnintr_t *intr) {}
-int xnintr_mount(void) { return 0; }
+#endif /* !CONFIG_RTAI_RTDM_SHIRQ */
 
-#endif /* CONFIG_RTAI_RTDM_LEVEL_SHIRQ || CONFIG_RTAI_RTDM_EDGE_SHIRQ */
+/*
+ * Low-level interrupt handler dispatching non-shared ISRs -- Called with
+ * interrupts off.
+ */
+static void xnintr_irq_handler(unsigned irq, void *cookie)
+{
+
+	xnintr_t *intr;
+
+
+	int s;
+
+
+
+
+
+	RTAI_SCHED_ISR_LOCK();
+
+	xnlock_get(&xnirqs[irq].lock);
+
+#ifdef CONFIG_SMP
+	/* In SMP case, we have to reload the cookie under the per-IRQ lock
+	   to avoid racing with xnintr_detach. */
+	intr = xnarch_get_irq_cookie(irq);
+	if (unlikely(!intr)) {
+		s = 0;
+		goto unlock_and_exit;
+	}
+#else
+	/* cookie always valid, attach/detach happens with IRQs disabled */
+	intr = cookie;
+#endif
+	s = intr->isr(intr);
+
+	if (unlikely(s == XN_ISR_NONE)) {
+		if (++intr->unhandled == XNINTR_MAX_UNHANDLED) {
+			xnlogerr("%s: IRQ%d not handled. Disabling IRQ "
+				 "line.\n", __FUNCTION__, irq);
+			s |= XN_ISR_NOENABLE;
+		}
+	} else {
+		xnstat_counter_inc(&intr->stat[xnsched_cpu(sched)].hits);
+
+
+
+		intr->unhandled = 0;
+	}
+
+#ifdef CONFIG_SMP
+ unlock_and_exit:
+#endif
+	xnlock_put(&xnirqs[irq].lock);
+
+	if (s & XN_ISR_PROPAGATE)
+		xnarch_chain_irq(irq);
+	else if (!(s & XN_ISR_NOENABLE))
+		xnarch_end_irq(irq);
+
+	RTAI_SCHED_ISR_UNLOCK();
+
+
+
+
+}
+
+int xnintr_mount(void)
+{
+	int i;
+	for (i = 0; i < RTHAL_NR_IRQS; ++i)
+		xnlock_init(&xnirqs[i].lock);
+	return 0;
+}
 
 int xnintr_init(xnintr_t *intr,
 		const char *name,
@@ -594,9 +582,9 @@ int xnintr_init(xnintr_t *intr,
 	intr->flags = flags;
 	intr->unhandled = 0;
 	memset(&intr->stat, 0, sizeof(intr->stat));
-#if defined(CONFIG_RTAI_RTDM_LEVEL_SHIRQ) ||defined(CONFIG_RTAI_RTDM_EDGE_SHIRQ)
+#ifdef CONFIG_RTAI_RTDM_SHIRQ
 	intr->next = NULL;
-#endif /* CONFIG_RTAI_RTDM_LEVEL_SHIRQ) || CONFIG_RTAI_RTDM_EDGE_SHIRQ */
+#endif
 
 	return 0;
 }
@@ -613,20 +601,19 @@ int xnintr_attach(xnintr_t *intr, void *cookie)
 	spl_t s;
 
 	intr->cookie = cookie;
+	memset(&intr->stat, 0, sizeof(intr->stat));
 
 	xnlock_get_irqsave(&intrlock, s);
 
+#ifdef CONFIG_SMP
+	xnarch_set_irq_affinity(intr->irq, nkaffinity);
+#endif /* CONFIG_SMP */
 	err = xnintr_irq_attach(intr);
 
+
+
+
 	xnlock_put_irqrestore(&intrlock, s);
-
-
-
-
-
-
-
-
 
 	return err;
 }
@@ -640,21 +627,10 @@ int xnintr_detach(xnintr_t *intr)
 
 	err = xnintr_irq_detach(intr);
 
+
+
+
 	xnlock_put_irqrestore(&intrlock, s);
-
-
-
-
-
-
-
-
-
-
-
-
-
-	xnintr_synchronize(intr);
 
 	return err;
 }
@@ -671,10 +647,251 @@ int xnintr_disable (xnintr_t *intr)
         return 0;
 }
 
+extern struct epoch_struct boot_epoch;
+
+#ifdef CONFIG_SMP
+#define NUM_CPUS           RTAI_NR_CPUS
+#define TIMED_TIMER_CPUID  (timed_timer->cpuid)
+#define TIMER_CPUID        (timer->cpuid)
+#define LIST_CPUID         (cpuid)
+#else
+#define NUM_CPUS           1
+#define TIMED_TIMER_CPUID  (0)
+#define TIMER_CPUID        (0)
+#define LIST_CPUID         (0)
+#endif
+
+
+static struct rt_timer_struct timers_list[NUM_CPUS] =
+{ { &timers_list[0], &timers_list[0], RT_SCHED_LOWEST_PRIORITY, 0, RT_TIME_END, 0LL, NULL, 0UL,
+#ifdef  CONFIG_RTAI_LONG_TIMED_LIST
+{ NULL } 
+#endif
+}, };
+
+static struct rt_timer_struct tasklets_list =
+{ &tasklets_list, &tasklets_list, };
+
+static spinlock_t timers_lock[NUM_CPUS] = { SPIN_LOCK_UNLOCKED, };
+
+#ifdef _CONFIG_RTAI_LONG_TIMED_LIST
+
+/* BINARY TREE */
+static inline void enq_timer(struct rt_timer_struct *timed_timer)
+{
+	struct rt_timer_struct *timerh, *tmrnxt, *timer;
+	rb_node_t **rbtn, *rbtpn = NULL;
+	timer = timerh = &timers_list[TIMED_TIMER_CPUID];
+	rbtn = &timerh->rbr.rb_node;
+
+	while (*rbtn) {
+		rbtpn = *rbtn;
+		tmrnxt = rb_entry(rbtpn, struct rt_timer_struct, rbn);
+		if (timer->firing_time > tmrnxt->firing_time) {
+			rbtn = &(rbtpn)->rb_right;
+		} else {
+			rbtn = &(rbtpn)->rb_left;
+			timer = tmrnxt;
+		}
+	}
+	rb_link_node(&timed_timer->rbn, rbtpn, rbtn);
+	rb_insert_color(&timed_timer->rbn, &timerh->rbr);
+	timer->prev = (timed_timer->prev = timer->prev)->next = timed_timer;
+	timed_timer->next = timer;
+}
+
+#define rb_erase_timer(timer)  rb_erase(&(timer)->rbn, &timers_list[NUM_CPUS > 1 ? (timer)->cpuid].rbr : 0)
+
+#else /* !CONFIG_RTAI_LONG_TIMED_LIST */
+
+/* LINEAR */
+static inline void enq_timer(struct rt_timer_struct *timed_timer)
+{
+	struct rt_timer_struct *timer;
+	timer = &timers_list[TIMED_TIMER_CPUID];
+        while (timed_timer->firing_time >= (timer = timer->next)->firing_time);
+	timer->prev = (timed_timer->prev = timer->prev)->next = timed_timer;
+	timed_timer->next = timer;
+}
+
+#define rb_erase_timer(timer)
+
+#endif /* CONFIG_RTAI_LONG_TIMED_LIST */
+
+static inline void rem_timer(struct rt_timer_struct *timer)
+{
+	(timer->next)->prev = timer->prev;
+	(timer->prev)->next = timer->next;
+	timer->next = timer->prev = timer;
+	rb_erase_timer(timer);
+}
+
+static RT_TASK timers_manager[NUM_CPUS];
+
+static inline void asgn_min_prio(int cpuid)
+{
+	RT_TASK *timer_manager;
+	struct rt_timer_struct *timer, *timerl;
+	spinlock_t *lock;
+	unsigned long flags;
+	int priority;
+
+	priority = (timer = (timerl = &timers_list[LIST_CPUID])->next)->priority;
+	flags = rt_spin_lock_irqsave(lock = &timers_lock[LIST_CPUID]);
+	while ((timer = timer->next) != timerl) {
+		if (timer->priority < priority) {
+			priority = timer->priority;
+		}
+		rt_spin_unlock_irqrestore(flags, lock);
+		flags = rt_spin_lock_irqsave(lock);
+	}
+	rt_spin_unlock_irqrestore(flags, lock);
+	flags = rt_global_save_flags_and_cli();
+	if ((timer_manager = &timers_manager[LIST_CPUID])->priority > priority) {
+		timer_manager->priority = priority;
+		if (timer_manager->state == RT_SCHED_READY) {
+			rem_ready_task(timer_manager);
+			enq_ready_task(timer_manager);
+		}
+	}
+	rt_global_restore_flags(flags);
+}
+
+RTAI_SYSCALL_MODE int rt_timer_insert(struct rt_timer_struct *timer, int priority, RTIME firing_time, RTIME period, void (*handler)(unsigned long), unsigned long data)
+{
+	spinlock_t *lock;
+	unsigned long flags, cpuid;
+	RT_TASK *timer_manager;
+
+	if (!handler) {
+		return -EINVAL;
+	}
+	timer->handler     = handler;	
+	timer->data        = data;
+	timer->priority    = priority;	
+	timer->firing_time = firing_time;
+	timer->period      = period;
+	REALTIME2COUNT(firing_time)
+	
+	timer->cpuid = cpuid = NUM_CPUS > 1 ? rtai_cpuid() : 0;
+// timer insertion in timers_list
+	flags = rt_spin_lock_irqsave(lock = &timers_lock[LIST_CPUID]);
+	enq_timer(timer);
+	rt_spin_unlock_irqrestore(flags, lock);
+// timers_manager priority inheritance
+	if (timer->priority < (timer_manager = &timers_manager[LIST_CPUID])->priority) {
+		timer_manager->priority = timer->priority;
+	}
+// timers_task deadline inheritance
+	flags = rt_global_save_flags_and_cli();
+	if (timers_list[LIST_CPUID].next == timer && (timer_manager->state & RT_SCHED_DELAYED) && firing_time < timer_manager->resume_time) {
+		timer_manager->resume_time = firing_time;
+		rem_timed_task(timer_manager);
+		enq_timed_task(timer_manager);
+		rt_schedule();
+	}
+	rt_global_restore_flags(flags);
+	return 0;
+}
+
+RTAI_SYSCALL_MODE void rt_timer_remove(struct rt_timer_struct *timer)
+{
+	if (timer->next != timer && timer->prev != timer) {
+		spinlock_t *lock;
+		unsigned long flags;
+		flags = rt_spin_lock_irqsave(lock = &timers_lock[TIMER_CPUID]);
+		rem_timer(timer);
+		rt_spin_unlock_irqrestore(flags, lock);
+		asgn_min_prio(TIMER_CPUID);
+	}
+}
+
+static int TimersManagerPrio = 0;
+RTAI_MODULE_PARM(TimersManagerPrio, int);
+
+// the timers_manager task function
+
+static void rt_timers_manager(long cpuid)
+{
+	RTIME now;
+	RT_TASK *timer_manager;
+	struct rt_timer_struct *tmr, *timer, *timerl;
+	spinlock_t *lock;
+	unsigned long flags, timer_tol;
+	int priority;
+
+	timer_manager = &timers_manager[LIST_CPUID];
+	timerl = &timers_list[LIST_CPUID];
+	lock = &timers_lock[LIST_CPUID];
+	timer_tol = tuned.timers_tol[LIST_CPUID];
+
+	while (1) {
+		int retval;
+		retval = rt_sleep_until((timerl->next)->firing_time);
+		now = rt_get_time() + timer_tol;
+		while (1) {
+			tmr = timer = timerl;
+			priority = RT_SCHED_LOWEST_PRIORITY;
+			flags = rt_spin_lock_irqsave(lock);
+			while ((tmr = tmr->next)->firing_time <= now) {
+				if (tmr->priority < priority) {
+					priority = (timer = tmr)->priority;
+				}
+			}
+			rt_spin_unlock_irqrestore(flags, lock);
+			if (timer == timerl) {
+				if (timer_manager->priority > TimersManagerPrio) {
+					timer_manager->priority = TimersManagerPrio;
+				}
+				break;
+			}
+			timer_manager->priority = priority;
+			flags = rt_spin_lock_irqsave(lock);
+			rem_timer(timer);
+			if (timer->period) {
+				timer->firing_time += timer->period;
+				enq_timer(timer);
+			}
+			rt_spin_unlock_irqrestore(flags, lock);
+			timer->handler(timer->data);
+		}
+		asgn_min_prio(LIST_CPUID);
+	}
+}
+
+static int TimersManagerStacksize = TASKLET_STACK_SIZE;
+RTAI_MODULE_PARM(TimersManagerStacksize, int);
+
+static int rtai_timer_init(void)
+{
+	int cpuid;
+	
+	for (cpuid = 0; cpuid < NUM_CPUS; cpuid++) {
+		timers_lock[cpuid] = timers_lock[0];
+		timers_list[cpuid] = timers_list[0];
+		timers_list[cpuid].next = timers_list[cpuid].prev = &timers_list[cpuid];
+		rt_task_init_cpuid(&timers_manager[cpuid], rt_timers_manager, cpuid, TimersManagerStacksize, TimersManagerPrio, 0, 0, cpuid);
+		rt_task_resume(&timers_manager[cpuid]);
+	}
+	return 0;
+}
+
+static void rtai_timer_exit(void)
+{
+	int cpuid;
+	for (cpuid = 0; cpuid < NUM_CPUS; cpuid++) {
+		rt_task_delete(&timers_manager[cpuid]);
+	}
+}
+
+EXPORT_SYMBOL(rt_timer_insert);
+EXPORT_SYMBOL(rt_timer_remove);
+
 int __init rtdm_skin_init(void)
 {
 	int err;
 
+	rtai_timer_init();
         if(set_rt_fun_ext_index(rtdm, RTDM_INDX)) {
                 printk("LXRT extension %d already in use. Recompile RTDM with a different extension index\n", RTDM_INDX);
                 return -EACCES;
@@ -705,6 +922,7 @@ fail:
 
 void __exit rtdm_skin_exit(void)
 {
+	rtai_timer_exit();
 	rtdm_dev_cleanup();
         reset_rt_fun_ext_index(rtdm, RTDM_INDX);
 #ifdef CONFIG_PROC_FS

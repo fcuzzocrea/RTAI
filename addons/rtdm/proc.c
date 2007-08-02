@@ -2,6 +2,8 @@
  * Copyright (C) 2005 Jan Kiszka <jan.kiszka@web.de>.
  * Copyright (C) 2005 Joerg Langenberg <joerg.langenberg@gmx.net>.
  *
+ * with adaptions for RTAI by Paolo Mantegazza <mantegazza@aero.polimi.it>
+ *
  * RTAI is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License as published by
  * the Free Software Foundation; either version 2 of the License, or
@@ -17,9 +19,7 @@
  * Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
  */
 
-#include <linux/proc_fs.h>
-#include "rtdm/core.h"
-#include "rtdm/device.h"
+#include "rtdm/internal.h"
 
 
 /* Derived from Erwin Rol's rtai_proc_fs.h.
@@ -104,7 +104,6 @@ static int proc_read_proto_devs(char* buf, char** start, off_t offset,
                      device->socket_type);
             if (!RTDM_PROC_PRINT("%02X\t%-31s\t%-15s\t%s\n", i, txt,
                                  device->driver_name, device->proc_name))
-
                 break;
         }
 
@@ -121,33 +120,44 @@ static int proc_read_open_fildes(char* buf, char** start, off_t offset,
     int                     i;
     int                     close_lock_count;
     struct rtdm_device      *device;
+    struct rtdm_process     owner;
     spl_t                   s;
     RTDM_PROC_PRINT_VARS(80);
 
 
-    if (!RTDM_PROC_PRINT("Index\tLocked\tDevice\n"))
+    if (!RTDM_PROC_PRINT("Index\tLocked\tDevice\t\tOwner [PID]\n"))
         goto done;
 
     if (down_interruptible(&nrt_dev_lock))
         return -ERESTARTSYS;
 
     for (i = 0; i < RTDM_FD_MAX; i++) {
+        struct rtdm_dev_context *context;
+
         xnlock_get_irqsave(&rt_fildes_lock, s);
 
-        if (!fildes_table[i].context) {
+        context = fildes_table[i].context;
+        if (!context) {
             xnlock_put_irqrestore(&rt_fildes_lock, s);
             continue;
         }
 
-        close_lock_count =
-            atomic_read(&fildes_table[i].context->close_lock_count);
-        device = fildes_table[i].context->device;
+        close_lock_count = atomic_read(&context->close_lock_count);
+        device = context->device;
+
+        if (context->reserved.owner)
+            memcpy(&owner, context->reserved.owner, sizeof(owner));
+        else {
+            strcpy(owner.name, "<kernel>");
+            owner.pid = -1;
+        }
 
         xnlock_put_irqrestore(&rt_fildes_lock, s);
 
-        if (!RTDM_PROC_PRINT("%d\t%d\t%s\n", i, close_lock_count,
+        if (!RTDM_PROC_PRINT("%d\t%d\t%-15s %s [%d]\n", i, close_lock_count,
                              (device->device_flags & RTDM_NAMED_DEVICE) ?
-                             device->device_name : device->proc_name))
+                             device->device_name : device->proc_name,
+                             owner.name, owner.pid))
             break;
     }
 
@@ -179,7 +189,7 @@ static int proc_kill_open_fildes(struct file *file, const char __user *buffer,
     if (!sscanf(krnl_buf, "%d", &fd))
         return -EINVAL;
 
-    res = _rtdm_close(current, fd, 1);
+    res = _rtdm_close(current, fd);
     if (res < 0)
         return res;
 

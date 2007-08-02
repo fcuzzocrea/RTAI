@@ -29,7 +29,7 @@
  * The Real-Time Driver Model (RTDM) provides a unified interface to
  * both users and developers of real-time device
  * drivers. Specifically, it addresses the constraints of mixed
- * RT/non-RT systems like Xenomai. RTDM conforms to POSIX
+ * RT/non-RT systems like RTAI. RTDM conforms to POSIX
  * semantics (IEEE Std 1003.1) where available and applicable.
  *
  * @b API @b Revision: 5
@@ -91,7 +91,7 @@ typedef struct task_struct          rtdm_user_info_t;
  * @anchor api_versioning @name API Versioning
  * @{ */
 /** Common user and driver API version */
-#define RTDM_API_VER                5
+#define RTDM_API_VER                6
 
 /** Minimum API revision compatible with the current release */
 #define RTDM_API_MIN_COMPAT_VER     5
@@ -149,6 +149,8 @@ typedef int64_t                     nanosecs_rel_t;
 /** @} RTDM_CLASS_xxx */
 
 
+#define RTDM_SUBCLASS_GENERIC       (-1)
+
 #define RTIOC_TYPE_COMMON           0
 
 
@@ -159,6 +161,22 @@ typedef int64_t                     nanosecs_rel_t;
  */
 #define RTDM_MAX_DEVNAME_LEN        31
 /** @} Device Naming */
+
+
+/**
+ * Device information
+ */
+typedef struct rtdm_device_info {
+    /** Device flags, see @ref dev_flags "Device Flags" for details */
+    int device_flags;
+    /** Device class ID, see @ref RTDM_CLASS_xxx */
+    int device_class;
+    /** Device sub-class, either RTDM_SUBCLASS_GENERIC or a RTDM_SUBCLASS_xxx
+     *  definition of the related @ref profiles "Device Profile" */
+    int device_sub_class;
+    /** Supported device profile version */
+    int profile_version;
+} rtdm_device_info_t;
 
 
 /*!
@@ -172,9 +190,16 @@ typedef int64_t                     nanosecs_rel_t;
 
 /*!
  * @anchor common_IOCTLs    @name Common IOCTLs
- * The following IOCTLs shall be supported by any device profile if applicable
+ * The following IOCTLs are common to all device profiles.
  * @{
  */
+
+/**
+ * Retrieve information about a device or socket.
+ * @param[out] arg Pointer to information buffer (struct rtdm_device_info)
+ */
+#define RTIOC_DEVICE_INFO       \
+    _IOR(RTIOC_TYPE_COMMON, 0x00, struct rtdm_device_info)
 
 /**
  * Purge internal device or socket buffers.
@@ -235,7 +260,7 @@ int     _rtdm_open   (rtdm_user_info_t *user_info, const char *path,
                       int oflag);
 int     _rtdm_socket (rtdm_user_info_t *user_info, int protocol_family,
                       int socket_type, int protocol);
-int     _rtdm_close  (rtdm_user_info_t *user_info, int fd, int forced);
+int     _rtdm_close  (rtdm_user_info_t *user_info, int fd);
 int     _rtdm_ioctl  (rtdm_user_info_t *user_info, int fd, int request, ...);
 ssize_t _rtdm_read   (rtdm_user_info_t *user_info, int fd, void *buf,
                       size_t nbyte);
@@ -261,7 +286,7 @@ ssize_t _rtdm_sendmsg(rtdm_user_info_t *user_info, int fd,
     _rtdm_socket(NULL, protocol_family, socket_type, protocol)
 
 #define rt_dev_close(fd)                                        \
-    _rtdm_close(NULL, fd, 0)
+    _rtdm_close(NULL, fd)
 
 #define rt_dev_ioctl(fd, request, ...)                          \
     _rtdm_ioctl(NULL, fd, request, __VA_ARGS__)
@@ -283,13 +308,22 @@ static inline ssize_t rt_dev_recvfrom(int fd, void *buf, size_t len, int flags,
                                       struct sockaddr *from,
                                       socklen_t *fromlen)
 {
-    struct iovec    iov = {buf, len};
-    struct msghdr   msg =
-        {from, (from != NULL) ? *fromlen : 0, &iov, 1, NULL, 0};
-    int             ret;
+    struct iovec iov;
+    struct msghdr msg;
+    int ret;
+
+    iov.iov_base = buf;
+    iov.iov_len = len;
+
+    msg.msg_name = from;
+    msg.msg_namelen = from ? *fromlen : 0;
+    msg.msg_iov = &iov;
+    msg.msg_iovlen = 1;
+    msg.msg_control = NULL;
+    msg.msg_controllen = 0;
 
     ret = rt_dev_recvmsg(fd, &msg, flags);
-    if ((ret >= 0) && (from != NULL))
+    if (ret >= 0 && from)
         *fromlen = msg.msg_namelen;
     return ret;
 }
@@ -434,21 +468,31 @@ static inline ssize_t rt_dev_sendmsg(int fd, const struct msghdr *msg, int flags
 
 static inline ssize_t rt_dev_recvfrom(int fd, void *buf, size_t len, int flags, struct sockaddr *from, socklen_t *fromlen)
 {
-	struct iovec iov = { buf, len };
-	struct msghdr msg = { from, from && fromlen ? *fromlen : 0, &iov, 1, NULL, 0, 0 };
-	int ret;
+    struct iovec iov;
+    struct msghdr msg;
+    int ret;
 
-	if ((ret = rt_dev_recvmsg(fd, &msg, flags)) >= 0 && from && fromlen) {
-		*fromlen = msg.msg_namelen;
-	}
-	return ret;
+    iov.iov_base = buf;
+    iov.iov_len = len;
+
+    msg.msg_name = from;
+    msg.msg_namelen = from ? *fromlen : 0;
+    msg.msg_iov = &iov;
+    msg.msg_iovlen = 1;
+    msg.msg_control = NULL;
+    msg.msg_controllen = 0;
+
+    ret = rt_dev_recvmsg(fd, &msg, flags);
+    if (ret >= 0 && from)
+        *fromlen = msg.msg_namelen;
+    return ret;
 }
 
 #ifdef __cplusplus
 }
 #endif
 
-#endif /* __KERNEL__ */
+#endif /* !__KERNEL__ */
 
 #ifdef __cplusplus
 extern "C" {
@@ -464,9 +508,18 @@ static inline ssize_t rt_dev_sendto(int fd, const void *buf, size_t len,
                                     int flags, const struct sockaddr *to,
                                     socklen_t tolen)
 {
-    struct iovec    iov = {(void *)buf, len};
-    struct msghdr   msg =
-        {(struct sockaddr *)to, tolen, &iov, 1, NULL, 0, 0};
+    struct iovec iov;
+    struct msghdr msg;
+
+    iov.iov_base = (void *)buf;
+    iov.iov_len = len;
+
+    msg.msg_name = (struct sockaddr *)to;
+    msg.msg_namelen = tolen;
+    msg.msg_iov = &iov;
+    msg.msg_iovlen = 1;
+    msg.msg_control = NULL;
+    msg.msg_controllen = 0;
 
     return rt_dev_sendmsg(fd, &msg, flags);
 }

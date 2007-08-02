@@ -27,20 +27,26 @@
 #include <asm/uaccess.h>
 #include <asm/mman.h>
 
-#if 0
-
-#define XENO_ASSERT(subsystem, cond, action)  do { } while (0)
-#else
+#if defined(CONFIG_RTAI_RTDM_LEVEL_SHIRQ) || defined(CONFIG_RTAI_RTDM_EDGE_SHIRQ)
+#define CONFIG_RTAI_RTDM_SHIRQ
+#endif
 
 #ifndef CONFIG_RTAI_DEBUG_RTDM
 #define CONFIG_RTAI_DEBUG_RTDM  0
 #endif
+
+#define XENO_DEBUG(subsystem)   (CONFIG_RTAI_DEBUG_##subsystem > 0)
 
 #define XENO_ASSERT(subsystem, cond, action)  do { \
     if (unlikely(CONFIG_RTAI_DEBUG_##subsystem > 0 && !(cond))) { \
         xnlogerr("assertion failed at %s:%d (%s)\n", __FILE__, __LINE__, (#cond)); \
         action; \
     } \
+} while(0)
+
+#define XENO_BUGON(subsystem, cond)  do { \
+    if (unlikely(CONFIG_RTAI_DEBUG_##subsystem > 0 && (cond))) \
+        xnpod_fatal("bug at %s:%d (%s)", __FILE__, __LINE__, (#cond)); \
 } while(0)
 
 /* 
@@ -51,8 +57,6 @@
 #define xnpod_root_p()          (!current->rtai_tskext(TSKEXT0) || !((RT_TASK *)(current->rtai_tskext(TSKEXT0)))->is_hard)
 #define rthal_local_irq_test()  (!rtai_save_flags_irqbit())
 #define rthal_local_irq_enable  rtai_sti 
-
-#endif
 
 #if LINUX_VERSION_CODE < KERNEL_VERSION(2,6,0)
 
@@ -79,9 +83,37 @@ extern xnlock_t nklock;
 
 #ifdef CONFIG_SMP
 
+#define DECLARE_XNLOCK(lock)            xnlock_t lock
+#define DECLARE_EXTERN_XNLOCK(lock)     extern xnlock_t lock
+#define DEFINE_XNLOCK(lock)             xnlock_t lock = XNARCH_LOCK_UNLOCKED
+#define DEFINE_PRIVATE_XNLOCK(lock)     static DEFINE_XNLOCK(lock)
+
 static inline void xnlock_init(xnlock_t *lock)
 {
 	*lock = XNARCH_LOCK_UNLOCKED;
+}
+
+static inline void xnlock_get(xnlock_t *lock)
+{
+	barrier();
+	rtai_cli();
+	if (!test_and_set_bit(hal_processor_id(), &lock->lock)) {
+		while (test_and_set_bit(31, &lock->lock)) {
+			cpu_relax();
+		}
+	}
+	barrier();
+}
+
+static inline void xnlock_put(xnlock_t *lock)
+{
+	barrier();
+	rtai_cli();
+	if (test_and_clear_bit(hal_processor_id(), &lock->lock)) {
+		test_and_clear_bit(31, &lock->lock);
+		cpu_relax();
+	}
+	barrier();
 }
 
 static inline spl_t __xnlock_get_irqsave(xnlock_t *lock)
@@ -129,7 +161,14 @@ static inline void xnlock_put_irqrestore(xnlock_t *lock, spl_t flags)
 
 #else /* !CONFIG_SMP */
 
+#define DECLARE_XNLOCK(lock)
+#define DECLARE_EXTERN_XNLOCK(lock)
+#define DEFINE_XNLOCK(lock)
+#define DEFINE_PRIVATE_XNLOCK(lock)
+
 #define xnlock_init(lock)                   do { } while(0)
+#define xnlock_get(lock)                    rtai_cli()
+#define xnlock_put(lock)                    rtai_sti()
 #define xnlock_get_irqsave(lock, flags)     rtai_save_flags_and_cli(flags)
 #define xnlock_put_irqrestore(lock, flags)  rtai_restore_flags(flags)
 
@@ -230,6 +269,18 @@ unsigned long __va_to_kva(unsigned long va);
 
 #define XN_ISR_ATTACHED   0x10000
 
+#if LINUX_VERSION_CODE < KERNEL_VERSION(2,4,32) || (LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,0) && LINUX_VERSION_CODE < KERNEL_VERSION(2,6,14))
+
+#define rthal_virtualize_irq(dom, irq, isr, cookie, ackfn, mode) \
+	ipipe_virtualize_irq(dom, irq, isr, ackfn, mode)
+
+#else
+
+#define rthal_virtualize_irq(dom, irq, isr, cookie, ackfn, mode) \
+	ipipe_virtualize_irq(dom, irq, isr, cookie, ackfn, mode)
+
+#endif
+
 struct xnintr;
 
 typedef int (*xnisr_t)(struct xnintr *intr);
@@ -253,7 +304,9 @@ typedef struct xnstat_counter {
 #define xnstat_counter_inc(c)  ((c)->counter++)
 
 typedef struct xnintr {
+#ifdef CONFIG_RTAI_RTDM_SHIRQ
     struct xnintr *next;
+#endif /* CONFIG_RTAI_RTDM_SHIRQ */
     unsigned unhandled;
     xnisr_t isr;
     void *cookie;
@@ -302,5 +355,77 @@ int xnintr_disable (xnintr_t *intr);
 	rt_request_irq_wack(irq, (void *)handler, intr, 0, iack);
 #define xnarch_release_irq(irq) \
 	rt_release_irq(irq);
+
+extern struct rtai_realtime_irq_s rtai_realtime_irq[];
+#define xnarch_get_irq_cookie(irq)  (rtai_realtime_irq[irq].cookie)
+
+extern unsigned long IsolCpusMask;
+#define xnarch_set_irq_affinity(irq, nkaffinity) \
+	rt_assign_irq_to_cpu(irq, IsolCpusMask)
+
+// support for RTDM timers
+
+struct rt_timer_struct {
+        struct rt_timer_struct *next, *prev;
+        int priority, cpuid;
+        RTIME firing_time, period;
+        void (*handler)(unsigned long);
+        unsigned long data;
+#ifdef  CONFIG_RTAI_LONG_TIMED_LIST
+        rb_root_t rbr;
+        rb_node_t rbn;
+#endif
+};
+
+RTAI_SYSCALL_MODE void rt_timer_remove(struct rt_timer_struct *timer);
+
+RTAI_SYSCALL_MODE int rt_timer_insert(struct rt_timer_struct *timer, int priority, RTIME firing_time, RTIME period, void (*handler)(unsigned long), unsigned long data);
+
+typedef struct rt_timer_struct xntimer_t;
+
+/* Timer modes */
+typedef enum xntmode {
+        XN_RELATIVE,
+        XN_ABSOLUTE,
+        XN_REALTIME
+} xntmode_t;
+
+#define xntbase_ns2ticks(rtdm_tbase, expiry)  nano2count(expiry)
+
+static inline void xntimer_init(xntimer_t *timer, void (*handler)(xntimer_t *))
+{
+        memset(timer, 0, sizeof(struct rt_timer_struct));
+        timer->handler = (void *)handler;
+        timer->data    = (unsigned long)timer;
+}
+
+#define xntimer_set_name(timer, name)
+
+static inline int xntimer_start(xntimer_t *timer, xnticks_t value, xnticks_t interval, int mode)
+{
+	return rt_timer_insert(timer, 0, value, interval, timer->handler, (unsigned long)timer);
+}
+
+static inline void xntimer_destroy(xntimer_t *timer)
+{
+        rt_timer_remove(timer);
+}
+
+static inline void xntimer_stop(xntimer_t *timer)
+{
+        rt_timer_remove(timer);
+}
+
+// support for use in RTDM usage testing found in RTAI SHOWROOM CVS
+
+static inline unsigned long long xnarch_ulldiv(unsigned long long ull, unsigned
+long uld, unsigned long *r)
+{
+        unsigned long rem = do_div(ull, uld);
+        if (r) {
+                *r = rem;
+        }
+        return ull;
+}
 
 #endif /* !_RTAI_XNSTUFF_H */

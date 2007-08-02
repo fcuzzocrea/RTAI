@@ -5,6 +5,8 @@
  * @note Copyright (C) 2005 Jan Kiszka <jan.kiszka@web.de>
  * @note Copyright (C) 2005 Joerg Langenberg <joerg.langenberg@gmx.net>
  *
+ * with adaptions for RTAI by Paolo Mantegazza <mantegazza@aero.polimi.it>
+ *
  * RTAI is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License as published by
  * the Free Software Foundation; either version 2 of the License, or
@@ -26,11 +28,9 @@
  */
 
 #include <linux/module.h>
-#include <linux/moduleparam.h>
 #include <linux/delay.h>
 
-#include "rtdm/device.h"
-#include "rtdm/proc.h"
+#include "rtdm/internal.h"
 
 
 #define SET_DEFAULT_OP(device, operation)                               \
@@ -43,8 +43,8 @@
     if (!(device).operation##_nrt)                                      \
         (device).operation##_nrt = (void *)rtdm_no_support
 
-#define NO_HANDLER(device, operation)                               \
-    ((!(device).operation##_rt) && (!(device).operation##_nrt))
+#define ANY_HANDLER(device, operation)                               \
+    ((device).operation##_rt || (device).operation##_nrt)
 
 
 unsigned int        devname_hashtab_size  = DEF_DEVNAME_HASHTAB_SIZE;
@@ -62,10 +62,7 @@ static int          name_hashkey_mask;
 static int          proto_hashkey_mask;
 
 DECLARE_MUTEX(nrt_dev_lock);
-
-#ifdef CONFIG_SMP
-xnlock_t            rt_dev_lock = XNARCH_LOCK_UNLOCKED;
-#endif /* CONFIG_SMP */
+DEFINE_XNLOCK(rt_dev_lock);
 
 #ifndef MODULE
 int                 rtdm_initialised = 0;
@@ -211,29 +208,35 @@ int rtdm_dev_register(struct rtdm_device* device)
         return -ENOSYS;
 
     /* Sanity check: structure version */
-    if (device->struct_version != RTDM_DEVICE_STRUCT_VER) {
+    XENO_ASSERT(RTDM, (device->struct_version == RTDM_DEVICE_STRUCT_VER),
         xnlogerr("RTDM: invalid rtdm_device version (%d, required %d)\n",
                  device->struct_version, RTDM_DEVICE_STRUCT_VER);
         return -EINVAL;
-    }
+    );
+
+    /* Sanity check: proc_name specified? */
+    XENO_ASSERT(RTDM, (device->proc_name),
+        xnlogerr("RTDM: no /proc entry name specified\n");
+        return -EINVAL;
+    );
 
     switch (device->device_flags & RTDM_DEVICE_TYPE_MASK) {
         case RTDM_NAMED_DEVICE:
             /* Sanity check: any open handler? */
-            if (NO_HANDLER(*device, open)) {
-                xnlogerr("RTDM: no open handler\n");
+            XENO_ASSERT(RTDM, ANY_HANDLER(*device, open),
+                xnlogerr("RTDM: missing open handler\n");
                 return -EINVAL;
-            }
+            );
             SET_DEFAULT_OP_IF_NULL(*device, open);
             SET_DEFAULT_OP(*device, socket);
             break;
 
         case RTDM_PROTOCOL_DEVICE:
             /* Sanity check: any socket handler? */
-            if (NO_HANDLER(*device, socket)) {
-                xnlogerr("RTDM: no socket handler\n");
+            XENO_ASSERT(RTDM, ANY_HANDLER(*device, socket),
+                xnlogerr("RTDM: missing socket handler\n");
                 return -EINVAL;
-            }
+            );
             SET_DEFAULT_OP_IF_NULL(*device, socket);
             SET_DEFAULT_OP(*device, open);
             break;
@@ -245,11 +248,12 @@ int rtdm_dev_register(struct rtdm_device* device)
     /* Sanity check: non-RT close handler?
      * (Always required for forced cleanup) */
     if (!device->ops.close_nrt) {
-        xnlogerr("RTDM: no non-RT close handler\n");
+        xnlogerr("RTDM: missing non-RT close handler\n");
         return -EINVAL;
     }
+    if (!device->ops.close_rt)
+        device->ops.close_rt = (void *)rtdm_no_support;
 
-    SET_DEFAULT_OP_IF_NULL(device->ops, close);
     SET_DEFAULT_OP_IF_NULL(device->ops, ioctl);
     SET_DEFAULT_OP_IF_NULL(device->ops, read);
     SET_DEFAULT_OP_IF_NULL(device->ops, write);
@@ -288,10 +292,8 @@ int rtdm_dev_register(struct rtdm_device* device)
         }
 
 #ifdef CONFIG_PROC_FS
-        if ((ret = rtdm_proc_register_device(device)) < 0) {
-            xnlogerr("RTDM: error while creating device proc entry\n");
+        if ((ret = rtdm_proc_register_device(device)) < 0)
             goto err;
-        }
 #endif /* CONFIG_PROC_FS */
 
         xnlock_get_irqsave(&rt_dev_lock, s);

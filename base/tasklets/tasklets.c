@@ -695,6 +695,15 @@ static void rt_timers_manager(long cpuid)
 				break;
 			}
 			timer_manager->priority = priority;
+#if 1
+			flags = rt_spin_lock_irqsave(lock);
+			rem_timer(timer);
+			if (timer->period) {
+				timer->firing_time += timer->period;
+				enq_timer(timer);
+			}
+			rt_spin_unlock_irqrestore(flags, lock);
+#else
 			if (!timer->period) {
 				flags = rt_spin_lock_irqsave(lock);
 				rem_timer(timer);
@@ -702,6 +711,7 @@ static void rt_timers_manager(long cpuid)
 			} else {
 				set_timer_firing_time(timer, timer->firing_time + timer->period);
 			}
+#endif
 	//	if (retval != RTE_TMROVRN) {
 			tmr->overrun = 0;
 			if (!timer->task) {

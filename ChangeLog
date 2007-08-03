@@ -1,3 +1,8 @@
+2007-08-04  Paolo Mantegazza <mantegazza@aero.polimi.it>
+
+	* base/arch/x86_64/hal/hal.immed and base/arch/ppc/hal/hal.c: 
+          export IsolCpusMask for possible use in RTDM.
+
 2007-08-03  Paolo Mantegazza <mantegazza@aero.polimi.it>
 
 	* base/addons/rtdm/core.c, core.h, device.c, device.h, drvlib.c,
@@ -6,7 +11,6 @@
 	* base/addons/drivers/16550A/16550A.c, 16550A_io.h, 16550A_pnp.h:
 	  updated to the last.
 	* base/arch/i386/hal/hal.immed: export IsolCpusMask for possible use
-	* base/arch/x86_64/hal/hal.immed: export IsolCpusMask for possible use
           in RTDM.
 
 2007-08-02  Paolo Mantegazza <mantegazza@aero.polimi.it>

@@ -77,7 +77,7 @@ static int PrintFpuTrap = 0;
 RTAI_MODULE_PARM(PrintFpuTrap, int);
 static int PrintFpuInit = 0;
 RTAI_MODULE_PARM(PrintFpuInit, int);
-static unsigned long IsolCpusMask = 0;
+unsigned long IsolCpusMask = 0;
 RTAI_MODULE_PARM(IsolCpusMask, ulong);
 
 struct { volatile int locked, rqsted; } rt_scheduling[RTAI_NR_CPUS];
@@ -1380,3 +1380,6 @@ EXPORT_SYMBOL(__save_fpenv);
 void __restore_fpenv(void *fpenv);
 EXPORT_SYMBOL(__restore_fpenv);
 #endif
+
+EXPORT_SYMBOL(IsolCpusMask);
+

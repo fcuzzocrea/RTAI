@@ -209,7 +209,7 @@ void rtai_critical_exit (unsigned long flags)
 	hal_critical_exit(flags);
 }
 
-static unsigned long IsolCpusMask = 0;
+unsigned long IsolCpusMask = 0;
 RTAI_MODULE_PARM(IsolCpusMask, ulong);
 
 int rt_request_irq (unsigned irq, int (*handler)(unsigned irq, void *cookie), void *cookie, int retmode)
@@ -2400,3 +2400,5 @@ static void rtai_release_tickdev(void)  {  return;  }
 
 EXPORT_SYMBOL(rt_linux_hrt_set_mode);
 EXPORT_SYMBOL(rt_linux_hrt_next_shot);
+
+EXPORT_SYMBOL(IsolCpusMask);

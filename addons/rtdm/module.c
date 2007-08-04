@@ -58,22 +58,6 @@ static RTAI_SYSCALL_MODE int _rtdm_fdcount(void)
 	return RTDM_FD_MAX;
 }
 
-#ifdef TRUE_LXRT_WAY
-
-static struct rt_fun_entry rtdm[] = {
-	[__rtdm_fdcount] = { 0, _rtdm_fdcount },
-	[__rtdm_open]    = { 0, _rtdm_open },
-	[__rtdm_socket]  = { 0, _rtdm_socket },
-	[__rtdm_close]   = { 0, _rtdm_close },
-	[__rtdm_ioctl]   = { 0, _rtdm_ioctl },
-	[__rtdm_read]    = { 0, _rtdm_read },
-	[__rtdm_write]   = { 0, _rtdm_write },
-	[__rtdm_recvmsg] = { 0, _rtdm_recvmsg },
-	[__rtdm_sendmsg] = { 0, _rtdm_sendmsg }
-};
-
-#else /* !TRUE_LXRT_WAY */
-
 static RTAI_SYSCALL_MODE int sys_rtdm_open(const char *path, long oflag)
 {
 	char krnl_path[RTDM_MAX_DEVNAME_LEN + 1];
@@ -151,8 +135,6 @@ static struct rt_fun_entry rtdm[] = {
 	[__rtdm_recvmsg] = { 0, sys_rtdm_recvmsg },
 	[__rtdm_sendmsg] = { 0, sys_rtdm_sendmsg },
 };
-
-#endif /* TRUE_LXRT_WAY */
 
 /* This is needed because RTDM interrupt handlers:
  * - do no want immediate in handler rescheduling, RTAI can be configured

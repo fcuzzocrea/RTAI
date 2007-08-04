@@ -1,3 +1,10 @@
+2007-08-05  Paolo Mantegazza <mantegazza@aero.polimi.it>
+
+	* base/addons/rtdm/module.c: remove long unused TRUE_LXRT_WAY.
+	* base/addons/rtdm/rtdm.h: remove long unused TRUE_LXRT_WAY and
+	  manage ENOSYS caused transitions from hard to soft mode
+	  automatically.
+
 2007-08-04  Paolo Mantegazza <mantegazza@aero.polimi.it>
 
 	* base/arch/x86_64/hal/hal.immed and base/arch/ppc/hal/hal.c: 

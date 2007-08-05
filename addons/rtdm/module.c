@@ -53,7 +53,7 @@ MODULE_DESCRIPTION("Real-Time Driver Model");
 MODULE_AUTHOR("jan.kiszka@web.de");
 MODULE_LICENSE("GPL");
 
-static RTAI_SYSCALL_MODE int _rtdm_fdcount(void)
+static RTAI_SYSCALL_MODE int sys_rtdm_fdcount(void)
 {
 	return RTDM_FD_MAX;
 }
@@ -66,7 +66,7 @@ static RTAI_SYSCALL_MODE int sys_rtdm_open(const char *path, long oflag)
 	if (unlikely(!__xn_access_ok(curr, VERIFY_READ, path, sizeof(krnl_path)))) {
 	        return -EFAULT;
 	}
-	__xn_copy_from_user(curr, krnl_path, path, sizeof(krnl_path)-1);
+	__xn_copy_from_user(curr, krnl_path, path, sizeof(krnl_path) - 1);
 	krnl_path[sizeof(krnl_path) - 1] = '\0';
 	return _rtdm_open(curr, (const char *)krnl_path, oflag);
 }
@@ -125,7 +125,7 @@ static RTAI_SYSCALL_MODE int sys_rtdm_sendmsg(long fd, const struct msghdr *msg,
 }
 
 static struct rt_fun_entry rtdm[] = {
-	[__rtdm_fdcount] = { 0, _rtdm_fdcount },
+	[__rtdm_fdcount] = { 0, sys_rtdm_fdcount },
 	[__rtdm_open]    = { 0, sys_rtdm_open },
 	[__rtdm_socket]  = { 0, sys_rtdm_socket },
 	[__rtdm_close]   = { 0, sys_rtdm_close },
@@ -844,7 +844,7 @@ static void rt_timers_manager(long cpuid)
 static int TimersManagerStacksize = TASKLET_STACK_SIZE;
 RTAI_MODULE_PARM(TimersManagerStacksize, int);
 
-static int rtai_timer_init(void)
+static int rtai_timers_init(void)
 {
 	int cpuid;
 	
@@ -858,7 +858,7 @@ static int rtai_timer_init(void)
 	return 0;
 }
 
-static void rtai_timer_exit(void)
+static void rtai_timers_cleanup(void)
 {
 	int cpuid;
 	for (cpuid = 0; cpuid < NUM_CPUS; cpuid++) {
@@ -873,7 +873,7 @@ int __init rtdm_skin_init(void)
 {
 	int err;
 
-	rtai_timer_init();
+	rtai_timers_init();
         if(set_rt_fun_ext_index(rtdm, RTDM_INDX)) {
                 printk("LXRT extension %d already in use. Recompile RTDM with a different extension index\n", RTDM_INDX);
                 return -EACCES;
@@ -904,7 +904,7 @@ fail:
 
 void __exit rtdm_skin_exit(void)
 {
-	rtai_timer_exit();
+	rtai_timers_cleanup();
 	rtdm_dev_cleanup();
         reset_rt_fun_ext_index(rtdm, RTDM_INDX);
 #ifdef CONFIG_PROC_FS

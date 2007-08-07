@@ -76,6 +76,7 @@
 #ifdef CONFIG_X86_LOCAL_APIC
 
 #define TIMER_NAME        "APIC"
+#define TIMER_TYPE  1
 #define HRT_LINUX_TIMER_NAME  "lapic"
 #define FAST_TO_READ_TSC
 #define TIMER_FREQ        RTAI_FREQ_APIC
@@ -94,6 +95,7 @@
 
 #define USE_LINUX_TIMER
 #define TIMER_NAME        "8254-PIT"
+#define TIMER_TYPE  0
 #define HRT_LINUX_TIMER_NAME  "pit"
 #define TIMER_FREQ        RTAI_FREQ_8254
 #define TIMER_LATENCY     RTAI_LATENCY_8254

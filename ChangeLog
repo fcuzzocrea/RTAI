@@ -3,7 +3,8 @@
 	* base/include/asm-i386/rtai_lxrt.h: define TIMER_TYPE as arch
 	  dependent feature here.
 	* base/sched/sched.c: define TIMER_TYPE to one, but only if it is
-	  not defined as an arch specific feature already.
+	  not defined as an arch specific feature already; fix, partially
+	  rewrite and simplify _rt_linux_hrt_next_shot.
 
 2007-08-05  Paolo Mantegazza <mantegazza@aero.polimi.it>
 

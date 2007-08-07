@@ -1539,7 +1539,7 @@ void stop_rt_timer(void)
 #else /* !CONFIG_SMP */
 
 #ifndef TIMER_TYPE
-#define TIMER_TYPE 0
+#define TIMER_TYPE  1
 #endif
 
 RTAI_SYSCALL_MODE RTIME start_rt_timer(int period)

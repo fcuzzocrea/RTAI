@@ -34,6 +34,7 @@
 #include <linux/version.h>
 #include <linux/module.h>
 #include <linux/errno.h>
+#include <linux/fs.h>
 #include <linux/mm.h>
 #include <linux/miscdevice.h>
 

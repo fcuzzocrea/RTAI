@@ -1234,7 +1234,6 @@ static void rt_timer_handler(void)
 #ifdef CONFIG_GENERIC_CLOCKEVENTS
 				if (rt_times.linux_time < rt_times.intr_time) {
 					rt_times.intr_time = rt_times.linux_time;
-					preempt = 1;
 				}
 #else
 				RTIME linux_intr_time;
@@ -1451,19 +1450,19 @@ static void _rt_linux_hrt_set_mode(enum clock_event_mode mode, struct ipipe_tick
 	}
 }
 
-static int _rt_linux_hrt_next_shot(unsigned long delay, struct ipipe_tick_device *hrt_dev)
+static int _rt_linux_hrt_next_shot(unsigned long deltat, struct ipipe_tick_device *hrt_dev)
 {
 	int cpuid = rtai_cpuid();
 
-	delay = nano2count_cpuid(delay, cpuid);
-	rt_times.linux_time = (rt_time_h = rt_get_time_cpuid(cpuid)) + delay;
-	rt_time_h += rt_half_tick;
+	deltat = nano2count_cpuid(deltat, cpuid);
+	rt_times.linux_time = rt_get_time_cpuid(cpuid) + deltat;
 
 	if (oneshot_running) {
 		rtai_cli();
 		if (rt_times.linux_time < rt_times.intr_time) {
+			int delay;
 			rt_times.intr_time = rt_times.linux_time;
-			delay = (int)(rt_times.intr_time - rt_time_h) - tuned.latency;
+			delay = deltat - tuned.latency;
 			if (delay >= tuned.setup_time_TIMER_CPUNIT) {
 				delay = imuldiv(delay, TIMER_FREQ, tuned.cpu_freq);
 			} else {

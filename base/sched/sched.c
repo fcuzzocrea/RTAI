@@ -1538,10 +1538,8 @@ void stop_rt_timer(void)
 
 #else /* !CONFIG_SMP */
 
-#if defined(USE_LINUX_TIMER) && !defined(CONFIG_GENERIC_CLOCKEVENTS)
+#ifndef TIMER_TYPE
 #define TIMER_TYPE 0
-#else
-#define TIMER_TYPE 1
 #endif
 
 RTAI_SYSCALL_MODE RTIME start_rt_timer(int period)

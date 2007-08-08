@@ -2325,12 +2325,6 @@ EXPORT_SYMBOL(IsolCpusMask);
 void (*rt_linux_hrt_set_mode)(enum clock_event_mode, struct ipipe_tick_device *);
 int (*rt_linux_hrt_next_shot)(unsigned long, struct ipipe_tick_device *);
 
-#ifdef CONFIG_SMP
-#define TEST_LINUX_TICK  RTAI_APIC_ICOUNT
-#else
-#define TEST_LINUX_TICK  (used_apic ? RTAI_APIC_ICOUNT : LATCH)
-#endif 
-
 /* 
  * _rt_linux_hrt_set_mode and _rt_linux_hrt_next_shot below should serve 
  * RTAI examples only and assume that RTAI is in periodic mode always
@@ -2338,19 +2332,16 @@ int (*rt_linux_hrt_next_shot)(unsigned long, struct ipipe_tick_device *);
 
 static void _rt_linux_hrt_set_mode(enum clock_event_mode mode, struct ipipe_tick_device *hrt_dev)
 {
-	if (mode == CLOCK_EVT_MODE_PERIODIC) {
-		rtai_cli();
-		rt_times.linux_tick = TEST_LINUX_TICK;
-		rt_times.linux_time = (RTIME)rt_times.linux_tick*(jiffies + 1);
-		rtai_sti();
-	} else if (mode == CLOCK_EVT_MODE_ONESHOT || mode == CLOCK_EVT_MODE_SHUTDOWN) {
+	if (mode == CLOCK_EVT_MODE_ONESHOT || mode == CLOCK_EVT_MODE_SHUTDOWN) {
 		rt_times.linux_tick = 0;
+	} else if (mode == CLOCK_EVT_MODE_PERIODIC) {
+		rt_times.linux_tick = llimd((1000000000 + HZ/2)/HZ, TIMER_FREQ, 1000000000);
 	}
 }
 
 static int _rt_linux_hrt_next_shot(unsigned long delay, struct ipipe_tick_device *hrt_dev)
 {
-	rt_times.linux_time = llimd(rtai_rdtsc(), tuned.cpu_freq, used_apic ? RTAI_APIC_ICOUNT : LATCH) + llimd(delay, used_apic ? RTAI_APIC_ICOUNT : LATCH, 1000000000);
+	rt_times.linux_time = rt_times.tick_time + llimd(delay, TIMER_FREQ, 1000000000);
 	return 0;
 }
 
@@ -2363,12 +2354,9 @@ static int rtai_request_tickdev(void)
 		} else {
 			mode = ipipe_request_tickdev(HRT_LINUX_TIMER_NAME, _rt_linux_hrt_set_mode, _rt_linux_hrt_next_shot, cpuid);
 		}
-		if (mode == CLOCK_EVT_MODE_PERIODIC) {
-//			rt_times.linux_tick = TEST_LINUX_TICK;
-//			rt_times.linux_tick = nano2count_cpuid((1000000000 + HZ/2)/HZ, cpuid);
-		} else if (mode == CLOCK_EVT_MODE_UNUSED || mode == CLOCK_EVT_MODE_ONESHOT) {
+		if (mode == CLOCK_EVT_MODE_UNUSED || mode == CLOCK_EVT_MODE_ONESHOT) {
 			rt_times.linux_tick = 0;
-		} else {
+		} else if (mode != CLOCK_EVT_MODE_PERIODIC) {
 			return mode;
 		}
 	}

@@ -47,6 +47,7 @@ struct rtdm_fildes      fildes_table[RTDM_FD_MAX] =
 static unsigned long    used_fildes[FD_BITMAP_SIZE];
 int                     open_fildes;    /* amount of used descriptors */
 
+
 DEFINE_XNLOCK(rt_fildes_lock);
 
 
@@ -299,6 +300,7 @@ int _rtdm_close(rtdm_user_info_t *user_info, int fd)
     struct rtdm_dev_context *context;
     spl_t                   s;
     int                     ret;
+    int                     nrt_mode = !rtdm_in_rt_context();
 
 
     ret = -EBADF;
@@ -320,27 +322,20 @@ int _rtdm_close(rtdm_user_info_t *user_info, int fd)
 
     xnlock_put_irqrestore(&rt_fildes_lock, s);
 
-    if (rtdm_in_rt_context()) {
-        ret = -ENOTSUPP;
-        /* Warn about asymmetric open/close, but only if there is really a
-           close_rt handler. Otherwise, we will be switched to nrt
-           automatically. */
-        if (unlikely(test_bit(RTDM_CREATED_IN_NRT, &context->context_flags) &&
-                     (context->ops->close_rt !=
-                         (rtdm_close_handler_t)rtdm_no_support))) {
-            xnprintf("RTDM: closing device in real-time mode while creation "
-                     "ran in non-real-time - this is not supported!\n");
+    if (nrt_mode)
+        ret = context->ops->close_nrt(context, user_info);
+    else {
+        /* Avoid asymmetric close context by switching to nrt. */
+        if (unlikely(test_bit(RTDM_CREATED_IN_NRT, &context->context_flags))) {
+            ret = -ENOSYS;
             goto unlock_out;
         }
-
         ret = context->ops->close_rt(context, user_info);
-
-    } else
-        ret = context->ops->close_nrt(context, user_info);
+    }
 
     XENO_ASSERT(RTDM, !rthal_local_irq_test(), rthal_local_irq_enable(););
 
-    if (unlikely(ret == -EAGAIN) && !rtdm_in_rt_context()) {
+    if (unlikely(ret == -EAGAIN) && nrt_mode) {
         rtdm_context_unlock(context);
         msleep(CLOSURE_RETRY_PERIOD);
         goto again;
@@ -352,7 +347,7 @@ int _rtdm_close(rtdm_user_info_t *user_info, int fd)
     if (unlikely(atomic_read(&context->close_lock_count) > 1)) {
         xnlock_put_irqrestore(&rt_fildes_lock, s);
 
-        if (rtdm_in_rt_context()) {
+        if (!nrt_mode) {
             ret = -EAGAIN;
             goto unlock_out;
         }

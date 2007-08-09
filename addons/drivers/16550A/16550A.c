@@ -73,42 +73,42 @@
 #define MSR			6	/* Modem Status Register */
 
 struct rt_16550_context {
-	struct rtser_config config;
+	struct rtser_config config;	/* current device configuration */
 
-	rtdm_irq_t irq_handle;
-	rtdm_lock_t lock;
+	rtdm_irq_t irq_handle;		/* device IRQ handle */
+	rtdm_lock_t lock;		/* lock to protect context struct */
 
-	unsigned long base_addr;
+	unsigned long base_addr;	/* hardware IO base address */
 #ifdef CONFIG_XENO_DRIVERS_16550A_ANY
-	int io_mode;
+	int io_mode;			/* hardware IO-access mode */
 #endif
-	int tx_fifo;
+	int tx_fifo;			/* cached global tx_fifo[<device>] */
 
-	int in_head;
-	int in_tail;
-	volatile size_t in_npend;
-	int in_nwait;
-	rtdm_event_t in_event;
-	char in_buf[IN_BUFFER_SIZE];
-	volatile unsigned long in_lock;
-	uint64_t *in_history;
+	int in_head;			/* RX ring buffer, head pointer */
+	int in_tail;			/* RX ring buffer, tail pointer */
+	size_t in_npend;		/* pending bytes in RX ring */
+	int in_nwait;			/* bytes the user waits for */
+	rtdm_event_t in_event;		/* raised to unblock reader */
+	char in_buf[IN_BUFFER_SIZE];	/* RX ring buffer */
+	volatile unsigned long in_lock;	/* single-reader lock */
+	uint64_t *in_history;		/* RX timestamp buffer */
 
-	int out_head;
-	int out_tail;
-	size_t out_npend;
-	rtdm_event_t out_event;
-	char out_buf[OUT_BUFFER_SIZE];
-	rtdm_mutex_t out_lock;
+	int out_head;			/* TX ring buffer, head pointer */
+	int out_tail;			/* TX ring buffer, tail pointer */
+	size_t out_npend;		/* pending bytes in TX ring */
+	rtdm_event_t out_event;		/* raised to unblock writer */
+	char out_buf[OUT_BUFFER_SIZE];	/* TX ring buffer */
+	rtdm_mutex_t out_lock;		/* single-writer mutex */
 
-	uint64_t last_timestamp;
-	volatile int ioc_events;
-	rtdm_event_t ioc_event;
-	volatile unsigned long ioc_event_lock;
+	uint64_t last_timestamp;	/* timestamp of last event */
+	int ioc_events;			/* recorded events */
+	rtdm_event_t ioc_event;		/* raised to unblock event waiter */
+	volatile unsigned long ioc_event_lock;	/* single-waiter lock */
 
-	int ier_status;
-	int mcr_status;
-	int status;
-	int saved_errors;
+	int ier_status;			/* IER cache */
+	int mcr_status;			/* MCR cache */
+	int status;			/* cache for LSR + soft-states */
+	int saved_errors;		/* error cache for RTIOC_GET_STATUS */
 };
 
 static const struct rtser_config default_config = {
@@ -698,7 +698,7 @@ int rt_16550_ioctl(struct rtdm_dev_context *context,
 	}
 
 	case RTSER_RTIOC_WAIT_EVENT: {
-		struct rtser_event ev = { rxpend_timestamp:0 };
+		struct rtser_event ev = { .rxpend_timestamp = 0 };
 		rtdm_toseq_t timeout_seq;
 
 		if (!rtdm_in_rt_context())
@@ -844,9 +844,9 @@ ssize_t rt_16550_read(struct rtdm_dev_context * context,
 	if (test_and_set_bit(0, &ctx->in_lock))
 		return -EBUSY;
 
-	while (nbyte > 0) {
-		rtdm_lock_get_irqsave(&ctx->lock, lock_ctx);
+	rtdm_lock_get_irqsave(&ctx->lock, lock_ctx);
 
+	while (1) {
 		/* switch on error interrupt - the user is ready to listen */
 		if (!testbits(ctx->ier_status, IER_STAT)) {
 			ctx->ier_status |= IER_STAT;
@@ -864,8 +864,6 @@ ssize_t rt_16550_read(struct rtdm_dev_context * context,
 			    (RTSER_LSR_OVERRUN_ERR | RTSER_LSR_PARITY_ERR |
 			     RTSER_LSR_FRAMING_ERR | RTSER_SOFT_OVERRUN_ERR);
 			ctx->status = 0;
-
-			rtdm_lock_put_irqrestore(&ctx->lock, lock_ctx);
 			break;
 		}
 
@@ -889,7 +887,7 @@ ssize_t rt_16550_read(struct rtdm_dev_context * context,
 					     &ctx->in_buf[in_pos],
 					     subblock) != 0) {
 						ret = -EFAULT;
-						break;
+						goto break_unlocked;
 					}
 				} else
 					memcpy(out_pos, &ctx->in_buf[in_pos],
@@ -907,7 +905,7 @@ ssize_t rt_16550_read(struct rtdm_dev_context * context,
 						      &ctx->in_buf[in_pos],
 						      subblock) != 0) {
 					ret = -EFAULT;
-					break;
+					goto break_unlocked;
 				}
 			} else
 				memcpy(out_pos, &ctx->in_buf[in_pos], subblock);
@@ -923,32 +921,33 @@ ssize_t rt_16550_read(struct rtdm_dev_context * context,
 			if ((ctx->in_npend -= block) == 0)
 				ctx->ioc_events &= ~RTSER_EVENT_RXPEND;
 
-			rtdm_lock_put_irqrestore(&ctx->lock, lock_ctx);
+			if (nbyte == 0)
+				break; /* All requested bytes read. */
+
 			continue;
 		}
 
-		if (nonblocking) {
-			rtdm_lock_put_irqrestore(&ctx->lock, lock_ctx);
-			/* ret was set to EAGAIN in case of real non-blocking
-			   call or contains the error returned by
-			   rtdm_event_wait[_until] */
+		if (nonblocking)
+			/* ret was set to EAGAIN in case of a real
+			   non-blocking call or contains the error
+			   returned by rtdm_event_wait[_until] */
 			break;
-		}
 
 		ctx->in_nwait = nbyte;
 
 		rtdm_lock_put_irqrestore(&ctx->lock, lock_ctx);
 
-		ret =
-		    rtdm_event_timedwait(&ctx->in_event,
-					 ctx->config.rx_timeout,
-					 &timeout_seq);
+		ret = rtdm_event_timedwait(&ctx->in_event,
+					   ctx->config.rx_timeout,
+					   &timeout_seq);
 		if (ret < 0) {
 			if (ret == -EIDRM) {
 				/* Device has been closed -
 				   return immediately. */
 				return -EBADF;
 			}
+
+			rtdm_lock_get_irqsave(&ctx->lock, lock_ctx);
 
 			nonblocking = 1;
 			if (ctx->in_npend > 0) {
@@ -960,8 +959,13 @@ ssize_t rt_16550_read(struct rtdm_dev_context * context,
 			ctx->in_nwait = 0;
 			break;
 		}
+
+		rtdm_lock_get_irqsave(&ctx->lock, lock_ctx);
 	}
 
+	rtdm_lock_put_irqrestore(&ctx->lock, lock_ctx);
+
+break_unlocked:
 	/* Release the simple reader lock, */
 	clear_bit(0, &ctx->in_lock);
 
@@ -1124,7 +1128,7 @@ static const struct rtdm_device __initdata device_tmpl = {
 	.device_sub_class	= RTDM_SUBCLASS_16550A,
 	.profile_version	= RTSER_PROFILE_VER,
 	.driver_name		= RT_16550_DRIVER_NAME,
-	.driver_version		= RTDM_DRIVER_VER(1, 5, 0),
+	.driver_version		= RTDM_DRIVER_VER(1, 5, 1),
 	.peripheral_name	= "UART 16550A",
 	.provider_name		= "Jan Kiszka",
 };

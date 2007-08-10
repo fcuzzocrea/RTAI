@@ -1,4 +1,4 @@
-/** 
+/**
  * @ingroup lxrt
  * @file
  * Common scheduling function 
@@ -875,9 +875,9 @@ RTAI_SYSCALL_MODE int rt_set_period(RT_TASK *task, RTIME new_period)
 	if (task->magic != RT_TASK_MAGIC) {
 		return -EINVAL;
 	}
-	rtai_save_flags_and_cli(flags);
+	flags = rt_global_save_flags_and_cli();
 	task->period = new_period;
-	rtai_restore_flags(flags);
+	rt_global_restore_flags(flags);
 	return 0;
 }
 

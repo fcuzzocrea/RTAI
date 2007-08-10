@@ -1,3 +1,7 @@
+2007-08-19  Paolo Mantegazza <mantegazza@aero.polimi.it>
+
+	* base/sched/api.c: make rt_set_period SMP safe.
+
 2007-08-07  Paolo Mantegazza <mantegazza@aero.polimi.it>
 
 	* base/include/asm-i386/rtai_lxrt.h: define TIMER_TYPE as arch

@@ -30,11 +30,10 @@
 
 #include <rtdm/rtdm_driver.h>
 
-#define RTDM_FD_MAX                   CONFIG_RTAI_RTDM_FD_MAX
+#define RTDM_FD_MAX			CONFIG_RTAI_RTDM_FD_MAX
 
-#define DEF_DEVNAME_HASHTAB_SIZE	256 /* entries in name hash table */
-#define DEF_PROTO_HASHTAB_SIZE		256 /* entries in protocol hash table */
-
+#define DEF_DEVNAME_HASHTAB_SIZE	256	/* entries in name hash table */
+#define DEF_PROTO_HASHTAB_SIZE		256	/* entries in protocol hash table */
 
 struct rtdm_fildes {
 	struct rtdm_dev_context *context;
@@ -43,32 +42,30 @@ struct rtdm_fildes {
 struct rtdm_process {
 #ifdef CONFIG_PROC_FS
 	char name[32];
-        pid_t pid;
+	pid_t pid;
 #endif /* CONFIG_PROC_FS */
 
-	
-};
 
+};
 
 DECLARE_EXTERN_XNLOCK(rt_fildes_lock);
 DECLARE_EXTERN_XNLOCK(rt_dev_lock);
 
-extern int			__rtdm_muxid;
-extern struct rtdm_fildes	fildes_table[];
-extern int			open_fildes;
-extern struct semaphore		nrt_dev_lock;
-extern unsigned int		devname_hashtab_size;
-extern unsigned int		protocol_hashtab_size;
-extern struct list_head		*rtdm_named_devices;
-extern struct list_head		*rtdm_protocol_devices;
-extern struct proc_dir_entry	*rtdm_proc_root;
+extern int __rtdm_muxid;
+extern struct rtdm_fildes fildes_table[];
+extern int open_fildes;
+extern struct semaphore nrt_dev_lock;
+extern unsigned int devname_hashtab_size;
+extern unsigned int protocol_hashtab_size;
+extern struct list_head *rtdm_named_devices;
+extern struct list_head *rtdm_protocol_devices;
+extern struct proc_dir_entry *rtdm_proc_root;
 
 #ifdef MODULE
 #define rtdm_initialised 1
 #else /* !MODULE */
 extern int rtdm_initialised;
 #endif /* MODULE */
-
 
 void cleanup_owned_contexts(void *user_info);
 int rtdm_no_support(void);
@@ -77,18 +74,18 @@ struct rtdm_device *get_protocol_device(int protocol_family, int socket_type);
 
 static inline void rtdm_dereference_device(struct rtdm_device *device)
 {
-    atomic_dec(&device->reserved.refcount);
+	atomic_dec(&device->reserved.refcount);
 }
 
 int __init rtdm_dev_init(void);
 
 static inline void rtdm_dev_cleanup(void)
 {
-    kfree(rtdm_named_devices);
-    kfree(rtdm_protocol_devices);
+	kfree(rtdm_named_devices);
+	kfree(rtdm_protocol_devices);
 }
 
-int rtdm_proc_register_device(struct rtdm_device* device);
+int rtdm_proc_register_device(struct rtdm_device *device);
 int __init rtdm_proc_init(void);
 void rtdm_proc_cleanup(void);
 

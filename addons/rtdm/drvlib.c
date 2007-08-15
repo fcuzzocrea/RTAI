@@ -32,7 +32,6 @@
  * this interface in order to remain portable.
  */
 
-
 #include <asm/page.h>
 #include <asm/io.h>
 #include <asm/pgtable.h>
@@ -41,7 +40,6 @@
 #include <linux/highmem.h>
 
 #include <rtdm/rtdm_driver.h>
-
 
 /*!
  * @ingroup driverapi
@@ -104,7 +102,6 @@ nanosecs_abs_t rtdm_clock_read_monotonic(void);
 #endif /* DOXYGEN_CPP */
 /** @} */
 
-
 /*!
  * @ingroup driverapi
  * @defgroup rtdmtask Task Services
@@ -140,8 +137,8 @@ nanosecs_abs_t rtdm_clock_read_monotonic(void);
  * Rescheduling: possible.
  */
 int rtdm_task_init(rtdm_task_t *task, const char *name,
-                   rtdm_task_proc_t task_proc, void *arg,
-                   int priority, nanosecs_rel_t period)
+		   rtdm_task_proc_t task_proc, void *arg,
+		   int priority, nanosecs_rel_t period)
 {
 	if (rt_task_init(task, (void *)task_proc, (long)arg, PAGE_SIZE, priority, 0, 0)) {
         	return -ENOMEM;
@@ -154,8 +151,22 @@ int rtdm_task_init(rtdm_task_t *task, const char *name,
 	return 0;
 }
 
-EXPORT_SYMBOL(rtdm_task_init);
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+EXPORT_SYMBOL(rtdm_task_init);
 
 #ifdef DOXYGEN_CPP /* Only used for doxygen doc generation */
 /**
@@ -350,13 +361,9 @@ int rtdm_task_sleep_until(nanosecs_abs_t wakeup_time);
  *
  * Rescheduling: always, unless the specified time already passed.
  */
-int rtdm_task_sleep_abs(nanosecs_abs_t wakeup_time,
-                        enum rtdm_timer_mode mode);
+int rtdm_task_sleep_abs(nanosecs_abs_t wakeup_time, enum rtdm_timer_mode mode);
 
 #endif /* DOXYGEN_CPP */
-
-
-
 
 
 
@@ -409,16 +416,14 @@ void rtdm_task_join_nrt(rtdm_task_t *task, unsigned int poll_delay)
 	}
 }
 
+
+
+
+
+
+
+
 EXPORT_SYMBOL(rtdm_task_join_nrt);
-
-
-
-
-
-
-
-
-
 
 /**
  * @brief Busy-wait a specified amount of time
@@ -451,8 +456,6 @@ void rtdm_task_busy_sleep(nanosecs_rel_t delay)
 EXPORT_SYMBOL(rtdm_task_busy_sleep);
 /** @} */
 
-
-
 /*!
  * @ingroup driverapi
  * @defgroup rtdmtimer Timer Services
@@ -480,9 +483,8 @@ EXPORT_SYMBOL(rtdm_task_busy_sleep);
  * Rescheduling: never.
  */
 int rtdm_timer_init(rtdm_timer_t *timer, rtdm_timer_handler_t handler,
-                    const char *name);
+		    const char *name);
 #endif /* DOXYGEN_CPP */
-
 
 /**
  * @brief Destroy a timer
@@ -501,16 +503,14 @@ int rtdm_timer_init(rtdm_timer_t *timer, rtdm_timer_handler_t handler,
  */
 void rtdm_timer_destroy(rtdm_timer_t *timer)
 {
- 
 
 
 
-    xntimer_destroy(timer);
+	xntimer_destroy(timer);
 
 }
 
 EXPORT_SYMBOL(rtdm_timer_destroy);
-
 
 /**
  * @brief Start a timer
@@ -540,22 +540,21 @@ EXPORT_SYMBOL(rtdm_timer_destroy);
  * Rescheduling: never.
  */
 int rtdm_timer_start(rtdm_timer_t *timer, nanosecs_abs_t expiry,
-                      nanosecs_rel_t interval, enum rtdm_timer_mode mode)
+		     nanosecs_rel_t interval, enum rtdm_timer_mode mode)
 {
  
-    int err;
+	int err;
 
 
 
-    err = xntimer_start(timer, xntbase_ns2ticks(rtdm_tbase, expiry),
-                        xntbase_ns2ticks(rtdm_tbase, interval), mode);
+	err = xntimer_start(timer, xntbase_ns2ticks(rtdm_tbase, expiry),
+			    xntbase_ns2ticks(rtdm_tbase, interval),
+			    (xntmode_t)mode);
 
-
-    return err;
+	return err;
 }
 
 EXPORT_SYMBOL(rtdm_timer_start);
-
 
 /**
  * @brief Stop a timer
@@ -578,13 +577,11 @@ void rtdm_timer_stop(rtdm_timer_t *timer)
  
 
 
-
-    xntimer_stop(timer);
+	xntimer_stop(timer);
 
 }
 
 EXPORT_SYMBOL(rtdm_timer_stop);
-
 
 #ifdef DOXYGEN_CPP /* Only used for doxygen doc generation */
 /**
@@ -612,8 +609,8 @@ EXPORT_SYMBOL(rtdm_timer_stop);
  * Rescheduling: never.
  */
 int rtdm_timer_start_in_handler(rtdm_timer_t *timer, nanosecs_abs_t expiry,
-                                nanosecs_rel_t interval,
-                                enum rtdm_timer_mode mode);
+				nanosecs_rel_t interval,
+				enum rtdm_timer_mode mode);
 
 /**
  * @brief Stop a timer from inside a timer handler
@@ -631,8 +628,6 @@ int rtdm_timer_start_in_handler(rtdm_timer_t *timer, nanosecs_abs_t expiry,
 void rtdm_timer_stop_in_handler(rtdm_timer_t *timer);
 #endif /* DOXYGEN_CPP */
 /** @} */
-
-
 
 /* --- RTAI proper common to events, sems and mtxes --- */
 
@@ -667,7 +662,6 @@ static inline int _sem_wait_timed(void *sem, nanosecs_rel_t timeout, rtdm_toseq_
 	return _rt_whoami()->unblocked ? -EINTR : -EIDRM;
 }
 
-
 /*!
  * @ingroup driverapi
  * @defgroup rtdmsync Synchronisation Services
@@ -695,20 +689,20 @@ static inline int _sem_wait_timed(void *sem, nanosecs_rel_t timeout, rtdm_toseq_
  * @code
 int device_service_routine(...)
 {
-    rtdm_toseq_t timeout_seq;
-    ...
+	rtdm_toseq_t timeout_seq;
+	...
 
-    rtdm_toseq_init(&timeout_seq, timeout);
-    ...
-    while (received < requested) {
-        ret = rtdm_event_timedwait(&data_available, timeout, &timeout_seq);
-        if (ret < 0)    // including -ETIMEDOUT
-            break;
+	rtdm_toseq_init(&timeout_seq, timeout);
+	...
+	while (received < requested) {
+		ret = rtdm_event_timedwait(&data_available, timeout, &timeout_seq);
+		if (ret < 0) // including -ETIMEDOUT
+			break;
 
-        // receive some data
-        ...
-    }
-    ...
+		// receive some data
+		...
+	}
+	...
 }
  * @endcode
  * Using a timeout sequence in such a scenario avoids that the user-provided
@@ -726,16 +720,16 @@ int device_service_routine(...)
  * @code
 int device_service_routine(...)
 {
-    ...
-    while (received < requested) {
-        ret = rtdm_event_timedwait(&event->synch_base, rt_get_time()+timeout);
-        if (ret < 0)    // including -ETIMEDOUT
-            break;
-        ...
-        // receive some data
-        ...
-    }
-    ...
+ 	...
+	while (received < requested) {
+		ret = rtdm_event_timedwait(&event->synch_base, rt_get_time()+timeout);
+		if (ret < 0) // including -ETIMEDOUT
+			break;
+		...
+		// receive some data
+		...
+	}
+	...
 }
  * @endcode
  * though it is not so because of an easier porting. Nonetheless the RTAI 
@@ -757,7 +751,8 @@ void rtdm_toseq_init(rtdm_toseq_t *timeout_seq, nanosecs_rel_t timeout)
 
 
 
-    *timeout_seq = rt_get_time() + nano2count(timeout);
+
+	*timeout_seq = rt_get_time() + nano2count(timeout);
 }
 
 EXPORT_SYMBOL(rtdm_toseq_init);
@@ -794,13 +789,11 @@ void rtdm_event_init(rtdm_event_t *event, unsigned long pending)
 
 
 
-
-    event->pending = pending;
-    rt_typed_sem_init(&event->synch_base, 0, BIN_SEM | PRIO_Q);
+	event->pending = pending;
+	rt_typed_sem_init(&event->synch_base, 0, BIN_SEM | PRIO_Q);
 }
 
 EXPORT_SYMBOL(rtdm_event_init);
-
 
 #ifdef DOXYGEN_CPP /* Only used for doxygen doc generation */
 /**
@@ -843,7 +836,6 @@ void rtdm_event_destroy(rtdm_event_t *event);
 void rtdm_event_pulse(rtdm_event_t *event);
 #endif /* DOXYGEN_CPP */
 
-
 /**
  * @brief Signal an event occurrence
  *
@@ -871,7 +863,6 @@ void rtdm_event_signal(rtdm_event_t *event)
 
 
 
-
 	flags = rt_global_save_flags_and_cli();
 	__set_bit(0, &event->pending);
 	rt_sem_broadcast(&event->synch_base);
@@ -879,7 +870,6 @@ void rtdm_event_signal(rtdm_event_t *event)
 }
 
 EXPORT_SYMBOL(rtdm_event_signal);
-
 
 /**
  * @brief Wait on event occurrence
@@ -928,7 +918,6 @@ int rtdm_event_wait(rtdm_event_t *event)
 
 EXPORT_SYMBOL(rtdm_event_wait);
 
-
 /**
  * @brief Wait on event occurrence with timeout
  *
@@ -965,7 +954,7 @@ EXPORT_SYMBOL(rtdm_event_wait);
  * Rescheduling: possible.
  */
 int rtdm_event_timedwait(rtdm_event_t *event, nanosecs_rel_t timeout,
-                         rtdm_toseq_t *timeout_seq)
+			 rtdm_toseq_t *timeout_seq)
 {
 	unsigned long flags;
 	int ret;
@@ -1017,10 +1006,7 @@ int rtdm_event_timedwait(rtdm_event_t *event, nanosecs_rel_t timeout,
 
 
 
-
-
 EXPORT_SYMBOL(rtdm_event_timedwait);
-
 
 /**
  * @brief Clear event state
@@ -1046,14 +1032,11 @@ void rtdm_event_clear(rtdm_event_t *event)
 
 
 
-
-    event->pending = 0;
+	event->pending = 0;
 }
 
 EXPORT_SYMBOL(rtdm_event_clear);
 /** @} */
-
-
 
 /*!
  * @name Semaphore Services
@@ -1086,12 +1069,10 @@ void rtdm_sem_init(rtdm_sem_t *sem, unsigned long value)
 
 
 
-
-   rt_typed_sem_init(sem, value, CNT_SEM | PRIO_Q);
+	rt_typed_sem_init(sem, value, CNT_SEM | PRIO_Q);
 }
 
 EXPORT_SYMBOL(rtdm_sem_init);
-
 
 #ifdef DOXYGEN_CPP /* Only used for doxygen doc generation */
 /**
@@ -1141,11 +1122,10 @@ void rtdm_sem_destroy(rtdm_sem_t *sem);
  */
 int rtdm_sem_down(rtdm_sem_t *sem)
 {
-    return _sem_wait(sem);
+	return _sem_wait(sem);
 }
 
 EXPORT_SYMBOL(rtdm_sem_down);
-
 
 /**
  * @brief Decrement a semaphore with timeout
@@ -1186,7 +1166,7 @@ EXPORT_SYMBOL(rtdm_sem_down);
  * Rescheduling: possible.
  */
 int rtdm_sem_timeddown(rtdm_sem_t *sem, nanosecs_rel_t timeout,
-                       rtdm_toseq_t *timeout_seq)
+		       rtdm_toseq_t *timeout_seq)
 {
 
 
@@ -1229,11 +1209,10 @@ int rtdm_sem_timeddown(rtdm_sem_t *sem, nanosecs_rel_t timeout,
 
 
 
-    return _sem_wait_timed(sem, timeout, timeout_seq);
+	return _sem_wait_timed(sem, timeout, timeout_seq);
 }
 
 EXPORT_SYMBOL(rtdm_sem_timeddown);
-
 
 /**
  * @brief Increment a semaphore
@@ -1265,14 +1244,11 @@ void rtdm_sem_up(rtdm_sem_t *sem)
 
 
 
-
 	rt_sem_signal(sem);
 }
 
 EXPORT_SYMBOL(rtdm_sem_up);
 /** @} */
-
-
 
 /*!
  * @name Mutex Services
@@ -1307,12 +1283,10 @@ void rtdm_mutex_init(rtdm_mutex_t *mutex)
 
 
 
-
-    rt_typed_sem_init(mutex, 1, RES_SEM | PRIO_Q);
+	rt_typed_sem_init(mutex, 1, RES_SEM | PRIO_Q);
 }
 
 EXPORT_SYMBOL(rtdm_mutex_init);
-
 
 #ifdef DOXYGEN_CPP /* Only used for doxygen doc generation */
 /**
@@ -1352,7 +1326,6 @@ void rtdm_mutex_destroy(rtdm_mutex_t *mutex);
 void rtdm_mutex_unlock(rtdm_mutex_t *mutex);
 #endif /* DOXYGEN_CPP */
 
-
 /**
  * @brief Request a mutex
  *
@@ -1379,11 +1352,10 @@ void rtdm_mutex_unlock(rtdm_mutex_t *mutex);
  */
 int rtdm_mutex_lock(rtdm_mutex_t *mutex)
 {
-    int retval; while ((retval = _sem_wait(mutex)) == -EINTR); return retval;
+	int ret; while ((ret = _sem_wait(mutex)) == -EINTR); return ret;
 }
 
 EXPORT_SYMBOL(rtdm_mutex_lock);
-
 
 /**
  * @brief Request a mutex with timeout
@@ -1420,7 +1392,7 @@ EXPORT_SYMBOL(rtdm_mutex_lock);
  * Rescheduling: possible.
  */
 int rtdm_mutex_timedlock(rtdm_mutex_t *mutex, nanosecs_rel_t timeout,
-                         rtdm_toseq_t *timeout_seq)
+			 rtdm_toseq_t *timeout_seq)
 {
 	int retval;
 	if (timeout_seq) {
@@ -1472,11 +1444,12 @@ int rtdm_mutex_timedlock(rtdm_mutex_t *mutex, nanosecs_rel_t timeout,
 
 
 
+
+
 EXPORT_SYMBOL(rtdm_mutex_timedlock);
 /** @} */
 
 /** @} Synchronisation services */
-
 
 /*!
  * @ingroup driverapi
@@ -1514,8 +1487,8 @@ EXPORT_SYMBOL(rtdm_mutex_timedlock);
  * Rescheduling: never.
  */
 int rtdm_irq_request(rtdm_irq_t *irq_handle, unsigned int irq_no,
-                     rtdm_irq_handler_t handler, unsigned long flags,
-                     const char *device_name, void *arg)
+		     rtdm_irq_handler_t handler, unsigned long flags,
+		     const char *device_name, void *arg)
 {
 
 
@@ -1528,8 +1501,8 @@ int rtdm_irq_request(rtdm_irq_t *irq_handle, unsigned int irq_no,
 
 
 
-    xnintr_init(irq_handle, device_name, irq_no, handler, NULL, flags);
-    return xnintr_attach(irq_handle, arg);
+	xnintr_init(irq_handle, device_name, irq_no, handler, NULL, flags);
+	return xnintr_attach(irq_handle, arg);
 }
 
 EXPORT_SYMBOL(rtdm_irq_request);
@@ -1597,7 +1570,6 @@ int rtdm_irq_disable(rtdm_irq_t *irq_handle);
 
 /** @} Interrupt Management Services */
 
-
 #ifdef DOXYGEN_CPP /* Only used for doxygen doc generation */
 
 /*!
@@ -1634,7 +1606,7 @@ int rtdm_irq_disable(rtdm_irq_t *irq_handle);
  * Rescheduling: never.
  */
 int rtdm_nrtsig_init(rtdm_nrtsig_t *nrt_sig, rtdm_nrtsig_handler_t handler,
-                     void *arg);
+		     void *arg);
 
 /**
  * @brief Release a non-realtime signal handler
@@ -1675,7 +1647,6 @@ void rtdm_nrtsig_pend(rtdm_nrtsig_t *nrt_sig);
 
 #endif /* DOXYGEN_CPP */
 
-
 /*!
  * @ingroup driverapi
  * @defgroup util Utility Services
@@ -1684,95 +1655,93 @@ void rtdm_nrtsig_pend(rtdm_nrtsig_t *nrt_sig);
 
 
 struct rtdm_mmap_data {
-    void *src_vaddr;
-    unsigned long src_paddr;
-    struct vm_operations_struct *vm_ops;
-    void *vm_private_data;
+	void *src_vaddr;
+	unsigned long src_paddr;
+	struct vm_operations_struct *vm_ops;
+	void *vm_private_data;
 };
 
 static int rtdm_mmap_buffer(struct file *filp, struct vm_area_struct *vma)
 {
-    struct rtdm_mmap_data *mmap_data = filp->private_data;
-    unsigned long vaddr, paddr, maddr, size;
+	struct rtdm_mmap_data *mmap_data = filp->private_data;
+	unsigned long vaddr, paddr, maddr, size;
 
-    vma->vm_ops = mmap_data->vm_ops;
-    vma->vm_private_data = mmap_data->vm_private_data;
+	vma->vm_ops = mmap_data->vm_ops;
+	vma->vm_private_data = mmap_data->vm_private_data;
 
-    vaddr = (unsigned long)mmap_data->src_vaddr;
-    paddr = (unsigned long)mmap_data->src_paddr;
-    if (!paddr)
-        /* kmalloc memory */
-        paddr = virt_to_phys((void *)vaddr);
+	vaddr = (unsigned long)mmap_data->src_vaddr;
+	paddr = (unsigned long)mmap_data->src_paddr;
+	if (!paddr)
+		/* kmalloc memory */
+		paddr = virt_to_phys((void *)vaddr);
 
-    maddr = vma->vm_start;
-    size  = vma->vm_end - vma->vm_start;
+	maddr = vma->vm_start;
+	size = vma->vm_end - vma->vm_start;
 
 #ifdef CONFIG_MMU
-    /* Catch vmalloc memory (vaddr is 0 for I/O mapping) */
-    if ((vaddr >= VMALLOC_START) && (vaddr < VMALLOC_END)) {
-        unsigned long mapped_size = 0;
+	/* Catch vmalloc memory (vaddr is 0 for I/O mapping) */
+	if ((vaddr >= VMALLOC_START) && (vaddr < VMALLOC_END)) {
+		unsigned long mapped_size = 0;
 
-        XENO_ASSERT(RTDM, (vaddr == PAGE_ALIGN(vaddr)), return -EINVAL);
-        XENO_ASSERT(RTDM, (size % PAGE_SIZE == 0), return -EINVAL);
+		XENO_ASSERT(RTDM, vaddr == PAGE_ALIGN(vaddr), return -EINVAL);
+		XENO_ASSERT(RTDM, (size % PAGE_SIZE) == 0, return -EINVAL);
 
-        while (mapped_size < size) {
-            if (xnarch_remap_vm_page(vma, maddr,vaddr))
-                return -EAGAIN;
+		while (mapped_size < size) {
+			if (xnarch_remap_vm_page(vma, maddr, vaddr))
+				return -EAGAIN;
 
-            maddr += PAGE_SIZE;
-            vaddr += PAGE_SIZE;
-            mapped_size += PAGE_SIZE;
-        }
-        return 0;
-    } else
+			maddr += PAGE_SIZE;
+			vaddr += PAGE_SIZE;
+			mapped_size += PAGE_SIZE;
+		}
+		return 0;
+	} else
 #endif /* CONFIG_MMU */
-        return xnarch_remap_io_page_range(vma, maddr, paddr,
-                                          size, PAGE_SHARED);
+		return xnarch_remap_io_page_range(vma, maddr, paddr,
+						  size, PAGE_SHARED);
 }
 
-
 static struct file_operations rtdm_mmap_fops = {
-    .mmap = rtdm_mmap_buffer,
+	.mmap = rtdm_mmap_buffer,
 };
 
 static int rtdm_do_mmap(rtdm_user_info_t *user_info,
-                        struct rtdm_mmap_data *mmap_data,
-                        size_t len, int prot, void **pptr)
+			struct rtdm_mmap_data *mmap_data,
+			size_t len, int prot, void **pptr)
 {
-    struct file                     *filp;
-    const struct file_operations    *old_fops;
-    void                            *old_priv_data;
-    void                            *user_ptr;
+	struct file *filp;
+	const struct file_operations *old_fops;
+	void *old_priv_data;
+	void *user_ptr;
 
-    XENO_ASSERT(RTDM, xnpod_root_p(), return -EPERM;);
+	XENO_ASSERT(RTDM, xnpod_root_p(), return -EPERM;);
 
-    filp = filp_open("/dev/zero", O_RDWR, 0);
-    if (IS_ERR(filp))
-        return PTR_ERR(filp);
+	filp = filp_open("/dev/zero", O_RDWR, 0);
+	if (IS_ERR(filp))
+		return PTR_ERR(filp);
 
-    old_fops = filp->f_op;
-    filp->f_op = &rtdm_mmap_fops;
+	old_fops = filp->f_op;
+	filp->f_op = &rtdm_mmap_fops;
 
-    old_priv_data = filp->private_data;
-    filp->private_data = mmap_data;
+	old_priv_data = filp->private_data;
+	filp->private_data = mmap_data;
 
-    down_write(&user_info->mm->mmap_sem);
-    user_ptr = (void *)do_mmap(filp, (unsigned long)*pptr, len, prot,
-                               MAP_SHARED, 0);
-    up_write(&user_info->mm->mmap_sem);
+	down_write(&user_info->mm->mmap_sem);
+	user_ptr = (void *)do_mmap(filp, (unsigned long)*pptr, len, prot,
+				   MAP_SHARED, 0);
+	up_write(&user_info->mm->mmap_sem);
 
-    filp->f_op = (typeof(filp->f_op))old_fops;
-    filp->private_data = old_priv_data;
+	filp->f_op = (typeof(filp->f_op))old_fops;
+	filp->private_data = old_priv_data;
 
-    filp_close(filp, user_info->files);
+	filp_close(filp, user_info->files);
 
-    if (IS_ERR(user_ptr))
-        return PTR_ERR(user_ptr);
+	if (IS_ERR(user_ptr))
+		return PTR_ERR(user_ptr);
 
-    *pptr = user_ptr;
-    return 0;
+	*pptr = user_ptr;
+	return 0;
 }
-
 
 /**
  * Map a kernel memory range into the address space of the user.
@@ -1829,19 +1798,18 @@ static int rtdm_do_mmap(rtdm_user_info_t *user_info,
  * Rescheduling: possible.
  */
 int rtdm_mmap_to_user(rtdm_user_info_t *user_info,
-                      void *src_addr, size_t len,
-                      int prot, void **pptr,
-                      struct vm_operations_struct *vm_ops,
-                      void *vm_private_data)
+		      void *src_addr, size_t len,
+		      int prot, void **pptr,
+		      struct vm_operations_struct *vm_ops,
+		      void *vm_private_data)
 {
-    struct rtdm_mmap_data   mmap_data = { src_addr, 0,
-                                          vm_ops, vm_private_data };
+	struct rtdm_mmap_data mmap_data =
+		{ src_addr, 0, vm_ops, vm_private_data };
 
-    return rtdm_do_mmap(user_info, &mmap_data, len, prot, pptr);
+	return rtdm_do_mmap(user_info, &mmap_data, len, prot, pptr);
 }
 
 EXPORT_SYMBOL(rtdm_mmap_to_user);
-
 
 /**
  * Map an I/O memory range into the address space of the user.
@@ -1894,19 +1862,18 @@ EXPORT_SYMBOL(rtdm_mmap_to_user);
  * Rescheduling: possible.
  */
 int rtdm_iomap_to_user(rtdm_user_info_t *user_info,
-                       unsigned long src_addr, size_t len,
-                       int prot, void **pptr,
-                       struct vm_operations_struct *vm_ops,
-                       void *vm_private_data)
+		       unsigned long src_addr, size_t len,
+		       int prot, void **pptr,
+		       struct vm_operations_struct *vm_ops,
+		       void *vm_private_data)
 {
-    struct rtdm_mmap_data   mmap_data = { NULL, src_addr,
-                                          vm_ops, vm_private_data };
+	struct rtdm_mmap_data mmap_data =
+		{ NULL, src_addr, vm_ops, vm_private_data };
 
-    return rtdm_do_mmap(user_info, &mmap_data, len, prot, pptr);
+	return rtdm_do_mmap(user_info, &mmap_data, len, prot, pptr);
 }
 
 EXPORT_SYMBOL(rtdm_iomap_to_user);
-
 
 /**
  * Unmap a user memory range.
@@ -1934,20 +1901,18 @@ EXPORT_SYMBOL(rtdm_iomap_to_user);
  */
 int rtdm_munmap(rtdm_user_info_t *user_info, void *ptr, size_t len)
 {
-    int err;
+	int err;
 
+	XENO_ASSERT(RTDM, xnpod_root_p(), return -EPERM;);
 
-    XENO_ASSERT(RTDM, xnpod_root_p(), return -EPERM;);
+	down_write(&user_info->mm->mmap_sem);
+	err = do_munmap(user_info->mm, (unsigned long)ptr, len);
+	up_write(&user_info->mm->mmap_sem);
 
-    down_write(&user_info->mm->mmap_sem);
-    err = do_munmap(user_info->mm, (unsigned long)ptr, len);
-    up_write(&user_info->mm->mmap_sem);
-
-    return err;
+	return err;
 }
 
 EXPORT_SYMBOL(rtdm_munmap);
-
 
 
 #ifdef DOXYGEN_CPP /* Only used for doxygen doc generation */
@@ -2036,7 +2001,7 @@ void rtdm_free(void *ptr);
  * Rescheduling: never.
  */
 int rtdm_read_user_ok(rtdm_user_info_t *user_info, const void __user *ptr,
-                      size_t size);
+		      size_t size);
 
 /**
  * Check if read/write access to user-space memory block is safe
@@ -2060,7 +2025,7 @@ int rtdm_read_user_ok(rtdm_user_info_t *user_info, const void __user *ptr,
  * Rescheduling: never.
  */
 int rtdm_rw_user_ok(rtdm_user_info_t *user_info, const void __user *ptr,
-                    size_t size);
+		    size_t size);
 
 /**
  * Copy user-space memory block to specified buffer
@@ -2089,7 +2054,7 @@ int rtdm_rw_user_ok(rtdm_user_info_t *user_info, const void __user *ptr,
  * Rescheduling: never.
  */
 int rtdm_copy_from_user(rtdm_user_info_t *user_info, void *dst,
-                        const void __user *src, size_t size);
+			const void __user *src, size_t size);
 
 /**
  * Check if read access to user-space memory block and copy it to specified
@@ -2119,7 +2084,7 @@ int rtdm_copy_from_user(rtdm_user_info_t *user_info, void *dst,
  * Rescheduling: never.
  */
 int rtdm_safe_copy_from_user(rtdm_user_info_t *user_info, void *dst,
-                             const void __user *src, size_t size);
+			     const void __user *src, size_t size);
 
 /**
  * Copy specified buffer to user-space memory block
@@ -2148,7 +2113,7 @@ int rtdm_safe_copy_from_user(rtdm_user_info_t *user_info, void *dst,
  * Rescheduling: never.
  */
 int rtdm_copy_to_user(rtdm_user_info_t *user_info, void __user *dst,
-                      const void *src, size_t size);
+		      const void *src, size_t size);
 
 /**
  * Check if read/write access to user-space memory block is safe and copy
@@ -2178,7 +2143,7 @@ int rtdm_copy_to_user(rtdm_user_info_t *user_info, void __user *dst,
  * Rescheduling: never.
  */
 int rtdm_safe_copy_to_user(rtdm_user_info_t *user_info, void __user *dst,
-                           const void *src, size_t size);
+			   const void *src, size_t size);
 
 /**
  * Copy user-space string to specified buffer
@@ -2209,7 +2174,7 @@ int rtdm_safe_copy_to_user(rtdm_user_info_t *user_info, void __user *dst,
  * Rescheduling: never.
  */
 int rtdm_strncpy_from_user(rtdm_user_info_t *user_info, char *dst,
-                           const char __user *src, size_t count);
+			   const char __user *src, size_t count);
 
 /**
  * Test if running in a real-time task

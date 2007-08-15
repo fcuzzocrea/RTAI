@@ -60,40 +60,40 @@ static RTAI_SYSCALL_MODE int sys_rtdm_fdcount(void)
 
 static RTAI_SYSCALL_MODE int sys_rtdm_open(const char *path, long oflag)
 {
-	char krnl_path[RTDM_MAX_DEVNAME_LEN + 1];
 	struct task_struct *curr = current;
+	char krnl_path[RTDM_MAX_DEVNAME_LEN + 1];
 
 	if (unlikely(!__xn_access_ok(curr, VERIFY_READ, path, sizeof(krnl_path)))) {
 	        return -EFAULT;
 	}
 	__xn_copy_from_user(curr, krnl_path, path, sizeof(krnl_path) - 1);
 	krnl_path[sizeof(krnl_path) - 1] = '\0';
-	return _rtdm_open(curr, (const char *)krnl_path, oflag);
+	return __rt_dev_open(curr, (const char *)krnl_path, oflag);
 }
 
 static RTAI_SYSCALL_MODE int sys_rtdm_socket(long protocol_family, long socket_type, long protocol)
 {
-	return _rtdm_socket(current, protocol_family, socket_type, protocol);
+	return __rt_dev_socket(current, protocol_family, socket_type, protocol);
 }
 
 static RTAI_SYSCALL_MODE int sys_rtdm_close(long fd, long forced)
 {
-	return _rtdm_close(current, fd);
+	return __rt_dev_close(current, fd);
 }
 
 static RTAI_SYSCALL_MODE int sys_rtdm_ioctl(long fd, long request, void *arg)
 {
-	return _rtdm_ioctl(current, fd, request, arg);
+	return __rt_dev_ioctl(current, fd, request, arg);
 }
 
 static RTAI_SYSCALL_MODE int sys_rtdm_read(long fd, void *buf, long nbytes)
 {
-	return _rtdm_read(current, fd, buf, nbytes);
+	return __rt_dev_read(current, fd, buf, nbytes);
 }
 
 static RTAI_SYSCALL_MODE int sys_rtdm_write(long fd, void *buf, long nbytes)
 {
-	return _rtdm_write(current, fd, buf, nbytes);
+	return __rt_dev_write(current, fd, buf, nbytes);
 }
 
 static RTAI_SYSCALL_MODE int sys_rtdm_recvmsg(long fd, struct msghdr *msg, long flags)
@@ -106,7 +106,7 @@ static RTAI_SYSCALL_MODE int sys_rtdm_recvmsg(long fd, struct msghdr *msg, long 
 		return -EFAULT;
 	}
 	__xn_copy_from_user(curr, &krnl_msg, msg, sizeof(krnl_msg));
-	if ((ret = _rtdm_recvmsg(curr, fd, &krnl_msg, flags)) >= 0) {
+	if ((ret = __rt_dev_recvmsg(curr, fd, &krnl_msg, flags)) >= 0) {
 		__xn_copy_to_user(curr, msg, &krnl_msg, sizeof(krnl_msg));
 	}
 	return ret;
@@ -121,7 +121,7 @@ static RTAI_SYSCALL_MODE int sys_rtdm_sendmsg(long fd, const struct msghdr *msg,
 		return -EFAULT;
 	}
 	__xn_copy_from_user(curr, &krnl_msg, msg, sizeof(krnl_msg));
-	return _rtdm_sendmsg(curr, fd, &krnl_msg, flags);
+	return __rt_dev_sendmsg(curr, fd, &krnl_msg, flags);
 }
 
 static struct rt_fun_entry rtdm[] = {

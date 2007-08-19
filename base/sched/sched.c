@@ -1450,10 +1450,9 @@ static int _rt_linux_hrt_next_shot(unsigned long deltat, struct ipipe_tick_devic
 	int cpuid = rtai_cpuid();
 
 	deltat = nano2count_cpuid(deltat, cpuid);
+	rtai_cli();
 	rt_times.linux_time = rt_get_time_cpuid(cpuid) + deltat;
-
 	if (oneshot_running) {
-		rtai_cli();
 		if (rt_times.linux_time < rt_times.intr_time) {
 			int delay;
 			rt_times.intr_time = rt_times.linux_time;
@@ -1467,8 +1466,8 @@ static int _rt_linux_hrt_next_shot(unsigned long deltat, struct ipipe_tick_devic
 			shot_fired = 1;
 			rt_set_timer_delay(delay);
 		}
-		rtai_sti();
 	}
+	rtai_sti();
 	return 0;
 }
 

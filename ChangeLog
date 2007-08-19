@@ -1,5 +1,10 @@
 2007-08-19  Paolo Mantegazza <mantegazza@aero.polimi.it>
 
+	* base/sched/sched.c: optimise EXEC_TIME calculations, modify
+	  various "is_hard" tests to have it more appropriately.
+
+2007-08-12  Paolo Mantegazza <mantegazza@aero.polimi.it>
+
 	* base/sched/api.c: make rt_set_period SMP safe.
 
 2007-08-07  Paolo Mantegazza <mantegazza@aero.polimi.it>

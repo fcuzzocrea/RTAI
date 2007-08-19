@@ -624,34 +624,29 @@ do { \
 #define SAVE_LOCK_LINUX_IN_IRQ(cpuid)
 #define RESTORE_UNLOCK_LINUX_IN_IRQ(cpuid)
 #else
-#define SAVE_LOCK_LINUX_IN_IRQ(cpuid)    LOCK_LINUX(cpuid)    
+#define SAVE_LOCK_LINUX_IN_IRQ(cpuid)       LOCK_LINUX(cpuid)    
 #define RESTORE_UNLOCK_LINUX_IN_IRQ(cpuid)  UNLOCK_LINUX(cpuid)
 #endif
 
 #if CONFIG_RTAI_MONITOR_EXECTIME
-RTIME switch_time[NR_RT_CPUS];
-#define KEXECTIME() \
-do { \
-	RTIME now; \
-	now = rdtsc(); \
-	if (!rt_current->lnxtsk) { \
-		rt_current->exectime[0] += (now - switch_time[cpuid]); \
-	} \
-	switch_time[cpuid] = now; \
-} while (0)
 
-#define UEXECTIME() \
-do { \
-	RTIME now; \
-	now = rdtsc(); \
-	if (rt_current->is_hard) { \
+RTIME switch_time[NR_RT_CPUS];
+
+#define SET_EXEC_TIME() \
+	do { \
+		RTIME now; \
+		now = rdtsc(); \
 		rt_current->exectime[0] += (now - switch_time[cpuid]); \
-	} \
-	switch_time[cpuid] = now; \
-} while (0)
+		switch_time[cpuid] = now; \
+	} while (0)
+
+#define RST_EXEC_TIME()  do { switch_time[cpuid] = rdtsc(); } while (0)
+
 #else
-#define KEXECTIME()
-#define UEXECTIME()
+
+#define SET_EXEC_TIME()
+#define RST_EXEC_TIME()
+
 #endif
 
 
@@ -740,7 +735,7 @@ static RT_TASK *switch_rtai_tasks(RT_TASK *rt_current, RT_TASK *new_task, int cp
 			fpu_task = new_task;
 			restore_fpenv(fpu_task->fpu_reg);
 		}
-		KEXECTIME();
+		RST_EXEC_TIME();
 		rt_exchange_tasks(rt_smp_current[cpuid], new_task);
 		restore_fpcr(linux_cr0);
 		RESTORE_UNLOCK_LINUX(cpuid);
@@ -761,7 +756,7 @@ static RT_TASK *switch_rtai_tasks(RT_TASK *rt_current, RT_TASK *new_task, int cp
 			fpu_task = new_task;
 			restore_fpenv(fpu_task->fpu_reg);
 		}
-		KEXECTIME();
+		SET_EXEC_TIME();
 		rt_exchange_tasks(rt_smp_current[cpuid], new_task);
 	}
 	return NULL;
@@ -825,20 +820,21 @@ static void rt_schedule_on_schedule_ipi(void)
 				goto sched_exit;
 			}
 		}
-		if (new_task->is_hard || rt_current->is_hard) {
+		if (new_task->is_hard > 0 || rt_current->is_hard > 0) {
 			struct task_struct *prev;
 			unsigned long sflags;
-			if (!rt_current->is_hard) {
+			if (rt_current->is_hard <= 0) {
 				SAVE_LOCK_LINUX_IN_IRQ(cpuid);
 				rt_linux_task.lnxtsk = prev = current;
+				RST_EXEC_TIME();
 			} else {
 				sflags = rtai_linux_context[cpuid].sflags;
 				prev = rt_current->lnxtsk;
+				SET_EXEC_TIME();
 			}
 			rt_smp_current[cpuid] = new_task;
-			UEXECTIME();
 			lxrt_context_switch(prev, new_task->lnxtsk, cpuid);
-			if (!rt_current->is_hard) {
+			if (rt_current->is_hard <= 0) {
 				RESTORE_UNLOCK_LINUX_IN_IRQ(cpuid);
 			} else if (lnxtsk_uses_fpu(prev)) {
 				restore_fpu(prev);
@@ -926,19 +922,20 @@ void rt_schedule(void)
 			}
 		}
 		rt_smp_current[cpuid] = new_task;
-		if (new_task->is_hard || rt_current->is_hard) {
+		if (new_task->is_hard > 0 || rt_current->is_hard > 0) {
 			struct task_struct *prev;
 			unsigned long sflags;
-			if (!rt_current->is_hard) {
+			if (rt_current->is_hard <= 0) {
 				SAVE_LOCK_LINUX(cpuid);
 				rt_linux_task.lnxtsk = prev = current;
+				RST_EXEC_TIME();
 			} else {
 				sflags = rtai_linux_context[cpuid].sflags;
 				prev = rt_current->lnxtsk;
+				SET_EXEC_TIME();
 			}
-			UEXECTIME();
 			lxrt_context_switch(prev, new_task->lnxtsk, cpuid);
-			if (!rt_current->is_hard) {
+			if (rt_current->is_hard <= 0) {
 				RESTORE_UNLOCK_LINUX(cpuid);
 				if (rt_current->state != RT_SCHED_READY) {
 					goto sched_soft;
@@ -1272,20 +1269,21 @@ static void rt_timer_handler(void)
 				goto sched_exit;
 			}
 		}
-		if (new_task->is_hard || rt_current->is_hard) {
+		if (new_task->is_hard > 0 || rt_current->is_hard > 0) {
 			struct task_struct *prev;
 			unsigned long sflags;
-			if (!rt_current->is_hard) {
+			if (rt_current->is_hard <= 0) {
 				SAVE_LOCK_LINUX_IN_IRQ(cpuid);
 				rt_linux_task.lnxtsk = prev = current;
+				RST_EXEC_TIME();
 			} else {
 				sflags = rtai_linux_context[cpuid].sflags;
 				prev = rt_current->lnxtsk;
+				SET_EXEC_TIME();
 			}
 			rt_smp_current[cpuid] = new_task;
-			UEXECTIME();
 			lxrt_context_switch(prev, new_task->lnxtsk, cpuid);
-			if (!rt_current->is_hard) {
+			if (rt_current->is_hard <= 0) {
 				RESTORE_UNLOCK_LINUX_IN_IRQ(cpuid);
 			} else if (lnxtsk_uses_fpu(prev)) {
 				restore_fpu(prev);
@@ -1971,7 +1969,7 @@ static inline void fast_schedule(RT_TASK *new_task, struct task_struct *lnxtsk, 
 	sched_release_global_lock(cpuid);
 	LOCK_LINUX(cpuid);
 	(rt_current = &rt_linux_task)->lnxtsk = lnxtsk;
-	UEXECTIME();
+	SET_EXEC_TIME();
 	rt_smp_current[cpuid] = new_task;
 	lxrt_context_switch(lnxtsk, new_task->lnxtsk, cpuid);
 	UNLOCK_LINUX(cpuid);

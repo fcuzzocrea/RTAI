@@ -632,6 +632,7 @@ void rt_eoi_irq (unsigned irq)
 int rt_request_linux_irq (unsigned irq, void *handler, char *name, void *dev_id)
 {
 	unsigned long flags;
+	int retval;
 
 	if (irq >= RTAI_NR_IRQS || !handler) {
 		return -EINVAL;
@@ -646,7 +647,7 @@ int rt_request_linux_irq (unsigned irq, void *handler, char *name, void *dev_id)
 	spin_unlock(&irq_desc[irq].lock);
 	rtai_restore_flags(flags);
 
-	request_irq(irq, handler, IRQF_SHARED, name, dev_id);
+	retval = request_irq(irq, handler, IRQF_SHARED, name, dev_id);
 
 	return 0;
 }
@@ -902,7 +903,7 @@ int _rtai_sched_on_ipi_handler(void)
         ((void (*)(void))rtai_realtime_irq[SCHED_IPI].handler)();
         HAL_UNLOCK_LINUX();
         RTAI_SCHED_ISR_UNLOCK();
-        if (!test_bit(IPIPE_STALL_FLAG, ipipe_root_status[cpuid])) {
+	if (test_and_clear_bit(cpuid, &hal_pended) && !test_bit(IPIPE_STALL_FLAG, ipipe_root_status[cpuid])) {
                 rtai_sti();
                 hal_fast_flush_pipeline(cpuid);
 #if defined(CONFIG_SMP) &&  LINUX_VERSION_CODE < KERNEL_VERSION(2,6,19)
@@ -989,7 +990,7 @@ int _rtai_apic_timer_handler(void)
         ((void (*)(void))rtai_realtime_irq[RTAI_APIC_TIMER_IPI].handler)();
         HAL_UNLOCK_LINUX();
 	RTAI_SCHED_ISR_UNLOCK();
-        if (!test_bit(IPIPE_STALL_FLAG, ipipe_root_status[cpuid])) {
+	if (test_and_clear_bit(cpuid, &hal_pended) && !test_bit(IPIPE_STALL_FLAG, ipipe_root_status[cpuid])) {
                 rtai_sti();
                 hal_fast_flush_pipeline(cpuid);
 #if defined(CONFIG_SMP) &&  LINUX_VERSION_CODE < KERNEL_VERSION(2,6,19)
@@ -2342,19 +2343,16 @@ int (*rt_linux_hrt_next_shot)(unsigned long, struct ipipe_tick_device *);
 
 static void _rt_linux_hrt_set_mode(enum clock_event_mode mode, struct ipipe_tick_device *hrt_dev)
 {
-	if (mode == CLOCK_EVT_MODE_PERIODIC) {
-		rtai_cli();
-		rt_times.linux_tick = TEST_LINUX_TICK;
-		rt_times.linux_time = (RTIME)rt_times.linux_tick*(jiffies + 1);
-		rtai_sti();
-	} else if (mode == CLOCK_EVT_MODE_ONESHOT || mode == CLOCK_EVT_MODE_SHUTDOWN) {
+	if (mode == CLOCK_EVT_MODE_ONESHOT || mode == CLOCK_EVT_MODE_SHUTDOWN) {
 		rt_times.linux_tick = 0;
+	} else if (mode == CLOCK_EVT_MODE_PERIODIC) {
+		rt_times.linux_tick = llimd((1000000000 + HZ/2)/HZ, TIMER_FREQ, 1000000000);
 	}
 }
 
 static int _rt_linux_hrt_next_shot(unsigned long delay, struct ipipe_tick_device *hrt_dev)
 {
-	rt_times.linux_time = llimd(rtai_rdtsc(), tuned.cpu_freq, used_apic ? RTAI_APIC_ICOUNT : LATCH) + llimd(delay, used_apic ? RTAI_APIC_ICOUNT : LATCH, 1000000000);
+	rt_times.linux_time = rt_times.tick_time + llimd(delay, TIMER_FREQ, 1000000000);
 	return 0;
 }
 

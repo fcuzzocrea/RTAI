@@ -1,3 +1,8 @@
+2007-08-21  Paolo Mantegazza <mantegazza@aero.polimi.it>
+
+	* /testsuite/user/latency/latency.c: do not display execution time 
+	  statistics when the related feature is not configured.
+
 2007-08-20  Paolo Mantegazza <mantegazza@aero.polimi.it>
 
 	* base/arch/i386/hal/hal.immed: check both hal_pended and pipe root

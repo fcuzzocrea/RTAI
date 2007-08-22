@@ -69,6 +69,6 @@ static inline void *get_stack_pointer(void)
 
 #define RT_SET_RTAI_TRAP_HANDLER(x)  rt_set_rtai_trap_handler(x)
 
-#define DO_TIMER_PROPER_OP();
+#define DO_TIMER_PROPER_OP()
 
 #endif /* !_RTAI_ASM_I386_SCHED_H */

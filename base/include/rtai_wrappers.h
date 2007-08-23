@@ -36,6 +36,16 @@
 
 #if LINUX_VERSION_CODE < KERNEL_VERSION(2,6,0)
 
+#ifndef __deprecated
+#define container_of(ptr, type, member) \
+	({ const typeof( ((type *)0)->member ) *__mptr = (ptr); \
+        (type *)( (char *)__mptr - offsetof(type,member) );})
+#endif
+
+#ifndef __deprecated
+#define __deprecated  __attribute__((deprecated))
+#endif
+
 #define RTAI_MODULE_PARM_ARRAY(name, type, addr, size) \
         static inline void *__check_existence_##name(void) { return &name; } \
 	MODULE_PARM(name, "1-" __MODULE_STRING(size) _MODULE_PARM_STRING_ ## type);

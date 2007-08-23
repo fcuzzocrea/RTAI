@@ -1668,7 +1668,7 @@ static devfs_handle_t devfs_handle;
 static int MaxFifos = MAX_FIFOS;
 RTAI_MODULE_PARM(MaxFifos, int);
 
-#define LXRTEXT
+#define LXRTEXT  /* undef it to allow using fifos without any RTAI scheduler */
 
 #ifdef LXRTEXT
 

@@ -235,8 +235,6 @@ static FIFO *fifo;
 static struct { int in, out; struct task_struct *task[MAXREQS]; } taskq;
 static struct { int in, out; FIFO *fifo[MAXREQS]; } pol_asyn_q;
 
-static RT_TASK *rt_base_linux_task;
-
 static int do_nothing(unsigned int arg) { return 0; }
 
 static inline void enqueue_blocked(LX_TASK *task, F_QUEUE *queue, int qtype, int priority)
@@ -1670,6 +1668,12 @@ static devfs_handle_t devfs_handle;
 static int MaxFifos = MAX_FIFOS;
 RTAI_MODULE_PARM(MaxFifos, int);
 
+#define LXRTEXT
+
+#ifdef LXRTEXT
+
+static RT_TASK *rt_base_linux_task;
+
 static struct rt_fun_entry rtai_fifos_fun[] = {
 	[_CREATE]       = { 0, rtf_create },
 	[_DESTROY]      = { 0, rtf_destroy },
@@ -1688,14 +1692,11 @@ static struct rt_fun_entry rtai_fifos_fun[] = {
 	[_GET_IF]       = { 0, rtf_get_if }
 };
 
-static int LxrtXten = 1;
-RTAI_MODULE_PARM(LxrtXten, int);
-
 static int register_lxrt_fifos_support(void)
 {
-	RT_TASK *rt_linux_tasks[NR_RT_CPUS];
-	rt_base_linux_task = rt_get_base_linux_task(rt_linux_tasks);
-	if(LxrtXten && rt_base_linux_task->task_trap_handler[0]) {
+	if (rt_base_linux_task->task_trap_handler[0]) {
+		RT_TASK *rt_linux_tasks[NR_RT_CPUS];
+		rt_base_linux_task = rt_get_base_linux_task(rt_linux_tasks);
 		if(((int (*)(void *, int))rt_base_linux_task->task_trap_handler[0])(rtai_fifos_fun, FUN_FIFOS_LXRT_INDX)) {
 			printk("LXRT EXTENSION SLOT FOR FIFOS (%d) ALREADY USED\n", FUN_FIFOS_LXRT_INDX);
 			return -EACCES;
@@ -1706,10 +1707,17 @@ static int register_lxrt_fifos_support(void)
 
 static void unregister_lxrt_fifos_support(void)
 {
-	if(LxrtXten && rt_base_linux_task->task_trap_handler[1]) {
+	if(rt_base_linux_task->task_trap_handler[1]) {
 		((int (*)(void *, int))rt_base_linux_task->task_trap_handler[1])(rtai_fifos_fun, FUN_FIFOS_LXRT_INDX);
 	}
 }
+
+#else
+
+static int register_lxrt_fifos_support(void) { return 0; }
+#define unregister_lxrt_fifos_support()
+
+#endif
 
 int __rtai_fifos_init(void)
 {

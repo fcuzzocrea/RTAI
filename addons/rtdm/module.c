@@ -43,7 +43,6 @@
  */
 
 #include <linux/module.h>
-#include <linux/cpumask.h>
 
 #include <rtdm/rtdm.h>
 #include <rtdm/internal.h>

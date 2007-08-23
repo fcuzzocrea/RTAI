@@ -1,15 +1,22 @@
 2007-08-24  Paolo Mantegazza <mantegazza@aero.polimi.it>
 
-	* /base/ipc/fifos/fifos.c: allow using fifos without any RTAI scheduler,	  unsetting macro "LXRTEXT" by hand.
+	* base/ipc/fifos/fifos.c: allow using fifos without any RTAI 
+	  scheduler, unsetting macro "LXRTEXT" by hand.
+	* base/include/asm-i386/rtai_vectors.h: restructured to work with 
+	  both 2.4.xx and 2.6.xx.
+	* base/include/rtai_wrappers.h: added a few define and a type not 
+	  existing in 2.4.xx.
+	* addons/rtdm/module.c: deleted inclusion of the useless cpumask.h,
+	  conflicting with 2.4.xx.
 
 2007-08-23  Martin Plattl <martin.plattl@knapp.com>
 
-	* /base/ipc/fifos/fifos.c: fixed a wrong test using free space in 
+	* base/ipc/fifos/fifos.c: fixed a wrong test using free space in 
 	  place of available bytes in mbx_receive_if
 
 2007-08-21  Paolo Mantegazza <mantegazza@aero.polimi.it>
 
-	* /testsuite/user/latency/latency.c: do not display execution time 
+	* testsuite/user/latency/latency.c: do not display execution time 
 	  statistics when the related feature is not configured.
 
 2007-08-20  Paolo Mantegazza <mantegazza@aero.polimi.it>

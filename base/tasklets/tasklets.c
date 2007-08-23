@@ -886,6 +886,10 @@ RTAI_SYSCALL_MODE timer_t rt_ptimer_create(struct rt_tasklet_struct *timer, void
 }
 EXPORT_SYMBOL(rt_ptimer_create);
 
+#ifndef TIMER_ABSTIME
+#define TIMER_ABSTIME  0x01
+#endif
+
 RTAI_SYSCALL_MODE void rt_ptimer_settime(timer_t timer, const struct itimerspec *value, unsigned long data, long flags)
 {
 	struct rt_tasklet_struct *tasklet;

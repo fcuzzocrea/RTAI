@@ -1,3 +1,8 @@
+2007-08-23  Martin Plattl <martin.plattl@knapp.com>
+
+	* /base/ipc/fifos/fifos.c: fixed a wrong test using free space in 
+	  place of available bytes in mbx_receive_if
+
 2007-08-21  Paolo Mantegazza <mantegazza@aero.polimi.it>
 
 	* /testsuite/user/latency/latency.c: do not display execution time 

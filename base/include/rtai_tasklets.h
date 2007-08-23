@@ -88,6 +88,10 @@ struct rt_tasklet_struct {
 #endif
 };
 
+#if LINUX_VERSION_CODE < KERNEL_VERSION(2,6,0)
+typedef int  timer_t;
+#endif
+
 #ifdef __cplusplus
 extern "C" {
 #endif /* !__cplusplus */

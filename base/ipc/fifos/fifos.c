@@ -738,7 +738,7 @@ static inline int mbx_receive_if(F_MBX *mbx, void *msg, int msg_size, int lnx)
 	unsigned long flags;
 
 	rtf_save_flags_and_cli(flags);
-	if (mbx->rcvsem.free && (mbx->frbs >= msg_size)) {
+	if (mbx->rcvsem.free && mbx->avbs >= msg_size) {
 		mbx->rcvsem.free = 0;
 		rtf_restore_flags(flags);
 		msg_size = mbx_get(mbx, (char **)(&msg), msg_size, lnx);

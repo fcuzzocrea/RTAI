@@ -1,3 +1,7 @@
+2007-08-24  Paolo Mantegazza <mantegazza@aero.polimi.it>
+
+	* /base/ipc/fifos/fifos.c: allow using fifos without any RTAI scheduler,	  unsetting macro "LXRTEXT" by hand.
+
 2007-08-23  Martin Plattl <martin.plattl@knapp.com>
 
 	* /base/ipc/fifos/fifos.c: fixed a wrong test using free space in 

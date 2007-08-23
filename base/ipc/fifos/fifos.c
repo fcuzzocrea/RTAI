@@ -1694,9 +1694,9 @@ static struct rt_fun_entry rtai_fifos_fun[] = {
 
 static int register_lxrt_fifos_support(void)
 {
+	RT_TASK *rt_linux_tasks[NR_RT_CPUS];
+	rt_base_linux_task = rt_get_base_linux_task(rt_linux_tasks);
 	if (rt_base_linux_task->task_trap_handler[0]) {
-		RT_TASK *rt_linux_tasks[NR_RT_CPUS];
-		rt_base_linux_task = rt_get_base_linux_task(rt_linux_tasks);
 		if(((int (*)(void *, int))rt_base_linux_task->task_trap_handler[0])(rtai_fifos_fun, FUN_FIFOS_LXRT_INDX)) {
 			printk("LXRT EXTENSION SLOT FOR FIFOS (%d) ALREADY USED\n", FUN_FIFOS_LXRT_INDX);
 			return -EACCES;

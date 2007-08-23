@@ -131,6 +131,8 @@
 #define pthread_attr_setinheritsched(attr, inherit)
 #define pthread_attr_getinheritsched(attr, inherit)
 
+#include <linux/fcntl.h>
+
 #include <rtai_malloc.h>
 #include <rtai_rwl.h>
 #include <rtai_spl.h>

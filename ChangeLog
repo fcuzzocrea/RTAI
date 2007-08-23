@@ -1,3 +1,7 @@
+2007-08-23 Pierangelo Masarati <masarati@aero.polimi.i>
+
+	* RTAI 3.5 closure version
+
 2007-08-23  Martin Plattl <martin.plattl@knapp.com>
 
 	* /base/ipc/fifos/fifos.c: fixed a wrong test using free space in

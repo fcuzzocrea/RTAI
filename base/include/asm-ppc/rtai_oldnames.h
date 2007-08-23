@@ -43,7 +43,7 @@
 #define hard_save_flags_and_cli(x)   rtai_local_irq_save(x)
 #define hard_restore_flags(x)        rtai_local_irq_restore(x)
 #define hard_save_flags(x)           rtai_local_irq_flags(x)
-#define hard_cpu_id                  adeos_processor_id
+#define hard_cpu_id                  hal_processor_id
 #define this_rt_task                 ptd
 
 #endif /* __KERNEL__ */
@@ -126,8 +126,6 @@ static inline int rt_free_global_irq(unsigned irq) {
 #define lxrt_hrt_flags        rtai_cpu_lxrt
 #define rtai_print_to_screen  rt_printk
 
-#define RTAI_NR_TRAPS         ADEOS_NR_FAULTS
-
 #if 0
 #define DECLR_8254_TSC_EMULATION
 #define TICK_8254_TSC_EMULATION
@@ -138,6 +136,8 @@ static inline int rt_free_global_irq(unsigned irq) {
 #ifndef __cplusplus
 
 #include <linux/irq.h>
+
+#if 0
 
 extern struct desc_struct idt_table[];
 
@@ -158,6 +158,8 @@ static inline void rt_reset_full_intr_vect(unsigned vector,
 					   struct desc_struct e) {
     idt_table[vector] = e;
 }
+
+#endif
 
 static const int __ipi2vec[] = {
     INVALIDATE_TLB_VECTOR,

@@ -219,7 +219,7 @@ typedef struct rt_fifo_struct {
 	char name[RTF_NAMELEN+1];
 } FIFO;
 
-#if defined(CONFIG_SYSFS) && defined(CONFIG_DEVFS_SYSFS) && !CONFIG_DEVFS_FS
+#if defined(CONFIG_SYSFS) || (defined(CONFIG_DEVFS_SYSFS) && !CONFIG_DEVFS_FS)
 static class_t *fifo_class = NULL;
 #endif
 
@@ -234,8 +234,6 @@ static FIFO *fifo;
 #define MAXREQS 64	// KEEP IT A POWER OF 2!!!
 static struct { int in, out; struct task_struct *task[MAXREQS]; } taskq;
 static struct { int in, out; FIFO *fifo[MAXREQS]; } pol_asyn_q;
-
-static RT_TASK *rt_base_linux_task;
 
 static int do_nothing(unsigned int arg) { return 0; }
 
@@ -1670,6 +1668,12 @@ static devfs_handle_t devfs_handle;
 static int MaxFifos = MAX_FIFOS;
 RTAI_MODULE_PARM(MaxFifos, int);
 
+#define LXRTEXT  /* undef it to allow using fifos without any RTAI scheduler */
+
+#ifdef LXRTEXT
+
+static RT_TASK *rt_base_linux_task;
+
 static struct rt_fun_entry rtai_fifos_fun[] = {
 	[_CREATE]       = { 0, rtf_create },
 	[_DESTROY]      = { 0, rtf_destroy },
@@ -1688,14 +1692,11 @@ static struct rt_fun_entry rtai_fifos_fun[] = {
 	[_GET_IF]       = { 0, rtf_get_if }
 };
 
-static int LxrtXten = 1;
-RTAI_MODULE_PARM(LxrtXten, int);
-
 static int register_lxrt_fifos_support(void)
 {
 	RT_TASK *rt_linux_tasks[NR_RT_CPUS];
 	rt_base_linux_task = rt_get_base_linux_task(rt_linux_tasks);
-	if(LxrtXten && rt_base_linux_task->task_trap_handler[0]) {
+	if (rt_base_linux_task->task_trap_handler[0]) {
 		if(((int (*)(void *, int))rt_base_linux_task->task_trap_handler[0])(rtai_fifos_fun, FUN_FIFOS_LXRT_INDX)) {
 			printk("LXRT EXTENSION SLOT FOR FIFOS (%d) ALREADY USED\n", FUN_FIFOS_LXRT_INDX);
 			return -EACCES;
@@ -1706,16 +1707,23 @@ static int register_lxrt_fifos_support(void)
 
 static void unregister_lxrt_fifos_support(void)
 {
-	if(LxrtXten && rt_base_linux_task->task_trap_handler[1]) {
+	if(rt_base_linux_task->task_trap_handler[1]) {
 		((int (*)(void *, int))rt_base_linux_task->task_trap_handler[1])(rtai_fifos_fun, FUN_FIFOS_LXRT_INDX);
 	}
 }
+
+#else
+
+static int register_lxrt_fifos_support(void) { return 0; }
+#define unregister_lxrt_fifos_support()
+
+#endif
 
 int __rtai_fifos_init(void)
 {
 	int minor;
 
-#if defined(CONFIG_SYSFS) && defined(CONFIG_DEVFS_SYSFS) && !CONFIG_DEVFS_FS
+#if defined(CONFIG_SYSFS) || (defined(CONFIG_DEVFS_SYSFS) && !CONFIG_DEVFS_FS)
 	fifo_class = class_create(THIS_MODULE, "rtai_fifos");
 	if (!fifo_class) {
 		printk("RTAI-FIFO: cannot register major %d.\n", RTAI_FIFOS_MAJOR);
@@ -1809,7 +1817,8 @@ void __rtai_fifos_exit(void)
 	devfs_unregister_chrdev(RTAI_FIFOS_MAJOR,"rtai_fifo");
 #endif  /* LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,0) || !CONFIG_DEVFS_FS */
 #else /* !CONFIG_DEVFS_FS */
-#if defined(CONFIG_SYSFS) && defined(CONFIG_DEVFS_SYSFS) && !CONFIG_DEVFS_FS
+	unregister_chrdev(RTAI_FIFOS_MAJOR,"rtai_fifo");
+#if defined(CONFIG_SYSFS) || (defined(CONFIG_DEVFS_SYSFS) && !CONFIG_DEVFS_FS)
 	{
 		int minor;
 		for (minor = 0; minor < MAX_FIFOS; minor++) {
@@ -1818,7 +1827,6 @@ void __rtai_fifos_exit(void)
 	}
 	class_destroy(fifo_class);
 #endif /* CONFIG_SYSFS */
-	unregister_chrdev(RTAI_FIFOS_MAJOR,"rtai_fifo");
 #endif /* CONFIG_DEVFS_FS */
 
 	if (rtf_free_srq(fifo_srq) < 0) {

@@ -58,7 +58,7 @@ dnl Please note that as the ac_opengl macro and the toy example evolves,
 dnl the version number increases, so you may have to adjust the above
 dnl URL accordingly.
 dnl
-dnl @version 0.01 $Id: acinclude.m4,v 1.5 2006/12/29 16:34:38 ando Exp $
+dnl @version 0.01 $Id: acinclude.m4,v 1.6 2007/08/23 15:27:51 ando Exp $
 dnl @author Matthew D. Langston <langston@SLAC.Stanford.EDU>
 dnl
 dnl Patched by <rpm@xenomai.org> to suit RTAI's requirements.
@@ -138,7 +138,7 @@ AC_DEFUN([SC_PATH_EFLTK], [
 
 dnl EFLTK dir passed to the command line overrides the Kconfig setting
 
-AC_ARG_WITH(efltk, [  --with-efltk            directory containing EFLTK], with_efltk=${withval})
+AC_ARG_WITH(efltk, [  --with-efltk              directory containing EFLTK], with_efltk=${withval})
 
 dnl Defaults to the Kconfig setting (CONFIG_RTAI_EFLTK_DIR) if unset
 
@@ -211,7 +211,7 @@ AC_DEFUN([SC_PATH_COMEDI], [
 
 dnl COMEDI dir passed to the command line overrides the Kconfig setting
 
-AC_ARG_WITH(comedi, [  --with-comedi           directory containing COMEDI], with_comedi=${withval})
+AC_ARG_WITH(comedi, [  --with-comedi              directory containing COMEDI], with_comedi=${withval})
 
 dnl Defaults to the Kconfig setting (CONFIG_RTAI_COMEDI_DIR) if unset
 

@@ -46,6 +46,12 @@
 #define LINUX_SYSCALL_REG5    edi
 #define LINUX_SYSCALL_REG6    ebp
 #define LINUX_SYSCALL_RETREG  eax
+#define LINUX_SYSCALL_FLAGS   eflags
+
+#define LXRT_DO_IMMEDIATE_LINUX_SYSCALL(regs) \
+	do { \
+		regs->LINUX_SYSCALL_RETREG = sys_call_table[regs->LINUX_SYSCALL_NR](*regs); \
+	} while (0)
 
 #define SET_LXRT_RETVAL_IN_SYSCALL(regs, retval) \
 	do { \
@@ -70,17 +76,27 @@
 #ifdef CONFIG_X86_LOCAL_APIC
 
 #define TIMER_NAME        "APIC"
+#define TIMER_TYPE  1
+#define HRT_LINUX_TIMER_NAME  "lapic"
 #define FAST_TO_READ_TSC
 #define TIMER_FREQ        RTAI_FREQ_APIC
 #define TIMER_LATENCY     RTAI_LATENCY_APIC
 #define TIMER_SETUP_TIME  RTAI_SETUP_TIME_APIC
 #define ONESHOT_SPAN      (CPU_FREQ/(CONFIG_RTAI_CAL_FREQS_FACT + 2)) //(0x7FFFFFFFLL*(CPU_FREQ/TIMER_FREQ))
+#ifdef CONFIG_GENERIC_CLOCKEVENTS
+#define USE_LINUX_TIMER
+#define update_linux_timer(cpuid) \
+	do { hal_pend_uncond(LOCAL_TIMER_IPI, cpuid); } while (0)
+#else /* !CONFIG_GENERIC_CLOCKEVENTS */
 #define update_linux_timer(cpuid)
+#endif /* CONFIG_GENERIC_CLOCKEVENTS */
 
 #else /* !CONFIG_X86_LOCAL_APIC */
 
 #define USE_LINUX_TIMER
 #define TIMER_NAME        "8254-PIT"
+#define TIMER_TYPE  0
+#define HRT_LINUX_TIMER_NAME  "pit"
 #define TIMER_FREQ        RTAI_FREQ_8254
 #define TIMER_LATENCY     RTAI_LATENCY_8254
 #define TIMER_SETUP_TIME  RTAI_SETUP_TIME_8254
@@ -186,7 +202,17 @@ static inline void kthread_fun_long_jump(struct task_struct *lnxtsk)
 #define rt_strncpy_from_user(a, b, c)  \
 	( { int ret = strncpy_from_user(a, b, c); ret; } )
 #endif
-#define rt_put_user        __put_user
+#define rt_put_user  __put_user
+#define rt_get_user  __get_user
+
+//#define RTAI_DO_LINUX_SIGNAL
+#if LINUX_VERSION_CODE < KERNEL_VERSION(2,6,16)
+extern int FASTCALL(do_signal(struct pt_regs *regs, sigset_t *oldset));
+#define RT_DO_SIGNAL(regs)  do_signal(regs, NULL)
+#else
+__attribute__((regparm(3))) void do_notify_resume(struct pt_regs *regs, void *_unused, __u32 thread_info_flags);
+#define RT_DO_SIGNAL(regs)  do_notify_resume(regs, NULL, (_TIF_SIGPENDING | _TIF_RESTORE_SIGMASK));
+#endif
 
 #else /* !__KERNEL__ */
 

@@ -140,8 +140,6 @@ int main(int argc, char *argv[])
 					svt = rt_get_cpu_time_ns();
 				}
 			}
-			outb(i = 1 - i, 0x378);
-
 			if (diff < min_diff) {
 				min_diff = diff;
 			}
@@ -169,7 +167,9 @@ int main(int argc, char *argv[])
 		stop_rt_timer();	
 	}
 	rt_get_exectime(task, exectime);
-	printf("\n>>> S = %g, EXECTIME = %G\n", s, (double)exectime[0]/(double)(exectime[2] - exectime[1]));
+	if (exectime[1] && exectime[2]) {
+		printf("\n>>> S = %g, EXECTIME = %G\n", s, (double)exectime[0]/(double)(exectime[2] - exectime[1]));
+	}
 	rt_task_delete(task);
 	rt_mbx_delete(mbx);
 

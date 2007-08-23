@@ -2,6 +2,8 @@
  * Copyright (C) 2005 Jan Kiszka <jan.kiszka@web.de>.
  * Copyright (C) 2005 Joerg Langenberg <joerg.langenberg@gmx.net>.
  *
+ * with adaptions for RTAI by Paolo Mantegazza <mantegazza@aero.polimi.it>
+ *
  * RTAI is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License as published by
  * the Free Software Foundation; either version 2 of the License, or

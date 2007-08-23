@@ -34,6 +34,7 @@
 #include <linux/version.h>
 #include <linux/module.h>
 #include <linux/errno.h>
+#include <linux/fs.h>
 #include <linux/mm.h>
 #include <linux/miscdevice.h>
 
@@ -199,7 +200,9 @@ static struct vm_operations_struct rtai_shm_vm_ops = {
 	close: 	rtai_shm_vm_close
 };
 
+#ifdef CONFIG_RTAI_MALLOC
 static RTAI_SYSCALL_MODE void rt_set_heap(unsigned long, void *);
+#endif
 
 static int rtai_shm_f_ioctl(struct inode *inode, struct file *file, unsigned int cmd, unsigned long arg)
 {
@@ -216,10 +219,12 @@ static int rtai_shm_f_ioctl(struct inode *inode, struct file *file, unsigned int
 			TRACE_RTAI_SHM(TRACE_RTAI_EV_SHM_GET_SIZE, arg, cmd, current->pid);
 			return rt_shm_size((unsigned long *)((unsigned long *)arg)[0]);
 		}
+#ifdef CONFIG_RTAI_MALLOC
 		case HEAP_SET: {
 			rt_set_heap(((unsigned long *)arg)[0], (void *)((unsigned long *)arg)[1]);
 			return 0;
 		}
+#endif
 	}
 	return 0;
 }
@@ -245,6 +250,8 @@ static struct file_operations rtai_shm_fops = {
 
 static struct miscdevice rtai_shm_dev = 
 	{ RTAI_SHM_MISC_MINOR, "RTAI_SHM", &rtai_shm_fops };
+
+#ifdef CONFIG_RTAI_MALLOC
 
 static inline void *_rt_halloc(int size, struct rt_heap_t *heap)
 {
@@ -565,7 +572,7 @@ static RTAI_SYSCALL_MODE void rt_set_heap(unsigned long name, void *adr)
 	size = ((abs(rt_get_type(name)) - sizeof(rtheap_t) - (hptr - heap)) & PAGE_MASK);
 	heap = hptr + size;
 	if (!atomic_cmpxchg((atomic_t *)hptr, 0, name)) {
-		rtheap_init(heap, hptr, size, PAGE_SIZE);
+		rtheap_init(heap, hptr, size, PAGE_SIZE, 0);
 	}
 	RTAI_TASK(return);
 	if (name == GLOBAL_HEAP_ID) {
@@ -624,10 +631,13 @@ void *rt_heap_open(unsigned long name, int size, int suprt)
 	return 0;
 }
 
+#endif
+
 struct rt_native_fun_entry rt_shm_entries[] = {
         { { 0, rt_shm_alloc_usp },		SHM_ALLOC },
         { { 0, rt_shm_free },			SHM_FREE },
         { { 0, rt_shm_size },			SHM_SIZE },
+#ifdef CONFIG_RTAI_MALLOC
         { { 0, rt_set_heap },			HEAP_SET},
         { { 0, rt_halloc },			HEAP_ALLOC },
         { { 0, rt_hfree },			HEAP_FREE },
@@ -637,6 +647,7 @@ struct rt_native_fun_entry rt_shm_entries[] = {
         { { 0, rt_free_usp },			FREE },
         { { 0, rt_named_malloc_usp },		NAMED_MALLOC },
         { { 0, rt_named_free_usp },		NAMED_FREE },
+#endif
         { { 0, 0 },				000 }
 };
 
@@ -666,13 +677,15 @@ int __rtai_shm_init (void)
 		printk("***** UNABLE TO REGISTER THE SHARED MEMORY DEVICE (miscdev minor: %d) *****\n", RTAI_SHM_MISC_MINOR);
 		return -EBUSY;
 	}
-#ifndef CONFIG_RTAI_MALLOC_VMALLOC
-	printk("***** WARNING: GLOBAL HEAP NEITHER SHARABLE NOR USABLE FROM USER SPACE (use the vmalloc option for RTAI malloc) *****\n");
-#else
+#ifdef CONFIG_RTAI_MALLOC
+#ifdef CONFIG_RTAI_MALLOC_VMALLOC
 	rt_register(GLOBAL_HEAP_ID, rtai_global_heap_adr, rtai_global_heap_size, 0);
 	rt_smp_linux_task->heap[GLOBAL].heap = &rtai_global_heap;
 	rt_smp_linux_task->heap[GLOBAL].kadr =
 	rt_smp_linux_task->heap[GLOBAL].uadr = rtai_global_heap_adr;
+#else
+	printk("***** WARNING: GLOBAL HEAP NEITHER SHARABLE NOR USABLE FROM USER SPACE (use the vmalloc option for RTAI malloc) *****\n");
+#endif
 #endif
 	return set_rt_fun_entries(rt_shm_entries);
 }
@@ -683,7 +696,9 @@ void __rtai_shm_exit (void)
         int slot;
         struct rt_registry_entry entry;
 
+#ifdef CONFIG_RTAI_MALLOC_VMALLOC
 	rt_drg_on_name_cnt(GLOBAL_HEAP_ID);
+#endif
 	for (slot = 1; slot <= max_slots; slot++) {
 		if (rt_get_registry_slot(slot, &entry)) {
 			if (abs(entry.type) >= PAGE_SIZE) {
@@ -713,6 +728,7 @@ module_exit(__rtai_shm_exit);
 #ifdef CONFIG_KBUILD
 EXPORT_SYMBOL(rt_shm_alloc);
 EXPORT_SYMBOL(rt_shm_free);
+#ifdef CONFIG_RTAI_MALLOC
 EXPORT_SYMBOL(rt_named_malloc);
 EXPORT_SYMBOL(rt_named_free);
 EXPORT_SYMBOL(rt_halloc);
@@ -720,4 +736,5 @@ EXPORT_SYMBOL(rt_hfree);
 EXPORT_SYMBOL(rt_named_halloc);
 EXPORT_SYMBOL(rt_named_hfree);
 EXPORT_SYMBOL(rt_heap_open);
+#endif
 #endif /* CONFIG_KBUILD */

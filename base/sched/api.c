@@ -1,4 +1,4 @@
-/** 
+/**
  * @ingroup lxrt
  * @file
  * Common scheduling function 
@@ -620,16 +620,38 @@ RTAI_SYSCALL_MODE int rt_task_signal_handler(RT_TASK *task, void (*handler)(void
 
 /* ++++++++++++++++++++++++++++ MEASURING TIME ++++++++++++++++++++++++++++++ */
 
-void rt_gettimeorig(RTIME time_orig[])
+struct epoch_struct boot_epoch = { SPIN_LOCK_UNLOCKED, 0, };
+EXPORT_SYMBOL(boot_epoch);
+
+static inline void _rt_get_boot_epoch(volatile RTIME time_orig[])
 {
 	unsigned long flags;
 	struct timeval tv;
-	rtai_save_flags_and_cli(flags);
+	RTIME t;
+
+	flags = rt_spin_lock_irqsave(&boot_epoch.lock);
 	do_gettimeofday(&tv);
-	time_orig[0] = rtai_rdtsc();
-	rtai_restore_flags(flags);
-	time_orig[0] = tv.tv_sec*(long long)tuned.cpu_freq + llimd(tv.tv_usec, tuned.cpu_freq, 1000000) - time_orig[0];
-	time_orig[1] = llimd(time_orig[0], 1000000000, tuned.cpu_freq);
+	t = rtai_rdtsc();
+	rt_spin_unlock_irqrestore(flags, &boot_epoch.lock);
+
+	time_orig[0] = tv.tv_sec*(RTIME)tuned.cpu_freq + imuldiv(tv.tv_usec, tuned.cpu_freq, 1000000) - t;
+	time_orig[1] = tv.tv_sec*1000000000ULL + tv.tv_usec*1000ULL - llimd(t, 1000000000, tuned.cpu_freq);
+}
+
+void rt_get_boot_epoch(void)
+{
+	int use;
+	_rt_get_boot_epoch(boot_epoch.time[use = 1 - boot_epoch.touse]);
+	boot_epoch.touse = use;
+}
+
+void rt_gettimeorig(RTIME time_orig[])
+{
+	if (time_orig == NULL) {
+		rt_get_boot_epoch();
+	} else {
+		_rt_get_boot_epoch(time_orig);
+	}
 }
 
 /* +++++++++++++++++++++++++++ CONTROLLING TIME ++++++++++++++++++++++++++++++ */
@@ -733,6 +755,7 @@ RTAI_SYSCALL_MODE int rt_task_make_periodic(RT_TASK *task, RTIME start_time, RTI
 	} else if (task->magic != RT_TASK_MAGIC) {
 		return -EINVAL;
 	}
+	REALTIME2COUNT(start_time);
 	flags = rt_global_save_flags_and_cli();
 	task->periodic_resume_time = task->resume_time = start_time;
 	task->period = period;
@@ -852,9 +875,9 @@ RTAI_SYSCALL_MODE int rt_set_period(RT_TASK *task, RTIME new_period)
 	if (task->magic != RT_TASK_MAGIC) {
 		return -EINVAL;
 	}
-	rtai_save_flags_and_cli(flags);
+	flags = rt_global_save_flags_and_cli();
 	task->period = new_period;
-	rtai_restore_flags(flags);
+	rt_global_restore_flags(flags);
 	return 0;
 }
 
@@ -975,6 +998,7 @@ RTAI_SYSCALL_MODE int rt_sleep_until(RTIME time)
 {
 	DECLARE_RT_CURRENT;
 	unsigned long flags;
+	REALTIME2COUNT(time);
 	flags = rt_global_save_flags_and_cli();
 	ASSIGN_RT_CURRENT;
 	if ((rt_current->resume_time = time) > rt_time_h) {
@@ -1921,73 +1945,29 @@ RTAI_SYSCALL_MODE void usp_request_rtc(int rtc_freq, void *handler)
 
 /* +++++++++++++++++ SUPPORT FOR THE LINUX SYSCALL SERVER +++++++++++++++++++ */
 
-RT_TASK *rt_exec_linux_syscall(RT_TASK *rt_current, RT_TASK *task, struct pt_regs *regs)
+RTAI_SYSCALL_MODE void rt_set_linux_syscall_mode(long mode, void (*callback_fun)(long, long))
 {
-	unsigned long flags;
-
-	task->priority = rt_current->priority + BASE_SOFT_PRIORITY;
-	flags = rt_global_save_flags_and_cli();
-	if (task->state & RT_SCHED_RECEIVE) {
-		rt_current->msg = task->msg = (unsigned long)regs;
-		task->msg_queue.task = rt_current;
-		task->ret_queue.task = NULL;
-		task->state = RT_SCHED_READY;
-		enq_ready_task(task);
-		enqueue_blocked(rt_current, &task->ret_queue, 1);
-		rt_current->state |= RT_SCHED_RETURN;
-	} else {
-		rt_current->msg = (unsigned long)regs;
-                enqueue_blocked(rt_current, &task->msg_queue, 1);
-		rt_current->state |= RT_SCHED_RPC;
-	}
-	task->priority = rt_current->priority;
-	rem_ready_current(rt_current);
-	rt_current->msg_queue.task = task;
-	rt_schedule();
-	rt_global_restore_flags(flags);
-	return rt_current->msg_queue.task != rt_current ? NULL : task;
+	rt_put_user(callback_fun, &(RT_CURRENT->linux_syscall_server)->callback_fun);
+	rt_put_user(mode, &(RT_CURRENT->linux_syscall_server)->mode);
 }
 
-#include <asm/uaccess.h>
-RTAI_SYSCALL_MODE RT_TASK *rt_receive_linux_syscall(RT_TASK *task, struct pt_regs *regs)
+void rt_exec_linux_syscall(RT_TASK *rt_current, struct linux_syscalls_list *syscalls, struct pt_regs *regs)
 {
-	unsigned long flags;
-	RT_TASK *rt_current;
+	struct { long in, nr, mode; RT_TASK *serv; struct mode_regs *moderegs; } from;
 
-	flags = rt_global_save_flags_and_cli();
-	rt_current = rt_smp_current[rtai_cpuid()];
-	if ((task->state & RT_SCHED_RPC) && task->msg_queue.task == rt_current) {
-		dequeue_blocked(task);
-		*regs = *((struct pt_regs *)task->msg);
-		rt_current->msg_queue.task = task;
-		enqueue_blocked(task, &rt_current->ret_queue, 1);
-		task->state = (task->state & ~RT_SCHED_RPC) | RT_SCHED_RETURN;
-	} else {
-		rt_current->ret_queue.task = RTP_OBJREM;
-		rt_current->state |= RT_SCHED_RECEIVE;
-		rem_ready_current(rt_current);
-		rt_current->msg_queue.task = task != rt_current ? task : NULL;
-		rt_schedule();
-		*regs = *((struct pt_regs *)rt_current->msg);
+	rt_copy_from_user(&from, syscalls, sizeof(from));
+	from.serv->priority = rt_current->priority + BASE_SOFT_PRIORITY;
+	rt_put_user(from.mode, &from.moderegs[from.in].mode);
+	rt_copy_to_user(&from.moderegs[from.in].regs, regs, sizeof(struct pt_regs));
+	if (++from.in >= from.nr) {
+		from.in = 0;
 	}
-	rt_current->msg_queue.task = rt_current;
-	rt_global_restore_flags(flags);
-	return rt_current->ret_queue.task ? NULL : task;
-}
-
-RTAI_SYSCALL_MODE void rt_return_linux_syscall(RT_TASK *task, unsigned long retval)
-{
-	unsigned long flags;
-
-	((struct pt_regs *)task->msg)->LINUX_SYSCALL_RETREG = retval;
-	flags = rt_global_save_flags_and_cli();
-	dequeue_blocked(task);
-	task->msg = 0;
-	task->msg_queue.task = task;
-	if ((task->state &= ~RT_SCHED_RETURN) == RT_SCHED_READY) {
-		enq_ready_task(task);
+	rt_put_user(from.in, &syscalls->in);
+	rt_task_resume(from.serv);
+	if (from.mode == SYNC_LINUX_SYSCALL) {
+		rt_task_suspend(rt_current);
+		rt_get_user(regs->LINUX_SYSCALL_RETREG, &syscalls->retval);
 	}
-	rt_global_restore_flags(flags);
 }
 
 /* ++++++++++++++++++++ END OF COMMON FUNCTIONALITIES +++++++++++++++++++++++ */

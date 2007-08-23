@@ -168,28 +168,28 @@ RTAI_SYSCALL_MODE struct rt_task_struct *rt_returnx(struct rt_task_struct *task,
 RTAI_SYSCALL_MODE struct rt_task_struct *rt_evdrpx(struct rt_task_struct *task,
 				 void *msg,
 				 int size,
-				 int *len);
+				 long *len);
 
 RTAI_SYSCALL_MODE struct rt_task_struct *rt_receivex(struct rt_task_struct *task,
 				   void *msg,
 				   int size,
-				   int *len);
+				   long *len);
 
 RTAI_SYSCALL_MODE struct rt_task_struct *rt_receivex_if(struct rt_task_struct *task,
 				      void *msg,
 				      int size,
-				      int *len);
+				      long *len);
 
 RTAI_SYSCALL_MODE struct rt_task_struct *rt_receivex_until(struct rt_task_struct *task,
 					 void *msg,
 					 int size,
-					 int *len,
+					 long *len,
 					 RTIME time);
 
 RTAI_SYSCALL_MODE struct rt_task_struct *rt_receivex_timed(struct rt_task_struct *task,
 					 void *msg,
 					 int size,
-					 int *len,
+					 long *len,
 					 RTIME delay);
 
 struct rt_task_struct *__rt_proxy_attach(void (*func)(long),
@@ -404,33 +404,33 @@ RTAI_PROTO(struct rt_task_struct *,rt_returnx,(struct rt_task_struct *task, void
 
 #define rt_isrpcx(task)  rt_isrpc(task)
 
-RTAI_PROTO(struct rt_task_struct *,rt_evdrpx,(struct rt_task_struct *task, void *msg, int size, int *len))
+RTAI_PROTO(struct rt_task_struct *,rt_evdrpx,(struct rt_task_struct *task, void *msg, int size, long *len))
 {
-	struct { struct rt_task_struct *task; void *msg; long size; int *len; } arg = { task, msg, size, len };
+	struct { struct rt_task_struct *task; void *msg; long size; long *len; } arg = { task, msg, size, len };
 	return (struct rt_task_struct *)rtai_lxrt(BIDX, SIZARG, EVDRPX, &arg).v[LOW];
 }
 
-RTAI_PROTO(struct rt_task_struct *,rt_receivex,(struct rt_task_struct *task, void *msg, int size, int *len))
+RTAI_PROTO(struct rt_task_struct *,rt_receivex,(struct rt_task_struct *task, void *msg, int size, long *len))
 {
-	struct { struct rt_task_struct *task; void *msg; long size; int *len; } arg = { task, msg, size, len };
+	struct { struct rt_task_struct *task; void *msg; long size; long *len; } arg = { task, msg, size, len };
 	return (struct rt_task_struct *)rtai_lxrt(BIDX, SIZARG, RECEIVEX, &arg).v[LOW];
 }
 
-RTAI_PROTO(struct rt_task_struct *,rt_receivex_if,(struct rt_task_struct *task, void *msg, int size, int *len))
+RTAI_PROTO(struct rt_task_struct *,rt_receivex_if,(struct rt_task_struct *task, void *msg, int size, long *len))
 {
-	struct { struct rt_task_struct *task; void *msg; long size; int *len; } arg = { task, msg, size, len };
+	struct { struct rt_task_struct *task; void *msg; long size; long *len; } arg = { task, msg, size, len };
 	return (struct rt_task_struct *)rtai_lxrt(BIDX, SIZARG, RECEIVEX_IF, &arg).v[LOW];
 }
 
-RTAI_PROTO(struct rt_task_struct *,rt_receivex_until,(struct rt_task_struct *task, void *msg, int size, int *len, RTIME time))
+RTAI_PROTO(struct rt_task_struct *,rt_receivex_until,(struct rt_task_struct *task, void *msg, int size, long *len, RTIME time))
 {
-	struct { struct rt_task_struct *task; void *msg; long size; int *len; RTIME time; } arg = { task, msg, size, len, time };
+	struct { struct rt_task_struct *task; void *msg; long size; long *len; RTIME time; } arg = { task, msg, size, len, time };
 	return (struct rt_task_struct *)rtai_lxrt(BIDX, SIZARG, RECEIVEX_UNTIL, &arg).v[LOW];
 }
 
-RTAI_PROTO(struct rt_task_struct *,rt_receivex_timed,(struct rt_task_struct *task, void *msg, int size, int *len, RTIME delay))
+RTAI_PROTO(struct rt_task_struct *,rt_receivex_timed,(struct rt_task_struct *task, void *msg, int size, long *len, RTIME delay))
 {
-	struct { struct rt_task_struct *task; void *msg; long size; int *len; RTIME delay; } arg = { task, msg, size, len, delay };
+	struct { struct rt_task_struct *task; void *msg; long size; long *len; RTIME delay; } arg = { task, msg, size, len, delay };
 	return (struct rt_task_struct *)rtai_lxrt(BIDX, SIZARG, RECEIVEX_TIMED, &arg).v[LOW];
 }
 
@@ -458,10 +458,9 @@ RTAI_PROTO(int, rt_Send,(pid_t pid, void *smsg, void *rmsg, size_t ssize, size_t
 	return (pid_t) rtai_lxrt(BIDX, SIZARG, RT_SEND, &arg).i[LOW];
 }
 
-RTAI_PROTO(pid_t, rt_Receive,(pid_t pid, void *msg, size_t maxsize, void *msglen))
+RTAI_PROTO(pid_t, rt_Receive,(pid_t pid, void *msg, size_t maxsize, size_t *msglen))
 {
-	struct { long pid; void *msg; long maxsize; void *msglen;}
-	arg = { pid, msg, maxsize, msglen };
+	struct { long pid; void *msg; long maxsize; size_t *msglen; } arg = { pid, msg, maxsize, msglen };
 	return (pid_t) rtai_lxrt(BIDX, SIZARG, RT_RECEIVE, &arg).i[LOW];
 }
 

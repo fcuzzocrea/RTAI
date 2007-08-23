@@ -29,6 +29,9 @@
  *
  *@{*/
 
+#include <linux/kernel.h>
+#include <linux/module.h>
+
 #include <asm/uaccess.h>
 
 #include <rtai_schedcore.h>
@@ -39,6 +42,7 @@
 
 MODULE_LICENSE("GPL");
 
+extern struct epoch_struct boot_epoch;
 
 /* +++++++++++++++++++++ ALL SEMAPHORES TYPES SUPPORT +++++++++++++++++++++++ */
 
@@ -589,6 +593,8 @@ RTAI_SYSCALL_MODE int rt_sem_wait_until(SEM *sem, RTIME time)
 		return RTE_OBJINV;
 	}
 
+	REALTIME2COUNT(time);
+
 	flags = rt_global_save_flags_and_cli();
 	ASSIGN_RT_CURRENT;
 	if ((count = sem->count) <= 0) {
@@ -881,6 +887,9 @@ RTAI_SYSCALL_MODE int rt_cond_wait_until(CND *cnd, SEM *mtx, RTIME time)
 	if (cnd->magic != RT_SEM_MAGIC && mtx->magic != RT_SEM_MAGIC) {
 		return RTE_OBJINV;
 	}
+
+	REALTIME2COUNT(time);
+
 	flags = rt_global_save_flags_and_cli();
 	ASSIGN_RT_CURRENT;
 	if (mtx->owndby != rt_current) {
@@ -1368,9 +1377,10 @@ RTAI_SYSCALL_MODE int rt_spl_lock(SPL *spl)
 	if (spl->owndby == (rt_current = RT_CURRENT)) {
 		spl->count++;
 	} else {
-		while (atomic_cmpxchg((atomic_t *)&spl->owndby, 0, rt_current));
+		while (cmpxchg(&spl->owndby, 0L, rt_current));
 		spl->flags = flags;
 	}
+	rtai_restore_flags(flags);
 	return 0;
 }
 
@@ -1398,12 +1408,13 @@ RTAI_SYSCALL_MODE int rt_spl_lock_if(SPL *spl)
 	if (spl->owndby == (rt_current = RT_CURRENT)) {
 		spl->count++;
 	} else {
-		if (atomic_cmpxchg((atomic_t *)&spl->owndby, 0, rt_current)) {
+		if (cmpxchg(&spl->owndby, 0L, rt_current)) {
 			rtai_restore_flags(flags);
 			return -1;
 		}
 		spl->flags = flags;
 	}
+	rtai_restore_flags(flags);
 	return 0;
 }
 
@@ -1438,15 +1449,16 @@ RTAI_SYSCALL_MODE int rt_spl_lock_timed(SPL *spl, unsigned long ns)
 		spl->count++;
 	} else {
 		RTIME end_time;
-		int locked;
+		long locked;
 		end_time = rdtsc() + imuldiv(ns, tuned.cpu_freq, 1000000000);
-		while ((locked = atomic_cmpxchg((atomic_t *)&spl->owndby, 0, rt_current)) && rdtsc() < end_time);
+		while ((locked = (long)cmpxchg(&spl->owndby, 0L, rt_current)) && rdtsc() < end_time);
 		if (locked) {
 			rtai_restore_flags(flags);
 			return -1;
 		}
 		spl->flags = flags;
 	}
+	rtai_restore_flags(flags);
 	return 0;
 }
 
@@ -1479,8 +1491,8 @@ RTAI_SYSCALL_MODE int rt_spl_unlock(SPL *spl)
 		} else {
 			spl->owndby = 0;
 			spl->count  = 0;
-			rtai_restore_flags(spl->flags);
 		}
+		rtai_restore_flags(spl->flags);
 		return 0;
 	}
 	rtai_restore_flags(flags);

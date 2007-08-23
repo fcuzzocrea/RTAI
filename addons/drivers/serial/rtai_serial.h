@@ -188,13 +188,13 @@ static inline int rt_com_write(unsigned int tty,
 
 RTAI_PROTO(int, rt_spopen, (unsigned int tty, unsigned int baud, unsigned int numbits, unsigned int stopbits, unsigned int parity, int mode, int fifotrig))
 {
-	struct { unsigned int tty, baud, numbits, stopbits, parity; int mode, fifotrig; } arg = { tty, baud, numbits, stopbits, parity, mode, fifotrig }; 
+	struct { unsigned long tty, baud, numbits, stopbits, parity; long mode, fifotrig; } arg = { tty, baud, numbits, stopbits, parity, mode, fifotrig }; 
 	return rtai_lxrt(FUN_EXT_RTAI_SP, SIZARG, _SPOPEN, &arg).i[LOW];
 }
 
 RTAI_PROTO(int, rt_spclose, (unsigned int tty))
 {
-	struct { unsigned int tty; } arg = { tty }; 
+	struct { unsigned long tty; } arg = { tty }; 
 	return rtai_lxrt(FUN_EXT_RTAI_SP, SIZARG, _SPCLOSE, &arg).i[LOW];
 }
 
@@ -202,7 +202,7 @@ RTAI_PROTO_ALWAYS_INLINE(int, rt_spread, (unsigned int tty, char *msg, int msg_s
 {
 	int notrd, size;
 	char lmsg[size = abs(msg_size)];
-	struct { unsigned int tty; char *msg; int msg_size; } arg = { tty, lmsg, msg_size };
+	struct { unsigned long tty; char *msg; long msg_size; } arg = { tty, lmsg, msg_size };
 	notrd = rtai_lxrt(FUN_EXT_RTAI_SP, SIZARG, _SPREAD, &arg).i[LOW];
 	if (notrd >= 0 && notrd != size) {
 		memcpy(msg, lmsg, size - notrd);	
@@ -214,7 +214,7 @@ RTAI_PROTO_ALWAYS_INLINE(int, rt_spevdrp, (unsigned int tty, char *msg, int msg_
 {
 	int notrd, size;
 	char lmsg[size = abs(msg_size)];
-	struct { unsigned int tty; char *msg; int msg_size; } arg = { tty, lmsg, msg_size };
+	struct { unsigned long tty; char *msg; long msg_size; } arg = { tty, lmsg, msg_size };
 	notrd = rtai_lxrt(FUN_EXT_RTAI_SP, SIZARG, _SPEVDRP, &arg).i[LOW];
 	if ( notrd >= 0 && notrd != size ) {
 		memcpy(msg, lmsg, size - notrd);	
@@ -226,86 +226,86 @@ RTAI_PROTO_ALWAYS_INLINE(int, rt_spwrite, (unsigned int tty, char *msg, int msg_
 {
 	int size;
 	char lmsg[size = abs(msg_size)];
-	struct { unsigned int tty; char *msg; int msg_size; } arg = { tty, lmsg, msg_size };
+	struct { unsigned long tty; char *msg; long msg_size; } arg = { tty, lmsg, msg_size };
 	memcpy(lmsg, msg, size);	
 	return rtai_lxrt(FUN_EXT_RTAI_SP, SIZARG, _SPWRITE, &arg).i[LOW];
 }
 
 RTAI_PROTO(int, rt_spread_timed, (unsigned int tty, char *msg, int msg_size, RTIME delay))
 {
-	struct { unsigned int tty; char *msg; int msg_size; RTIME delay; } arg = { tty, msg, msg_size, delay };
+	struct { unsigned long tty; char *msg; long msg_size; RTIME delay; } arg = { tty, msg, msg_size, delay };
 	return msg_size > 0 ? rtai_lxrt(FUN_EXT_RTAI_SP, SIZARG, _SPREAD_TIMED, &arg).i[LOW] : msg_size;
 }
 
 RTAI_PROTO(int, rt_spwrite_timed, (unsigned int tty, char *msg, int msg_size, RTIME delay))
 {
-	struct { unsigned int tty; char *msg; int msg_size; RTIME delay; } arg = { tty, msg, msg_size, delay };
+	struct { unsigned long tty; char *msg; long msg_size; RTIME delay; } arg = { tty, msg, msg_size, delay };
 	return msg_size > 0 ? rtai_lxrt(FUN_EXT_RTAI_SP, SIZARG, _SPWRITE_TIMED, &arg).i[LOW] : msg_size;
 }
 
 RTAI_PROTO(int, rt_spclear_rx, (unsigned int tty))
 {
-	struct { unsigned int tty; } arg = { tty };
+	struct { unsigned long tty; } arg = { tty };
 	return rtai_lxrt(FUN_EXT_RTAI_SP, SIZARG, _SPCLEAR_RX, &arg).i[LOW];
 }
 
 RTAI_PROTO(int, rt_spclear_tx, (unsigned int tty))
 {
-	struct { unsigned int tty; } arg = { tty };
+	struct { unsigned long tty; } arg = { tty };
 	return rtai_lxrt(FUN_EXT_RTAI_SP, SIZARG, _SPCLEAR_TX, &arg).i[LOW];
 }
 
 RTAI_PROTO(int, rt_spget_msr, (unsigned int tty, int mask))
 {
-	struct { unsigned int tty; int mask; } arg = { tty, mask };
+	struct { unsigned long tty; long mask; } arg = { tty, mask };
 	return rtai_lxrt(FUN_EXT_RTAI_SP, SIZARG, _SPGET_MSR, &arg).i[LOW];
 }
 
 RTAI_PROTO(int, rt_spset_msr, (unsigned int tty, int mask, int setbits))
 {
-	struct { unsigned int tty; int mask, setbits; } arg = { tty, mask, setbits };
+	struct { unsigned long tty; long mask, setbits; } arg = { tty, mask, setbits };
 	return rtai_lxrt(FUN_EXT_RTAI_SP, SIZARG, _SPSET_MCR, &arg).i[LOW];
 }
 
 RTAI_PROTO(int, rt_spget_err, (unsigned int tty))
 {
-	struct { unsigned int tty; } arg = { tty };
+	struct { unsigned long tty; } arg = { tty };
 	return rtai_lxrt(FUN_EXT_RTAI_SP, SIZARG, _SPGET_ERR, &arg).i[LOW];
 }
 
 RTAI_PROTO(int, rt_spset_mode, (unsigned int tty, int mode))
 {
-	struct { unsigned int tty; int mode; } arg = { tty, mode };
+	struct { unsigned long tty; long mode; } arg = { tty, mode };
 	return rtai_lxrt(FUN_EXT_RTAI_SP, SIZARG, _SPSET_MODE, &arg).i[LOW];
 }
 
 RTAI_PROTO(int, rt_spset_fifotrig, (unsigned int tty, int fifotrig))
 {
-	struct { unsigned int tty; int fifotrig; } arg = { tty, fifotrig };
+	struct { unsigned long tty; long fifotrig; } arg = { tty, fifotrig };
 	return rtai_lxrt(FUN_EXT_RTAI_SP, SIZARG, _SPSET_FIFOTRIG, &arg).i[LOW];
 }
 
 RTAI_PROTO(int, rt_spget_rxavbs, (unsigned int tty))
 {
-	struct { unsigned int tty; } arg = { tty };
+	struct { unsigned long tty; } arg = { tty };
 	return rtai_lxrt(FUN_EXT_RTAI_SP, SIZARG, _SPGET_RXAVBS, &arg).i[LOW];
 }
 
 RTAI_PROTO(int, rt_spget_txfrbs, (unsigned int tty))
 {
-	struct { unsigned int tty; } arg = { tty };
+	struct { unsigned long tty; } arg = { tty };
 	return rtai_lxrt(FUN_EXT_RTAI_SP, SIZARG, _SPGET_TXFRBS, &arg).i[LOW];
 }
 
 RTAI_PROTO(int, rt_spset_thrs, (unsigned int tty, int rxthrs, int txthrs))
 {
-	struct { unsigned int tty; int rxthrs, txthrs; } arg = { tty, rxthrs, txthrs };
+	struct { unsigned long tty; long rxthrs, txthrs; } arg = { tty, rxthrs, txthrs };
 	return rtai_lxrt(FUN_EXT_RTAI_SP, SIZARG, _SPSET_THRS, &arg).i[LOW];
 }
 
 static inline void rt_spwait_usr_callback(unsigned int tty, unsigned long *retvals)
 {
-	struct { unsigned int tty; unsigned long *retvals; int size; } arg = { tty, retvals, 6*sizeof(unsigned long) };
+	struct { unsigned long tty; unsigned long *retvals; long size; } arg = { tty, retvals, 6*sizeof(unsigned long) };
 	rtai_lxrt(FUN_EXT_RTAI_SP, SIZARG, _SPWAIT_USR_CALLBACK, &arg);
 	return;
 }
@@ -315,7 +315,7 @@ static inline void rt_spwait_usr_callback(unsigned int tty, unsigned long *retva
 static void *callback_thread(void *farg)
 {
 	unsigned long retvals[6];
-	struct farg_t { int tty; void *callback_fun; int rxthrs, txthrs, code; RT_TASK *task; } *arg;
+	struct farg_t { long tty; void *callback_fun; long rxthrs, txthrs, code; RT_TASK *task; } *arg;
 
 	arg = (struct farg_t *)farg;
 	if (!(arg->task = rt_task_init_schmod((unsigned long)arg, 0, 0, 0, SCHED_FIFO, 0xF))) {
@@ -355,7 +355,7 @@ RTAI_PROTO_ALWAYS_INLINE(int, rt_spset_callback_fun, (unsigned int tty, void (*c
 {
 	int ret;
 	pthread_t thread;
-	struct { int tty; void (*callback_fun)(int, int); int rxthrs, txthrs, code; void *task; } arg = { tty, callback_fun, rxthrs, txthrs, _SPSET_CALLBACK, 0 };
+	struct { long tty; void (*callback_fun)(int, int); long rxthrs, txthrs, code; void *task; } arg = { tty, callback_fun, rxthrs, txthrs, _SPSET_CALLBACK, 0 };
 	if ((ret = rtai_lxrt(FUN_EXT_RTAI_SP, SIZARG, _SPSET_CALLBACK, &arg).i[LOW]) == EINVAL) {
 		void *argp;
 		argp = (void *)malloc(sizeof(arg));
@@ -369,7 +369,7 @@ RTAI_PROTO_ALWAYS_INLINE(int, rt_spset_err_callback_fun, (unsigned int tty, void
 {
 	int ret;
 	pthread_t thread;
-	struct { int tty; void (*err_callback_fun)(int); int dummy1, dummy2, code; void *task; } arg = { tty, err_callback_fun, 0, 0, _SPSET_ERR_CALLBACK, 0 };
+	struct { long tty; void (*err_callback_fun)(int); long dummy1, dummy2, code; void *task; } arg = { tty, err_callback_fun, 0, 0, _SPSET_ERR_CALLBACK, 0 };
 	if ((ret = rtai_lxrt(FUN_EXT_RTAI_SP, SIZARG, _SPSET_ERR_CALLBACK, &arg).i[LOW]) == EINVAL) {
 		void *argp;
 		argp = (void *)malloc(sizeof(arg));

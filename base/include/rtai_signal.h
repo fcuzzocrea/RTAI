@@ -30,13 +30,17 @@
 #define SIGNAL_DISABLE  5
 #define SIGNAL_TRIGGER  6
 
+#define MAXSIGNALS  16
+
 #define SIGNAL_TASK_INIPRIO     0
+
+#define RT_SCHED_SIGSUSP  (1 << 15)
+
+struct rt_signal_t { unsigned long flags; RT_TASK *sigtask; };
 
 struct sigsuprt_t { RT_TASK *sigtask; RT_TASK *task; long signal; void (*sighdl)(long, RT_TASK *); unsigned long cpuid; };
 
 #ifdef __KERNEL__
-
-#define MAXSIGNALS  16
 
 #define SIGNAL_ENBIT   0
 #define SIGNAL_PNDBIT  1
@@ -45,6 +49,8 @@ struct sigsuprt_t { RT_TASK *sigtask; RT_TASK *task; long signal; void (*sighdl)
 
 int rt_request_signal(long signal, void (*sighdl)(long, RT_TASK *));
 
+RTAI_SYSCALL_MODE int rt_request_signal_(RT_TASK *sigtask, RT_TASK *task, long signal);
+
 RTAI_SYSCALL_MODE int rt_release_signal(long signal, RT_TASK *task);
 
 RTAI_SYSCALL_MODE void rt_enable_signal(long signal, RT_TASK *task);
@@ -52,6 +58,8 @@ RTAI_SYSCALL_MODE void rt_enable_signal(long signal, RT_TASK *task);
 RTAI_SYSCALL_MODE void rt_disable_signal(long signal, RT_TASK *task);
 
 RTAI_SYSCALL_MODE void rt_trigger_signal(long signal, RT_TASK *task);
+
+RTAI_SYSCALL_MODE int rt_wait_signal(RT_TASK *sigtask, RT_TASK *task);
 
 #else /* !__KERNEL__ */
 
@@ -89,7 +97,8 @@ static inline int rt_request_signal(long signal, void (*sighdl)(long, RT_TASK *)
 {
 	if (signal >= 0 && sighdl) {
 		struct sigsuprt_t arg = { NULL, rt_buddy(), signal, sighdl, rtai_lxrt(RTAI_SIGNALS_IDX, sizeof(void *), SIGNAL_HELPER, &arg.sigtask).i[LOW] };
-		if (rt_clone(signal_suprt_fun, &arg, SIGNAL_TASK_STACK_SIZE, 0) > 0) {
+//		if (rt_clone(signal_suprt_fun, &arg, SIGNAL_TASK_STACK_SIZE, 0) > 0) {
+		if (rt_thread_create(signal_suprt_fun, &arg, SIGNAL_TASK_STACK_SIZE)) {
 			return rtai_lxrt(RTAI_SIGNALS_IDX, sizeof(RT_TASK *), SIGNAL_HELPER, &arg.task).i[LOW];
 		}
 	}

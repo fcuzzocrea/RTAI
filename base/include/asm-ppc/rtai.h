@@ -17,8 +17,4 @@
  */
 
 #include <rtai_config.h>
-#ifdef CONFIG_RTAI_ADEOS
 #include <asm/rtai_hal.h>
-#else
-#include <asm/rtai_legacy.h>
-#endif

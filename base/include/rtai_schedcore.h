@@ -178,6 +178,15 @@ do { \
 	int cpuid; \
 	for (cpuid = 0; cpuid < num_online_cpus(); cpuid++) { \
         	hal_virtualize_irq(hal_root_domain, wake_up_srq[cpuid].srq = hal_alloc_irq(), wake_up_srq_handler, NULL, IPIPE_HANDLE_FLAG); \
+		if ( wake_up_srq[cpuid].srq != (wake_up_srq[0].srq + cpuid)) { \
+			int i; \
+			for (i = 0; i <= cpuid; i++) { \
+				hal_virtualize_irq(hal_root_domain, wake_up_srq[i].srq, NULL, NULL, 0); \
+				hal_free_irq(wake_up_srq[i].srq); \
+			} \
+			printk("*** NON CONSECUTIVE WAKE UP SRQs, ABORTING ***\n"); \
+			return -1; \
+		} \
 	} \
 } while (0)
 
@@ -206,23 +215,19 @@ extern int rt_smp_oneshot_timer[];
 extern volatile int rt_sched_timed;
 
 #ifdef CONFIG_RTAI_MALLOC
-#define sched_malloc(size)		rt_malloc((size))
-#define sched_free(adr)			rt_free((adr))
-#ifndef CONFIG_RTAI_MALLOC_BUILTIN
-#define sched_mem_init()
-#define sched_mem_end()
-#else  /* CONFIG_RTAI_MALLOC_BUILTIN */
+#ifdef CONFIG_RTAI_MALLOC_BUILTIN
 #define sched_mem_init() \
 	{ if(__rtai_heap_init() != 0) { \
                 return(-ENOMEM); \
         } }
-#define sched_mem_end()		__rtai_heap_exit()
+#define sched_mem_end()	 __rtai_heap_exit()
+#else  /* CONFIG_RTAI_MALLOC_BUILTIN */
+#define sched_mem_init()
+#define sched_mem_end()
 #endif /* !CONFIG_RTAI_MALLOC_BUILTIN */
 #define call_exit_handlers(task)	        __call_exit_handlers(task)
 #define set_exit_handler(task, fun, arg1, arg2)	__set_exit_handler(task, fun, arg1, arg2)
 #else  /* !CONFIG_RTAI_MALLOC */
-#define sched_malloc(size)	kmalloc((size), GFP_KERNEL)
-#define sched_free(adr)		kfree((adr))
 #define sched_mem_init()
 #define sched_mem_end()
 #define call_exit_handlers(task)
@@ -331,6 +336,17 @@ static inline void enq_ready_edf_task(RT_TASK *ready_task)
 	task->rprev = (ready_task->rprev = task->rprev)->rnext = ready_task;
 	ready_task->rnext = task;
 }
+
+struct epoch_struct { spinlock_t lock; volatile int touse; volatile RTIME time[2][2]; };
+
+#ifdef CONFIG_RTAI_CLOCK_REALTIME
+#define REALTIME2COUNT(rtime) \
+	if (rtime > boot_epoch.time[boot_epoch.touse][0]) { \
+		rtime -= boot_epoch.time[boot_epoch.touse][0]; \
+	}
+#else 
+#define REALTIME2COUNT(rtime)
+#endif
 
 #define MAX_WAKEUP_SRQ (2 << 6)
 

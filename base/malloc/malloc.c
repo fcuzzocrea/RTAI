@@ -36,14 +36,12 @@
 #include <linux/module.h>
 #include <linux/kernel.h>
 #include <linux/version.h>
+#include <linux/slab.h>
+
 #include <rtai_config.h>
 #include <asm/rtai.h>
-#ifdef CONFIG_RTAI_MALLOC_VMALLOC
-#include <rtai_shm.h>
-#else /* !CONFIG_RTAI_MALLOC_VMALLOC */
-#include <linux/slab.h>
-#endif /* CONFIG_RTAI_MALLOC_VMALLOC */
 #include <rtai_malloc.h>
+#include <rtai_shm.h>
 
 int rtai_global_heap_size = RTHEAP_GLOBALSZ;
 RTAI_MODULE_PARM(rtai_global_heap_size, int);
@@ -52,43 +50,43 @@ void *rtai_global_heap_adr = NULL;
 
 rtheap_t rtai_global_heap;	/* Global system heap */
 
-static void *alloc_extent (u_long size)
+static void *alloc_extent (u_long size, int suprt)
 {
 	caddr_t p;
-#ifdef CONFIG_RTAI_MALLOC_VMALLOC
-	caddr_t _p;
+if (!suprt) {
+		caddr_t _p;
 
-	p = _p = (caddr_t)vmalloc(size);
-	if (p) {
-		printk("RTAI[malloc]: vmalloced extent %p, size %lu.\n", p, size);
-		for (; size > 0; size -= PAGE_SIZE, _p += PAGE_SIZE) {
-			mem_map_reserve(virt_to_page(__va(kvirt_to_pa((u_long)_p))));
+		p = _p = (caddr_t)vmalloc(size);
+		if (p) {
+			printk("RTAI[malloc]: vmalloced extent %p, size %lu.\n", p, size);
+			for (; size > 0; size -= PAGE_SIZE, _p += PAGE_SIZE) {
+				mem_map_reserve(virt_to_page(__va(kvirt_to_pa((u_long)_p))));
+			}
 		}
+	} else {
+		p = (caddr_t)kmalloc(size, suprt);
+		printk("RTAI[malloc]: kmalloced extent %p, size %lu.\n", p, size);
 	}
-#else /* !CONFIG_RTAI_MALLOC_VMALLOC */
-	p = (caddr_t)kmalloc(size,GFP_KERNEL);
-	printk("RTAI[malloc]: kmalloced extent %p, size %lu.\n", p, size);
-#endif /* CONFIG_RTAI_MALLOC_VMALLOC */
 	if (p) {
 		memset(p, 0, size);
 	}
 	return p;
 }
 
-static void free_extent (void *p, u_long size)
+static void free_extent (void *p, u_long size, int suprt)
 {
-#ifdef CONFIG_RTAI_MALLOC_VMALLOC
-	caddr_t _p = (caddr_t)p;
+	if (!suprt) {
+		caddr_t _p = (caddr_t)p;
 
-	printk("RTAI[malloc]: vfreed extent %p, size %lu.\n", p, size);
-	for (; size > 0; size -= PAGE_SIZE, _p += PAGE_SIZE) {
-		mem_map_unreserve(virt_to_page(__va(kvirt_to_pa((u_long)_p))));
+		printk("RTAI[malloc]: vfreed extent %p, size %lu.\n", p, size);
+		for (; size > 0; size -= PAGE_SIZE, _p += PAGE_SIZE) {
+			mem_map_unreserve(virt_to_page(__va(kvirt_to_pa((u_long)_p))));
+		}
+		vfree(p);
+	} else {
+		printk("RTAI[malloc]: kfreed extent %p, size %lu.\n", p, size);
+		kfree(p);
 	}
-	vfree(p);
-#else /* !CONFIG_RTAI_MALLOC_VMALLOC */
-	printk("RTAI[malloc]: kfreed extent %p, size %lu.\n", p, size);
-	kfree(p);
-#endif /* CONFIG_RTAI_MALLOC_VMALLOC */
 }
 
 static void init_extent (rtheap_t *heap, rtextent_t *extent)
@@ -119,7 +117,8 @@ static void init_extent (rtheap_t *heap, rtextent_t *extent)
  * \fn int rtheap_init(rtheap_t *heap,
                        void *heapaddr,
 		       u_long heapsize,
-		       u_long pagesize);
+		       u_long pagesize,
+		       int suprt);
  * \brief Initialize a memory heap.
  *
  * Initializes a memory heap suitable for dynamic memory allocation
@@ -174,7 +173,7 @@ static void init_extent (rtheap_t *heap, rtextent_t *extent)
  * Context: This routine must be called on behalf of a thread context.
  */
 
-int rtheap_init (rtheap_t *heap, void *heapaddr, u_long heapsize, u_long pagesize)
+int rtheap_init (rtheap_t *heap, void *heapaddr, u_long heapsize, u_long pagesize, int suprt)
 {
 	u_long hdrsize, pmapsize, shiftsize, pageshift;
 	rtextent_t *extent;
@@ -223,11 +222,11 @@ int rtheap_init (rtheap_t *heap, void *heapaddr, u_long heapsize, u_long pagesiz
 	heap->pagesize   = pagesize;
 	heap->pageshift  = pageshift;
 	heap->hdrsize    = hdrsize;
-#ifdef CONFIG_RTAI_MALLOC_VMALLOC
-	heap->extentsize = heapsize;
-#else  /* !CONFIG_RTAI_MALLOC_VMALLOC */
-	heap->extentsize = heapsize > KMALLOC_LIMIT ? KMALLOC_LIMIT : heapsize;
-#endif /* CONFIG_RTAI_MALLOC_VMALLOC */
+	if (!suprt) {
+		heap->extentsize = heapsize;
+	} else {
+		heap->extentsize = heapsize > KMALLOC_LIMIT ? KMALLOC_LIMIT : heapsize;
+	}
 	heap->npages     = (heap->extentsize - hdrsize) >> pageshift;
 	heap->maxcont    = heap->npages*pagesize;
 	heap->flags      =
@@ -246,11 +245,11 @@ int rtheap_init (rtheap_t *heap, void *heapaddr, u_long heapsize, u_long pagesiz
 	} else {
 		u_long init_size = 0;
 		while (init_size < heapsize) {
-			if (!(extent = (rtextent_t *)alloc_extent(heap->extentsize))) {
+			if (!(extent = (rtextent_t *)alloc_extent(heap->extentsize, suprt))) {
 				struct list_head *holder, *nholder;
 				list_for_each_safe(holder, nholder, &heap->extents) {
 					extent = list_entry(holder, rtextent_t, link);
-					free_extent(extent, heap->extentsize);
+					free_extent(extent, heap->extentsize, suprt);
 				}
 				return RTHEAP_NOMEM;
 			}
@@ -276,12 +275,12 @@ int rtheap_init (rtheap_t *heap, void *heapaddr, u_long heapsize, u_long pagesiz
  * Context: This routine must be called on behalf of a thread context.
  */
 
-void rtheap_destroy (rtheap_t *heap)
+void rtheap_destroy (rtheap_t *heap, int suprt)
 {
 	struct list_head *holder, *nholder;
 
 	list_for_each_safe(holder, nholder, &heap->extents) {
-		free_extent(list_entry(holder, rtextent_t, link), heap->extentsize);
+		free_extent(list_entry(holder, rtextent_t, link), heap->extentsize, suprt);
 	}
 }
 
@@ -629,7 +628,7 @@ unlock_and_fail:
 int __rtai_heap_init (void)
 {
 	rtai_global_heap_size = (rtai_global_heap_size + PAGE_SIZE - 1) & ~(PAGE_SIZE - 1);
-	if (rtheap_init(&rtai_global_heap, NULL, rtai_global_heap_size, PAGE_SIZE)) {
+	if (rtheap_init(&rtai_global_heap, NULL, rtai_global_heap_size, PAGE_SIZE, 0)) {
 		printk(KERN_INFO "RTAI[malloc]: failed to initialize the global heap (size=%d bytes).\n", rtai_global_heap_size);
 		return 1;
 	}
@@ -640,7 +639,7 @@ int __rtai_heap_init (void)
 
 void __rtai_heap_exit (void)
 {
-	rtheap_destroy(&rtai_global_heap);
+	rtheap_destroy(&rtai_global_heap, 0);
 	printk("RTAI[malloc]: unloaded.\n");
 }
 

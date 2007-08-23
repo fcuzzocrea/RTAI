@@ -6,7 +6,7 @@ config MODULES
 
 config RTAI_VERSION
 	string
-	default "3.5 (vulcano)"
+	default "3.6 (vulcano)"
 
 menu "General"
 
@@ -26,7 +26,7 @@ config RTAI_LINUXDIR
 	default "/usr/src/linux"
 	help
 	This variable contains the directory of your previously
-	patched Linux kernel. As explained before, you can changed the
+	patched Linux kernel. As explained before, you can change the
 	value of the Linux source tree which is fixed by default to
 	/usr/src/linux.  
 
@@ -252,41 +252,6 @@ endmenu
 
 menu "Base system"
 
-config RTAI_SCHED_LXRT_
-	bool "Kernel/User space scheduler without RTAI own kernel tasks (KEEP)"
-	default y
-	help
-	This scheduler (rtai_lxrt) supports hard real time for all Linux
-	schedulable objects, i.e. processes/threads/kthreads. All of RTAI 
-	APIs are available simmetrically inter/intra kernel and user space.
-
-	This configuration parameter is ignored by the build process and
-	this scheduler will be made anyhow, along with the related liblxrt.
-
-config RTAI_KTASKS_SCHED_LXRT_
-	bool "Kernel/User space scheduler with RTAI own kernel tasks (KEEP)"
-	default y
-	help
-	This scheduler (rtai_sched) supports not only hard real time for 
-	all Linux schedulable objects, i.e.  processes/threads/kthreads, 
-	but also for RTAI own kernel tasks. As such is the most complete
-	scheduler available within RTAI.
-
-	A secondary effect is that rt_task_init() will generate RTAI
-	own kernel tasks instead of real time hardened Linux kernel threads.
-	This will reduce task switching time, with noticeable effects on
-	low end CPUs.
-
-	Users wanting to use both RTAI own tasks and real time hardened
-	Linux kernel threads must specifically use rt_task_init for the 
-	former and rt_thread_init for the latter.
-
-	For backward compatibility old named schedulers, i.e.: up, smp, mup,
-	ksched; are all linked to this one.
-
-	This configuration parameter is ignored by the build process and
-	this scheduler will be made anyhow, along with the related liblxrt.
-
 menu "Scheduling options"
 
 #	depends on RTAI_EXTENDED
@@ -436,26 +401,29 @@ config RTAI_BUSY_TIME_ALIGN
 	Do not set it if a hard periodic timer is to be used.
 
 config RTAI_LXRT_USE_LINUX_SYSCALL
-	bool "Use Linux syscall mechanism for LXRT calls from user space"
+	bool "Use Linux syscall mechanism for RTAI calls from user space"
 	default n
 	help
-	With this option enabled, LXRT uses the Linux syscall mechanism
-	for service calls, as provided by libc "syscall".  This may improve 
-	signal handling (and therefore debugging of LXRT applications), but 
-	has the drawback of a slight overhead. 
+	With this option enabled, RTAI uses the Linux syscall mechanism
+	for its service calls, including RTAI own srqs, as provided by libc 
+	"syscall".  This may improve signal handling (and therefore debugging 
+	of RTAI applications), but has the drawback of a slight overhead. 
 
 	When direct inlining of RTAI syscalls is enabled, see the related
 	configuration options, it is still possible to force the use of 
 	the Linux syscall mechanism, even if this configuration parameter 
-	has not been set. The only thing to do is to add:
+	has not been set. Notice that RTAI own srqs are inlined always.
+	So, since it all depends on the definition of the USE_LINUX_SYSCALL 
+	macro, the only thing to do is to add:
 	#define USE_LINUX_SYSCALL
-	before any RTAI header inclusion, in any source file in which you
-	want to use the Linux syscall mechanism. In the same way when this
-	parameter is set you can selectively revert to LXRT own syscall
-	mechanism by defining:
+	after all of the RTAI headers inclusion in any source file in which 
+	you want to use the Linux syscall mechanism, to be sure that the macro
+	USE_LINUX_SYSCALL will not be redifined afterward. In the same way 
+	when this parameter is set you can selectively revert to RTAI own 
+	syscall mechanism by defining:
 	#undef USE_LINUX_SYSCALL
-	before any RTAI header inclusion, in any source file in which you
-	want to use the LXRT syscall mechanism.
+	after all of the RTAI headers inclusion in any source file in which 
+	you want to use the LXRT syscall mechanism.
 	RTAI will then operate in mixed mode selectively by using both 
 	its own and Linux syscall mechanisms.
 	
@@ -651,17 +619,6 @@ config RTAI_TBX
 	Typed mailboxes depend on semaphores.
 	The module will be called rtai_tbx.o.
 
-config RTAI_MQ
-	tristate "POSIX-like message queues"
-	depends on RTAI_SEM
-	default y if RTAI_SEM=y
-	default m if RTAI_SEM=m
-	help
-	RTAI pqueues implements the message queues section of Posix 1003.1d. 
-	They provide kernel-safe message queues. Message queues depend on 
-	semaphores.
-	The module will be called rtai_mq.o.
-
 config RTAI_TASKLETS
 	tristate "Tasklets and async signals"
 	default m
@@ -702,6 +659,31 @@ config RTAI_TASKLETS
 	the making of two different modules. At the moment the related
 	services from user space are seen as LXRT expansions using slots
 	1 and 2 respectively.
+
+config RTAI_MQ
+	tristate "POSIX-like message queues"
+	depends on RTAI_SEM
+	default y if RTAI_SEM=y
+	default m if RTAI_SEM=m
+	help
+	RTAI pqueues implements the message queues section of Posix 1003.1d. 
+	They provide kernel-safe message queues. Message queues depend on 
+	semaphores.
+	The module will be called rtai_mq.o.
+
+config RTAI_CLOCK_REALTIME
+	bool "Support for Posix CLOCK_REALTIME APIs"
+	default y
+	help
+	The purpose here is mainly to activate the CLOCK_REALTIME timing 
+	support in a few RTAI native services used behind POSIX APIs.
+	CLOCK_REALTIME is the default POSIX timing option so it should be
+	enabled for a full POSIX support but, if you are either not using 
+	POSIX or can work with it using just the CLOCK_MONOTONIC timing, 
+	it would be better to avoid enabling this option. It will save you 
+	a test on a long long. Not too much of an overhead indeed, but why 
+	paying for it if not needed?
+	It is defaulted to "yes" just to stay on the safe side.
 
 endmenu
 
@@ -749,13 +731,16 @@ config RTAI_IMMEDIATE_LINUX_SYSCALL
 	specific RTAI users extensions.
 	It is remarked that nothing is changed if hard/soft transitions 
 	are called controlled by an application task through 
-	rtai_make_hard_real_time/rtai_make_soft_real_time.
-	The default is 1.
+	rt_make_hard_real_time/rt_make_soft_real_time.
 
 config RTAI_MATH
-	bool "Math support"
+	bool "Mathfuns support in kernel"
 	depends on RTAI_FPU_SUPPORT
 	default y
+	help
+	This parameter allows buiding a module containing math support 
+	functions for kernel space. It might be useful to avoid fighting
+	for the use of libc within the kernel.
 
 config RTAI_MATH_C99
 	bool "C99 standard support"
@@ -767,8 +752,11 @@ config RTAI_MALLOC
 	default y
 	help
 	RTAI provides a real-time implementation of malloc(). This allows 
-	real-time tasks to allocate and to free memory safely whilst executing
-	in the real-time domain.
+	real-time tasks to allocate and free memory safely while executing
+	in the real-time domain. If it is not enabled kernel's kmalloc will
+	be used. So disabling this option is acceptable if you'll care 
+	to do any allocation while in Linux context only, i.e. at modules
+	initialisation.
 	The module will be called rtai_malloc.o.
 
 config RTAI_MALLOC_VMALLOC
@@ -782,7 +770,7 @@ config RTAI_MALLOC_VMALLOC
 	- it is simpler to share allocated buffers with user space;
 	- it doesn't have the size restrictions of kmalloc.
 	The reasons for using kmalloc:
-	- it is faster (not important since it as to be used in sof real time);
+	- it is faster (not important since it as to be used in soft real time);
 	- it exhibits contiguous buffer addressing needed for DMA controllers 
 	  which don't have scattering/gathering capability.
 	The default is using kmalloc()

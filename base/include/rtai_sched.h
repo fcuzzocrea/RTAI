@@ -48,7 +48,9 @@
 #define RT_SCHED_MBXSUSP    256
 #define RT_SCHED_SFTRDY     512
 
-#define RT_RWLINV     (9)  // keep this the highest
+#define RT_RWLINV     (11)  // keep this the highest
+#define RT_CHGPORTERR (10)
+#define RT_CHGPORTOK  (9)
 #define RT_NETIMOUT   (8)
 #define RT_DEADLOK    (7)
 #define RT_PERM       (6)
@@ -57,43 +59,49 @@
 #define RT_TIMOUT     (3)
 #define RT_UNBLKD     (2)
 #define RT_TMROVRN    (1)  // keep this the lowest, must be 1
-#define RTP_RWLINV    ((void *)RT_RWLINV)
-#define RTP_NETIMOUT  ((void *)RT_NETIMOUT)
-#define RTP_DEADLOK   ((void *)RT_DEADLOK)
-#define RTP_PERM      ((void *)RT_PERM)
-#define RTP_OBJINV    ((void *)RT_OBJINV)
-#define RTP_OBJREM    ((void *)RT_OBJREM)
-#define RTP_TIMOUT    ((void *)RT_TIMOUT)
-#define RTP_UNBLKD    ((void *)RT_UNBLKD)
-#define RTP_TMROVRN   ((void *)RT_TMROVRN)
-#define RTP_HIGERR    (RTP_RWLINV)
-#define RTP_LOWERR    (RTP_TMROVRN)
+#define RTP_RWLINV     ((void *)RT_RWLINV)
+#define RTP_CHGPORTERR ((void *)RT_CHGPORTERR)
+#define RTP_CHGPORTOK  ((void *)RT_CHGPORTOK)
+#define RTP_NETIMOUT   ((void *)RT_NETIMOUT)
+#define RTP_DEADLOK    ((void *)RT_DEADLOK)
+#define RTP_PERM       ((void *)RT_PERM)
+#define RTP_OBJINV     ((void *)RT_OBJINV)
+#define RTP_OBJREM     ((void *)RT_OBJREM)
+#define RTP_TIMOUT     ((void *)RT_TIMOUT)
+#define RTP_UNBLKD     ((void *)RT_UNBLKD)
+#define RTP_TMROVRN    ((void *)RT_TMROVRN)
+#define RTP_HIGERR     (RTP_RWLINV)
+#define RTP_LOWERR     (RTP_TMROVRN)
 #if CONFIG_RTAI_USE_NEWERR
-#define RTE_BASE      (0x3FFFFF00)
-#define RTE_RWLINV    (RTE_BASE + RT_RWLINV)
-#define RTE_NETIMOUT  (RTE_BASE + RT_NETIMOUT)
-#define RTE_DEADLOK   (RTE_BASE + RT_DEADLOK)
-#define RTE_PERM      (RTE_BASE + RT_PERM)
-#define RTE_OBJINV    (RTE_BASE + RT_OBJINV)
-#define RTE_OBJREM    (RTE_BASE + RT_OBJREM)
-#define RTE_TIMOUT    (RTE_BASE + RT_TIMOUT)
-#define RTE_UNBLKD    (RTE_BASE + RT_UNBLKD)
-#define RTE_TMROVRN   (RTE_BASE + RT_TMROVRN)
-#define RTE_HIGERR    (RTE_RWLINV)
-#define RTE_LOWERR    (RTE_TMROVRN)
+#define RTE_BASE       (0x3FFFFF00)
+#define RTE_RWLINV     (RTE_BASE + RT_RWLINV)
+#define RTE_CHGPORTERR (RTE_BASE + RT_CHGPORTERR)
+#define RTE_CHGPORTOK  (RTE_BASE + RT_CHGPORTOK)
+#define RTE_NETIMOUT   (RTE_BASE + RT_NETIMOUT)
+#define RTE_DEADLOK    (RTE_BASE + RT_DEADLOK)
+#define RTE_PERM       (RTE_BASE + RT_PERM)
+#define RTE_OBJINV     (RTE_BASE + RT_OBJINV)
+#define RTE_OBJREM     (RTE_BASE + RT_OBJREM)
+#define RTE_TIMOUT     (RTE_BASE + RT_TIMOUT)
+#define RTE_UNBLKD     (RTE_BASE + RT_UNBLKD)
+#define RTE_TMROVRN    (RTE_BASE + RT_TMROVRN)
+#define RTE_HIGERR     (RTE_RWLINV)
+#define RTE_LOWERR     (RTE_TMROVRN)
 #else
-#define RTE_BASE      (0xFFFB)
-#define RTE_RWLINV    (RTE_BASE + RT_RWLINV)
-#define RTE_NETIMOUT  (RTE_BASE + RT_NETIMOUT)
-#define RTE_DEADLOK   (RTE_BASE + RT_DEADLOK)
-#define RTE_PERM      (RTE_BASE + RT_PERM)
-#define RTE_OBJINV    (RTE_BASE + RT_OBJREM)
-#define RTE_OBJREM    (RTE_BASE + RT_OBJREM)
-#define RTE_TIMOUT    (RTE_BASE + RT_TIMOUT)
-#define RTE_UNBLKD    (RTE_BASE + RT_UNBLKD)
-#define RTE_TMROVRN   (RTE_BASE + RT_TMROVRN)
-#define RTE_HIGERR    (RTE_RWLINV)
-#define RTE_LOWERR    (RTE_TMROVRN)
+#define RTE_BASE       (0xFFFB)
+#define RTE_RWLINV     (RTE_BASE + RT_RWLINV)
+#define RTE_CHGPORTERR (RTE_BASE + RT_CHGPORTERR)
+#define RTE_CHGPORTOK  (RTE_BASE + RT_CHGPORTOK)
+#define RTE_NETIMOUT   (RTE_BASE + RT_NETIMOUT)
+#define RTE_DEADLOK    (RTE_BASE + RT_DEADLOK)
+#define RTE_PERM       (RTE_BASE + RT_PERM)
+#define RTE_OBJINV     (RTE_BASE + RT_OBJREM)
+#define RTE_OBJREM     (RTE_BASE + RT_OBJREM)
+#define RTE_TIMOUT     (RTE_BASE + RT_TIMOUT)
+#define RTE_UNBLKD     (RTE_BASE + RT_UNBLKD)
+#define RTE_TMROVRN    (RTE_BASE + RT_TMROVRN)
+#define RTE_HIGERR     (RTE_RWLINV)
+#define RTE_LOWERR     (RTE_TMROVRN)
 #endif
 
 #define RT_EINTR      (RTE_UNBLKD)
@@ -208,7 +216,7 @@ typedef struct rt_task_struct {
     volatile int is_hard;
 
     void *trap_handler_data;
-    struct rt_task_struct *linux_syscall_server; 
+    struct linux_syscalls_list *linux_syscall_server; 
 
     /* For use by watchdog. */
     int resync_frame;
@@ -336,6 +344,10 @@ RTAI_SYSCALL_MODE RTIME rt_get_time_ns_cpuid(unsigned cpuid);
 
 RTIME rt_get_cpu_time_ns(void);
 
+RTIME rt_get_real_time(void);
+
+RTIME rt_get_real_time_ns(void);
+
 int rt_get_prio(struct rt_task_struct *task);
 
 int rt_get_inher_prio(struct rt_task_struct *task);
@@ -363,9 +375,9 @@ RTAI_SYSCALL_MODE int rt_task_suspend_timed(struct rt_task_struct *task, RTIME d
 
 RTAI_SYSCALL_MODE int rt_task_resume(struct rt_task_struct *task);
 
-RT_TASK *rt_exec_linux_syscall(RT_TASK *rt_current, RT_TASK *task, struct pt_regs *regs);
+RTAI_SYSCALL_MODE void rt_set_linux_syscall_mode(long sync_async, void (*callback_fun)(long, long));
 
-RTAI_SYSCALL_MODE RT_TASK *rt_receive_linux_syscall(RT_TASK *task, struct pt_regs *regs);
+void rt_exec_linux_syscall(RT_TASK *rt_current, struct linux_syscalls_list *syscalls, struct pt_regs *regs);
 
 RTAI_SYSCALL_MODE void rt_return_linux_syscall(RT_TASK *task, unsigned long retval);
 

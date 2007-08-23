@@ -16,19 +16,36 @@
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
  */
 
+
 #ifndef _RTAI_ASM_I386_SRQ_H
 #define _RTAI_ASM_I386_SRQ_H
 
+#ifndef __KERNEL__
+
+#include <sys/syscall.h>
+#include <unistd.h>
+
 #include <asm/rtai_vectors.h>
 
-#ifndef __KERNEL__
+#ifdef CONFIG_RTAI_LXRT_USE_LINUX_SYSCALL
+#define USE_LINUX_SYSCALL
+#else
+#undef USE_LINUX_SYSCALL
+#endif
+
+#define RTAI_SRQ_SYSCALL_NR  0x70000001
 
 static inline long long rtai_srq(int srq, unsigned long args)
 {
 	long long retval;
-	RTAI_DO_TRAP(RTAI_SYS_VECTOR, retval, srq, args);
+#ifdef USE_LINUX_SYSCALL
+        syscall(RTAI_SRQ_SYSCALL_NR, srq, args, &retval);
+#else
+        RTAI_DO_TRAP(RTAI_SYS_VECTOR, retval, srq, args);
+#endif
 	return retval;
 }
+
 
 static inline int rtai_open_srq(unsigned long label)
 {

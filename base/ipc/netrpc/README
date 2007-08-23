@@ -80,7 +80,7 @@ Before doing anything remotely a task working on remote services has to ask
 for a "port" at its remote peer. Such a port is obtained by a call of the type: 
 	myport = rt_request_soft_port(node); for a soft real time service 
 or
-	myport = rt_request_soft_port(node); for a hard real time service 
+	myport = rt_request_hard_port(node); for a hard real time service 
 and released by:
 	rt_release(node, myport);
 when the "port" is needed nomore. A task cannot ask for more then one "port",
@@ -90,8 +90,8 @@ related internally to a socket and port but its value as no reference
 whatsoever to either of them.
 
 Nonetheless a task can create and access more "port"s by using: 
-	anotherport = rt_request_soft_port(node, id);
-	anotherport = rt_request_hard_port(node, id);
+	anotherport = rt_request_soft_port_id(node, id);
+	anotherport = rt_request_hard_port_id(node, id);
 "id" being a unique unsigned long "id" the task must have agreed with any
 other local application. Releasing a "port" defined with a specific "id" 
 makes no difference with the simpler request above, i.e.:
@@ -110,11 +110,11 @@ be related to missing deadlines.
 
 In requesting a "port" there is also the possibility of providing a mailbox 
 to recover results of asyncrhounous calls. So you can use either:
-	myport = rt_request_soft_port(node, mbx);
-	myport = rt_request_hard_port(node, mbx);
+	myport = rt_request_soft_port_mbx(node, mbx);
+	myport = rt_request_hard_port_mbx(node, mbx);
 or:
-	myport = rt_request_soft_port(node, id, mbx);
-	myport = rt_request_hard_port(node, id, mbx);
+	myport = rt_request_soft_port_id_mbx(node, id, mbx);
+	myport = rt_request_hard_port_id_mbx(node, id, mbx);
 "mbx" being a pointer to a mailbox. When a new rpc is made and there is the
 result of any previous asynchronous call pending it will be sent to such a
 mailbox. A typical use of this possibility consists in providing a server
@@ -180,6 +180,21 @@ made. So "port"s request/release are not real time operations, they must be
 carried out before beginning any true real time work. Because of this assumption
 they are not time critical and are timed out softly, without too much a hurry.
 
+A function is provided to set up stub response timeout on each port. By default
+each calling is set not timeouted. Setting timeout on port is obtained by
+calling:
+	rt_set_netrpc_timeout(port, timeout);
+Each task using this port after calling this function waits stub's response
+for "timeout" period and then return RTE_NETIMOUT error code.
+If you want removing timeout on "port" simple call:
+	rt_set_netrpc_timeout(port, 0);
+
+If for some reason on remote nodes arrive some request on the wrong port a new
+port is dinamically assigned and an error RTE_CHGPORTOK is returned. The 
+developer must check integrity on remote node, when the error is found. If in
+this situation a new dinamically assigned port is not available RTE_CHGPORTERR
+error is returned.
+
 A further remark must be made in relation to intertask receive functions.
 If you want to receive from any task there is no need to use RT_receive(x),
 rt_receive(x) will receive also from remote tasks. If you want a specific
@@ -217,37 +232,41 @@ to be bad if any of its dotted field contains a value greater than 0xFF.
 
 The netrpc driver module can be made to know its local node by being insmoded 
 either with the parameter <ThisNode="xxx.xxx.xxx.xxx"> or by a call to: 
-	rt_set_this_node(const char *ddn, unsigned long node);
+	rt_set_this_node(const char *ddn, unsigned long node, int hard);
 made by the application module before using any netrpc service. In the above 
 call "ddn" is the dotted decimal notation string and node the corresponding 
 "node". A call with a NULL "ddn" means that "node" contains a valid value while
 a non NULL "ddn" implies that the local node is obtained from converting the 
 related string, "node" being discarded.
+In case of RTnet is enabled rt_set_this_node must be called twice. One for each
+mode, hard and soft, to set up corresponding IP address. The other way doing
+that is insmoding netrpc with <ThisHardNode="xxx.xxx.xxx.xxx"
+ThisSoftNode="xxx.xxx.xxx.xxx"> parameter.
 
-"Netrpc" needs a network support and such a support can come either from Linux
-or from RTNet (http://www.rts.uni-hannover.de/rtnet/). Clearly only RTNet can
-provide true real time communications.
-As already hinted "Netrpc" can serve soft and hard ports alike, the difference 
-being related to the use of a soft real time stub task, for a soft port, while 
-a hard real time stub is used for hard ports. In the soft case "netrpc" 
-emulates RTNet (http://www.rts.uni-hannover.de/rtnet/) internally using Linux 
-Ethernet support, so it does not supply a real time networking. To use NETRPC 
-communications in true hard real time you must install the real RTNet services 
-and inform "netrpc.c" that it is available, by setting the related compilation 
-macro found in "netrpc.c", i.e. HARD_RTNET, to 1.
-In the case RTNet is available it is possible to either substitute "netrpc.c" 
-soft support or use both, by setting SOFT_RTNET to either 1 or 0.
-When there is just one support in place netrpc.c automatically sets network 
+"Netrpc" basically uses Linux ethernet support. In this case communication are
+not RealTime. Installing RTNet (http://www.rts.uni-hannover.de/rtnet/) enable
+Netrpc providing true real time communications.
+As already hinted "Netrpc" can serve soft and hard ports alike, the difference
+being related to the use of a soft real time stub task, for a soft port, while
+a hard real time stub is used for hard ports. In the soft case "netrpc"
+emulates RTNet internally using Linux Ethernet support, so it does not supply
+a real time networking. To use NETRPC communications in true hard real time
+you must install the real RTNet services and inform "netrpc.c" that it is
+available, by setting the related option in RTAI Menuconfig.
+When both support are enabled calling all function must be done using soft node
+IP, hard IP is internally menaged, for this purpose is necessary to set them up 
+insmoding netrpc or using function as explained above.
+When there is only soft support in place netrpc.c automatically sets network
 calls appropriately. When both are used it is under user responsability to
 specifically ask for the preferred service. The choice comes through using 
 the port_request functions, already described above.
-It is important to notice that a soft port requests implies a remote soft stub 
+It is important to notice that a soft port requests implies a remote soft stub
 support, while a hard port request defaults to a hard stub. While it can make
 sense using real time networking in soft real time tasks the opposite is 
 likely mostly inappropriate. So "netrpc" forces the stubs to be soft when just
-Linux networking is available, coherently forcing them to hard when just RTNet 
-is being used. However there is no constraint imposed by NETRPC in the case 
-both supports are in place and the user can choose whatever s/he wants.
+Linux networking is available. 
+However there is no constraint imposed by NETRPC in the case both supports are 
+in place and the user can choose whatever s/he wants.
 Notice also that RTNet now imposes that hard communications be done from hard 
 real time tasks only. It is thus compulsory to adhere to this condition in
 developing your own applications.

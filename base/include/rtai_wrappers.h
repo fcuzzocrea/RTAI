@@ -30,6 +30,9 @@
 #define RTAI_MODULE_PARM(name, type) \
 	module_param(name, type, 0444)
 
+#if LINUX_VERSION_CODE < KERNEL_VERSION(2,6,18)
+#define IRQF_SHARED  SA_SHIRQ
+#endif
 
 #if LINUX_VERSION_CODE < KERNEL_VERSION(2,6,0)
 

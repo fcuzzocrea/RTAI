@@ -30,6 +30,9 @@
 #ifndef _RTAI_ASM_I386_VECTORS_H
 #define _RTAI_ASM_I386_VECTORS_H
 
+//#include <asm/ipipe.h>
+
+#include <rtai_hal_names.h>
 #include <rtai_config.h>
 
 #ifdef CONFIG_X86_LOCAL_APIC
@@ -39,11 +42,24 @@
 #define RTAI_APIC_HIGH_VECTOR  0xff
 #define RTAI_APIC_LOW_VECTOR   0xff
 #endif
+#define RTAI_SYS_VECTOR     0xF6
 
+#ifdef ipipe_apic_vector_irq // LINUX_VERSION_CODE > KERNEL_VERSION(2,6,19)
+#define RTAI_APIC_HIGH_IPI     ipipe_apic_vector_irq(RTAI_APIC_HIGH_VECTOR)
+#define RTAI_APIC_LOW_IPI      ipipe_apic_vector_irq(RTAI_APIC_LOW_VECTOR)
+#define RTAI_SYS_IRQ           ipipe_apic_vector_irq(RTAI_SYS_VECTOR)
+#define LOCAL_TIMER_IPI        ipipe_apic_vector_irq(LOCAL_TIMER_VECTOR)
+#else
 #define RTAI_APIC_HIGH_IPI     (RTAI_APIC_HIGH_VECTOR - FIRST_EXTERNAL_VECTOR)
 #define RTAI_APIC_LOW_IPI      (RTAI_APIC_LOW_VECTOR - FIRST_EXTERNAL_VECTOR)
+#define RTAI_SYS_IRQ           (RTAI_SYS_VECTOR - FIRST_EXTERNAL_VECTOR)
+#define LOCAL_TIMER_IPI        (LOCAL_TIMER_VECTOR - FIRST_EXTERNAL_VECTOR)
+#endif
 
-#define RTAI_SYS_VECTOR        0xf6
+#include <linux/sched.h>
+#if RTAI_APIC_HIGH_VECTOR == RTAI_SYS_VECTOR || RTAI_APIC_LOW_VECTOR == RTAI_SYS_VECTOR
+#error *** RTAI_SYS_VECTOR CONFLICTS WITH APIC VECTORS USED BY RTAI ***
+#endif
 
 #define __rtai_stringize0(_s_) #_s_
 #define __rtai_stringize(_s_)  __rtai_stringize0(_s_)

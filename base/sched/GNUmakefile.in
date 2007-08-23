@@ -81,7 +81,7 @@ RECURSIVE_TARGETS = all-recursive check-recursive dvi-recursive \
 	uninstall-recursive
 ETAGS = etags
 CTAGS = ctags
-DIST_SUBDIRS = liblxrt
+DIST_SUBDIRS = $(SUBDIRS)
 DISTFILES = $(DIST_COMMON) $(DIST_SOURCES) $(TEXINFOS) $(EXTRA_DIST)
 ACLOCAL = @ACLOCAL@
 AMDEP_FALSE = @AMDEP_FALSE@
@@ -167,6 +167,8 @@ CONFIG_RTAI_MSG_BUILTIN_FALSE = @CONFIG_RTAI_MSG_BUILTIN_FALSE@
 CONFIG_RTAI_MSG_BUILTIN_TRUE = @CONFIG_RTAI_MSG_BUILTIN_TRUE@
 CONFIG_RTAI_MSG_FALSE = @CONFIG_RTAI_MSG_FALSE@
 CONFIG_RTAI_MSG_TRUE = @CONFIG_RTAI_MSG_TRUE@
+CONFIG_RTAI_MVM_FALSE = @CONFIG_RTAI_MVM_FALSE@
+CONFIG_RTAI_MVM_TRUE = @CONFIG_RTAI_MVM_TRUE@
 CONFIG_RTAI_NETRPC_BUILTIN_FALSE = @CONFIG_RTAI_NETRPC_BUILTIN_FALSE@
 CONFIG_RTAI_NETRPC_BUILTIN_TRUE = @CONFIG_RTAI_NETRPC_BUILTIN_TRUE@
 CONFIG_RTAI_NETRPC_FALSE = @CONFIG_RTAI_NETRPC_FALSE@
@@ -175,9 +177,6 @@ CONFIG_RTAI_OLD_FASHIONED_BUILD_FALSE = @CONFIG_RTAI_OLD_FASHIONED_BUILD_FALSE@
 CONFIG_RTAI_OLD_FASHIONED_BUILD_TRUE = @CONFIG_RTAI_OLD_FASHIONED_BUILD_TRUE@
 CONFIG_RTAI_RTDM_FALSE = @CONFIG_RTAI_RTDM_FALSE@
 CONFIG_RTAI_RTDM_TRUE = @CONFIG_RTAI_RTDM_TRUE@
-CONFIG_RTAI_SCHED_LXRT = @CONFIG_RTAI_SCHED_LXRT@
-CONFIG_RTAI_SCHED_LXRT_FALSE = @CONFIG_RTAI_SCHED_LXRT_FALSE@
-CONFIG_RTAI_SCHED_LXRT_TRUE = @CONFIG_RTAI_SCHED_LXRT_TRUE@
 CONFIG_RTAI_SEM_BUILTIN_FALSE = @CONFIG_RTAI_SEM_BUILTIN_FALSE@
 CONFIG_RTAI_SEM_BUILTIN_TRUE = @CONFIG_RTAI_SEM_BUILTIN_TRUE@
 CONFIG_RTAI_SEM_FALSE = @CONFIG_RTAI_SEM_FALSE@
@@ -208,6 +207,8 @@ CONFIG_SMP_FALSE = @CONFIG_SMP_FALSE@
 CONFIG_SMP_TRUE = @CONFIG_SMP_TRUE@
 CONFIG_UCLINUX_FALSE = @CONFIG_UCLINUX_FALSE@
 CONFIG_UCLINUX_TRUE = @CONFIG_UCLINUX_TRUE@
+CONFIG_X86_64_FALSE = @CONFIG_X86_64_FALSE@
+CONFIG_X86_64_TRUE = @CONFIG_X86_64_TRUE@
 CONFIG_X86_FALSE = @CONFIG_X86_FALSE@
 CONFIG_X86_LOCAL_APIC_FALSE = @CONFIG_X86_LOCAL_APIC_FALSE@
 CONFIG_X86_LOCAL_APIC_TRUE = @CONFIG_X86_LOCAL_APIC_TRUE@
@@ -293,10 +294,12 @@ RTAI_LINUX_DIR = @RTAI_LINUX_DIR@
 RTAI_LINUX_VERSION = @RTAI_LINUX_VERSION@
 RTAI_LXRT_LDADD = @RTAI_LXRT_LDADD@
 RTAI_MAYBE_DOCDIR = @RTAI_MAYBE_DOCDIR@
+RTAI_MAYBE_SIMDIR = @RTAI_MAYBE_SIMDIR@
 RTAI_MODULE_DIR = @RTAI_MODULE_DIR@
 RTAI_MODULE_EXT = @RTAI_MODULE_EXT@
 RTAI_POSIX_WRAP = @RTAI_POSIX_WRAP@
 RTAI_TARGET_ARCH = @RTAI_TARGET_ARCH@
+RTAI_TARGET_ARCH_OPTS = @RTAI_TARGET_ARCH_OPTS@
 RTAI_TARGET_SUBARCH = @RTAI_TARGET_SUBARCH@
 RTAI_USER_APP_CFLAGS = @RTAI_USER_APP_CFLAGS@
 RTAI_USER_CFLAGS = @RTAI_USER_CFLAGS@
@@ -354,18 +357,30 @@ program_transform_name = @program_transform_name@
 psdir = @psdir@
 sbindir = @sbindir@
 sharedstatedir = @sharedstatedir@
+subdirs = @subdirs@
 sysconfdir = @sysconfdir@
 target_alias = @target_alias@
 moduledir = @RTAI_MODULE_DIR@
 modext = @RTAI_MODULE_EXT@
 schedulers = rtai_sched$(modext) rtai_lxrt$(modext)
+# $(main_scheduler) is the scheduler links are created from;
+# it is rtai_sched for all archs, except x86_64, where rtai_lxrt is used
+# $(legacy_schedulers) are all the schedulers that are generated
+# as links of $(main_scheduler); for x86_64, they are all but rtai_lxrt
+#if CONFIG_X86_64
+#main_scheduler = rtai_lxrt
+#legacy_schedulers = up mup smp ksched sched
+#else # CONFIG_X86_64
+main_scheduler = rtai_sched
 legacy_schedulers = up mup smp ksched
+#endif # CONFIG_X86_64
 noinst_LIBRARIES = $(am__append_1)
 builtins = @RTAI_BUILTIN_MODLIST@
 @CONFIG_KBUILD_TRUE@builtins_srclist = $(wildcard $(foreach mod,$(builtins),$(patsubst %,$(top_srcdir)/base/%/*.[chS],$(mod))))
 @CONFIG_KBUILD_FALSE@builtins_objlist = $(foreach mod,$(builtins),$(patsubst %,../%/rtai_$(notdir $(mod)).o,$(mod)))
 
 # SCHED
+#if !CONFIG_X86_64
 libsched_sched_a_SOURCES = sched.c sys.c api.c
 rtai_sched_extradef = -DUSE_RTAI_TASKS=1
 @CONFIG_KBUILD_FALSE@libsched_sched_a_AR = $(CROSS_COMPILE)ar cru
@@ -375,6 +390,7 @@ rtai_sched_extradef = -DUSE_RTAI_TASKS=1
 @CONFIG_KBUILD_FALSE@	-I$(top_srcdir)/base/include \
 @CONFIG_KBUILD_FALSE@	-I../include
 
+#endif # !CONFIG_X86_64
 
 # LXRT
 libsched_lxrt_a_SOURCES = sched.c sys.c api.c
@@ -384,8 +400,9 @@ rtai_lxrt_extradef = -DUSE_RTAI_TASKS=0 # -D__RTAI_LXRT__
 @CONFIG_KBUILD_FALSE@	-DUSE_RTAI_TASKS=0 \
 @CONFIG_KBUILD_FALSE@	-I$(top_srcdir)/base/include -I../include \
 @CONFIG_KBUILD_FALSE@	$(rtai_lxrt_extradef)
-@CONFIG_RTAI_SCHED_LXRT_TRUE@OPTDIRS = liblxrt
-SUBDIRS = $(OPTDIRS)
+
+# liblxrt is always built
+SUBDIRS = liblxrt
 EXTRA_DIST = Makefile.kbuild sched.piped sched.immed
 all: all-recursive
 
@@ -860,7 +877,7 @@ all-local: $(schedulers)
 @CONFIG_RTAI_OLD_FASHIONED_BUILD_TRUE@	$(INSTALL_DATA) $^ $(top_srcdir)/modules
 @CONFIG_RTAI_OLD_FASHIONED_BUILD_TRUE@	for s in $(legacy_schedulers) ; do \
 @CONFIG_RTAI_OLD_FASHIONED_BUILD_TRUE@		rm -f $(top_srcdir)/modules/rtai_$$s$(modext) ; \
-@CONFIG_RTAI_OLD_FASHIONED_BUILD_TRUE@		$(LN_S) rtai_sched$(modext) $(top_srcdir)/modules/rtai_$$s$(modext) ; \
+@CONFIG_RTAI_OLD_FASHIONED_BUILD_TRUE@		$(LN_S) $(main_scheduler)$(modext) $(top_srcdir)/modules/rtai_$$s$(modext) ; \
 @CONFIG_RTAI_OLD_FASHIONED_BUILD_TRUE@	done
 
 install-exec-local: $(schedulers)
@@ -868,7 +885,7 @@ install-exec-local: $(schedulers)
 	$(INSTALL_DATA) $(schedulers) $(DESTDIR)$(moduledir)
 	for s in $(legacy_schedulers) ; do \
 		rm -f $(DESTDIR)$(moduledir)/rtai_$$s$(modext) ; \
-		$(LN_S) rtai_sched$(modext) $(DESTDIR)$(moduledir)/rtai_$$s$(modext) ; \
+		$(LN_S) $(main_scheduler)$(modext) $(DESTDIR)$(moduledir)/rtai_$$s$(modext) ; \
 	done
 # Tell versions [3.59,3.63) of GNU make to not export all variables.
 # Otherwise a system limit (for SysV at least) may be exceeded.

@@ -639,23 +639,14 @@ else
 fi
 AC_MSG_RESULT($CONFIG_RTAI_RTDM_FD_MAX)
 
-AC_MSG_CHECKING(for shared edge triggered interrupts in RTDM)
-AC_ARG_ENABLE(rtdm-edge-shirq,
-	      [ --enable-rtdm-edge-shirq	Enable shared edge triggered interrupts in RTDM],
+AC_MSG_CHECKING(for shared interrupts in RTDM)
+AC_ARG_ENABLE(rtdm-shirq,
+	      [ --enable-rtdm-shirq	Enable shared interrupts in RTDM],
 	[case "$enableval" in
-	y | yes) CONFIG_RTAI_RTDM_EDGE_SHIRQ=y ;;
-	*) unset CONFIG_RTAI_RTDM_EDGE_SHIRQ ;;
+	y | yes) CONFIG_RTAI_RTDM_SHIRQ=y ;;
+	*) unset CONFIG_RTAI_RTDM_SHIRQ ;;
 	esac])
-AC_MSG_RESULT(${CONFIG_RTAI_RTDM_EDGE_SHIRQ:-no})
-
-AC_MSG_CHECKING(for shared level triggered interrupts in RTDM)
-AC_ARG_ENABLE(rtdm-level-shirq,
-	      [ --enable-rtdm-level-shirq	Enable shared level triggered interrupts in RTDM],
-	[case "$enableval" in
-	y | yes) CONFIG_RTAI_RTDM_LEVEL_SHIRQ=y ;;
-	*) unset CONFIG_RTAI_RTDM_LEVEL_SHIRQ ;;
-	esac])
-AC_MSG_RESULT(${CONFIG_RTAI_RTDM_LEVEL_SHIRQ:-no})
+AC_MSG_RESULT(${CONFIG_RTAI_RTDM_SHIRQ:-no})
 
 AC_MSG_CHECKING(for RTDM debug)
 AC_ARG_ENABLE(debug-rtdm,
@@ -743,6 +734,35 @@ AC_ARG_ENABLE(16550a,
 	*) unset CONFIG_RTAI_DRIVERS_16550A;;
 	esac])
 AC_MSG_RESULT(${CONFIG_RTAI_DRIVERS_16550A:-no})
+
+dnl Set default inline mode for LXRT as specified from
+dnl Kconfig. Defaults to conditional inlining.
+
+if test x$CONFIG_RTAI_16550A_PIO = xy; then
+   CONFIG_RTAI_16550A_HAM=1
+elif test x$CONFIG_RTAI_16550A_MMIO = xy; then
+   CONFIG_RTAI_16550A_HAM=2
+elif test x$CONFIG_RTAI_16550A_ANY = xy; then
+   CONFIG_RTAI_16550A_HAM=3
+else
+   AC_MSG_ERROR([Invalid real-time serial driver hardware access mode])
+fi
+
+AC_MSG_CHECKING(for real-time serial driver hardware access mode)
+AC_ARG_WITH(16550a-ham,
+	[ --with-16550a-ham	Set real-time serial driver hardware access mode (pio|mmio|any)],
+	[case "$withval" in
+	pio) CONFIG_RTAI_16550A_HAM=1 ;;
+	mmio) CONFIG_RTAI_16550A_HAM=2 ;;
+	any) CONFIG_RTAI_16550A_HAM=3 ;;
+	*) AC_MSG_ERROR([Bad argument to option: --with-16550a-ham=<pio|mmio|any>]) ;;
+	esac])
+case "$CONFIG_RTAI_" in
+  1) ham_type=pio ;;
+  2) ham_type=mmio ;;
+  3) ham_type=any ;;
+esac
+AC_MSG_RESULT([$ham_type])
 
 AC_MSG_CHECKING(for testsuite)
 AC_ARG_ENABLE(testsuite,
@@ -1182,6 +1202,11 @@ test \! x$CONFIG_RTAI_LEDS = x && AC_DEFINE(CONFIG_RTAI_LEDS,1,[Kconfig])
 test \! x$CONFIG_RTAI_LXRT_USE_LINUX_SYSCALL = x && AC_DEFINE(CONFIG_RTAI_LXRT_USE_LINUX_SYSCALL,1,[Kconfig])
 test \! x$CONFIG_RTAI_DRIVERS_SERIAL = x && AC_DEFINE(CONFIG_RTAI_DRIVERS_SERIAL,1,[Kconfig])
 test \! x$CONFIG_RTAI_DRIVERS_16550A = x && AC_DEFINE(CONFIG_RTAI_DRIVERS_16550A,1,[Kconfig])
+case $CONFIG_RTAI_16550A_HAM in
+	1) AC_DEFINE(CONFIG_RTAI_16550A_PIO,1,[Kconfig]) ;;
+	2) AC_DEFINE(CONFIG_RTAI_16550A_MMIO,1,[Kconfig]) ;;
+	3) AC_DEFINE(CONFIG_RTAI_16550A_ANY,1,[Kconfig]) ;;
+esac
 test \! x$CONFIG_RTAI_RTDM = x && AC_DEFINE(CONFIG_RTAI_RTDM,1,[Kconfig])
 test \! x$CONFIG_RTAI_ALIGN_LINUX_PRIORITY = x && AC_DEFINE(CONFIG_RTAI_ALIGN_LINUX_PRIORITY,1,[Kconfig])
 
@@ -1207,8 +1232,7 @@ AC_DEFINE_UNQUOTED(CONFIG_RTAI_SCHED_8254_LATENCY,$CONFIG_RTAI_SCHED_8254_LATENC
 AC_DEFINE_UNQUOTED(CONFIG_RTAI_SCHED_APIC_LATENCY,$CONFIG_RTAI_SCHED_APIC_LATENCY,[Kconfig])
 AC_DEFINE_UNQUOTED(CONFIG_RTAI_SCHED_LXRT_NUMSLOTS,$CONFIG_RTAI_SCHED_LXRT_NUMSLOTS,[Kconfig])
 AC_DEFINE_UNQUOTED(CONFIG_RTAI_RTDM_FD_MAX,$CONFIG_RTAI_RTDM_FD_MAX,[Kconfig])
-test x$CONFIG_RTAI_RTDM_EDGE_SHIRQ = xy && AC_DEFINE(CONFIG_RTAI_RTDM_EDGE_SHIRQ,1,[Kconfig])
-test x$CONFIG_RTAI_RTDM_LEVEL_SHIRQ = xy && AC_DEFINE(CONFIG_RTAI_RTDM_LEVEL_SHIRQ,1,[Kconfig])
+test x$CONFIG_RTAI_RTDM_SHIRQ = xy && AC_DEFINE(CONFIG_RTAI_RTDM_SHIRQ,1,[Kconfig])
 test x$CONFIG_RTAI_DEBUG_RTDM = xy && AC_DEFINE(CONFIG_RTAI_DEBUG_RTDM,1,[Kconfig])
 AC_DEFINE_UNQUOTED(CONFIG_RTAI_CAL_FREQS_FACT,$CONFIG_RTAI_CAL_FREQS_FACT,[Kconfig])
 

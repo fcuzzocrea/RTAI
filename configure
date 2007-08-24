@@ -1669,8 +1669,7 @@ Optional Features:
  --enable-sched-apic-latency	Set APIC tuning latency
  --enable-sched-lxrt-numslots	Set maximum number of LXRT slots
  --enable-rtdm-fd-max        	Set maximum number of RTDM file descriptor slots
- --enable-rtdm-edge-shirq	Enable shared edge triggered interrupts in RTDM
- --enable-rtdm-level-shirq	Enable shared level triggered interrupts in RTDM
+ --enable-rtdm-shirq	Enable shared interrupts in RTDM
  --enable-debug-rtdm		Enable RTDM debug
  --enable-align-priority		Keep Linux task priority aligned to RTAI
  --enable-cplusplus	Build in-kernel C++ support
@@ -1712,6 +1711,7 @@ Optional Packages:
   --with-module-dir=<module-dir>      Installation directory for modules
   --with-linux-dir=<linux-dir>      RTAI-enabled Linux kernel tree
   --with-comedi              directory containing COMEDI
+ --with-16550a-ham	Set real-time serial driver hardware access mode (pio|mmio|any)
   --with-x                use the X Window System
   --with-efltk              directory containing EFLTK
 --with-dbx-root	specify the Docbook XML root (that
@@ -20729,31 +20729,18 @@ fi
 { echo "$as_me:$LINENO: result: $CONFIG_RTAI_RTDM_FD_MAX" >&5
 echo "${ECHO_T}$CONFIG_RTAI_RTDM_FD_MAX" >&6; }
 
-{ echo "$as_me:$LINENO: checking for shared edge triggered interrupts in RTDM" >&5
-echo $ECHO_N "checking for shared edge triggered interrupts in RTDM... $ECHO_C" >&6; }
-# Check whether --enable-rtdm-edge-shirq was given.
-if test "${enable_rtdm_edge_shirq+set}" = set; then
-  enableval=$enable_rtdm_edge_shirq; case "$enableval" in
-	y | yes) CONFIG_RTAI_RTDM_EDGE_SHIRQ=y ;;
-	*) unset CONFIG_RTAI_RTDM_EDGE_SHIRQ ;;
+{ echo "$as_me:$LINENO: checking for shared interrupts in RTDM" >&5
+echo $ECHO_N "checking for shared interrupts in RTDM... $ECHO_C" >&6; }
+# Check whether --enable-rtdm-shirq was given.
+if test "${enable_rtdm_shirq+set}" = set; then
+  enableval=$enable_rtdm_shirq; case "$enableval" in
+	y | yes) CONFIG_RTAI_RTDM_SHIRQ=y ;;
+	*) unset CONFIG_RTAI_RTDM_SHIRQ ;;
 	esac
 fi
 
-{ echo "$as_me:$LINENO: result: ${CONFIG_RTAI_RTDM_EDGE_SHIRQ:-no}" >&5
-echo "${ECHO_T}${CONFIG_RTAI_RTDM_EDGE_SHIRQ:-no}" >&6; }
-
-{ echo "$as_me:$LINENO: checking for shared level triggered interrupts in RTDM" >&5
-echo $ECHO_N "checking for shared level triggered interrupts in RTDM... $ECHO_C" >&6; }
-# Check whether --enable-rtdm-level-shirq was given.
-if test "${enable_rtdm_level_shirq+set}" = set; then
-  enableval=$enable_rtdm_level_shirq; case "$enableval" in
-	y | yes) CONFIG_RTAI_RTDM_LEVEL_SHIRQ=y ;;
-	*) unset CONFIG_RTAI_RTDM_LEVEL_SHIRQ ;;
-	esac
-fi
-
-{ echo "$as_me:$LINENO: result: ${CONFIG_RTAI_RTDM_LEVEL_SHIRQ:-no}" >&5
-echo "${ECHO_T}${CONFIG_RTAI_RTDM_LEVEL_SHIRQ:-no}" >&6; }
+{ echo "$as_me:$LINENO: result: ${CONFIG_RTAI_RTDM_SHIRQ:-no}" >&5
+echo "${ECHO_T}${CONFIG_RTAI_RTDM_SHIRQ:-no}" >&6; }
 
 { echo "$as_me:$LINENO: checking for RTDM debug" >&5
 echo $ECHO_N "checking for RTDM debug... $ECHO_C" >&6; }
@@ -21024,6 +21011,42 @@ fi
 
 { echo "$as_me:$LINENO: result: ${CONFIG_RTAI_DRIVERS_16550A:-no}" >&5
 echo "${ECHO_T}${CONFIG_RTAI_DRIVERS_16550A:-no}" >&6; }
+
+
+if test x$CONFIG_RTAI_16550A_PIO = xy; then
+   CONFIG_RTAI_16550A_HAM=1
+elif test x$CONFIG_RTAI_16550A_MMIO = xy; then
+   CONFIG_RTAI_16550A_HAM=2
+elif test x$CONFIG_RTAI_16550A_ANY = xy; then
+   CONFIG_RTAI_16550A_HAM=3
+else
+   { { echo "$as_me:$LINENO: error: Invalid real-time serial driver hardware access mode" >&5
+echo "$as_me: error: Invalid real-time serial driver hardware access mode" >&2;}
+   { (exit 1); exit 1; }; }
+fi
+
+{ echo "$as_me:$LINENO: checking for real-time serial driver hardware access mode" >&5
+echo $ECHO_N "checking for real-time serial driver hardware access mode... $ECHO_C" >&6; }
+
+# Check whether --with-16550a-ham was given.
+if test "${with_16550a_ham+set}" = set; then
+  withval=$with_16550a_ham; case "$withval" in
+	pio) CONFIG_RTAI_16550A_HAM=1 ;;
+	mmio) CONFIG_RTAI_16550A_HAM=2 ;;
+	any) CONFIG_RTAI_16550A_HAM=3 ;;
+	*) { { echo "$as_me:$LINENO: error: Bad argument to option: --with-16550a-ham=<pio|mmio|any>" >&5
+echo "$as_me: error: Bad argument to option: --with-16550a-ham=<pio|mmio|any>" >&2;}
+   { (exit 1); exit 1; }; } ;;
+	esac
+fi
+
+case "$CONFIG_RTAI_" in
+  1) ham_type=pio ;;
+  2) ham_type=mmio ;;
+  3) ham_type=any ;;
+esac
+{ echo "$as_me:$LINENO: result: $ham_type" >&5
+echo "${ECHO_T}$ham_type" >&6; }
 
 { echo "$as_me:$LINENO: checking for testsuite" >&5
 echo $ECHO_N "checking for testsuite... $ECHO_C" >&6; }
@@ -24295,6 +24318,23 @@ cat >>confdefs.h <<\_ACEOF
 #define CONFIG_RTAI_DRIVERS_16550A 1
 _ACEOF
 
+case $CONFIG_RTAI_16550A_HAM in
+	1)
+cat >>confdefs.h <<\_ACEOF
+#define CONFIG_RTAI_16550A_PIO 1
+_ACEOF
+ ;;
+	2)
+cat >>confdefs.h <<\_ACEOF
+#define CONFIG_RTAI_16550A_MMIO 1
+_ACEOF
+ ;;
+	3)
+cat >>confdefs.h <<\_ACEOF
+#define CONFIG_RTAI_16550A_ANY 1
+_ACEOF
+ ;;
+esac
 test \! x$CONFIG_RTAI_RTDM = x &&
 cat >>confdefs.h <<\_ACEOF
 #define CONFIG_RTAI_RTDM 1
@@ -24412,14 +24452,9 @@ cat >>confdefs.h <<_ACEOF
 #define CONFIG_RTAI_RTDM_FD_MAX $CONFIG_RTAI_RTDM_FD_MAX
 _ACEOF
 
-test x$CONFIG_RTAI_RTDM_EDGE_SHIRQ = xy &&
+test x$CONFIG_RTAI_RTDM_SHIRQ = xy &&
 cat >>confdefs.h <<\_ACEOF
-#define CONFIG_RTAI_RTDM_EDGE_SHIRQ 1
-_ACEOF
-
-test x$CONFIG_RTAI_RTDM_LEVEL_SHIRQ = xy &&
-cat >>confdefs.h <<\_ACEOF
-#define CONFIG_RTAI_RTDM_LEVEL_SHIRQ 1
+#define CONFIG_RTAI_RTDM_SHIRQ 1
 _ACEOF
 
 test x$CONFIG_RTAI_DEBUG_RTDM = xy &&

@@ -898,21 +898,13 @@ config RTAI_RTDM_FD_MAX
 	help
 	The maximum number of file descriptors in RTDM.
 
-config RTAI_RTDM_EDGE_SHIRQ
+config RTAI_RTDM_SHIRQ
 	depends on RTAI_RTDM
-        bool "Shared edge triggered interrupts"
+        bool "Shared interrupts"
         default n
         help
         Make it possible for RTDM own interrupt handlers to manage shared
-	edge triggered interrupts.
-
-config RTAI_RTDM_LEVEL_SHIRQ
-	depends on RTAI_RTDM
-        bool "Shared level triggered interrupts"
-        default n
-        help
-        Make it possible for RTDM own interrupt handlers to manage shared
-	level triggered interrupts.
+	interrupts.
 
 config RTAI_DEBUG_RTDM
 	depends on RTAI_RTDM
@@ -938,6 +930,35 @@ config RTAI_DRIVERS_16550A
 	help
 	An alternate RTAI real-time serial driver based on RTDM.
 	The module will be called rtai_16550A.o.
+
+choice
+	prompt "Hardware access mode"
+	depends on RTAI_DRIVERS_16550A
+	default RTAI_16550A_PIO
+	help
+	Allows choosing among:
+
+	- Port based:    driver uses I/O ports, as defined by module vector 
+                         parameter "io".
+
+	- Memory mapped: driver uses I/O ports, as defined by module vector 
+                         parameter "mem".
+
+	- Whatever:      both "io" and "mem" module parameters can be used,
+                         but with only one mode for each device
+                         (e.g.: "io=0x2f8 mem=0,0xe0000000", for device 1
+                         and 2 respectively).
+
+config RTAI_16550A_PIO
+	bool "Port based"
+
+config RTAI_16550A_MMIO
+	bool "Memory mapped"
+
+config RTAI_16550A_ANY
+	bool "Whatever port and memory mix"
+
+endchoice
 
 endmenu
 

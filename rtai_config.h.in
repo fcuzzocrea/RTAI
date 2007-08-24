@@ -7,6 +7,15 @@
 #undef CONFIG_RTAI
 
 /* Kconfig */
+#undef CONFIG_RTAI_16550A_ANY
+
+/* Kconfig */
+#undef CONFIG_RTAI_16550A_MMIO
+
+/* Kconfig */
+#undef CONFIG_RTAI_16550A_PIO
+
+/* Kconfig */
 #undef CONFIG_RTAI_ADEOS
 
 /* Kconfig */
@@ -199,13 +208,10 @@
 #undef CONFIG_RTAI_RTDM
 
 /* Kconfig */
-#undef CONFIG_RTAI_RTDM_EDGE_SHIRQ
-
-/* Kconfig */
 #undef CONFIG_RTAI_RTDM_FD_MAX
 
 /* Kconfig */
-#undef CONFIG_RTAI_RTDM_LEVEL_SHIRQ
+#undef CONFIG_RTAI_RTDM_SHIRQ
 
 /* Kconfig */
 #undef CONFIG_RTAI_SCHED_8254_LATENCY

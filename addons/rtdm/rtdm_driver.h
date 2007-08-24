@@ -1105,7 +1105,7 @@ static inline void rtdm_free(void *ptr)
 	xnfree(ptr);
 }
 
-#if 1 // #ifdef CONFIG_XENO_OPT_PERVASIVE
+#ifdef CONFIG_RTAI_OPT_PERVASIVE
 int rtdm_mmap_to_user(rtdm_user_info_t *user_info,
 		      void *src_addr, size_t len,
 		      int prot, void **pptr,
@@ -1168,7 +1168,7 @@ static inline int rtdm_strncpy_from_user(rtdm_user_info_t *user_info,
 		return -EFAULT;
 	return __xn_strncpy_from_user(user_info, dst, src, count);
 }
-#else /* !CONFIG_XENO_OPT_PERVASIVE */
+#else /* !CONFIG_RTAI_OPT_PERVASIVE */
 /* Define void user<->kernel services that simply fail */
 #define rtdm_mmap_to_user(...)		({ -ENOSYS; })
 #define rtdm_munmap(...)		({ -ENOSYS; })
@@ -1179,7 +1179,7 @@ static inline int rtdm_strncpy_from_user(rtdm_user_info_t *user_info,
 #define rtdm_copy_to_user(...)		({ -ENOSYS; })
 #define rtdm_safe_copy_to_user(...)	({ -ENOSYS; })
 #define rtdm_strncpy_from_user(...)	({ -ENOSYS; })
-#endif /* CONFIG_XENO_OPT_PERVASIVE */
+#endif /* CONFIG_RTAI_OPT_PERVASIVE */
 
 static inline int rtdm_in_rt_context(void)
 {

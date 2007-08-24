@@ -138,105 +138,96 @@ typedef struct rt_queue {
 } QUEUE;
 
 struct mcb_t {
-    void *sbuf;
-    int sbytes;
-    void *rbuf;
-    int rbytes;
+	void *sbuf;
+	int sbytes;
+	void *rbuf;
+	int rbytes;
 };
 
+/*Exit handler functions are called like C++ destructors in rt_task_delete().*/
 typedef struct rt_ExitHandler {
-    /* Exit handler functions are called like C++ destructors in
-       rt_task_delete(). */
-    struct rt_ExitHandler *nxt;
-    void (*fun) (void *arg1, int arg2);
-    void *arg1;
-    int   arg2;
+	struct rt_ExitHandler *nxt;
+	void (*fun) (void *arg1, int arg2);
+	void *arg1;
+	int   arg2;
 } XHDL;
 
 struct rt_heap_t { void *heap, *kadr, *uadr; };
 
 typedef struct rt_task_struct {
+	long *stack __attribute__ ((__aligned__ (L1_CACHE_BYTES)));
+	int uses_fpu;
+	int magic;
+	volatile int state, running;
+	unsigned long runnable_on_cpus;
+	long *stack_bottom;
+	volatile int priority;
+	int base_priority;
+	int policy;
+	int sched_lock_priority;
+	struct rt_task_struct *prio_passed_to;
+	RTIME period;
+	RTIME resume_time;
+	RTIME periodic_resume_time;
+	RTIME yield_time;
+	int rr_quantum, rr_remaining;
+	int suspdepth;
+	struct rt_queue queue;
+	int owndres;
+	struct rt_queue *blocked_on;
+	struct rt_queue msg_queue;
+	int tid;  /* trace ID */
+	unsigned long msg;
+	struct rt_queue ret_queue;
+	void (*signal)(void);
+	FPU_ENV fpu_reg __attribute__ ((__aligned__ (L1_CACHE_BYTES)));
+	struct rt_task_struct *prev, *next;
+	struct rt_task_struct *tprev, *tnext;
+	struct rt_task_struct *rprev, *rnext;
 
-    long *stack __attribute__ ((__aligned__ (L1_CACHE_BYTES)));
-    int uses_fpu;
-    int magic;
-    volatile int state, running;
-    unsigned long runnable_on_cpus;
-    long *stack_bottom;
-    volatile int priority;
-    int base_priority;
-    int policy;
-    int sched_lock_priority;
-    struct rt_task_struct *prio_passed_to;
-    RTIME period;
-    RTIME resume_time;
-    RTIME periodic_resume_time;
-    RTIME yield_time;
-    int rr_quantum;
-    int rr_remaining;
-    int suspdepth;
-    struct rt_queue queue;
-    int owndres;
-    struct rt_queue *blocked_on;
-    struct rt_queue msg_queue;
-    int tid;	/* trace ID */
-    unsigned long msg;
-    struct rt_queue ret_queue;
-    void (*signal)(void);
-    FPU_ENV fpu_reg __attribute__ ((__aligned__ (L1_CACHE_BYTES)));
-    struct rt_task_struct *prev;
-    struct rt_task_struct *next;
-    struct rt_task_struct *tprev;
-    struct rt_task_struct *tnext;
-    struct rt_task_struct *rprev;
-    struct rt_task_struct *rnext;
+	/* For calls from LINUX. */
+	long *fun_args;
+	long *bstack;
+	struct task_struct *lnxtsk;
+	long long retval;
+	char *msg_buf[2];
+	long max_msg_size[2];
+	char task_name[16];
+	void *system_data_ptr;
+	struct rt_task_struct *nextp, *prevp;
 
-    /* Appended for calls from LINUX. */
-    long *fun_args;
-    long *bstack;
-    struct task_struct *lnxtsk;
-    long long retval;
-    char *msg_buf[2];
-    long max_msg_size[2];
-    char task_name[16];
-    void *system_data_ptr;
-    struct rt_task_struct *nextp;
-    struct rt_task_struct *prevp;
+	RT_TRAP_HANDLER task_trap_handler[HAL_NR_FAULTS];
 
-    /* Added to support user specific trap handlers. */
-    RT_TRAP_HANDLER task_trap_handler[HAL_NR_FAULTS];
+	long unblocked;
+	void *rt_signals;
+	volatile unsigned long pstate;
+	unsigned long usp_flags;
+	unsigned long usp_flags_mask;
+	unsigned long force_soft;
+	volatile int is_hard;
 
-    /* Added from rtai-22. */
-    long unblocked;
-    void *rt_signals;
-    volatile unsigned long pstate;
-    unsigned long usp_flags;
-    unsigned long usp_flags_mask;
-    unsigned long force_soft;
-    volatile int is_hard;
+	void *trap_handler_data;
+	struct linux_syscalls_list *linux_syscall_server; 
 
-    void *trap_handler_data;
-    struct linux_syscalls_list *linux_syscall_server; 
+	/* For use by watchdog. */
+	int resync_frame;
 
-    /* For use by watchdog. */
-    int resync_frame;
+	/* For use by exit handler functions. */
+	XHDL *ExitHook;
 
-    /* For use by exit handler functions. */
-    XHDL *ExitHook;
+	RTIME exectime[2];
+	struct mcb_t mcb;
 
-    RTIME exectime[2];
-    struct mcb_t mcb;
+	/* Real time heaps. */
+	struct rt_heap_t heap[2];
 
-    /* Real time heaps. */
-    struct rt_heap_t heap[2];
-
-    volatile int scheduler;
+	volatile int scheduler;
 
 #ifdef CONFIG_RTAI_LONG_TIMED_LIST
-    rb_root_t rbr;
-    rb_node_t rbn;
+	rb_root_t rbr;
+	rb_node_t rbn;
 #endif
-    struct rt_queue resq;
+	struct rt_queue resq;
 } RT_TASK __attribute__ ((__aligned__ (L1_CACHE_BYTES)));
 
 #else /* __cplusplus */

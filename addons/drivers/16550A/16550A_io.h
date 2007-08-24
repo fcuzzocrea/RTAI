@@ -20,26 +20,25 @@
 
 /* Manages the I/O access method of the driver. */
 
-#define CONFIG_RTAI_DRIVERS_16550A_PIO
 
 typedef enum { MODE_PIO, MODE_MMIO } io_mode_t;
 
-#if defined(CONFIG_RTAI_DRIVERS_16550A_PIO) || \
-    defined(CONFIG_RTAI_DRIVERS_16550A_ANY)
+#if defined(CONFIG_RTAI_16550A_PIO) || \
+    defined(CONFIG_RTAI_16550A_ANY)
 static unsigned long io[MAX_DEVICES];
 compat_module_param_array(io, ulong, MAX_DEVICES, 0400);
 MODULE_PARM_DESC(io, "I/O port addresses of the serial devices");
-#endif /* CONFIG_RTAI_DRIVERS_16550A_PIO || CONFIG_RTAI_DRIVERS_16550A_ANY */
+#endif /* CONFIG_RTAI_16550A_PIO || CONFIG_RTAI_16550A_ANY */
 
-#if defined(CONFIG_RTAI_DRIVERS_16550A_MMIO) || \
-    defined(CONFIG_RTAI_DRIVERS_16550A_ANY)
+#if defined(CONFIG_RTAI_16550A_MMIO) || \
+    defined(CONFIG_RTAI_16550A_ANY)
 static unsigned long mem[MAX_DEVICES];
 static void *mapped_io[MAX_DEVICES];
 compat_module_param_array(mem, ulong, MAX_DEVICES, 0400);
 MODULE_PARM_DESC(mem, "I/O memory addresses of the serial devices");
-#endif /* CONFIG_RTAI_DRIVERS_16550A_MMIO || CONFIG_RTAI_DRIVERS_16550A_ANY */
+#endif /* CONFIG_RTAI_16550A_MMIO || CONFIG_RTAI_16550A_ANY */
 
-#ifdef CONFIG_RTAI_DRIVERS_16550A_PIO
+#ifdef CONFIG_RTAI_16550A_PIO
 
 #define RT_16550_IO_INLINE inline
 
@@ -77,7 +76,7 @@ rt_16550_init_io_ctx(int dev_id, struct rt_16550_context *ctx)
 	ctx->base_addr = io[dev_id];
 }
 
-#elif defined(CONFIG_RTAI_DRIVERS_16550A_MMIO)
+#elif defined(CONFIG_RTAI_16550A_MMIO)
 
 #define RT_16550_IO_INLINE inline
 
@@ -115,7 +114,7 @@ rt_16550_init_io_ctx(int dev_id, struct rt_16550_context *ctx)
 	ctx->base_addr = (unsigned long)mapped_io[dev_id];
 }
 
-#elif defined(CONFIG_RTAI_DRIVERS_16550A_ANY)
+#elif defined(CONFIG_RTAI_16550A_ANY)
 
 #define RT_16550_IO_INLINE /* uninline */
 

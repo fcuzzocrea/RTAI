@@ -19,8 +19,8 @@
  */
 
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,0) && \
-    (defined(CONFIG_XENO_DRIVERS_16550A_PIO) || \
-     defined(CONFIG_XENO_DRIVERS_16550A_ANY))
+    (defined(CONFIG_RTAI_16550A_PIO) || \
+     defined(CONFIG_RTAI_16550A_ANY))
 
 #include <linux/pnp.h>
 

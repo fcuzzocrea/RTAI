@@ -21019,10 +21019,6 @@ elif test x$CONFIG_RTAI_16550A_MMIO = xy; then
    CONFIG_RTAI_16550A_HAM=2
 elif test x$CONFIG_RTAI_16550A_ANY = xy; then
    CONFIG_RTAI_16550A_HAM=3
-else
-   { { echo "$as_me:$LINENO: error: Invalid real-time serial driver hardware access mode" >&5
-echo "$as_me: error: Invalid real-time serial driver hardware access mode" >&2;}
-   { (exit 1); exit 1; }; }
 fi
 
 { echo "$as_me:$LINENO: checking for real-time serial driver hardware access mode" >&5
@@ -24334,6 +24330,11 @@ cat >>confdefs.h <<\_ACEOF
 #define CONFIG_RTAI_16550A_ANY 1
 _ACEOF
  ;;
+	*) if test \! x$CONFIG_RTAI_DRIVERS_16550A = x ; then \
+		{ { echo "$as_me:$LINENO: error: Missing 16550A hardware access mode" >&5
+echo "$as_me: error: Missing 16550A hardware access mode" >&2;}
+   { (exit 1); exit 1; }; } \
+	fi ;;
 esac
 test \! x$CONFIG_RTAI_RTDM = x &&
 cat >>confdefs.h <<\_ACEOF

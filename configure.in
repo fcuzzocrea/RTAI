@@ -744,8 +744,6 @@ elif test x$CONFIG_RTAI_16550A_MMIO = xy; then
    CONFIG_RTAI_16550A_HAM=2
 elif test x$CONFIG_RTAI_16550A_ANY = xy; then
    CONFIG_RTAI_16550A_HAM=3
-else
-   AC_MSG_ERROR([Invalid real-time serial driver hardware access mode])
 fi
 
 AC_MSG_CHECKING(for real-time serial driver hardware access mode)
@@ -1206,6 +1204,9 @@ case $CONFIG_RTAI_16550A_HAM in
 	1) AC_DEFINE(CONFIG_RTAI_16550A_PIO,1,[Kconfig]) ;;
 	2) AC_DEFINE(CONFIG_RTAI_16550A_MMIO,1,[Kconfig]) ;;
 	3) AC_DEFINE(CONFIG_RTAI_16550A_ANY,1,[Kconfig]) ;;
+	*) if test \! x$CONFIG_RTAI_DRIVERS_16550A = x ; then \
+		AC_MSG_ERROR([Missing 16550A hardware access mode]) \
+	fi ;;
 esac
 test \! x$CONFIG_RTAI_RTDM = x && AC_DEFINE(CONFIG_RTAI_RTDM,1,[Kconfig])
 test \! x$CONFIG_RTAI_ALIGN_LINUX_PRIORITY = x && AC_DEFINE(CONFIG_RTAI_ALIGN_LINUX_PRIORITY,1,[Kconfig])

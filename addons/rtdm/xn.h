@@ -27,10 +27,6 @@
 #include <asm/uaccess.h>
 #include <asm/mman.h>
 
-#if defined(CONFIG_RTAI_RTDM_LEVEL_SHIRQ) || defined(CONFIG_RTAI_RTDM_EDGE_SHIRQ)
-#define CONFIG_RTAI_RTDM_SHIRQ
-#endif
-
 #ifndef CONFIG_RTAI_DEBUG_RTDM
 #define CONFIG_RTAI_DEBUG_RTDM  0
 #endif

@@ -1683,8 +1683,8 @@ static int rtdm_mmap_buffer(struct file *filp, struct vm_area_struct *vma)
 	if ((vaddr >= VMALLOC_START) && (vaddr < VMALLOC_END)) {
 		unsigned long mapped_size = 0;
 
-		XENO_ASSERT(RTDM, vaddr == PAGE_ALIGN(vaddr), return -EINVAL);
-		XENO_ASSERT(RTDM, (size % PAGE_SIZE) == 0, return -EINVAL);
+		RTAI_ASSERT(RTDM, vaddr == PAGE_ALIGN(vaddr), return -EINVAL);
+		RTAI_ASSERT(RTDM, (size % PAGE_SIZE) == 0, return -EINVAL);
 
 		while (mapped_size < size) {
 			if (xnarch_remap_vm_page(vma, maddr, vaddr))
@@ -1714,7 +1714,7 @@ static int rtdm_do_mmap(rtdm_user_info_t *user_info,
 	void *old_priv_data;
 	void *user_ptr;
 
-	XENO_ASSERT(RTDM, xnpod_root_p(), return -EPERM;);
+	RTAI_ASSERT(RTDM, xnpod_root_p(), return -EPERM;);
 
 	filp = filp_open("/dev/zero", O_RDWR, 0);
 	if (IS_ERR(filp))
@@ -1903,7 +1903,7 @@ int rtdm_munmap(rtdm_user_info_t *user_info, void *ptr, size_t len)
 {
 	int err;
 
-	XENO_ASSERT(RTDM, xnpod_root_p(), return -EPERM;);
+	RTAI_ASSERT(RTDM, xnpod_root_p(), return -EPERM;);
 
 	down_write(&user_info->mm->mmap_sem);
 	err = do_munmap(user_info->mm, (unsigned long)ptr, len);

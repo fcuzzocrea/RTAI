@@ -31,16 +31,16 @@
 #define CONFIG_RTAI_DEBUG_RTDM  0
 #endif
 
-#define XENO_DEBUG(subsystem)   (CONFIG_RTAI_DEBUG_##subsystem > 0)
+#define RTAI_DEBUG(subsystem)   (CONFIG_RTAI_DEBUG_##subsystem > 0)
 
-#define XENO_ASSERT(subsystem, cond, action)  do { \
+#define RTAI_ASSERT(subsystem, cond, action)  do { \
     if (unlikely(CONFIG_RTAI_DEBUG_##subsystem > 0 && !(cond))) { \
         xnlogerr("assertion failed at %s:%d (%s)\n", __FILE__, __LINE__, (#cond)); \
         action; \
     } \
 } while(0)
 
-#define XENO_BUGON(subsystem, cond)  do { \
+#define RTAI_BUGON(subsystem, cond)  do { \
     if (unlikely(CONFIG_RTAI_DEBUG_##subsystem > 0 && (cond))) \
         xnpod_fatal("bug at %s:%d (%s)", __FILE__, __LINE__, (#cond)); \
 } while(0)

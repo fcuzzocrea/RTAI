@@ -3084,6 +3084,10 @@ static void __rtai_lxrt_exit(void)
 module_init(__rtai_lxrt_init);
 module_exit(__rtai_lxrt_exit);
 
+#ifndef CONFIG_KBUILD
+#define CONFIG_KBUILD
+#endif
+
 #ifdef CONFIG_KBUILD
 
 EXPORT_SYMBOL(rt_fun_lxrt);

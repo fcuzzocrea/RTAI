@@ -939,15 +939,16 @@ choice
 	Allows choosing among:
 
 	- Port based:    driver uses I/O ports, as defined by module vector 
-                         parameter "io".
+                         parameters "io=port1,port2,...".
 
-	- Memory mapped: driver uses I/O ports, as defined by module vector 
-                         parameter "mem".
+	- Memory mapped: driver uses memory mapping, as defined by module
+			 vector parameters "mem=addr1,addr2,...".
 
-	- Whatever:      both "io" and "mem" module parameters can be used,
-                         but with only one mode for each device
-                         (e.g.: "io=0x2f8 mem=0,0xe0000000", for device 1
-                         and 2 respectively).
+	- Whatever:      the driver can use both I/O and memory mapping, as
+			 assigned by "io" and "mem" module vectors parameters,
+			 but with only one mode allowed for each device e.g.:
+			 "io=0x2F8,0,0x3F8 mem=0,0xe0000000,0"; for devices 1,
+			 2 and 3 respectively.
 
 config RTAI_16550A_PIO
 	bool "Port based"

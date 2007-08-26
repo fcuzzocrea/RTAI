@@ -1,3 +1,10 @@
+2007-08-26  Roberto Bucher <roberto.bucher@supsi.ch>
+
+	* rtai-lab/scilab/rtmain.c: Changed type for rt_BaseTaskPeriod to RTIME.
+	* rtai-lab/matlab/rtmain.c: Changed type for rt_BaseTaskPeriod to RTIME.
+	* rtai-lab/matrixx/rtmain.c:  Changed type for rt_BaseTaskPeriod to RTIME.
+	* rtai-lab/matrixx/rtmain.h:  Changed version.
+
 2007-08-24  Paolo Mantegazza <mantegazza@aero.polimi.it>
 
 	* base/ipc/fifos/fifos.c: allow using fifos without any RTAI 

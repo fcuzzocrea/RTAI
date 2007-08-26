@@ -642,32 +642,28 @@ extern struct epoch_struct boot_epoch;
 #define LIST_CPUID         (0)
 #endif
 
-
-static struct rt_timer_struct timers_list[NUM_CPUS] =
+static struct rtdm_timer_struct timers_list[NUM_CPUS] =
 { { &timers_list[0], &timers_list[0], RT_SCHED_LOWEST_PRIORITY, 0, RT_TIME_END, 0LL, NULL, 0UL,
 #ifdef  CONFIG_RTAI_LONG_TIMED_LIST
 { NULL } 
 #endif
 }, };
 
-static struct rt_timer_struct tasklets_list =
-{ &tasklets_list, &tasklets_list, };
-
 static spinlock_t timers_lock[NUM_CPUS] = { SPIN_LOCK_UNLOCKED, };
 
 #ifdef CONFIG_RTAI_LONG_TIMED_LIST
 
 /* BINARY TREE */
-static inline void enq_timer(struct rt_timer_struct *timed_timer)
+static inline void enq_timer(struct rtdm_timer_struct *timed_timer)
 {
-	struct rt_timer_struct *timerh, *tmrnxt, *timer;
+	struct rtdm_timer_struct *timerh, *tmrnxt, *timer;
 	rb_node_t **rbtn, *rbtpn = NULL;
 	timer = timerh = &timers_list[TIMED_TIMER_CPUID];
 	rbtn = &timerh->rbr.rb_node;
 
 	while (*rbtn) {
 		rbtpn = *rbtn;
-		tmrnxt = rb_entry(rbtpn, struct rt_timer_struct, rbn);
+		tmrnxt = rb_entry(rbtpn, struct rtdm_timer_struct, rbn);
 		if (timer->firing_time > tmrnxt->firing_time) {
 			rbtn = &(rbtpn)->rb_right;
 		} else {
@@ -687,9 +683,9 @@ rb_erase(&(timer)->rbn, &timers_list[NUM_CPUS > 1 ? (timer)->cpuid : 0].rbr)
 #else /* !CONFIG_RTAI_LONG_TIMED_LIST */
 
 /* LINEAR */
-static inline void enq_timer(struct rt_timer_struct *timed_timer)
+static inline void enq_timer(struct rtdm_timer_struct *timed_timer)
 {
-	struct rt_timer_struct *timer;
+	struct rtdm_timer_struct *timer;
 	timer = &timers_list[TIMED_TIMER_CPUID];
         while (timed_timer->firing_time > (timer = timer->next)->firing_time);
 	timer->prev = (timed_timer->prev = timer->prev)->next = timed_timer;
@@ -700,7 +696,7 @@ static inline void enq_timer(struct rt_timer_struct *timed_timer)
 
 #endif /* CONFIG_RTAI_LONG_TIMED_LIST */
 
-static inline void rem_timer(struct rt_timer_struct *timer)
+static inline void rem_timer(struct rtdm_timer_struct *timer)
 {
 	(timer->next)->prev = timer->prev;
 	(timer->prev)->next = timer->next;
@@ -713,7 +709,7 @@ static RT_TASK timers_manager[NUM_CPUS];
 static inline void asgn_min_prio(int cpuid)
 {
 	RT_TASK *timer_manager;
-	struct rt_timer_struct *timer, *timerl;
+	struct rtdm_timer_struct *timer, *timerl;
 	spinlock_t *lock;
 	unsigned long flags;
 	int priority;
@@ -739,7 +735,7 @@ static inline void asgn_min_prio(int cpuid)
 	rt_global_restore_flags(flags);
 }
 
-RTAI_SYSCALL_MODE int rt_timer_insert(struct rt_timer_struct *timer, int priority, RTIME firing_time, RTIME period, void (*handler)(unsigned long), unsigned long data)
+RTAI_SYSCALL_MODE int rt_timer_insert(struct rtdm_timer_struct *timer, int priority, RTIME firing_time, RTIME period, void (*handler)(unsigned long), unsigned long data)
 {
 	spinlock_t *lock;
 	unsigned long flags, cpuid;
@@ -776,7 +772,7 @@ RTAI_SYSCALL_MODE int rt_timer_insert(struct rt_timer_struct *timer, int priorit
 	return 0;
 }
 
-RTAI_SYSCALL_MODE void rt_timer_remove(struct rt_timer_struct *timer)
+RTAI_SYSCALL_MODE void rt_timer_remove(struct rtdm_timer_struct *timer)
 {
 	if (timer->next != timer && timer->prev != timer) {
 		spinlock_t *lock;
@@ -797,7 +793,7 @@ static void rt_timers_manager(long cpuid)
 {
 	RTIME now;
 	RT_TASK *timer_manager;
-	struct rt_timer_struct *tmr, *timer, *timerl;
+	struct rtdm_timer_struct *tmr, *timer, *timerl;
 	spinlock_t *lock;
 	unsigned long flags, timer_tol;
 	int priority;
@@ -850,6 +846,7 @@ static int rtai_timers_init(void)
 	for (cpuid = 0; cpuid < NUM_CPUS; cpuid++) {
 		timers_lock[cpuid] = timers_lock[0];
 		timers_list[cpuid] = timers_list[0];
+		timers_list[cpuid].cpuid = cpuid;
 		timers_list[cpuid].next = timers_list[cpuid].prev = &timers_list[cpuid];
 		rt_task_init_cpuid(&timers_manager[cpuid], rt_timers_manager, cpuid, TimersManagerStacksize, TimersManagerPrio, 0, 0, cpuid);
 		rt_task_resume(&timers_manager[cpuid]);

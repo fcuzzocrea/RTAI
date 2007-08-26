@@ -363,8 +363,8 @@ extern unsigned long IsolCpusMask;
 
 // support for RTDM timers
 
-struct rt_timer_struct {
-        struct rt_timer_struct *next, *prev;
+struct rtdm_timer_struct {
+        struct rtdm_timer_struct *next, *prev;
         int priority, cpuid;
         RTIME firing_time, period;
         void (*handler)(unsigned long);
@@ -375,11 +375,11 @@ struct rt_timer_struct {
 #endif
 };
 
-RTAI_SYSCALL_MODE void rt_timer_remove(struct rt_timer_struct *timer);
+RTAI_SYSCALL_MODE void rt_timer_remove(struct rtdm_timer_struct *timer);
 
-RTAI_SYSCALL_MODE int rt_timer_insert(struct rt_timer_struct *timer, int priority, RTIME firing_time, RTIME period, void (*handler)(unsigned long), unsigned long data);
+RTAI_SYSCALL_MODE int rt_timer_insert(struct rtdm_timer_struct *timer, int priority, RTIME firing_time, RTIME period, void (*handler)(unsigned long), unsigned long data);
 
-typedef struct rt_timer_struct xntimer_t;
+typedef struct rtdm_timer_struct xntimer_t;
 
 /* Timer modes */
 typedef enum xntmode {
@@ -392,7 +392,7 @@ typedef enum xntmode {
 
 static inline void xntimer_init(xntimer_t *timer, void (*handler)(xntimer_t *))
 {
-        memset(timer, 0, sizeof(struct rt_timer_struct));
+        memset(timer, 0, sizeof(struct rtdm_timer_struct));
         timer->handler = (void *)handler;
         timer->data    = (unsigned long)timer;
 }

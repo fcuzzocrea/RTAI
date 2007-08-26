@@ -154,7 +154,7 @@ static struct rt_fun_entry rt_tasklet_fun[] = {
 	
 };
 
-#ifdef _CONFIG_RTAI_LONG_TIMED_LIST
+#ifdef CONFIG_RTAI_LONG_TIMED_LIST
 
 /* BINARY TREE */
 static inline void enq_timer(struct rt_tasklet_struct *timed_timer)
@@ -180,7 +180,8 @@ static inline void enq_timer(struct rt_tasklet_struct *timed_timer)
 	timed_timer->next = timer;
 }
 
-#define rb_erase_timer(timer)  rb_erase(&(timer)->rbn, &timers_list[NUM_CPUS > 1 ? (timer)->cpuid].rbr : 0)
+#define rb_erase_timer(timer) \
+rb_erase(&(timer)->rbn, &timers_list[NUM_CPUS > 1 ? (timer)->cpuid : 0].rbr)
 
 #else /* !CONFIG_RTAI_LONG_TIMED_LIST */
 
@@ -189,7 +190,7 @@ static inline void enq_timer(struct rt_tasklet_struct *timed_timer)
 {
 	struct rt_tasklet_struct *timer;
 	timer = &timers_list[TIMED_TIMER_CPUID];
-        while (timed_timer->firing_time >= (timer = timer->next)->firing_time);
+        while (timed_timer->firing_time > (timer = timer->next)->firing_time);
 	timer->prev = (timed_timer->prev = timer->prev)->next = timed_timer;
 	timed_timer->next = timer;
 }

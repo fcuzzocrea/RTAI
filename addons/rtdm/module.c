@@ -655,7 +655,7 @@ static struct rt_timer_struct tasklets_list =
 
 static spinlock_t timers_lock[NUM_CPUS] = { SPIN_LOCK_UNLOCKED, };
 
-#ifdef _CONFIG_RTAI_LONG_TIMED_LIST
+#ifdef CONFIG_RTAI_LONG_TIMED_LIST
 
 /* BINARY TREE */
 static inline void enq_timer(struct rt_timer_struct *timed_timer)
@@ -681,7 +681,8 @@ static inline void enq_timer(struct rt_timer_struct *timed_timer)
 	timed_timer->next = timer;
 }
 
-#define rb_erase_timer(timer)  rb_erase(&(timer)->rbn, &timers_list[NUM_CPUS > 1 ? (timer)->cpuid].rbr : 0)
+#define rb_erase_timer(timer) \
+rb_erase(&(timer)->rbn, &timers_list[NUM_CPUS > 1 ? (timer)->cpuid : 0].rbr)
 
 #else /* !CONFIG_RTAI_LONG_TIMED_LIST */
 
@@ -690,7 +691,7 @@ static inline void enq_timer(struct rt_timer_struct *timed_timer)
 {
 	struct rt_timer_struct *timer;
 	timer = &timers_list[TIMED_TIMER_CPUID];
-        while (timed_timer->firing_time >= (timer = timer->next)->firing_time);
+        while (timed_timer->firing_time > (timer = timer->next)->firing_time);
 	timer->prev = (timed_timer->prev = timer->prev)->next = timed_timer;
 	timed_timer->next = timer;
 }
@@ -807,8 +808,7 @@ static void rt_timers_manager(long cpuid)
 	timer_tol = tuned.timers_tol[LIST_CPUID];
 
 	while (1) {
-		int retval;
-		retval = rt_sleep_until((timerl->next)->firing_time);
+		rt_sleep_until((timerl->next)->firing_time);
 		now = rt_get_time() + timer_tol;
 		while (1) {
 			tmr = timer = timerl;

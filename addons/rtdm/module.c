@@ -787,8 +787,6 @@ RTAI_SYSCALL_MODE void rt_timer_remove(struct rtdm_timer_struct *timer)
 static int TimersManagerPrio = 0;
 RTAI_MODULE_PARM(TimersManagerPrio, int);
 
-// the timers_manager task function
-
 static void rt_timers_manager(long cpuid)
 {
 	RTIME now;

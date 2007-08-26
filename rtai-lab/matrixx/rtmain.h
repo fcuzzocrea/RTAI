@@ -20,7 +20,7 @@
 #ifndef _RTMAIN_H_
 #define _RTMAIN_H_
 
-#define RTAILAB_VERSION   "3.4.5"
+#define RTAILAB_VERSION   "3.4.6"
 #define MAX_ADR_SRCH      500
 #define MAX_NAME_SIZE     256
 #define MAX_SCOPES        100

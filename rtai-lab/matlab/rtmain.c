@@ -92,7 +92,7 @@ extern void rt_ODEUpdateContinuousStates(RTWSolverInfo *si);
 extern RT_MODEL *MODEL(void);
 static RT_MODEL *rtM;
 
-#define RTAILAB_VERSION         "3.4.6"
+#define RTAILAB_VERSION         "3.4.7"
 #define MAX_NTARGETS		1000
 #define MAX_NAMES_SIZE		256
 #define RUN_FOREVER		-1.0
@@ -768,7 +768,7 @@ static void *rt_HostInterface(void *args)
 static int_T rt_Main(RT_MODEL * (*model_name)(void), int_T priority)
 {
   const char *status;
-  unsigned int rt_BaseTaskPeriod;
+  RTIME rt_BaseTaskPeriod;
   struct timespec rt_MainTaskPollPeriod = { 0, POLL_PERIOD };
   struct timespec err_timeout;
   int msg, i;
@@ -868,7 +868,7 @@ static int_T rt_Main(RT_MODEL * (*model_name)(void), int_T priority)
     goto finish;
   }
 
-  rt_BaseTaskPeriod = (unsigned int)(1000000000.0*rtmGetStepSize(rtM));
+  rt_BaseTaskPeriod = (RTIME)(1000000000.0*rtmGetStepSize(rtM));
   if (InternalTimer) {
     WaitTimingEvent = (void *)rt_task_wait_period;
     if (!(hard_timers_cnt = rt_get_adr(nam2num("HTMRCN")))) {

@@ -972,6 +972,7 @@ int __rtai_tasklets_init(void)
 	for (cpuid = 0; cpuid < NUM_CPUS; cpuid++) {
 		timers_lock[cpuid] = timers_lock[0];
 		timers_list[cpuid] = timers_list[0];
+		timers_list[cpuid].cpuid = cpuid;
 		timers_list[cpuid].next = timers_list[cpuid].prev = &timers_list[cpuid];
 		rt_task_init_cpuid(&timers_manager[cpuid], rt_timers_manager, cpuid, TaskletsStacksize, TimersManagerPrio, 0, 0, cpuid);
 		rt_task_resume(&timers_manager[cpuid]);

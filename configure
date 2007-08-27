@@ -20760,8 +20760,8 @@ echo $ECHO_N "checking for Linux task priority alignment to RTAI... $ECHO_C" >&6
 # Check whether --enable-align-priority was given.
 if test "${enable_align_priority+set}" = set; then
   enableval=$enable_align_priority; case "$enableval" in
-	y | yes) CONFIG_CONFIG_RTAI_ALIGN_LINUX_PRIORITY=y ;;
-	*) unset CONFIG_CONFIG_RTAI_ALIGN_LINUX_PRIORITY ;;
+	y | yes) CONFIG_RTAI_ALIGN_LINUX_PRIORITY=y ;;
+	*) unset CONFIG_RTAI_ALIGN_LINUX_PRIORITY ;;
 	esac
 fi
 

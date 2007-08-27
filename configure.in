@@ -661,8 +661,8 @@ AC_MSG_CHECKING(for Linux task priority alignment to RTAI)
 AC_ARG_ENABLE(align-priority,
 	      [ --enable-align-priority		Keep Linux task priority aligned to RTAI],
 	[case "$enableval" in
-	y | yes) CONFIG_CONFIG_RTAI_ALIGN_LINUX_PRIORITY=y ;;
-	*) unset CONFIG_CONFIG_RTAI_ALIGN_LINUX_PRIORITY ;;
+	y | yes) CONFIG_RTAI_ALIGN_LINUX_PRIORITY=y ;;
+	*) unset CONFIG_RTAI_ALIGN_LINUX_PRIORITY ;;
 	esac])
 AC_MSG_RESULT(${CONFIG_RTAI_ALIGN_LINUX_PRIORITY:-no})
 

@@ -40,7 +40,7 @@
 #include <rtai_mbx.h>
 #include <rtai_fifos.h>
 
-#define RTAILAB_VERSION         "3.4.6"
+#define RTAILAB_VERSION         "3.4.7"
 #define MAX_ADR_SRCH      500
 #define MAX_NAME_SIZE     256
 #define MAX_SCOPES        100
@@ -568,7 +568,7 @@ static int rt_Main(int priority)
 {
   SEM *hard_timers_cnt;
   char name[7];
-  unsigned int rt_BaseTaskPeriod;
+  RTIME rt_BaseTaskPeriod;
   struct timespec err_timeout;
   int i;
 
@@ -605,7 +605,7 @@ static int rt_Main(int priority)
     goto finish;
   }
 
-  rt_BaseTaskPeriod = (unsigned int) (1e9*get_tsamp());
+  rt_BaseTaskPeriod = (RTIME) (1e9*get_tsamp());
   if (InternTimer) {
     WaitTimingEvent = (void *)rt_task_wait_period;
     if (!(hard_timers_cnt = rt_get_adr(nam2num("HTMRCN")))) {

@@ -1,3 +1,10 @@
+2007-08-27  Roberto Bucher <roberto.bucher@supsi.ch>
+
+	* rtai-lab/scilab/rtmain.c: Changed type for rt_BaseTaskPeriod to RTIME.
+	* rtai-lab/matlab/rtmain.c: Changed type for rt_BaseTaskPeriod to RTIME.
+	* rtai-lab/matrixx/rtmain.c:  Changed type for rt_BaseTaskPeriod to RTIME.
+	* rtai-lab/matrixx/rtmain.h:  Changed version.
+
 2007-08-23 Pierangelo Masarati <masarati@aero.polimi.i>
 
 	* RTAI 3.5 closure version

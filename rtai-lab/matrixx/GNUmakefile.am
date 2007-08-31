@@ -21,7 +21,9 @@ EXTRA_DIST = $(EXTRA_DIST_SRC) $(EXTRA_DIST_DIR)
 
 install-exec-local: $(EXTRA_INST_SRC) $(EXTRA_INST_DIR)
 	$(mkinstalldirs) $(DESTDIR)$(pkgdatadir)/matrixx
-	$(INSTALL_DATA) $(srcdir)/$(EXTRA_INST_SRC) $(DESTDIR)$(pkgdatadir)/matrixx
+	@for f in $(EXTRA_INST_SRC) ; do \
+		$(INSTALL_DATA) $(srcdir)/$$f $(DESTDIR)$(pkgdatadir)/matrixx ; \
+	done
 	$(mkinstalldirs) $(DESTDIR)$(pkgdatadir)/matrixx/matrixx-files
 	@for d in $(EXTRA_INST_DIR) ; do \
 		$(mkinstalldirs) $(DESTDIR)$(pkgdatadir)/matrixx/$$d ; \

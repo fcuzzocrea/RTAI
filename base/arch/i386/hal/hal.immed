@@ -1548,7 +1548,7 @@ static int rtai_hirq_dispatcher (struct pt_regs regs)
 		HAL_TICK_REGS.ebp    = regs.ebp;
 #endif /* CONFIG_SMP && CONFIG_FRAME_POINTER */
 #else
-//		set_irq_regs(&regs);
+		set_irq_regs(&regs);
 #endif
 	}
 	hal_fast_flush_pipeline(cpuid);

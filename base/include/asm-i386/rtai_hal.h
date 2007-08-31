@@ -344,6 +344,7 @@ do { \
 		__set_bit(lo, &ipipe_cpudom_var(domain, irqheld_mask)[hi]); \
 	} \
 	ipipe_cpudom_var(domain, irqall)[irq]++; \
+	test_and_set_bit(cpuid, &hal_pended); /* cautious, cautious */ \
 } while (0)
 
 #define hal_fast_flush_pipeline(cpuid) \

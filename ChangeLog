@@ -1,3 +1,10 @@
+2007-08-31  Roberto Bucher <roberto.bucher@supsi.ch>
+
+	* rtai-lab/matrixx/GNUmakefile.am:  Modified to allow compilation from an
+	external folder.
+	* rtai-lab/matrixx/GNUmakefile.in:  Modified to allow compilation from an
+	external folder.
+
 2007-08-27  Roberto Bucher <roberto.bucher@supsi.ch>
 
 	* rtai-lab/scilab/rtmain.c: Changed type for rt_BaseTaskPeriod to RTIME.

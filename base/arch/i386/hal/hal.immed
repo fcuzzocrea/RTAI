@@ -1528,7 +1528,8 @@ static int rtai_hirq_dispatcher (struct pt_regs regs)
 		}
 	} else {
 		unsigned long lflags;
-		lflags = xchg(ROOT_STATUS_ADR(cpuid = rtai_cpuid()), (1 << IPIPE_STALL_FLAG));
+		cpuid = rtai_cpuid();
+		lflags = xchg(ROOT_STATUS_ADR(cpuid), (1 << IPIPE_STALL_FLAG));
 		rtai_realtime_irq[irq].irq_ack(irq); mb();
 //		hal_root_domain->irqs[irq].acknowledge(irq); mb();
 		hal_pend_uncond(irq, cpuid);
@@ -1538,18 +1539,18 @@ static int rtai_hirq_dispatcher (struct pt_regs regs)
 		}
 	}
 	rtai_sti();
-#if LINUX_VERSION_CODE < KERNEL_VERSION(2,6,22)
 	if (irq == hal_tick_irq) {
+#if LINUX_VERSION_CODE < KERNEL_VERSION(2,6,22)
 		HAL_TICK_REGS.eflags = regs.eflags;
 		HAL_TICK_REGS.eip    = regs.eip;
 		HAL_TICK_REGS.xcs    = regs.xcs;
 #if defined(CONFIG_SMP) && defined(CONFIG_FRAME_POINTER)
 		HAL_TICK_REGS.ebp    = regs.ebp;
 #endif /* CONFIG_SMP && CONFIG_FRAME_POINTER */
-	}
 #else
-	set_irq_regs(&regs);
+//		set_irq_regs(&regs);
 #endif
+	}
 	hal_fast_flush_pipeline(cpuid);
 #if defined(CONFIG_SMP) &&  LINUX_VERSION_CODE >= KERNEL_VERSION(2,4,32)
 	__set_bit(IPIPE_STALL_FLAG, ROOT_STATUS_ADR(rtai_cpuid()));

@@ -51,7 +51,7 @@
 #define RTAI_APIC_LOW_VECTOR   0xff
 #endif
 
-#if LINUX_VERSION_CODE > KERNEL_VERSION(2,6,19)
+#ifdef ipipe_apic_vector_irq /* LINUX_VERSION_CODE > KERNEL_VERSION(2,6,19) */
 #define RTAI_APIC_HIGH_IPI     ipipe_apic_vector_irq(RTAI_APIC_HIGH_VECTOR)
 #define RTAI_APIC_LOW_IPI      ipipe_apic_vector_irq(RTAI_APIC_LOW_VECTOR)
 #define RTAI_SYS_IRQ           ipipe_apic_vector_irq(RTAI_SYS_VECTOR)

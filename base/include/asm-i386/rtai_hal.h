@@ -316,8 +316,10 @@ static inline struct hal_domain_struct *get_domain_pointer(int n)
 #define hal_pend_domain_uncond(irq, domain, cpuid) \
 do { \
 	hal_irq_hits_pp(irq, domain, cpuid); \
-	__set_bit((irq) & IPIPE_IRQ_IMASK, &domain->cpudata[cpuid].irq_pending_lo[(irq) >> IPIPE_IRQ_ISHIFT]); \
-	__set_bit((irq) >> IPIPE_IRQ_ISHIFT, &domain->cpudata[cpuid].irq_pending_hi); \
+	if (likely(!test_bit(IPIPE_LOCK_FLAG, &(domain)->irqs[irq].control))) { \
+		__set_bit((irq) & IPIPE_IRQ_IMASK, &(domain)->cpudata[cpuid].irq_pending_lo[(irq) >> IPIPE_IRQ_ISHIFT]); \
+		__set_bit((irq) >> IPIPE_IRQ_ISHIFT, &(domain)->cpudata[cpuid].irq_pending_hi); \
+	} \
 	test_and_set_bit(cpuid, &hal_pended); /* cautious, cautious */ \
 } while (0)
 
@@ -336,12 +338,11 @@ do { \
 
 #define hal_pend_domain_uncond(irq, domain, cpuid) \
 do { \
-	int hi = irq >> IPIPE_IRQ_ISHIFT, lo = irq & IPIPE_IRQ_IMASK; \
-	if (likely(!test_bit(IPIPE_LOCK_FLAG, &domain->irqs[irq].control))) { \
-		__set_bit(lo, &ipipe_cpudom_var(domain, irqpend_lomask)[hi]); \
-		__set_bit(hi, &ipipe_cpudom_var(domain, irqpend_himask)); \
+	if (likely(!test_bit(IPIPE_LOCK_FLAG, &(domain)->irqs[irq].control))) { \
+		__set_bit((irq) & IPIPE_IRQ_IMASK, &ipipe_cpudom_var(domain, irqpend_lomask)[(irq) >> IPIPE_IRQ_ISHIFT]); \
+		__set_bit((irq) >> IPIPE_IRQ_ISHIFT, &ipipe_cpudom_var(domain, irqpend_himask)); \
 	} else { \
-		__set_bit(lo, &ipipe_cpudom_var(domain, irqheld_mask)[hi]); \
+		__set_bit((irq) & IPIPE_IRQ_IMASK, &ipipe_cpudom_var(domain, irqheld_mask)[(irq) >> IPIPE_IRQ_ISHIFT]); \
 	} \
 	ipipe_cpudom_var(domain, irqall)[irq]++; \
 	test_and_set_bit(cpuid, &hal_pended); /* cautious, cautious */ \

@@ -1,9 +1,9 @@
-2007-08-31 Paolo Mantegazza <mantegazza@aero.polimi.it>
+2007-09-02 Paolo Mantegazza <mantegazza@aero.polimi.it>
 
-	* base/arch/i386/hal/hal.immed, base/arch/i386/hal/rtc.c, 
-	  base/include/rtai_hal_names.h base/include/asm-i386/rtai_hal.h:
-	  changes to fit use pf per cpu variable in the latest patches
-	  (>= 2.6.22).
+	* base/include/asm-i386/rtai_hal.h: revised and unified 
+	  hal_pend_uncond for all Linux versions.
+	* base/malloc/malloc.c: added TLSF based allocator, optionally
+	  set at RTAI config.
 
 2007-08-31  Roberto Bucher <roberto.bucher@supsi.ch>
 

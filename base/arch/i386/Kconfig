@@ -764,7 +764,7 @@ config RTAI_USE_TLSF
 	depends on RTAI_MALLOC
 	default n
 	help
-	RTAI dynamic memory allocations support offers two different methods
+	RTAI dynamic memory allocation support offers two different methods
 	to allocate memory chunks. The default one is along the lines 
 	illustrated in:
 	"Design of a General Purpose Memory Allocator for the 4.3BSD Unix
@@ -775,7 +775,7 @@ config RTAI_USE_TLSF
 	will be used instead.
 	Rough measures seems to indicate little differences between the two
 	in term of alloc/free times, likely with BSD being slightly better,
-	but TLSF seems to have better, i.e. low, fragmentation properties.
+	but TLSF seems to have better, i.e. lower, fragmentation properties.
 	In any case you should check it yourself within your own applications.
 
 config RTAI_MALLOC_VMALLOC

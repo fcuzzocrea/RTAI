@@ -985,7 +985,7 @@ int _rtai_sched_on_ipi_handler(void)
 	((void (*)(void))rtai_realtime_irq[SCHED_IPI].handler)();
 	HAL_UNLOCK_LINUX();
 	RTAI_SCHED_ISR_UNLOCK();
-	if (test_and_clear_bit(cpuid, &hal_pended) && !test_bit(IPIPE_STALL_FLAG, ROOT_STATUS_ADR(cpuid))) {
+	if (test_bit(cpuid, &hal_pended) && !test_bit(IPIPE_STALL_FLAG, ROOT_STATUS_ADR(cpuid))) {
 		rtai_sti();
 		hal_fast_flush_pipeline(cpuid);
 #if defined(CONFIG_SMP) &&  LINUX_VERSION_CODE >= KERNEL_VERSION(2,4,32)
@@ -1025,7 +1025,7 @@ int _rtai_apic_timer_handler(void)
 	((void (*)(void))rtai_realtime_irq[RTAI_APIC_TIMER_IPI].handler)();
 	HAL_UNLOCK_LINUX();
 	RTAI_SCHED_ISR_UNLOCK();
-	if (test_and_clear_bit(cpuid, &hal_pended) && !test_bit(IPIPE_STALL_FLAG, ROOT_STATUS_ADR(cpuid))) {
+	if (test_bit(cpuid, &hal_pended) && !test_bit(IPIPE_STALL_FLAG, ROOT_STATUS_ADR(cpuid))) {
 		rtai_sti();
 		hal_fast_flush_pipeline(cpuid);
 #if defined(CONFIG_SMP) &&  LINUX_VERSION_CODE >= KERNEL_VERSION(2,4,32)
@@ -1053,7 +1053,7 @@ int _rtai_8254_timer_handler(struct pt_regs regs)
 	((void (*)(void))rtai_realtime_irq[RTAI_TIMER_8254_IRQ].handler)();
 	HAL_UNLOCK_LINUX();
 	RTAI_SCHED_ISR_UNLOCK();
-	if (test_and_clear_bit(cpuid, &hal_pended) && !test_bit(IPIPE_STALL_FLAG, ROOT_STATUS_ADR(cpuid))) {
+	if (test_bit(cpuid, &hal_pended) && !test_bit(IPIPE_STALL_FLAG, ROOT_STATUS_ADR(cpuid))) {
 		rtai_sti();
 #if LINUX_VERSION_CODE < KERNEL_VERSION(2,6,22)
 /* specific for the Linux tick, do not cre in a generic handler */
@@ -1522,7 +1522,7 @@ static int rtai_hirq_dispatcher (struct pt_regs regs)
 			rtai_realtime_irq[irq].handler(irq, rtai_realtime_irq[irq].cookie);
 			HAL_UNLOCK_LINUX();
 			RTAI_SCHED_ISR_UNLOCK();
-			if (!test_and_clear_bit(cpuid, &hal_pended) || test_bit(IPIPE_STALL_FLAG, ROOT_STATUS_ADR(cpuid))) {
+			if (!test_bit(cpuid, &hal_pended) || test_bit(IPIPE_STALL_FLAG, ROOT_STATUS_ADR(cpuid))) {
 				return 0;
 			}
 		}

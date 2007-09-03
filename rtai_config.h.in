@@ -259,6 +259,9 @@
 #undef CONFIG_RTAI_USE_NEWERR
 
 /* Kconfig */
+#undef CONFIG_RTAI_USE_TLSF
+
+/* Kconfig */
 #undef CONFIG_RTAI_USI
 
 /* Kconfig */

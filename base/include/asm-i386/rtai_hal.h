@@ -291,8 +291,6 @@ static inline int ext_irq_vector(int irq)
 #define rtai_restore_flags(x)       hal_hw_local_irq_restore(x)
 #define rtai_save_flags(x)          hal_hw_local_irq_flags(x)
 
-extern volatile unsigned long hal_pended;
-
 static inline struct hal_domain_struct *get_domain_pointer(int n)
 {
 	struct list_head *p = hal_pipeline.next;
@@ -320,10 +318,8 @@ do { \
 		__set_bit((irq) & IPIPE_IRQ_IMASK, &(domain)->cpudata[cpuid].irq_pending_lo[(irq) >> IPIPE_IRQ_ISHIFT]); \
 		__set_bit((irq) >> IPIPE_IRQ_ISHIFT, &(domain)->cpudata[cpuid].irq_pending_hi); \
 	} \
-	test_and_set_bit(cpuid, &hal_pended); /* cautious, cautious */ \
 } while (0)
 
-#if 0
 #define hal_fast_flush_pipeline(cpuid) \
 do { \
 	if (hal_root_domain->cpudata[cpuid].irq_pending_hi != 0) { \
@@ -331,7 +327,6 @@ do { \
 		hal_sync_stage(IPIPE_IRQMASK_ANY); \
 	} \
 } while (0)
-#endif
 
 #else
 
@@ -347,10 +342,8 @@ do { \
 		__set_bit((irq) & IPIPE_IRQ_IMASK, &ipipe_cpudom_var(domain, irqheld_mask)[(irq) >> IPIPE_IRQ_ISHIFT]); \
 	} \
 	ipipe_cpudom_var(domain, irqall)[irq]++; \
-	test_and_set_bit(cpuid, &hal_pended); /* cautious, cautious */ \
 } while (0)
 
-#if 0
 #define hal_fast_flush_pipeline(cpuid) \
 do { \
 	if (ipipe_cpudom_var(hal_root_domain, irqpend_himask) != 0) { \
@@ -358,17 +351,8 @@ do { \
 		hal_sync_stage(IPIPE_IRQMASK_ANY); \
 	} \
 } while (0)
-#endif
 
 #endif
-
-#define hal_fast_flush_pipeline(cpuid) \
-do { \
-	if (test_and_clear_bit(cpuid, &hal_pended)) { \
-		rtai_cli(); \
-		hal_sync_stage(IPIPE_IRQMASK_ANY); \
-	} \
-} while (0)
 
 #define hal_pend_uncond(irq, cpuid)  hal_pend_domain_uncond(irq, hal_root_domain, cpuid)
 

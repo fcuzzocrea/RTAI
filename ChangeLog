@@ -1,7 +1,7 @@
-2007-09-04 Paolo Mantegazza <mantegazza@aero.polimi.it>
+2007-09-05 Paolo Mantegazza <mantegazza@aero.polimi.it>
 
 	* base/arch/i386/hal/hal.immed and base/include/asm-i386/rtai_hal.h:
-	  rely only on hal_pended for flushing the Linux pipe.
+	  get rid of hal_pended alltogether.
 
 2007-09-02 Paolo Mantegazza <mantegazza@aero.polimi.it>
 

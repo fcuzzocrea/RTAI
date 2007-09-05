@@ -1,6 +1,7 @@
 2007-09-05 Paolo Mantegazza <mantegazza@aero.polimi.it>
 
-	* base/arch/i386/hal/hal.immed and base/include/asm-i386/rtai_hal.h:
+	* base/arch/i386/hal/hal.immedi, base/include/asm-i386/rtai_hal.h,
+	* base/arch/x86_646/hal/hal.immed, base/include/asm-x86_646/rtai_hal.h:
 	  get rid of hal_pended alltogether.
 
 2007-09-02 Paolo Mantegazza <mantegazza@aero.polimi.it>

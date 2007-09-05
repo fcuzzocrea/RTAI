@@ -232,8 +232,6 @@ static inline int ext_irq_vector(int irq)
 #define rtai_restore_flags(x)       hal_hw_local_irq_restore(x)
 #define rtai_save_flags(x)          hal_hw_local_irq_flags(x)
 
-extern volatile unsigned long hal_pended;
-
 static inline struct hal_domain_struct *get_domain_pointer(int n)
 {
 	struct list_head *p = hal_pipeline.next;
@@ -252,9 +250,10 @@ static inline struct hal_domain_struct *get_domain_pointer(int n)
 #define hal_pend_domain_uncond(irq, domain, cpuid) \
 do { \
 	hal_irq_hits_pp(irq, domain, cpuid); \
-	__set_bit((irq) & IPIPE_IRQ_IMASK, &domain->cpudata[cpuid].irq_pending_lo[(irq) >> IPIPE_IRQ_ISHIFT]); \
-	__set_bit((irq) >> IPIPE_IRQ_ISHIFT, &domain->cpudata[cpuid].irq_pending_hi); \
-	test_and_set_bit(cpuid, &hal_pended); /* cautious, cautious */ \
+	if (!test_bit(IPIPE_LOCK_FLAG, &(domain)->irqs[irq].control)) { \
+		__set_bit((irq) & IPIPE_IRQ_IMASK, &domain->cpudata[cpuid].irq_pending_lo[(irq) >> IPIPE_IRQ_ISHIFT]); \
+		__set_bit((irq) >> IPIPE_IRQ_ISHIFT, &domain->cpudata[cpuid].irq_pending_hi); \
+	} \
 } while (0)
 
 #define hal_pend_uncond(irq, cpuid)  hal_pend_domain_uncond(irq, hal_root_domain, cpuid)

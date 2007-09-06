@@ -773,10 +773,11 @@ config RTAI_USE_TLSF
 	"Two Levels Segregated Lists (TLSF)" as found at:
 	http://rtportal.upv.es/rtmalloc/allocators/tlsf/
 	will be used instead.
-	Rough measures seems to indicate little differences between the two
-	in term of alloc/free times, likely with BSD being slightly better,
-	but TLSF seems to have better, i.e. lower, fragmentation properties.
-	In any case you should check it yourself within your own applications.
+	Rough measures seems to indicate small differences between the two
+	in term of alloc/free times, likely with BSD being better for the
+	tested allocation sizes (up to a few KBs), but TLSF seems to have
+	better, i.e. lower, fragmentation properties. In any case you should
+	check it yourself within your own applications.
 
 config RTAI_MALLOC_VMALLOC
 	bool "Use vmalloc() support"

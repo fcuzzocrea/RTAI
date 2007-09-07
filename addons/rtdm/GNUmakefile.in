@@ -399,7 +399,8 @@ noinst_HEADERS = \
 @CONFIG_KBUILD_FALSE@	-I../.. \
 @CONFIG_KBUILD_FALSE@	-I..
 
-EXTRA_DIST = $(libmodule_SRC) Makefile.kbuild
+EXTRA_DIST = $(libmodule_SRC) Makefile.kbuild \
+	     internal.h
 
 # Always build if CONFIG_RTAI_RTDM is enabled
 @CONFIG_RTAI_RTDM_TRUE@OPTDIRS = lib

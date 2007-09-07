@@ -70,7 +70,8 @@ uninstall-local:
 
 .PHONY: FORCE
 
-EXTRA_DIST = $(libmodule_SRC) Makefile.kbuild
+EXTRA_DIST = $(libmodule_SRC) Makefile.kbuild \
+	     internal.h
 
 # Always build if CONFIG_RTAI_RTDM is enabled
 if CONFIG_RTAI_RTDM

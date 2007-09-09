@@ -445,7 +445,6 @@ int __init rtdm_dev_init(void)
 	for (i = 0; i < protocol_hashtab_size; i++)
 		INIT_LIST_HEAD(&rtdm_protocol_devices[i]);
 
-printk(">>> %d %d\n", protocol_hashtab_size * sizeof(struct list_head), devname_hashtab_size * sizeof(struct list_head));
 	return 0;
 }
 

@@ -834,7 +834,7 @@ static void rt_timers_manager(long cpuid)
 	}
 }
 
-static int TimersManagerStacksize = TASKLET_STACK_SIZE;
+static int TimersManagerStacksize = 8192;
 RTAI_MODULE_PARM(TimersManagerStacksize, int);
 
 static int rtai_timers_init(void)

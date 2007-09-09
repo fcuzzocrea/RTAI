@@ -1490,19 +1490,19 @@ int rtdm_irq_request(rtdm_irq_t *irq_handle, unsigned int irq_no,
 		     rtdm_irq_handler_t handler, unsigned long flags,
 		     const char *device_name, void *arg)
 {
+        int err;
 
+        xnintr_init(irq_handle, device_name, irq_no, handler, NULL, flags);
 
+        err = xnintr_attach(irq_handle, arg);
+        if (err)
+                return err;
 
+        err = xnintr_enable(irq_handle);
+        if (err)
+                xnintr_detach(irq_handle);
 
-
-
-
-
-
-
-
-	xnintr_init(irq_handle, device_name, irq_no, handler, NULL, flags);
-	return xnintr_attach(irq_handle, arg);
+        return err;
 }
 
 EXPORT_SYMBOL(rtdm_irq_request);

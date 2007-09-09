@@ -957,7 +957,7 @@ int __rtai_tasklets_init(void)
 	RT_TASK *rt_linux_tasks[NR_RT_CPUS];
 	int cpuid;
 	
-	if (init_ptimers())	{
+	if (init_ptimers()) {
 		return -ENOMEM;
 	}	
 

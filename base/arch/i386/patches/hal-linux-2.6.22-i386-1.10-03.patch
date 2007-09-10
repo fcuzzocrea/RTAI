@@ -814,7 +814,7 @@ new file mode 100644
 index 0000000..121d8c5
 --- /dev/null
 +++ b/arch/i386/kernel/ipipe.c
-@@ -0,0 +1,826 @@
+@@ -0,0 +1,825 @@
 +/*   -*- linux-c -*-
 + *   linux/arch/i386/kernel/ipipe.c
 + *

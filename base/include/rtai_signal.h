@@ -67,7 +67,7 @@ RTAI_SYSCALL_MODE int rt_wait_signal(RT_TASK *sigtask, RT_TASK *task);
 
 #include <rtai_lxrt.h>
 
-#define SIGNAL_TASK_STACK_SIZE  64*1024 //8192
+#define SIGNAL_TASK_STACK_SIZE  64*1024
 
 #ifndef __SIGNAL_SUPPORT_FUN__
 #define __SIGNAL_SUPPORT_FUN__
@@ -80,6 +80,7 @@ static void signal_suprt_fun(struct sigsuprt_t *funarg)
 
 	if ((arg.sigtask = rt_thread_init(rt_get_name(0), SIGNAL_TASK_INIPRIO, 0, SCHED_FIFO, 1 << arg.cpuid))) {
 		if (!rtai_lxrt(RTAI_SIGNALS_IDX, sizeof(struct sigreq_t), SIGNAL_REQUEST, &arg).i[LOW]) {
+			rt_grow_and_lock_stack(SIGNAL_TASK_STACK_SIZE/2);
 			mlockall(MCL_CURRENT | MCL_FUTURE);
 			rt_make_hard_real_time();
 			while (rtai_lxrt(RTAI_SIGNALS_IDX, sizeof(struct sigtsk_t), SIGNAL_WAITSIG, &arg).i[LOW]) {
@@ -97,7 +98,6 @@ static inline int rt_request_signal(long signal, void (*sighdl)(long, RT_TASK *)
 {
 	if (signal >= 0 && sighdl) {
 		struct sigsuprt_t arg = { NULL, rt_buddy(), signal, sighdl, rtai_lxrt(RTAI_SIGNALS_IDX, sizeof(void *), SIGNAL_HELPER, &arg.sigtask).i[LOW] };
-//		if (rt_clone(signal_suprt_fun, &arg, SIGNAL_TASK_STACK_SIZE, 0) > 0) {
 		if (rt_thread_create(signal_suprt_fun, &arg, SIGNAL_TASK_STACK_SIZE)) {
 			return rtai_lxrt(RTAI_SIGNALS_IDX, sizeof(RT_TASK *), SIGNAL_HELPER, &arg.task).i[LOW];
 		}

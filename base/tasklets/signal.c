@@ -34,17 +34,22 @@ RTAI_SYSCALL_MODE int rt_request_signal_(RT_TASK *sigtask, RT_TASK *task, long s
 	int retval;
 	if (signal >= 0 && sigtask && task) {
 		if (!task->rt_signals) {
-			task->rt_signals = rt_malloc((MAXSIGNALS + MAX_PQUEUES)*sizeof(struct rt_signal_t));
-			memset(task->rt_signals, 0, ((MAXSIGNALS + MAX_PQUEUES)*sizeof(struct rt_signal_t)));
-			task->pstate = 0;
+			if ((task->rt_signals = rt_malloc((MAXSIGNALS + MAX_PQUEUES)*sizeof(struct rt_signal_t)))) {
+				memset(task->rt_signals, 0, ((MAXSIGNALS + MAX_PQUEUES)*sizeof(struct rt_signal_t)));
+				task->pstate = 0;
+			} else {
+				retval = -ENOMEM;
+				goto ret;
+			}
 		}
 		RT_SIGNALS[signal].flags = (1 << SIGNAL_ENBIT);
-		sigtask->rt_signals = (void *)1;
 		RT_SIGNALS[signal].sigtask = sigtask;
+		sigtask->rt_signals = (void *)1;
 		retval = 0;
 	} else {
 		retval = -EINVAL;
 	}
+ret:
 	task->retval = retval;
 	rt_task_resume(task);
 	return retval;
@@ -56,7 +61,7 @@ static inline void rt_exec_signal(RT_TASK *sigtask, RT_TASK *task)
 	unsigned long flags;
 
 	flags = rt_global_save_flags_and_cli();
-	if (!(--sigtask->suspdepth)) {
+	if (sigtask->suspdepth > 0 && !(--sigtask->suspdepth)) {
 		if (task) {
 			sigtask->priority = task->priority; 
  			if (!task->pstate++) {
@@ -94,9 +99,9 @@ RTAI_SYSCALL_MODE int rt_release_signal(long signal, RT_TASK *task)
 	}
 	if (signal >= 0 && RT_SIGNALS && RT_SIGNALS[signal].sigtask) {
 		RT_SIGNALS[signal].sigtask->priority = task->priority; 
-		RT_SIGNALS[signal].sigtask->rt_signals = NULL;
 		rt_exec_signal(RT_SIGNALS[signal].sigtask, 0);
 		RT_SIGNALS[signal].sigtask = NULL;
+		RT_SIGNALS[signal].sigtask->rt_signals = NULL;
 		return 0;
 	}
 	return -EINVAL;
@@ -212,11 +217,10 @@ RTAI_SYSCALL_MODE int rt_wait_signal(RT_TASK *sigtask, RT_TASK *task)
 }
 EXPORT_SYMBOL(rt_wait_signal);
 
-static void signal_suprt_fun(struct sigsuprt_t *funarg)
+static void signal_suprt_fun(long args)
 {		
-	struct sigsuprt_t arg = *funarg;
+	struct sigsuprt_t arg = *((struct sigsuprt_t *)args);
 
-	arg.sigtask = RT_CURRENT;
 	if (!rt_request_signal_(arg.sigtask, arg.task, arg.signal)) {
 		while (rt_wait_signal(arg.sigtask, arg.task)) {
 			arg.sighdl(arg.signal, arg.task);
@@ -247,15 +251,14 @@ static void signal_suprt_fun(struct sigsuprt_t *funarg)
 
 int rt_request_signal(long signal, void (*sighdl)(long, RT_TASK *))
 {
-	if (signal >= 0 && sighdl) {
-		RT_TASK *task = RT_CURRENT;
-		struct sigsuprt_t arg = { NULL, task, signal, sighdl, task->runnable_on_cpus };
-		if ((task = rt_malloc(sizeof(RT_TASK)))) {
-			rt_task_init_cpuid(task, (void *)signal_suprt_fun, (long)&arg, SIGNAL_TASK_STACK_SIZE, arg.task->priority, 0, 0, arg.cpuid);
-			rt_task_resume(task);
+	struct sigsuprt_t arg = { NULL, RT_CURRENT, signal, sighdl };
+	if (signal >= 0 && sighdl && (arg.sigtask = rt_malloc(sizeof(RT_TASK)))) {
+		if (!rt_task_init_cpuid(arg.sigtask, signal_suprt_fun, (long)&arg, SIGNAL_TASK_STACK_SIZE, arg.task->priority, 0, 0, RT_CURRENT->runnable_on_cpus)) {
+			rt_task_resume(arg.sigtask);
 			rt_task_suspend(arg.task);
 			return arg.task->retval;
 		}
+		rt_free(arg.sigtask);
 	}
 	return -EINVAL;
 }

@@ -99,8 +99,8 @@ RTAI_SYSCALL_MODE int rt_release_signal(long signal, RT_TASK *task)
 	}
 	if (signal >= 0 && RT_SIGNALS && RT_SIGNALS[signal].sigtask) {
 		RT_SIGNALS[signal].sigtask->priority = task->priority; 
-		rt_exec_signal(RT_SIGNALS[signal].sigtask, 0);
 		RT_SIGNALS[signal].sigtask->rt_signals = NULL;
+		rt_exec_signal(RT_SIGNALS[signal].sigtask, 0);
 		RT_SIGNALS[signal].sigtask = NULL;
 		return 0;
 	}

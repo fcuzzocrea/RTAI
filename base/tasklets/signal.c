@@ -43,8 +43,8 @@ RTAI_SYSCALL_MODE int rt_request_signal_(RT_TASK *sigtask, RT_TASK *task, long s
 			}
 		}
 		RT_SIGNALS[signal].flags = (1 << SIGNAL_ENBIT);
-		RT_SIGNALS[signal].sigtask = sigtask;
 		sigtask->rt_signals = (void *)1;
+		RT_SIGNALS[signal].sigtask = sigtask;
 		retval = 0;
 	} else {
 		retval = -EINVAL;
@@ -100,8 +100,8 @@ RTAI_SYSCALL_MODE int rt_release_signal(long signal, RT_TASK *task)
 	if (signal >= 0 && RT_SIGNALS && RT_SIGNALS[signal].sigtask) {
 		RT_SIGNALS[signal].sigtask->priority = task->priority; 
 		rt_exec_signal(RT_SIGNALS[signal].sigtask, 0);
-		RT_SIGNALS[signal].sigtask = NULL;
 		RT_SIGNALS[signal].sigtask->rt_signals = NULL;
+		RT_SIGNALS[signal].sigtask = NULL;
 		return 0;
 	}
 	return -EINVAL;

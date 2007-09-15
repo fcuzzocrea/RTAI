@@ -81,7 +81,6 @@ static void signal_suprt_fun(struct sigsuprt_t *funarg)
 	if ((arg.sigtask = rt_thread_init(rt_get_name(0), SIGNAL_TASK_INIPRIO, 0, SCHED_FIFO, 1 << arg.cpuid))) {
 		if (!rtai_lxrt(RTAI_SIGNALS_IDX, sizeof(struct sigreq_t), SIGNAL_REQUEST, &arg).i[LOW]) {
 			rt_grow_and_lock_stack(SIGNAL_TASK_STACK_SIZE/2);
-			mlockall(MCL_CURRENT | MCL_FUTURE);
 			rt_make_hard_real_time();
 			while (rtai_lxrt(RTAI_SIGNALS_IDX, sizeof(struct sigtsk_t), SIGNAL_WAITSIG, &arg).i[LOW]) {
 				arg.sighdl(arg.signal, arg.task);

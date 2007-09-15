@@ -225,8 +225,6 @@ static void signal_suprt_fun(long args)
 		while (rt_wait_signal(arg.sigtask, arg.task)) {
 			arg.sighdl(arg.signal, arg.task);
 		}
-	} else {
-		rt_task_resume(arg.task);
 	}
 }
 

@@ -20,7 +20,7 @@
 #ifndef _RTAI_SIGNAL_H_
 #define _RTAI_SIGNAL_H_
 
-#define RTAI_SIGNALS_IDX  2
+#define RTAI_SIGNALS_IDX  1
 
 #define SIGNAL_HELPER   0
 #define SIGNAL_WAITSIG  1

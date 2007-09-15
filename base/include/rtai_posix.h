@@ -2286,7 +2286,7 @@ static int support_posix_timer(void *data)
 		return -1;
 	} else {
 		struct { struct rt_tasklet_struct *tasklet, *usptasklet; RT_TASK *task; } reg = { data_struct.tasklet, &usptasklet, task };
-		rtai_lxrt(TSKIDX, sizeof(reg), REG_TASK, &reg);
+		rtai_lxrt(TASKLETS_IDX, sizeof(reg), REG_TASK, &reg);
 	}
 
 	mlockall(MCL_CURRENT | MCL_FUTURE);
@@ -2346,10 +2346,10 @@ RTAI_PROTO (int, __wrap_timer_create, (clockid_t clockid, struct sigevent *evp, 
 	}
 
 	struct { struct rt_tasklet_struct *timer; void (*handler)(unsigned long); unsigned long data; long pid; long thread; } arg = { NULL, handler, data, pid, 0 };
-	arg.timer = (struct rt_tasklet_struct*)rtai_lxrt(TSKIDX, SIZARG, INIT, &arg).v[LOW];
+	arg.timer = (struct rt_tasklet_struct*)rtai_lxrt(TASKLETS_IDX, SIZARG, INIT, &arg).v[LOW];
 	data_supfun.tasklet = arg.timer; 
 	arg.thread = rt_thread_create((void *)support_posix_timer, &data_supfun, TASKLET_STACK_SIZE);
-	*timerid = (timer_t)rtai_lxrt(TSKIDX, SIZARG, PTIMER_CREATE, &arg).i[LOW];
+	*timerid = (timer_t)rtai_lxrt(TASKLETS_IDX, SIZARG, PTIMER_CREATE, &arg).i[LOW];
 	
 	return 0;
 }
@@ -2359,7 +2359,7 @@ RTAI_PROTO (int, __wrap_timer_gettime, (timer_t timerid, struct itimerspec *valu
 	RTIME timer_times[2];
 	
 	struct { timer_t timer; RTIME *timer_times; } arg = { timerid, timer_times };
-	rtai_lxrt(TSKIDX, SIZARG, PTIMER_GETTIME, &arg);
+	rtai_lxrt(TASKLETS_IDX, SIZARG, PTIMER_GETTIME, &arg);
 	
 	count2timespec( timer_times[0], &(value->it_value) );
 	count2timespec( timer_times[1], &(value->it_interval) );
@@ -2373,7 +2373,7 @@ RTAI_PROTO (int, __wrap_timer_settime, (timer_t timerid, int flags, const struct
 		__wrap_timer_gettime(timerid, ovalue);
 	}
 	struct { timer_t timer; const struct itimerspec *value; unsigned long data; long flags; } arg = { timerid, value, pthread_self(), flags};
-	rtai_lxrt(TSKIDX, SIZARG, PTIMER_SETTIME, &arg);
+	rtai_lxrt(TASKLETS_IDX, SIZARG, PTIMER_SETTIME, &arg);
 	
 	return 0;
 }
@@ -2381,7 +2381,7 @@ RTAI_PROTO (int, __wrap_timer_settime, (timer_t timerid, int flags, const struct
 RTAI_PROTO (int, __wrap_timer_getoverrun, (timer_t timerid))
 {
 	struct { timer_t timer; } arg = { timerid };
-	return rtai_lxrt(TSKIDX, SIZARG, PTIMER_OVERRUN, &arg).rt;
+	return rtai_lxrt(TASKLETS_IDX, SIZARG, PTIMER_OVERRUN, &arg).rt;
 }
 
 RTAI_PROTO (int, __wrap_timer_delete, (timer_t timerid))
@@ -2389,7 +2389,7 @@ RTAI_PROTO (int, __wrap_timer_delete, (timer_t timerid))
 	int thread;
 	
 	struct { timer_t timer; long space;} arg_del = { timerid, 1 };
-	if ((thread = rtai_lxrt(TSKIDX, sizeof(arg_del), PTIMER_DELETE, &arg_del).i[LOW])) {
+	if ((thread = rtai_lxrt(TASKLETS_IDX, sizeof(arg_del), PTIMER_DELETE, &arg_del).i[LOW])) {
 		rt_thread_join(thread);
 	}
 	

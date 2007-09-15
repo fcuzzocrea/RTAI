@@ -6,8 +6,8 @@ of its native addons, as listed below.
 
 Those already used by modules found in this distributions are:
 0  - RTAI itself (hardwired),
-1  - tasklets    (hardwired),
-2  - signals     (hardwired),
+1  - signals     (hardwired),
+2  - tasklets    (hardwired),
 3  - watchdog    (hardwired),
 9  - comedi,
 10 - fifos,

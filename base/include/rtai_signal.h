@@ -34,8 +34,6 @@
 
 #define SIGNAL_TASK_INIPRIO     0
 
-#define RT_SCHED_SIGSUSP  (1 << 15)
-
 struct rt_signal_t { unsigned long flags; RT_TASK *sigtask; };
 
 struct sigsuprt_t { RT_TASK *sigtask; RT_TASK *task; long signal; void (*sighdl)(long, RT_TASK *); unsigned long cpuid; };

@@ -47,6 +47,7 @@
 #define RT_SCHED_RETURN     128
 #define RT_SCHED_MBXSUSP    256
 #define RT_SCHED_SFTRDY     512
+#define RT_SCHED_SIGSUSP    (1 << 15)
 
 #define RT_RWLINV     (11)  // keep this the highest
 #define RT_CHGPORTERR (10)

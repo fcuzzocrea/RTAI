@@ -950,25 +950,17 @@ EXPORT_SYMBOL(rt_ptimer_delete);
 static int TaskletsStacksize = TASKLET_STACK_SIZE;
 RTAI_MODULE_PARM(TaskletsStacksize, int);
 
-static RT_TASK *rt_base_linux_task;
-
 int __rtai_tasklets_init(void)
 {
-	RT_TASK *rt_linux_tasks[NR_RT_CPUS];
 	int cpuid;
-	
+
+	if(set_rt_fun_ext_index(rt_tasklet_fun, TASKLETS_IDX)) {
+		printk("Recompile your module with a different index\n");
+		return -EACCES;
+        }
 	if (init_ptimers()) {
 		return -ENOMEM;
 	}	
-
-	rt_base_linux_task = rt_get_base_linux_task(rt_linux_tasks);
-        if(rt_base_linux_task->task_trap_handler[0]) {
-                if(((int (*)(void *, int))rt_base_linux_task->task_trap_handler[0])(rt_tasklet_fun, TASKLETS_IDX)) {
-                        printk("Recompile your module with a different index\n");
-                        cleanup_ptimers();
-                        return -EACCES;
-                }
-        }
 	for (cpuid = 0; cpuid < NUM_CPUS; cpuid++) {
 		timers_lock[cpuid] = timers_lock[0];
 		timers_list[cpuid] = timers_list[0];
@@ -984,13 +976,11 @@ int __rtai_tasklets_init(void)
 void __rtai_tasklets_exit(void)
 {
 	int cpuid;
+ 	reset_rt_fun_ext_index(rt_tasklet_fun, TASKLETS_IDX);
+	cleanup_ptimers();    
 	for (cpuid = 0; cpuid < NUM_CPUS; cpuid++) {
 		rt_task_delete(&timers_manager[cpuid]);
 	}
-        if(rt_base_linux_task->task_trap_handler[1]) {
-                ((int (*)(void *, int))rt_base_linux_task->task_trap_handler[1])(rt_tasklet_fun, TASKLETS_IDX);
-        }
-	cleanup_ptimers();    
 	printk(KERN_INFO "RTAI[tasklets]: unloaded.\n");
 }
 

@@ -1,3 +1,11 @@
+2007-09-22 Paolo Mantegazza <mantegazza@aero.polimi.it>
+
+	* base/sched/sys.c: do not init task_trap_handler for setting lxrt 
+	  extension anymore.
+	* base/usi/usi.c, base/tasklets/tasklets.c, base/ipc/fifos/fisos.c:
+	  set lxrt extensions with the due set/rest functions, 
+	  task_trap_handler is dead.
+
 2007-09-05 Paolo Mantegazza <mantegazza@aero.polimi.it>
 
 	* base/arch/i386/hal/hal.immedi, base/include/asm-i386/rtai_hal.h,

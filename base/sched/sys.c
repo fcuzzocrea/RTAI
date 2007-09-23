@@ -771,9 +771,5 @@ void linux_process_termination(void)
 
 void init_fun_ext (void)
 {
-	RT_TASK *rt_linux_tasks[NR_RT_CPUS];
 	rt_fun_ext[0] = rt_fun_lxrt;
-	rt_get_base_linux_task(rt_linux_tasks);
-	rt_linux_tasks[0]->task_trap_handler[0] = (void *)set_rt_fun_ext_index;
-	rt_linux_tasks[0]->task_trap_handler[1] = (void *)reset_rt_fun_ext_index;
 }

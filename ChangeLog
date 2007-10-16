@@ -1,3 +1,10 @@
+2007-10-16 Paolo Mantegazza <mantegazza@aero.polimi.it>
+
+	* base/include/rtai_lxrt.h: rt_thread_create/join adapted to 
+	  pthread_create thread return in NPTL
+	* base/include/rtai_tasklets.h, base/tasklets/tasklets.c: adapted
+	  to what returned above.
+
 2007-09-22 Paolo Mantegazza <mantegazza@aero.polimi.it>
 
 	* base/sched/sys.c: do not init task_trap_handler for setting lxrt 

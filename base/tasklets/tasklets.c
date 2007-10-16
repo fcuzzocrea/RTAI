@@ -767,7 +767,7 @@ RTAI_SYSCALL_MODE void rt_register_task(struct rt_tasklet_struct *tasklet, struc
 	rt_copy_to_user(usptasklet, tasklet, sizeof(struct rt_tasklet_struct));
 }
 
-RTAI_SYSCALL_MODE void rt_wait_tasklet_is_hard(struct rt_tasklet_struct *tasklet, int thread)
+RTAI_SYSCALL_MODE void rt_wait_tasklet_is_hard(struct rt_tasklet_struct *tasklet, long thread)
 {
 	tasklet->thread = thread;
 	while (!tasklet->task || !((tasklet->task)->state & RT_SCHED_SUSPENDED)) {
@@ -877,7 +877,7 @@ static inline int gvb_ptimer_indx(int itimer)
 RTAI_SYSCALL_MODE timer_t rt_ptimer_create(struct rt_tasklet_struct *timer, void (*handler)(unsigned long), unsigned long data, long pid, long thread)
 {
 	if (thread) {
-		rt_wait_tasklet_is_hard(timer, (int)thread);
+		rt_wait_tasklet_is_hard(timer, thread);
 	}
 	timer->next = timer;
 	timer->prev = timer;

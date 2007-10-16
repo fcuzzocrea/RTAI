@@ -263,7 +263,7 @@ do { \
 
 #define rt_timer_use_fpu rt_tasklet_use_fpu
 
-RTAI_SYSCALL_MODE void rt_wait_tasklet_is_hard(struct rt_tasklet_struct *tasklet, int thread);
+RTAI_SYSCALL_MODE void rt_wait_tasklet_is_hard(struct rt_tasklet_struct *tasklet, long thread);
 
 RTAI_SYSCALL_MODE void rt_register_task(struct rt_tasklet_struct *tasklet, struct rt_tasklet_struct *usptasklet, struct rt_task_struct *task);
  
@@ -287,7 +287,7 @@ struct rt_tasklet_struct {
 	RTIME firing_time, period;
 	void (*handler)(unsigned long);
 	unsigned long data, id;
-	int thread;
+	long thread;
 	struct rt_task_struct *task;
 	struct rt_tasklet_struct *usptasklet;
 	int overrun;
@@ -346,7 +346,6 @@ RTAI_PROTO(struct rt_tasklet_struct *, rt_init_tasklet,(void))
 		rt_make_soft_real_time();
 	}
 	arg.thread = rt_thread_create((void *)support_tasklet, arg.tasklet, TASKLET_STACK_SIZE);
-//	arg.thread = clone(support_tasklet, sp + TASKLET_STACK_SIZE - 1, CLONE_VM | CLONE_FS | CLONE_FILES, arg.tasklet);
 	rtai_lxrt(TASKLETS_IDX, SIZARG, WAIT_IS_HARD, &arg);
 	if (is_hard) {
 		rt_make_hard_real_time();

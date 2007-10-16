@@ -634,58 +634,35 @@ static inline int rt_clone(void *fun, void *args, long stack_size, unsigned long
 
 #define RT_THREAD_STACK_MIN  64*1024
 
-#if 1
 #include <pthread.h>
 
-RTAI_PROTO(int, rt_thread_create,(void *fun, void *args, int stack_size))
+RTAI_PROTO(long, rt_thread_create, (void *fun, void *args, int stack_size))
 {
-	pthread_t thread;
+	long thread;
 	pthread_attr_t attr;
-        pthread_attr_init(&attr);
-	int hs;
 
-        if (pthread_attr_setstacksize(&attr, stack_size > RT_THREAD_STACK_MIN ? stack_size : RT_THREAD_STACK_MIN)) {
-                return -1;
-        }
-	{
-		struct { unsigned long dummy; } arg = { 0 };
-		if ((hs = rtai_lxrt(BIDX, SIZARG, IS_HARD, &arg).i[LOW])) {
+        pthread_attr_init(&attr);
+	if (!pthread_attr_setstacksize(&attr, stack_size > RT_THREAD_STACK_MIN ? stack_size : RT_THREAD_STACK_MIN)) {
+		struct { unsigned long hs; } arg = { 0 };
+		if ((arg.hs = rtai_lxrt(BIDX, SIZARG, IS_HARD, &arg).i[LOW])) {
 			rtai_lxrt(BIDX, SIZARG, MAKE_SOFT_RT, &arg);
 		}
-	}
-	if (pthread_create(&thread, &attr, (void *(*)(void *))fun, args)) {
-		thread = -1;
-	}
-	if (hs) {
-	        struct { unsigned long dummy; } arg;
-		rtai_lxrt(BIDX, SIZARG, MAKE_HARD_RT, &arg);
+		if (pthread_create(&thread, &attr, (void *(*)(void *))fun, args)) {
+			thread = 0;
+		}
+		if (arg.hs) {
+			rtai_lxrt(BIDX, SIZARG, MAKE_HARD_RT, &arg);
+		}
+	} else {
+		thread = 0;
 	}
 	return thread;
 }
 
-RTAI_PROTO(int, rt_thread_join, (int thread))
+RTAI_PROTO(int, rt_thread_join, (long thread))
 {
 	return pthread_join((pthread_t)thread, NULL);
 }
-
-#else
-
-#include <sys/wait.h>
-
-RTAI_PROTO(int, rt_thread_create, (void *fun, void *args, int stack_size))
-{
-	if (stack_size < RT_THREAD_STACK_MIN) {
-		stack_size = RT_THREAD_STACK_MIN;
-	}
-	return rt_clone(fun, args, stack_size, 0);
-}
-
-RTAI_PROTO(int, rt_thread_join, (int thread))
-{
-	return waitpid(thread, NULL, 0);
-}
-
-#endif
 
 #ifndef __SUPPORT_LINUX_SERVER__
 #define __SUPPORT_LINUX_SERVER__
@@ -741,7 +718,7 @@ RTAI_PROTO(int, rt_sync_async_linux_syscall_server_create, (RT_TASK *task, int m
 		syscalls.callback_fun = callback_fun;
 		syscalls.mode         = mode;
 		syscalls.nr           = nr_bufd_async_calls;
-		if (rt_thread_create((void *)linux_syscall_server_fun, &syscalls, 0) > 0) {
+		if (rt_thread_create((void *)linux_syscall_server_fun, &syscalls, 0)) {
 			rtai_lxrt(BIDX, sizeof(RT_TASK *), SUSPEND, &task);
 			return 0;
 		}

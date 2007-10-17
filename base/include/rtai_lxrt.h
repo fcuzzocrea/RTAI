@@ -647,7 +647,7 @@ RTAI_PROTO(long, rt_thread_create, (void *fun, void *args, int stack_size))
 		if ((arg.hs = rtai_lxrt(BIDX, SIZARG, IS_HARD, &arg).i[LOW])) {
 			rtai_lxrt(BIDX, SIZARG, MAKE_SOFT_RT, &arg);
 		}
-		if (pthread_create((pthread *)&thread, &attr, (void *(*)(void *))fun, args)) {
+		if (pthread_create((pthread_t *)&thread, &attr, (void *(*)(void *))fun, args)) {
 			thread = 0;
 		}
 		if (arg.hs) {

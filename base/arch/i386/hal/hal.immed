@@ -889,7 +889,7 @@ irqreturn_t rtai_broadcast_to_local_timers (int irq, void *dev_id, struct pt_reg
 	do {                       } while (0)
 #endif /* CONFIG_RTAI_SCHED_ISR_LOCK */
 
-#if (LINUX_VERSION_CODE > KERNEL_VERSION(2,4,31) && LINUX_VERSION_CODE < KERNEL_VERSION(2,6,0)) || LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,9) 
+#if (LINUX_VERSION_CODE > KERNEL_VERSION(2,4,31) && LINUX_VERSION_CODE < KERNEL_VERSION(2,6,0)) || LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,9)
 #define HAL_TICK_REGS hal_tick_regs[cpuid]
 #else
 #define HAL_TICK_REGS hal_tick_regs
@@ -1062,7 +1062,10 @@ int _rtai_8254_timer_handler(struct pt_regs regs)
 		HAL_TICK_REGS.ebp    = regs.ebp;
 #endif /* CONFIG_SMP && CONFIG_FRAME_POINTER */
 #else
-		set_irq_regs(&regs);
+		__raw_get_cpu_var(__ipipe_tick_regs).eflags = regs.eflags;
+		__raw_get_cpu_var(__ipipe_tick_regs).eip    = regs.eip;
+		__raw_get_cpu_var(__ipipe_tick_regs).xcs    = regs.xcs;
+		__raw_get_cpu_var(__ipipe_tick_regs).ebp    = regs.ebp;
 #endif
 		hal_fast_flush_pipeline(cpuid);
 #if defined(CONFIG_SMP) && LINUX_VERSION_CODE >= KERNEL_VERSION(2,4,32)
@@ -1546,7 +1549,10 @@ static int rtai_hirq_dispatcher (struct pt_regs regs)
 		HAL_TICK_REGS.ebp    = regs.ebp;
 #endif /* CONFIG_SMP && CONFIG_FRAME_POINTER */
 #else
-		set_irq_regs(&regs);
+		__raw_get_cpu_var(__ipipe_tick_regs).eflags = regs.eflags;
+		__raw_get_cpu_var(__ipipe_tick_regs).eip    = regs.eip;
+		__raw_get_cpu_var(__ipipe_tick_regs).xcs    = regs.xcs;
+		__raw_get_cpu_var(__ipipe_tick_regs).ebp    = regs.ebp;
 #endif
 	}
 	hal_fast_flush_pipeline(cpuid);

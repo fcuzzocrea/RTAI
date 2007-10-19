@@ -1,3 +1,10 @@
+2007-10-20 Paolo Mantegazza <mantegazza@aero.polimi.it>
+
+	* base/include/asm-x86_64/rtai_hal-h: upgrades for using latest kernel 
+	  patching.
+	* base/arche/x86_64/hal/hal.immed: upgrades for using latest kernel 
+	  patching.
+
 2007-10-19 Paolo Mantegazza <mantegazza@aero.polimi.it>
 
 	* base/sched/sys.c: force mlockall internally at task initting.

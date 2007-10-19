@@ -369,7 +369,7 @@ do { \
 #else
 #define hal_test_and_fast_flush_pipeline(cpuid) \
 do { \
-       	if (!test_bit(IPIPE_STALL_FLAG, ROOT_STATUS_ADR(cpuid))) { \
+	if (!test_bit(IPIPE_STALL_FLAG, ROOT_STATUS_ADR(cpuid))) { \
 		hal_fast_flush_pipeline(cpuid); \
 		rtai_sti(); \
 	} \

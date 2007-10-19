@@ -624,7 +624,7 @@ config RTAI_TBX
 	The module will be called rtai_tbx.o.
 
 config RTAI_TASKLETS
-	tristate "Tasklets and async signals"
+	tristate "Tasklets"
 	default m
 	help
 
@@ -648,7 +648,8 @@ config RTAI_TASKLETS
 	handler in charge of their execution when they are needed.
 	The module will be called rtai_tasklets.o.
 
-	Signals are much the same as tasklets and execute their handler
+	There are special signals tasklets also, natively built in always.
+	They are much the same as tasklets and execute their handler
 	function whenever they are triggered by any task, including their
 	parent task. The notable difference against tasklets is that the
 	task they serve is blocked till any of its signal handler is 

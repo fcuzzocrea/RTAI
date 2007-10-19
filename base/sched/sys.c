@@ -246,11 +246,13 @@ static inline RT_TASK* __task_init(unsigned long name, int prio, int stack_size,
 #ifdef PF_EVNOTIFY
 			current->flags |= PF_EVNOTIFY;
 #endif
-asmlinkage long sys_mlockall(int flags);
-			sys_mlockall(MCL_CURRENT | MCL_FUTURE);
+			{
+				asmlinkage long sys_mlockall(int flags);
+				sys_mlockall(MCL_CURRENT | MCL_FUTURE);
 #ifdef VM_PINNED
-			ipipe_disable_ondemand_mappings(current);
+				ipipe_disable_ondemand_mappings(current);
 #endif
+			}
 
 			return rt_task;
 		} else {

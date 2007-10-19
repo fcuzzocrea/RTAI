@@ -2909,11 +2909,17 @@ static void timer_fun(unsigned long none)
 extern int rt_registry_alloc(void);
 extern void rt_registry_free(void);
 
+extern int __rtai_signals_init(void);
+extern void __rtai_signals_exit(void);
+
 static int __rtai_lxrt_init(void)
 {
 	int cpuid, retval;
 	
-	sched_mem_init();
+	if (__rtai_signals_init()) {
+		return 1;
+	}
+
 #ifdef CONFIG_RTAI_MALLOC
 	rtai_kstack_heap_size = (rtai_kstack_heap_size + PAGE_SIZE - 1) & ~(PAGE_SIZE - 1);
 	if (rtheap_init(&rtai_kstack_heap, NULL, rtai_kstack_heap_size, PAGE_SIZE, GFP_KERNEL)) {
@@ -2921,6 +2927,8 @@ static int __rtai_lxrt_init(void)
 		return 1;
 	}
 #endif
+	sched_mem_init();
+
 	rt_registry_alloc();
 
 	for (cpuid = 0; cpuid < NR_RT_CPUS; cpuid++) {
@@ -3046,6 +3054,8 @@ static void __rtai_lxrt_exit(void)
 	rt_linux_hrt_set_mode  = NULL;
 	rt_linux_hrt_next_shot = NULL;
 #endif
+
+	__rtai_signals_exit();
 
 	lxrt_killall();
 

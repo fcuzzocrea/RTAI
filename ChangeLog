@@ -1,3 +1,7 @@
+2007-10-24  Roberto Bucher <roberto.bucher@supsi.ch>
+
+	* rtai-lab/scilab: Modifications for Scilab-4.1.2
+
 2007-08-26  Roberto Bucher <roberto.bucher@supsi.ch>
 
 	* rtai-lab/scilab/rtmain.c: Changed type for rt_BaseTaskPeriod to RTIME.

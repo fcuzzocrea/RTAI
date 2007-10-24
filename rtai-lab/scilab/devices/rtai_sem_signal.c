@@ -17,7 +17,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA.
 */
 
 #include <machine.h>
-#include <scicos_block.h>
+#include <scicos_block4.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
@@ -68,9 +68,10 @@ static void init(scicos_block *block)
 
 static void inout(scicos_block *block)
 {
+  double *u = block->inptr[0];
   struct Sems * sem = (struct Sems *) (*block->work);
   int ret;
-  if(block->inptr[0][0] > 0.0) ret = RT_sem_signal(sem->tNode, sem->tPort,sem->sem);
+  if(u[0] > 0.0) ret = RT_sem_signal(sem->tNode, sem->tPort,sem->sem);
 }
 
 static void end(scicos_block *block)
@@ -86,7 +87,7 @@ static void end(scicos_block *block)
 
 void rtai_sem_signal(scicos_block *block,int flag)
 {
-  if (flag==2){          /* get input */
+  if (flag==1){          /* get input */
     inout(block);
   }
   else if (flag==5){     /* termination */ 

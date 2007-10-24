@@ -17,7 +17,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA.
 */
 
 #include <machine.h>
-#include <scicos_block.h>
+#include <scicos_block4.h>
 #include <stdio.h>
 #include <unistd.h>
 #include <sys/types.h>
@@ -122,13 +122,14 @@ static void inout(scicos_block *block)
 
   lsampl_t data, maxdata = comedi_get_maxdata(comdev->dev, comdev->subdev, comdev->channel);
   double x;
+  double *y = block->outptr[0];
 
   comedi_data_read(comdev->dev, comdev->subdev, comdev->channel, comdev->range, comdev->aref, &data);
   x = data;
   x /= maxdata;
   x *= (comdev->range_max - comdev->range_min);
   x += comdev->range_min;
-  block->outptr[0][0] = x;
+  y[0] = x;
 }
 
 static void end(scicos_block *block)

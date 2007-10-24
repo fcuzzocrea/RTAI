@@ -2,18 +2,17 @@ Writing new devices for Scilab/Scicos
 =====================================
 
 Use the utility "gen_dev" to create a skeleton of the file for your
-new device. The needed procedures are added to the include file "devices.h" too.
+new device.
 
 Example:
 gen_dev rtai_comedi_data
 
-This command creates a file "rtai_comedi_data.c" and fill the
-procedures into "device.h"
+This command creates a file "rtai_comedi_data.c".
 
 Now simply add the code to the generated file in order to fit your need.
+Add the file in the GNUmakefile.am and run automake.
 
-Start "Makefile" to generate the library "libsciblk.a" and "make
-install".
+Reconfigure, rebuild and reinstall RTAI.
  
 Roberto Bucher roberto.bucher@die.supsi.ch
-Sep 18 2004
+Oct 24 2007

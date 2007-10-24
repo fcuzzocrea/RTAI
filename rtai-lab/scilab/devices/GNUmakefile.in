@@ -14,7 +14,6 @@
 
 @SET_MAKE@
 
-
 srcdir = @srcdir@
 top_srcdir = @top_srcdir@
 VPATH = @srcdir@
@@ -41,12 +40,10 @@ host_triplet = @host@
 @CONFIG_RTAI_COMEDI_LXRT_TRUE@	rtai_comedi_datain.c \
 @CONFIG_RTAI_COMEDI_LXRT_TRUE@	rtai_comedi_dataout.c \
 @CONFIG_RTAI_COMEDI_LXRT_TRUE@	rtai_comedi_dioin.c \
-@CONFIG_RTAI_COMEDI_LXRT_TRUE@	rtai_comedi_dioout.c \
-@CONFIG_RTAI_COMEDI_LXRT_TRUE@	old_comedi.c
+@CONFIG_RTAI_COMEDI_LXRT_TRUE@	rtai_comedi_dioout.c 
 
 subdir = rtai-lab/scilab/devices
-DIST_COMMON = $(include_HEADERS) $(srcdir)/GNUmakefile.am \
-	$(srcdir)/GNUmakefile.in
+DIST_COMMON = $(srcdir)/GNUmakefile.am $(srcdir)/GNUmakefile.in
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
 am__aclocal_m4_deps = $(top_srcdir)/base/config/autoconf/acinclude.m4 \
 	$(top_srcdir)/base/config/autoconf/docbook.m4 \
@@ -63,7 +60,7 @@ am__vpath_adj = case $$p in \
     *) f=$$p;; \
   esac;
 am__strip_dir = `echo $$p | sed -e 's|^.*/||'`;
-am__installdirs = "$(DESTDIR)$(libdir)" "$(DESTDIR)$(includedir)"
+am__installdirs = "$(DESTDIR)$(libdir)"
 libLIBRARIES_INSTALL = $(INSTALL_DATA)
 LIBRARIES = $(lib_LIBRARIES)
 ARFLAGS = cru
@@ -71,16 +68,15 @@ libsciblk_a_LIBADD =
 am__libsciblk_a_SOURCES_DIST = rtai_scope.c rtai_led.c rtai_meter.c \
 	rtai_fifoin.c rtai_fifoout.c rtai_sinus.c rtai_square.c \
 	rtai_step.c rtai_extdata.c mbx_receive_if.c mbx_receive.c \
-	mbx_ovrwr_send.c mbx_send_if.c getstr.c rtmain.h devices.h \
-	machine.h scicos_block.h rtai_sem_signal.c rtai_sem_wait.c \
-	olddevices.c rtai_comedi_datain.c rtai_comedi_dataout.c \
-	rtai_comedi_dioin.c rtai_comedi_dioout.c old_comedi.c
+	mbx_ovrwr_send.c mbx_send_if.c getstr.c rtmain.h machine.h \
+	scicos_block4.h rtai_sem_signal.c rtai_sem_wait.c \
+	rtai_comedi_datain.c rtai_comedi_dataout.c rtai_comedi_dioin.c \
+	rtai_comedi_dioout.c
 @CONFIG_RTAI_COMEDI_LXRT_TRUE@am__objects_1 =  \
 @CONFIG_RTAI_COMEDI_LXRT_TRUE@	rtai_comedi_datain.$(OBJEXT) \
 @CONFIG_RTAI_COMEDI_LXRT_TRUE@	rtai_comedi_dataout.$(OBJEXT) \
 @CONFIG_RTAI_COMEDI_LXRT_TRUE@	rtai_comedi_dioin.$(OBJEXT) \
-@CONFIG_RTAI_COMEDI_LXRT_TRUE@	rtai_comedi_dioout.$(OBJEXT) \
-@CONFIG_RTAI_COMEDI_LXRT_TRUE@	old_comedi.$(OBJEXT)
+@CONFIG_RTAI_COMEDI_LXRT_TRUE@	rtai_comedi_dioout.$(OBJEXT)
 am_libsciblk_a_OBJECTS = rtai_scope.$(OBJEXT) rtai_led.$(OBJEXT) \
 	rtai_meter.$(OBJEXT) rtai_fifoin.$(OBJEXT) \
 	rtai_fifoout.$(OBJEXT) rtai_sinus.$(OBJEXT) \
@@ -89,7 +85,7 @@ am_libsciblk_a_OBJECTS = rtai_scope.$(OBJEXT) rtai_led.$(OBJEXT) \
 	mbx_receive.$(OBJEXT) mbx_ovrwr_send.$(OBJEXT) \
 	mbx_send_if.$(OBJEXT) getstr.$(OBJEXT) \
 	rtai_sem_signal.$(OBJEXT) rtai_sem_wait.$(OBJEXT) \
-	olddevices.$(OBJEXT) $(am__objects_1)
+	$(am__objects_1)
 libsciblk_a_OBJECTS = $(am_libsciblk_a_OBJECTS)
 DEFAULT_INCLUDES = -I. -I$(srcdir) -I$(top_builddir)
 depcomp = $(SHELL) $(top_srcdir)/base/config/autoconf/depcomp
@@ -104,8 +100,6 @@ LINK = $(LIBTOOL) --tag=CC --mode=link $(CCLD) $(AM_CFLAGS) $(CFLAGS) \
 	$(AM_LDFLAGS) $(LDFLAGS) -o $@
 SOURCES = $(libsciblk_a_SOURCES)
 DIST_SOURCES = $(am__libsciblk_a_SOURCES_DIST)
-includeHEADERS_INSTALL = $(INSTALL_HEADER)
-HEADERS = $(include_HEADERS)
 ETAGS = etags
 CTAGS = ctags
 DISTFILES = $(DIST_COMMON) $(DIST_SOURCES) $(TEXINFOS) $(EXTRA_DIST)
@@ -391,13 +385,10 @@ lib_LIBRARIES = libsciblk.a
 libsciblk_a_SOURCES = rtai_scope.c rtai_led.c rtai_meter.c \
 	rtai_fifoin.c rtai_fifoout.c rtai_sinus.c rtai_square.c \
 	rtai_step.c rtai_extdata.c mbx_receive_if.c mbx_receive.c \
-	mbx_ovrwr_send.c mbx_send_if.c getstr.c rtmain.h devices.h \
-	machine.h scicos_block.h rtai_sem_signal.c rtai_sem_wait.c \
-	olddevices.c $(am__append_1)
+	mbx_ovrwr_send.c mbx_send_if.c getstr.c rtmain.h machine.h \
+	scicos_block4.h rtai_sem_signal.c rtai_sem_wait.c \
+	$(am__append_1)
 libsciblk_a_AR = $(CROSS_COMPILE)ar cru
-include_HEADERS = \
-	devices.h 
-
 INCLUDES = \
 	@RTAI_USER_CFLAGS@ \
 	-I$(top_srcdir)/base/include \
@@ -405,7 +396,7 @@ INCLUDES = \
 	-I$(top_srcdir)/addons/comedi \
 	-I@COMEDI_DIR@/include
 
-EXTRA_DIST = template.c.tmp README.devices devtmpl.h
+EXTRA_DIST = template.c.tmp README.devices
 all: all-am
 
 .SUFFIXES:
@@ -484,8 +475,6 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/mbx_receive.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/mbx_receive_if.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/mbx_send_if.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/old_comedi.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/olddevices.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/rtai_comedi_datain.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/rtai_comedi_dataout.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/rtai_comedi_dioin.Po@am__quote@
@@ -532,23 +521,6 @@ clean-libtool:
 distclean-libtool:
 	-rm -f libtool
 uninstall-info-am:
-install-includeHEADERS: $(include_HEADERS)
-	@$(NORMAL_INSTALL)
-	test -z "$(includedir)" || $(mkdir_p) "$(DESTDIR)$(includedir)"
-	@list='$(include_HEADERS)'; for p in $$list; do \
-	  if test -f "$$p"; then d=; else d="$(srcdir)/"; fi; \
-	  f=$(am__strip_dir) \
-	  echo " $(includeHEADERS_INSTALL) '$$d$$p' '$(DESTDIR)$(includedir)/$$f'"; \
-	  $(includeHEADERS_INSTALL) "$$d$$p" "$(DESTDIR)$(includedir)/$$f"; \
-	done
-
-uninstall-includeHEADERS:
-	@$(NORMAL_UNINSTALL)
-	@list='$(include_HEADERS)'; for p in $$list; do \
-	  f=$(am__strip_dir) \
-	  echo " rm -f '$(DESTDIR)$(includedir)/$$f'"; \
-	  rm -f "$(DESTDIR)$(includedir)/$$f"; \
-	done
 
 ID: $(HEADERS) $(SOURCES) $(LISP) $(TAGS_FILES)
 	list='$(SOURCES) $(HEADERS) $(LISP) $(TAGS_FILES)'; \
@@ -627,9 +599,9 @@ distdir: $(DISTFILES)
 	done
 check-am: all-am
 check: check-am
-all-am: GNUmakefile $(LIBRARIES) $(HEADERS)
+all-am: GNUmakefile $(LIBRARIES)
 installdirs:
-	for dir in "$(DESTDIR)$(libdir)" "$(DESTDIR)$(includedir)"; do \
+	for dir in "$(DESTDIR)$(libdir)"; do \
 	  test -z "$$dir" || $(mkdir_p) "$$dir"; \
 	done
 install: install-am
@@ -677,7 +649,7 @@ info: info-am
 
 info-am:
 
-install-data-am: install-includeHEADERS
+install-data-am:
 
 install-exec-am: install-libLIBRARIES
 
@@ -705,21 +677,20 @@ ps: ps-am
 
 ps-am:
 
-uninstall-am: uninstall-includeHEADERS uninstall-info-am \
-	uninstall-libLIBRARIES
+uninstall-am: uninstall-info-am uninstall-libLIBRARIES
 
 .PHONY: CTAGS GTAGS all all-am check check-am clean clean-generic \
 	clean-libLIBRARIES clean-libtool ctags distclean \
 	distclean-compile distclean-generic distclean-libtool \
 	distclean-tags distdir dvi dvi-am html html-am info info-am \
 	install install-am install-data install-data-am install-exec \
-	install-exec-am install-includeHEADERS install-info \
-	install-info-am install-libLIBRARIES install-man install-strip \
-	installcheck installcheck-am installdirs maintainer-clean \
+	install-exec-am install-info install-info-am \
+	install-libLIBRARIES install-man install-strip installcheck \
+	installcheck-am installdirs maintainer-clean \
 	maintainer-clean-generic mostlyclean mostlyclean-compile \
 	mostlyclean-generic mostlyclean-libtool pdf pdf-am ps ps-am \
-	tags uninstall uninstall-am uninstall-includeHEADERS \
-	uninstall-info-am uninstall-libLIBRARIES
+	tags uninstall uninstall-am uninstall-info-am \
+	uninstall-libLIBRARIES
 
 # Tell versions [3.59,3.63) of GNU make to not export all variables.
 # Otherwise a system limit (for SysV at least) may be exceeded.

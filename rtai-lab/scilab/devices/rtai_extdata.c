@@ -17,7 +17,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA.
 */
 
 #include <machine.h>
-#include <scicos_block.h>
+#include <scicos_block4.h>
 #include <stdio.h>
 #include <stdlib.h>
 
@@ -55,15 +55,17 @@ static void init(scicos_block *block)
 
 static void inout(scicos_block *block)
 {
+  double *y = block->outptr[0];
   double * pData=(double *) *block->work;
-  block->outptr[0][0]=pData[block->ipar[1]];
+  y[0]=pData[block->ipar[1]];
   block->ipar[1] = ++(block->ipar[1]) % block->ipar[0];
 }
 
 static void end(scicos_block *block)
 {
   double * pData=(double *) *block->work;
-  block->outptr[0][0]=0.0;
+  double *y = block->outptr[0];
+  y[0]=0.0;
   free(pData);
   printf("EXTDATA closed\n");
 }

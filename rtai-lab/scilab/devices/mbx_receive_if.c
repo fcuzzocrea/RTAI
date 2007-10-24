@@ -17,7 +17,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA.
 */
 
 #include <machine.h>
-#include <scicos_block.h>
+#include <scicos_block4.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
@@ -73,6 +73,8 @@ static void inout(scicos_block *block)
 {
   struct MbxRif * mbx = (struct MbxRif *) (*block->work);
   int ntraces = block->nout;
+  double *y;
+
   struct{
     double u[ntraces];
   } data;
@@ -83,7 +85,10 @@ static void inout(scicos_block *block)
       mbx->oldVal[i] = data.u[i];
     }
   }
-  for(i=0;i<ntraces;i++) block->outptr[i][0] = mbx->oldVal[i];
+  for(i=0;i<ntraces;i++) {
+    y = block->outptr[i];
+    y[0] = mbx->oldVal[i];
+  }
 }
 
 static void end(scicos_block *block)

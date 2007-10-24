@@ -17,7 +17,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA.
 */
 
 #include <machine.h>
-#include <scicos_block.h>
+#include <scicos_block4.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
@@ -71,13 +71,16 @@ static void inout(scicos_block *block)
 {
   struct MbxOwS * mbx = (struct MbxOwS *) (*block->work);
   int ntraces = block->nin;
+  double *u;
+
   struct{
     double u[ntraces];
   } data;
   int i;
 
   for(i=0;i<ntraces;i++){
-    data.u[i] = block->inptr[i][0];
+    u = block->inptr[i];
+    data.u[i] = u[0];
   }
   RT_mbx_ovrwr_send(mbx->tNode, mbx->tPort,mbx->mbx,&data,sizeof(data));
 }
@@ -96,7 +99,7 @@ static void end(scicos_block *block)
 
 void rtai_mbx_ovrwr_send(scicos_block *block,int flag)
 {
-  if (flag==2){          /* get input */
+  if (flag==1){          /* get input */
     inout(block);
   }
   else if (flag==5){     /* termination */ 

@@ -554,6 +554,7 @@ void reset_rt_fun_ext_index(struct rt_fun_entry *fun,
 #else /* !__KERNEL__ */
 
 #include <sys/types.h>
+#include <sys/mman.h>
 #include <sched.h>
 #include <stdarg.h>
 #include <stdio.h>
@@ -564,11 +565,11 @@ void reset_rt_fun_ext_index(struct rt_fun_entry *fun,
 struct apic_timer_setup_data;
 
 #define rt_grow_and_lock_stack(incr) \
-        do { \
-                char buf[incr]; \
-                memset(buf, 0, incr); \
-                mlockall(MCL_CURRENT | MCL_FUTURE); \
-        } while (0)
+	do { \
+		char buf[incr]; \
+		memset(buf, 0, incr); \
+		mlockall(MCL_CURRENT | MCL_FUTURE); \
+	} while (0)
 
 #define BIDX   0 // rt_fun_ext[0]
 #define SIZARG sizeof(arg)
@@ -617,6 +618,7 @@ RTAI_PROTO(RT_TASK *, rt_task_init_schmod, (unsigned long name, int priority, in
                 return 0;
         }
 	rtai_iopl();
+	mlockall(MCL_CURRENT | MCL_FUTURE); \
 
 	return (RT_TASK *)rtai_lxrt(BIDX, SIZARG, LXRT_TASK_INIT, &arg).v[LOW];
 }
@@ -952,16 +954,32 @@ RTAI_PROTO(int,rt_is_hard_timer_running,(void))
 	return rtai_lxrt(BIDX, SIZARG, HARD_TIMER_RUNNING, &arg).i[LOW];
 }
 
-RTAI_PROTO(RTIME, start_rt_timer,(int period))
+RTAI_PROTO(RTIME, start_rt_timer, (int period))
 {
-	struct { long period; } arg = { period };
-	return rtai_lxrt(BIDX, SIZARG, START_TIMER, &arg).rt;
+	int hs;
+	RTIME retval;
+	struct { long period; } arg = { 0 };
+	if ((hs = rtai_lxrt(BIDX, SIZARG, IS_HARD, &arg).i[LOW])) {
+		rtai_lxrt(BIDX, SIZARG, MAKE_SOFT_RT, &arg);
+	}
+	arg.period = period;
+	retval = rtai_lxrt(BIDX, SIZARG, START_TIMER, &arg).rt;
+	if (hs) {
+		rtai_lxrt(BIDX, SIZARG, MAKE_HARD_RT, &arg);
+	}
+	return retval;
 }
 
-RTAI_PROTO(void, stop_rt_timer,(void))
+RTAI_PROTO(void, stop_rt_timer, (void))
 {
-	struct { unsigned long dummy; } arg;
+	struct { long hs; } arg = { 0 };
+	if ((arg.hs = rtai_lxrt(BIDX, SIZARG, IS_HARD, &arg).i[LOW])) {
+		rtai_lxrt(BIDX, SIZARG, MAKE_SOFT_RT, &arg);
+	}
 	rtai_lxrt(BIDX, SIZARG, STOP_TIMER, &arg);
+	if (arg.hs) {
+		rtai_lxrt(BIDX, SIZARG, MAKE_HARD_RT, &arg);
+	}
 }
 
 RTAI_PROTO(void, rt_request_rtc,(int rtc_freq, void *handler))

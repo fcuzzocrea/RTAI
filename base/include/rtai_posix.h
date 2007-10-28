@@ -711,11 +711,11 @@ static inline int pthread_create(pthread_t *thread, const pthread_attr_t *attr, 
 			*thread = &cookie->task;
 			rt_typed_sem_init(&cookie->sem, 0, BIN_SEM | FIFO_Q);
 			rt_task_resume(&cookie->task);
-		return 0;
+			return 0;
 		}
 	}
 	rt_free(cookie);
-    return -ENOMEM;
+	return -ENOMEM;
 }
 
 static inline int pthread_yield(void)

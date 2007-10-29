@@ -39,7 +39,7 @@ RTAI_MODULE_PARM(smiReset, int);
 #endif
 
 /* set these as you need */
-#define CONFIG_RTAI_HW_SMI_ALL		0
+#define CONFIG_RTAI_HW_SMI_ALL		1
 #define CONFIG_RTAI_HW_SMI_INTEL_USB2	0
 #define CONFIG_RTAI_HW_SMI_LEGACY_USB2	0
 #define CONFIG_RTAI_HW_SMI_PERIODIC	0
@@ -104,7 +104,7 @@ pci.ids database, ICH5-M ?)
 #define SLP_EN_BIT          (0x01 << 4)
 #define LEGACY_USB_EN_BIT   (0x01 << 3)
 #define BIOS_EN_BIT         (0x01 << 2)
-#define GBL_SMI_EN_BIT      (0x01) /* This is reset by a PCI reset event! */
+#define GBL_SMI_EN_BIT      (0x01 << 0)  /* This is reset by a PCI reset event! */
 
 static const unsigned hal_smi_masked_bits = 0
 #if CONFIG_RTAI_HW_SMI_ALL

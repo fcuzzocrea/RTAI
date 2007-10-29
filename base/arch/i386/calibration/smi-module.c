@@ -106,7 +106,7 @@ pci.ids database, ICH5-M ?)
 #define BIOS_EN_BIT         (0x01 << 2)
 #define GBL_SMI_EN_BIT      (0x01 << 0)  /* This is reset by a PCI reset event! */
 
-static const unsigned hal_smi_masked_bits = 0
+unsigned long hal_smi_masked_bits = 0
 #if CONFIG_RTAI_HW_SMI_ALL
     | GBL_SMI_EN_BIT
 #else
@@ -136,6 +136,8 @@ static const unsigned hal_smi_masked_bits = 0
 #endif
 #endif
 ;
+
+RTAI_MODULE_PARM(hal_smi_masked_bits, ulong);
 
 static unsigned hal_smi_saved_bits;
 static unsigned short hal_smi_en_addr;

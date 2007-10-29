@@ -78,7 +78,7 @@ struct rt_tasklet_struct {
 	RTIME firing_time, period;
 	void (*handler)(unsigned long);
 	unsigned long data, id;
-	int thread;
+	long thread;
 	struct rt_task_struct *task;
 	struct rt_tasklet_struct *usptasklet;
 	int overrun;

@@ -1,7 +1,20 @@
 REMARK!!!
 all of what found in the explanation below should be in smi-module.c.
 
-To fix SMI problems run: setsmi
+To fix SMI problems run "setsmi [hal_smi_masked_bits=<xxx>]", where
+hal_smi_masked_bits should be used if SMI devices must be disabled selectivily.
+Without it SMI is disabled completly.
+A list of a few specific bits:
+#define INTEL_USB2_EN_BIT   (0x01 << 18) /* ICH4, ... */
+#define LEGACY_USB2_EN_BIT  (0x01 << 17) /* ICH4, ... */
+#define PERIODIC_EN_BIT     (0x01 << 14) /* called 1MIN_ in ICH0 */
+#define TCO_EN_BIT          (0x01 << 13)
+#define MCSMI_EN_BIT        (0x01 << 11)
+#define SWSMI_TMR_EN_BIT    (0x01 << 6)
+#define APMC_EN_BIT         (0x01 << 5)
+#define SLP_EN_BIT          (0x01 << 4)
+#define LEGACY_USB_EN_BIT   (0x01 << 3)
+#define BIOS_EN_BIT         (0x01 << 2)
 To reset SMI to its previous state run: rstsmi
 
 Both scripts are located in $PREFIX/bin/ and they assume that directory

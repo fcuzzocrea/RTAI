@@ -36,7 +36,7 @@ index 97b64d7..c449a3d 100644
  	bool "Local APIC support on uniprocessors"
  	depends on !SMP && !(X86_VISWS || X86_VOYAGER || X86_GENERICARCH)
 diff --git a/arch/i386/Makefile b/arch/i386/Makefile
-index 52b9324..3b17aed 100644
+index 52b9324..1fc6175 100644
 --- a/arch/i386/Makefile
 +++ b/arch/i386/Makefile
 @@ -128,7 +128,7 @@ all: bzImage
@@ -44,12 +44,12 @@ index 52b9324..3b17aed 100644
  
  zImage bzImage: vmlinux
 -	$(Q)$(MAKE) $(build)=$(boot) $(KBUILD_IMAGE)
-+	$(Q)$(MAKE) $(build)=$(boot) mflags-y=$(mflags-y) $(KBUILD_IMAGE)
++	$(Q)$(MAKE) $(build)=$(boot) mflags-y="$(mflags-y)" $(KBUILD_IMAGE)
  
  compressed: zImage
  
 diff --git a/arch/i386/boot/Makefile b/arch/i386/boot/Makefile
-index 93386a4..f78f5fe 100644
+index 93386a4..4e6a230 100644
 --- a/arch/i386/boot/Makefile
 +++ b/arch/i386/boot/Makefile
 @@ -94,7 +94,7 @@ $(obj)/setup.bin: $(obj)/setup.elf FORCE
@@ -57,7 +57,7 @@ index 93386a4..f78f5fe 100644
  
  $(obj)/compressed/vmlinux: FORCE
 -	$(Q)$(MAKE) $(build)=$(obj)/compressed IMAGE_OFFSET=$(IMAGE_OFFSET) $@
-+	$(Q)$(MAKE) $(build)=$(obj)/compressed mflags-y=$(mflags-y) IMAGE_OFFSET=$(IMAGE_OFFSET) $@
++	$(Q)$(MAKE) $(build)=$(obj)/compressed mflags-y="$(mflags-y)" IMAGE_OFFSET=$(IMAGE_OFFSET) $@
  
  # Set this if you want to pass append arguments to the zdisk/fdimage/isoimage kernel
  FDARGS = 
@@ -709,10 +709,10 @@ index 0499cbe..b5845b8 100644
  	return;
  
 diff --git a/arch/i386/kernel/io_apic.c b/arch/i386/kernel/io_apic.c
-index e2f4a1c..fbbc95e 100644
+index e2f4a1c..ccafcc5 100644
 --- a/arch/i386/kernel/io_apic.c
 +++ b/arch/i386/kernel/io_apic.c
-@@ -56,8 +56,8 @@ atomic_t irq_mis_count;
+@@ -56,8 +56,12 @@ atomic_t irq_mis_count;
  /* Where if anywhere is the i8259 connect in external int mode */
  static struct { int pin, apic; } ioapic_i8259 = { -1, -1 };
  
@@ -720,10 +720,14 @@ index e2f4a1c..fbbc95e 100644
 -static DEFINE_SPINLOCK(vector_lock);
 +static IPIPE_DEFINE_SPINLOCK(ioapic_lock);
 +static IPIPE_DEFINE_SPINLOCK(vector_lock);
++
++#ifdef CONFIG_IPIPE
++volatile unsigned long bugous_edge_irq_triggers[(NR_IRQS + BITS_PER_LONG - 1) / BITS_PER_LONG];
++#endif
  
  int timer_over_8254 __initdata = 1;
  
-@@ -278,6 +278,7 @@ static void mask_IO_APIC_irq (unsigned int irq)
+@@ -278,6 +282,7 @@ static void mask_IO_APIC_irq (unsigned int irq)
  	unsigned long flags;
  
  	spin_lock_irqsave(&ioapic_lock, flags);
@@ -731,15 +735,21 @@ index e2f4a1c..fbbc95e 100644
  	__mask_IO_APIC_irq(irq);
  	spin_unlock_irqrestore(&ioapic_lock, flags);
  }
-@@ -288,6 +289,7 @@ static void unmask_IO_APIC_irq (unsigned int irq)
+@@ -287,7 +292,13 @@ static void unmask_IO_APIC_irq (unsigned int irq)
+ 	unsigned long flags;
  
  	spin_lock_irqsave(&ioapic_lock, flags);
++#ifdef CONFIG_IPIPE
++	if (test_and_clear_bit(irq, &bugous_edge_irq_triggers[0]))
++		__unmask_and_level_IO_APIC_irq(irq);
++	else
++#endif
  	__unmask_IO_APIC_irq(irq);
 +	ipipe_irq_unlock(irq);
  	spin_unlock_irqrestore(&ioapic_lock, flags);
  }
  
-@@ -729,8 +731,10 @@ late_initcall(balanced_irq_init);
+@@ -729,8 +740,10 @@ late_initcall(balanced_irq_init);
  #ifndef CONFIG_SMP
  void fastcall send_IPI_self(int vector)
  {
@@ -750,7 +760,7 @@ index e2f4a1c..fbbc95e 100644
  	/*
  	 * Wait for idle.
  	 */
-@@ -740,6 +744,7 @@ void fastcall send_IPI_self(int vector)
+@@ -740,6 +753,7 @@ void fastcall send_IPI_self(int vector)
  	 * Send the IPI. The write to APIC_ICR fires this off.
  	 */
  	apic_write_around(APIC_ICR, cfg);
@@ -758,7 +768,7 @@ index e2f4a1c..fbbc95e 100644
  }
  #endif /* !CONFIG_SMP */
  
-@@ -1939,6 +1944,7 @@ static unsigned int startup_ioapic_irq(unsigned int irq)
+@@ -1939,6 +1953,7 @@ static unsigned int startup_ioapic_irq(unsigned int irq)
  			was_pending = 1;
  	}
  	__unmask_IO_APIC_irq(irq);
@@ -766,7 +776,7 @@ index e2f4a1c..fbbc95e 100644
  	spin_unlock_irqrestore(&ioapic_lock, flags);
  
  	return was_pending;
-@@ -1946,8 +1952,10 @@ static unsigned int startup_ioapic_irq(unsigned int irq)
+@@ -1946,8 +1961,10 @@ static unsigned int startup_ioapic_irq(unsigned int irq)
  
  static void ack_ioapic_irq(unsigned int irq)
  {
@@ -778,17 +788,38 @@ index e2f4a1c..fbbc95e 100644
  }
  
  static void ack_ioapic_quirk_irq(unsigned int irq)
-@@ -1955,7 +1963,9 @@ static void ack_ioapic_quirk_irq(unsigned int irq)
+@@ -1955,6 +1972,30 @@ static void ack_ioapic_quirk_irq(unsigned int irq)
  	unsigned long v;
  	int i;
  
-+#ifndef CONFIG_IPIPE
++#ifdef CONFIG_IPIPE
++/*
++ * Prevent low priority IRQs grabbed by high priority domains from
++ * being delayed, waiting for a high priority interrupt handler
++ * running in a low priority domain to complete.
++ */
++	i = irq_vector[irq];
++
++	v = apic_read(APIC_TMR + ((i & ~0x1f) >> 1));
++
++	spin_lock(&ioapic_lock);
++
++	if (unlikely(!(v & (1 << (i & 0x1f))))) {
++		/* IO-APIC erratum: see comment below. */
++		atomic_inc(&irq_mis_count);
++		__mask_and_edge_IO_APIC_irq(irq);
++		set_bit(irq, &bugous_edge_irq_triggers[0]);
++	} else
++		__mask_IO_APIC_irq(irq);
++
++	spin_unlock(&ioapic_lock);
++
++	__ack_APIC_irq();
++#else /* !CONFIG_IPIPE */
  	move_native_irq(irq);
-+#endif /* CONFIG_IPIPE */
  /*
   * It appears there is an erratum which affects at least version 0x11
-  * of I/O APIC (that's the 82093AA and cores integrated into various
-@@ -1979,7 +1989,7 @@ static void ack_ioapic_quirk_irq(unsigned int irq)
+@@ -1979,7 +2020,7 @@ static void ack_ioapic_quirk_irq(unsigned int irq)
  
  	v = apic_read(APIC_TMR + ((i & ~0x1f) >> 1));
  
@@ -797,25 +828,15 @@ index e2f4a1c..fbbc95e 100644
  
  	if (!(v & (1 << (i & 0x1f)))) {
  		atomic_inc(&irq_mis_count);
-@@ -1988,6 +1998,17 @@ static void ack_ioapic_quirk_irq(unsigned int irq)
+@@ -1988,6 +2029,7 @@ static void ack_ioapic_quirk_irq(unsigned int irq)
  		__unmask_and_level_IO_APIC_irq(irq);
  		spin_unlock(&ioapic_lock);
  	}
-+
-+#ifdef CONFIG_IPIPE
-+/*
-+ * Prevent low priority IRQs grabbed by high priority domains from
-+ * being delayed, waiting for a high priority interrupt handler
-+ * running in a low priority domain to complete.
-+ */
-+	spin_lock(&ioapic_lock);
-+	__mask_IO_APIC_irq(irq);
-+	spin_unlock(&ioapic_lock);
-+#endif
++#endif /* CONFIG_IPIPE */
  }
  
  static int ioapic_retrigger_irq(unsigned int irq)
-@@ -2049,23 +2070,29 @@ static inline void init_IO_APIC_traps(void)
+@@ -2049,23 +2091,29 @@ static inline void init_IO_APIC_traps(void)
  
  static void ack_apic(unsigned int irq)
  {
@@ -853,7 +874,7 @@ new file mode 100644
 index 0000000..47c0704
 --- /dev/null
 +++ b/arch/i386/kernel/ipipe.c
-@@ -0,0 +1,853 @@
+@@ -0,0 +1,851 @@
 +/*   -*- linux-c -*-
 + *   linux/arch/i386/kernel/ipipe.c
 + *
@@ -1680,8 +1701,6 @@ index 0000000..47c0704
 +extern spinlock_t i8259A_lock;
 +EXPORT_SYMBOL(i8259A_lock);
 +EXPORT_SYMBOL(__ipipe_sync_stage);
-+extern asmlinkage long sys_mlockall(int flags);
-+EXPORT_SYMBOL(sys_mlockall);
 +#ifdef CONFIG_X86_LOCAL_APIC
 +EXPORT_SYMBOL(apic_wait_icr_idle);
 +#endif
@@ -2204,7 +2223,7 @@ index 29d8f9a..9a91ced 100644
  extern void enable_8259A_irq(unsigned int irq);
 diff --git a/include/asm-i386/ipipe.h b/include/asm-i386/ipipe.h
 new file mode 100644
-index 0000000..7359918
+index 0000000..e59fa42
 --- /dev/null
 +++ b/include/asm-i386/ipipe.h
 @@ -0,0 +1,212 @@
@@ -2234,10 +2253,10 @@ index 0000000..7359918
 +
 +#ifdef CONFIG_IPIPE
 +
-+#define IPIPE_ARCH_STRING	"1.10-10"
++#define IPIPE_ARCH_STRING	"1.10-11"
 +#define IPIPE_MAJOR_NUMBER	1
 +#define IPIPE_MINOR_NUMBER	10
-+#define IPIPE_PATCH_NUMBER	10
++#define IPIPE_PATCH_NUMBER	11
 +
 +#ifndef __ASSEMBLY__
 +
@@ -3961,18 +3980,53 @@ index 313c6b6..7b37b8c 100644
  /*
   * Only the _current_ task can read/write to tsk->flags, but other
 diff --git a/include/linux/spinlock.h b/include/linux/spinlock.h
-index c376f3b..e47c0e5 100644
+index c376f3b..2d9fbbc 100644
 --- a/include/linux/spinlock.h
 +++ b/include/linux/spinlock.h
-@@ -172,7 +172,90 @@ do {								\
- #define read_trylock(lock)		__cond_lock(lock, _read_trylock(lock))
- #define write_trylock(lock)		__cond_lock(lock, _write_trylock(lock))
+@@ -89,10 +89,14 @@ extern int __lockfunc generic__raw_read_trylock(raw_rwlock_t *lock);
+ # include <linux/spinlock_up.h>
+ #endif
  
--#define spin_lock(lock)			_spin_lock(lock)
 +#undef TYPE_EQUAL
 +#define TYPE_EQUAL(lock, type) \
 +	__builtin_types_compatible_p(typeof(lock), type *)
 +
+ #ifdef CONFIG_DEBUG_SPINLOCK
+   extern void __spin_lock_init(spinlock_t *lock, const char *name,
+ 			       struct lock_class_key *key);
+-# define spin_lock_init(lock)					\
++# define _spin_lock_init(lock)				\
+ do {								\
+ 	static struct lock_class_key __key;			\
+ 								\
+@@ -100,10 +104,21 @@ do {								\
+ } while (0)
+ 
+ #else
+-# define spin_lock_init(lock)					\
++# define _spin_lock_init(lock)				\
+ 	do { *(lock) = SPIN_LOCK_UNLOCKED; } while (0)
+ #endif
+ 
++# define spin_lock_init(lock)						\
++	do {								\
++		if (TYPE_EQUAL((lock), __ipipe_spinlock_t))		\
++			do {						\
++				IPIPE_DEFINE_SPINLOCK(__lock__);	\
++				*((ipipe_spinlock_t *)lock) = __lock__; \
++			} while(0);					\
++		else							\
++			_spin_lock_init((spinlock_t *)lock);		\
++	} while(0)
++
+ #ifdef CONFIG_DEBUG_SPINLOCK
+   extern void __rwlock_init(rwlock_t *lock, const char *name,
+ 			    struct lock_class_key *key);
+@@ -172,7 +187,86 @@ do {								\
+ #define read_trylock(lock)		__cond_lock(lock, _read_trylock(lock))
+ #define write_trylock(lock)		__cond_lock(lock, _write_trylock(lock))
+ 
+-#define spin_lock(lock)			_spin_lock(lock)
 +#define PICK_SPINOP(op, lock)						\
 +do {									\
 +	if (TYPE_EQUAL((lock), __ipipe_spinlock_t))			\
@@ -4056,7 +4110,7 @@ index c376f3b..e47c0e5 100644
  
  #ifdef CONFIG_DEBUG_LOCK_ALLOC
  # define spin_lock_nested(lock, subclass) _spin_lock_nested(lock, subclass)
-@@ -185,7 +268,7 @@ do {								\
+@@ -185,7 +279,7 @@ do {								\
  
  #if defined(CONFIG_SMP) || defined(CONFIG_DEBUG_SPINLOCK)
  
@@ -4065,7 +4119,7 @@ index c376f3b..e47c0e5 100644
  #define read_lock_irqsave(lock, flags)	flags = _read_lock_irqsave(lock)
  #define write_lock_irqsave(lock, flags)	flags = _write_lock_irqsave(lock)
  
-@@ -199,7 +282,7 @@ do {								\
+@@ -199,7 +293,7 @@ do {								\
  
  #else
  
@@ -4074,7 +4128,7 @@ index c376f3b..e47c0e5 100644
  #define read_lock_irqsave(lock, flags)	_read_lock_irqsave(lock, flags)
  #define write_lock_irqsave(lock, flags)	_write_lock_irqsave(lock, flags)
  #define spin_lock_irqsave_nested(lock, flags, subclass)	\
-@@ -207,7 +290,7 @@ do {								\
+@@ -207,7 +301,7 @@ do {								\
  
  #endif
  
@@ -4083,7 +4137,7 @@ index c376f3b..e47c0e5 100644
  #define spin_lock_bh(lock)		_spin_lock_bh(lock)
  
  #define read_lock_irq(lock)		_read_lock_irq(lock)
-@@ -221,32 +304,40 @@ do {								\
+@@ -221,32 +315,40 @@ do {								\
   */
  #if defined(CONFIG_DEBUG_SPINLOCK) || defined(CONFIG_PREEMPT) || \
  	!defined(CONFIG_SMP)
@@ -4114,15 +4168,15 @@ index c376f3b..e47c0e5 100644
 +# define read_unlock(lock)			\
 +do {						\
 +	__raw_read_unlock(&(lock)->raw_lock);	\
++	__release(lock);			\
++} while (0)
++# define write_unlock(lock)			\
++do {						\
++	__raw_write_unlock(&(lock)->raw_lock);	\
  	__release(lock);			\
 -	local_irq_enable();			\
  } while (0)
 -# define read_unlock_irq(lock)			\
-+# define write_unlock(lock)			\
-+do {						\
-+	__raw_write_unlock(&(lock)->raw_lock);	\
-+	__release(lock);			\
-+} while (0)
 +# define spin_unlock_irq(lock)		\
 +do {						\
 +	PICK_SPINUNLOCK_IRQ_RAW(lock);		\
@@ -4139,7 +4193,7 @@ index c376f3b..e47c0e5 100644
  do {						\
  	__raw_write_unlock(&(lock)->raw_lock);	\
  	__release(lock);			\
-@@ -254,8 +345,8 @@ do {						\
+@@ -254,8 +356,8 @@ do {						\
  } while (0)
  #endif
  
@@ -4150,7 +4204,7 @@ index c376f3b..e47c0e5 100644
  #define spin_unlock_bh(lock)		_spin_unlock_bh(lock)
  
  #define read_unlock_irqrestore(lock, flags) \
-@@ -346,4 +437,29 @@ extern int _atomic_dec_and_lock(atomic_t *atomic, spinlock_t *lock);
+@@ -346,4 +448,29 @@ extern int _atomic_dec_and_lock(atomic_t *atomic, spinlock_t *lock);
   */
  #define spin_can_lock(lock)	(!spin_is_locked(lock))
  
@@ -5254,7 +5308,7 @@ index 0000000..250a7ae
 +
 +int fastcall __ipipe_dispatch_event (unsigned event, void *data)
 +{
-+extern void *ipipe_irq_handler; void *handler; if (ipipe_irq_handler != __ipipe_handle_irq&& (handler = ipipe_root_domain->evhand[event])) { return ((int (*)(unsigned long, void *))handler)(event, data); } else {
++extern void *ipipe_irq_handler; void *handler; if (ipipe_irq_handler != __ipipe_handle_irq && (handler = ipipe_root_domain->evhand[event])) { return ((int (*)(unsigned long, void *))handler)(event, data); } else {
 +	struct ipipe_domain *start_domain, *this_domain, *next_domain;
 +	ipipe_event_handler_t evhand;
 +	struct list_head *pos, *npos;

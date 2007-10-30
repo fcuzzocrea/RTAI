@@ -386,7 +386,7 @@ libsmi_rt_a_SOURCES = smi-module.c
 calibrate_SOURCES = calibrate.c calibrate.h
 calibrate_CPPFLAGS = \
 	@RTAI_USER_CFLAGS@ \
-	-DKERNEL_HELPER_PATH="\"$(calibrationdir)/calibrate_rt$(modext)\"" \
+	-DKERNEL_HELPER_PATH="\"$(calibrationdir)/rtai_calibrate$(modext)\"" \
 	-DUSER_HELPER_PATH="\"$(calibrationdir)/calibration_helper\"" \
 	-I$(top_srcdir)/base/include \
 	-I../../../include
@@ -401,7 +401,7 @@ calibration_helper_LDADD = \
 	../../../sched/liblxrt/liblxrt.la \
 	-lpthread
 
-RT_MODULES = calibrate_rt$(modext) smi_rt$(modext)
+RT_MODULES = rtai_calibrate$(modext) rtai_smi$(modext)
 EXTRA_DIST = runinfo README.SMI Makefile.kbuild
 all: all-am
 
@@ -756,14 +756,14 @@ uninstall-am: uninstall-calibrationPROGRAMS uninstall-info-am
 	uninstall-info-am
 
 
-@CONFIG_KBUILD_TRUE@calibrate_rt.ko: @RTAI_KBUILD_ENV@
-@CONFIG_KBUILD_TRUE@calibrate_rt.ko: $(libcalibrate_rt_a_SOURCES)
+@CONFIG_KBUILD_TRUE@rtai_calibrate.ko: @RTAI_KBUILD_ENV@
+@CONFIG_KBUILD_TRUE@rtai_calibrate.ko: $(libcalibrate_rt_a_SOURCES)
 @CONFIG_KBUILD_TRUE@	@RTAI_KBUILD_TOP@ \
 @CONFIG_KBUILD_TRUE@	@RTAI_KBUILD_CMD@ \
 @CONFIG_KBUILD_TRUE@	@RTAI_KBUILD_BOTTOM@
 
-@CONFIG_KBUILD_TRUE@smi_rt.ko: @RTAI_KBUILD_ENV@
-@CONFIG_KBUILD_TRUE@smi_rt.ko: $(libsmi_rt_a_SOURCES)
+@CONFIG_KBUILD_TRUE@rtai_smi.ko: @RTAI_KBUILD_ENV@
+@CONFIG_KBUILD_TRUE@rtai_smi.ko: $(libsmi_rt_a_SOURCES)
 @CONFIG_KBUILD_TRUE@	@RTAI_KBUILD_TOP@ \
 @CONFIG_KBUILD_TRUE@	@RTAI_KBUILD_CMD@ \
 @CONFIG_KBUILD_TRUE@	@RTAI_KBUILD_BOTTOM@
@@ -771,20 +771,19 @@ uninstall-am: uninstall-calibrationPROGRAMS uninstall-info-am
 @CONFIG_KBUILD_TRUE@clean-local:
 @CONFIG_KBUILD_TRUE@	@RTAI_KBUILD_CLEAN@
 
-@CONFIG_KBUILD_FALSE@calibrate_rt.o: libcalibrate_rt.a
+@CONFIG_KBUILD_FALSE@rtai_calibrate.o: libcalibrate_rt.a
 @CONFIG_KBUILD_FALSE@	$(CROSS_COMPILE)$(LD) --whole-archive $< -r -o $@
 
-@CONFIG_KBUILD_FALSE@smi_rt.o: libsmi_rt.a
+@CONFIG_KBUILD_FALSE@rtai_smi.o: libsmi_rt.a
 @CONFIG_KBUILD_FALSE@	$(CROSS_COMPILE)$(LD) --whole-archive $< -r -o $@
 
-all-local: calibrate_rt$(modext) smi_rt$(modext)
+all-local: rtai_calibrate$(modext) rtai_smi$(modext)
 
 install-exec-local: $(RT_MODULES)
 	$(mkinstalldirs) $(DESTDIR)$(moduledir)
 	@for m in $(RT_MODULES) ; do \
-		k="rtai_`echo $$m | sed 's;_rt\.;.;'`" ; \
-		echo "installing module $$m as $$k in $(DESTDIR)$(moduledir)" ; \
-		$(INSTALL_DATA) $$m $(DESTDIR)$(moduledir)/$$k ; \
+		echo "installing module $$m in $(DESTDIR)$(moduledir)" ; \
+		$(INSTALL_DATA) $$m $(DESTDIR)$(moduledir)/$$m ; \
 	done
 
 install-data-local:

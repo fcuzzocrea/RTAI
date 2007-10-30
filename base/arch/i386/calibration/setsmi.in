@@ -14,6 +14,7 @@ if test x"$MODULEDIR" = x ; then
 	exit 1
 fi
 
+# Determine if setting or resetting
 case `basename $0` in
 setsmi)
 	SMIRESET=0
@@ -27,7 +28,16 @@ rstsmi)
 	;;
 esac
 
-insmod "$MODULEDIR/$MODULENAME" smiReset=$SMIRESET
+# If hal_smi_masked_bits is not set, use default
+if test x"$1" != x ; then
+	SMI_MASKED_BITS="$1"
+else
+	SMI_MASKED_BITS="0x1"
+fi
+
+# NOTE: hal_smi_masked_bits is passed also when resetting;
+# it should be harmless
+insmod "$MODULEDIR/$MODULENAME" smiReset=$SMIRESET hal_smi_masked_bits=$SMI_MASKED_BITS
 RC=$?
 if test $RC != 0 ; then
 	echo "insmod $MODULEDIR/$MODULENAME failed"

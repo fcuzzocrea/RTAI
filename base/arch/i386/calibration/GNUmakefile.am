@@ -9,14 +9,14 @@ libcalibrate_rt_a_SOURCES = calibrate-module.c calibrate.h
 libsmi_rt_a_SOURCES = smi-module.c
 
 if CONFIG_KBUILD
-calibrate_rt.ko: @RTAI_KBUILD_ENV@
-calibrate_rt.ko: $(libcalibrate_rt_a_SOURCES)
+rtai_calibrate.ko: @RTAI_KBUILD_ENV@
+rtai_calibrate.ko: $(libcalibrate_rt_a_SOURCES)
 	@RTAI_KBUILD_TOP@ \
 	@RTAI_KBUILD_CMD@ \
 	@RTAI_KBUILD_BOTTOM@
 
-smi_rt.ko: @RTAI_KBUILD_ENV@
-smi_rt.ko: $(libsmi_rt_a_SOURCES)
+rtai_smi.ko: @RTAI_KBUILD_ENV@
+rtai_smi.ko: $(libsmi_rt_a_SOURCES)
 	@RTAI_KBUILD_TOP@ \
 	@RTAI_KBUILD_CMD@ \
 	@RTAI_KBUILD_BOTTOM@
@@ -33,7 +33,7 @@ libcalibrate_rt_a_CPPFLAGS = \
 	-I$(top_srcdir)/base/include \
 	-I../../../include
 
-calibrate_rt.o: libcalibrate_rt.a
+rtai_calibrate.o: libcalibrate_rt.a
 	$(CROSS_COMPILE)$(LD) --whole-archive $< -r -o $@
 
 libsmi_rt_a_AR = $(CROSS_COMPILE)ar cru
@@ -43,7 +43,7 @@ libsmi_rt_a_CPPFLAGS = \
 	-I$(top_srcdir)/base/include \
 	-I../../../include
 
-smi_rt.o: libsmi_rt.a
+rtai_smi.o: libsmi_rt.a
 	$(CROSS_COMPILE)$(LD) --whole-archive $< -r -o $@
 endif
 
@@ -55,7 +55,7 @@ calibrate_SOURCES = calibrate.c calibrate.h
 
 calibrate_CPPFLAGS = \
 	@RTAI_USER_CFLAGS@ \
-	-DKERNEL_HELPER_PATH="\"$(calibrationdir)/calibrate_rt$(modext)\"" \
+	-DKERNEL_HELPER_PATH="\"$(calibrationdir)/rtai_calibrate$(modext)\"" \
 	-DUSER_HELPER_PATH="\"$(calibrationdir)/calibration_helper\"" \
 	-I$(top_srcdir)/base/include \
 	-I../../../include
@@ -71,16 +71,15 @@ calibration_helper_LDADD = \
 	../../../sched/liblxrt/liblxrt.la \
 	-lpthread
 
-all-local: calibrate_rt$(modext) smi_rt$(modext)
+all-local: rtai_calibrate$(modext) rtai_smi$(modext)
 
-RT_MODULES = calibrate_rt$(modext) smi_rt$(modext)
+RT_MODULES = rtai_calibrate$(modext) rtai_smi$(modext)
 
 install-exec-local: $(RT_MODULES)
 	$(mkinstalldirs) $(DESTDIR)$(moduledir)
 	@for m in $(RT_MODULES) ; do \
-		k="rtai_`echo $$m | sed 's;_rt\.;.;'`" ; \
-		echo "installing module $$m as $$k in $(DESTDIR)$(moduledir)" ; \
-		$(INSTALL_DATA) $$m $(DESTDIR)$(moduledir)/$$k ; \
+		echo "installing module $$m in $(DESTDIR)$(moduledir)" ; \
+		$(INSTALL_DATA) $$m $(DESTDIR)$(moduledir)/$$m ; \
 	done
 
 install-data-local:

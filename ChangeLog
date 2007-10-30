@@ -1,3 +1,8 @@
+2007-10-30 Pierangelo Masarati <masarati@aero.polimi.it>
+
+	* smi: fix module naming
+	* smi: set hal_smi_masked_bits during set/reset
+
 2007-10-28 Paolo Mantegazza <mantegazza@aero.polimi.it>
 
 	* base/include/rtai_lxrt.h: start/stop_rt_timer care of being done 

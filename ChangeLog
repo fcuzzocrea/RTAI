@@ -1,7 +1,8 @@
 2007-10-30 Pierangelo Masarati <masarati@aero.polimi.it>
 
-	* smi: fix module naming
-	* smi: set hal_smi_masked_bits during set/reset
+	* /base/arch/i386/calibration/smi-module.c: fix module naming.
+	* /base/arch/i386/calibration/setsmi: set hal_smi_masked_bits during
+	   set/reset.
 
 2007-10-28 Paolo Mantegazza <mantegazza@aero.polimi.it>
 

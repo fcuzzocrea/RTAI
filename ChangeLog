@@ -1,3 +1,8 @@
+2007-10-01 Bernd Suessmilch <Bernd.Suessmilch@uibk.ac.at>
+
+	* base/ipc/bits.c: ensure the correct value is returned when a task
+	  is blocked in any of the bits_wait.
+
 2007-10-30 Pierangelo Masarati <masarati@aero.polimi.it>
 
 	* /base/arch/i386/calibration/smi-module.c: fix module naming.

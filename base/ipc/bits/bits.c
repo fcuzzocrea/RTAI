@@ -269,6 +269,7 @@ RTAI_SYSCALL_MODE int _rt_bits_wait(BITS *bits, int testfun, unsigned long testm
 
 	flags = rt_global_save_flags_and_cli();
 	if (!test_fun[testfun](bits, testmasks)) {
+		void *retval;
 		long bits_test[2];	
 		rt_current = RT_CURRENT;
 		TEST_BUF(rt_current, bits_test);
@@ -278,15 +279,18 @@ RTAI_SYSCALL_MODE int _rt_bits_wait(BITS *bits, int testfun, unsigned long testm
 		rem_ready_current(rt_current);
 		enqueue_blocked(rt_current, &bits->queue, 1);
 		rt_schedule();
-		mask = bits->mask;
-		if ((void *)rt_current->blocked_on != RTP_OBJREM) {
-			dequeue_blocked(rt_current);
-			rt_global_restore_flags(flags);
-			return RTE_UNBLKD;
+		if (likely(!(retval = rt_current->blocked_on))) {
+			mask = bits->mask;
 		} else {
-			rt_current->prio_passed_to = NULL;
-			rt_global_restore_flags(flags);
-			return RTE_OBJREM;
+			if (likely(retval != RTP_OBJREM)) {
+				dequeue_blocked(rt_current);
+				rt_global_restore_flags(flags);
+				return RTE_UNBLKD;
+			} else {
+				rt_current->prio_passed_to = NULL;
+				rt_global_restore_flags(flags);
+				return RTE_OBJREM;
+			}
 		}
 	} else {
 		mask = bits->mask;
@@ -356,15 +360,18 @@ RTAI_SYSCALL_MODE int _rt_bits_wait_until(BITS *bits, int testfun, unsigned long
 		} else {
 			rt_current->queue.prev = rt_current->queue.next = &rt_current->queue;
 		}
-		mask = bits->mask;
-		if ((retval = rt_current->blocked_on) != RTP_OBJREM) {
-			dequeue_blocked(rt_current);
-			rt_global_restore_flags(flags);
-			return likely(retval > RTP_HIGERR) ? RTE_TIMOUT : RTE_UNBLKD;
+		if (likely(!(retval = rt_current->blocked_on))) {
+			mask = bits->mask;
 		} else {
-			rt_current->prio_passed_to = NULL;
-			rt_global_restore_flags(flags);
-			return RTE_OBJREM;
+			if (likely(retval != RTP_OBJREM)) {
+				dequeue_blocked(rt_current);
+				rt_global_restore_flags(flags);
+				return likely(retval > RTP_HIGERR) ? RTE_TIMOUT : RTE_UNBLKD;
+			} else {
+				rt_current->prio_passed_to = NULL;
+				rt_global_restore_flags(flags);
+				return RTE_OBJREM;
+			}
 		}
 	} else {
 		mask = bits->mask;

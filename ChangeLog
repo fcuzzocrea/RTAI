@@ -1,4 +1,9 @@
-2007-10-01 Bernd Suessmilch <Bernd.Suessmilch@uibk.ac.at>
+2007-11-02 Paolo Mantegazza <mantegazza@aero.polimi.it>
+
+	* base/include/rtai_posix.h: reworked a few lines, impose L1 cache
+	  alignement to the task allocation in kernel pthread_create.
+
+2007-11-01 Bernd Suessmilch <Bernd.Suessmilch@uibk.ac.at>
 
 	* base/ipc/bits.c: ensure the correct value is returned when a task
 	  is blocked in any of the bits_wait.

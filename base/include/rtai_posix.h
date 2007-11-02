@@ -166,11 +166,11 @@ typedef struct { SEM cond; } pthread_cond_t;
 
 typedef unsigned long pthread_condattr_t;
 
-typedef union { SEM barrier; } pthread_barrier_t;
+typedef struct { SEM barrier; } pthread_barrier_t;
 
 typedef unsigned long pthread_barrierattr_t;
 
-typedef union { RWL rwlock; } pthread_rwlock_t;
+typedef struct { RWL rwlock; } pthread_rwlock_t;
 
 typedef unsigned long pthread_rwlockattr_t;
 
@@ -188,8 +188,9 @@ typedef struct pthread_attr {
 typedef struct pthread_cookie {
 	RT_TASK task;
 	SEM sem;
-	void (*task_fun)(int);
+	void (*task_fun)(long);
 	long arg;
+	void *cookie;
 } pthread_cookie_t;
 
 #ifdef __cplusplus
@@ -696,25 +697,27 @@ static void posix_wrapper_fun(pthread_cookie_t *cookie)
 	cookie->task_fun(cookie->arg);
 	rt_sem_broadcast(&cookie->sem);
 	rt_sem_delete(&cookie->sem);
-	rt_task_suspend(&cookie->task);
+//	rt_task_suspend(&cookie->task);
 } 
 
 static inline int pthread_create(pthread_t *thread, const pthread_attr_t *attr, void *(*start_routine)(void *), void *arg)
 {
 	pthread_cookie_t *cookie;
-	cookie = (void *)rt_malloc(sizeof(pthread_cookie_t));
+	cookie = (void *)rt_malloc(sizeof(pthread_cookie_t) + L1_CACHE_BYTES);
 	if (cookie) {
+		cookie = (void *)(((unsigned long)cookie + L1_CACHE_BYTES) & ~(L1_CACHE_BYTES - 1));
+		cookie->cookie = cookie;
 		(cookie->task).magic = 0;
 		cookie->task_fun = (void *)start_routine;
 		cookie->arg = (long)arg;
 		if (!rt_task_init(&cookie->task, (void *)posix_wrapper_fun, (long)cookie, (attr) ? attr->stacksize : STACK_SIZE, (attr) ? attr->priority : RT_SCHED_LOWEST_PRIORITY, 1, 0)) {
-			*thread = &cookie->task;
 			rt_typed_sem_init(&cookie->sem, 0, BIN_SEM | FIFO_Q);
 			rt_task_resume(&cookie->task);
+			*thread = &cookie->task;
 			return 0;
 		}
 	}
-	rt_free(cookie);
+	rt_free(cookie->cookie);
 	return -ENOMEM;
 }
 
@@ -727,9 +730,11 @@ static inline int pthread_yield(void)
 static inline void pthread_exit(void *retval)
 {
 	RT_TASK *rt_task;
+	SEM *sem;
 	rt_task = rt_whoami();
-	rt_sem_broadcast((SEM *)(rt_task + 1));
-	rt_sem_delete((SEM *)(rt_task + 1));
+	sem = &((pthread_cookie_t *)rt_task)->sem;
+	rt_sem_broadcast(sem);
+	rt_sem_delete(sem);
 	rt_task->retval = (long)retval;
 	rt_task_suspend(rt_task);
 }
@@ -738,21 +743,22 @@ static inline int pthread_join(pthread_t thread, void **thread_return)
 {
 	int retval1, retval2;
 	long retval_thread;
+	SEM *sem;
+	sem = &((pthread_cookie_t *)thread)->sem;
 	if (rt_whoami()->priority != RT_SCHED_LINUX_PRIORITY){
-		retval1 = rt_sem_wait((SEM *)(thread + 1));
+		retval1 = rt_sem_wait(sem);
 	} else {
-		while ((retval1 = rt_sem_wait_if((SEM *)(thread + 1))) <= 0) {
-			set_current_state(TASK_INTERRUPTIBLE);
-			schedule_timeout(HZ/10);
+		while ((retval1 = rt_sem_wait_if(sem)) <= 0) {
+			msleep(10);
 		}
 	}
-	retval1 = 0;
+//	retval1 = 0;
 	retval_thread = ((RT_TASK *)thread)->retval;
 	if (thread_return) {
 		*thread_return = (void *)retval_thread;
 	}
 	retval2 = rt_task_delete(thread);
-	rt_free(thread);
+	rt_free(((pthread_cookie_t *)thread)->cookie);
 	return (retval1) ? retval1 : retval2;
 }
 
@@ -763,7 +769,7 @@ static inline int pthread_cancel(pthread_t thread)
 		thread = rt_whoami();
 	}
 	retval = rt_task_delete(thread);
-	rt_free(thread);
+	rt_free(((pthread_cookie_t *)thread)->cookie);
 	return retval;
 }
 

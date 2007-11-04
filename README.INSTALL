@@ -1,7 +1,7 @@
 Installing RTAI-3.x
 ===================
 
-0. RTAI 3.5
+0. RTAI 3.6
 ================================
 
 RTAI uses only the leanest and fastest RTAI+Linux combination now, i.e. it 
@@ -12,7 +12,11 @@ directly to their handlers. Such an option strongly enhances performances
 on low end machines and comes by default. You can disable it while configuring 
 RTAI though. See the related configuration helper.
 What above requires you to patch Linux just with patches found wihin this 
-distribution. Notice also that this release is for use with i386s only.
+distribution. 
+Notice also that this release is for use with:
+- i386,
+- x86_64,
+- PPC.
 
 On recent distributions devices created by following this installation 
 procedure will disappear at each machine halting. So you have to restore 

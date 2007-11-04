@@ -1,7 +1,21 @@
+2007-11-03 Paolo Mantegazza <mantegazza@aero.polimi.it>
+
+	* base/sched/sched.c: made RTAI own real time signals a native 
+	  service; reinstalled task signals at context switch using 
+	  RTAI signals simmetrically in kernel/user space, while 
+	  maintaining compatibility with the old kernel space only method.
+	* base/sched/signal.c: modified as neede to be native RTAI services.
+	* base/include/rtai_lxrt.h: defined signals syscalls numbers as part i
+	  of the basic RTAI services.
+	* base/include/rtai_signal.h: use new signals syscalls numbers, part 
+	  of the basic RTAI services now.
+	* base/include/rtai_mq.h, rtai_pmq.h: changed named of signals related 
+	  syscalls names.
+
 2007-11-02 Paolo Mantegazza <mantegazza@aero.polimi.it>
 
-	* base/include/rtai_posix.h: reworked a few lines, impose L1 cache
-	  alignement to the task allocation in kernel pthread_create.
+	* base/include/rtai_posix.h: reworked a few lines, to impose L1 
+	  cache alignment to the task allocation in kernel pthread_create.
 
 2007-11-01 Bernd Suessmilch <Bernd.Suessmilch@uibk.ac.at>
 

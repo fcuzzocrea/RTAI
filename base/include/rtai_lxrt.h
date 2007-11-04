@@ -321,10 +321,17 @@
 #define GET_REAL_TIME		       218
 #define GET_REAL_TIME_NS	       219
 
-#define MQ_REG_USP_NOTIFIER		       220
+#define MQ_REG_USP_NOTIFIER	       220
 
+#define RT_SIGNAL_HELPER   	       221
+#define RT_SIGNAL_WAITSIG  	       222
+#define RT_SIGNAL_REQUEST  	       223
+#define RT_SIGNAL_RELEASE  	       224
+#define RT_SIGNAL_ENABLE	       225
+#define RT_SIGNAL_DISABLE	       226
+#define RT_SIGNAL_TRIGGER	       227
 
-#define MAX_LXRT_FUN		       225
+#define MAX_LXRT_FUN		       230
 
 // not recovered yet 
 // Qblk's 
@@ -1042,7 +1049,7 @@ RTAI_PROTO(void,rt_set_oneshot_mode,(void))
 	rtai_lxrt(BIDX, SIZARG, SET_ONESHOT_MODE, &arg);
 }
 
-RTAI_PROTO(int,rt_task_signal_handler,(RT_TASK *task, void (*handler)(void)))
+RTAI_PROTO(int, rt_task_signal_handler, (RT_TASK *task, void (*handler)(void)))
 {
 	struct { RT_TASK *task; void (*handler)(void); } arg = { task, handler };
 	return rtai_lxrt(BIDX, SIZARG, SIGNAL_HANDLER, &arg).i[LOW];

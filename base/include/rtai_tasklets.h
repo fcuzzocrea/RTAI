@@ -33,7 +33,7 @@
 #include <rtai_types.h>
 #include <rtai_sched.h>
 
-#define TASKLETS_IDX  2
+#define TASKLETS_IDX  1
 
 #define INIT	 	 0
 #define DELETE		 1

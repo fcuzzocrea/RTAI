@@ -50,14 +50,14 @@ static void *alloc_extent(u_long size, int suprt)
 
 		p = _p = (caddr_t)vmalloc(size);
 		if (p) {
-			printk("RTAI[malloc]: vmalloced extent %p, size %lu.\n", p, size);
+//			printk("RTAI[malloc]: vmalloced extent %p, size %lu.\n", p, size);
 			for (; size > 0; size -= PAGE_SIZE, _p += PAGE_SIZE) {
 				mem_map_reserve(virt_to_page(__va(kvirt_to_pa((u_long)_p))));
 			}
 		}
 	} else {
 		p = (caddr_t)kmalloc(size, suprt);
-		printk("RTAI[malloc]: kmalloced extent %p, size %lu.\n", p, size);
+//		printk("RTAI[malloc]: kmalloced extent %p, size %lu.\n", p, size);
 	}
 	if (p) {
 		memset(p, 0, size);
@@ -70,13 +70,13 @@ static void free_extent(void *p, u_long size, int suprt)
 	if (!suprt) {
 		caddr_t _p = (caddr_t)p;
 
-		printk("RTAI[malloc]: vfreed extent %p, size %lu.\n", p, size);
+//		printk("RTAI[malloc]: vfreed extent %p, size %lu.\n", p, size);
 		for (; size > 0; size -= PAGE_SIZE, _p += PAGE_SIZE) {
 			mem_map_unreserve(virt_to_page(__va(kvirt_to_pa((u_long)_p))));
 		}
 		vfree(p);
 	} else {
-		printk("RTAI[malloc]: kfreed extent %p, size %lu.\n", p, size);
+//		printk("RTAI[malloc]: kfreed extent %p, size %lu.\n", p, size);
 		kfree(p);
 	}
 }
@@ -1205,7 +1205,7 @@ int __rtai_heap_init (void)
 		return 1;
 	}
 	rtai_global_heap_adr = rtai_global_heap.extents.next;
-	printk(KERN_INFO "RTAI[malloc]: loaded (global heap size=%d bytes, <%s>).\n", rtai_global_heap_size, CONFIG_RTAI_USE_TLSF ? "TLSF" : "BSD");
+	printk(KERN_INFO "RTAI[malloc]: global heap size = %d bytes, <%s>.\n", rtai_global_heap_size, CONFIG_RTAI_USE_TLSF ? "TLSF" : "BSD");
 	return 0;
 }
 

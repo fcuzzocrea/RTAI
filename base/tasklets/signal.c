@@ -17,6 +17,7 @@
  */
 
 
+#if 0
 #include <linux/kernel.h>
 #include <linux/module.h>
 
@@ -292,3 +293,4 @@ void __rtai_signals_exit(void)
 module_init(__rtai_signals_init);
 module_exit(__rtai_signals_exit);
 #endif /* !CONFIG_RTAI_TASKLETS_BUILTIN */
+#endif

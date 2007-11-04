@@ -98,14 +98,10 @@ RTAI_SYSCALL_MODE int rt_release_signal(long signal, RT_TASK *task)
 		task = RT_CURRENT;
 	}
 	if (signal >= 0 && RT_SIGNALS && RT_SIGNALS[signal].sigtask) {
-		RT_TASK *sigtask = RT_SIGNALS[signal].sigtask;
+		RT_SIGNALS[signal].sigtask->priority = task->priority;
+		RT_SIGNALS[signal].sigtask->rt_signals = NULL;
+		rt_exec_signal(RT_SIGNALS[signal].sigtask, 0);
 		RT_SIGNALS[signal].sigtask = NULL;
-		sigtask->priority = task->priority; 
-		sigtask->rt_signals = NULL;
-		rt_exec_signal(sigtask, 0);
-		if (sigtask->lnxtsk == NULL) {
-			rt_free(sigtask);
-		}
 		return 0;
 	}
 	return -EINVAL;
@@ -230,6 +226,7 @@ static void signal_suprt_fun(long args)
 			arg.sighdl(arg.signal, arg.task);
 		}
 	}
+	rt_free(arg.sigtask);
 }
 
 /**
@@ -255,7 +252,7 @@ int rt_request_signal(long signal, void (*sighdl)(long, RT_TASK *))
 {
 	struct sigsuprt_t arg = { NULL, RT_CURRENT, signal, sighdl };
 	if (signal >= 0 && sighdl && (arg.sigtask = rt_malloc(sizeof(RT_TASK)))) {
-		if (!rt_task_init_cpuid(arg.sigtask, signal_suprt_fun, (long)&arg, SIGNAL_TASK_STACK_SIZE, arg.task->priority, 0, 0, RT_CURRENT->runnable_on_cpus)) {
+		if (!rt_task_init_cpuid(arg.sigtask, signal_suprt_fun, (long)&arg, SIGNAL_TASK_STACK_SIZE, arg.task->priority, 0, NULL, RT_CURRENT->runnable_on_cpus)) {
 			rt_task_resume(arg.sigtask);
 			rt_task_suspend(arg.task);
 			return arg.task->retval;

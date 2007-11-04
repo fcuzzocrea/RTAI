@@ -98,10 +98,14 @@ RTAI_SYSCALL_MODE int rt_release_signal(long signal, RT_TASK *task)
 		task = RT_CURRENT;
 	}
 	if (signal >= 0 && RT_SIGNALS && RT_SIGNALS[signal].sigtask) {
-		RT_SIGNALS[signal].sigtask->priority = task->priority; 
-		RT_SIGNALS[signal].sigtask->rt_signals = NULL;
-		rt_exec_signal(RT_SIGNALS[signal].sigtask, 0);
+		RT_TASK *sigtask = RT_SIGNALS[signal].sigtask;
 		RT_SIGNALS[signal].sigtask = NULL;
+		sigtask->priority = task->priority; 
+		sigtask->rt_signals = NULL;
+		rt_exec_signal(sigtask, 0);
+		if (sigtask->lnxtsk == NULL) {
+			rt_free(sigtask);
+		}
 		return 0;
 	}
 	return -EINVAL;
@@ -187,7 +191,7 @@ RTAI_SYSCALL_MODE void rt_disable_signal(long signal, RT_TASK *task)
 }
 EXPORT_SYMBOL(rt_disable_signal);
 
-static RTAI_SYSCALL_MODE int rt_signal_helper(RT_TASK *task)
+RTAI_SYSCALL_MODE int rt_signal_helper(RT_TASK *task)
 {
 	if (task) {
 		rt_task_suspend(task);
@@ -261,29 +265,3 @@ int rt_request_signal(long signal, void (*sighdl)(long, RT_TASK *))
 	return -EINVAL;
 }
 EXPORT_SYMBOL(rt_request_signal);
-
-static struct rt_fun_entry rtai_signals_fun[] = {
-	[SIGNAL_HELPER]  = { 1, rt_signal_helper   }, // internal, not for users
-	[SIGNAL_WAITSIG] = { 1, rt_wait_signal     }, // internal, not for users
-	[SIGNAL_REQUEST] = { 1, rt_request_signal_ }, // internal, not for users
-	[SIGNAL_RELEASE] = { 1, rt_release_signal  },
-	[SIGNAL_ENABLE]  = { 1, rt_enable_signal   },
-	[SIGNAL_DISABLE] = { 1, rt_disable_signal  },
-	[SIGNAL_TRIGGER] = { 1, rt_trigger_signal  }
-};
-
-int __rtai_signals_init(void)
-{
-	if (set_rt_fun_ext_index(rtai_signals_fun, RTAI_SIGNALS_IDX)) {
-		printk("Wrong or already used LXRT extension: %d.\n", RTAI_SIGNALS_IDX);
-		return -EACCES;
-	}
-	printk("%s: loaded.\n", MODULE_NAME);
-	return 0;
-}
-
-void __rtai_signals_exit(void)
-{
-	reset_rt_fun_ext_index(rtai_signals_fun, RTAI_SIGNALS_IDX);
-	printk("%s: unloaded.\n", MODULE_NAME);
-}

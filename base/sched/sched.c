@@ -73,6 +73,7 @@ void rtai_proc_lxrt_unregister(void);
 #include <rtai_nam2num.h>
 #include <rtai_schedcore.h>
 #include <rtai_prinher.h>
+#include <rtai_signal.h>
 
 #ifndef CONFIG_RTAI_ALIGN_LINUX_PRIORITY
 //#define CONFIG_RTAI_ALIGN_LINUX_PRIORITY  1
@@ -223,7 +224,7 @@ do { \
 /* ++++++++++++++++++++++++++++++++ TASKS ++++++++++++++++++++++++++++++++++ */
 
 #ifdef CONFIG_RTAI_MALLOC
-int rtai_kstack_heap_size = 128*1024;
+int rtai_kstack_heap_size = 512*1024;
 RTAI_MODULE_PARM(rtai_kstack_heap_size, int);
 
 static rtheap_t rtai_kstack_heap;
@@ -628,6 +629,27 @@ do { \
 #define RESTORE_UNLOCK_LINUX_IN_IRQ(cpuid)  UNLOCK_LINUX(cpuid)
 #endif
 
+#define CONFIG_RTAI_TASK_SWITCH_SIGNAL 1
+
+#if defined(CONFIG_RTAI_TASK_SWITCH_SIGNAL) && CONFIG_RTAI_TASK_SWITCH_SIGNAL
+
+#define RTAI_TASK_SWITCH_SIGNAL() \
+	do { \
+		void (*signal)(void) = rt_current->signal; \
+		if ((unsigned long)signal > MAXSIGNALS) { \
+			(*signal)(); \
+		} else if (signal) { \
+			rt_current->signal = NULL; /* to avoid recursing */\
+			rt_trigger_signal((long)signal, rt_current); \
+			rt_current->signal = signal; \
+		} \
+	} while (0)
+#else
+
+#define RTAI_TASK_SWITCH_SIGNAL()
+
+#endif
+	
 #if CONFIG_RTAI_MONITOR_EXECTIME
 
 RTIME switch_time[NR_RT_CPUS];
@@ -759,11 +781,15 @@ static RT_TASK *switch_rtai_tasks(RT_TASK *rt_current, RT_TASK *new_task, int cp
 		SET_EXEC_TIME();
 		rt_exchange_tasks(rt_smp_current[cpuid], new_task);
 	}
+	RTAI_TASK_SWITCH_SIGNAL();
 	return NULL;
 }
 
 #define lxrt_context_switch(prev, next, cpuid) \
-	do { _lxrt_context_switch(prev, next, cpuid); barrier(); } while (0)
+	do { \
+		_lxrt_context_switch(prev, next, cpuid); barrier(); \
+		RTAI_TASK_SWITCH_SIGNAL(); \
+	} while (0)
 
 #ifdef CONFIG_SMP
 static void rt_schedule_on_schedule_ipi(void)
@@ -2761,6 +2787,13 @@ static struct rt_native_fun_entry rt_sched_entries[] = {
 	{ { 0, rt_gettid },                         RT_GETTID },
 	{ { 0, rt_get_real_time },		    GET_REAL_TIME },
 	{ { 0, rt_get_real_time_ns },		    GET_REAL_TIME_NS },
+	{ { 1, rt_signal_helper }, 		    RT_SIGNAL_HELPER },
+	{ { 1, rt_wait_signal }, 		    RT_SIGNAL_WAITSIG },
+	{ { 1, rt_request_signal_ },		    RT_SIGNAL_REQUEST },
+	{ { 1, rt_release_signal },		    RT_SIGNAL_RELEASE },
+	{ { 1, rt_enable_signal },		    RT_SIGNAL_ENABLE },
+	{ { 1, rt_disable_signal },		    RT_SIGNAL_DISABLE },
+	{ { 1, rt_trigger_signal }, 		    RT_SIGNAL_TRIGGER },
 	{ { 0, 0 },			            000 }
 };
 
@@ -2909,17 +2942,10 @@ static void timer_fun(unsigned long none)
 extern int rt_registry_alloc(void);
 extern void rt_registry_free(void);
 
-extern int __rtai_signals_init(void);
-extern void __rtai_signals_exit(void);
-
 static int __rtai_lxrt_init(void)
 {
 	int cpuid, retval;
 	
-	if (__rtai_signals_init()) {
-		return 1;
-	}
-
 #ifdef CONFIG_RTAI_MALLOC
 	rtai_kstack_heap_size = (rtai_kstack_heap_size + PAGE_SIZE - 1) & ~(PAGE_SIZE - 1);
 	if (rtheap_init(&rtai_kstack_heap, NULL, rtai_kstack_heap_size, PAGE_SIZE, GFP_KERNEL)) {
@@ -3000,19 +3026,20 @@ static int __rtai_lxrt_init(void)
 
 	register_reboot_notifier(&lxrt_notifier_reboot);
 #ifdef CONFIG_SMP
-	printk(KERN_INFO "RTAI[sched]: loaded (IMMEDIATE, MP, USER/KERNEL SPACE: <%s RTAI OWN KTASKs>", USE_RTAI_TASKS ? "with" : "without");
+	printk(KERN_INFO "RTAI[sched]: IMMEDIATE, MP, USER/KERNEL SPACE: <%s RTAI OWN KTASKs>", USE_RTAI_TASKS ? "with" : "without");
 #else
 	printk(KERN_INFO "RTAI[sched]: loaded (IMMEDIATE, UP, USER/KERNEL SPACE: <%s RTAI OWN KTASKs>", USE_RTAI_TASKS ? "with" : "without");
 #endif
 #ifdef CONFIG_RTAI_LXRT_USE_LINUX_SYSCALL
 	printk(", <uses LINUX SYSCALLs>");
 #endif
-	printk(").\n");
-	printk(KERN_INFO "RTAI[sched]: hard timer type/freq = %s/%d(Hz); default timing mode is %s; ", TIMER_NAME, (int)TIMER_FREQ, OneShot ? "oneshot" : "periodic");
+	printk(", kstacks pool size = %d bytes", rtai_kstack_heap_size);
+	printk(".\n");
+	printk(KERN_INFO "RTAI[sched]: hard timer type/freq = %s/%d(Hz); default timing: %s; ", TIMER_NAME, (int)TIMER_FREQ, OneShot ? "oneshot" : "periodic");
 #ifdef CONFIG_RTAI_LONG_TIMED_LIST
-	printk("binary tree ordering of timed lists.\n");
+	printk("black/red timed lists.\n");
 #else
-	printk("linear ordering of timed lists.\n");
+	printk("linear timed lists.\n");
 #endif
 	printk(KERN_INFO "RTAI[sched]: Linux timer freq = %d (Hz), CPU freq = %lu hz.\n", HZ, (unsigned long)tuned.cpu_freq);
 	printk(KERN_INFO "RTAI[sched]: timer setup = %d ns, resched latency = %d ns.\n", (int)imuldiv(tuned.setup_time_TIMER_CPUNIT, 1000000000, tuned.cpu_freq), (int)imuldiv(tuned.latency - tuned.setup_time_TIMER_CPUNIT, 1000000000, tuned.cpu_freq));
@@ -3054,8 +3081,6 @@ static void __rtai_lxrt_exit(void)
 	rt_linux_hrt_set_mode  = NULL;
 	rt_linux_hrt_next_shot = NULL;
 #endif
-
-	__rtai_signals_exit();
 
 	lxrt_killall();
 

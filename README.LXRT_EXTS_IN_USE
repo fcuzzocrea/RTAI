@@ -20,9 +20,10 @@ set_rt_fun_ext_index.
 N.B. "(hardwired)" above means they are assumed as basic RTAI proper extensions.
 Nonetheless extension 1 and 2 do check if they can install into their hardwired 
 slots, exiting their installation in error. 
-So you can make the related slot yours if tasklets are not being used by 
-your applications, __NEVER__ USE 0. In any case you'd better choose the other 
-many free slots available to avoid any trouble.
+So you can make the related slot yours if neither tasklets nor watchdog are 
+being used by your applications; __NEVER__ USE 0 though. 
+In any case you'd better choose the other many free slots available to avoid
+any trouble.
 
 If in doubt about slots engaged already use something like the following piece
 of code in your extension module to discover them:

@@ -252,7 +252,7 @@ int rt_request_signal(long signal, void (*sighdl)(long, RT_TASK *))
 {
 	struct sigsuprt_t arg = { NULL, RT_CURRENT, signal, sighdl };
 	if (signal >= 0 && sighdl && (arg.sigtask = rt_malloc(sizeof(RT_TASK)))) {
-		if (!rt_task_init_cpuid(arg.sigtask, signal_suprt_fun, (long)&arg, SIGNAL_TASK_STACK_SIZE, arg.task->priority, 0, NULL, RT_CURRENT->runnable_on_cpus)) {
+		if (!rt_task_init_cpuid(arg.sigtask, signal_suprt_fun, (long)&arg, SIGNAL_TASK_STACK_SIZE, arg.task->priority, 0, NULL, arg.task->runnable_on_cpus)) {
 			rt_task_resume(arg.sigtask);
 			rt_task_suspend(arg.task);
 			return arg.task->retval;

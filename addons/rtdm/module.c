@@ -846,7 +846,7 @@ static int rtai_timers_init(void)
 		timers_list[cpuid] = timers_list[0];
 		timers_list[cpuid].cpuid = cpuid;
 		timers_list[cpuid].next = timers_list[cpuid].prev = &timers_list[cpuid];
-		rt_task_init_cpuid(&timers_manager[cpuid], rt_timers_manager, cpuid, TimersManagerStacksize, TimersManagerPrio, 0, 0, cpuid);
+		rt_task_init_cpuid(&timers_manager[cpuid], rt_timers_manager, cpuid, TimersManagerStacksize, TimersManagerPrio, 0, NULL, cpuid);
 		rt_task_resume(&timers_manager[cpuid]);
 	}
 	return 0;

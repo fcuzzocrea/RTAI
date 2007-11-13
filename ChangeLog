@@ -1,3 +1,7 @@
+2007-11-13 Bernd Suessmilch <Bernd.Suessmilch@uibk.ac.at>
+
+	* base/ipc/bits.c: return the latest mask always.
+
 2007-11-03 Paolo Mantegazza <mantegazza@aero.polimi.it>
 
 	* base/sched/sched.c: made RTAI own real time signals a native 

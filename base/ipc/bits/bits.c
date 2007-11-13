@@ -194,7 +194,7 @@ RTAI_SYSCALL_MODE unsigned long rt_get_bits(BITS *bits)
 	return bits->mask;
 }
 
-RTAI_SYSCALL_MODE int rt_bits_reset(BITS *bits, unsigned long mask)
+RTAI_SYSCALL_MODE unsigned long rt_bits_reset(BITS *bits, unsigned long mask)
 {
 	unsigned long flags, schedmap, oldmask;
 	RT_TASK *task;

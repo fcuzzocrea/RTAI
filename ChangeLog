@@ -1,3 +1,8 @@
+2007-11-13 Paolo Mantegazza <mantegazza@aero.polimi.it>
+
+	* base/ipc/bits.c and base/include/rtai_bits.h: changed return type 
+	  from "int" to "unsigned long" in rt_bits_reset, is 64 bits safer.
+
 2007-11-13 Bernd Suessmilch <Bernd.Suessmilch@uibk.ac.at>
 
 	* base/ipc/bits.c: return the latest mask always.

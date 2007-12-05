@@ -1,6 +1,7 @@
 2007-12-05 Pierangelo Masarati <masarati@aero.polimi.it>
 
-	* base/sched/sched.c: add configurable RTAI own kernel tasks stack heap
+	* base/sched/sched.c: add configurable stack heap size for RTAI own
+	  kernel tasks.
 
 2007-11-13 Paolo Mantegazza <mantegazza@aero.polimi.it>
 

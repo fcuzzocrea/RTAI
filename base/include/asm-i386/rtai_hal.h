@@ -724,7 +724,7 @@ static inline unsigned long rt_global_save_flags_and_cli(void)
 #endif
 
 asmlinkage int rt_printk(const char *format, ...);
-asmlinkage int rt_printk_sync(const char *format, ...);
+asmlinkage int rt_sync_printk(const char *format, ...);
 
 extern struct hal_domain_struct rtai_domain;
 extern struct hal_domain_struct *fusion_domain;

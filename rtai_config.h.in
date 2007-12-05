@@ -100,6 +100,9 @@
 #undef CONFIG_RTAI_IPIPE
 
 /* Kconfig */
+#undef CONFIG_RTAI_KSTACK_HEAPSZ
+
+/* Kconfig */
 #undef CONFIG_RTAI_LEDS
 
 /* Kconfig */

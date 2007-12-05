@@ -1,3 +1,7 @@
+2007-12-05 Pierangelo Masarati <masarati@aero.polimi.it>
+
+	* base/sched/sched.c: add configurable RTAI own kernel tasks stack heap
+
 2007-11-13 Paolo Mantegazza <mantegazza@aero.polimi.it>
 
 	* base/ipc/bits.c and base/include/rtai_bits.h: changed return type 

@@ -805,6 +805,14 @@ config RTAI_MALLOC_HEAPSZ
 	chores. This parameter allows to define its size (in
 	kilobytes).
 
+config RTAI_KSTACK_HEAPSZ
+	string "Size of RTAI own kernel task heap for stacks (Kbytes)"
+	depends on RTAI_MALLOC
+	default 512
+	help
+	RTAI pre-allocates a heap for its own kernel task stacks.
+	This parameter allows to define its size (in kilobytes).
+
 config RTAI_TRACE
 	bool "LTT support"
 	default n

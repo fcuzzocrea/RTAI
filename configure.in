@@ -856,6 +856,21 @@ if test x$CONFIG_RTAI_MALLOC_HEAPSZ = x ; then
 fi
 AC_MSG_RESULT($CONFIG_RTAI_MALLOC_HEAPSZ)
 
+AC_MSG_CHECKING(for size of real-time kernel task stack heap)
+AC_ARG_ENABLE(kstack-heap-size,
+	[ --enable-kstack-heap-size	Set size of real-time kernel task stack heap],
+	[case "$enableval" in
+ changequote(,)dnl
+	[0-9]*) CONFIG_RTAI_KSTACK_HEAPSZ=$enableval ;;
+ changequote([,])dnl
+	*) AC_MSG_ERROR([Bad argument to option: --enable-kstack-heap-size=<Kbytes>]) ;;
+	esac])
+if test x$CONFIG_RTAI_KSTACK_HEAPSZ = x ; then
+  # Use a reasonable default if unset (in Kbytes)
+  CONFIG_RTAI_KSTACK_HEAPSZ=512
+fi
+AC_MSG_RESULT($CONFIG_RTAI_KSTACK_HEAPSZ)
+
 AC_MSG_CHECKING(for number of CPUs (SMP-only))
 AC_ARG_ENABLE(cpus,
 	[ --enable-cpus		Enable CPUs],
@@ -1293,6 +1308,7 @@ esac
 AC_DEFINE_UNQUOTED(CONFIG_RTAI_DONT_DISPATCH_CORE_IRQS,$CONFIG_RTAI_DONT_DISPATCH_CORE_IRQS,[Kconfig])
 
 AC_DEFINE_UNQUOTED(CONFIG_RTAI_MALLOC_HEAPSZ,$CONFIG_RTAI_MALLOC_HEAPSZ,[Kconfig])
+AC_DEFINE_UNQUOTED(CONFIG_RTAI_KSTACK_HEAPSZ,$CONFIG_RTAI_KSTACK_HEAPSZ,[Kconfig])
 if test x$CONFIG_DEVFS_FS = xy; then
    fifos_template="/dev/rtf/%d"
 else

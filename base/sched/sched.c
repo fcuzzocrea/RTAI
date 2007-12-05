@@ -224,7 +224,7 @@ do { \
 /* ++++++++++++++++++++++++++++++++ TASKS ++++++++++++++++++++++++++++++++++ */
 
 #ifdef CONFIG_RTAI_MALLOC
-int rtai_kstack_heap_size = 512*1024;
+int rtai_kstack_heap_size = (CONFIG_RTAI_KSTACK_HEAPSZ*1024);	/* 512 */
 RTAI_MODULE_PARM(rtai_kstack_heap_size, int);
 
 static rtheap_t rtai_kstack_heap;

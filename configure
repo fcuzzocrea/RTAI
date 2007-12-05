@@ -1685,6 +1685,7 @@ Optional Features:
  --enable-malloc-tlsf	Enable tlsf support in malloc
  --enable-malloc-vmalloc	Enable vmalloc support in malloc
  --enable-malloc-heap-size	Set size of real-time malloc heap
+ --enable-kstack-heap-size	Set size of real-time kernel task stack heap
  --enable-cpus		Enable CPUs
  --enable-diag-tsc-sync		Enable diagnose out of sync MP-TSCs
  --enable-master-tsc-cpu	Enable master TSC CPU
@@ -5229,7 +5230,7 @@ ia64-*-hpux*)
   ;;
 *-*-irix6*)
   # Find out which ABI we are using.
-  echo '#line 5232 "configure"' > conftest.$ac_ext
+  echo '#line 5233 "configure"' > conftest.$ac_ext
   if { (eval echo "$as_me:$LINENO: \"$ac_compile\"") >&5
   (eval $ac_compile) 2>&5
   ac_status=$?
@@ -7652,11 +7653,11 @@ else
    -e 's:.*FLAGS}\{0,1\} :&$lt_compiler_flag :; t' \
    -e 's: [^ ]*conftest\.: $lt_compiler_flag&:; t' \
    -e 's:$: $lt_compiler_flag:'`
-   (eval echo "\"\$as_me:7655: $lt_compile\"" >&5)
+   (eval echo "\"\$as_me:7656: $lt_compile\"" >&5)
    (eval "$lt_compile" 2>conftest.err)
    ac_status=$?
    cat conftest.err >&5
-   echo "$as_me:7659: \$? = $ac_status" >&5
+   echo "$as_me:7660: \$? = $ac_status" >&5
    if (exit $ac_status) && test -s "$ac_outfile"; then
      # The compiler can only warn and ignore the option if not recognized
      # So say no if there are warnings other than the usual output.
@@ -7920,11 +7921,11 @@ else
    -e 's:.*FLAGS}\{0,1\} :&$lt_compiler_flag :; t' \
    -e 's: [^ ]*conftest\.: $lt_compiler_flag&:; t' \
    -e 's:$: $lt_compiler_flag:'`
-   (eval echo "\"\$as_me:7923: $lt_compile\"" >&5)
+   (eval echo "\"\$as_me:7924: $lt_compile\"" >&5)
    (eval "$lt_compile" 2>conftest.err)
    ac_status=$?
    cat conftest.err >&5
-   echo "$as_me:7927: \$? = $ac_status" >&5
+   echo "$as_me:7928: \$? = $ac_status" >&5
    if (exit $ac_status) && test -s "$ac_outfile"; then
      # The compiler can only warn and ignore the option if not recognized
      # So say no if there are warnings other than the usual output.
@@ -8024,11 +8025,11 @@ else
    -e 's:.*FLAGS}\{0,1\} :&$lt_compiler_flag :; t' \
    -e 's: [^ ]*conftest\.: $lt_compiler_flag&:; t' \
    -e 's:$: $lt_compiler_flag:'`
-   (eval echo "\"\$as_me:8027: $lt_compile\"" >&5)
+   (eval echo "\"\$as_me:8028: $lt_compile\"" >&5)
    (eval "$lt_compile" 2>out/conftest.err)
    ac_status=$?
    cat out/conftest.err >&5
-   echo "$as_me:8031: \$? = $ac_status" >&5
+   echo "$as_me:8032: \$? = $ac_status" >&5
    if (exit $ac_status) && test -s out/conftest2.$ac_objext
    then
      # The compiler can only warn and ignore the option if not recognized
@@ -10476,7 +10477,7 @@ else
   lt_dlunknown=0; lt_dlno_uscore=1; lt_dlneed_uscore=2
   lt_status=$lt_dlunknown
   cat > conftest.$ac_ext <<EOF
-#line 10479 "configure"
+#line 10480 "configure"
 #include "confdefs.h"
 
 #if HAVE_DLFCN_H
@@ -10576,7 +10577,7 @@ else
   lt_dlunknown=0; lt_dlno_uscore=1; lt_dlneed_uscore=2
   lt_status=$lt_dlunknown
   cat > conftest.$ac_ext <<EOF
-#line 10579 "configure"
+#line 10580 "configure"
 #include "confdefs.h"
 
 #if HAVE_DLFCN_H
@@ -12944,11 +12945,11 @@ else
    -e 's:.*FLAGS}\{0,1\} :&$lt_compiler_flag :; t' \
    -e 's: [^ ]*conftest\.: $lt_compiler_flag&:; t' \
    -e 's:$: $lt_compiler_flag:'`
-   (eval echo "\"\$as_me:12947: $lt_compile\"" >&5)
+   (eval echo "\"\$as_me:12948: $lt_compile\"" >&5)
    (eval "$lt_compile" 2>conftest.err)
    ac_status=$?
    cat conftest.err >&5
-   echo "$as_me:12951: \$? = $ac_status" >&5
+   echo "$as_me:12952: \$? = $ac_status" >&5
    if (exit $ac_status) && test -s "$ac_outfile"; then
      # The compiler can only warn and ignore the option if not recognized
      # So say no if there are warnings other than the usual output.
@@ -13048,11 +13049,11 @@ else
    -e 's:.*FLAGS}\{0,1\} :&$lt_compiler_flag :; t' \
    -e 's: [^ ]*conftest\.: $lt_compiler_flag&:; t' \
    -e 's:$: $lt_compiler_flag:'`
-   (eval echo "\"\$as_me:13051: $lt_compile\"" >&5)
+   (eval echo "\"\$as_me:13052: $lt_compile\"" >&5)
    (eval "$lt_compile" 2>out/conftest.err)
    ac_status=$?
    cat out/conftest.err >&5
-   echo "$as_me:13055: \$? = $ac_status" >&5
+   echo "$as_me:13056: \$? = $ac_status" >&5
    if (exit $ac_status) && test -s out/conftest2.$ac_objext
    then
      # The compiler can only warn and ignore the option if not recognized
@@ -14618,11 +14619,11 @@ else
    -e 's:.*FLAGS}\{0,1\} :&$lt_compiler_flag :; t' \
    -e 's: [^ ]*conftest\.: $lt_compiler_flag&:; t' \
    -e 's:$: $lt_compiler_flag:'`
-   (eval echo "\"\$as_me:14621: $lt_compile\"" >&5)
+   (eval echo "\"\$as_me:14622: $lt_compile\"" >&5)
    (eval "$lt_compile" 2>conftest.err)
    ac_status=$?
    cat conftest.err >&5
-   echo "$as_me:14625: \$? = $ac_status" >&5
+   echo "$as_me:14626: \$? = $ac_status" >&5
    if (exit $ac_status) && test -s "$ac_outfile"; then
      # The compiler can only warn and ignore the option if not recognized
      # So say no if there are warnings other than the usual output.
@@ -14722,11 +14723,11 @@ else
    -e 's:.*FLAGS}\{0,1\} :&$lt_compiler_flag :; t' \
    -e 's: [^ ]*conftest\.: $lt_compiler_flag&:; t' \
    -e 's:$: $lt_compiler_flag:'`
-   (eval echo "\"\$as_me:14725: $lt_compile\"" >&5)
+   (eval echo "\"\$as_me:14726: $lt_compile\"" >&5)
    (eval "$lt_compile" 2>out/conftest.err)
    ac_status=$?
    cat out/conftest.err >&5
-   echo "$as_me:14729: \$? = $ac_status" >&5
+   echo "$as_me:14730: \$? = $ac_status" >&5
    if (exit $ac_status) && test -s out/conftest2.$ac_objext
    then
      # The compiler can only warn and ignore the option if not recognized
@@ -16952,11 +16953,11 @@ else
    -e 's:.*FLAGS}\{0,1\} :&$lt_compiler_flag :; t' \
    -e 's: [^ ]*conftest\.: $lt_compiler_flag&:; t' \
    -e 's:$: $lt_compiler_flag:'`
-   (eval echo "\"\$as_me:16955: $lt_compile\"" >&5)
+   (eval echo "\"\$as_me:16956: $lt_compile\"" >&5)
    (eval "$lt_compile" 2>conftest.err)
    ac_status=$?
    cat conftest.err >&5
-   echo "$as_me:16959: \$? = $ac_status" >&5
+   echo "$as_me:16960: \$? = $ac_status" >&5
    if (exit $ac_status) && test -s "$ac_outfile"; then
      # The compiler can only warn and ignore the option if not recognized
      # So say no if there are warnings other than the usual output.
@@ -17220,11 +17221,11 @@ else
    -e 's:.*FLAGS}\{0,1\} :&$lt_compiler_flag :; t' \
    -e 's: [^ ]*conftest\.: $lt_compiler_flag&:; t' \
    -e 's:$: $lt_compiler_flag:'`
-   (eval echo "\"\$as_me:17223: $lt_compile\"" >&5)
+   (eval echo "\"\$as_me:17224: $lt_compile\"" >&5)
    (eval "$lt_compile" 2>conftest.err)
    ac_status=$?
    cat conftest.err >&5
-   echo "$as_me:17227: \$? = $ac_status" >&5
+   echo "$as_me:17228: \$? = $ac_status" >&5
    if (exit $ac_status) && test -s "$ac_outfile"; then
      # The compiler can only warn and ignore the option if not recognized
      # So say no if there are warnings other than the usual output.
@@ -17324,11 +17325,11 @@ else
    -e 's:.*FLAGS}\{0,1\} :&$lt_compiler_flag :; t' \
    -e 's: [^ ]*conftest\.: $lt_compiler_flag&:; t' \
    -e 's:$: $lt_compiler_flag:'`
-   (eval echo "\"\$as_me:17327: $lt_compile\"" >&5)
+   (eval echo "\"\$as_me:17328: $lt_compile\"" >&5)
    (eval "$lt_compile" 2>out/conftest.err)
    ac_status=$?
    cat out/conftest.err >&5
-   echo "$as_me:17331: \$? = $ac_status" >&5
+   echo "$as_me:17332: \$? = $ac_status" >&5
    if (exit $ac_status) && test -s out/conftest2.$ac_objext
    then
      # The compiler can only warn and ignore the option if not recognized
@@ -23395,6 +23396,25 @@ fi
 { echo "$as_me:$LINENO: result: $CONFIG_RTAI_MALLOC_HEAPSZ" >&5
 echo "${ECHO_T}$CONFIG_RTAI_MALLOC_HEAPSZ" >&6; }
 
+{ echo "$as_me:$LINENO: checking for size of real-time kernel task stack heap" >&5
+echo $ECHO_N "checking for size of real-time kernel task stack heap... $ECHO_C" >&6; }
+# Check whether --enable-kstack-heap-size was given.
+if test "${enable_kstack_heap_size+set}" = set; then
+  enableval=$enable_kstack_heap_size; case "$enableval" in
+ 	[0-9]*) CONFIG_RTAI_KSTACK_HEAPSZ=$enableval ;;
+ 	*) { { echo "$as_me:$LINENO: error: Bad argument to option: --enable-kstack-heap-size=<Kbytes>" >&5
+echo "$as_me: error: Bad argument to option: --enable-kstack-heap-size=<Kbytes>" >&2;}
+   { (exit 1); exit 1; }; } ;;
+	esac
+fi
+
+if test x$CONFIG_RTAI_KSTACK_HEAPSZ = x ; then
+  # Use a reasonable default if unset (in Kbytes)
+  CONFIG_RTAI_KSTACK_HEAPSZ=512
+fi
+{ echo "$as_me:$LINENO: result: $CONFIG_RTAI_KSTACK_HEAPSZ" >&5
+echo "${ECHO_T}$CONFIG_RTAI_KSTACK_HEAPSZ" >&6; }
+
 { echo "$as_me:$LINENO: checking for number of CPUs (SMP-only)" >&5
 echo $ECHO_N "checking for number of CPUs (SMP-only)... $ECHO_C" >&6; }
 # Check whether --enable-cpus was given.
@@ -24572,6 +24592,11 @@ _ACEOF
 
 cat >>confdefs.h <<_ACEOF
 #define CONFIG_RTAI_MALLOC_HEAPSZ $CONFIG_RTAI_MALLOC_HEAPSZ
+_ACEOF
+
+
+cat >>confdefs.h <<_ACEOF
+#define CONFIG_RTAI_KSTACK_HEAPSZ $CONFIG_RTAI_KSTACK_HEAPSZ
 _ACEOF
 
 if test x$CONFIG_DEVFS_FS = xy; then

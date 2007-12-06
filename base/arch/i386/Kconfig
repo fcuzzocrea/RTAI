@@ -813,7 +813,7 @@ config RTAI_KSTACK_HEAPSZ
 	RTAI pre-allocates a heap for the stacks of its own kernel tasks.
 	This parameter allows to define its size (in kilobytes).
 
-config CONFIG_RTAI_TASK_SWITCH_SIGNAL
+config RTAI_TASK_SWITCH_SIGNAL
 	bool "task switches specific signal support"
 	default n
 	help

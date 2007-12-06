@@ -247,6 +247,9 @@
 #undef CONFIG_RTAI_TASKLETS_BUILTIN
 
 /* Kconfig */
+#undef CONFIG_RTAI_TASK_SWITCH_SIGNAL
+
+/* Kconfig */
 #undef CONFIG_RTAI_TBX
 
 /* Kconfig */

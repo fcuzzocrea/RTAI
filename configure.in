@@ -657,6 +657,15 @@ AC_ARG_ENABLE(debug-rtdm,
 	esac])
 AC_MSG_RESULT(${CONFIG_RTAI_DEBUG_RTDM:-no})
 
+AC_MSG_CHECKING(for task switch signal)
+AC_ARG_ENABLE(task-switch-signal,
+	      [ --enable-task-switch-signal		Enable RTAI task switch signal],
+	[case "$enableval" in
+	y | yes) CONFIG_RTAI_TASK_SWITCH_SIGNAL=y ;;
+	*) unset CONFIG_RTAI_TASK_SWITCH_SIGNAL ;;
+	esac])
+AC_MSG_RESULT(${CONFIG_RTAI_TASK_SWITCH_SIGNAL:-no})
+
 AC_MSG_CHECKING(for Linux task priority alignment to RTAI)
 AC_ARG_ENABLE(align-priority,
 	      [ --enable-align-priority		Keep Linux task priority aligned to RTAI],
@@ -1235,6 +1244,7 @@ case $CONFIG_RTAI_16550A_HAM in
 esac
 test \! x$CONFIG_RTAI_RTDM = x && AC_DEFINE(CONFIG_RTAI_RTDM,1,[Kconfig])
 test \! x$CONFIG_RTAI_ALIGN_LINUX_PRIORITY = x && AC_DEFINE(CONFIG_RTAI_ALIGN_LINUX_PRIORITY,1,[Kconfig])
+test \! x$CONFIG_RTAI_TASK_SWITCH_SIGNAL = x && AC_DEFINE(CONFIG_RTAI_TASK_SWITCH_SIGNAL,1,[Kconfig])
 
 test x$CONFIG_RTAI_MATH = xy && AC_DEFINE(CONFIG_RTAI_MATH_BUILTIN,1,[Kconfig])
 test x$CONFIG_RTAI_BITS = xy && AC_DEFINE(CONFIG_RTAI_BITS_BUILTIN,1,[Kconfig])

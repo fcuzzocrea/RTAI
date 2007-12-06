@@ -1,5 +1,9 @@
 2007-12-05 Pierangelo Masarati <masarati@aero.polimi.it>
 
+	* configure.in: allow configuration of task switch specific signals
+
+2007-12-05 Pierangelo Masarati <masarati@aero.polimi.it>
+
 	* base/sched/sched.c: use configurable parameter for the stacks heap
 	  size of RTAI own kernel tasks.
 

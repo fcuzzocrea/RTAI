@@ -814,11 +814,11 @@ config RTAI_KSTACK_HEAPSZ
 	This parameter allows to define its size (in kilobytes).
 
 config RTAI_TASK_SWITCH_SIGNAL
-	bool "task switches specific signal support"
+	bool "support for task switches specific signal"
 	default n
 	help
 	RTAI can signal a task switch each time a task resumes execution.
-	The way it is done depends from the execution space:
+	The way it is done depends on the execution space:
 	- kernel: execute a function assigned at rt_task_init or by calling
 	  rt_task_signal_handler;
 	- user: install an RTAI own signal handler and have it called at any

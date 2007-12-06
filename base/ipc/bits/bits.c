@@ -280,7 +280,7 @@ RTAI_SYSCALL_MODE int _rt_bits_wait(BITS *bits, int testfun, unsigned long testm
 		rem_ready_current(rt_current);
 		enqueue_blocked(rt_current, &bits->queue, 1);
 		rt_schedule();
-		if (unlikely((retpnt = rt_current->blocked_on))) {
+		if (unlikely((retpnt = rt_current->blocked_on) != NULL)) {
 			if (likely(retpnt != RTP_OBJREM)) {
 				dequeue_blocked(rt_current);
 				retval = RTE_UNBLKD;
@@ -362,7 +362,7 @@ RTAI_SYSCALL_MODE int _rt_bits_wait_until(BITS *bits, int testfun, unsigned long
 		} else {
 			rt_current->queue.prev = rt_current->queue.next = &rt_current->queue;
 		}
-		if (unlikely((retpnt = rt_current->blocked_on))) {
+		if (unlikely((retpnt = rt_current->blocked_on) != NULL)) {
 			if (likely(retpnt != RTP_OBJREM)) {
 				dequeue_blocked(rt_current);
 				retval = likely(retpnt > RTP_HIGERR) ? RTE_TIMOUT : RTE_UNBLKD;

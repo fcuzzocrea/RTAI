@@ -1,6 +1,11 @@
-2007-12-05 Pierangelo Masarati <masarati@aero.polimi.it>
+2007-12-06 Pierangelo Masarati <masarati@aero.polimi.it>
 
-	* configure.in: allow configuration of task switch specific signals
+	* configure.in: allow configuration of task switch specific signals.
+
+2007-12-06 Paolo Mantegazza <mantegazza@aero.polimi.it>
+
+	* base/sched/sched.c: use configurable parameter to enable/disable
+	  signalling of task switches in kernel/user space.
 
 2007-12-05 Pierangelo Masarati <masarati@aero.polimi.it>
 

@@ -1,3 +1,8 @@
+2007-12-07 Paolo Mantegazza <mantegazza@aero.polimi.it>
+
+	* base/include/rtai_signal.h: modified an uncertain, likely compiler 
+	  dependent, structure initialisation in requesting a signal.
+
 2007-12-06 Pierangelo Masarati <masarati@aero.polimi.it>
 
 	* configure.in: allow configuration of task switch specific signals.

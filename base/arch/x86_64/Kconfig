@@ -814,6 +814,20 @@ config RTAI_KSTACK_HEAPSZ
 	RTAI pre-allocates a heap for the stacks of its own kernel tasks.
 	This parameter allows to define its size (in kilobytes).
 
+config RTAI_TASK_SWITCH_SIGNAL
+	bool "task switches specific signal"
+	default n
+	help
+	RTAI can signal a task switch each time a task resumes execution.
+	The way it is done depends on the execution space:
+	- kernel: execute a function assigned at rt_task_init or by calling
+	  rt_task_signal_handler;
+	- user: install an RTAI own signal handler and have it called at any
+	  task switch through its number, assigned by calling 
+	  rt_task_signal_handler.
+	The default is to not make available this feature, so you must enable
+	it explicitly if it is useful for your application.
+
 config RTAI_TRACE
 	bool "LTT support"
 	default n

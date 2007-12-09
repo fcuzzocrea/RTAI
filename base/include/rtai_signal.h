@@ -22,6 +22,8 @@
 
 #define RTAI_SIGNALS_IDX  BIDX
 
+#include <rtai_sched.h>
+
 #define MAXSIGNALS  16
 
 #define SIGNAL_TASK_INIPRIO     0

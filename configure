@@ -2176,7 +2176,7 @@ ac_compiler_gnu=$ac_cv_c_compiler_gnu
 
 CONFIG_RTAI_VERSION_MAJOR=3
 CONFIG_RTAI_VERSION_MINOR=6
-CONFIG_RTAI_REVISION_LEVEL=0
+CONFIG_RTAI_REVISION_LEVEL=2
 
 ac_config_headers="$ac_config_headers rtai_config.h"
 

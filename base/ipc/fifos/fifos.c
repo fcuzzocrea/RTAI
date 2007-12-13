@@ -150,9 +150,6 @@ ACKNOWLEDGEMENTS:
 #include <linux/slab.h>
 #include <linux/stat.h>
 #include <linux/proc_fs.h>
-#ifdef CONFIG_SYSFS
-#include <linux/device.h>
-#endif
 
 #include <rtai_fifos.h>
 #include <rtai_trace.h>
@@ -218,10 +215,6 @@ typedef struct rt_fifo_struct {
 	F_SEM sem;
 	char name[RTF_NAMELEN+1];
 } FIFO;
-
-#if defined(CONFIG_SYSFS) || (defined(CONFIG_DEVFS_SYSFS) && !CONFIG_DEVFS_FS)
-static class_t *fifo_class = NULL;
-#endif
 
 static int fifo_srq, async_sig;
 static spinlock_t rtf_lock = SPIN_LOCK_UNLOCKED;
@@ -1711,65 +1704,40 @@ static int register_lxrt_fifos_support(void) { return 0; }
 
 #endif
 
+#define USE_UDEV_CLASS 1
+
+#if USE_UDEV_CLASS
+static class_t *fifo_class = NULL;
+#endif
+
 int __rtai_fifos_init(void)
 {
 	int minor;
 
-#if defined(CONFIG_SYSFS) || (defined(CONFIG_DEVFS_SYSFS) && !CONFIG_DEVFS_FS)
-	fifo_class = class_create(THIS_MODULE, "rtai_fifos");
-	if (!fifo_class) {
-		printk("RTAI-FIFO: cannot register major %d.\n", RTAI_FIFOS_MAJOR);
-		return -EIO;
+	if (!(fifo = (FIFO *)kmalloc(MaxFifos*sizeof(FIFO), GFP_KERNEL))) {
+		printk("RTAI-FIFO: cannot allocate memory for FIFOS structure.\n");
+		return -ENOSPC;
+	}
+	memset(fifo, 0, MaxFifos*sizeof(FIFO));
+
+#if USE_UDEV_CLASS
+	if ((fifo_class = class_create(THIS_MODULE, "rtai_fifos")) == NULL) {
+		printk("RTAI-FIFO: cannot create class.\n");
+		return -EBUSY;
 	}
 	for (minor = 0; minor < MAX_FIFOS; minor++) {
-		CLASS_DEVICE_CREATE(fifo_class, MKDEV(RTAI_FIFOS_MAJOR, minor), NULL, "rtf%d", minor);
+		if (CLASS_DEVICE_CREATE(fifo_class, MKDEV(RTAI_FIFOS_MAJOR, minor), NULL, "rtf%d", minor) == NULL) {
+			printk("RTAI-FIFO: cannot attach class.\n");
+			class_destroy(fifo_class);
+                        return -EBUSY;
+		}
 	}
-#endif /* CONFIG_SYSFS && !CONFIG_DEVFS_FS */
+#endif
 
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,0) || !CONFIG_DEVFS_FS
-	if (register_chrdev(RTAI_FIFOS_MAJOR,"rtai_fifo",&rtf_fops)) {
-#else /* LINUX_VERSION_CODE < KERNEL_VERSION(2,6,0) && CONFIG_DEVFS_FS */
-	if (devfs_register_chrdev(RTAI_FIFOS_MAJOR,"rtai_fifo",&rtf_fops)) {
-#endif  /* LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,0) || !CONFIG_DEVFS_FS */
+	if (register_chrdev(RTAI_FIFOS_MAJOR, "rtai_fifo", &rtf_fops)) {
 		printk("RTAI-FIFO: cannot register major %d.\n", RTAI_FIFOS_MAJOR);
 		return -EIO;
 	}
-
-#ifdef CONFIG_DEVFS_FS
-
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,0)
-	for (minor = 0; minor < MAX_FIFOS; minor++)
-	    if (devfs_mk_cdev(MKDEV(RTAI_FIFOS_MAJOR,minor),
-			      S_IFCHR|S_IRUSR|S_IWUSR,
-			      "rtf/%u",
-			      minor) < 0)
-		{
-		printk("RTAI-FIFO: cannot create devfs entry rtf/%u.\n",minor);
-		devfs_remove("rtf");
-		unregister_chrdev(RTAI_FIFOS_MAJOR,"rtai_fifo");
-		return -EIO;
-		}
-#else /* LINUX_VERSION_CODE < KERNEL_VERSION(2,6,0) */
-	devfs_handle = devfs_mk_dir(NULL, "rtf", NULL);
-
-	if(!devfs_handle)
-	    {
-	    printk("RTAI-FIFO: cannot create devfs dir entry.\n");
-	    return -EIO;
-	    }
-
-	devfs_register_series(devfs_handle,
-			      "%u",
-			      MAX_FIFOS,
-			      DEVFS_FL_DEFAULT,
-			      RTAI_FIFOS_MAJOR,
-			      0,
-			      S_IFCHR|S_IRUGO|S_IWUGO,
-			      &rtf_fops,
-			      NULL);
-#endif /* LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,0) */
-
-#endif /* CONFIG_DEVFS_FS */
 
 	if ((fifo_srq = rtf_request_srq(rtf_sysrq_handler)) < 0) {
 		printk("RTAI-FIFO: no srq available in rtai.\n");
@@ -1777,12 +1745,6 @@ int __rtai_fifos_init(void)
 	}
 	taskq.in = taskq.out = pol_asyn_q.in = pol_asyn_q.out = 0;
 	async_sig = SIGIO;
-
-	if (!(fifo = (FIFO *)kmalloc(MaxFifos*sizeof(FIFO), GFP_KERNEL))) {
-		printk("RTAI-FIFO: cannot allocate memory for FIFOS structure.\n");
-		return -ENOSPC;
-	}
-	memset(fifo, 0, MaxFifos*sizeof(FIFO));
 
 	for (minor = 0; minor < MAX_FIFOS; minor++) {
 		fifo[minor].opncnt = fifo[minor].pol_asyn_pended = 0;
@@ -1799,27 +1761,17 @@ int __rtai_fifos_init(void)
 void __rtai_fifos_exit(void)
 {
 	unregister_lxrt_fifos_support();
+	unregister_chrdev(RTAI_FIFOS_MAJOR, "rtai_fifo");
 
-#if defined(CONFIG_DEVFS_FS) && CONFIG_DEVFS_FS
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,0)
-	devfs_remove("rtf");
-	unregister_chrdev(RTAI_FIFOS_MAJOR,"rtai_fifo");
-#else /* LINUX_VERSION_CODE < KERNEL_VERSION(2,6,0) */
-	devfs_unregister(devfs_handle);
-	devfs_unregister_chrdev(RTAI_FIFOS_MAJOR,"rtai_fifo");
-#endif  /* LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,0) || !CONFIG_DEVFS_FS */
-#else /* !CONFIG_DEVFS_FS */
-	unregister_chrdev(RTAI_FIFOS_MAJOR,"rtai_fifo");
-#if defined(CONFIG_SYSFS) || (defined(CONFIG_DEVFS_SYSFS) && !CONFIG_DEVFS_FS)
-	{
-		int minor;
-		for (minor = 0; minor < MAX_FIFOS; minor++) {
-			class_device_destroy(fifo_class, MKDEV(RTAI_FIFOS_MAJOR, minor));
-		}
+#if USE_UDEV_CLASS
+{
+	int minor;
+	for (minor = 0; minor < MAX_FIFOS; minor++) {
+		class_device_destroy(fifo_class, MKDEV(RTAI_FIFOS_MAJOR, minor));
 	}
 	class_destroy(fifo_class);
-#endif /* CONFIG_SYSFS */
-#endif /* CONFIG_DEVFS_FS */
+}
+#endif
 
 	if (rtf_free_srq(fifo_srq) < 0) {
 		printk("RTAI-FIFO: rtai srq %d illegal or already free.\n", fifo_srq);

@@ -99,6 +99,7 @@ typedef void irqreturn_t;
 
 /* Basic class macros */
 #ifdef CONFIG_SYSFS
+#include <linux/device.h>
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,15)
 typedef struct class class_t;
 #define CLASS_DEVICE_CREATE(cls, devt, device, fmt, arg...) class_device_create(cls, NULL, devt, device, fmt, ## arg)
@@ -139,6 +140,14 @@ typedef struct class_simple class_t;
 #define CPUMASK_T(name)  ((cpumask_t){ { name } })
 #define CPUMASK(name)    (name.bits[0])
 #endif /* LINUX_VERSION_CODE <= KERNEL_VERSION(2,6,7) */
+
+#ifndef CONFIG_SYSFS
+typedef void * class_t;
+#define class_create(a,b)  ((void *)1)
+#define CLASS_DEVICE_CREATE(a, b, c, d, ...)  ((void *)1) 
+#define class_device_destroy(a, b)
+#define class_destroy(a)
+#endif
 
 #endif /* __KERNEL__ */
 

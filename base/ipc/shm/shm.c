@@ -654,19 +654,20 @@ struct rt_native_fun_entry rt_shm_entries[] = {
 extern int set_rt_fun_entries(struct rt_native_fun_entry *entry);
 extern void reset_rt_fun_entries(struct rt_native_fun_entry *entry);
 
-#if 0
-#include <linux/device.h>
+#define USE_UDEV_CLASS 1
+
+#if USE_UDEV_CLASS
 static class_t *shm_class = NULL;
 #endif
 
 int __rtai_shm_init (void)
 {
-#if 0
-	if (!(shm_class = class_create(THIS_MODULE, "rtai_shm"))) {
+#if USE_UDEV_CLASS
+	if ((shm_class = class_create(THIS_MODULE, "rtai_shm")) == NULL) {
 		printk("RTAI-SHM: cannot create class.\n");
 		return -EBUSY;
 	}
-	if (!CLASS_DEVICE_CREATE(shm_class, MKDEV(MISC_MAJOR, RTAI_SHM_MISC_MINOR), NULL, "rtai_shm")) {
+	if (CLASS_DEVICE_CREATE(shm_class, MKDEV(MISC_MAJOR, RTAI_SHM_MISC_MINOR), NULL, "rtai_shm") == NULL) {
 		printk("RTAI-SHM: cannot attach class.\n");
 		class_destroy(shm_class);
 		return -EBUSY;
@@ -711,7 +712,7 @@ void __rtai_shm_exit (void)
 	}
 	reset_rt_fun_entries(rt_shm_entries);
 	misc_deregister(&rtai_shm_dev);
-#if 0
+#if USE_UDEV_CLASS
 	class_device_destroy(shm_class, MKDEV(MISC_MAJOR, RTAI_SHM_MISC_MINOR));
 	class_destroy(shm_class);
 #endif

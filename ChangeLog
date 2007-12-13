@@ -1,3 +1,8 @@
+2007-12-12 Paolo Mantegazza <mantegazza@aero.polimi.it>
+
+	* base/arch/i386/smi-module.c reworked module inti/cleanup and
+	  related infos printout.
+
 2007-12-08 Paolo Mantegazza <mantegazza@aero.polimi.it>
 
 	* base/include/rtai_signal.h: modified an uncertain, likely compiler 

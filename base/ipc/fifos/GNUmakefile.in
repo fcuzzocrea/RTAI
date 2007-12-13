@@ -357,7 +357,7 @@ libfifos_a_SOURCES = fifos.c
 @CONFIG_KBUILD_FALSE@	-I$(top_srcdir)/base/include \
 @CONFIG_KBUILD_FALSE@	-I../../include
 
-EXTRA_DIST = Makefile.kbuild
+EXTRA_DIST = Makefile.kbuild rtai_fifos.udev
 all: all-am
 
 .SUFFIXES:

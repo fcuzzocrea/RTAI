@@ -45,4 +45,4 @@ install-exec-local: rtai_shm$(modext)
 	$(INSTALL_DATA) $< $(DESTDIR)$(moduledir)
 endif
 
-EXTRA_DIST = Makefile.kbuild
+EXTRA_DIST = Makefile.kbuild rtai_shm.udev

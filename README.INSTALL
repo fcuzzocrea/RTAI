@@ -18,9 +18,12 @@ Notice also that this release is for use with:
 - x86_64,
 - PPC.
 
-On recent distributions devices created by following this installation 
-procedure will disappear at each machine halting. So you have to restore 
-them after each reboot. A short script containing:
+On recent distributions, managing udev/sysfs, devices created by following 
+this installation procedure will disappear at each machine halting. Then they 
+will be available nomore at the next reboot. RTAI should manage udev/sysfs 
+support but in case something weird will impede it you can solve your problem
+quickly by restoring RTAI devices before running your application. For that
+the following short script containing:
 ------------------------------ cut here -------------------------------------
 if test \! -c /dev/rtai_shm; then
         mknod -m 666 /dev/rtai_shm c 10 254
@@ -32,8 +35,7 @@ for n in `seq 0 9`; do
         fi
 done
 ------------------------------ cut here -------------------------------------
-will solve the problem. You can put it into your own boot profiler so that 
-it will be executed automatically at each fresh start up.
+should suffice.
 
 1. How to build
 ===============

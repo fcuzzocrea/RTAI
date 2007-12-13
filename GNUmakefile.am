@@ -87,7 +87,26 @@ dist-hook:
 	test -e $(srcdir)/doc || rm -fr $(distdir)/doc
 
 dev devices:
-	@if test x$(DESTDIR) = x; then \
+	@if test -r $(DESTDIR)/etc/udev/udev.rules ; then \
+	    for f in \
+	            $(srcdir)/base/ipc/shm/rtai_shm.udev \
+	            $(srcdir)/base/ipc/fifos/rtai_fifos.udev \
+	            ; do \
+	        b=`basename $$f` ; \
+	        grep -q RTAI:`basename $$b .udev` $(DESTDIR)/etc/udev/udev.rules || \
+	        $$sudo sh -c "( echo ; cat $$f ) >> $(DESTDIR)/etc/udev/udev.rules" ; \
+	    done ; \
+	elif test -d $(DESTDIR)/etc/udev/rules.d ; then \
+	    for f in \
+	            $(srcdir)/base/ipc/shm/rtai_shm.udev \
+	            $(srcdir)/base/ipc/fifos/rtai_fifos.udev \
+	            ; do \
+	        b=`basename $$f` ; \
+	        grep -q RTAI:`basename $$b .udev` $(DESTDIR)/etc/udev/rules.d/99-rtai.rules || \
+	        $$sudo sh -c "( echo ; cat $$f ) >> $(DESTDIR)/etc/udev/rules.d/99-rtai.rules" ; \
+	    done ; \
+	fi ; \
+	if test x$(DESTDIR) = x; then \
 	    if test \! "x`type -t sudo`" = x; then sudo=sudo; else sudo=; fi; \
 	    if test \! -c $(DESTDIR)/dev/rtai_shm; then \
 	       $$sudo mknod -m 666 $(DESTDIR)/dev/rtai_shm c 10 254; \

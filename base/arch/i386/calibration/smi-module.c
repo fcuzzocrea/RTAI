@@ -141,7 +141,7 @@ unsigned long hal_smi_masked_bits = 0
 
 RTAI_MODULE_PARM(hal_smi_masked_bits, ulong);
 
-static unsigned hal_smi_saved_bits;
+static unsigned long hal_smi_saved_bits;
 static unsigned short hal_smi_en_addr;
 static struct pci_dev *smi_dev;
 
@@ -204,20 +204,19 @@ int __devinit hal_smi_init(void)
 int init_module(void)
 {
 	int retval;
-	if (!(retval = hal_smi_init())) {
-		printk("SMI module loaded\n");
+	if (smiReset) {
+		hal_smi_restore();
+		printk("SMI configuration has been reset, mask used = %lx.\n", hal_smi_saved_bits);
+		retval = 0;
+	} else if (!(retval = hal_smi_init())) {
+		printk("SMI configuration has been set, mask used = %lx.\n", hal_smi_masked_bits);
 	}
 	return retval;
 }
 
 void cleanup_module(void)         
 {
-	if (smiReset) {
-		hal_smi_restore();
-		printk("SMI module unloaded and reset\n");
-	} else {
-		printk("SMI module unloaded but not reset\n");
-	}
+	return;
 }
 
 MODULE_LICENSE("GPL");

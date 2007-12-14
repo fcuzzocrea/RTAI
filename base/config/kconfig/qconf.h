@@ -102,7 +102,7 @@ public:
 	void setParentMenu(void);
 
 	template <class P>
-	void ConfigList::updateMenuList(P*, struct menu*);
+	void updateMenuList(P*, struct menu*);
 
 	bool updateAll;
 

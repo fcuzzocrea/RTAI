@@ -1,13 +1,148 @@
+2007-12-14 Pierangelo Masarati <masarati@aero.polimi.it>
+
+	* GNUMakefile.am: add udev rules file creation for RTAI shm 
+	  and fifos.
+
+2007-12-13 Paolo Mantegazza <mantegazza@aero.polimi.it>
+
+	base/include/rtai_wrappers.h: define dummy udev class support.
+	base/ipc/fifos/fifos.c and
+	base/ipc/shm/shm.c: restructured sysfs-devfs stuff.
+
+2007-12-12 Paolo Mantegazza <mantegazza@aero.polimi.it>
+
+	* base/arch/i386/smi-module.c reworked module inti/cleanup and
+	  related infos printout.
+
+2007-12-08 Paolo Mantegazza <mantegazza@aero.polimi.it>
+
+	* base/include/rtai_signal.h: modified an uncertain, likely compiler 
+	  dependent, structure initialisation in requesting a signal.
+	* base/include/rtai_mq.h, rtai_pmq.h: as above for notification 
+	  handlers.
+
+2007-12-06 Pierangelo Masarati <masarati@aero.polimi.it>
+
+	* configure.in: allow configuration of task switch specific signals.
+
+2007-12-06 Paolo Mantegazza <mantegazza@aero.polimi.it>
+
+	* base/sched/sched.c: use configurable parameter to enable/disable
+	  signalling of task switches in kernel/user space.
+
+2007-12-05 Pierangelo Masarati <masarati@aero.polimi.it>
+
+	* base/sched/sched.c: use configurable parameter for the stacks heap
+	  size of RTAI own kernel tasks.
+
+2007-12-04 Paolo Mantegazza <mantegazza@aero.polimi.it>
+
+	* all archs Kconfigs: add configurable parameter for the stacks heap
+	  size of RTAI own kernel tasks.
+
+2007-11-13 Paolo Mantegazza <mantegazza@aero.polimi.it>
+
+	* base/ipc/bits.c and base/include/rtai_bits.h: changed return type 
+	  from "int" to "unsigned long" in rt_bits_reset, is 64 bits safer.
+
+2007-11-13 Bernd Suessmilch <Bernd.Suessmilch@uibk.ac.at>
+
+	* base/ipc/bits.c: return the latest mask always.
+
+2007-11-03 Paolo Mantegazza <mantegazza@aero.polimi.it>
+
+	* base/sched/sched.c: made RTAI own real time signals a native 
+	  service; reinstalled task signals at context switch using 
+	  RTAI signals simmetrically in kernel/user space, while 
+	  maintaining compatibility with the old kernel space only method.
+	* base/sched/signal.c: modified as neede to be native RTAI services.
+	* base/include/rtai_lxrt.h: defined signals syscalls numbers as part i
+	  of the basic RTAI services.
+	* base/include/rtai_signal.h: use new signals syscalls numbers, part 
+	  of the basic RTAI services now.
+	* base/include/rtai_mq.h, rtai_pmq.h: changed named of signals related 
+	  syscalls names.
+
+2007-11-02 Paolo Mantegazza <mantegazza@aero.polimi.it>
+
+	* base/include/rtai_posix.h: reworked a few lines, to impose L1 
+	  cache alignment to the task allocation in kernel pthread_create.
+
+2007-11-01 Bernd Suessmilch <Bernd.Suessmilch@uibk.ac.at>
+
+	* base/ipc/bits.c: ensure the correct value is returned when a task
+	  is blocked in any of the bits_wait.
+
+2007-10-30 Pierangelo Masarati <masarati@aero.polimi.it>
+
+	* /base/arch/i386/calibration/smi-module.c: fix module naming.
+	* /base/arch/i386/calibration/setsmi: set hal_smi_masked_bits during
+	   set/reset.
+
+2007-10-28 Paolo Mantegazza <mantegazza@aero.polimi.it>
+
+	* base/include/rtai_lxrt.h: start/stop_rt_timer care of being done 
+	  in soft mode.
+
 2007-10-24  Roberto Bucher <roberto.bucher@supsi.ch>
 
 	* rtai-lab/scilab: Modifications for Scilab-4.1.2
 
+2007-10-21 Paolo Mantegazza <mantegazza@aero.polimi.it>
+
+	* base/include/asm-x86_64/rtai_hal-h: upgrades for using latest kernel 
+	  patching.
+	* base/arche/x86_64/hal/hal.immed: upgrades for using latest kernel 
+	  patching.
+
+2007-10-19 Paolo Mantegazza <mantegazza@aero.polimi.it>
+
+	* base/sched/sys.c: force mlockall internally at task initting.
+
+2007-10-16 Paolo Mantegazza <mantegazza@aero.polimi.it>
+
+	* base/include/rtai_lxrt.h: rt_thread_create/join adapted to 
+	  pthread_create thread return in NPTL
+	* base/include/rtai_tasklets.h, base/tasklets/tasklets.c: adapted
+	  to what returned above.
+
+2007-09-22 Paolo Mantegazza <mantegazza@aero.polimi.it>
+
+	* base/sched/sys.c: do not init task_trap_handler for setting lxrt 
+	  extension anymore.
+	* base/usi/usi.c, base/tasklets/tasklets.c, base/ipc/fifos/fisos.c:
+	  set lxrt extensions with the due set/rest functions, 
+	  task_trap_handler is dead.
+
+2007-09-05 Paolo Mantegazza <mantegazza@aero.polimi.it>
+
+	* base/arch/i386/hal/hal.immedi, base/include/asm-i386/rtai_hal.h,
+	* base/arch/x86_646/hal/hal.immed, base/include/asm-x86_646/rtai_hal.h:
+	  get rid of hal_pended alltogether.
+
+2007-09-02 Paolo Mantegazza <mantegazza@aero.polimi.it>
+
+	* base/include/asm-i386/rtai_hal.h: revised and unified 
+	  hal_pend_uncond for all Linux versions.
+	* base/malloc/malloc.c: added TLSF based allocator, optionally
+	  set at RTAI config.
+
+2007-08-31  Roberto Bucher <roberto.bucher@supsi.ch>
+
+	* rtai-lab/matrixx/GNUmakefile.am:  Modified to allow compilation from
+	  an external folder.
+	* rtai-lab/matrixx/GNUmakefile.in:  Modified to allow compilation from
+	  an external folder.
+
 2007-08-26  Roberto Bucher <roberto.bucher@supsi.ch>
 
-	* rtai-lab/scilab/rtmain.c: Changed type for rt_BaseTaskPeriod to RTIME.
-	* rtai-lab/matlab/rtmain.c: Changed type for rt_BaseTaskPeriod to RTIME.
-	* rtai-lab/matrixx/rtmain.c:  Changed type for rt_BaseTaskPeriod to RTIME.
-	* rtai-lab/matrixx/rtmain.h:  Changed version.
+	* rtai-lab/scilab/rtmain.c: Changed type for rt_BaseTaskPeriod to
+	  RTIME.
+	* rtai-lab/matlab/rtmain.c: Changed type for rt_BaseTaskPeriod to
+	  RTIME.
+	* rtai-lab/matrixx/rtmain.c: Changed type for rt_BaseTaskPeriod to
+	  RTIME.
+	* rtai-lab/matrixx/rtmain.h: Changed version.
 
 2007-08-24  Paolo Mantegazza <mantegazza@aero.polimi.it>
 
@@ -19,6 +154,10 @@
 	  existing in 2.4.xx.
 	* addons/rtdm/module.c: deleted inclusion of the useless cpumask.h,
 	  conflicting with 2.4.xx.
+
+2007-08-23 Pierangelo Masarati <masarati@aero.polimi.i>
+
+	* RTAI 3.5 closure version
 
 2007-08-23  Martin Plattl <martin.plattl@knapp.com>
 
@@ -382,6 +521,10 @@
 	* base/sched/sched.c: modified assignement of Linux syscall server 
 	  in task structure and call table to support both sync and async 
 	  serving.
+
+2007-02-26 Pierangelo Masarati <masarati@aero.polimi.i>
+
+	* RTAI 3.5 release
 
 2007-02-25  Roberto Bucher <roberto.bucher@supsi.ch>
 

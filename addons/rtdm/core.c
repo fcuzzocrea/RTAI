@@ -222,7 +222,7 @@ int __rt_dev_open(rtdm_user_info_t *user_info, const char *path, int oflag)
 		ret = device->open_rt(context, user_info, oflag);
 	}
 
-	XENO_ASSERT(RTDM, !rthal_local_irq_test(), rthal_local_irq_enable(););
+	RTAI_ASSERT(RTDM, !rthal_local_irq_test(), rthal_local_irq_enable(););
 
 	if (unlikely(ret < 0))
 		goto cleanup_out;
@@ -268,7 +268,7 @@ int __rt_dev_socket(rtdm_user_info_t *user_info, int protocol_family,
 		ret = device->socket_rt(context, user_info, protocol);
 	}
 
-	XENO_ASSERT(RTDM, !rthal_local_irq_test(), rthal_local_irq_enable(););
+	RTAI_ASSERT(RTDM, !rthal_local_irq_test(), rthal_local_irq_enable(););
 
 	if (unlikely(ret < 0))
 		goto cleanup_out;
@@ -325,7 +325,7 @@ again:
 		ret = context->ops->close_rt(context, user_info);
 	}
 
-	XENO_ASSERT(RTDM, !rthal_local_irq_test(), rthal_local_irq_enable(););
+	RTAI_ASSERT(RTDM, !rthal_local_irq_test(), rthal_local_irq_enable(););
 
 	if (unlikely(ret == -EAGAIN) && nrt_mode) {
 		rtdm_context_unlock(context);
@@ -380,12 +380,12 @@ void cleanup_owned_contexts(void *owner)
 		xnlock_put_irqrestore(&rt_fildes_lock, s);
 
 		if (context) {
-			if (XENO_DEBUG(RTDM))
+			if (RTAI_DEBUG(RTDM))
 				xnprintf("RTDM: closing file descriptor %d.\n",
 					 fd);
 
 			ret = __rt_dev_close(NULL, fd);
-			XENO_ASSERT(RTDM, ret >= 0 || ret == -EBADF,
+			RTAI_ASSERT(RTDM, ret >= 0 || ret == -EBADF,
 				    /* only warn here */;);
 		}
 	}
@@ -409,7 +409,7 @@ do {									\
 	else								\
 		ret = ops->operation##_nrt(context, user_info, args);	\
 									\
-	XENO_ASSERT(RTDM, !rthal_local_irq_test(), rthal_local_irq_enable();)
+	RTAI_ASSERT(RTDM, !rthal_local_irq_test(), rthal_local_irq_enable();)
 
 #define MAJOR_FUNCTION_WRAPPER_BH()					\
 	rtdm_context_unlock(context);					\

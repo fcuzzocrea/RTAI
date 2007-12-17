@@ -196,21 +196,21 @@ int rtdm_dev_register(struct rtdm_device *device)
 		return -ENOSYS;
 
 	/* Sanity check: structure version */
-	XENO_ASSERT(RTDM, device->struct_version == RTDM_DEVICE_STRUCT_VER,
+	RTAI_ASSERT(RTDM, device->struct_version == RTDM_DEVICE_STRUCT_VER,
 		    xnlogerr("RTDM: invalid rtdm_device version (%d, "
 			     "required %d)\n", device->struct_version,
 			     RTDM_DEVICE_STRUCT_VER);
 		    return -EINVAL;);
 
 	/* Sanity check: proc_name specified? */
-	XENO_ASSERT(RTDM, device->proc_name,
+	RTAI_ASSERT(RTDM, device->proc_name,
 		    xnlogerr("RTDM: no /proc entry name specified\n");
 		    return -EINVAL;);
 
 	switch (device->device_flags & RTDM_DEVICE_TYPE_MASK) {
 	case RTDM_NAMED_DEVICE:
 		/* Sanity check: any open handler? */
-		XENO_ASSERT(RTDM, ANY_HANDLER(*device, open),
+		RTAI_ASSERT(RTDM, ANY_HANDLER(*device, open),
 			    xnlogerr("RTDM: missing open handler\n");
 			    return -EINVAL;);
 		SET_DEFAULT_OP_IF_NULL(*device, open);
@@ -219,7 +219,7 @@ int rtdm_dev_register(struct rtdm_device *device)
 
 	case RTDM_PROTOCOL_DEVICE:
 		/* Sanity check: any socket handler? */
-		XENO_ASSERT(RTDM, ANY_HANDLER(*device, socket),
+		RTAI_ASSERT(RTDM, ANY_HANDLER(*device, socket),
 			    xnlogerr("RTDM: missing socket handler\n");
 			    return -EINVAL;);
 		SET_DEFAULT_OP_IF_NULL(*device, socket);

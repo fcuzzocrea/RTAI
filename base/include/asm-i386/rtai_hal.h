@@ -291,8 +291,6 @@ static inline int ext_irq_vector(int irq)
 #define rtai_restore_flags(x)       hal_hw_local_irq_restore(x)
 #define rtai_save_flags(x)          hal_hw_local_irq_flags(x)
 
-extern volatile unsigned long hal_pended;
-
 static inline struct hal_domain_struct *get_domain_pointer(int n)
 {
 	struct list_head *p = hal_pipeline.next;
@@ -308,15 +306,19 @@ static inline struct hal_domain_struct *get_domain_pointer(int n)
 	return (struct hal_domain_struct *)i;
 }
 
+#if LINUX_VERSION_CODE < KERNEL_VERSION(2,6,22)
+
+#define ROOT_STATUS_ADR(cpuid)  (ipipe_root_status[cpuid])
+#define ROOT_STATUS_VAL(cpuid)  (*ipipe_root_status[cpuid])
+
 #define hal_pend_domain_uncond(irq, domain, cpuid) \
 do { \
 	hal_irq_hits_pp(irq, domain, cpuid); \
-	__set_bit((irq) & IPIPE_IRQ_IMASK, &domain->cpudata[cpuid].irq_pending_lo[(irq) >> IPIPE_IRQ_ISHIFT]); \
-	__set_bit((irq) >> IPIPE_IRQ_ISHIFT, &domain->cpudata[cpuid].irq_pending_hi); \
-	test_and_set_bit(cpuid, &hal_pended); /* cautious, cautious */ \
+	if (likely(!test_bit(IPIPE_LOCK_FLAG, &(domain)->irqs[irq].control))) { \
+		__set_bit((irq) & IPIPE_IRQ_IMASK, &(domain)->cpudata[cpuid].irq_pending_lo[(irq) >> IPIPE_IRQ_ISHIFT]); \
+		__set_bit((irq) >> IPIPE_IRQ_ISHIFT, &(domain)->cpudata[cpuid].irq_pending_hi); \
+	} \
 } while (0)
-
-#define hal_pend_uncond(irq, cpuid)  hal_pend_domain_uncond(irq, hal_root_domain, cpuid)
 
 #define hal_fast_flush_pipeline(cpuid) \
 do { \
@@ -325,6 +327,34 @@ do { \
 		hal_sync_stage(IPIPE_IRQMASK_ANY); \
 	} \
 } while (0)
+
+#else
+
+#define ROOT_STATUS_ADR(cpuid)  (&ipipe_cpudom_var(hal_root_domain, status))
+#define ROOT_STATUS_VAL(cpuid)  (ipipe_cpudom_var(hal_root_domain, status))
+
+#define hal_pend_domain_uncond(irq, domain, cpuid) \
+do { \
+	if (likely(!test_bit(IPIPE_LOCK_FLAG, &(domain)->irqs[irq].control))) { \
+		__set_bit((irq) & IPIPE_IRQ_IMASK, &ipipe_cpudom_var(domain, irqpend_lomask)[(irq) >> IPIPE_IRQ_ISHIFT]); \
+		__set_bit((irq) >> IPIPE_IRQ_ISHIFT, &ipipe_cpudom_var(domain, irqpend_himask)); \
+	} else { \
+		__set_bit((irq) & IPIPE_IRQ_IMASK, &ipipe_cpudom_var(domain, irqheld_mask)[(irq) >> IPIPE_IRQ_ISHIFT]); \
+	} \
+	ipipe_cpudom_var(domain, irqall)[irq]++; \
+} while (0)
+
+#define hal_fast_flush_pipeline(cpuid) \
+do { \
+	if (ipipe_cpudom_var(hal_root_domain, irqpend_himask) != 0) { \
+		rtai_cli(); \
+		hal_sync_stage(IPIPE_IRQMASK_ANY); \
+	} \
+} while (0)
+
+#endif
+
+#define hal_pend_uncond(irq, cpuid)  hal_pend_domain_uncond(irq, hal_root_domain, cpuid)
 
 extern volatile unsigned long *ipipe_root_status[];
 
@@ -339,7 +369,7 @@ do { \
 #else
 #define hal_test_and_fast_flush_pipeline(cpuid) \
 do { \
-       	if (!test_bit(IPIPE_STALL_FLAG, ipipe_root_status[cpuid])) { \
+	if (!test_bit(IPIPE_STALL_FLAG, ROOT_STATUS_ADR(cpuid))) { \
 		hal_fast_flush_pipeline(cpuid); \
 		rtai_sti(); \
 	} \
@@ -694,7 +724,7 @@ static inline unsigned long rt_global_save_flags_and_cli(void)
 #endif
 
 asmlinkage int rt_printk(const char *format, ...);
-asmlinkage int rt_printk_sync(const char *format, ...);
+asmlinkage int rt_sync_printk(const char *format, ...);
 
 extern struct hal_domain_struct rtai_domain;
 extern struct hal_domain_struct *fusion_domain;
@@ -723,7 +753,7 @@ do { \
 
 #define _rt_switch_to_real_time(cpuid) \
 do { \
-	rtai_linux_context[cpuid].lflags = xchg(ipipe_root_status[cpuid], (1 << IPIPE_STALL_FLAG)); \
+	rtai_linux_context[cpuid].lflags = xchg(ROOT_STATUS_ADR(cpuid), (1 << IPIPE_STALL_FLAG)); \
 	rtai_linux_context[cpuid].sflags = 1; \
 	hal_current_domain(cpuid) = &rtai_domain; \
 } while (0)
@@ -732,7 +762,7 @@ do { \
 do { \
 	if (rtai_linux_context[cpuid].sflags) { \
 		hal_current_domain(cpuid) = hal_root_domain; \
-		*ipipe_root_status[cpuid] = rtai_linux_context[cpuid].lflags; \
+		ROOT_STATUS_VAL(cpuid) = rtai_linux_context[cpuid].lflags; \
 		rtai_linux_context[cpuid].sflags = 0; \
 		CLR_TASKPRI(cpuid); \
 	} \
@@ -820,7 +850,7 @@ void rtai_set_linux_task_priority(struct task_struct *task,
 				  int policy,
 				  int prio);
 
-long rtai_catch_event (struct hal_domain_struct *ipd, unsigned long event, int (*handler)(unsigned long, void *));
+long rtai_catch_event (struct hal_domain_struct *domain, unsigned long event, int (*handler)(unsigned long, void *));
 
 #endif /* __KERNEL__ && !__cplusplus */
 

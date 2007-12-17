@@ -242,9 +242,14 @@ static inline RT_TASK* __task_init(unsigned long name, int prio, int stack_size,
 		rt_task->max_msg_size[1] = max_msg_size;
 		if (rt_register(name, rt_task, IS_TASK, 0)) {
 			rt_task->state = 0;
+
 #ifdef PF_EVNOTIFY
 			current->flags |= PF_EVNOTIFY;
 #endif
+#ifdef VM_PINNED
+			ipipe_disable_ondemand_mappings(current);
+#endif
+
 			return rt_task;
 		} else {
 			clr_rtext(rt_task);
@@ -771,9 +776,5 @@ void linux_process_termination(void)
 
 void init_fun_ext (void)
 {
-	RT_TASK *rt_linux_tasks[NR_RT_CPUS];
 	rt_fun_ext[0] = rt_fun_lxrt;
-	rt_get_base_linux_task(rt_linux_tasks);
-	rt_linux_tasks[0]->task_trap_handler[0] = (void *)set_rt_fun_ext_index;
-	rt_linux_tasks[0]->task_trap_handler[1] = (void *)reset_rt_fun_ext_index;
 }

@@ -32,7 +32,7 @@ endif # CONFIG_KBUILD
 
 # SCHED
 #if !CONFIG_X86_64
-libsched_sched_a_SOURCES = sched.c sys.c api.c
+libsched_sched_a_SOURCES = sched.c sys.c api.c signal.c
 
 rtai_sched_extradef = -DUSE_RTAI_TASKS=1
 
@@ -61,7 +61,7 @@ schedulers += rtai_sched$(modext)
 #endif # !CONFIG_X86_64
 
 # LXRT
-libsched_lxrt_a_SOURCES = sched.c sys.c api.c
+libsched_lxrt_a_SOURCES = sched.c sys.c api.c signal.c
 
 rtai_lxrt_extradef = -DUSE_RTAI_TASKS=0 # -D__RTAI_LXRT__
 

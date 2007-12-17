@@ -2041,6 +2041,10 @@ void rtai_proc_lxrt_unregister(void)
 /* ------------------< end of proc filesystem section >------------------*/
 #endif /* CONFIG_PROC_FS */
 
+#ifndef CONFIG_KBUILD
+#define CONFIG_KBUILD
+#endif
+
 #ifdef CONFIG_KBUILD
 
 EXPORT_SYMBOL(rt_set_sched_policy);

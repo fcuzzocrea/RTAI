@@ -1,47 +1,29 @@
 Installing RTAI-3.x
 ===================
 
-0. RTAI duo/trio operating modes
+0. RTAI 3.6
 ================================
 
-RTAI can work both as a duo (RTAI_DUOSS) and as a trio (RTAI_TRIOSS).
-At the moment the choice must be done by hand, as described here below.
-
-RTAI_DUOSS is for the standard, leanest and fastest, RTAI+Linux combination,
-usable with both Linux 2.4.xx and 2.6.xx. To set it up use the patches
-hal-linux-whatever-version, found within this distribution only, and
-enable the definition of the macro RTAI_DUOSS in "include/asm-i386/rtai_hal.h".
-
-RTAI_TRIOSS is the newest relase that allows to work with and integrate
-RTAI+FUSION+Linux (notice that FUSION has been renamed XENOMAI recently).
-It is usable with Linux 2.6.xx only and to set it up you must use the patches
-hal-trioss-whatever-version, found within this distribution only. Then you
-must disable the definition of the macro RTAI_DUOSS in 
-"include/asm-i386/rtai_hal.h". However if you disable both RTAI_DUOSS and 
-RTAI_TRIOSS, found in the ame header file, you fall back to the duo RTAI,
-i.e. just for RTAI+Linux.
-
-The difference between a duo RTAI obtained just by enabling RTAI_DUOSS and
-the one obtained by disabling both RTAI_DUOSS and RTAI_TRIOSS is just a bit
-more overhead and latency for the latter combination due to many sstacked
-pipes in ADEOS. So use just hal-linux-whatever patches and set RTAI_DUOSS if 
-you have no need to work with the trio.
-
-It is important to note that RTAI comes with duo version set by default.
-
-In both versions RTAI uses only the leanest and fastest RTAI+Linux combination 
-now, i.e. it dispatches real time interrupts immediately. Moreover within such 
-a scheme i386 has the possibility of completely avoiding the dispatching of 
-critical internal timers and interprocessor scheduling interrupts by vectoring 
-them directly to their handlers. Such an option strongly enhances performances
-on low end machines and comes by default. You can disable it while configuring
+RTAI uses only the leanest and fastest RTAI+Linux combination now, i.e. it 
+dispatches real time interrupts immediately. Moreover within such a scheme 
+i386 has the possibility of completely avoiding the dispatching of critical 
+internal timers and interprocessor scheduling interrupts by vectoring them 
+directly to their handlers. Such an option strongly enhances performances
+on low end machines and comes by default. You can disable it while configuring 
 RTAI though. See the related configuration helper.
-What above requires you to patch Linux just with patches found wihin this
-distribution. Notice also that this release is for use with i386s only.
+What above requires you to patch Linux just with patches found wihin this 
+distribution. 
+Notice also that this release is for use with:
+- i386,
+- x86_64,
+- PPC.
 
-On recent distributions the devices created by following this installation
-procedure will disappear at each machine halting. So you have to restore them
-after each reboot. A short script containing:
+On recent distributions, managing udev/sysfs, devices created by following 
+this installation procedure will disappear at each machine halting. Then they 
+will be available nomore at the next reboot. RTAI should manage udev/sysfs 
+support but in case something weird will impede it you can solve your problem
+quickly by restoring RTAI devices before running your application. For that
+the following short script containing:
 ------------------------------ cut here -------------------------------------
 if test \! -c /dev/rtai_shm; then
         mknod -m 666 /dev/rtai_shm c 10 254
@@ -53,8 +35,7 @@ for n in `seq 0 9`; do
         fi
 done
 ------------------------------ cut here -------------------------------------
-will solve the problem. You can put it into your own boot profiler so that
-it will be executed automatically at each fresh start up.
+should suffice.
 
 1. How to build
 ===============
@@ -62,7 +43,7 @@ it will be executed automatically at each fresh start up.
 1.1 Standard procedure
 ----------------------
 
-The new RTAI build system is a merge of Linux's Kconfig with
+The RTAI build system is a merge of Linux's Kconfig with
 autoconf/automake/libtool. Therefore, you can either build RTAI:
 
 1.1.1 Interactive configuration
@@ -78,8 +59,8 @@ $ make menuconfig (dialog-based as in 24.1.x)
 Save your configuration, wait for the shell prompt to come back after
 the configuration script has fully finished, then run "make".
 
-2) Outside the source tree (preferred way). From your fresh build
-directory, either run:
+2) Outside the source tree. From your fresh build directory, 
+either run:
 
 $ make -f $source_tree/makefile srctree=$source_tree xconfig
 $ make -f $source_tree/makefile srctree=$source_tree gconfig
@@ -103,7 +84,7 @@ RTAI-specific switches are:
  --enable-bits		Enable bits IPC support
  --enable-fifos		Enable fifo IPC support
  --enable-netrpc	Enable netrpc support
- --enable-netrpc-rtnet	Enable netrpc emulation of RTNet
+ --enable-netrpc-rtnet	Enable use of RTNet
  --enable-sem		Enable semaphore support
  --enable-msg		Enable messaging support
  --enable-mbx		Enable mailbox support
@@ -115,10 +96,8 @@ RTAI-specific switches are:
  --enable-usi		Enable user-space interrupt support
  --enable-watchdog	Enable watchdog support
  --enable-leds		Enable leds-based debugging support
- --enable-sched-up	Enable UP scheduler support
- --enable-sched-smp	Enable SMP scheduler support
- --enable-sched-mup	Enable MUP scheduler support
- --enable-sched-lxrt	Enable LXRT scheduler support
+ --enable-sched-lxrt	Enable scheduler support without RTAI own ktasks
+ --enable-ktasks-sched-lxrt     Enable scheduler support with RTAI own ktasks
  --enable-sched-lock-isr	Enable scheduler lock in ISRs
  --enable-sched-8254-latency=	Set 8254 tuning latency
  --enable-sched-apic-latency=	Set APIC tuning latency
@@ -142,7 +121,6 @@ RTAI-specific switches are:
  --enable-compat	Enable compatibility mode
  --enable-module-debug	Enable debug information in kernel modules
  --enable-user-debug	Enable debug information in user-space programs
- --enable-sim		Build RTAI simulator (MVM)
 
 Some configuration targets in base/ can either produce a module,
 or be statically linked to the RTAI schedulers. Either pass "m" for
@@ -278,7 +256,7 @@ o libtool 1.5.8
 1.7 Using the integrated calibration tool
 -----------------------------------------
 
-RTAI 3.0 comes with a brand new calibration tool which should help you
+RTAI 3.x comes with a brand new calibration tool which should help you
 determining if your hardware platform is up to the hard real-time
 duties. You can find this tool under $installdir/calibration. Here is
 the output of this tool's help message for x86-based platforms:
@@ -309,20 +287,19 @@ OPTIONS:
   -s<y/n>, --scope<y/n>
       toggle parport bit to monitor scheduling on a scope, default y(es)
 
-2. Bootstrapping with magma in 7 steps
+2. Bootstrapping with vulcano in 7 steps
 ========================================
 
 >1. patch and build a vanilla Linux kernel tree with the RTAI support as
     usual. Patches for x86 are available from
-    magma/base/arch/i386/patches/. Apply only one of them
-    that matches the Linux kernel version ("hal" selects Adeos,
-    "legacy" selects the old RTHAL), like this:
+    vulcano/base/arch/i386/patches/. Apply only one of them
+    that matches the Linux kernel version, like this:
     $ cd $linux-src-dir
     $ patch -p1 < base/arch/$arch/patches/patchfile
 
 >2. $ mkdir $builddir && cd $builddir
 
->3. $ make -f ../magma/makefile srctree=../magma
+>3. $ make -f ../vulcano/makefile srctree=../vulcano
 
 >4. a GUI should pop up, allowing you to configure RTAI:
     o default settings should be ok for most platforms

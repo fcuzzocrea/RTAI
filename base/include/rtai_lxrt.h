@@ -321,10 +321,17 @@
 #define GET_REAL_TIME		       218
 #define GET_REAL_TIME_NS	       219
 
-#define MQ_REG_USP_NOTIFIER		       220
+#define MQ_REG_USP_NOTIFIER	       220
 
+#define RT_SIGNAL_HELPER   	       221
+#define RT_SIGNAL_WAITSIG  	       222
+#define RT_SIGNAL_REQUEST  	       223
+#define RT_SIGNAL_RELEASE  	       224
+#define RT_SIGNAL_ENABLE	       225
+#define RT_SIGNAL_DISABLE	       226
+#define RT_SIGNAL_TRIGGER	       227
 
-#define MAX_LXRT_FUN		       225
+#define MAX_LXRT_FUN		       230
 
 // not recovered yet 
 // Qblk's 
@@ -554,6 +561,7 @@ void reset_rt_fun_ext_index(struct rt_fun_entry *fun,
 #else /* !__KERNEL__ */
 
 #include <sys/types.h>
+#include <sys/mman.h>
 #include <sched.h>
 #include <stdarg.h>
 #include <stdio.h>
@@ -564,11 +572,11 @@ void reset_rt_fun_ext_index(struct rt_fun_entry *fun,
 struct apic_timer_setup_data;
 
 #define rt_grow_and_lock_stack(incr) \
-        do { \
-                char buf[incr]; \
-                memset(buf, 0, incr); \
-                mlockall(MCL_CURRENT | MCL_FUTURE); \
-        } while (0)
+	do { \
+		char buf[incr]; \
+		memset(buf, 0, incr); \
+		mlockall(MCL_CURRENT | MCL_FUTURE); \
+	} while (0)
 
 #define BIDX   0 // rt_fun_ext[0]
 #define SIZARG sizeof(arg)
@@ -617,6 +625,7 @@ RTAI_PROTO(RT_TASK *, rt_task_init_schmod, (unsigned long name, int priority, in
                 return 0;
         }
 	rtai_iopl();
+	mlockall(MCL_CURRENT | MCL_FUTURE); \
 
 	return (RT_TASK *)rtai_lxrt(BIDX, SIZARG, LXRT_TASK_INIT, &arg).v[LOW];
 }
@@ -634,58 +643,35 @@ static inline int rt_clone(void *fun, void *args, long stack_size, unsigned long
 
 #define RT_THREAD_STACK_MIN  64*1024
 
-#if 1
 #include <pthread.h>
 
-RTAI_PROTO(int, rt_thread_create,(void *fun, void *args, int stack_size))
+RTAI_PROTO(long, rt_thread_create, (void *fun, void *args, int stack_size))
 {
-	pthread_t thread;
+	long thread;
 	pthread_attr_t attr;
-        pthread_attr_init(&attr);
-	int hs;
 
-        if (pthread_attr_setstacksize(&attr, stack_size > RT_THREAD_STACK_MIN ? stack_size : RT_THREAD_STACK_MIN)) {
-                return -1;
-        }
-	{
-		struct { unsigned long dummy; } arg = { 0 };
-		if ((hs = rtai_lxrt(BIDX, SIZARG, IS_HARD, &arg).i[LOW])) {
+        pthread_attr_init(&attr);
+	if (!pthread_attr_setstacksize(&attr, stack_size > RT_THREAD_STACK_MIN ? stack_size : RT_THREAD_STACK_MIN)) {
+		struct { unsigned long hs; } arg = { 0 };
+		if ((arg.hs = rtai_lxrt(BIDX, SIZARG, IS_HARD, &arg).i[LOW])) {
 			rtai_lxrt(BIDX, SIZARG, MAKE_SOFT_RT, &arg);
 		}
-	}
-	if (pthread_create(&thread, &attr, (void *(*)(void *))fun, args)) {
-		thread = -1;
-	}
-	if (hs) {
-	        struct { unsigned long dummy; } arg;
-		rtai_lxrt(BIDX, SIZARG, MAKE_HARD_RT, &arg);
+		if (pthread_create((pthread_t *)&thread, &attr, (void *(*)(void *))fun, args)) {
+			thread = 0;
+		}
+		if (arg.hs) {
+			rtai_lxrt(BIDX, SIZARG, MAKE_HARD_RT, &arg);
+		}
+	} else {
+		thread = 0;
 	}
 	return thread;
 }
 
-RTAI_PROTO(int, rt_thread_join, (int thread))
+RTAI_PROTO(int, rt_thread_join, (long thread))
 {
 	return pthread_join((pthread_t)thread, NULL);
 }
-
-#else
-
-#include <sys/wait.h>
-
-RTAI_PROTO(int, rt_thread_create, (void *fun, void *args, int stack_size))
-{
-	if (stack_size < RT_THREAD_STACK_MIN) {
-		stack_size = RT_THREAD_STACK_MIN;
-	}
-	return rt_clone(fun, args, stack_size, 0);
-}
-
-RTAI_PROTO(int, rt_thread_join, (int thread))
-{
-	return waitpid(thread, NULL, 0);
-}
-
-#endif
 
 #ifndef __SUPPORT_LINUX_SERVER__
 #define __SUPPORT_LINUX_SERVER__
@@ -741,7 +727,7 @@ RTAI_PROTO(int, rt_sync_async_linux_syscall_server_create, (RT_TASK *task, int m
 		syscalls.callback_fun = callback_fun;
 		syscalls.mode         = mode;
 		syscalls.nr           = nr_bufd_async_calls;
-		if (rt_thread_create((void *)linux_syscall_server_fun, &syscalls, 0) > 0) {
+		if (rt_thread_create((void *)linux_syscall_server_fun, &syscalls, 0)) {
 			rtai_lxrt(BIDX, sizeof(RT_TASK *), SUSPEND, &task);
 			return 0;
 		}
@@ -975,16 +961,32 @@ RTAI_PROTO(int,rt_is_hard_timer_running,(void))
 	return rtai_lxrt(BIDX, SIZARG, HARD_TIMER_RUNNING, &arg).i[LOW];
 }
 
-RTAI_PROTO(RTIME, start_rt_timer,(int period))
+RTAI_PROTO(RTIME, start_rt_timer, (int period))
 {
-	struct { long period; } arg = { period };
-	return rtai_lxrt(BIDX, SIZARG, START_TIMER, &arg).rt;
+	int hs;
+	RTIME retval;
+	struct { long period; } arg = { 0 };
+	if ((hs = rtai_lxrt(BIDX, SIZARG, IS_HARD, &arg).i[LOW])) {
+		rtai_lxrt(BIDX, SIZARG, MAKE_SOFT_RT, &arg);
+	}
+	arg.period = period;
+	retval = rtai_lxrt(BIDX, SIZARG, START_TIMER, &arg).rt;
+	if (hs) {
+		rtai_lxrt(BIDX, SIZARG, MAKE_HARD_RT, &arg);
+	}
+	return retval;
 }
 
-RTAI_PROTO(void, stop_rt_timer,(void))
+RTAI_PROTO(void, stop_rt_timer, (void))
 {
-	struct { unsigned long dummy; } arg;
+	struct { long hs; } arg = { 0 };
+	if ((arg.hs = rtai_lxrt(BIDX, SIZARG, IS_HARD, &arg).i[LOW])) {
+		rtai_lxrt(BIDX, SIZARG, MAKE_SOFT_RT, &arg);
+	}
 	rtai_lxrt(BIDX, SIZARG, STOP_TIMER, &arg);
+	if (arg.hs) {
+		rtai_lxrt(BIDX, SIZARG, MAKE_HARD_RT, &arg);
+	}
 }
 
 RTAI_PROTO(void, rt_request_rtc,(int rtc_freq, void *handler))
@@ -1047,7 +1049,7 @@ RTAI_PROTO(void,rt_set_oneshot_mode,(void))
 	rtai_lxrt(BIDX, SIZARG, SET_ONESHOT_MODE, &arg);
 }
 
-RTAI_PROTO(int,rt_task_signal_handler,(RT_TASK *task, void (*handler)(void)))
+RTAI_PROTO(int, rt_task_signal_handler, (RT_TASK *task, void (*handler)(void)))
 {
 	struct { RT_TASK *task; void (*handler)(void); } arg = { task, handler };
 	return rtai_lxrt(BIDX, SIZARG, SIGNAL_HANDLER, &arg).i[LOW];

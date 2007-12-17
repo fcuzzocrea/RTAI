@@ -20,21 +20,13 @@
 #ifndef _RTAI_SIGNAL_H_
 #define _RTAI_SIGNAL_H_
 
-#define RTAI_SIGNALS_IDX  2
+#define RTAI_SIGNALS_IDX  BIDX
 
-#define SIGNAL_HELPER   0
-#define SIGNAL_WAITSIG  1
-#define SIGNAL_REQUEST  2
-#define SIGNAL_RELEASE  3 
-#define SIGNAL_ENABLE   4
-#define SIGNAL_DISABLE  5
-#define SIGNAL_TRIGGER  6
+#include <rtai_sched.h>
 
 #define MAXSIGNALS  16
 
 #define SIGNAL_TASK_INIPRIO     0
-
-#define RT_SCHED_SIGSUSP  (1 << 15)
 
 struct rt_signal_t { unsigned long flags; RT_TASK *sigtask; };
 
@@ -46,6 +38,8 @@ struct sigsuprt_t { RT_TASK *sigtask; RT_TASK *task; long signal; void (*sighdl)
 #define SIGNAL_PNDBIT  1
 
 #define SIGNAL_TASK_STACK_SIZE  8192
+
+RTAI_SYSCALL_MODE int rt_signal_helper(RT_TASK *task);
 
 int rt_request_signal(long signal, void (*sighdl)(long, RT_TASK *));
 
@@ -67,7 +61,7 @@ RTAI_SYSCALL_MODE int rt_wait_signal(RT_TASK *sigtask, RT_TASK *task);
 
 #include <rtai_lxrt.h>
 
-#define SIGNAL_TASK_STACK_SIZE  64*1024 //8192
+#define SIGNAL_TASK_STACK_SIZE  64*1024
 
 #ifndef __SIGNAL_SUPPORT_FUN__
 #define __SIGNAL_SUPPORT_FUN__
@@ -79,10 +73,10 @@ static void signal_suprt_fun(struct sigsuprt_t *funarg)
 	struct sigsuprt_t arg = *funarg;
 
 	if ((arg.sigtask = rt_thread_init(rt_get_name(0), SIGNAL_TASK_INIPRIO, 0, SCHED_FIFO, 1 << arg.cpuid))) {
-		if (!rtai_lxrt(RTAI_SIGNALS_IDX, sizeof(struct sigreq_t), SIGNAL_REQUEST, &arg).i[LOW]) {
-			mlockall(MCL_CURRENT | MCL_FUTURE);
+		if (!rtai_lxrt(RTAI_SIGNALS_IDX, sizeof(struct sigreq_t), RT_SIGNAL_REQUEST, &arg).i[LOW]) {
+			rt_grow_and_lock_stack(SIGNAL_TASK_STACK_SIZE/2);
 			rt_make_hard_real_time();
-			while (rtai_lxrt(RTAI_SIGNALS_IDX, sizeof(struct sigtsk_t), SIGNAL_WAITSIG, &arg).i[LOW]) {
+			while (rtai_lxrt(RTAI_SIGNALS_IDX, sizeof(struct sigtsk_t), RT_SIGNAL_WAITSIG, &arg).i[LOW]) {
 				arg.sighdl(arg.signal, arg.task);
 			}
 			rt_make_soft_real_time();
@@ -96,10 +90,10 @@ static void signal_suprt_fun(struct sigsuprt_t *funarg)
 static inline int rt_request_signal(long signal, void (*sighdl)(long, RT_TASK *))
 {
 	if (signal >= 0 && sighdl) {
-		struct sigsuprt_t arg = { NULL, rt_buddy(), signal, sighdl, rtai_lxrt(RTAI_SIGNALS_IDX, sizeof(void *), SIGNAL_HELPER, &arg.sigtask).i[LOW] };
-//		if (rt_clone(signal_suprt_fun, &arg, SIGNAL_TASK_STACK_SIZE, 0) > 0) {
+		struct sigsuprt_t arg = { NULL, rt_buddy(), signal, sighdl };
+		arg.cpuid = rtai_lxrt(RTAI_SIGNALS_IDX, sizeof(void *), RT_SIGNAL_HELPER, &arg.sigtask).i[LOW];
 		if (rt_thread_create(signal_suprt_fun, &arg, SIGNAL_TASK_STACK_SIZE)) {
-			return rtai_lxrt(RTAI_SIGNALS_IDX, sizeof(RT_TASK *), SIGNAL_HELPER, &arg.task).i[LOW];
+			return rtai_lxrt(RTAI_SIGNALS_IDX, sizeof(RT_TASK *), RT_SIGNAL_HELPER, &arg.task).i[LOW];
 		}
 	}
 	return -EINVAL;
@@ -108,25 +102,25 @@ static inline int rt_request_signal(long signal, void (*sighdl)(long, RT_TASK *)
 static inline int rt_release_signal(long signal, RT_TASK *task)
 {
 	struct { long signal; RT_TASK *task; } arg = { signal, task };
-	return rtai_lxrt(RTAI_SIGNALS_IDX, SIZARG, SIGNAL_RELEASE, &arg).i[LOW];
+	return rtai_lxrt(RTAI_SIGNALS_IDX, SIZARG, RT_SIGNAL_RELEASE, &arg).i[LOW];
 }
 
 static inline void rt_enable_signal(long signal, RT_TASK *task)
 {
 	struct { long signal; RT_TASK *task; } arg = { signal, task };
-	rtai_lxrt(RTAI_SIGNALS_IDX, SIZARG, SIGNAL_ENABLE, &arg);
+	rtai_lxrt(RTAI_SIGNALS_IDX, SIZARG, RT_SIGNAL_ENABLE, &arg);
 }
 
 static inline void rt_disable_signal(long signal, RT_TASK *task)
 {
 	struct { long signal; RT_TASK *task; } arg = { signal, task };
-	rtai_lxrt(RTAI_SIGNALS_IDX, SIZARG, SIGNAL_DISABLE, &arg);
+	rtai_lxrt(RTAI_SIGNALS_IDX, SIZARG, RT_SIGNAL_DISABLE, &arg);
 }
 
 static inline void rt_trigger_signal(long signal, RT_TASK *task)
 {
 	struct { long signal; RT_TASK *task; } arg = { signal, task };
-	rtai_lxrt(RTAI_SIGNALS_IDX, SIZARG, SIGNAL_TRIGGER, &arg);
+	rtai_lxrt(RTAI_SIGNALS_IDX, SIZARG, RT_SIGNAL_TRIGGER, &arg);
 }
 
 #endif /* __KERNEL__ */

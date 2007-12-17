@@ -79,7 +79,7 @@ int rt_bits_delete(struct rt_bits_struct *bits);
 
 RTAI_SYSCALL_MODE unsigned long rt_get_bits(struct rt_bits_struct *bits);
 
-RTAI_SYSCALL_MODE int rt_bits_reset(struct rt_bits_struct *bits, unsigned long mask);
+RTAI_SYSCALL_MODE unsigned long rt_bits_reset(struct rt_bits_struct *bits, unsigned long mask);
 
 RTAI_SYSCALL_MODE unsigned long rt_bits_signal(struct rt_bits_struct *bits, int setfun, unsigned long masks);
 
@@ -139,10 +139,10 @@ RTAI_PROTO(unsigned long, rt_get_bits,(struct rt_bits_struct *bits))
 	return rtai_lxrt(BITSIDX, SIZARG, BITS_GET, &arg).i[LOW];
 }
 
-RTAI_PROTO(int, rt_bits_reset,(struct rt_bits_struct *bits, unsigned long mask))
+RTAI_PROTO(unsigned long, rt_bits_reset,(struct rt_bits_struct *bits, unsigned long mask))
 {
 	struct { struct rt_bits_struct *bits; unsigned long mask; } arg = { bits, mask };
-	return rtai_lxrt(BITSIDX, SIZARG, BITS_RESET, &arg).i[LOW];
+	return (unsigned long)rtai_lxrt(BITSIDX, SIZARG, BITS_RESET, &arg).i[LOW];
 }
 
 RTAI_PROTO(unsigned long, rt_bits_signal,(struct rt_bits_struct *bits, int setfun, unsigned long masks))

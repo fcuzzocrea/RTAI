@@ -170,7 +170,12 @@ do { \
 #define hal_critical_enter  ipipe_critical_enter
 #define hal_critical_exit   ipipe_critical_exit
 
+#if LINUX_VERSION_CODE < KERNEL_VERSION(2,6,22)
 #define hal_clear_irq   __ipipe_clear_irq
+#else
+#define hal_clear_irq(a, b)
+#endif
+
 #define hal_lock_irq    __ipipe_lock_irq
 #define hal_unlock_irq  __ipipe_unlock_irq
 

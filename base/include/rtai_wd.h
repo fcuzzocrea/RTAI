@@ -55,7 +55,7 @@ typedef struct bad_rt_task {
     struct bad_rt_task	*next;		// Next in list
 } BAD_RT_TASK;
 
-#define WD_INDX          3
+#define WD_INDX          2
 
 #define WD_SET_GRACE     1
 #define WD_SET_GRACEDIV  2 

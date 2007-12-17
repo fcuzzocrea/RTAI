@@ -186,9 +186,10 @@ int rkmmap(void *mem,
 static inline void *_rt_shm_alloc(void *start, unsigned long name, int size, int suprt, int isheap)
 {
 	int hook;
-	void *adr;
+	void *adr = NULL;
+
 	if ((hook = open(RTAI_SHM_DEV, O_RDWR)) <= 0) {
-		return 0;
+		return NULL;
 	} else {
 		struct { unsigned long name, arg, suprt; } arg = { name, size, suprt };
 #ifdef SHM_USE_LXRT
@@ -196,15 +197,13 @@ static inline void *_rt_shm_alloc(void *start, unsigned long name, int size, int
 #else
 		if ((size = ioctl(hook, SHM_ALLOC, (unsigned long)(&arg)))) {
 #endif
-			if ((adr = mmap(start, size, PROT_WRITE | PROT_READ, MAP_SHARED | MAP_LOCKED, hook, 0)) == (void *)-1) {;
+			if ((adr = mmap(start, size, PROT_WRITE | PROT_READ, MAP_SHARED | MAP_LOCKED, hook, 0)) == MAP_FAILED) {;
 #ifdef SHM_USE_LXRT
 				rtai_lxrt(BIDX, sizeof(name), SHM_FREE, &name);
 #else
 				ioctl(hook, SHM_FREE, &name);
 #endif
-				adr = 0;
-			} 
-			if (isheap) {
+			} else if (isheap) {
 				arg.arg = (unsigned long)adr;
 #ifdef SHM_USE_LXRT
 				rtai_lxrt(BIDX, SIZARG, HEAP_SET, &arg);
@@ -212,8 +211,6 @@ static inline void *_rt_shm_alloc(void *start, unsigned long name, int size, int
 				ioctl(hook, HEAP_SET, &arg);
 #endif
 			}
-		} else {
-			adr = 0;
 		}
 	}
 	close(hook);

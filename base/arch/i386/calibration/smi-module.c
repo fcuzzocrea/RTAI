@@ -39,7 +39,7 @@ RTAI_MODULE_PARM(smiReset, int);
 #endif
 
 /* set these as you need */
-#define CONFIG_RTAI_HW_SMI_ALL		0
+#define CONFIG_RTAI_HW_SMI_ALL		1
 #define CONFIG_RTAI_HW_SMI_INTEL_USB2	0
 #define CONFIG_RTAI_HW_SMI_LEGACY_USB2	0
 #define CONFIG_RTAI_HW_SMI_PERIODIC	0
@@ -53,6 +53,7 @@ RTAI_MODULE_PARM(smiReset, int);
 #ifndef PCI_DEVICE_ID_INTEL_ICH7_0
 #define PCI_DEVICE_ID_INTEL_ICH7_0  0x27b8
 #define PCI_DEVICE_ID_INTEL_ICH7_1  0x27b9
+#define PCI_DEVICE_ID_INTEL_ICH8_4 0x2815
 #endif
 #endif
 
@@ -73,6 +74,7 @@ static struct pci_device_id hal_smi_pci_tbl[] = {
 { PCI_DEVICE(PCI_VENDOR_ID_INTEL, PCI_DEVICE_ID_INTEL_ICH6_2) },
 { PCI_DEVICE(PCI_VENDOR_ID_INTEL, PCI_DEVICE_ID_INTEL_ICH7_0) },
 { PCI_DEVICE(PCI_VENDOR_ID_INTEL, PCI_DEVICE_ID_INTEL_ICH7_1) },
+{ PCI_DEVICE(PCI_VENDOR_ID_INTEL, PCI_DEVICE_ID_INTEL_ICH8_4) },
 { 0, },
 };
 
@@ -104,9 +106,9 @@ pci.ids database, ICH5-M ?)
 #define SLP_EN_BIT          (0x01 << 4)
 #define LEGACY_USB_EN_BIT   (0x01 << 3)
 #define BIOS_EN_BIT         (0x01 << 2)
-#define GBL_SMI_EN_BIT      (0x01) /* This is reset by a PCI reset event! */
+#define GBL_SMI_EN_BIT      (0x01 << 0)  /* This is reset by a PCI reset event! */
 
-static const unsigned hal_smi_masked_bits = 0
+unsigned long hal_smi_masked_bits = 0
 #if CONFIG_RTAI_HW_SMI_ALL
     | GBL_SMI_EN_BIT
 #else
@@ -137,7 +139,9 @@ static const unsigned hal_smi_masked_bits = 0
 #endif
 ;
 
-static unsigned hal_smi_saved_bits;
+RTAI_MODULE_PARM(hal_smi_masked_bits, ulong);
+
+static unsigned long hal_smi_saved_bits;
 static unsigned short hal_smi_en_addr;
 static struct pci_dev *smi_dev;
 
@@ -200,20 +204,19 @@ int __devinit hal_smi_init(void)
 int init_module(void)
 {
 	int retval;
-	if (!(retval = hal_smi_init())) {
-		printk("SMI module loaded\n");
+	if (smiReset) {
+		hal_smi_restore();
+		printk("SMI configuration has been reset, mask used = %lx.\n", hal_smi_saved_bits);
+		retval = 0;
+	} else if (!(retval = hal_smi_init())) {
+		printk("SMI configuration has been set, mask used = %lx.\n", hal_smi_masked_bits);
 	}
 	return retval;
 }
 
 void cleanup_module(void)         
 {
-	if (smiReset) {
-		hal_smi_restore();
-		printk("SMI module unloaded and reset\n");
-	} else {
-		printk("SMI module unloaded but not reset\n");
-	}
+	return;
 }
 
 MODULE_LICENSE("GPL");

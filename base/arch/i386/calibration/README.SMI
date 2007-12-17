@@ -1,12 +1,39 @@
-REMARK!!!
-all of what found in the explanation below should be in smi-module.c.
+To fix SMI problems run "setsmi [hal_smi_masked_bits=<xxx>]", where
+"hal_smi_masked_bits" should be used if SMI devices must be disabled
+selectivily. Without it SMI is disabled completly. Note that using
+"setsmi hal_smi_masked_bits=1" will disable SMI competely, it is in
+fact the default action if nothing is said at insmod.
 
-To fix SMI problems run: setsmi
-To reset SMI to its previous state run: rstsmi
+A list of a few specific bits:
+#define INTEL_USB2_EN_BIT   (0x01 << 18) /* ICH4, ... */
+#define LEGACY_USB2_EN_BIT  (0x01 << 17) /* ICH4, ... */
+#define PERIODIC_EN_BIT     (0x01 << 14) /* called 1MIN_ in ICH0 */
+#define TCO_EN_BIT          (0x01 << 13)
+#define MCSMI_EN_BIT        (0x01 << 11)
+#define SWSMI_TMR_EN_BIT    (0x01 << 6)
+#define APMC_EN_BIT         (0x01 << 5)
+#define SLP_EN_BIT          (0x01 << 4)
+#define LEGACY_USB_EN_BIT   (0x01 << 3)
+#define BIOS_EN_BIT         (0x01 << 2)
+
+The default action of disabling SMI support completely will disable any 
+device wanting to acces SMI. So assigning a specific "hal_smi_masked_bits" 
+may be a more viable way of controlling SMI. Such a choice may however 
+be not a trivial one, entailing some testing trials. In fact it is in view
+of the need of easily fiddling with such a bit mask, without recompiling the
+related support, that the alternative of setting it at RTAI configuration
+as been dismissed.
+
+To reset SMI to its previous state simply run: "rstsmi". 
 
 Both scripts are located in $PREFIX/bin/ and they assume that directory
 is in your $PATH.
 
+------------------------------------------------------------------------------
+
+REMARK!!!
+
+All of what found in the explanation below should be in smi-module.c.
 
 HISTORY and EXPLANATION of SMI INTERFERENCE with RTAI and RELATED TECH LINKs.
 

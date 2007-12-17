@@ -1,6 +1,593 @@
 /*!\file malloc.c
  * \brief Dynamic memory allocation services.
- * \author Philippe Gerum
+ *
+ * Copyright (C) 2007 Paolo Mantegazza <mantegazza@aero.polimi.it>.
+ * Specific following parts as copyrighted/licensed by their authors. 
+ *
+ * RTAI is free software; you can redistribute it and/or modify it
+ * under the terms of the GNU General Public License as published by
+ * the Free Software Foundation; either version 2 of the License, or
+ * (at your option) any later version.
+ *
+ * RTAI is distributed in the hope that it will be useful, but WITHOUT
+ * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY
+ * or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public
+ * License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with RTAI; if not, write to the Free Software Foundation,
+ * Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
+ *
+ * \ingroup shm
+ */
+
+/*!
+ * @addtogroup shm
+ *@{*/
+
+#include <linux/module.h>
+#include <linux/kernel.h>
+#include <linux/version.h>
+#include <linux/slab.h>
+
+#include <rtai_config.h>
+#include <asm/rtai.h>
+#include <rtai_malloc.h>
+#include <rtai_shm.h>
+
+int rtai_global_heap_size = RTHEAP_GLOBALSZ;
+RTAI_MODULE_PARM(rtai_global_heap_size, int);
+
+void *rtai_global_heap_adr = NULL;
+
+rtheap_t rtai_global_heap;	/* Global system heap */
+
+static void *alloc_extent(u_long size, int suprt)
+{
+	caddr_t p;
+	if (!suprt) {
+		caddr_t _p;
+
+		p = _p = (caddr_t)vmalloc(size);
+		if (p) {
+//			printk("RTAI[malloc]: vmalloced extent %p, size %lu.\n", p, size);
+			for (; size > 0; size -= PAGE_SIZE, _p += PAGE_SIZE) {
+				mem_map_reserve(virt_to_page(__va(kvirt_to_pa((u_long)_p))));
+			}
+		}
+	} else {
+		p = (caddr_t)kmalloc(size, suprt);
+//		printk("RTAI[malloc]: kmalloced extent %p, size %lu.\n", p, size);
+	}
+	if (p) {
+		memset(p, 0, size);
+	}
+	return p;
+}
+
+static void free_extent(void *p, u_long size, int suprt)
+{
+	if (!suprt) {
+		caddr_t _p = (caddr_t)p;
+
+//		printk("RTAI[malloc]: vfreed extent %p, size %lu.\n", p, size);
+		for (; size > 0; size -= PAGE_SIZE, _p += PAGE_SIZE) {
+			mem_map_unreserve(virt_to_page(__va(kvirt_to_pa((u_long)_p))));
+		}
+		vfree(p);
+	} else {
+//		printk("RTAI[malloc]: kfreed extent %p, size %lu.\n", p, size);
+		kfree(p);
+	}
+}
+
+#ifndef CONFIG_RTAI_USE_TLSF
+#define CONFIG_RTAI_USE_TLSF 0
+#endif
+
+#if CONFIG_RTAI_USE_TLSF
+
+static size_t init_memory_pool(size_t mem_pool_size, void *mem_pool);
+static inline void *malloc_ex(size_t size, void *mem_pool);
+static inline void free_ex(void *ptr, void *mem_pool);
+
+static void init_extent(rtheap_t *heap, rtextent_t *extent)
+{
+	INIT_LIST_HEAD(&extent->link);
+	extent->membase = (caddr_t)extent + sizeof(rtextent_t);
+	extent->memlim  = (caddr_t)extent + heap->extentsize;
+}
+
+int rtheap_init(rtheap_t *heap, void *heapaddr, u_long heapsize, u_long pagesize, int suprt)
+{
+	rtextent_t *extent;
+
+	INIT_LIST_HEAD(&heap->extents);
+	spin_lock_init(&heap->lock);
+
+	if (!suprt) {
+		heap->extentsize = heapsize;
+	} else {
+		heap->extentsize = heapsize > KMALLOC_LIMIT ? KMALLOC_LIMIT : heapsize;
+	}
+
+	if (heapaddr) {
+		extent = (rtextent_t *)heapaddr;
+		init_extent(heap, extent);
+		list_add_tail(&extent->link, &heap->extents);
+		return init_memory_pool(heapsize - sizeof(rtextent_t), heapaddr + sizeof(rtextent_t)) < 0 ? RTHEAP_NOMEM : 0;
+	} else {
+		u_long init_size = 0;
+		while (init_size < heapsize) {
+			if (!(extent = (rtextent_t *)alloc_extent(heap->extentsize, suprt)) || init_memory_pool(heap->extentsize - sizeof(rtextent_t), (void *)extent + sizeof(rtextent_t)) < 0) {
+				struct list_head *holder, *nholder;
+				list_for_each_safe(holder, nholder, &heap->extents) {
+					extent = list_entry(holder, rtextent_t, link);
+					free_extent(extent, heap->extentsize, suprt);
+				}
+				return RTHEAP_NOMEM;
+			}
+			init_extent(heap, extent);
+			list_add_tail(&extent->link, &heap->extents);
+			init_size += heap->extentsize;
+		}
+	}
+	return 0;
+}
+
+void rtheap_destroy(rtheap_t *heap, int suprt)
+{
+	struct list_head *holder, *nholder;
+	list_for_each_safe(holder, nholder, &heap->extents) {
+		free_extent(list_entry(holder, rtextent_t, link), heap->extentsize, suprt);
+	}
+}
+
+void *rtheap_alloc(rtheap_t *heap, u_long size, int mode)
+{
+	void *adr = NULL;
+	struct list_head *holder;
+	unsigned long flags;
+
+	flags = rt_spin_lock_irqsave(&heap->lock);
+	list_for_each(holder, &heap->extents) {
+		if ((adr = malloc_ex(size, list_entry(holder, rtextent_t, link)->membase)) != NULL) {
+			break;
+		}
+	}
+	rt_spin_unlock_irqrestore(flags, &heap->lock);
+	return adr;
+}
+
+int rtheap_free(rtheap_t *heap, void *block)
+{
+	unsigned long flags;
+	struct list_head *holder;
+
+	flags = rt_spin_lock_irqsave(&heap->lock);
+	list_for_each(holder, &heap->extents) {
+		rtextent_t *extent;
+		extent = list_entry(holder, rtextent_t, link);
+		if ((caddr_t)block < extent->memlim && (caddr_t)block >= extent->membase) {
+			free_ex(block, extent->membase);
+			break;
+		}
+	}
+	rt_spin_unlock_irqrestore(flags, &heap->lock);
+	return 0;
+}
+
+/******************************** BEGIN TLSF ********************************/
+
+/* 
+ * Two Levels Segregate Fit memory allocator (TLSF)
+ * Version 2.3
+ *
+ * Written by Miguel Masmano Tello <mimastel@doctor.upv.es>
+ *
+ * Thanks to Ismael Ripoll for his suggestions and reviews
+ *
+ * Copyright (C) 2007, 2006, 2005, 2004
+ *
+ * This code is released using a dual license strategy: GPL/LGPL
+ * You can choose the licence that better fits your requirements.
+ *
+ * Released under the terms of the GNU General Public License Version 2.0
+ * Released under the terms of the GNU Lesser General Public License Version 2.1
+ *
+ */
+
+/*
+ * Code contributions:
+ *
+ * (Jul 28 2007)  Herman ten Brugge <hermantenbrugge@home.nl>:
+ *
+ * - Add 64 bit support. It now runs on x86_64 and solaris64.
+ * - I also tested this on vxworks/32and solaris/32 and i386/32 processors.
+ * - Remove assembly code. I could not measure any performance difference 
+ *   on my core2 processor. This also makes the code more portable.
+ * - Moved defines/typedefs from tlsf.h to tlsf.c
+ * - Changed MIN_BLOCK_SIZE to sizeof (free_ptr_t) and BHDR_OVERHEAD to 
+ *   (sizeof (bhdr_t) - MIN_BLOCK_SIZE). This does not change the fact 
+ *    that the minumum size is still sizeof 
+ *   (bhdr_t).
+ * - Changed all C++ comment style to C style. (// -> /.* ... *./)
+ * - Used ls_bit instead of ffs and ms_bit instead of fls. I did this to 
+ *   avoid confusion with the standard ffs function which returns 
+ *   different values.
+ * - Created set_bit/clear_bit fuctions because they are not present 
+ *   on x86_64.
+ * - Added locking support + extra file target.h to show how to use it.
+ * - Added get_used_size function
+ * - Added rtl_realloc and rtl_calloc function
+ * - Implemented realloc clever support.
+ * - Added some test code in the example directory.
+ *        
+ *
+ * (Oct 23 2006) Adam Scislowicz: 
+ *
+ * - Support for ARMv5 implemented
+ *
+ * Adaption to RTAI by Paolo Mantegazza <mantegazza@aero.polimi.it>,
+ * with TLSF downloaded from: 
+ * http://rtportal.upv.es/rtmalloc/allocators/tlsf/.
+ *
+ */
+
+#if !defined(__GNUC__)
+#ifndef __inline__
+#define __inline__
+#endif
+#endif
+
+/* Definition of the structures used by TLSF */
+
+/* Some IMPORTANT TLSF parameters */
+/* Unlike the preview TLSF versions, now they are statics */
+#define MAX_FLI		(30)
+#define MAX_LOG2_SLI	(5)
+#define MAX_SLI		(1 << MAX_LOG2_SLI)	/* MAX_SLI = 2^MAX_LOG2_SLI */
+
+#define FLI_OFFSET	(6) /* tlsf structure just will manage blocks bigger */
+		     	    /* than 128 bytes */
+#define SMALL_BLOCK	(128)
+#define REAL_FLI	(MAX_FLI - FLI_OFFSET)
+#define MIN_BLOCK_SIZE	(sizeof (free_ptr_t))
+#define BHDR_OVERHEAD	(sizeof (bhdr_t) - MIN_BLOCK_SIZE)
+#define TLSF_SIGNATURE	(0x2A59FA59)
+
+#define	PTR_MASK	(sizeof(void *) - 1)
+#define TLSF_BLOCK_SIZE	(0xFFFFFFFF - PTR_MASK)
+
+#define GET_NEXT_BLOCK(_addr, _r) ((bhdr_t *) ((char *) (_addr) + (_r)))
+#define	MEM_ALIGN		  (sizeof(void *) * 2 - 1)
+#define ROUNDUP_SIZE(_r)          (((_r) + MEM_ALIGN) & ~MEM_ALIGN)
+#define ROUNDDOWN_SIZE(_r)        ((_r) & ~MEM_ALIGN)
+
+#define BLOCK_STATE	(0x1)
+#define PREV_STATE	(0x2)
+
+/* bit 0 of the block size */
+#define FREE_BLOCK	(0x1)
+#define USED_BLOCK	(0x0)
+
+/* bit 1 of the block size */
+#define PREV_FREE	(0x2)
+#define PREV_USED	(0x0)
+
+#define PRINT_MSG(fmt, args...) rt_printk(fmt, ## args)
+#define ERROR_MSG(fmt, args...) rt_printk(fmt, ## args)
+
+typedef unsigned int u32_t;
+typedef unsigned char u8_t;
+
+typedef struct free_ptr_struct {
+    struct bhdr_struct *prev;
+    struct bhdr_struct *next;
+} free_ptr_t;
+
+typedef struct bhdr_struct {
+    /* This pointer is just valid if the first bit of size is set */
+    struct bhdr_struct *prev_hdr;
+    /* The size is stored in bytes */
+    u32_t size; /* bit 0 indicates whether the block is used and */
+                /* bit 1 allows to know whether the previous block is free */
+    union {
+	struct free_ptr_struct free_ptr;
+	u8_t buffer[sizeof(struct free_ptr_struct)];
+    } ptr;
+} bhdr_t;
+
+typedef struct TLSF_struct {
+    /* the TLSF's structure signature */
+    u32_t tlsf_signature;
+
+//    size_t size;
+    size_t used_size;
+
+    /* the first-level bitmap */
+    /* This array should have a size of REAL_FLI bits */
+    u32_t fl_bitmap;
+
+    /* the second-level bitmap */
+    u32_t sl_bitmap[REAL_FLI];
+
+    bhdr_t *matrix[REAL_FLI][MAX_SLI];
+} tlsf_t;
+
+static __inline__ void tlsf_set_bit(int nr, u32_t *addr);
+static __inline__ void tlsf_clear_bit(int nr, u32_t *addr);
+static __inline__ int ls_bit (int x);
+static __inline__ int ms_bit (int x);
+static __inline__ void MAPPING_SEARCH(size_t * _r, int *_fl, int *_sl);
+static __inline__ void MAPPING_INSERT(size_t _r, int *_fl, int *_sl);
+static __inline__ bhdr_t *FIND_SUITABLE_BLOCK(tlsf_t * _tlsf, int *_fl, int *_sl);
+
+static const int table[] = {
+  -1,0,1,1,2,2,2,2,3,3,3,3,3,3,3,3,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,
+   5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,
+   6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,
+   6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,
+   7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,
+   7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,
+   7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,
+   7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7
+};
+
+static __inline__ int
+ls_bit (int i)
+{
+  unsigned int a;
+  unsigned int x = i & -i;
+
+  a = x <= 0xffff ? (x <= 0xff ? 0 : 8) : (x <= 0xffffff ? 16 : 24);
+  return table[x >> a] + a;
+}
+
+static __inline__ int
+ms_bit (int i)
+{
+  unsigned int a;
+  unsigned int x = (unsigned int) i;
+
+  a = x <= 0xffff ? (x <= 0xff ? 0 : 8) : (x <= 0xffffff ? 16 : 24);
+  return table[x >> a] + a;
+}
+
+static __inline__ void
+tlsf_set_bit(int nr, u32_t *addr)
+{
+  addr[nr >> 5] |= 1 << (nr & 0x1f);
+}
+
+static __inline__ void
+tlsf_clear_bit(int nr, u32_t *addr)
+{
+  addr[nr >> 5] &= ~(1 << (nr & 0x1f));
+}
+
+static __inline__ void MAPPING_SEARCH(size_t * _r, int *_fl, int *_sl)
+{
+    int _t;
+
+    if (*_r < SMALL_BLOCK) {
+	*_fl = 0;
+	*_sl = *_r / (SMALL_BLOCK / MAX_SLI);
+    } else {
+	_t = (1 << (ms_bit(*_r) - MAX_LOG2_SLI)) - 1;
+	*_r = *_r + _t;
+	*_fl = ms_bit(*_r);
+	*_sl = (*_r >> (*_fl - MAX_LOG2_SLI)) - MAX_SLI;
+	*_fl -= FLI_OFFSET;
+	/*if ((*_fl -= FLI_OFFSET) < 0) // FL wil be always >0!
+	 *_fl = *_sl = 0;
+	 */
+	*_r &= ~_t;
+    }
+}
+
+static __inline__ void MAPPING_INSERT(size_t _r, int *_fl, int *_sl)
+{
+    if (_r < SMALL_BLOCK) {
+	*_fl = 0;
+	*_sl = _r / (SMALL_BLOCK / MAX_SLI);
+    } else {
+	*_fl = ms_bit(_r);
+	*_sl = (_r >> (*_fl - MAX_LOG2_SLI)) - MAX_SLI;
+	*_fl -= FLI_OFFSET;
+    }
+}
+
+static __inline__ bhdr_t *FIND_SUITABLE_BLOCK(tlsf_t * _tlsf, int *_fl,
+					  int *_sl)
+{
+    u32_t _tmp = _tlsf->sl_bitmap[*_fl] & (~0 << *_sl);
+    bhdr_t *_b = NULL;
+
+    if (_tmp) {
+	*_sl = ls_bit(_tmp);
+	_b = _tlsf->matrix[*_fl][*_sl];
+    } else {
+	*_fl = ls_bit(_tlsf->fl_bitmap & (~0 << (*_fl + 1)));
+	if (*_fl > 0) {		/* likely */
+	    *_sl = ls_bit(_tlsf->sl_bitmap[*_fl]);
+	    _b = _tlsf->matrix[*_fl][*_sl];
+	}
+    }
+    return _b;
+}
+
+#define EXTRACT_BLOCK_HDR(_b, _tlsf, _fl, _sl) { \
+  _tlsf -> matrix [_fl] [_sl] = _b -> ptr.free_ptr.next; \
+  if (_tlsf -> matrix[_fl][_sl]) \
+    _tlsf -> matrix[_fl][_sl] -> ptr.free_ptr.prev = NULL; \
+  else {\
+    tlsf_clear_bit (_sl, &_tlsf -> sl_bitmap [_fl]); \
+    if (!_tlsf -> sl_bitmap [_fl]) \
+      tlsf_clear_bit (_fl, &_tlsf -> fl_bitmap); \
+  } \
+  _b -> ptr.free_ptr = (free_ptr_t) {NULL, NULL}; \
+}
+
+#define EXTRACT_BLOCK(_b, _tlsf, _fl, _sl) { \
+  if (_b -> ptr.free_ptr.next) \
+    _b -> ptr.free_ptr.next -> ptr.free_ptr.prev = _b -> ptr.free_ptr.prev; \
+  if (_b -> ptr.free_ptr.prev) \
+    _b -> ptr.free_ptr.prev -> ptr.free_ptr.next = _b -> ptr.free_ptr.next; \
+  if (_tlsf -> matrix [_fl][_sl] == _b) {  \
+    _tlsf -> matrix [_fl][_sl] = _b -> ptr.free_ptr.next; \
+    if (!_tlsf -> matrix [_fl][_sl]) {  \
+      tlsf_clear_bit (_sl, &_tlsf -> sl_bitmap[_fl]); \
+      if (!_tlsf -> sl_bitmap [_fl]) \
+      tlsf_clear_bit (_fl, &_tlsf -> fl_bitmap); \
+    } \
+  } \
+  _b -> ptr.free_ptr = (free_ptr_t) {NULL, NULL}; \
+}
+
+#define INSERT_BLOCK(_b, _tlsf, _fl, _sl) { \
+  _b -> ptr.free_ptr = (free_ptr_t) {NULL, _tlsf -> matrix [_fl][_sl]}; \
+  if (_tlsf -> matrix [_fl][_sl]) \
+    _tlsf -> matrix [_fl][_sl] -> ptr.free_ptr.prev = _b; \
+  _tlsf -> matrix [_fl][_sl] = _b; \
+  tlsf_set_bit (_sl, &_tlsf -> sl_bitmap [_fl]); \
+  tlsf_set_bit (_fl, &_tlsf -> fl_bitmap); \
+}
+
+static size_t init_memory_pool(size_t mem_pool_size, void *mem_pool)
+{
+    char *mp = NULL;
+    tlsf_t *tlsf;
+    bhdr_t *b, *lb;
+    int fl, sl;
+    if (!mem_pool || !mem_pool_size
+	|| mem_pool_size < sizeof(tlsf_t) + 128) {
+	ERROR_MSG("init_memory_pool (): memory_pool invalid\n");
+	return -1;
+    }
+
+    if (((unsigned long) mem_pool & PTR_MASK)) {
+	ERROR_MSG
+	    ("init_memory_pool (): mem_pool must be aligned to a word\n");
+	return -1;
+    }
+    tlsf = (tlsf_t *) mem_pool;
+    /* Check if allready initialised */
+    if (tlsf->tlsf_signature == TLSF_SIGNATURE) {
+      mp = mem_pool;
+      b = GET_NEXT_BLOCK(mp, sizeof(tlsf_t));
+      return b->size & TLSF_BLOCK_SIZE;
+    }
+    tlsf->tlsf_signature = TLSF_SIGNATURE;
+    mp = mem_pool;
+    /* Zeroing the memory pool */
+    memset(&tlsf->used_size, 0x0,
+           mem_pool_size - ((char *) &tlsf->used_size - mp));
+    b = GET_NEXT_BLOCK(mem_pool, ROUNDUP_SIZE (sizeof(tlsf_t)));
+    b->size = ROUNDDOWN_SIZE(mem_pool_size - sizeof(tlsf_t) - 2 *
+			      BHDR_OVERHEAD) | FREE_BLOCK | PREV_USED;
+    b->ptr.free_ptr.prev = b->ptr.free_ptr.next = 0;
+
+    if (b->size > (1 << MAX_FLI)) {
+	ERROR_MSG
+	    ("init_memory_pool (): TLSF can't store a block of %u bytes.\n",
+	     (int) (b->size & TLSF_BLOCK_SIZE));
+	return -1;
+    }
+
+    MAPPING_INSERT(b->size & TLSF_BLOCK_SIZE, &fl, &sl);
+    INSERT_BLOCK(b, tlsf, fl, sl);
+    /* The sentinel block, it allow us to know when we're in the last block */
+    lb = GET_NEXT_BLOCK(b->ptr.buffer, b->size & TLSF_BLOCK_SIZE);
+    lb->prev_hdr = b;
+    lb->size = 0 | USED_BLOCK | PREV_FREE;
+    tlsf->used_size = mem_pool_size - (b->size & TLSF_BLOCK_SIZE);
+    return b->size & TLSF_BLOCK_SIZE;
+}
+
+static inline void *malloc_ex(size_t size, void *mem_pool)
+{
+    tlsf_t *tlsf = (tlsf_t *) mem_pool;
+    bhdr_t *b, *b2, *next_b;
+    int fl, sl;
+    size_t tmp_size;
+
+    size = (size < MIN_BLOCK_SIZE) ? MIN_BLOCK_SIZE : ROUNDUP_SIZE(size);
+    /* Rounding up the requested size and calculating fl and sl */
+    MAPPING_SEARCH(&size, &fl, &sl);
+
+    /* Searching a free block */
+    if (!(b = FIND_SUITABLE_BLOCK(tlsf, &fl, &sl)))
+	return NULL;		/* Not found */
+
+    EXTRACT_BLOCK_HDR(b, tlsf, fl, sl);
+
+    /*-- found: */
+    next_b = GET_NEXT_BLOCK(b->ptr.buffer, b->size & TLSF_BLOCK_SIZE);
+    /* Should the block be split? */
+    tmp_size = (b->size & TLSF_BLOCK_SIZE) - size;
+    if (tmp_size >= sizeof (bhdr_t) ) {
+	tmp_size -= BHDR_OVERHEAD;
+	b2 = GET_NEXT_BLOCK(b->ptr.buffer, size);
+	b2->size = tmp_size | FREE_BLOCK | PREV_USED;
+	next_b->prev_hdr = b2;
+
+	MAPPING_INSERT(tmp_size, &fl, &sl);
+	INSERT_BLOCK(b2, tlsf, fl, sl);
+
+	b->size = size | (b->size & PREV_STATE);
+    } else {
+	next_b->size &= (~PREV_FREE);
+        b->size &= (~FREE_BLOCK);	/* Now it's used */
+    }
+
+    tlsf->used_size += (b->size & TLSF_BLOCK_SIZE) + BHDR_OVERHEAD;
+
+    return (void *) b->ptr.buffer;
+}
+
+static inline void free_ex(void *ptr, void *mem_pool)
+{
+    tlsf_t *tlsf = (tlsf_t *) mem_pool;
+    bhdr_t *b, *tmp_b;
+    int fl = 0, sl = 0;
+
+    if (ptr == NULL) {
+      return;
+    }
+    b = (bhdr_t *) ((char *) ptr - BHDR_OVERHEAD);
+    b->size |= FREE_BLOCK;
+    tlsf->used_size -= (b->size & TLSF_BLOCK_SIZE) + BHDR_OVERHEAD;
+    b->ptr.free_ptr = (free_ptr_t) { NULL, NULL};
+    tmp_b = GET_NEXT_BLOCK(b->ptr.buffer, b->size & TLSF_BLOCK_SIZE);
+    if (tmp_b->size & FREE_BLOCK) {
+	MAPPING_INSERT(tmp_b->size & TLSF_BLOCK_SIZE, &fl, &sl);
+	EXTRACT_BLOCK(tmp_b, tlsf, fl, sl);
+	b->size += (tmp_b->size & TLSF_BLOCK_SIZE) + BHDR_OVERHEAD;
+    }
+    if (b->size & PREV_FREE) {
+	tmp_b = b->prev_hdr;
+	MAPPING_INSERT(tmp_b->size & TLSF_BLOCK_SIZE, &fl, &sl);
+	EXTRACT_BLOCK(tmp_b, tlsf, fl, sl);
+	tmp_b->size += (b->size & TLSF_BLOCK_SIZE) + BHDR_OVERHEAD;
+	b = tmp_b;
+    }
+    MAPPING_INSERT(b->size & TLSF_BLOCK_SIZE, &fl, &sl);
+    INSERT_BLOCK(b, tlsf, fl, sl);
+
+    tmp_b = GET_NEXT_BLOCK(b->ptr.buffer, b->size & TLSF_BLOCK_SIZE);
+    tmp_b->size |= PREV_FREE;
+    tmp_b->prev_hdr = b;
+}
+
+/******************************** END TLSF ********************************/
+
+#else /* !CONFIG_RTAI_USE_TLSF */
+
+/***************************** BEGIN BSD GPMA ********************************/
+
+/*!\file malloc.c
+ * \brief Dynamic memory allocation services.
  *
  * Copyright (C) 2001,2002,2003,2004 Philippe Gerum <rpm@xenomai.org>.
  *
@@ -32,62 +619,6 @@
 /*!
  * @addtogroup shm
  *@{*/
-
-#include <linux/module.h>
-#include <linux/kernel.h>
-#include <linux/version.h>
-#include <linux/slab.h>
-
-#include <rtai_config.h>
-#include <asm/rtai.h>
-#include <rtai_malloc.h>
-#include <rtai_shm.h>
-
-int rtai_global_heap_size = RTHEAP_GLOBALSZ;
-RTAI_MODULE_PARM(rtai_global_heap_size, int);
-
-void *rtai_global_heap_adr = NULL;
-
-rtheap_t rtai_global_heap;	/* Global system heap */
-
-static void *alloc_extent (u_long size, int suprt)
-{
-	caddr_t p;
-if (!suprt) {
-		caddr_t _p;
-
-		p = _p = (caddr_t)vmalloc(size);
-		if (p) {
-			printk("RTAI[malloc]: vmalloced extent %p, size %lu.\n", p, size);
-			for (; size > 0; size -= PAGE_SIZE, _p += PAGE_SIZE) {
-				mem_map_reserve(virt_to_page(__va(kvirt_to_pa((u_long)_p))));
-			}
-		}
-	} else {
-		p = (caddr_t)kmalloc(size, suprt);
-		printk("RTAI[malloc]: kmalloced extent %p, size %lu.\n", p, size);
-	}
-	if (p) {
-		memset(p, 0, size);
-	}
-	return p;
-}
-
-static void free_extent (void *p, u_long size, int suprt)
-{
-	if (!suprt) {
-		caddr_t _p = (caddr_t)p;
-
-		printk("RTAI[malloc]: vfreed extent %p, size %lu.\n", p, size);
-		for (; size > 0; size -= PAGE_SIZE, _p += PAGE_SIZE) {
-			mem_map_unreserve(virt_to_page(__va(kvirt_to_pa((u_long)_p))));
-		}
-		vfree(p);
-	} else {
-		printk("RTAI[malloc]: kfreed extent %p, size %lu.\n", p, size);
-		kfree(p);
-	}
-}
 
 static void init_extent (rtheap_t *heap, rtextent_t *extent)
 {
@@ -625,24 +1156,6 @@ unlock_and_fail:
     return 0;
 }
 
-int __rtai_heap_init (void)
-{
-	rtai_global_heap_size = (rtai_global_heap_size + PAGE_SIZE - 1) & ~(PAGE_SIZE - 1);
-	if (rtheap_init(&rtai_global_heap, NULL, rtai_global_heap_size, PAGE_SIZE, 0)) {
-		printk(KERN_INFO "RTAI[malloc]: failed to initialize the global heap (size=%d bytes).\n", rtai_global_heap_size);
-		return 1;
-	}
-	rtai_global_heap_adr = rtai_global_heap.extents.next;
-	printk(KERN_INFO "RTAI[malloc]: loaded (global heap size=%d bytes).\n", rtai_global_heap_size);
-	return 0;
-}
-
-void __rtai_heap_exit (void)
-{
-	rtheap_destroy(&rtai_global_heap, 0);
-	printk("RTAI[malloc]: unloaded.\n");
-}
-
 /*
  * IMPLEMENTATION NOTES:
  *
@@ -680,10 +1193,36 @@ void __rtai_heap_exit (void)
 
 /*@}*/
 
+/****************************** END BSD GPMA ********************************/
+
+#endif /* CONFIG_RTAI_USE_TLSF */
+
+int __rtai_heap_init (void)
+{
+	rtai_global_heap_size = (rtai_global_heap_size + PAGE_SIZE - 1) & ~(PAGE_SIZE - 1);
+	if (rtheap_init(&rtai_global_heap, NULL, rtai_global_heap_size, PAGE_SIZE, 0)) {
+		printk(KERN_INFO "RTAI[malloc]: failed to initialize the global heap (size=%d bytes).\n", rtai_global_heap_size);
+		return 1;
+	}
+	rtai_global_heap_adr = rtai_global_heap.extents.next;
+	printk(KERN_INFO "RTAI[malloc]: global heap size = %d bytes, <%s>.\n", rtai_global_heap_size, CONFIG_RTAI_USE_TLSF ? "TLSF" : "BSD");
+	return 0;
+}
+
+void __rtai_heap_exit (void)
+{
+	rtheap_destroy(&rtai_global_heap, 0);
+	printk("RTAI[malloc]: unloaded.\n");
+}
+
 #ifndef CONFIG_RTAI_MALLOC_BUILTIN
 module_init(__rtai_heap_init);
 module_exit(__rtai_heap_exit);
 #endif /* !CONFIG_RTAI_MALLOC_BUILTIN */
+
+#ifndef CONFIG_KBUILD
+#define CONFIG_KBUILD
+#endif
 
 #ifdef CONFIG_KBUILD
 EXPORT_SYMBOL(rtheap_init);

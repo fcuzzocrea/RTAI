@@ -1,3 +1,7 @@
+2007-12-17  Roberto Bucher <roberto.bucher@supsi.ch>
+
+	* rtai-lab/scilab/devices/READE.devices:  New descritption.
+
 2007-12-14 Pierangelo Masarati <masarati@aero.polimi.it>
 
 	* GNUMakefile.am: add udev rules file creation for RTAI shm 

@@ -53,11 +53,11 @@ int _rtai_rtc_timer_handler(void)
 	HAL_UNLOCK_LINUX();
 	RTAI_SCHED_ISR_UNLOCK();
 #if 1 //LINUX_VERSION_CODE < KERNEL_VERSION(2,6,0)
-	if (!test_bit(IPIPE_STALL_FLAG, &hal_root_domain->cpudata[cpuid].status)) {
+	if (!test_bit(IPIPE_STALL_FLAG, ROOT_STATUS_ADR(cpuid))) {
 		rtai_sti();
 		hal_fast_flush_pipeline(cpuid);
 #if defined(CONFIG_SMP) &&  LINUX_VERSION_CODE >= KERNEL_VERSION(2,4,32)
-		__set_bit(IPIPE_STALL_FLAG, ipipe_root_status[rtai_cpuid()]);
+		__set_bit(IPIPE_STALL_FLAG, ROOT_STATUS_ADR(cpuid));
 #endif
 		return 1;
 	}

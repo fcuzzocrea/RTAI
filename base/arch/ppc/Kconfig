@@ -6,7 +6,7 @@ config MODULES
 
 config RTAI_VERSION
 	string
-	default "(magma)"
+	default "3.6 (vulcano)"
 
 menu "General"
 
@@ -624,7 +624,7 @@ config RTAI_TBX
 	The module will be called rtai_tbx.o.
 
 config RTAI_TASKLETS
-	tristate "Tasklets and async signals"
+	tristate "Tasklets"
 	default m
 	help
 
@@ -648,7 +648,8 @@ config RTAI_TASKLETS
 	handler in charge of their execution when they are needed.
 	The module will be called rtai_tasklets.o.
 
-	Signals are much the same as tasklets and execute their handler
+	There are special signals tasklets also, natively built in always.
+	They are much the same as tasklets and execute their handler
 	function whenever they are triggered by any task, including their
 	parent task. The notable difference against tasklets is that the
 	task they serve is blocked till any of its signal handler is 
@@ -784,6 +785,28 @@ config RTAI_MALLOC_HEAPSZ
 	RTAI pre-allocates a global heap as part of its initialization
 	chores. This parameter allows to define its size (in
 	kilobytes).
+
+config RTAI_KSTACK_HEAPSZ
+	string "Size of stacks help for RTAI own kernel tasks (Kbytes)"
+	depends on RTAI_MALLOC
+	default 512
+	help
+	RTAI pre-allocates a heap for the stacks of its own kernel tasks.
+	This parameter allows to define its size (in kilobytes).
+
+config RTAI_TASK_SWITCH_SIGNAL
+	bool "task switches specific signal"
+	default n
+	help
+	RTAI can signal a task switch each time a task resumes execution.
+	The way it is done depends on the execution space:
+	- kernel: execute a function assigned at rt_task_init or by calling
+	  rt_task_signal_handler;
+	- user: install an RTAI own signal handler and have it called at any
+	  task switch through its number, assigned by calling 
+	  rt_task_signal_handler.
+	The default is to not make available this feature, so you must enable
+	it explicitly if it is useful for your application.
 
 config RTAI_TRACE
 	bool "LTT support"

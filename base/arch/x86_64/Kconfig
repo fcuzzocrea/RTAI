@@ -6,7 +6,7 @@ config MODULES
 
 config RTAI_VERSION
 	string
-	default "(magma)"
+	default "3.6 (vulcano)"
 
 menu "General"
 
@@ -624,7 +624,7 @@ config RTAI_TBX
 	The module will be called rtai_tbx.o.
 
 config RTAI_TASKLETS
-	tristate "Tasklets and async signals"
+	tristate "Tasklets"
 	default m
 	help
 
@@ -648,7 +648,8 @@ config RTAI_TASKLETS
 	handler in charge of their execution when they are needed.
 	The module will be called rtai_tasklets.o.
 
-	Signals are much the same as tasklets and execute their handler
+	There are special signals tasklets also, natively built in always.
+	They are much the same as tasklets and execute their handler
 	function whenever they are triggered by any task, including their
 	parent task. The notable difference against tasklets is that the
 	task they serve is blocked till any of its signal handler is 
@@ -760,6 +761,26 @@ config RTAI_MALLOC
 	in the real-time domain.
 	The module will be called rtai_malloc.o.
 
+config RTAI_USE_TLSF
+	bool "Allocate memory using TLSF in place of BSD one"
+	depends on RTAI_MALLOC
+	default n
+	help
+	RTAI dynamic memory allocation support offers two different methods
+	to allocate memory chunks. The default one is along the lines 
+	illustrated in:
+	"Design of a General Purpose Memory Allocator for the 4.3BSD Unix
+	 Kernel" by Marshall K. McKusick. 
+	By enabling this option the:
+	"Two Levels Segregated Lists (TLSF)" as found at:
+	http://rtportal.upv.es/rtmalloc/allocators/tlsf/
+	will be used instead.
+	Rough measures seems to indicate small differences between the two
+	in term of alloc/free times, likely with BSD being better for the
+	tested allocation sizes (up to a few KBs), but TLSF seems to have
+	better, i.e. lower, fragmentation properties. In any case you should
+	check it yourself within your own applications.
+
 config RTAI_MALLOC_VMALLOC
 	bool "Use vmalloc() support"
 	depends on RTAI_MALLOC
@@ -784,6 +805,28 @@ config RTAI_MALLOC_HEAPSZ
 	RTAI pre-allocates a global heap as part of its initialization
 	chores. This parameter allows to define its size (in
 	kilobytes).
+
+config RTAI_KSTACK_HEAPSZ
+	string "Size of stacks help for RTAI own kernel tasks (Kbytes)"
+	depends on RTAI_MALLOC
+	default 512
+	help
+	RTAI pre-allocates a heap for the stacks of its own kernel tasks.
+	This parameter allows to define its size (in kilobytes).
+
+config RTAI_TASK_SWITCH_SIGNAL
+	bool "task switches specific signal"
+	default n
+	help
+	RTAI can signal a task switch each time a task resumes execution.
+	The way it is done depends on the execution space:
+	- kernel: execute a function assigned at rt_task_init or by calling
+	  rt_task_signal_handler;
+	- user: install an RTAI own signal handler and have it called at any
+	  task switch through its number, assigned by calling 
+	  rt_task_signal_handler.
+	The default is to not make available this feature, so you must enable
+	it explicitly if it is useful for your application.
 
 config RTAI_TRACE
 	bool "LTT support"
@@ -899,21 +942,13 @@ config RTAI_RTDM_FD_MAX
 	help
 	The maximum number of file descriptors in RTDM.
 
-config RTAI_RTDM_EDGE_SHIRQ
+config RTAI_RTDM_SHIRQ
 	depends on RTAI_RTDM
-        bool "Shared edge triggered interrupts"
+        bool "Shared interrupts"
         default n
         help
         Make it possible for RTDM own interrupt handlers to manage shared
-	edge triggered interrupts.
-
-config RTAI_RTDM_LEVEL_SHIRQ
-	depends on RTAI_RTDM
-        bool "Shared level triggered interrupts"
-        default n
-        help
-        Make it possible for RTDM own interrupt handlers to manage shared
-	level triggered interrupts.
+	interrupts.
 
 config RTAI_DEBUG_RTDM
 	depends on RTAI_RTDM
@@ -940,10 +975,39 @@ config RTAI_DRIVERS_16550A
 	An alternate RTAI real-time serial driver based on RTDM.
 	The module will be called rtai_16550A.o.
 
-endmenu
+choice
+	prompt "Hardware access mode"
+	depends on RTAI_DRIVERS_16550A
+	default RTAI_16550A_PIO
+	help
+	Allows choosing among:
+
+	- Port based:    driver uses I/O ports, as defined by module vector 
+                         parameters "io=port1,port2,...".
+
+	- Memory mapped: driver uses memory mapping, as defined by module
+			 vector parameters "mem=addr1,addr2,...".
+
+	- Whatever:      the driver can use both I/O and memory mapping, as
+			 assigned by "io" and "mem" module vectors parameters,
+			 but with only one mode allowed for each device e.g.:
+			 "io=0x2F8,0,0x3F8 mem=0,0xe0000000,0"; for devices 1,
+			 2 and 3 respectively.
+
+config RTAI_16550A_PIO
+	bool "Port based"
+
+config RTAI_16550A_MMIO
+	bool "Memory mapped"
+
+config RTAI_16550A_ANY
+	bool "Whatever port and memory mix"
+
+endchoice
 
 endmenu
 
+endmenu
 menu "RTAI Lab"
 
 config RTAI_LAB

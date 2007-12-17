@@ -51,4 +51,5 @@ uninstall-local:
 
 .PHONY: FORCE
 
-EXTRA_DIST = $(distfiles) Makefile.kbuild
+EXTRA_DIST = $(distfiles) Makefile.kbuild \
+	     16550A_io.h 16550A_pnp.h

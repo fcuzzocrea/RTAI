@@ -360,7 +360,9 @@ distfiles = $(lib16550A_a_SOURCES)
 @CONFIG_KBUILD_FALSE@	-I../../../base/include \
 @CONFIG_KBUILD_FALSE@	-I../..
 
-EXTRA_DIST = $(distfiles) Makefile.kbuild
+EXTRA_DIST = $(distfiles) Makefile.kbuild \
+	     16550A_io.h 16550A_pnp.h
+
 all: all-am
 
 .SUFFIXES:

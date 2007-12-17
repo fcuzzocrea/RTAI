@@ -79,7 +79,7 @@ struct rt_16550_context {
 	rtdm_lock_t lock;		/* lock to protect context struct */
 
 	unsigned long base_addr;	/* hardware IO base address */
-#ifdef CONFIG_XENO_DRIVERS_16550A_ANY
+#ifdef CONFIG_RTAI_16550A_ANY
 	int io_mode;			/* hardware IO-access mode */
 #endif
 	int tx_fifo;			/* cached global tx_fifo[<device>] */

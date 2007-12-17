@@ -194,7 +194,7 @@ RTAI_SYSCALL_MODE unsigned long rt_get_bits(BITS *bits)
 	return bits->mask;
 }
 
-RTAI_SYSCALL_MODE int rt_bits_reset(BITS *bits, unsigned long mask)
+RTAI_SYSCALL_MODE unsigned long rt_bits_reset(BITS *bits, unsigned long mask)
 {
 	unsigned long flags, schedmap, oldmask;
 	RT_TASK *task;
@@ -262,6 +262,7 @@ RTAI_SYSCALL_MODE int _rt_bits_wait(BITS *bits, int testfun, unsigned long testm
 {
 	RT_TASK *rt_current;
 	unsigned long flags, mask;
+	int retval;
 
 	if (bits->magic != RT_BITS_MAGIC) {
 		return RTE_OBJINV;
@@ -269,6 +270,7 @@ RTAI_SYSCALL_MODE int _rt_bits_wait(BITS *bits, int testfun, unsigned long testm
 
 	flags = rt_global_save_flags_and_cli();
 	if (!test_fun[testfun](bits, testmasks)) {
+		void *retpnt;
 		long bits_test[2];	
 		rt_current = RT_CURRENT;
 		TEST_BUF(rt_current, bits_test);
@@ -278,20 +280,21 @@ RTAI_SYSCALL_MODE int _rt_bits_wait(BITS *bits, int testfun, unsigned long testm
 		rem_ready_current(rt_current);
 		enqueue_blocked(rt_current, &bits->queue, 1);
 		rt_schedule();
-		mask = bits->mask;
-		if ((void *)rt_current->blocked_on != RTP_OBJREM) {
-			dequeue_blocked(rt_current);
-			rt_global_restore_flags(flags);
-			return RTE_UNBLKD;
-		} else {
-			rt_current->prio_passed_to = NULL;
-			rt_global_restore_flags(flags);
-			return RTE_OBJREM;
+		if (unlikely((retpnt = rt_current->blocked_on) != NULL)) {
+			if (likely(retpnt != RTP_OBJREM)) {
+				dequeue_blocked(rt_current);
+				retval = RTE_UNBLKD;
+			} else {
+				rt_current->prio_passed_to = NULL;
+				retval = RTE_OBJREM;
+			}
+			goto retmask;
 		}
-	} else {
-		mask = bits->mask;
 	}
+	retval = 0;
+	mask = bits->mask;
 	exec_fun[exitfun](bits, exitmasks);
+retmask:
 	rt_global_restore_flags(flags);
 	if (resulting_mask) {
 		if (space) {
@@ -300,12 +303,13 @@ RTAI_SYSCALL_MODE int _rt_bits_wait(BITS *bits, int testfun, unsigned long testm
 			rt_copy_to_user(resulting_mask, &mask, sizeof(mask));
 		}
 	}
-	return 0;
+	return retval;
 }
 
 RTAI_SYSCALL_MODE int _rt_bits_wait_if(BITS *bits, int testfun, unsigned long testmasks, int exitfun, unsigned long exitmasks, unsigned long *resulting_mask, int space)
 {
 	unsigned long flags, mask;
+	int retval;
 
 	if (bits->magic != RT_BITS_MAGIC) {
 		return RTE_OBJINV;
@@ -315,9 +319,10 @@ RTAI_SYSCALL_MODE int _rt_bits_wait_if(BITS *bits, int testfun, unsigned long te
 	mask = bits->mask;
 	if (test_fun[testfun](bits, testmasks)) {
 		exec_fun[exitfun](bits, exitmasks);
-		rt_global_restore_flags(flags);
-		return 1;
-	} 
+		retval = 1;
+	} else {
+		retval = 0;
+	}
 	rt_global_restore_flags(flags);
 	if (resulting_mask) {
 		if (space) {
@@ -326,13 +331,14 @@ RTAI_SYSCALL_MODE int _rt_bits_wait_if(BITS *bits, int testfun, unsigned long te
 			rt_copy_to_user(resulting_mask, &mask, sizeof(mask));
 		}
 	}
-	return 0;
+	return retval;
 }
 
 RTAI_SYSCALL_MODE int _rt_bits_wait_until(BITS *bits, int testfun, unsigned long testmasks, int exitfun, unsigned long exitmasks, RTIME time, unsigned long *resulting_mask, int space)
 {
 	RT_TASK *rt_current;
 	unsigned long flags, mask;
+	int retval;
 
 	if (bits->magic != RT_BITS_MAGIC) {
 		return RTE_OBJINV;
@@ -340,7 +346,7 @@ RTAI_SYSCALL_MODE int _rt_bits_wait_until(BITS *bits, int testfun, unsigned long
 
 	flags = rt_global_save_flags_and_cli();
 	if (!test_fun[testfun](bits, testmasks)) {
-		void *retval;
+		void *retpnt;
 		long bits_test[2];
 		rt_current = RT_CURRENT;
 		TEST_BUF(rt_current, bits_test);
@@ -356,20 +362,21 @@ RTAI_SYSCALL_MODE int _rt_bits_wait_until(BITS *bits, int testfun, unsigned long
 		} else {
 			rt_current->queue.prev = rt_current->queue.next = &rt_current->queue;
 		}
-		mask = bits->mask;
-		if ((retval = rt_current->blocked_on) != RTP_OBJREM) {
-			dequeue_blocked(rt_current);
-			rt_global_restore_flags(flags);
-			return likely(retval > RTP_HIGERR) ? RTE_TIMOUT : RTE_UNBLKD;
-		} else {
-			rt_current->prio_passed_to = NULL;
-			rt_global_restore_flags(flags);
-			return RTE_OBJREM;
+		if (unlikely((retpnt = rt_current->blocked_on) != NULL)) {
+			if (likely(retpnt != RTP_OBJREM)) {
+				dequeue_blocked(rt_current);
+				retval = likely(retpnt > RTP_HIGERR) ? RTE_TIMOUT : RTE_UNBLKD;
+			} else {
+				rt_current->prio_passed_to = NULL;
+				retval = RTE_OBJREM;
+			}
+			goto retmask;
 		}
-	} else {
-		mask = bits->mask;
 	}
+	retval = 0;
+	mask = bits->mask;
 	exec_fun[exitfun](bits, exitmasks);
+retmask:
 	rt_global_restore_flags(flags);
 	if (resulting_mask) {
 		if (space) {
@@ -378,7 +385,7 @@ RTAI_SYSCALL_MODE int _rt_bits_wait_until(BITS *bits, int testfun, unsigned long
 			rt_copy_to_user(resulting_mask, &mask, sizeof(mask));
 		}
 	}
-	return 0;
+	return retval;
 }
 
 RTAI_SYSCALL_MODE int _rt_bits_wait_timed(BITS *bits, int testfun, unsigned long testmasks, int exitfun, unsigned long exitmasks, RTIME delay, unsigned long *resulting_mask, int space)

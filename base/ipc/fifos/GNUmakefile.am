@@ -45,4 +45,4 @@ install-exec-local: rtai_fifos$(modext)
 	$(INSTALL_DATA) $< $(DESTDIR)$(moduledir)
 endif
 
-EXTRA_DIST = Makefile.kbuild
+EXTRA_DIST = Makefile.kbuild rtai_fifos.udev

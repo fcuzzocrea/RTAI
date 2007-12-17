@@ -154,7 +154,7 @@ static struct rt_fun_entry rt_tasklet_fun[] = {
 	
 };
 
-#ifdef _CONFIG_RTAI_LONG_TIMED_LIST
+#ifdef CONFIG_RTAI_LONG_TIMED_LIST
 
 /* BINARY TREE */
 static inline void enq_timer(struct rt_tasklet_struct *timed_timer)
@@ -180,7 +180,8 @@ static inline void enq_timer(struct rt_tasklet_struct *timed_timer)
 	timed_timer->next = timer;
 }
 
-#define rb_erase_timer(timer)  rb_erase(&(timer)->rbn, &timers_list[NUM_CPUS > 1 ? (timer)->cpuid].rbr : 0)
+#define rb_erase_timer(timer) \
+rb_erase(&(timer)->rbn, &timers_list[NUM_CPUS > 1 ? (timer)->cpuid : 0].rbr)
 
 #else /* !CONFIG_RTAI_LONG_TIMED_LIST */
 
@@ -189,7 +190,7 @@ static inline void enq_timer(struct rt_tasklet_struct *timed_timer)
 {
 	struct rt_tasklet_struct *timer;
 	timer = &timers_list[TIMED_TIMER_CPUID];
-        while (timed_timer->firing_time >= (timer = timer->next)->firing_time);
+        while (timed_timer->firing_time > (timer = timer->next)->firing_time);
 	timer->prev = (timed_timer->prev = timer->prev)->next = timed_timer;
 	timed_timer->next = timer;
 }
@@ -766,7 +767,7 @@ RTAI_SYSCALL_MODE void rt_register_task(struct rt_tasklet_struct *tasklet, struc
 	rt_copy_to_user(usptasklet, tasklet, sizeof(struct rt_tasklet_struct));
 }
 
-RTAI_SYSCALL_MODE void rt_wait_tasklet_is_hard(struct rt_tasklet_struct *tasklet, int thread)
+RTAI_SYSCALL_MODE void rt_wait_tasklet_is_hard(struct rt_tasklet_struct *tasklet, long thread)
 {
 	tasklet->thread = thread;
 	while (!tasklet->task || !((tasklet->task)->state & RT_SCHED_SUSPENDED)) {
@@ -876,7 +877,7 @@ static inline int gvb_ptimer_indx(int itimer)
 RTAI_SYSCALL_MODE timer_t rt_ptimer_create(struct rt_tasklet_struct *timer, void (*handler)(unsigned long), unsigned long data, long pid, long thread)
 {
 	if (thread) {
-		rt_wait_tasklet_is_hard(timer, (int)thread);
+		rt_wait_tasklet_is_hard(timer, thread);
 	}
 	timer->next = timer;
 	timer->prev = timer;
@@ -949,28 +950,21 @@ EXPORT_SYMBOL(rt_ptimer_delete);
 static int TaskletsStacksize = TASKLET_STACK_SIZE;
 RTAI_MODULE_PARM(TaskletsStacksize, int);
 
-static RT_TASK *rt_base_linux_task;
-
 int __rtai_tasklets_init(void)
 {
-	RT_TASK *rt_linux_tasks[NR_RT_CPUS];
 	int cpuid;
-	
-	if (init_ptimers())	{
+
+	if(set_rt_fun_ext_index(rt_tasklet_fun, TASKLETS_IDX)) {
+		printk("Recompile your module with a different index\n");
+		return -EACCES;
+        }
+	if (init_ptimers()) {
 		return -ENOMEM;
 	}	
-
-	rt_base_linux_task = rt_get_base_linux_task(rt_linux_tasks);
-        if(rt_base_linux_task->task_trap_handler[0]) {
-                if(((int (*)(void *, int))rt_base_linux_task->task_trap_handler[0])(rt_tasklet_fun, TSKIDX)) {
-                        printk("Recompile your module with a different index\n");
-                        cleanup_ptimers();
-                        return -EACCES;
-                }
-        }
 	for (cpuid = 0; cpuid < NUM_CPUS; cpuid++) {
 		timers_lock[cpuid] = timers_lock[0];
 		timers_list[cpuid] = timers_list[0];
+		timers_list[cpuid].cpuid = cpuid;
 		timers_list[cpuid].next = timers_list[cpuid].prev = &timers_list[cpuid];
 		rt_task_init_cpuid(&timers_manager[cpuid], rt_timers_manager, cpuid, TaskletsStacksize, TimersManagerPrio, 0, 0, cpuid);
 		rt_task_resume(&timers_manager[cpuid]);
@@ -982,13 +976,11 @@ int __rtai_tasklets_init(void)
 void __rtai_tasklets_exit(void)
 {
 	int cpuid;
+ 	reset_rt_fun_ext_index(rt_tasklet_fun, TASKLETS_IDX);
+	cleanup_ptimers();    
 	for (cpuid = 0; cpuid < NUM_CPUS; cpuid++) {
 		rt_task_delete(&timers_manager[cpuid]);
 	}
-        if(rt_base_linux_task->task_trap_handler[1]) {
-                ((int (*)(void *, int))rt_base_linux_task->task_trap_handler[1])(rt_tasklet_fun, TSKIDX);
-        }
-	cleanup_ptimers();    
 	printk(KERN_INFO "RTAI[tasklets]: unloaded.\n");
 }
 

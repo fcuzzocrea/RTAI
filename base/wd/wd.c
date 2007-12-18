@@ -89,7 +89,7 @@
  * 5. Keeps a record of bad tasks (apart from those that have been killed) that 
  *    can be examined via a /proc interface. (/proc/rtai/watchdog)
  * 
- * ID: @(#)$Id: wd.c,v 1.8 2006/12/18 10:43:28 ando Exp $
+ * ID: @(#)$Id: wd.c,v 1.9 2007/12/18 15:01:51 mante Exp $
  *
  *******************************************************************************/
 
@@ -97,6 +97,8 @@
 #include <linux/init.h>
 #include <linux/version.h>
 #include <asm/io.h>
+
+MODULE_LICENSE("GPL");
 
 #ifdef CONFIG_PROC_FS
 #include <linux/stat.h>
@@ -137,7 +139,7 @@ static BAD_RT_TASK bad_task_pool[BAD_TASK_MAX];
 #endif
 
 // The current version number
-static char version[] = "$Revision: 1.8 $";
+static char version[] = "$Revision: 1.9 $";
 static char ver[10];
 
 // User friendly policy names

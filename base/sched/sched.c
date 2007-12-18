@@ -378,7 +378,7 @@ asmlinkage static void rt_startup(void(*rt_thread)(long), long data)
 #else
 	rt_thread(data);
 #endif
-	rt_task_delete(rt_current);
+	rt_task_delete(rt_smp_current[rtai_cpuid()]);
 	rt_printk("LXRT: task %p returned but could not be delated.\n", rt_current); 
 }
 

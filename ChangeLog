@@ -1,3 +1,8 @@
+2007-12-18 Paolo Mantegazza <mantegazza@aero.polimi.it>
+
+	* base/sched/sched.c: when returning from an RTAI own task fully
+	  restate rt_current from rt_smp_current and rtai_cpuid.
+
 2007-12-17  Roberto Bucher <roberto.bucher@supsi.ch>
 
 	* rtai-lab/scilab/devices/READE.devices:  New descritption.

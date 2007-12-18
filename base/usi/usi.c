@@ -166,26 +166,18 @@ static struct rt_fun_entry rtai_usi_fun[] = {
 	[_RSTFLAGS]		= { 0, usi_restore_flags }
 };
 
-static RT_TASK *rt_base_linux_task;
-
 static int register_lxrt_usi_support(void)
 {
-	RT_TASK *rt_linux_tasks[NR_RT_CPUS];
-	rt_base_linux_task = rt_get_base_linux_task(rt_linux_tasks);
-	if(rt_base_linux_task->task_trap_handler[0]) {
-		if(((int (*)(void *, int))rt_base_linux_task->task_trap_handler[0])(rtai_usi_fun, FUN_USI_LXRT_INDX)) {
-			printk("LXRT EXTENSION SLOT FOR USI (%d) ALREADY USED\n", FUN_USI_LXRT_INDX);
-			return -EACCES;
-		}
+	if(set_rt_fun_ext_index(rtai_usi_fun, FUN_USI_LXRT_INDX)) {
+		printk("LXRT EXTENSION SLOT FOR USI (%d) ALREADY USED\n", FUN_USI_LXRT_INDX);
+		return -EACCES;
 	}
 	return 0;
 }
 
 static void unregister_lxrt_usi_support(void)
 {
-	if(rt_base_linux_task->task_trap_handler[1]) {
-		((int (*)(void *, int))rt_base_linux_task->task_trap_handler[1])(rtai_usi_fun, FUN_USI_LXRT_INDX);
-	}
+	reset_rt_fun_ext_index(rtai_usi_fun, FUN_USI_LXRT_INDX);
 }
 
 int __rtai_usi_init(void)

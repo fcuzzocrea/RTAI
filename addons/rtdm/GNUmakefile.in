@@ -402,6 +402,7 @@ noinst_HEADERS = \
 EXTRA_DIST = $(libmodule_SRC) Makefile.kbuild \
 	     internal.h
 
+
 # Always build if CONFIG_RTAI_RTDM is enabled
 @CONFIG_RTAI_RTDM_TRUE@OPTDIRS = lib
 SUBDIRS = $(OPTDIRS)

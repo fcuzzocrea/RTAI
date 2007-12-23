@@ -814,6 +814,7 @@ static void rt_schedule_on_schedule_ipi(void)
 				break;
 			}
 		}
+		sched_release_global_lock(cpuid);
 		if (preempt || (prio == RT_SCHED_LINUX_PRIORITY && !shot_fired)) {
 //			RTIME now;
 			int delay;
@@ -831,8 +832,8 @@ static void rt_schedule_on_schedule_ipi(void)
 		}
 	} else {
 		TASK_TO_SCHEDULE();
+		sched_release_global_lock(cpuid);
 	}
-	sched_release_global_lock(cpuid);
 
 	if (new_task != rt_current) {
 		if (rt_scheduling[cpuid].locked) {
@@ -898,6 +899,7 @@ void rt_schedule(void)
 				break;
 			}
 		}
+		sched_release_global_lock(cpuid);
 #ifdef USE_LINUX_TIMER
 		if (prio == RT_SCHED_LINUX_PRIORITY && !shot_fired) {
 #ifdef CONFIG_GENERIC_CLOCKEVENTS
@@ -932,8 +934,8 @@ void rt_schedule(void)
 		}
 	} else {
 		TASK_TO_SCHEDULE();
+		sched_release_global_lock(cpuid);
 	}
-	sched_release_global_lock(cpuid);
 
 	if (new_task != rt_current) {
 		if (rt_scheduling[cpuid].locked) {
@@ -1243,6 +1245,7 @@ static void rt_timer_handler(void)
 				break;
 			}
 		}
+		sched_release_global_lock(cpuid);
 #ifndef USE_LINUX_TIMER
 		if (preempt || prio == RT_SCHED_LINUX_PRIORITY) {
 //			RTIME now;
@@ -1278,10 +1281,10 @@ static void rt_timer_handler(void)
 			rt_set_timer_delay(delay);
 		}
 	} else {
+		sched_release_global_lock(cpuid);
 		rt_times.intr_time += rt_times.periodic_tick;
                 rt_set_timer_delay(0);
 	}
-	sched_release_global_lock(cpuid);
 
 	if (new_task != rt_current) {
 		if (rt_scheduling[cpuid].locked) {

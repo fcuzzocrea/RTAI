@@ -99,6 +99,8 @@ ACKNOWLEDGMENTS:
 #define mem_map_unreserve(p) ClearPageReserved(p)
 #endif /* < 2.6.0 */
 
+#define UVIRT_TO_KVA(adr)  uvirt_to_kva(pgd_offset_k(adr), (adr))
+
 #if LINUX_VERSION_CODE > KERNEL_VERSION(2,6,10)
 static inline int remap_page_range(struct vm_area_struct *vma, unsigned long uvaddr, unsigned long paddr, unsigned long size, pgprot_t prot)
 {

@@ -1,3 +1,16 @@
+2007-12-24 Paolo Mantegazza <mantegazza@aero.polimi.it>
+
+	* base/sched/sched.c: anticipate releasing the sched lock before 
+	  programming the timer, in the oneshot case.
+	* base/include/rtai_shm.h: add macro UVIRT_TO_KVA to shorten usage of
+	  the real uvirt_to_kva.
+	* base/malloc/malloc.c: restyle memory alloc/freeing and use 
+	  uvirt_to_kva directly, through UVIRT_TO_KVA, to avoid redundant 
+	  __va(__pa) in res/unreserving pages.
+	* base/ipc/shm/kvmem.c: use uvirt_to_kva directly, through 
+	  UVIRT_TO_KVA, to avoid redundant __va(__pa) in res/unreserving
+	  pages.
+
 2007-12-18 Paolo Mantegazza <mantegazza@aero.polimi.it>
 
 	* base/sched/sched.c: when returning from an RTAI own task fully 

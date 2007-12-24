@@ -60,7 +60,7 @@ static inline unsigned long uvirt_to_kva(pgd_t *pgd, unsigned long adr)
 #endif /* < 2.6.0 */
 			pte = *ptep;
 			if (pte_present(pte)) {
-				return ((unsigned long)page_address(pte_page(pte)) | (adr & (PAGE_SIZE - 1)));
+				return (((unsigned long)page_address(pte_page(pte))) | (adr & (PAGE_SIZE - 1)));
 			}
 		}
 	}

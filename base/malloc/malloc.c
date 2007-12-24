@@ -46,13 +46,11 @@ static void *alloc_extent(u_long size, int suprt)
 {
 	caddr_t p;
 	if (!suprt) {
-		caddr_t _p;
-
-		p = _p = (caddr_t)vmalloc(size);
-		if (p) {
+		if ((p = (caddr_t)vmalloc(size))) {
+			unsigned long _p = (unsigned long)p;
 //			printk("RTAI[malloc]: vmalloced extent %p, size %lu.\n", p, size);
 			for (; size > 0; size -= PAGE_SIZE, _p += PAGE_SIZE) {
-				mem_map_reserve(virt_to_page(__va(kvirt_to_pa((u_long)_p))));
+				mem_map_reserve(virt_to_page(UVIRT_TO_KVA(_p)));
 			}
 		}
 	} else {
@@ -68,11 +66,11 @@ static void *alloc_extent(u_long size, int suprt)
 static void free_extent(void *p, u_long size, int suprt)
 {
 	if (!suprt) {
-		caddr_t _p = (caddr_t)p;
+		unsigned long _p = (unsigned long)p;
 
 //		printk("RTAI[malloc]: vfreed extent %p, size %lu.\n", p, size);
 		for (; size > 0; size -= PAGE_SIZE, _p += PAGE_SIZE) {
-			mem_map_unreserve(virt_to_page(__va(kvirt_to_pa((u_long)_p))));
+			mem_map_unreserve(virt_to_page(UVIRT_TO_KVA(_p)));
 		}
 		vfree(p);
 	} else {

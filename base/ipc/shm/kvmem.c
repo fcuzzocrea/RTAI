@@ -43,7 +43,7 @@ void *rvmalloc(unsigned long size)
 	if ((mem = vmalloc(size))) {
 	        adr = (unsigned long)mem;
 		while (size > 0) {
-			mem_map_reserve(virt_to_page(__va(kvirt_to_pa(adr))));
+			mem_map_reserve(virt_to_page(UVIRT_TO_KVA(adr)));
 			adr  += PAGE_SIZE;
 			size -= PAGE_SIZE;
 		}
@@ -57,7 +57,7 @@ void rvfree(void *mem, unsigned long size)
         
 	if ((adr = (unsigned long)mem)) {
 		while (size > 0) {
-			mem_map_unreserve(virt_to_page(__va(kvirt_to_pa(adr))));
+			mem_map_unreserve(virt_to_page(UVIRT_TO_KVA(adr)));
 			adr  += PAGE_SIZE;
 			size -= PAGE_SIZE;
 		}

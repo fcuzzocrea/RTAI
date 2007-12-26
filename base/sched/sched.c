@@ -831,8 +831,8 @@ static void rt_schedule_on_schedule_ipi(void)
 			rt_set_timer_delay(delay);
 		}
 	} else {
-		TASK_TO_SCHEDULE();
 		sched_release_global_lock(cpuid);
+		TASK_TO_SCHEDULE();
 	}
 
 	if (new_task != rt_current) {
@@ -933,8 +933,8 @@ void rt_schedule(void)
 			rt_set_timer_delay(delay);
 		}
 	} else {
-		TASK_TO_SCHEDULE();
 		sched_release_global_lock(cpuid);
+		TASK_TO_SCHEDULE();
 	}
 
 	if (new_task != rt_current) {

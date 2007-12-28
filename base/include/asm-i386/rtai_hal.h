@@ -306,7 +306,9 @@ static inline struct hal_domain_struct *get_domain_pointer(int n)
 	return (struct hal_domain_struct *)i;
 }
 
-#if LINUX_VERSION_CODE < KERNEL_VERSION(2,6,22)
+#define RTAI_LT_KERNEL_VERSION_FOR_NONPERCPU  KERNEL_VERSION(2,6,20)
+
+#if LINUX_VERSION_CODE < RTAI_LT_KERNEL_VERSION_FOR_NONPERCPU
 
 #define ROOT_STATUS_ADR(cpuid)  (ipipe_root_status[cpuid])
 #define ROOT_STATUS_VAL(cpuid)  (*ipipe_root_status[cpuid])

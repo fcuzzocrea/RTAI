@@ -191,7 +191,7 @@ struct rt_times rt_smp_times[RTAI_NR_CPUS];
 
 struct rtai_switch_data rtai_linux_context[RTAI_NR_CPUS];
 
-#if LINUX_VERSION_CODE < KERNEL_VERSION(2,6,22)
+#if LINUX_VERSION_CODE < RTAI_LT_KERNEL_VERSION_FOR_NONPERCPU
 volatile unsigned long *ipipe_root_status[RTAI_NR_CPUS];
 #endif
 
@@ -419,7 +419,9 @@ void rt_shutdown_irq (unsigned irq)
 {
 	BEGIN_PIC();
 	rtai_irq_desc(irq)->shutdown(irq);
+#if LINUX_VERSION_CODE < RTAI_LT_KERNEL_VERSION_FOR_NONPERCPU
 	hal_clear_irq(hal_root_domain, irq);
+#endif
 	END_PIC();
 }
 
@@ -1053,7 +1055,7 @@ int _rtai_8254_timer_handler(struct pt_regs regs)
 	RTAI_SCHED_ISR_UNLOCK();
 	if (!test_bit(IPIPE_STALL_FLAG, ROOT_STATUS_ADR(cpuid))) {
 		rtai_sti();
-#if LINUX_VERSION_CODE < KERNEL_VERSION(2,6,22)
+#if LINUX_VERSION_CODE < RTAI_LT_KERNEL_VERSION_FOR_NONPERCPU
 /* specific for the Linux tick, do not cre in a generic handler */
 		HAL_TICK_REGS.eflags = regs.eflags;
 		HAL_TICK_REGS.eip    = regs.eip;
@@ -1541,7 +1543,7 @@ static int rtai_hirq_dispatcher (struct pt_regs regs)
 	}
 	rtai_sti();
 	if (irq == hal_tick_irq) {
-#if LINUX_VERSION_CODE < KERNEL_VERSION(2,6,22)
+#if LINUX_VERSION_CODE < RTAI_LT_KERNEL_VERSION_FOR_NONPERCPU
 		HAL_TICK_REGS.eflags = regs.eflags;
 		HAL_TICK_REGS.eip    = regs.eip;
 		HAL_TICK_REGS.xcs    = regs.xcs;
@@ -2082,7 +2084,7 @@ int __rtai_hal_init (void)
 	for (trapnr = 0; trapnr < RTAI_NR_IRQS; trapnr++) {
 		rtai_realtime_irq[trapnr].irq_ack = hal_root_domain->irqs[trapnr].acknowledge;
 	}
-#if LINUX_VERSION_CODE < KERNEL_VERSION(2,6,22)
+#if LINUX_VERSION_CODE < RTAI_LT_KERNEL_VERSION_FOR_NONPERCPU
 	for (trapnr = 0; trapnr < RTAI_NR_CPUS; trapnr++) {
 		ipipe_root_status[trapnr] = &hal_root_domain->cpudata[trapnr].status;
 	}
@@ -2318,7 +2320,7 @@ EXPORT_SYMBOL(rtai_catch_event);
 
 EXPORT_SYMBOL(rtai_lxrt_dispatcher);
 EXPORT_SYMBOL(rt_scheduling);
-#if LINUX_VERSION_CODE < KERNEL_VERSION(2,6,22)
+#if LINUX_VERSION_CODE < RTAI_LT_KERNEL_VERSION_FOR_NONPERCPU
 EXPORT_SYMBOL(ipipe_root_status);
 #endif
 

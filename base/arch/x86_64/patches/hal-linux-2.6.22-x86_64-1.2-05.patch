@@ -7791,7 +7791,7 @@ index 50e1a31..cda7116 100644
  	struct mm_struct *mm = next->mm;
  	struct mm_struct *oldmm = prev->active_mm;
  
-+if (!rq) {
++if (likely(!rq)) {
 +	switch_mm(oldmm, next->active_mm, next);
 +	if (!mm) enter_lazy_tlb(oldmm, next);
 +} else {
@@ -7804,11 +7804,11 @@ index 50e1a31..cda7116 100644
  #endif
 -
 +}
++#ifdef CONFIG_IPIPE
++	next->ptd[IPIPE_ROOT_NPTDKEYS - 1] = prev;
++#endif /* CONFIG_IPIPE */
  	/* Here we just switch the register state and the stack. */
  	switch_to(prev, next, prev);
-+#ifdef CONFIG_IPIPE
-+	current->ptd[IPIPE_ROOT_NPTDKEYS - 1] = prev;
-+#endif /* CONFIG_IPIPE */
  
  	return prev;
  }

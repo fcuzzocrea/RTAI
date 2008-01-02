@@ -1,3 +1,8 @@
+2007-12-21 Pierangelo Masarati <masarati@aero.polimi.it>
+
+	* configure.in, configure: allow module versioning for Linux
+	  2.6.xx.
+
 2007-12-18 Paolo Mantegazza <mantegazza@aero.polimi.it>
 
 	* base/sched/sched.c: when returning from an RTAI own task fully

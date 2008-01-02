@@ -2276,7 +2276,7 @@ diff -uNrp 2.4.35.5/include/asm-i386/ipipe.h 2.4.35.5-i386-ipipe/include/asm-i38
 +	                 "jmp ret_from_intr\n\t" \
 +	                 "1:\n" \
 +			 : /* no output */ \
-+			 : "a" (irq), "m" ((ipd)->irqs[irq].handler), "r" ((ipd)->irqs[irq].cookie))
++			 : "a" (irq), "m" ((ipd)->irqs[irq].handler), "d" ((ipd)->irqs[irq].cookie))
 +
 +static inline unsigned long __ipipe_ffnz(unsigned long ul)
 +{

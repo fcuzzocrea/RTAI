@@ -1,3 +1,7 @@
+2008-01-03 Pierangelo Masarati <masarati@aero.polimi.it>
+
+	* RTAI 3.6-test3
+
 2007-12-21 Pierangelo Masarati <masarati@aero.polimi.it>
 
 	* configure.in, configure: allow module versioning for Linux

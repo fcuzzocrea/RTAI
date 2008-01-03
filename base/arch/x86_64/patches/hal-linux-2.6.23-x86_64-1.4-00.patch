@@ -5026,7 +5026,7 @@ index 0000000..3a7b4d9
 +void __ipipe_unstall_root(void)
 +{
 +#ifndef CONFIG_IPIPE_DEBUG_CONTEXT
-+	BUG_ON(!ipipe_root_domain_p);
++//	BUG_ON(!ipipe_root_domain_p);
 +#endif
 +
 +        local_irq_disable_hw();
@@ -5042,7 +5042,7 @@ index 0000000..3a7b4d9
 +void __ipipe_restore_root(unsigned long x)
 +{
 +#ifndef CONFIG_IPIPE_DEBUG_CONTEXT
-+	BUG_ON(!ipipe_root_domain_p);
++//	BUG_ON(!ipipe_root_domain_p);
 +#endif
 +
 +	if (x)

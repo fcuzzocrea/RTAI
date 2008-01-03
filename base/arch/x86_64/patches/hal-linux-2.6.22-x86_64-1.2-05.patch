@@ -4756,7 +4756,7 @@ index 0000000..250a7ae
 +
 +void __ipipe_unstall_root(void)
 +{
-+	BUG_ON(!ipipe_root_domain_p);
++//	BUG_ON(!ipipe_root_domain_p);
 +
 +        local_irq_disable_hw();
 +
@@ -4770,7 +4770,7 @@ index 0000000..250a7ae
 +
 +void __ipipe_restore_root(unsigned long x)
 +{
-+	BUG_ON(!ipipe_root_domain_p);
++//	BUG_ON(!ipipe_root_domain_p);
 +
 +	if (x)
 +		__ipipe_stall_root();

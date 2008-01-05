@@ -651,7 +651,7 @@ int rt_request_linux_irq (unsigned irq, void *handler, char *name, void *dev_id)
 
 	retval = request_irq(irq, handler, IRQF_SHARED, name, dev_id);
 
-	return 0;
+	return retval;
 }
 
 /**

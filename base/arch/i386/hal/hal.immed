@@ -671,6 +671,7 @@ void rt_eoi_irq (unsigned irq)
 int rt_request_linux_irq (unsigned irq, void *handler, char *name, void *dev_id)
 {
 	unsigned long flags;
+	int retval;
 
 	if (irq >= RTAI_NR_IRQS || !handler) {
 		return -EINVAL;
@@ -685,9 +686,9 @@ int rt_request_linux_irq (unsigned irq, void *handler, char *name, void *dev_id)
 	spin_unlock(&irq_desc[irq].lock);
 	rtai_restore_flags(flags);
 
-	request_irq(irq, handler, IRQF_SHARED, name, dev_id);
+	retval = request_irq(irq, handler, IRQF_SHARED, name, dev_id);
 
-	return 0;
+	return retval;
 }
 
 /**

@@ -8133,7 +8133,7 @@ diff --git a/lib/smp_processor_id.c b/lib/smp_processor_id.c
 index eddc9b3..7078cd0 100644
 --- a/lib/smp_processor_id.c
 +++ b/lib/smp_processor_id.c
-@@ -13,6 +13,9 @@ unsigned int debug_smp_processor_id(void)
+@@ -13,10 +13,13 @@ unsigned int debug_smp_processor_id(void)
  	int this_cpu = raw_smp_processor_id();
  	cpumask_t this_mask;
  
@@ -8143,6 +8143,11 @@ index eddc9b3..7078cd0 100644
  	if (likely(preempt_count))
  		goto out;
  
+-	if (irqs_disabled())
++	if (irqs_disabled() || irqs_disabled_hw())
+ 		goto out;
+ 
+ 	/*
 diff --git a/lib/spinlock_debug.c b/lib/spinlock_debug.c
 index 479fd46..5e135ef 100644
 --- a/lib/spinlock_debug.c

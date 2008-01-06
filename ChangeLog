@@ -1,4 +1,4 @@
-2008-02-06 Paolo Mantegazza <mantegazza@aero.polimi.it>
+2008-01-06 Paolo Mantegazza <mantegazza@aero.polimi.it>
 
 	* base/arch/ppc/Kconfig: update the RTDM related part.
 	* addons/rtdm/xn.h: defined a missing macro needed for older Linux

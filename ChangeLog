@@ -1,3 +1,9 @@
+2008-02-06 Paolo Mantegazza <mantegazza@aero.polimi.it>
+
+	* base/arch/ppc/Kconfig: update the RTDM related part.
+	* addons/rtdm/xn.h: defined a missing macro needed for older Linux
+	  versions.
+
 2007-12-24 Paolo Mantegazza <mantegazza@aero.polimi.it>
 
 	* base/sched/sched.c: anticipate releasing the sched lock before 

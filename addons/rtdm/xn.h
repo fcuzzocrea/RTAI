@@ -238,6 +238,9 @@ unsigned long __va_to_kva(unsigned long va);
 
 #else /* LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,0) */
 
+#include <rtai_shm.h>
+#define __va_to_kva(adr)  UVIRT_TO_KVA(adr)
+
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,15) && defined(CONFIG_MMU)
 	vma->vm_flags |= VM_RESERVED;
 	return vm_insert_page(vma, from, vmalloc_to_page((void *)to));

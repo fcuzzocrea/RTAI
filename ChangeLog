@@ -1,3 +1,25 @@
+2007-10-24  Roberto Bucher <roberto.bucher@supsi.ch>
+
+	* configure.in: Deleted the rtai-lab/scilab/devices folder from the
+	compilation chain.
+	* rtai-lab/scilab/GNUmakefile.am: modified to delete subfolder devices.
+	* rtai-lab/scilab/rtmain.c: Version 3.5.1 for scilab-4.1.2.
+	* rtai-lab/scilab/macros/builder.sce: Added for better scilab compatibility.
+	* rtai-lab/scilab/macros/loader.sce: Added for better scilab compatibility.
+	* rtai-lab/scilab/macros/scilab: Startup file for scilab-4.1.2.
+	* rtai-lab/scilab/macros/Makefile: New installation file for scilab-4.1.2.
+	* rtai-lab/scilab/macros/RTAI/SetTarget_.sci: modified for scilab-4.1.2.
+	* rtai-lab/scilab/macros/RTAI/RTAICodeGen_.sci: modified for scilab-4.1.2.
+	* rtai-lab/scilab/macros/RTAI/RTAI-Lib.cosf: modified for scilab-4.1.2.
+	* rtai-lab/scilab/macros/RTAI/RT_templates/standalone.cmd: modified for
+	scilab-4.1.2.
+	* rtai-lab/scilab/devices/GNUmakefile.am: Eliminated.
+	* rtai-lab/scilab/devices/GNUmakefile.in: Eliminated.
+	* rtai-lab/scilab/devices/Makefile: new makefile to generate the libscicos.a
+	library
+	* rtai-lab/scilab/devices/exit_on_error.c: Added for future HIL simulation.
+	* rtai-lab/scilab/devices/*.c: Little modifications for scilab-4.1.2. 
+
 2008-01-06 Paolo Mantegazza <mantegazza@aero.polimi.it>
 
 	* base/arch/ppc/Kconfig: update the RTDM related part.

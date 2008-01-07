@@ -1447,7 +1447,7 @@ function  [ok,XX,alreadyran,flgcdgen,szclkINTemp,freof]=do_compile_superblock42(
       x_message('sorry C file name not defined');
     end
 
-    TARGETDIR=SCI+'/macros/RTAI/RT_templates';
+    TARGETDIR=SCI+'/contrib/RTAI/RT_templates';
     if exists('TARGET_DIR') then
       [fd,ierr]=mopen(TARGET_DIR+'/'+target+'.gen','r');
       if ierr==0 then
@@ -1574,6 +1574,7 @@ function  [ok,XX,alreadyran,flgcdgen,szclkINTemp,freof]=do_compile_superblock42(
   n_cmd=size(cmdseq,1);
 
   for i=1:n_cmd
+    if (cmdseq(i)~="") then disp("Executing " + """" +cmdseq(i)+ """" + '...'); end;
     execstr(cmdseq(i));
   end
   if dynflag then 
@@ -1581,7 +1582,7 @@ function  [ok,XX,alreadyran,flgcdgen,szclkINTemp,freof]=do_compile_superblock42(
     XX=update_block(XX);
     execstr(rdnom+'_c=resume('+rdnom+'_c)')
   end
-
+  disp("----> Target generation terminated!");
 endfunction
 
 //==========================================================================

@@ -5,6 +5,3 @@ write_act_sens()
 Makename=rt_gen_make(rdnom,files,archname);
 ok=compile_standalone();
 dynflag=%f
-
-
-

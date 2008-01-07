@@ -282,7 +282,7 @@ dnl fi
 if test x${CONFIG_MODVERSIONS} = xy ; then
 	case "${RTAI_LINUX_VERSION}" in
 	2.4.*)
-		AC_MSG_ERROR([Please unset CONFIG_MODVERSIONS for $RTAI_LINUX_DIR and rebuild your kernel])
+  AC_MSG_ERROR([Please unset CONFIG_MODVERSIONS for $RTAI_LINUX_DIR and rebuild your kernel])
 		;;
 	*)
 		dnl reported to be harmless in 2.6
@@ -1798,7 +1798,6 @@ if test -d $srcdir/rtai-lab; then
         rtai-lab/matrixx/GNUmakefile \
         rtai-lab/scilab/GNUmakefile \
         rtai-lab/scilab/utility/GNUmakefile \
-        rtai-lab/scilab/devices/GNUmakefile \
    ])
 elif test \! x$CONFIG_RTAI_LAB = x; then
      AC_MSG_ERROR([rtai-lab package is missing])

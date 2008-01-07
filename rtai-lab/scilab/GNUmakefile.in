@@ -336,8 +336,8 @@ sharedstatedir = @sharedstatedir@
 subdirs = @subdirs@
 sysconfdir = @sysconfdir@
 target_alias = @target_alias@
-SUBDIRS = devices utility
-EXTRA_DIST = rtmain.c README examples macros
+SUBDIRS = utility
+EXTRA_DIST = rtmain.c README examples macros devices
 all: all-recursive
 
 .SUFFIXES:

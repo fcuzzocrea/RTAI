@@ -74,7 +74,6 @@ static void inout(scicos_block *block)
   for (i = 0; i < ntraces; i++) {
     u = block->inptr[i];
     data.u[i] = (float) u[0];
-/*     printf("SCOPE-> %d -> %f\n",i,data.u[i]); */
   }
   RT_mbx_send_if(0, 0, mbx, &data, sizeof(data));
 }

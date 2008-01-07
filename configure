@@ -20275,7 +20275,7 @@ fi
 if test x${CONFIG_MODVERSIONS} = xy ; then
 	case "${RTAI_LINUX_VERSION}" in
 	2.4.*)
-		{ { echo "$as_me:$LINENO: error: Please unset CONFIG_MODVERSIONS for $RTAI_LINUX_DIR and rebuild your kernel" >&5
+  { { echo "$as_me:$LINENO: error: Please unset CONFIG_MODVERSIONS for $RTAI_LINUX_DIR and rebuild your kernel" >&5
 echo "$as_me: error: Please unset CONFIG_MODVERSIONS for $RTAI_LINUX_DIR and rebuild your kernel" >&2;}
    { (exit 1); exit 1; }; }
 		;;
@@ -25609,7 +25609,7 @@ fi
 
 
 if test -d $srcdir/rtai-lab; then
-   ac_config_files="$ac_config_files rtai-lab/GNUmakefile rtai-lab/matlab/GNUmakefile rtai-lab/matrixx/GNUmakefile rtai-lab/scilab/GNUmakefile rtai-lab/scilab/utility/GNUmakefile rtai-lab/scilab/devices/GNUmakefile"
+   ac_config_files="$ac_config_files rtai-lab/GNUmakefile rtai-lab/matlab/GNUmakefile rtai-lab/matrixx/GNUmakefile rtai-lab/scilab/GNUmakefile rtai-lab/scilab/utility/GNUmakefile"
 
 elif test \! x$CONFIG_RTAI_LAB = x; then
      { { echo "$as_me:$LINENO: error: rtai-lab package is missing" >&5
@@ -26716,7 +26716,6 @@ do
     "rtai-lab/matrixx/GNUmakefile") CONFIG_FILES="$CONFIG_FILES rtai-lab/matrixx/GNUmakefile" ;;
     "rtai-lab/scilab/GNUmakefile") CONFIG_FILES="$CONFIG_FILES rtai-lab/scilab/GNUmakefile" ;;
     "rtai-lab/scilab/utility/GNUmakefile") CONFIG_FILES="$CONFIG_FILES rtai-lab/scilab/utility/GNUmakefile" ;;
-    "rtai-lab/scilab/devices/GNUmakefile") CONFIG_FILES="$CONFIG_FILES rtai-lab/scilab/devices/GNUmakefile" ;;
     "testsuite/GNUmakefile") CONFIG_FILES="$CONFIG_FILES testsuite/GNUmakefile" ;;
     "testsuite/kern/GNUmakefile") CONFIG_FILES="$CONFIG_FILES testsuite/kern/GNUmakefile" ;;
     "testsuite/kern/latency/GNUmakefile") CONFIG_FILES="$CONFIG_FILES testsuite/kern/latency/GNUmakefile" ;;

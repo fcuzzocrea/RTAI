@@ -399,10 +399,10 @@ static int rt_16550_set_config(struct rt_16550_context *ctx,
 		if (testbits(config->event_mask,
 			     RTSER_EVENT_MODEMHI | RTSER_EVENT_MODEMLO))
 			/* enable modem status interrupt */
-			ctx->ier_status |= IER_TX;
+			ctx->ier_status |= IER_MODEM;
 		else
 			/* disable modem status interrupt */
-			ctx->ier_status &= ~IER_TX;
+			ctx->ier_status &= ~IER_MODEM;
 		rt_16550_reg_out(mode, base, IER, ctx->ier_status);
 
 		rtdm_lock_put_irqrestore(&ctx->lock, lock_ctx);
@@ -1128,7 +1128,7 @@ static const struct rtdm_device __initdata device_tmpl = {
 	.device_sub_class	= RTDM_SUBCLASS_16550A,
 	.profile_version	= RTSER_PROFILE_VER,
 	.driver_name		= RT_16550_DRIVER_NAME,
-	.driver_version		= RTDM_DRIVER_VER(1, 5, 1),
+	.driver_version		= RTDM_DRIVER_VER(1, 5, 2),
 	.peripheral_name	= "UART 16550A",
 	.provider_name		= "Jan Kiszka",
 };

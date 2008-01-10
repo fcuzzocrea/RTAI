@@ -1,3 +1,8 @@
+2008-01-10 Paolo Mantegazza <mantegazza@aero.polimi.it>
+
+	* base/include/asm-x86_64/rtai_fpu.h: simplified because xmm is always 
+	  there and copied fpu save/restore from Linux.
+
 2008-01-10  Roberto Bucher <roberto.bucher@supsi.ch>
 
 	* rtai-lab/matlab/rtai.tmf: Modified for Matlab 7.3 and Matlab-7.4.

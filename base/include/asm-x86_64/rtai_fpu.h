@@ -60,21 +60,20 @@ typedef union i387_union FPU_ENV;
 
 // initialise the hard fpu unit directly
 #define init_hard_fpenv() do { \
-        __asm__ __volatile__ ("clts; fninit"); \
-        if (cpu_has_xmm) { \
-                unsigned long __mxcsr = (0xffbfu & 0x1f80u); \
-                __asm__ __volatile__ ("ldmxcsr %0": : "m" (__mxcsr)); \
-        } \
+	unsigned long __mxcsr; \
+	__asm__ __volatile__ ("clts; fninit"); \
+	__mxcsr = 0xffbfUL & 0x1f80UL; \
+	__asm__ __volatile__ ("ldmxcsr %0": : "m" (__mxcsr)); \
 } while (0)
 
 // initialise the given fpenv union, without touching the related hard fpu unit
 #define init_fpenv(fpenv)  do { \
         memset(&(fpenv).fxsave, 0, sizeof(struct i387_fxsave_struct)); \
         (fpenv).fxsave.cwd = 0x37f; \
-        if (cpu_has_xmm) { \
-	        (fpenv).fxsave.mxcsr = 0x1f80; \
-        } \
+	(fpenv).fxsave.mxcsr = 0x1f80; \
 } while (0)
+
+#if 0
 
 #define save_fpenv(fpenv)  do { \
 	__asm__ __volatile__ ("rex64; fxsave %0; fnclex": "=m" ((fpenv).fxsave)); \
@@ -83,6 +82,59 @@ typedef union i387_union FPU_ENV;
 #define restore_fpenv(fpenv)  do { \
         __asm__ __volatile__ ("fxrstor %0": : "m" ((fpenv).fxsave)); \
 } while (0)
+
+#else
+
+/* taken from Linux i387.h */
+
+static inline int __save_fpenv(struct i387_fxsave_struct __user *fx) 
+{ 
+	int err;
+
+	asm volatile("1:  rex64/fxsave (%[fx])\n\t"
+		     "2:\n"
+		     ".section .fixup,\"ax\"\n"
+		     "3:  movl $-1,%[err]\n"
+		     "    jmp  2b\n"
+		     ".previous\n"
+		     ".section __ex_table,\"a\"\n"
+		     "   .align 8\n"
+		     "   .quad  1b,3b\n"
+		     ".previous"
+		     : [err] "=r" (err), "=m" (*fx)
+		     : [fx] "cdaSDb" (fx), "0" (0));
+
+	return err;
+} 
+
+static inline int restore_fpenv(struct i387_fxsave_struct *fx) 
+{ 
+	int err;
+
+	asm volatile("1:  rex64/fxrstor (%[fx])\n\t"
+		     "2:\n"
+		     ".section .fixup,\"ax\"\n"
+		     "3:  movl $-1,%[err]\n"
+		     "    jmp  2b\n"
+		     ".previous\n"
+		     ".section __ex_table,\"a\"\n"
+		     "   .align 8\n"
+		     "   .quad  1b,3b\n"
+		     ".previous"
+		     : [err] "=r" (err)
+		     : [fx] "cdaSDb" (fx), "m" (*fx), "0" (0));
+
+	return err;
+} 
+
+#define save_fpenv(fpenv)  do { \
+	__save_fpenv(&fpenv.fxsave); \
+} while (0)
+
+#define restore_fpenv(fpenv)  do { \
+	restore_fpenv(&fpenv.fxsave); \
+} while (0)
+#endif
 
 // FPU MANAGEMENT DRESSED FOR IN KTHREAD/THREAD/PROCESS FPU USAGE FROM RTAI
 

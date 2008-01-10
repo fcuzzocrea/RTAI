@@ -380,8 +380,8 @@ index 1d232e5..9602808 100644
 +	pushq %rdi
 +	XCPT_FRAME
 +	SAVE_ARGS
-+	movq %rdi, ORIG_RAX(%rdx)	# regs->orig_eax = ~irq_vector
-+	movq %rdx, %rdi		     	# regs for handler
++	leaq -ARGOFFSET(%rsp),%rdi      # regs for handler // movq %rdi, ORIG_RAX(%rdx)	# regs->orig_eax = ~irq_vector
++//	movq %rdx, %rdi		     	# regs for handler
 +	call *%rsi
 +	jmp exit_intr
 +	CFI_ENDPROC

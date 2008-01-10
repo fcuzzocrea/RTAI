@@ -1,4 +1,8 @@
-2007-10-24  Roberto Bucher <roberto.bucher@supsi.ch>
+2008-01-10  Roberto Bucher <roberto.bucher@supsi.ch>
+
+	* rtai-lab/matlab/rtai.tmf: Modified for Matlab 7.3 and Matlab-7.4.
+
+2008-01-08  Roberto Bucher <roberto.bucher@supsi.ch>
 
 	* configure.in: Deleted the rtai-lab/scilab/devices folder from the
 	compilation chain.

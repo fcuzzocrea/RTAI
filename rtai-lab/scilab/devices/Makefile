@@ -25,7 +25,7 @@ CC_FLAGS = -c $(DBG) -I. -I$(RTAIDIR)/include -O2
 $(LIB): $(OBJ)
 	ar -r $(LIB) $(OBJ)
 
-install:
+install: $(LIB)
 	cp $(LIB) $(RTAIDIR)/lib
 
 clean:

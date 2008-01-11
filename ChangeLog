@@ -1,3 +1,8 @@
+2008-01-11 Paolo Mantegazza <mantegazza@aero.polimi.it>
+
+	* base/include/asm-x86_64/rtai_lxrt.h: force a "clts" before 
+	  context_switch if the prev task used the FPU.
+
 2008-01-10 Paolo Mantegazza <mantegazza@aero.polimi.it>
 
 	* base/include/asm-x86_64/rtai_fpu.h: simplified because xmm is always 

@@ -130,6 +130,9 @@ extern "C" {
 static inline void _lxrt_context_switch (struct task_struct *prev, struct task_struct *next, int cpuid)
 {
 	extern void *context_switch(void *, void *, void *);
+/* REMARK: the line below is not needed in i386, why should it be so if both
+   math_restore do a "clts" before orring TS_USEDFPU in status ?????          */
+	if (task_thread_info(prev)->status & TS_USEDFPU) clts();
 #if LINUX_VERSION_CODE > KERNEL_VERSION(2,6,18)
 	prev->fpu_counter = 0;
 #endif

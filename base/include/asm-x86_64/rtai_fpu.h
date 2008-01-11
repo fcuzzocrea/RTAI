@@ -107,7 +107,7 @@ static inline int __save_fpenv(struct i387_fxsave_struct __user *fx)
 	return err;
 } 
 
-static inline int restore_fpenv(struct i387_fxsave_struct *fx) 
+static inline int __restore_fpenv(struct i387_fxsave_struct *fx) 
 { 
 	int err;
 
@@ -132,7 +132,7 @@ static inline int restore_fpenv(struct i387_fxsave_struct *fx)
 } while (0)
 
 #define restore_fpenv(fpenv)  do { \
-	restore_fpenv(&fpenv.fxsave); \
+	__restore_fpenv(&fpenv.fxsave); \
 } while (0)
 #endif
 

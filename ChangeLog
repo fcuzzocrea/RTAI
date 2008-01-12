@@ -1,3 +1,8 @@
+2008-01-10  Roberto Bucher <roberto.bucher@supsi.ch>
+
+	* rtai-lab/scilab/macros/RTAI/RTAICodeGen_,sci: Added little
+	modificatio from INRIA CodeGen (SVN).
+
 2008-01-11 Paolo Mantegazza <mantegazza@aero.polimi.it>
 
 	* base/include/asm-x86_64/rtai_lxrt.h: force a "clts" before 

@@ -828,6 +828,8 @@ RTAI_PROTO(int,rt_task_delete,(RT_TASK *task))
 	return rtai_lxrt(BIDX, SIZARG, LXRT_TASK_DELETE, &arg).i[LOW];
 }
 
+#define rt_thread_delete(task)  rt_task_delete(task)
+
 RTAI_PROTO(int,rt_task_yield,(void))
 {
 	struct { unsigned long dummy; } arg;

@@ -195,7 +195,7 @@ function txt=call_block42(bk,pt,flag)
     txt = [txt;
            'nport = '+string(ind)+';']
     txt = [txt;
-           rdnom+'_sensor(&local_flag, &nport, &block_'+rdnom+'['+string(i-1)+'].nevprt, \'
+           rdnom+'_sensor(&local_flag, &nport, &block_'+rdnom+'['+string(bk-1)+'].nevprt, \'
            get_blank(rdnom+'_sensor')+' &t, ('+mat2scs_c_ptr(outtb(yk))+' *)'+rdnom+'_block_outtbptr['+string(yk-1)+'], \'
            get_blank(rdnom+'_sensor')+' &nrd_'+string(nyk_1)+', &nrd_'+string(nyk_2)+', &nrd_'+string(yk_t)+',aaa);']
     txt = [txt;
@@ -1306,7 +1306,7 @@ function  [ok,XX,alreadyran,flgcdgen,szclkINTemp,freof]=do_compile_superblock42(
 //
       //msg=[msg;'Active zero crossing block''s not allowed']
      elseif (clkptr(i+1)-clkptr(i))<>0 &funtyp(i)>-1 &funs(i)~='bidon' then
-//Alan      //msg=[msg;'Regular block generating activation not allowed yet']
+      msg=[msg;'Regular block generating activation not allowed yet']
     end
     if msg<>[] then message(msg),ok=%f,return,end
   end
@@ -2032,6 +2032,15 @@ function Code=make_computational42()
         '#include '"'+SCI+'/routines/os_specific/link.h'"'
         '#include '"'+SCI+'/routines/scicos/scicos.h'"'
         '']
+
+  if MSDOS then
+   Code=[Code;
+         ' '
+         '#define max(a,b) ((a) >= (b) ? (a) : (b))'
+         '#define min(a,b) ((a) <= (b) ? (a) : (b))'
+         ' '
+        ]
+  end
 
   Code=[Code;
         Protos
@@ -3264,6 +3273,15 @@ function Code=make_standalone42()
         Protostalone
         '']
 
+  if MSDOS then
+   Code=[Code;
+         ' '
+         '#define max(a,b) ((a) >= (b) ? (a) : (b))'
+         '#define min(a,b) ((a) <= (b) ? (a) : (b))'
+         ' '
+        ]
+  end
+  
   if x<>[] then
     Code=[Code
           '/* Code prototype for standalone use  */'
@@ -3354,9 +3372,11 @@ function Code=make_standalone42()
                                              imag(outtb(i)(:))]),',')+'};',70)]
     end
   end
-  Code=[Code;
-        Code_outtb;
-        '']
+  if Code_outtb<>[] then
+    Code=[Code;
+          Code_outtb;
+          '']
+  end
 
   Code=[Code;
 	 'double get_tsamp()'

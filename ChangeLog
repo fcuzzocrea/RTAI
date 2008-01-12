@@ -1,4 +1,4 @@
-2008-01-10  Roberto Bucher <roberto.bucher@supsi.ch>
+2008-01-12  Roberto Bucher <roberto.bucher@supsi.ch>
 
 	* rtai-lab/scilab/macros/RTAI/RTAICodeGen_,sci: Added little
 	modificatio from INRIA CodeGen (SVN).

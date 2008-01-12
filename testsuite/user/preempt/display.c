@@ -28,7 +28,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA.
 #include <signal.h>
 #include <unistd.h>
 
-#include <rtai_fifos.h>
+#include <rtai_mbx.h>
 
 static volatile int end;
 
@@ -36,8 +36,7 @@ static void endme (int dummy) { end = 1; }
 
 int main(int argc,char *argv[])
 {
-	int fd0;
-	char nm[RTF_NAMELEN+1];
+	MBX *mbx;
         struct pollfd pollkb;
 	struct sample { long min, max, avrg, jitters[2]; } samp;
 	int n = 0;
@@ -46,12 +45,6 @@ int main(int argc,char *argv[])
 	
 	pollkb.fd = 0;
 	pollkb.events = POLLIN;
-	if ((fd0 = open(rtf_getfifobyminor(0,nm,sizeof(nm)), O_RDONLY)) < 0) {
-		fprintf(stderr, "Error opening %s\n",nm);
-		exit(1);
-	}
-
-	printf("RTAI Testsuite - LXRT preempt (all data in nanoseconds)\n");
 
 	signal(SIGHUP,  endme);
 	signal(SIGINT,  endme);
@@ -59,10 +52,23 @@ int main(int argc,char *argv[])
 	signal(SIGTERM, endme);
 	signal(SIGALRM, endme);
 
+        if (!rt_thread_init(nam2num("DSPLY"), 0, 0, SCHED_FIFO, 1)) {
+                printf("CANNOT INIT DISPLAY TASK\n");
+                exit(1);
+        }
+
+	if (!(mbx = rt_get_adr(nam2num("MBX")))) {
+		fprintf(stderr, "Error opening mbx in display\n");
+		exit(1);
+	}
+
+	printf("RTAI Testsuite - LXRT preempt (all data in nanoseconds)\n");
+
 	while (!end) {
-		if ((n++ % 21)==0)
+		if ((n++ % 21) == 0) {
 			printf("RTH|%12s|%12s|%12s|%12s|%12s\n", "lat min","lat avg","lat max","jit fast","jit slow");
-		read(fd0, &samp, sizeof(samp));
+		}
+		rt_mbx_receive(mbx, &samp, sizeof(samp));
 		printf("RTD|%12ld|%12ld|%12ld|%12ld|%12ld\n", samp.min, samp.avrg, samp.max, samp.jitters[0], samp.jitters[1]);
 		fflush(stdout);
 		if (poll(&pollkb, 1, 1) > 0) {

@@ -16,17 +16,16 @@ License along with this library; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA.
 */
 
-#include <sys/mman.h>
+
 #include <pthread.h>
 #include <stdlib.h>
 #include <signal.h>
+#include <sys/mman.h>
 
-#include <rtai_fifos.h>
 #include <rtai_sem.h>
+#include <rtai_mbx.h>
 
-#define FIFO 0
-
-#define NAVRG 800
+#define NAVRG 4000
 
 #define USE_FPU 0
 
@@ -37,7 +36,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA.
 #if defined(CONFIG_UCLINUX) || defined(CONFIG_ARM)
 #define TICK_TIME 1000000
 #else
-#define TICK_TIME 500000
+#define TICK_TIME 100000
 #endif
 
 static RT_TASK *Latency_Task;
@@ -46,6 +45,8 @@ static RT_TASK *Fast_Task;
 
 static volatile int period, slowjit, fastjit;
 static volatile RTIME expected;
+
+static MBX *mbx;
 
 static SEM *barrier;
 
@@ -57,7 +58,7 @@ static void *slow_fun(void *arg)
         int jit;
         RTIME svt, t;
 
-        if (!(Slow_Task = rt_task_init_schmod(nam2num("SLWTSK"), 3, 0, 0, SCHED_FIFO, 1))) {
+        if (!(Slow_Task = rt_thread_init(nam2num("SLWTSK"), 3, 0, SCHED_FIFO, 1))) {
                 printf("CANNOT INIT SLOW TASK\n");
                 exit(1);
         }
@@ -76,7 +77,7 @@ static void *slow_fun(void *arg)
         }
 	rt_sem_wait_barrier(barrier);
 	rt_make_soft_real_time();
-	rt_task_delete(Slow_Task);
+	rt_thread_delete(Slow_Task);
 	return 0;
 }                                        
 
@@ -85,7 +86,7 @@ static void *fast_fun(void *arg)
         int jit;
         RTIME svt, t;
 
-        if (!(Fast_Task = rt_task_init_schmod(nam2num("FSTSK"), 2, 0, 0, SCHED_FIFO, 1))) {
+        if (!(Fast_Task = rt_thread_init(nam2num("FSTSK"), 2, 0, SCHED_FIFO, 1))) {
                 printf("CANNOT INIT FAST TASK\n");
                 exit(1);
         }
@@ -104,7 +105,7 @@ static void *fast_fun(void *arg)
         }                      
 	rt_sem_wait_barrier(barrier);
 	rt_make_soft_real_time();
-	rt_task_delete(Fast_Task);
+	rt_thread_delete(Fast_Task);
 	return 0;
 }
 
@@ -119,7 +120,7 @@ static void *latency_fun(void *arg)
 
 	min_diff = 1000000000;
 	max_diff = -1000000000;
-        if (!(Latency_Task = rt_task_init_schmod(nam2num("LTCTSK"), 1, 0, 0, SCHED_FIFO, 1))) {
+        if (!(Latency_Task = rt_thread_init(nam2num("LTCTSK"), 1, 0, SCHED_FIFO, 1))) {
                 printf("CANNOT INIT LATENCY TASK\n");
                 exit(1);
         }
@@ -139,18 +140,18 @@ static void *latency_fun(void *arg)
 			if (diff > max_diff) {
 				max_diff = diff;
 			}
-		average += diff;
+			average += diff;
 		}
 		samp.min = min_diff;
 		samp.max = max_diff;
 		samp.avrg = average/NAVRG;
 		samp.jitters[0] = fastjit;
 		samp.jitters[1] = slowjit;
-		rtf_ovrwr_put(FIFO, &samp, sizeof(samp));
+		rt_mbx_send_if(mbx, &samp, sizeof(samp));
 	}
 	rt_sem_wait_barrier(barrier);
 	rt_make_soft_real_time();
-	rt_task_delete(Latency_Task);
+	rt_thread_delete(Latency_Task);
 	return 0;
 }
 
@@ -158,9 +159,7 @@ static pthread_t latency_thread, fast_thread, slow_thread;
 
 int main(void)
 {
-	char nm[RTF_NAMELEN+1];
 	RT_TASK *Main_Task;
-	int fifo;
 
 	signal(SIGHUP,  endme);
 	signal(SIGINT,  endme);
@@ -168,22 +167,22 @@ int main(void)
 	signal(SIGTERM, endme);
 	signal(SIGALRM, endme);
 
-        if (!(Main_Task = rt_task_init_schmod(nam2num("MNTSK"), 0, 0, 0, SCHED_FIFO, 1))) {
+        if (!(Main_Task = rt_thread_init(nam2num("MNTSK"), 0, 0, SCHED_FIFO, 1))) {
                 printf("CANNOT INIT MAIN TASK\n");
                 exit(1);
         }
 
-	rtf_create(FIFO, 1000);
-        if ((fifo = open(rtf_getfifobyminor(0,nm,sizeof(nm)), O_RDWR)) < 0) {
-                printf("ERROR OPENING FIFO %s\n",nm);
+        if (!(mbx = rt_mbx_init(nam2num("MBX"), 1000))) {
+                printf("ERROR OPENING MBX\n");
                 exit(1);
         }
+
 	barrier = rt_sem_init(nam2num("PREMSM"), 4);
-	pthread_create(&latency_thread, NULL, latency_fun, NULL);
-	pthread_create(&fast_thread, NULL, fast_fun, NULL);
-	pthread_create(&slow_thread, NULL, slow_fun, NULL);
-	rt_set_oneshot_mode();
-	period = start_rt_timer(nano2count(TICK_TIME));
+	latency_thread = rt_thread_create(latency_fun, NULL, 0);
+	fast_thread    = rt_thread_create(fast_fun, NULL, 0);
+	slow_thread    = rt_thread_create(slow_fun, NULL, 0);
+	start_rt_timer(0);
+	period = nano2count(TICK_TIME);
 	rt_sem_wait_barrier(barrier);
 	expected = rt_get_time() + 100*period;
 	rt_task_make_periodic(Latency_Task, expected, period);
@@ -196,8 +195,8 @@ int main(void)
 	rt_thread_join(fast_thread);
 	rt_thread_join(slow_thread);
 	stop_rt_timer();	
-	rtf_destroy(FIFO);
+	rt_mbx_delete(mbx);
 	rt_sem_delete(barrier);
-	rt_task_delete(Main_Task);
+	rt_thread_delete(Main_Task);
 	return 0;
 }

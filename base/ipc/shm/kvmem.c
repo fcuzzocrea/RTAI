@@ -34,7 +34,7 @@ static __inline__ int km_remap_page_range(struct vm_area_struct *vma, unsigned l
 	return mm_remap_page_range(vma, from, virt_to_phys((void *)to), size, PAGE_SHARED);
 }
 
-/* allocate user space mmapable block of memory in the kernel space */
+/* allocate user space mmapable block of memory in kernel space */
 void *rvmalloc(unsigned long size)
 {
 	void *mem;
@@ -96,14 +96,19 @@ int rvmmap(void *mem, unsigned long memsize, struct vm_area_struct *vma) {
 	return 0;
 }
 
-/* allocate user space mmapable block of memory in the kernel space */
-void *rkmalloc(int *memsize, int suprt)
+/* allocate user space mmapable block of memory in kernel space */
+void *rkmalloc(int *msize, int suprt)
 {
 	unsigned long mem, adr, size;
         
-	if ((mem = (unsigned long)kmalloc(*memsize, suprt))) {
+	if (*msize <= KMALLOC_LIMIT) {
+		mem = (unsigned long)kmalloc(*msize, suprt);
+	} else {
+		mem = (unsigned long)__get_free_pages(suprt, get_order(*msize));
+	}
+	if (mem) {
 		adr  = PAGE_ALIGN(mem);
-		size = *memsize -= (adr - mem);
+		size = *msize -= (adr - mem);
 		while (size > 0) {
 			mem_map_reserve(virt_to_page(adr));
 			adr  += PAGE_SIZE;
@@ -118,13 +123,18 @@ void rkfree(void *mem, unsigned long size)
         unsigned long adr;
         
 	if ((adr = (unsigned long)mem)) {
+		unsigned long sz = size;
 		adr  = PAGE_ALIGN((unsigned long)mem);
 		while (size > 0) {
 			mem_map_unreserve(virt_to_page(adr));
 			adr  += PAGE_SIZE;
 			size -= PAGE_SIZE;
 		}
-		kfree(mem);
+		if (sz <= KMALLOC_LIMIT) {
+			kfree(mem);
+		} else {
+			free_pages((unsigned long)mem, get_order(sz));
+		}
 	}
 }
 

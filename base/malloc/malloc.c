@@ -54,7 +54,12 @@ static void *alloc_extent(u_long size, int suprt)
 			}
 		}
 	} else {
-		p = (caddr_t)kmalloc(size, suprt);
+		if (size <= KMALLOC_LIMIT) {
+			p = kmalloc(size, suprt);
+		} else {
+			p = (void*)__get_free_pages(suprt, get_order(size));
+		}
+//		p = (caddr_t)kmalloc(size, suprt);
 //		printk("RTAI[malloc]: kmalloced extent %p, size %lu.\n", p, size);
 	}
 	if (p) {
@@ -75,7 +80,12 @@ static void free_extent(void *p, u_long size, int suprt)
 		vfree(p);
 	} else {
 //		printk("RTAI[malloc]: kfreed extent %p, size %lu.\n", p, size);
-		kfree(p);
+//		kfree(p);
+		if (size <= KMALLOC_LIMIT) {
+			kfree(p);
+		} else {
+			free_pages((unsigned long)p, get_order(size));
+		}
 	}
 }
 
@@ -103,10 +113,12 @@ int rtheap_init(rtheap_t *heap, void *heapaddr, u_long heapsize, u_long pagesize
 	INIT_LIST_HEAD(&heap->extents);
 	spin_lock_init(&heap->lock);
 
-	if (!suprt) {
-		heap->extentsize = heapsize;
-	} else {
-		heap->extentsize = heapsize > KMALLOC_LIMIT ? KMALLOC_LIMIT : heapsize;
+	heap->extentsize = heapsize;
+	if (!heapaddr && suprt) {
+		if (heapsize <= KMALLOC_LIMIT || (heapaddr = alloc_extent(heapsize, suprt)) == NULL) {
+			heap->extentsize = KMALLOC_LIMIT;
+			heapaddr = NULL;
+		}
 	}
 
 	if (heapaddr) {
@@ -751,11 +763,15 @@ int rtheap_init (rtheap_t *heap, void *heapaddr, u_long heapsize, u_long pagesiz
 	heap->pagesize   = pagesize;
 	heap->pageshift  = pageshift;
 	heap->hdrsize    = hdrsize;
-	if (!suprt) {
-		heap->extentsize = heapsize;
-	} else {
-		heap->extentsize = heapsize > KMALLOC_LIMIT ? KMALLOC_LIMIT : heapsize;
+
+	heap->extentsize = heapsize;
+	if (!heapaddr && suprt) {
+		if (heapsize <= KMALLOC_LIMIT || (heapaddr = alloc_extent(heapsize, suprt)) == NULL) {
+			heap->extentsize = KMALLOC_LIMIT;
+			heapaddr = NULL;
+		}
 	}
+
 	heap->npages     = (heap->extentsize - hdrsize) >> pageshift;
 	heap->maxcont    = heap->npages*pagesize;
 	heap->flags      =

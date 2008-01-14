@@ -807,7 +807,7 @@ config RTAI_MALLOC_HEAPSZ
 	kilobytes).
 
 config RTAI_KSTACK_HEAPSZ
-	string "Size of stacks help for RTAI own kernel tasks (Kbytes)"
+	string "Size of stacks heap for RTAI own kernel tasks (Kbytes)"
 	depends on RTAI_MALLOC
 	default 512
 	help

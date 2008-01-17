@@ -228,18 +228,17 @@ static inline int xnarch_remap_io_page_range(struct vm_area_struct *vma, unsigne
 #endif /* LINUX_VERSION_CODE < KERNEL_VERSION(2,6,0) */
 }
 
+#include <rtai_shm.h>
+#define __va_to_kva(adr)  UVIRT_TO_KVA(adr)
+
 static inline int xnarch_remap_vm_page(struct vm_area_struct *vma, unsigned long from, unsigned long to)
 {
 #if LINUX_VERSION_CODE < KERNEL_VERSION(2,6,0)
 
-unsigned long __va_to_kva(unsigned long va);
 	vma->vm_flags |= VM_RESERVED;
 	return remap_page_range(from, virt_to_phys((void *)__va_to_kva(to)), PAGE_SIZE, PAGE_SHARED);
 
 #else /* LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,0) */
-
-#include <rtai_shm.h>
-#define __va_to_kva(adr)  UVIRT_TO_KVA(adr)
 
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,15) && defined(CONFIG_MMU)
 	vma->vm_flags |= VM_RESERVED;

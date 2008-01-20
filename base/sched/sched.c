@@ -2395,8 +2395,6 @@ struct prev_next_t { struct task_struct *prev, *next; };
 
 static int lxrt_intercept_schedule_head (unsigned long event, struct prev_next_t *evdata)
 {
-	IN_INTERCEPT_IRQ_ENABLE(); {
-
 	struct task_struct *prev = evdata->prev;
 
 	if (!prev->mm) {
@@ -2409,7 +2407,7 @@ static int lxrt_intercept_schedule_head (unsigned long event, struct prev_next_t
 	}
 
 	return 0;
-} }
+}
 
 #define DROP_MM2DROP(cpuid) \
 	do { \
@@ -2449,8 +2447,6 @@ static int lxrt_intercept_schedule_head (unsigned long event, struct prev_next_t
 static int lxrt_intercept_schedule_tail (unsigned event, void *nothing)
 
 {
-	IN_INTERCEPT_IRQ_ENABLE(); {
-
 	int cpuid = smp_processor_id();
 #if LINUX_VERSION_CODE < KERNEL_VERSION(2,6,11)
 	if (in_hrt_mode(cpuid)) {
@@ -2467,24 +2463,21 @@ static int lxrt_intercept_schedule_tail (unsigned event, void *nothing)
 	DROP_MM2DROP(cpuid);
 
 	return 0;
-} }
+}
 
 struct sig_wakeup_t { struct task_struct *task; };
 static int lxrt_intercept_sig_wakeup (long event, void *data)
 {
-	IN_INTERCEPT_IRQ_ENABLE(); {
 	RT_TASK *task;
 	if ((task = INTERCEPT_WAKE_UP_TASK(data)->rtai_tskext(TSKEXT0))) {
 		rt_signal_wake_up(task);
 		return 1;
 	}
 	return 0;
-} }
+}
 
 static int lxrt_intercept_exit (unsigned long event, struct task_struct *lnx_task)
 {
-	IN_INTERCEPT_IRQ_ENABLE(); {
-
 	extern void linux_process_termination(void);
 	RT_TASK *task;
 	if ((task = lnx_task->rtai_tskext(TSKEXT0))) {
@@ -2494,7 +2487,7 @@ static int lxrt_intercept_exit (unsigned long event, struct task_struct *lnx_tas
 		linux_process_termination();
 	}
 	return 0;
-} }
+}
 
 extern long long rtai_lxrt_invoke (unsigned long, void *, void *);
 extern int (*sys_call_table[])(struct pt_regs);
@@ -2567,7 +2560,6 @@ RT_TASK *lxrt_init_linux_server(RT_TASK *master_task)
 
 static int lxrt_intercept_syscall_prologue(struct pt_regs *regs)
 {
-	IN_INTERCEPT_IRQ_ENABLE(); {
 	RT_TASK *task;
 
 	if (regs->LINUX_SYSCALL_NR < NR_syscalls && (task = current->rtai_tskext(TSKEXT0))) {
@@ -2592,12 +2584,10 @@ static int lxrt_intercept_syscall_prologue(struct pt_regs *regs)
 		}
 	}
 	return 0;
-} }
+}
 
 static int lxrt_intercept_syscall_epilogue(unsigned long event, void *nothing)
 {
-	IN_INTERCEPT_IRQ_ENABLE(); {
-
 	RT_TASK *task;
 	if ((task = (RT_TASK *)current->rtai_tskext(TSKEXT0))) {
 		if (task->system_data_ptr) {
@@ -2613,7 +2603,7 @@ static int lxrt_intercept_syscall_epilogue(unsigned long event, void *nothing)
 		}
 	}
 	return 0;
-} }
+}
 
 /* ++++++++++++++++++++++++++ SCHEDULER PROC FILE +++++++++++++++++++++++++++ */
 

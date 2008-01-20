@@ -1,7 +1,9 @@
 2008-01-20 Paolo Mantegazza <mantegazza@aero.polimi.it>
 
 	* base/sched/sched.c: added missing conditional compilation macros
-	  for exectime calculations, reorganized the < 2.4.32 stuff.
+	  for exectime calculations; reorganized the < 2.4.32 stuff;
+	  removed IN_INTERCEPT_IRQ_ENABLE (have not been in use for a long
+	  time).
 
 2008-01-12  Roberto Bucher <roberto.bucher@supsi.ch>
 

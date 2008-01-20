@@ -372,7 +372,9 @@ asmlinkage static void rt_startup(void(*rt_thread)(long), long data)
 	extern int rt_task_delete(RT_TASK *);
 	RT_TASK *rt_current = rt_smp_current[rtai_cpuid()];
 	rt_global_sti();
+#if CONFIG_RTAI_MONITOR_EXECTIME
 	rt_current->exectime[1] = rdtsc();
+#endif
 #if 1 
 	((void (*)(long))rt_current->max_msg_size[0])(rt_current->max_msg_size[1]);
 #else
@@ -2093,7 +2095,9 @@ static void kthread_fun(int cpuid)
 		if (!(task = current->rtai_tskext(TSKEXT0))->max_msg_size[0]) {
 			break;
 		}
+#if CONFIG_RTAI_MONITOR_EXECTIME
 		task->exectime[1] = rdtsc();
+#endif
 		((void (*)(long))task->max_msg_size[0])(task->max_msg_size[1]);
 		task->owndres = 0;
 		current->comm[0] = 'F';
@@ -2206,9 +2210,11 @@ void steal_from_linux(RT_TASK *rt_task)
 	do {
 		schedule();
 	} while (rt_task->state != RT_SCHED_READY);
+#if CONFIG_RTAI_MONITOR_EXECTIME
 	if (!rt_task->exectime[1]) {
 		rt_task->exectime[1] = rdtsc();
 	}
+#endif
 	if (lnxtsk_uses_fpu(lnxtsk)) {
 		rtai_cli();
 		restore_fpu(lnxtsk);
@@ -2375,44 +2381,70 @@ static inline void rt_signal_wake_up(RT_TASK *task)
 }
 
 #if LINUX_VERSION_CODE < KERNEL_VERSION(2,4,32)
+
+#define INTERCEPT_SCHEDULE_HEAD() \
+	rtai_catch_event(hal_root_domain, HAL_SCHEDULE_HEAD, (void *)lxrt_intercept_schedule_head)
+
+#define MAX_MM2DROP 32  /* must be a power of 2. */
 static struct mmreq {
-    int in, out, count;
-#define MAX_MM 32  /* Should be more than enough (must be a power of 2). */
-#define bump_mmreq(x) do { x = (x + 1) & (MAX_MM - 1); } while(0)
-    struct mm_struct *mm[MAX_MM];
-} lxrt_mmrqtab[NR_CPUS];
+	int in, out, count;
+	struct mm_struct *mm[MAX_MM2DROP];
+} mm2drop_tab[NR_CPUS];
 
 struct prev_next_t { struct task_struct *prev, *next; };
+
 static int lxrt_intercept_schedule_head (unsigned long event, struct prev_next_t *evdata)
 {
-    IN_INTERCEPT_IRQ_ENABLE(); {
+	IN_INTERCEPT_IRQ_ENABLE(); {
 
-    struct task_struct *prev = evdata->prev;
+	struct task_struct *prev = evdata->prev;
 
-    /* The SCHEDULE_HEAD event is sent by the (Adeosized) Linux kernel
-       each time it's about to switch a process out. This hook is
-       aimed at preventing the last active MM from being dropped
-       during the LXRT real-time operations since it's a lengthy
-       atomic operation. See kernel/sched.c (schedule()) for more. The
-       MM dropping is simply postponed until the SCHEDULE_TAIL event
-       is received, right after the incoming task has been switched
-       in. */
-
-    if (!prev->mm)
-	{
-	struct mmreq *p = lxrt_mmrqtab + task_cpu(prev);
-	struct mm_struct *oldmm = prev->active_mm;
-	BUG_ON(p->count >= MAX_MM);
-	/* Prevent the MM from being dropped in schedule(), then pend
-	   a request to drop it later in lxrt_intercept_schedule_tail(). */
-	atomic_inc(&oldmm->mm_count);
-	p->mm[p->in] = oldmm;
-	bump_mmreq(p->in);
-	p->count++;
+	if (!prev->mm) {
+		struct mmreq *p = mm2drop_tab + prev->processor;
+		struct mm_struct *oldmm = prev->active_mm;
+		BUG_ON(p->count >= MAX_MM2DROP);
+		atomic_inc(&oldmm->mm_count);
+		p->mm[p->in] = oldmm;
+		p->in = (p->in + 1) & (MAX_MM2DROP - 1);
+		p->count++;
 	}
 
 	return 0;
 } }
+
+#define DROP_MM2DROP(cpuid) \
+	do { \
+		struct mmreq *p = mm2drop_tab + cpuid; \
+		while (p->out != p->in) { \
+			struct mm_struct *oldmm = p->mm[p->out]; \
+			mmdrop(oldmm); \
+			p->out = (p->out + 1) & (MAX_MM2DROP - 1); \
+			p->count--; \
+		} \
+	} while (0)
+
+#define RELEASE_SCHEDULE_HEAD() \
+	rtai_catch_event(hal_root_domain, HAL_SCHEDULE_HEAD, NULL)
+
+#define	DROP_ALL_PENDING_MM2DROP() \
+	do { \
+		unsigned long flags, cpuid; \
+		flags = rtai_critical_enter(NULL); \
+		for (cpuid = 0; cpuid < num_online_cpus(); cpuid++) { \
+			DROP_MM2DROP(cpuid); \
+		} \
+		rtai_critical_exit(flags); \
+	} while (0)
+
+#else  /* KERNEL_VERSION >= 2.4.32 */
+
+#define INTERCEPT_SCHEDULE_HEAD()   do { } while (0)
+
+#define DROP_MM2DROP(cpuid)         do { } while (0)
+
+#define RELEASE_SCHEDULE_HEAD()     do { } while (0)
+
+#define	DROP_ALL_PENDING_MM2DROP()  do { } while (0)
 
 #endif  /* KERNEL_VERSION < 2.4.32 */
 
@@ -2434,31 +2466,9 @@ static int lxrt_intercept_schedule_tail (unsigned event, void *nothing)
 		}
 	}
 
-#if LINUX_VERSION_CODE < KERNEL_VERSION(2,4,32)
-    {
-    struct mmreq *p;
+	DROP_MM2DROP(cpuid);
 
-#ifdef CONFIG_PREEMPT
-    preempt_disable();
-#endif /* CONFIG_PREEMPT */
-
-    p = lxrt_mmrqtab + smp_processor_id();
-
-    while (p->out != p->in)
-	{
-	struct mm_struct *oldmm = p->mm[p->out];
-	mmdrop(oldmm);
-	bump_mmreq(p->out);
-	p->count--;
-	}
-
-#ifdef CONFIG_PREEMPT
-    preempt_enable();
-#endif /* CONFIG_PREEMPT */
-    }
-#endif  /* KERNEL_VERSION < 2.4.32 */
-
-    return 0;
+	return 0;
 } }
 
 struct sig_wakeup_t { struct task_struct *task; };
@@ -2844,10 +2854,7 @@ static int lxrt_init(void)
     rtai_proc_lxrt_register();
 #endif
 
-    /* Must be called on behalf of the Linux domain. */
-#if LINUX_VERSION_CODE < KERNEL_VERSION(2,4,32)
-    rtai_catch_event(hal_root_domain, HAL_SCHEDULE_HEAD, (void *)lxrt_intercept_schedule_head);
-#endif  /* KERNEL_VERSION < 2.4.32 */
+    INTERCEPT_SCHEDULE_HEAD();
     rtai_catch_event(hal_root_domain, HAL_SCHEDULE_TAIL, (void *)lxrt_intercept_schedule_tail);
     rtai_catch_event(hal_root_domain, HAL_SYSCALL_PROLOGUE, (void *)lxrt_intercept_syscall_prologue);
     rtai_catch_event(hal_root_domain, HAL_SYSCALL_EPILOGUE, (void *)lxrt_intercept_syscall_epilogue);
@@ -2862,7 +2869,6 @@ static void lxrt_exit(void)
 {
 	RT_TASK *rt_task;
 	struct task_struct *kthread;
-	unsigned long flags;
 	int cpuid;
 
 #ifdef CONFIG_PROC_FS
@@ -2901,7 +2907,7 @@ static void lxrt_exit(void)
 
 	RELEASE_RESUME_SRQs_STUFF();
 
-	rtai_catch_event(hal_root_domain, HAL_SCHEDULE_HEAD, NULL);
+	RELEASE_SCHEDULE_HEAD();
 	rtai_catch_event(hal_root_domain, HAL_SCHEDULE_TAIL, NULL);
 	rtai_catch_event(hal_root_domain, HAL_SYSCALL_PROLOGUE, NULL);
 	rtai_catch_event(hal_root_domain, HAL_SYSCALL_EPILOGUE, NULL);
@@ -2909,22 +2915,7 @@ static void lxrt_exit(void)
 	rtai_catch_event(hal_root_domain, HAL_KICK_PROCESS, NULL);
 	rtai_lxrt_dispatcher = NULL;
     
-	flags = rtai_critical_enter(NULL);
-#if LINUX_VERSION_CODE < KERNEL_VERSION(2,4,32)
-	do {
-		struct mmreq *p;
-/* Flush the MM log for all processors */
-		for (p = lxrt_mmrqtab; p < lxrt_mmrqtab + NR_CPUS; p++) {
-			while (p->out != p->in) {
-				struct mm_struct *oldmm = p->mm[p->out];
-				mmdrop(oldmm);
-				bump_mmreq(p->out);
-				p->count--;
-			}
-		}
-	} while (0);
-#endif  /* KERNEL_VERSION < 2.4.32 */
-	rtai_critical_exit(flags);
+	DROP_ALL_PENDING_MM2DROP();
 
 	reset_rt_fun_entries(rt_sched_entries);
 }

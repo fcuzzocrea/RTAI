@@ -1,3 +1,8 @@
+2008-01-20 Paolo Mantegazza <mantegazza@aero.polimi.it>
+
+	* base/sched/sched.c: added missing conditional compilation macros
+	  for exectime calculations, reorganized the < 2.4.32 stuff.
+
 2008-01-12  Roberto Bucher <roberto.bucher@supsi.ch>
 
 	* rtai-lab/scilab/macros/RTAI/RTAICodeGen_,sci: Added little

@@ -2387,7 +2387,7 @@ static inline void rt_signal_wake_up(RT_TASK *task)
 
 #define MAX_MM2DROP 32  /* must be a power of 2. */
 static struct mmreq {
-	int in, out, count;
+	unsigned long in, out, count;
 	struct mm_struct *mm[MAX_MM2DROP];
 } mm2drop_tab[NR_CPUS];
 
@@ -2404,8 +2404,7 @@ static int lxrt_intercept_schedule_head (unsigned long event, struct prev_next_t
 		struct mm_struct *oldmm = prev->active_mm;
 		BUG_ON(p->count >= MAX_MM2DROP);
 		atomic_inc(&oldmm->mm_count);
-		p->mm[p->in] = oldmm;
-		p->in = (p->in + 1) & (MAX_MM2DROP - 1);
+		p->mm[p->in++ & (MAX_MM2DROP - 1)] = oldmm;
 		p->count++;
 	}
 
@@ -2416,9 +2415,8 @@ static int lxrt_intercept_schedule_head (unsigned long event, struct prev_next_t
 	do { \
 		struct mmreq *p = mm2drop_tab + cpuid; \
 		while (p->out != p->in) { \
-			struct mm_struct *oldmm = p->mm[p->out]; \
+			struct mm_struct *oldmm = p->mm[p->out++ & (MAX_MM2DROP - 1)]; \
 			mmdrop(oldmm); \
-			p->out = (p->out + 1) & (MAX_MM2DROP - 1); \
 			p->count--; \
 		} \
 	} while (0)
@@ -2815,54 +2813,53 @@ DECLARE_FUSION_WAKE_UP_STUFF;
 static int lxrt_init(void)
 
 {
-    void init_fun_ext(void);
-    int cpuid;
+	void init_fun_ext(void);
+	int cpuid;
 
-    init_fun_ext();
+	init_fun_ext();
 
-    REQUEST_RESUME_SRQs_STUFF();
+	REQUEST_RESUME_SRQs_STUFF();
 
-    /* We will start stealing Linux tasks as soon as the reservoir is
-       instantiated, so create the migration service now. */
+	/* We will start stealing Linux tasks as soon as the reservoir is
+	   instantiated, so create the migration service now.             */
 
-    if (Reservoir <= 0)
-	Reservoir = 1;
-
-    Reservoir = (Reservoir + NR_RT_CPUS - 1)/NR_RT_CPUS;
-
-    for (cpuid = 0; cpuid < num_online_cpus(); cpuid++)
-	{
-	taskav[cpuid] = (void *)kmalloc(SpareKthreads*sizeof(void *), GFP_KERNEL);
-	init_MUTEX_LOCKED(&resem[cpuid]);
-	kernel_thread((void *)kthread_m, (void *)(long)cpuid, 0);
-	down(&resem[cpuid]);
-	klistm[cpuid].in = (2*Reservoir) & (MAX_WAKEUP_SRQ - 1);
-	wake_up_process(kthreadm[cpuid]);
+	if (Reservoir <= 0) {
+		Reservoir = 1;
 	}
 
-    for (cpuid = 0; cpuid < MAX_LXRT_FUN; cpuid++)
-	{
-	rt_fun_lxrt[cpuid].type = 1;
-	rt_fun_lxrt[cpuid].fun  = nihil;
+	Reservoir = (Reservoir + NR_RT_CPUS - 1)/NR_RT_CPUS;
+
+	for (cpuid = 0; cpuid < num_online_cpus(); cpuid++) {
+		taskav[cpuid] = (void *)kmalloc(SpareKthreads*sizeof(void *), GFP_KERNEL);
+		init_MUTEX_LOCKED(&resem[cpuid]);
+		kernel_thread((void *)kthread_m, (void *)(long)cpuid, 0);
+		down(&resem[cpuid]);
+		klistm[cpuid].in = (2*Reservoir) & (MAX_WAKEUP_SRQ - 1);
+		wake_up_process(kthreadm[cpuid]);
+	}
+
+	for (cpuid = 0; cpuid < MAX_LXRT_FUN; cpuid++) {
+		rt_fun_lxrt[cpuid].type = 1;
+		rt_fun_lxrt[cpuid].fun  = nihil;
 	}
 	
-    set_rt_fun_entries(rt_sched_entries);
+	set_rt_fun_entries(rt_sched_entries);
 
-    lxrt_old_trap_handler = rt_set_rtai_trap_handler(lxrt_handle_trap);
+	lxrt_old_trap_handler = rt_set_rtai_trap_handler(lxrt_handle_trap);
 
 #ifdef CONFIG_PROC_FS
-    rtai_proc_lxrt_register();
+	rtai_proc_lxrt_register();
 #endif
 
-    INTERCEPT_SCHEDULE_HEAD();
-    rtai_catch_event(hal_root_domain, HAL_SCHEDULE_TAIL, (void *)lxrt_intercept_schedule_tail);
-    rtai_catch_event(hal_root_domain, HAL_SYSCALL_PROLOGUE, (void *)lxrt_intercept_syscall_prologue);
-    rtai_catch_event(hal_root_domain, HAL_SYSCALL_EPILOGUE, (void *)lxrt_intercept_syscall_epilogue);
-    rtai_catch_event(hal_root_domain, HAL_EXIT_PROCESS, (void *)lxrt_intercept_exit);
-    rtai_catch_event(hal_root_domain, HAL_KICK_PROCESS, (void *)lxrt_intercept_sig_wakeup);
+	INTERCEPT_SCHEDULE_HEAD();
+	rtai_catch_event(hal_root_domain, HAL_SCHEDULE_TAIL, (void *)lxrt_intercept_schedule_tail);
+	rtai_catch_event(hal_root_domain, HAL_SYSCALL_PROLOGUE, (void *)lxrt_intercept_syscall_prologue);
+	rtai_catch_event(hal_root_domain, HAL_SYSCALL_EPILOGUE, (void *)lxrt_intercept_syscall_epilogue);
+	rtai_catch_event(hal_root_domain, HAL_EXIT_PROCESS, (void *)lxrt_intercept_exit);
+	rtai_catch_event(hal_root_domain, HAL_KICK_PROCESS, (void *)lxrt_intercept_sig_wakeup);
 	rtai_lxrt_dispatcher = rtai_lxrt_invoke;
 
-    return 0;
+	return 0;
 }
 
 static void lxrt_exit(void)

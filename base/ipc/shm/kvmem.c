@@ -112,7 +112,8 @@ void *rkmalloc(int *msize, int suprt)
 		adr  = PAGE_ALIGN(mem);
 		size = *msize -= (adr - mem);
 		while (size > 0) {
-			mem_map_reserve(virt_to_page(adr));
+//			mem_map_reserve(virt_to_page(adr));
+			SetPageReserved(virt_to_page(adr));
 			adr  += PAGE_SIZE;
 			size -= PAGE_SIZE;
 		}
@@ -128,7 +129,8 @@ void rkfree(void *mem, unsigned long size)
 		unsigned long sz = size;
 		adr  = PAGE_ALIGN((unsigned long)mem);
 		while (size > 0) {
-			mem_map_unreserve(virt_to_page(adr));
+//			mem_map_unreserve(virt_to_page(adr));
+			ClearPageReserved(virt_to_page(adr));
 			adr  += PAGE_SIZE;
 			size -= PAGE_SIZE;
 		}

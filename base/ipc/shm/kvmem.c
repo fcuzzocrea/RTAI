@@ -18,12 +18,6 @@
 
 #include <rtai_shm.h>
 
-#if BITS_PER_LONG == 32
-#define MEMLIM  0xFFFFFFFFULL
-#else
-#define MEMLIM  0xFFFFFFFFFFFFFFFFULL
-#endif
-
 static __inline__ int vm_remap_page_range(struct vm_area_struct *vma, unsigned long from, unsigned long to)
 {
 	vma->vm_flags |= VM_RESERVED;
@@ -81,7 +75,7 @@ int rvmmap(void *mem, unsigned long memsize, struct vm_area_struct *vma)
 
 	/* this is not time critical code, so we check the arguments */
 	/* vma->vm_offset HAS to be checked (and is checked)*/
-	if (vma->vm_pgoff > (MEMLIM >> PAGE_SHIFT)) {
+	if (vma->vm_pgoff > (~0UL >> PAGE_SHIFT)) {
 		return -EFAULT;
 	}
 	offset = vma->vm_pgoff << PAGE_SHIFT;
@@ -157,7 +151,7 @@ int rkmmap(void *mem, unsigned long memsize, struct vm_area_struct *vma)
 
 	/* this is not time critical code, so we check the arguments */
 	/* vma->vm_offset HAS to be checked (and is checked)*/
-	if (vma->vm_pgoff > (MEMLIM >> PAGE_SHIFT)) {
+	if (vma->vm_pgoff > (~0UL >> PAGE_SHIFT)) {
 		return -EFAULT;
 	}
 	offset = vma->vm_pgoff << PAGE_SHIFT;

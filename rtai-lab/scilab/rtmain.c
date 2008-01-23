@@ -40,7 +40,7 @@
 #include <rtai_mbx.h>
 #include <rtai_fifos.h>
 
-#define RTAILAB_VERSION         "3.4.7"
+#define RTAILAB_VERSION         "3.5.1"
 #define MAX_ADR_SRCH      500
 #define MAX_NAME_SIZE     256
 #define MAX_SCOPES        100
@@ -274,7 +274,7 @@ static void *rt_BaseRate(void *args)
   iopl(3);
   rt_task_use_fpu(rt_BaseRateTask, 1);
 
-  NAME(MODEL,_init_blk)();
+  NAME(MODEL,_init)();
   grow_and_lock_stack(stackinc);
   if (UseHRT) {
     rt_make_hard_real_time();
@@ -296,13 +296,13 @@ static void *rt_BaseRate(void *args)
     RTTSKinit=rt_get_cpu_time_ns();
 #endif
 
-    NAME(MODEL,_rt_exec)(NAME(block_,MODEL),z, &TIME);
+    NAME(MODEL,_isr)(TIME);
 
   }
   if (UseHRT) {
     rt_make_soft_real_time();
   }
-  NAME(MODEL,_end)(NAME(block_,MODEL),z, &TIME);
+  NAME(MODEL,_end)();
   rt_task_delete(rt_BaseRateTask);
 
   return 0;

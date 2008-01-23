@@ -113,7 +113,7 @@ static inline int remap_page_range(struct vm_area_struct *vma, unsigned long uva
 #endif
 
 #include <rtai.h>
-#include <asm/rtai_shm.h>
+//#include <asm/rtai_shm.h>
 
 #include <rtai_malloc.h>
 

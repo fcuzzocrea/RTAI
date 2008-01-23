@@ -19,6 +19,8 @@
 #ifndef _RTAI_ASM_X8664_SHM_H
 #define _RTAI_ASM_X8664_SHM_H
 
+#if 0
+
 #ifndef __KERNEL__
 
 #include <asm/rtai_vectors.h>
@@ -31,8 +33,6 @@ static inline long long rtai_shmrq(int srq, unsigned long args)
 }
 
 #endif /* __KERNEL__ */
-
-#if 0
 
 #include <asm/pgtable.h>
 #include <asm/io.h>

@@ -20,6 +20,8 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA.
 #ifndef _RTAI_ASM_PPC_SHM_H
 #define _RTAI_ASM_PPC_SHM_H
 
+#if 0
+
 #undef __SHM_USE_VECTOR
 
 #ifndef __KERNEL__
@@ -56,8 +58,6 @@ static inline long long rtai_shmrq(unsigned long srq, unsigned long whatever)
 #endif /* __SHM_USE_VECTOR */
 
 #endif /* __KERNEL__ */
-
-#if 0
 
 #include <asm/pgtable.h>
 #include <asm/io.h>

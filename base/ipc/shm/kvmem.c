@@ -18,6 +18,12 @@
 
 #include <rtai_shm.h>
 
+#if BITS_PER_LONG == 32
+#define MEMLIM  0xFFFFFFFFULL
+#else
+#define MEMLIM  0xFFFFFFFFFFFFFFFFULL
+#endif
+
 static __inline__ int vm_remap_page_range(struct vm_area_struct *vma, unsigned long from, unsigned long to)
 {
 	vma->vm_flags |= VM_RESERVED;
@@ -68,13 +74,14 @@ void rvfree(void *mem, unsigned long size)
 }
 
 /* this function will map (fragment of) rvmalloc'ed memory area to user space */
-int rvmmap(void *mem, unsigned long memsize, struct vm_area_struct *vma) {
+int rvmmap(void *mem, unsigned long memsize, struct vm_area_struct *vma)
+{
 	unsigned long pos, size, offset;
 	unsigned long start  = vma->vm_start;
 
 	/* this is not time critical code, so we check the arguments */
 	/* vma->vm_offset HAS to be checked (and is checked)*/
-	if (vma->vm_pgoff > (0x7FFFFFFF >> PAGE_SHIFT)) { /* FIXME: 32bit dependency */
+	if (vma->vm_pgoff > (MEMLIM >> PAGE_SHIFT)) {
 		return -EFAULT;
 	}
 	offset = vma->vm_pgoff << PAGE_SHIFT;
@@ -143,13 +150,14 @@ void rkfree(void *mem, unsigned long size)
 }
 
 /* this function will map an rkmalloc'ed memory area to user space */
-int rkmmap(void *mem, unsigned long memsize, struct vm_area_struct *vma) {
+int rkmmap(void *mem, unsigned long memsize, struct vm_area_struct *vma)
+{
 	unsigned long pos, size, offset;
 	unsigned long start  = vma->vm_start;
 
 	/* this is not time critical code, so we check the arguments */
 	/* vma->vm_offset HAS to be checked (and is checked)*/
-	if (vma->vm_pgoff > (0x7FFFFFFF >> PAGE_SHIFT)) {
+	if (vma->vm_pgoff > (MEMLIM >> PAGE_SHIFT)) {
 		return -EFAULT;
 	}
 	offset = vma->vm_pgoff << PAGE_SHIFT;

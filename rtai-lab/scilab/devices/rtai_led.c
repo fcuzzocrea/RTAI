@@ -17,7 +17,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA.
 */
 
 #include <machine.h>
-#include <scicos_block.h>
+#include <scicos_block4.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <rtai_netrpc.h>
@@ -37,10 +37,11 @@ static void init(scicos_block *block)
 {
   char ledName[10];
   char name[7];
-  int nch = block->nin;
+  int nch  = GetNin(block);
+  int * ipar = GetIparPtrs(block);
   MBX *mbx;
 
-  par_getstr(ledName,block->ipar,1,block->ipar[0]);
+  par_getstr(ledName,ipar,1,ipar[0]);
   rtRegisterLed(ledName,nch);
   get_a_name(TargetLedMbxID,name);
 
@@ -50,38 +51,45 @@ static void init(scicos_block *block)
     exit_on_error();
   }
 
-  *block->work=(void *) mbx;
+  *(block->work) = mbx;
+
 }
 
 static void inout(scicos_block *block)
 {
-  MBX * mbx = (MBX *) (*block->work);
-  int nleds=block->nin;
+  MBX * mbx = *(block->work);
   int i;
   unsigned int led_mask = 0;
+  int nleds  = GetNin(block);
 
+  double *u;
   for (i = 0; i < nleds; i++) {
-    if (block->inptr[i][0] > 0.) {
+    u = block->inptr[i];
+    if (u[0] > 0.1) {
       led_mask += (1 << i);
     } else {
       led_mask += (0 << i);
     }
   }
   RT_mbx_send_if(0, 0, mbx, &led_mask, sizeof(led_mask));
+
 }
 
 static void end(scicos_block *block)
 {
+  int * ipar = GetIparPtrs(block);
+
   char ledName[10];
-  MBX * mbx = (MBX *) (*block->work);
+  MBX * mbx = *(block->work);
   RT_named_mbx_delete(0, 0, mbx);
-  par_getstr(ledName,block->ipar,1,block->ipar[0]);
+  par_getstr(ledName,ipar,1,ipar[0]);
   printf("Led %s closed\n",ledName);
+
 }
 
 void rtled(scicos_block *block,int flag)
 {
-  if (flag==2){          
+  if (flag==1){          /* set output */
     inout(block);
   }
   else if (flag==5){     /* termination */ 

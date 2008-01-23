@@ -16,42 +16,48 @@ License along with this library; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA.
 */
 
+#include <math.h>
 #include <machine.h>
-#include <scicos_block.h>
+#include <scicos_block4.h>
 
 static void init(scicos_block *block)
 {
-   block->outptr[0][0]=0.0;
+  double * rpar = GetRparPtrs(block);
+  double *y = GetRealOutPortPtrs(block,1);
+  y[0]=0.0;
 }
 
 static void inout(scicos_block *block)
 {
   double w,pi=3.1415927;
   double t = get_scicos_time();
+  double * rpar = GetRparPtrs(block);
+  double *y = block->outptr[0];
 
-   if (t<block->rpar[4]) block->outptr[0][0]=0.0;
+   if (t<rpar[4]) y[0]=0.0;
    else {
-     w=2*pi*block->rpar[1]*(t-block->rpar[4])-block->rpar[2];
-     block->outptr[0][0]=block->rpar[0]*sin(w)+block->rpar[3];
+     w=2*pi*rpar[1]*(t-rpar[4])-rpar[2];
+     y[0]=rpar[0]*sin(w)+rpar[3];
    }
 }
 
 static void end(scicos_block *block)
 {
-   block->outptr[0][0]=0.0;
+  double *y = block->outptr[0];
+  y[0]=0.0;
 }
 
 
 
 void rtsinus(scicos_block *block,int flag)
 {
-  if (flag==1){          /* set output */
+  if (flag==1){  /* set output */
     inout(block);
   }
-  else if (flag==5){     /* termination */ 
+  else if (flag==5){        /* termination */ 
     end(block);
   }
-  else if (flag ==4){    /* initialisation */
+  else if (flag ==4){       /* initialisation */
     init(block);
   }
 }

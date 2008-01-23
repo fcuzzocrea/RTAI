@@ -17,7 +17,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA.
 */
 
 #include <machine.h>
-#include <scicos_block.h>
+#include <scicos_block4.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <rtai_netrpc.h>
@@ -37,11 +37,14 @@ static void init(scicos_block *block)
 {
   char scopeName[10];
   char name[7];
-  int nch = block->nin;
-  int nt=nch + 1;
+  int nch = GetNin(block);
+  int * ipar = GetIparPtrs(block);
+  int nt = nch+1;
   MBX *mbx;
 
-  par_getstr(scopeName,block->ipar,1,block->ipar[0]);
+  int i;
+
+  par_getstr(scopeName,ipar,1,ipar[0]);
   rtRegisterScope(scopeName,nch);
   get_a_name(TargetMbxID,name);
 
@@ -51,13 +54,15 @@ static void init(scicos_block *block)
     exit_on_error();
   }
 
-  *block->work=(void *) mbx;
+  *(block->work) = mbx;
 }
 
 static void inout(scicos_block *block)
 {
-  MBX * mbx = (MBX *) (*block->work);
-  int ntraces=block->nin;
+  double *u;
+
+  MBX * mbx = *(block->work);
+  int ntraces=GetNin(block);
   struct {
     float t;
     float u[ntraces];
@@ -67,7 +72,8 @@ static void inout(scicos_block *block)
   double t=get_scicos_time();
   data.t=(float) t;
   for (i = 0; i < ntraces; i++) {
-    data.u[i] = (float) block->inptr[i][0];
+    u = block->inptr[i];
+    data.u[i] = (float) u[0];
   }
   RT_mbx_send_if(0, 0, mbx, &data, sizeof(data));
 }
@@ -75,15 +81,16 @@ static void inout(scicos_block *block)
 static void end(scicos_block *block)
 {
   char scopeName[10];
-  MBX * mbx = (MBX *) (*block->work);
+  int * ipar = GetIparPtrs(block);
+  MBX * mbx = *(block->work);
   RT_named_mbx_delete(0, 0, mbx);
-  par_getstr(scopeName,block->ipar,1,block->ipar[0]);
+  par_getstr(scopeName,ipar,1,ipar[0]);
   printf("Scope %s closed\n",scopeName);
 }
 
 void rtscope(scicos_block *block,int flag)
 {
-  if (flag==2){          
+  if (flag==1){          
     inout(block);
   }
   else if (flag==5){     /* termination */ 

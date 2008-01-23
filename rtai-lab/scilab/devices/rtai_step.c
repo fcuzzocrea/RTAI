@@ -17,23 +17,26 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA.
 */
 
 #include <machine.h>
-#include <scicos_block.h>
+#include <scicos_block4.h>
 
 static void init(scicos_block *block)
 {
-  block->outptr[0][0]=0.0;
+  double * y = block->outptr[0];
+  y[0]=0.0;
 }
 
 static void inout(scicos_block *block)
 {
   double t=get_scicos_time();
-  if (t<block->rpar[1]) block->outptr[0][0]=0.0;
-  else                  block->outptr[0][0]=block->rpar[0];
+  double * y = block->outptr[0];
+  if (t<block->rpar[1]) y[0]=0.0;
+  else                  y[0]=block->rpar[0];
 }
 
 static void end(scicos_block *block)
 {
-  block->outptr[0][0]=0.0;
+  double * y = block->outptr[0];
+  y[0]=0.0;
 }
 
 

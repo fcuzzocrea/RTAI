@@ -17,7 +17,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA.
 */
 
 #include <machine.h>
-#include <scicos_block.h>
+#include <scicos_block4.h>
 #include <stdio.h>
 #include <unistd.h>
 #include <sys/types.h>
@@ -132,8 +132,9 @@ static void inout(scicos_block *block)
 {
   struct DOCOMDev * comdev = (struct DOCOMDev *) (*block->work);
   unsigned int bit = 0;
+  double *u = block->inptr[0];
 
-  if (block->inptr[0][0] >= comdev->threshold) {
+  if (u[0] >= comdev->threshold) {
     bit=1;
   }
   comedi_dio_write(comdev->dev,comdev->subdev, comdev->channel, bit);
@@ -163,7 +164,7 @@ static void end(scicos_block *block)
 
 void rt_comedi_dioout(scicos_block *block,int flag)
 {
-  if (flag==2){          /* get input */
+  if (flag==1){          /* get input */
     inout(block);
   }
   else if (flag==5){     /* termination */ 

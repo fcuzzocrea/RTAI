@@ -17,33 +17,39 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA.
 */
 
 #include <machine.h>
-#include <scicos_block.h>
+#include <scicos_block4.h>
+
+void par_getstr(char * str, int par[], int init, int len);
 
 static void init(scicos_block *block)
 {
-   block->outptr[0][0]=0.0;
+  double *y = GetRealOutPortPtrs(block,1);
+ 
+  y[0] = 0.0;
 }
 
 static void inout(scicos_block *block)
 {
-  double t = get_scicos_time();
   double v;
+  double * rpar =  GetRparPtrs(block);
+  double t = get_scicos_time();
+  double *y = GetRealOutPortPtrs(block,1);
 
-  if (t<block->rpar[4]) block->outptr[0][0]=0.0;
+  if (t<rpar[4]) y[0]=0.0;
   else {
-    v=(t-block->rpar[4])/block->rpar[1];
-    v=(v - (int) v) * block->rpar[1];
-    if(v < block->rpar[2]) block->outptr[0][0]=block->rpar[3]+block->rpar[0];
-    else                   block->outptr[0][0]=block->rpar[3];
+    v=(t-rpar[4])/rpar[1];
+    v=(v - (int) v) * rpar[1];
+    if(v < rpar[2]) y[0] = rpar[3]+rpar[0];
+    else            y[0] = rpar[3];
   }
 }
 
 static void end(scicos_block *block)
 {
-   block->outptr[0][0]=0.0;
+  double *y = GetRealOutPortPtrs(block,1);
+
+  y[0] = 0.0;
 }
-
-
 
 void rtsquare(scicos_block *block,int flag)
 {

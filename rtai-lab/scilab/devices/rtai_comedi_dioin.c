@@ -17,7 +17,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA.
 */
 
 #include <machine.h>
-#include <scicos_block.h>
+#include <scicos_block4.h>
 #include <stdio.h>
 #include <unistd.h>
 #include <sys/types.h>
@@ -131,9 +131,10 @@ static void inout(scicos_block *block)
 {
   struct DICOMDev * comdev = (struct DICOMDev *) (*block->work);
   unsigned int bit;
+  double *y = block->outptr[0];
 
   comedi_dio_read(comdev->dev, comdev->subdev, comdev->channel, &bit);
-  block->outptr[0][0] = (double)bit;
+  y[0] = (double)bit;
 }
 
 static void end(scicos_block *block)

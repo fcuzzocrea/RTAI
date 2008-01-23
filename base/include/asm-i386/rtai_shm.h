@@ -67,6 +67,16 @@ static inline unsigned long uvirt_to_kva(pgd_t *pgd, unsigned long adr)
 	return 0UL;
 }
 
+static inline unsigned long kvirt_to_pa(unsigned long adr)
+{
+	unsigned long va;
+
+	va = VMALLOC_VMADDR(adr);
+	return __pa(uvirt_to_kva(pgd_offset_k(va), va));
+}
+#endif
+
+#if 0
 static inline unsigned long uvirt_to_bus(unsigned long adr)
 {
 	return virt_to_bus((void *)uvirt_to_kva(pgd_offset(current->mm, adr), adr));
@@ -78,14 +88,6 @@ static inline unsigned long kvirt_to_bus(unsigned long adr)
 
 	va = VMALLOC_VMADDR(adr);
 	return virt_to_bus((void *)uvirt_to_kva(pgd_offset_k(va), va));
-}
-
-static inline unsigned long kvirt_to_pa(unsigned long adr)
-{
-	unsigned long va;
-
-	va = VMALLOC_VMADDR(adr);
-	return __pa(uvirt_to_kva(pgd_offset_k(va), va));
 }
 
 #endif  /* !_RTAI_ASM_I386_SHM_H */

@@ -1,3 +1,10 @@
+2008-01-24  Roberto Bucher <roberto.bucher@supsi.ch>
+
+	* configure.in: Modified for Scilab-4.1.2: rtai-lab/devices is no more in the
+	compilation tree.
+	* configure:  Modified for Scilab-4.1.2: rtai-lab/devices is no more in the
+	compilation tree.
+
 2008-01-23  Roberto Bucher <roberto.bucher@supsi.ch>
 
 	* rtai-lab/scilab/*: All the files modified for Scilab-4.1.2.

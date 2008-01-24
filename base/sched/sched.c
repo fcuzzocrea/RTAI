@@ -1004,8 +1004,8 @@ sched_soft:
 			enq_soft_ready_task(rt_current);
 			rt_smp_current[cpuid] = rt_current;
 			goto sched_exit1;
-		} else {
-			printk(">>> RTAI SCHED SOFT WARNING: WHY HERE? <<<\n");
+		} else if (new_task != rt_current) {
+			printk(">>> RTAI SCHED SOFT WARNING: WHY HERE? (NEW %p, RTCUR %p, LNXTSK %p, LNXCUR %p) <<<\n", new_task, rt_current, &rt_linux_task, current);
 		}
 	}
 sched_exit:

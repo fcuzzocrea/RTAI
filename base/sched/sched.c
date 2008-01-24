@@ -3012,7 +3012,9 @@ static int __rtai_lxrt_init(void)
 #ifdef CONFIG_RTAI_LXRT_USE_LINUX_SYSCALL
 	printk(", <uses LINUX SYSCALLs>");
 #endif
+#ifdef CONFIG_RTAI_MALLOC
 	printk(", kstacks pool size = %d bytes", rtai_kstack_heap_size);
+#endif
 	printk(".\n");
 	printk(KERN_INFO "RTAI[sched]: hard timer type/freq = %s/%d(Hz); default timing: %s; ", TIMER_NAME, (int)TIMER_FREQ, OneShot ? "oneshot" : "periodic");
 #ifdef CONFIG_RTAI_LONG_TIMED_LIST

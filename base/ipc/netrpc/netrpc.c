@@ -1498,6 +1498,9 @@ static inline int krecv(int fd, void *ubuf, size_t size, unsigned flags)
 	return krecvfrom(fd, ubuf, size, flags, NULL, NULL);
 }
 
+#ifndef DECLARE_MUTEX_LOCKED
+#define DECLARE_MUTEX_LOCKED(name) __DECLARE_SEMAPHORE_GENERIC(name,0)
+#endif
 static DECLARE_MUTEX_LOCKED(mtx);
 static unsigned long end_softrtnet;
 

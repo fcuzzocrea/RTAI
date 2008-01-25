@@ -2040,12 +2040,17 @@ static struct task_struct *__get_kthread(int cpuid)
 /* detach the kernel thread from user space; not fully, only:
    session, process-group, tty. */ 
 
-static inline void detach_kthread(void)
+#if LINUX_VERSION_CODE < KERNEL_VERSION(2,6,24)
+static void rt_daemonize(void)
 {
 #if LINUX_VERSION_CODE < KERNEL_VERSION(2,6,0)
 	current->session = 1;
 	current->pgrp    = 1;
 	current->tty     = NULL;
+	spin_lock_irq(&current->sigmask_lock);
+	sigfillset(&current->blocked);
+	recalc_sigpending(current);
+	spin_unlock_irq(&current->sigmask_lock);
 #else
 #if LINUX_VERSION_CODE > KERNEL_VERSION(2,6,19)
 	(current->signal)->__session = 1;
@@ -2055,22 +2060,15 @@ static inline void detach_kthread(void)
 	(current->signal)->pgrp    = 1;
 	(current->signal)->tty     = NULL;
 #endif
-}
-
-static inline void lxrt_sigfillset(void)
-{
-#if LINUX_VERSION_CODE < KERNEL_VERSION(2,6,0)
-	spin_lock_irq(&current->sigmask_lock);
-	sigfillset(&current->blocked);
-	recalc_sigpending(current);
-	spin_unlock_irq(&current->sigmask_lock);
-#else
 	spin_lock_irq(&(current->sighand)->siglock);
 	sigfillset(&current->blocked);
 	recalc_sigpending();
 	spin_unlock_irq(&(current->sighand)->siglock);
-#endif
 }
+#else
+extern void rt_daemonize(void);
+#endif
+
 
 static void kthread_fun(int cpuid) 
 {
@@ -2078,12 +2076,11 @@ static void kthread_fun(int cpuid)
 	void give_back_to_linux(RT_TASK *, int);
 	RT_TASK *task;
 
-	detach_kthread();
+	rt_daemonize();
 	rtai_set_linux_task_priority(current, SCHED_FIFO, KTHREAD_F_PRIO);
 	sprintf(current->comm, "F:HARD:%d:%d", cpuid, ++rsvr_cnt[cpuid]);
 	current->rtai_tskext(TSKEXT0) = task = &thread_task[cpuid];
 	current->rtai_tskext(TSKEXT1) = task->lnxtsk = current;
-	lxrt_sigfillset();
 	put_current_on_cpu(cpuid);
 	init_hard_fpu(current);
 	task->msg_queue.next = &task->msg_queue;
@@ -2126,7 +2123,7 @@ static void kthread_m(int cpuid)
 	struct klist_t *klistp;
 	RT_TASK *task;
 	
-	detach_kthread();
+	rt_daemonize();
 	(task = &thread_task[cpuid])->magic = RT_TASK_MAGIC;
 	task->runnable_on_cpus = cpuid;
 	sprintf(current->comm, "RTAI_KTHRD_M:%d", cpuid);
@@ -2134,7 +2131,6 @@ static void kthread_m(int cpuid)
 	kthreadm[cpuid] = current;
 	klistp = &klistm[cpuid];
 	rtai_set_linux_task_priority(current, SCHED_FIFO, KTHREAD_M_PRIO);
-	lxrt_sigfillset();
 	up(&resem[cpuid]);
 	while (!endkthread) {
 		current->state = TASK_UNINTERRUPTIBLE;

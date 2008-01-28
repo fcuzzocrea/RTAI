@@ -617,15 +617,16 @@ RTAI_PROTO(RT_TASK *, rt_task_init_schmod, (unsigned long name, int priority, in
         struct sched_param mysched;
         struct { unsigned long name; long priority, stack_size, max_msg_size, cpus_allowed; } arg = { name ? name : rt_get_name(NULL), priority, stack_size, max_msg_size, cpus_allowed };
 
-        mysched.sched_priority = sched_get_priority_max(policy) - priority;
-        if (mysched.sched_priority < 1 ) {
-        	mysched.sched_priority = 1;
+        if (policy == SCHED_OTHER) {
+        	mysched.sched_priority = 0;
+	} else if ((mysched.sched_priority = sched_get_priority_max(policy) - priority) < 1) {
+		mysched.sched_priority = 1;
 	}
         if (sched_setscheduler(0, policy, &mysched) < 0) {
                 return 0;
         }
 	rtai_iopl();
-	mlockall(MCL_CURRENT | MCL_FUTURE); \
+	mlockall(MCL_CURRENT | MCL_FUTURE);
 
 	return (RT_TASK *)rtai_lxrt(BIDX, SIZARG, LXRT_TASK_INIT, &arg).v[LOW];
 }

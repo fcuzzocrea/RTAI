@@ -1,3 +1,8 @@
+2008-01-28 Paolo Mantegazza <mantegazza@aero.polimi.it>
+
+	* base/include/rtai_lxrt.h: allow use of SCHED_OTHER, lost since 3.2,
+	  but only by setting it explicitely with rt_task_init_schmod.
+
 2008-01-24  Roberto Bucher <roberto.bucher@supsi.ch>
 
 	* configure.in: Modified for Scilab-4.1.2: rtai-lab/devices is no more in the

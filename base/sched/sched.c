@@ -976,7 +976,7 @@ void rt_schedule(void)
 					force_current_soft(rt_current, cpuid);
 				}
 			}
-		} else if (rt_current->state != RT_SCHED_READY) {
+		} else { // if (rt_current->state != RT_SCHED_READY) {
 sched_soft:
 			UNLOCK_LINUX(cpuid);
 			rt_global_sti();

@@ -17,7 +17,7 @@ function [x,y,typ] = rtai4_comedi_datain(job,arg1,arg2)
     model=arg1.model;graphics=arg1.graphics;
     exprs=graphics.exprs;
     while %t do
-      [ok,ch,name,range,aref,exprs]=..
+      [ok,ch,name,comedi_range,aref,exprs]=..
       getvalue('Set RTAI-COMEDI DATA block parameters',..
       ['Channel:';
        'Device:';
@@ -30,7 +30,7 @@ function [x,y,typ] = rtai4_comedi_datain(job,arg1,arg2)
       if ok then
         graphics.exprs=exprs;
         model.ipar=[ch;
-                    range;
+                    comedi_range;
                     aref;
                     length(name);
                     ascii(name)'];
@@ -43,7 +43,7 @@ function [x,y,typ] = rtai4_comedi_datain(job,arg1,arg2)
   case 'define' then
     ch=0
     name='comedi0'
-    range=0
+    comedi_range=0
     aref=0
     model=scicos_model()
     model.sim=list('rt_comedi_datain',4)
@@ -51,14 +51,14 @@ function [x,y,typ] = rtai4_comedi_datain(job,arg1,arg2)
     model.evtin=1
     model.rpar=[]
     model.ipar=[ch;
-                range;
+                comedi_range;
                 aref;
                 length(name);
                 ascii(name)']
     model.dstate=[1];
     model.blocktype='d'
     model.dep_ut=[%t %f]
-    exprs=[sci2exp(ch),name,sci2exp(range),sci2exp(aref)]
+    exprs=[sci2exp(ch),name,sci2exp(comedi_range),sci2exp(aref)]
     gr_i=['xstringb(orig(1),orig(2),[''COMEDI A/D'';name+'' CH-''+string(ch)],sz(1),sz(2),''fill'');']
     x=standard_define([3 2],model,exprs,gr_i)
   end

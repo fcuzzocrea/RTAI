@@ -1818,7 +1818,6 @@ static inline int rt_poller_sem_signal_nosched(SEM *sem)
 	return 0;
 }
 
-
 void rt_wakeup_pollers(QUEUE *queue)
 {
 	int tosched = 0;
@@ -1838,11 +1837,10 @@ EXPORT_SYMBOL(rt_wakeup_pollers);
 
 RTAI_SYSCALL_MODE int _rt_poll(struct rt_poll_s *pdsa, unsigned long nr, RTIME timeout, int space)
 {
-	struct rt_poll_s *pds, pdsv[nr];  // BEWARE: consuming too much stack?
-	QUEUE pollink[nr];                // BEWARE: consuming too much stack?
-	RT_TASK *ready = NULL;
+	struct rt_poll_s *pds, pdsv[nr]; // BEWARE: consuming too much stack?
+	QUEUE pollink[nr];               // BEWARE: consuming too much stack?
+	long ready, i;
 	SEM sem = { { &sem.queue, &sem.queue, NULL }, RT_SEM_MAGIC, 0, 0, 0, RT_CURRENT, 1 };
-	long i;
 
 	if (space) {
 		pds = pdsa;
@@ -1850,21 +1848,22 @@ RTAI_SYSCALL_MODE int _rt_poll(struct rt_poll_s *pdsa, unsigned long nr, RTIME t
 		rt_copy_from_user(pdsv, pdsa, sizeof(pdsv));
 		pds = pdsv;
 	}
-
-	for (i = 0; i < nr; i++) {
-		switch(pds->forwhat) {
+	for (ready = i = 0; i < nr; i++) {
+		switch(pds[i].forwhat) {
 			case RT_POLL_MBX_RECV :
 			case RT_POLL_MBX_SEND : {
 				QUEUE *queue = NULL;
-				MBX *mbx = pds->what;
-				if (pds->forwhat == RT_POLL_MBX_RECV) {
+				MBX *mbx = pds[i].what;
+				if (pds[i].forwhat == RT_POLL_MBX_RECV) {
 					if (mbx->avbs > 0) {
-						ready = pollink[i].task = NULL;
+						pollink[i].task = NULL;
+						ready = 1;
 					} else {
 						queue = &mbx->pollrecv;
 					}
 				} else if (mbx->frbs > 0) {
-					ready = pollink[i].task = NULL;
+					pollink[i].task = NULL;
+					ready = 1;
 				} else {
 					queue = &mbx->pollsend;
 				}
@@ -1877,13 +1876,12 @@ RTAI_SYSCALL_MODE int _rt_poll(struct rt_poll_s *pdsa, unsigned long nr, RTIME t
 				        pollink[i].next = q;
 					rt_spin_unlock_irq(&mbx->pollock);
 				} else {
-					pollink[i].prev = NULL;
+					pds[i].forwhat = 0;
 				}
 				break;
 			}
 		}
 	}
-
 	if (!ready) {
 		if (timeout < 0) {
 			rt_sem_wait_timed(&sem, -timeout);
@@ -1893,15 +1891,14 @@ RTAI_SYSCALL_MODE int _rt_poll(struct rt_poll_s *pdsa, unsigned long nr, RTIME t
 			rt_sem_wait(&sem);
 		}
 	}
-
 	for (i = 0; i < nr; i++) {
-		if (pollink[i].prev) {
-			switch(pds->forwhat) {
+		if (pds[i].forwhat) {
+			switch(pds[i].forwhat) {
 				case RT_POLL_MBX_RECV : 
 				case RT_POLL_MBX_SEND : {
-					MBX *mbx = pds->what;
 					QUEUE *q;
-					q = pds->forwhat == RT_POLL_MBX_RECV ? &((MBX *)pds->what)->pollrecv : &((MBX *)pds->what)->pollsend;
+					MBX *mbx = pds[i].what;
+					q = pds[i].forwhat == RT_POLL_MBX_RECV ? &mbx->pollrecv : &mbx->pollsend;
 					rt_spin_lock_irq(&mbx->pollock);
 					(pollink[i].prev)->next = pollink[i].next;
 					(pollink[i].next)->prev = pollink[i].prev;
@@ -1911,23 +1908,16 @@ RTAI_SYSCALL_MODE int _rt_poll(struct rt_poll_s *pdsa, unsigned long nr, RTIME t
 			}
 		}
 		if (!pollink[i].task) {
-			pds->what = NULL;
+			pds[i].what = NULL;
 		}
 	}
-
 	if (!space) {
 		rt_copy_to_user(pdsa, pds, sizeof(pdsv));
 	}
-
 	return 0;
 }
 
-#else
-
-RTAI_SYSCALL_MODE int _rt_poll(struct rt_poll_s *pdsa, unsigned long nr, RTIME timeout, int space)
-{
-	return 0;
-}
+EXPORT_SYMBOL(_rt_poll);
 
 #endif
 
@@ -1946,32 +1936,34 @@ struct rt_native_fun_entry rt_sem_entries[] = {
 	{ { 1, rt_sem_wait_timed },        SEM_WAIT_TIMED },
 	{ { 1, rt_sem_wait_barrier },      SEM_WAIT_BARRIER },
 	{ { 1, rt_sem_count },             SEM_COUNT },
-        { { 1, rt_cond_signal}, 	   COND_SIGNAL },
-        { { 1, rt_cond_wait },             COND_WAIT },
-        { { 1, rt_cond_wait_until },       COND_WAIT_UNTIL },
-        { { 1, rt_cond_wait_timed },       COND_WAIT_TIMED },
-        { { 0, rt_typed_rwl_init },        RWL_INIT },
-        { { 0, rt_rwl_delete },            RWL_DELETE },
+	{ { 1, rt_cond_signal}, 	   COND_SIGNAL },
+	{ { 1, rt_cond_wait },             COND_WAIT },
+	{ { 1, rt_cond_wait_until },       COND_WAIT_UNTIL },
+	{ { 1, rt_cond_wait_timed },       COND_WAIT_TIMED },
+	{ { 0, rt_typed_rwl_init },        RWL_INIT },
+	{ { 0, rt_rwl_delete },            RWL_DELETE },
 	{ { 0, _rt_named_rwl_init },	   NAMED_RWL_INIT },
 	{ { 0, rt_named_rwl_delete },      NAMED_RWL_DELETE },
-        { { 1, rt_rwl_rdlock },            RWL_RDLOCK },
-        { { 1, rt_rwl_rdlock_if },         RWL_RDLOCK_IF },
-        { { 1, rt_rwl_rdlock_until },      RWL_RDLOCK_UNTIL },
-        { { 1, rt_rwl_rdlock_timed },      RWL_RDLOCK_TIMED },
-        { { 1, rt_rwl_wrlock },            RWL_WRLOCK },
-        { { 1, rt_rwl_wrlock_if },         RWL_WRLOCK_IF },
-        { { 1, rt_rwl_wrlock_until },      RWL_WRLOCK_UNTIL },
-        { { 1, rt_rwl_wrlock_timed },      RWL_WRLOCK_TIMED },
-        { { 1, rt_rwl_unlock },            RWL_UNLOCK },
-        { { 0, rt_spl_init },              SPL_INIT },
-        { { 0, rt_spl_delete },            SPL_DELETE },
+	{ { 1, rt_rwl_rdlock },            RWL_RDLOCK },
+	{ { 1, rt_rwl_rdlock_if },         RWL_RDLOCK_IF },
+	{ { 1, rt_rwl_rdlock_until },      RWL_RDLOCK_UNTIL },
+	{ { 1, rt_rwl_rdlock_timed },      RWL_RDLOCK_TIMED },
+	{ { 1, rt_rwl_wrlock },            RWL_WRLOCK },
+	{ { 1, rt_rwl_wrlock_if },         RWL_WRLOCK_IF },
+	{ { 1, rt_rwl_wrlock_until },      RWL_WRLOCK_UNTIL },
+	{ { 1, rt_rwl_wrlock_timed },      RWL_WRLOCK_TIMED },
+	{ { 1, rt_rwl_unlock },            RWL_UNLOCK },
+	{ { 0, rt_spl_init },              SPL_INIT },
+	{ { 0, rt_spl_delete },            SPL_DELETE },
 	{ { 0, _rt_named_spl_init },	   NAMED_SPL_INIT },
 	{ { 0, rt_named_spl_delete },      NAMED_SPL_DELETE },
-        { { 1, rt_spl_lock },              SPL_LOCK },
-        { { 1, rt_spl_lock_if },           SPL_LOCK_IF },
-        { { 1, rt_spl_lock_timed },        SPL_LOCK_TIMED },
-        { { 1, rt_spl_unlock },            SPL_UNLOCK },
-        { { 1, _rt_poll }, 	           SEM_RT_POLL },
+	{ { 1, rt_spl_lock },              SPL_LOCK },
+	{ { 1, rt_spl_lock_if },           SPL_LOCK_IF },
+	{ { 1, rt_spl_lock_timed },        SPL_LOCK_TIMED },
+	{ { 1, rt_spl_unlock },            SPL_UNLOCK },
+#ifdef CONFIG_RTAI_RT_POLL
+	{ { 1, _rt_poll }, 	           SEM_RT_POLL },
+#endif
 	{ { 0, 0 },  		           000 }
 };
 
@@ -2039,5 +2031,4 @@ EXPORT_SYMBOL(rt_spl_lock_timed);
 EXPORT_SYMBOL(rt_spl_unlock);
 EXPORT_SYMBOL(_rt_named_spl_init);
 EXPORT_SYMBOL(rt_named_spl_delete);
-EXPORT_SYMBOL(_rt_poll);
 #endif /* CONFIG_KBUILD */

@@ -1845,10 +1845,10 @@ RTAI_SYSCALL_MODE int _rt_poll(struct rt_poll_s *pdsa, unsigned long nr, RTIME t
 	long i;
 
 	if (space) {
+		pds = pdsa;
+	} else {
 		rt_copy_from_user(pdsv, pdsa, sizeof(pdsv));
 		pds = pdsv;
-	} else {
-		pds = pdsa;
 	}
 
 	for (i = 0; i < nr; i++) {
@@ -1915,7 +1915,7 @@ RTAI_SYSCALL_MODE int _rt_poll(struct rt_poll_s *pdsa, unsigned long nr, RTIME t
 		}
 	}
 
-	if (space) {
+	if (!space) {
 		rt_copy_to_user(pdsa, pds, sizeof(pdsv));
 	}
 

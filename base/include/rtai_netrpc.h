@@ -318,6 +318,19 @@ static inline int RT_sem_wait_timed(unsigned long node, int port, SEM *sem, RTIM
 	return rt_sem_wait_timed(sem, nano2count(delay));
 } 
 
+#ifdef CONFIG_RTAI_RT_POLL
+
+static inline int RT_poll(unsigned long node, int port, struct rt_poll_s *pdsa, unsigned long nr, RTIME timeout)
+{
+	if (node) {
+		struct { struct rt_poll_s *pdsa; unsigned long nr; RTIME timeout; int space; } arg = { pdsa, nr, timeout, 1 };
+		return rt_net_rpc(PACKPORT(port, NET_RPC_EXT, SEM_RT_POLL, 3), 0, &arg, SIZARG, 1).i;
+	}
+	return rt_poll(pdsa, nr, timeout);
+} 
+
+#endif
+
 #endif /* CONFIG_RTAI_SEM */
 
 #if CONFIG_RTAI_MSG
@@ -932,6 +945,20 @@ static inline int RT_sem_wait_timed(unsigned long node, int port, SEM *sem, RTIM
 	} 
 	return rt_sem_wait_timed(sem, nano2count(delay));
 } 
+
+#ifdef CONFIG_RTAI_RT_POLL
+
+static inline int RT_poll(unsigned long node, int port, struct rt_poll_s *pdsa, unsigned long nr, RTIME timeout)
+{
+	if (node) {
+		struct { struct rt_poll_s *pdsa; unsigned long nr; RTIME timeout; } arg = { pdsa, nr, timeout };
+		struct { unsigned long fun; long type; void *args; long argsize; long space; } args = { PACKPORT(port, NET_RPC_EXT, NET_RPC_EXT, 3), 0, &arg, SIZARG, 0 };
+		return rtai_lxrt(NET_RPC_IDX, SIZARGS, NETRPC, &args).i[LOW];
+	}
+	return rt_poll(pdsa, nr, timeout);
+} 
+
+#endif
 
 #endif /* CONFIG_RTAI_SEM */
 

@@ -1803,6 +1803,7 @@ static inline int rt_poller_sem_signal_nosched(SEM *sem)
 	RT_TASK *task;
 
 	flags = rt_global_save_flags_and_cli();
+	sem->count++;
 	if ((task = (sem->queue.next)->task)) {
 		dequeue_blocked(task);
 		rem_timed_task(task);
@@ -1914,7 +1915,7 @@ RTAI_SYSCALL_MODE int _rt_poll(struct rt_poll_s *pdsa, unsigned long nr, RTIME t
 		}
 	}
 
-	if (!space) {
+	if (space) {
 		rt_copy_to_user(pdsa, pds, sizeof(pdsv));
 	}
 

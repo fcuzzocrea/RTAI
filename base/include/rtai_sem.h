@@ -33,6 +33,13 @@
 #define SEM_ERR     (RTE_OBJINV)
 #define SEM_TIMOUT  (RTE_TIMOUT)
 
+//#define CONFIG_RTAI_RT_POLL
+
+struct rt_poll_s { void *what; unsigned long forwhat; };
+
+#define RT_POLL_MBX_RECV 1
+#define RT_POLL_MBX_SEND 2
+
 #if defined(__KERNEL__) && !defined(__cplusplus)
 
 typedef struct rt_semaphore {
@@ -44,6 +51,22 @@ typedef struct rt_semaphore {
     int qtype;
     struct rt_queue resq;
 } SEM;
+
+#ifdef CONFIG_RTAI_RT_POLL
+
+void rt_wakeup_pollers(QUEUE *queue);
+
+RTAI_SYSCALL_MODE int _rt_poll(struct rt_poll_s *pdsa, unsigned long nr, RTIME timeout, int space);
+static inline int rt_poll(struct rt_poll_s *pdsa, unsigned long nr, RTIME timeout, int space)
+{
+	return _rt_poll(pdsa, nr, timeout, 0);
+}
+
+#else
+
+#define rt_wakeup_pollers(queue)
+
+#endif
 
 #else /* !__KERNEL__ || __cplusplus */
 
@@ -369,6 +392,14 @@ RTAI_PROTO(int, rt_cond_wait_timed,(CND *cnd, SEM *mutex, RTIME delay))
 	struct { CND *cnd; SEM *mutex; RTIME delay; } arg = { cnd, mutex, delay };
 	return rtai_lxrt(BIDX, SIZARG, COND_WAIT_TIMED, &arg).i[LOW];
 }
+
+#ifdef CONFIG_RTAI_RT_POLL
+RTAI_PROTO(int, rt_poll, (struct rt_poll_s *pdsa, unsigned long nr, RTIME timeout, int space))
+{
+	struct { struct rt_poll_s *pdsa; unsigned long nr; RTIME timeout; long space; } arg = { pdsa, nr, timeout, 1 };
+	return rtai_lxrt(BIDX, SIZARG, SEM_RT_POLL, &arg).i[LOW];
+}
+#endif
 
 #ifdef __cplusplus
 }

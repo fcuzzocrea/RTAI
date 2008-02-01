@@ -1869,3 +1869,168 @@ EXPORT_SYMBOL(rt_spl_unlock);
 EXPORT_SYMBOL(_rt_named_spl_init);
 EXPORT_SYMBOL(rt_named_spl_delete);
 #endif /* CONFIG_KBUILD */
+
+//#include "poll.c"
+#ifdef CONFIG_RTAI_RT_POLL
+
+#ifdef CONFIG_SMP
+
+static volatile unsigned long tosched_mask[NR_RT_CPUS];
+
+#define TOSCHED_TASK(task, cpuid) \
+        do { tosched_mask[cpuid] |= (1 << (task)->runnable_on_cpus); } while (0)
+
+static inline void rt_schedule_tosched(void)
+{
+	unsigned long cpuid, rmask, lmask;
+
+	rmask = lmask = tosched_mask[cpuid = rtai_cpuid()];
+	if ((rmask = tosched_mask[cpuid])) {
+		tosched_mask[cpuid] = 0;
+		if ((rmask &= ~(1 << cpuid))) {
+			send_sched_ipi(rmask);
+		}
+		if ((lmask | (1 << cpuid))) {
+			unsigned long flags;
+			flags = rt_global_save_flags_and_cli();
+			rt_schedule();
+			rt_global_restore_flags(flags);
+		}
+	}
+}
+ 
+#else /* !CONFIG_SMP */
+
+#define TOSCHED_TASK(task, cpuid)
+
+#define rt_schedule_tosched()  rt_schedule()
+
+#endif /* CONFIG_SMP */
+
+static inline int rt_poller_sem_signal_nosched(SEM *sem)
+{
+	unsigned long flags;
+	RT_TASK *task;
+
+	flags = rt_global_save_flags_and_cli();
+	if ((task = (sem->queue.next)->task)) {
+		dequeue_blocked(task);
+		rem_timed_task(task);
+		if (task->state != RT_SCHED_READY && (task->state &= ~(RT_SCHED_SEMAPHORE | RT_SCHED_DELAYED)) == RT_SCHED_READY) {
+			enq_ready_task(task);
+			TOSCHED_TASK(task, rtai_cpuid());
+			rt_global_restore_flags(flags);
+			return 1;
+		}
+	}
+	rt_global_restore_flags(flags);
+	return 0;
+}
+
+
+void rt_wakeup_pollers(QUEUE *queue)
+{
+	int tosched = 0;
+        QUEUE *q = queue;
+        SEM *sem;
+	while ((q = q->next) != queue) {
+		sem = (SEM *)q->task;
+		q->task = NULL;
+		tosched |= rt_poller_sem_signal_nosched(sem);
+	}
+	if (tosched) {
+		rt_schedule_tosched();
+	}
+}
+
+EXPORT_SYMBOL(rt_wakeup_pollers);
+
+RTAI_SYSCALL_MODE int _rt_poll(struct rt_poll_s *pdsa, unsigned long nr, RTIME timeout, int space)
+{
+	struct rt_poll_s *pds, pdsv[nr];  // BEWARE: consuming too much stack?
+	QUEUE pollink[nr];                // BEWARE: consuming too much stack?
+	RT_TASK *ready = NULL;
+	SEM sem = { { &sem.queue, &sem.queue, NULL }, RT_SEM_MAGIC, 0, 0, 0, RT_CURRENT, 1 };
+	long i;
+
+	if (space) {
+		pds = pdsa;
+	} else {
+		rt_copy_from_user(pdsv, pdsa, sizeof(pdsv));
+		pds = pdsv;
+	}
+
+	for (i = 0; i < nr; i++) {
+		switch(pds->forwhat) {
+			case RT_POLL_MBX_RECV :
+			case RT_POLL_MBX_SEND : {
+				QUEUE *queue = NULL;
+				MBX *mbx = pds->what;
+				if (pds->forwhat == RT_POLL_MBX_RECV) {
+					if (mbx->avbs > 0) {
+						ready = pollink[i].task = NULL;
+					} else {
+						queue = &mbx->pollrecv;
+					}
+				} else if (mbx->frbs > 0) {
+					ready = pollink[i].task = NULL;
+				} else {
+					queue = &mbx->pollsend;
+				}
+				if (queue) {
+        				QUEUE *q = queue;
+					pollink[i].task = (RT_TASK *)&sem;
+					rt_spin_lock_irq(&mbx->pollock);
+                			while ((q = q->next) != queue && (((SEM *)q->task)->owndby)->priority <= sem.owndby->priority);
+				        q->prev = (pollink[i].prev = q->prev)->next  = &pollink[i];
+				        pollink[i].next = q;
+					rt_spin_unlock_irq(&mbx->pollock);
+				} else {
+					pollink[i].prev = NULL;
+				}
+				break;
+			}
+		}
+	}
+
+	if (!ready) {
+		if (timeout < 0) {
+			rt_sem_wait_timed(&sem, -timeout);
+		} else if (timeout > 0) {
+			rt_sem_wait_until(&sem, timeout);
+		} else {
+			rt_sem_wait(&sem);
+		}
+	}
+
+	for (i = 0; i < nr; i++) {
+		if (pollink[i].prev) {
+			switch(pds->forwhat) {
+				case RT_POLL_MBX_RECV : 
+				case RT_POLL_MBX_SEND : {
+					MBX *mbx = pds->what;
+					QUEUE *q;
+					q = pds->forwhat == RT_POLL_MBX_RECV ? &((MBX *)pds->what)->pollrecv : &((MBX *)pds->what)->pollsend;
+					rt_spin_lock_irq(&mbx->pollock);
+					(pollink[i].prev)->next = pollink[i].next;
+					(pollink[i].next)->prev = pollink[i].prev;
+					rt_spin_unlock_irq(&mbx->pollock);
+					break;
+				}
+			}
+		}
+		if (!pollink[i].task) {
+			pds->what = NULL;
+		}
+	}
+
+	if (!space) {
+		rt_copy_to_user(pdsa, pds, sizeof(pdsv));
+	}
+
+	return 0;
+}
+
+EXPORT_SYMBOL(_rt_poll);
+
+#endif

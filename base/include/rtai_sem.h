@@ -394,7 +394,7 @@ RTAI_PROTO(int, rt_cond_wait_timed,(CND *cnd, SEM *mutex, RTIME delay))
 }
 
 #ifdef CONFIG_RTAI_RT_POLL
-RTAI_PROTO(int, rt_poll, (struct rt_poll_s *pdsa, unsigned long nr, RTIME timeout, int space))
+RTAI_PROTO(int, rt_poll, (struct rt_poll_s *pdsa, unsigned long nr, RTIME timeout))
 {
 	struct { struct rt_poll_s *pdsa; unsigned long nr; RTIME timeout; long space; } arg = { pdsa, nr, timeout, 1 };
 	return rtai_lxrt(BIDX, SIZARG, SEM_RT_POLL, &arg).i[LOW];

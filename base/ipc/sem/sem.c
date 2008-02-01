@@ -1870,7 +1870,6 @@ EXPORT_SYMBOL(_rt_named_spl_init);
 EXPORT_SYMBOL(rt_named_spl_delete);
 #endif /* CONFIG_KBUILD */
 
-//#include "poll.c"
 #ifdef CONFIG_RTAI_RT_POLL
 
 #ifdef CONFIG_SMP

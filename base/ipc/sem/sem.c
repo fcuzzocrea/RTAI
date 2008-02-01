@@ -1761,115 +1761,6 @@ RTAI_SYSCALL_MODE int rt_named_spl_delete(SPL *spl)
 	return ret;
 }
 
-/* +++++ SEMAPHORES, BARRIER, COND VARIABLES, RWLOCKS, SPINLOCKS ENTRIES ++++ */
-
-struct rt_native_fun_entry rt_sem_entries[] = {
-	{ { 0, rt_typed_sem_init },        TYPED_SEM_INIT },
-	{ { 0, rt_sem_delete },            SEM_DELETE },
-	{ { 0, _rt_typed_named_sem_init }, NAMED_SEM_INIT },
-	{ { 0, rt_named_sem_delete },      NAMED_SEM_DELETE },
-	{ { 1, rt_sem_signal },            SEM_SIGNAL },
-	{ { 1, rt_sem_broadcast },         SEM_BROADCAST },
-	{ { 1, rt_sem_wait },              SEM_WAIT },
-	{ { 1, rt_sem_wait_if },           SEM_WAIT_IF },
-	{ { 1, rt_sem_wait_until },        SEM_WAIT_UNTIL },
-	{ { 1, rt_sem_wait_timed },        SEM_WAIT_TIMED },
-	{ { 1, rt_sem_wait_barrier },      SEM_WAIT_BARRIER },
-	{ { 1, rt_sem_count },             SEM_COUNT },
-        { { 1, rt_cond_signal}, 	   COND_SIGNAL },
-        { { 1, rt_cond_wait },             COND_WAIT },
-        { { 1, rt_cond_wait_until },       COND_WAIT_UNTIL },
-        { { 1, rt_cond_wait_timed },       COND_WAIT_TIMED },
-        { { 0, rt_typed_rwl_init },        RWL_INIT },
-        { { 0, rt_rwl_delete },            RWL_DELETE },
-	{ { 0, _rt_named_rwl_init },	   NAMED_RWL_INIT },
-	{ { 0, rt_named_rwl_delete },      NAMED_RWL_DELETE },
-        { { 1, rt_rwl_rdlock },            RWL_RDLOCK },
-        { { 1, rt_rwl_rdlock_if },         RWL_RDLOCK_IF },
-        { { 1, rt_rwl_rdlock_until },      RWL_RDLOCK_UNTIL },
-        { { 1, rt_rwl_rdlock_timed },      RWL_RDLOCK_TIMED },
-        { { 1, rt_rwl_wrlock },            RWL_WRLOCK },
-        { { 1, rt_rwl_wrlock_if },         RWL_WRLOCK_IF },
-        { { 1, rt_rwl_wrlock_until },      RWL_WRLOCK_UNTIL },
-        { { 1, rt_rwl_wrlock_timed },      RWL_WRLOCK_TIMED },
-        { { 1, rt_rwl_unlock },            RWL_UNLOCK },
-        { { 0, rt_spl_init },              SPL_INIT },
-        { { 0, rt_spl_delete },            SPL_DELETE },
-	{ { 0, _rt_named_spl_init },	   NAMED_SPL_INIT },
-	{ { 0, rt_named_spl_delete },      NAMED_SPL_DELETE },
-        { { 1, rt_spl_lock },              SPL_LOCK },
-        { { 1, rt_spl_lock_if },           SPL_LOCK_IF },
-        { { 1, rt_spl_lock_timed },        SPL_LOCK_TIMED },
-        { { 1, rt_spl_unlock },            SPL_UNLOCK },
-	{ { 0, 0 },  		           000 }
-};
-
-extern int set_rt_fun_entries(struct rt_native_fun_entry *entry);
-extern void reset_rt_fun_entries(struct rt_native_fun_entry *entry);
-
-int __rtai_sem_init (void)
-{
-    return set_rt_fun_entries(rt_sem_entries);
-}
-
-void __rtai_sem_exit (void)
-{
-    reset_rt_fun_entries(rt_sem_entries);
-}
-
-/* +++++++ END SEMAPHORES, BARRIER, COND VARIABLES, RWLOCKS, SPINLOCKS ++++++ */
-
-/*@}*/
-
-#ifndef CONFIG_RTAI_SEM_BUILTIN
-module_init(__rtai_sem_init);
-module_exit(__rtai_sem_exit);
-#endif /* !CONFIG_RTAI_SEM_BUILTIN */
-
-#ifdef CONFIG_KBUILD
-EXPORT_SYMBOL(rt_typed_sem_init);
-EXPORT_SYMBOL(rt_sem_init);
-EXPORT_SYMBOL(rt_sem_delete);
-EXPORT_SYMBOL(rt_sem_count);
-EXPORT_SYMBOL(rt_sem_signal);
-EXPORT_SYMBOL(rt_sem_broadcast);
-EXPORT_SYMBOL(rt_sem_wait);
-EXPORT_SYMBOL(rt_sem_wait_if);
-EXPORT_SYMBOL(rt_sem_wait_until);
-EXPORT_SYMBOL(rt_sem_wait_timed);
-EXPORT_SYMBOL(rt_sem_wait_barrier);
-EXPORT_SYMBOL(_rt_typed_named_sem_init);
-EXPORT_SYMBOL(rt_named_sem_delete);
-
-EXPORT_SYMBOL(rt_cond_signal);
-EXPORT_SYMBOL(rt_cond_wait);
-EXPORT_SYMBOL(rt_cond_wait_until);
-EXPORT_SYMBOL(rt_cond_wait_timed);
-
-EXPORT_SYMBOL(rt_typed_rwl_init);
-EXPORT_SYMBOL(rt_rwl_delete);
-EXPORT_SYMBOL(rt_rwl_rdlock);
-EXPORT_SYMBOL(rt_rwl_rdlock_if);
-EXPORT_SYMBOL(rt_rwl_rdlock_until);
-EXPORT_SYMBOL(rt_rwl_rdlock_timed);
-EXPORT_SYMBOL(rt_rwl_wrlock);
-EXPORT_SYMBOL(rt_rwl_wrlock_if);
-EXPORT_SYMBOL(rt_rwl_wrlock_until);
-EXPORT_SYMBOL(rt_rwl_wrlock_timed);
-EXPORT_SYMBOL(rt_rwl_unlock);
-EXPORT_SYMBOL(_rt_named_rwl_init);
-EXPORT_SYMBOL(rt_named_rwl_delete);
-
-EXPORT_SYMBOL(rt_spl_init);
-EXPORT_SYMBOL(rt_spl_delete);
-EXPORT_SYMBOL(rt_spl_lock);
-EXPORT_SYMBOL(rt_spl_lock_if);
-EXPORT_SYMBOL(rt_spl_lock_timed);
-EXPORT_SYMBOL(rt_spl_unlock);
-EXPORT_SYMBOL(_rt_named_spl_init);
-EXPORT_SYMBOL(rt_named_spl_delete);
-#endif /* CONFIG_KBUILD */
-
 #ifdef CONFIG_RTAI_RT_POLL
 
 #ifdef CONFIG_SMP
@@ -1953,10 +1844,10 @@ RTAI_SYSCALL_MODE int _rt_poll(struct rt_poll_s *pdsa, unsigned long nr, RTIME t
 	long i;
 
 	if (space) {
-		pds = pdsa;
-	} else {
 		rt_copy_from_user(pdsv, pdsa, sizeof(pdsv));
 		pds = pdsv;
+	} else {
+		pds = pdsa;
 	}
 
 	for (i = 0; i < nr; i++) {
@@ -2030,6 +1921,115 @@ RTAI_SYSCALL_MODE int _rt_poll(struct rt_poll_s *pdsa, unsigned long nr, RTIME t
 	return 0;
 }
 
-EXPORT_SYMBOL(_rt_poll);
-
 #endif
+
+/* +++++ SEMAPHORES, BARRIER, COND VARIABLES, RWLOCKS, SPINLOCKS ENTRIES ++++ */
+
+struct rt_native_fun_entry rt_sem_entries[] = {
+	{ { 0, rt_typed_sem_init },        TYPED_SEM_INIT },
+	{ { 0, rt_sem_delete },            SEM_DELETE },
+	{ { 0, _rt_typed_named_sem_init }, NAMED_SEM_INIT },
+	{ { 0, rt_named_sem_delete },      NAMED_SEM_DELETE },
+	{ { 1, rt_sem_signal },            SEM_SIGNAL },
+	{ { 1, rt_sem_broadcast },         SEM_BROADCAST },
+	{ { 1, rt_sem_wait },              SEM_WAIT },
+	{ { 1, rt_sem_wait_if },           SEM_WAIT_IF },
+	{ { 1, rt_sem_wait_until },        SEM_WAIT_UNTIL },
+	{ { 1, rt_sem_wait_timed },        SEM_WAIT_TIMED },
+	{ { 1, rt_sem_wait_barrier },      SEM_WAIT_BARRIER },
+	{ { 1, rt_sem_count },             SEM_COUNT },
+        { { 1, rt_cond_signal}, 	   COND_SIGNAL },
+        { { 1, rt_cond_wait },             COND_WAIT },
+        { { 1, rt_cond_wait_until },       COND_WAIT_UNTIL },
+        { { 1, rt_cond_wait_timed },       COND_WAIT_TIMED },
+        { { 0, rt_typed_rwl_init },        RWL_INIT },
+        { { 0, rt_rwl_delete },            RWL_DELETE },
+	{ { 0, _rt_named_rwl_init },	   NAMED_RWL_INIT },
+	{ { 0, rt_named_rwl_delete },      NAMED_RWL_DELETE },
+        { { 1, rt_rwl_rdlock },            RWL_RDLOCK },
+        { { 1, rt_rwl_rdlock_if },         RWL_RDLOCK_IF },
+        { { 1, rt_rwl_rdlock_until },      RWL_RDLOCK_UNTIL },
+        { { 1, rt_rwl_rdlock_timed },      RWL_RDLOCK_TIMED },
+        { { 1, rt_rwl_wrlock },            RWL_WRLOCK },
+        { { 1, rt_rwl_wrlock_if },         RWL_WRLOCK_IF },
+        { { 1, rt_rwl_wrlock_until },      RWL_WRLOCK_UNTIL },
+        { { 1, rt_rwl_wrlock_timed },      RWL_WRLOCK_TIMED },
+        { { 1, rt_rwl_unlock },            RWL_UNLOCK },
+        { { 0, rt_spl_init },              SPL_INIT },
+        { { 0, rt_spl_delete },            SPL_DELETE },
+	{ { 0, _rt_named_spl_init },	   NAMED_SPL_INIT },
+	{ { 0, rt_named_spl_delete },      NAMED_SPL_DELETE },
+        { { 1, rt_spl_lock },              SPL_LOCK },
+        { { 1, rt_spl_lock_if },           SPL_LOCK_IF },
+        { { 1, rt_spl_lock_timed },        SPL_LOCK_TIMED },
+        { { 1, rt_spl_unlock },            SPL_UNLOCK },
+        { { 1, _rt_poll }, 	           SEM_RT_POLL },
+	{ { 0, 0 },  		           000 }
+};
+
+extern int set_rt_fun_entries(struct rt_native_fun_entry *entry);
+extern void reset_rt_fun_entries(struct rt_native_fun_entry *entry);
+
+int __rtai_sem_init (void)
+{
+    return set_rt_fun_entries(rt_sem_entries);
+}
+
+void __rtai_sem_exit (void)
+{
+    reset_rt_fun_entries(rt_sem_entries);
+}
+
+/* +++++++ END SEMAPHORES, BARRIER, COND VARIABLES, RWLOCKS, SPINLOCKS ++++++ */
+
+/*@}*/
+
+#ifndef CONFIG_RTAI_SEM_BUILTIN
+module_init(__rtai_sem_init);
+module_exit(__rtai_sem_exit);
+#endif /* !CONFIG_RTAI_SEM_BUILTIN */
+
+#ifdef CONFIG_KBUILD
+EXPORT_SYMBOL(rt_typed_sem_init);
+EXPORT_SYMBOL(rt_sem_init);
+EXPORT_SYMBOL(rt_sem_delete);
+EXPORT_SYMBOL(rt_sem_count);
+EXPORT_SYMBOL(rt_sem_signal);
+EXPORT_SYMBOL(rt_sem_broadcast);
+EXPORT_SYMBOL(rt_sem_wait);
+EXPORT_SYMBOL(rt_sem_wait_if);
+EXPORT_SYMBOL(rt_sem_wait_until);
+EXPORT_SYMBOL(rt_sem_wait_timed);
+EXPORT_SYMBOL(rt_sem_wait_barrier);
+EXPORT_SYMBOL(_rt_typed_named_sem_init);
+EXPORT_SYMBOL(rt_named_sem_delete);
+
+EXPORT_SYMBOL(rt_cond_signal);
+EXPORT_SYMBOL(rt_cond_wait);
+EXPORT_SYMBOL(rt_cond_wait_until);
+EXPORT_SYMBOL(rt_cond_wait_timed);
+
+EXPORT_SYMBOL(rt_typed_rwl_init);
+EXPORT_SYMBOL(rt_rwl_delete);
+EXPORT_SYMBOL(rt_rwl_rdlock);
+EXPORT_SYMBOL(rt_rwl_rdlock_if);
+EXPORT_SYMBOL(rt_rwl_rdlock_until);
+EXPORT_SYMBOL(rt_rwl_rdlock_timed);
+EXPORT_SYMBOL(rt_rwl_wrlock);
+EXPORT_SYMBOL(rt_rwl_wrlock_if);
+EXPORT_SYMBOL(rt_rwl_wrlock_until);
+EXPORT_SYMBOL(rt_rwl_wrlock_timed);
+EXPORT_SYMBOL(rt_rwl_unlock);
+EXPORT_SYMBOL(_rt_named_rwl_init);
+EXPORT_SYMBOL(rt_named_rwl_delete);
+
+EXPORT_SYMBOL(rt_spl_init);
+EXPORT_SYMBOL(rt_spl_delete);
+EXPORT_SYMBOL(rt_spl_lock);
+EXPORT_SYMBOL(rt_spl_lock_if);
+EXPORT_SYMBOL(rt_spl_lock_timed);
+EXPORT_SYMBOL(rt_spl_unlock);
+EXPORT_SYMBOL(_rt_named_spl_init);
+EXPORT_SYMBOL(rt_named_spl_delete);
+EXPORT_SYMBOL(_rt_poll);
+#endif /* CONFIG_KBUILD */

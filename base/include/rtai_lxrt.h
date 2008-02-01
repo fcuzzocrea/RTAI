@@ -331,6 +331,8 @@
 #define RT_SIGNAL_DISABLE	       226
 #define RT_SIGNAL_TRIGGER	       227
 
+#define SEM_RT_POLL 		       228
+
 #define MAX_LXRT_FUN		       230
 
 // not recovered yet 

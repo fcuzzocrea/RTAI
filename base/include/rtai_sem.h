@@ -33,7 +33,7 @@
 #define SEM_ERR     (RTE_OBJINV)
 #define SEM_TIMOUT  (RTE_TIMOUT)
 
-//#define CONFIG_RTAI_RT_POLL
+#define CONFIG_RTAI_RT_POLL
 
 struct rt_poll_s { void *what; unsigned long forwhat; };
 
@@ -57,7 +57,7 @@ typedef struct rt_semaphore {
 void rt_wakeup_pollers(QUEUE *queue);
 
 RTAI_SYSCALL_MODE int _rt_poll(struct rt_poll_s *pdsa, unsigned long nr, RTIME timeout, int space);
-static inline int rt_poll(struct rt_poll_s *pdsa, unsigned long nr, RTIME timeout, int space)
+static inline int rt_poll(struct rt_poll_s *pdsa, unsigned long nr, RTIME timeout)
 {
 	return _rt_poll(pdsa, nr, timeout, 1);
 }

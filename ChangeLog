@@ -2,7 +2,8 @@
 
 	* base/ipc/sem/sem.c: added RTAI IPC mechanisms polling support, only
 	  MBXes are supported at the moment but the scheme is should be ready
-	  for everything needed.
+	  for everything needed. The related call is documented with an
+	  internal comment.
 	* base/include/rtai_sem.h: added declarations required to support
 	  rt_poll in kernel user space.
 	* base/include/rtai_netrpc.h: added declarations required to support

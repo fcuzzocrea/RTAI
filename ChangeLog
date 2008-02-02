@@ -1,3 +1,16 @@
+2008-02-02 Paolo Mantegazza <mantegazza@aero.polimi.it>
+
+	* base/ipc/sem/sem.c: added RTAI IPC mechanisms polling support, only
+	  MBXes are supported at the moment but the scheme is should be ready
+	  for everything needed.
+	* base/include/rtai_sem.h: added declarations required to support
+	  rt_poll in kernel user space.
+	* base/include/rtai_netrpc.h: added declarations required to support
+	  remote usage of rt_poll.
+	* base/include/rtai_lxrt.h: added function call number for rt_poll.
+	* base/include/rtai_mbx.h: expanded MBX type to include polling
+	  queues and lock.
+
 2008-01-31  Roberto Bucher <roberto.bucher@supsi.ch>
 
 	* rtai-lab/scilab/macros/RTAI/rtai4_comedi_data*.sci: Modified 

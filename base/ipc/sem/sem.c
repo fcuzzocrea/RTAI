@@ -1814,41 +1814,23 @@ static inline int rt_poller_sem_signal_nosched(SEM *sem)
 	return 0;
 }
 
-#if 0
 void rt_wakeup_pollers(QUEUE *queue)
 {
        	QUEUE *q = queue->next;
+
 	if ((q = queue->next) != queue) {
 	        SEM *sem;
-		unsigned long tosched_mask;
+		unsigned long tosched_mask = 0UL;
 
 		do {
 			sem = (SEM *)q->task;
 			q->task = NULL;
 			tosched_mask |= rt_poller_sem_signal_nosched(sem);
-		} while ((q = q->next) != queue) {
+		} while ((q = q->next) != queue);
 
 		RT_SCHEDULE_TOSCHED();
 	}
 }
-#else
-void rt_wakeup_pollers(QUEUE *queue)
-{
-	unsigned long tosched_mask;
-        QUEUE *q = queue;
-        SEM *sem;
-
-	tosched_mask = 0;
-	while ((q = q->next) != queue) {
-		sem = (SEM *)q->task;
-		q->task = NULL;
-		tosched_mask |= rt_poller_sem_signal_nosched(sem);
-	}
-	if (tosched_mask) {
-		RT_SCHEDULE_TOSCHED();
-	}
-}
-#endif
 
 EXPORT_SYMBOL(rt_wakeup_pollers);
 

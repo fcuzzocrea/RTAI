@@ -1,8 +1,14 @@
+2008-02-03 Paolo Mantegazza <mantegazza@aero.polimi.it>
+
+	* base/include/rtai_netrpc.h: modified arg declaratios for user
+	  space mail boxes to avoid possible glitches due to an imprecise
+	  initialisitaion.
+
 2008-02-02 Paolo Mantegazza <mantegazza@aero.polimi.it>
 
 	* base/ipc/sem/sem.c: added RTAI IPC mechanisms polling support, only
-	  MBXes are supported at the moment but the scheme is should be ready
-	  for everything needed. The related call is documented with an
+	  MBXes are supported at the moment but the scheme should be ready
+	  for everything else needed. The related call is documented with an
 	  internal comment.
 	* base/include/rtai_sem.h: added declarations required to support
 	  rt_poll in kernel user space.

@@ -347,6 +347,7 @@ res:	if (sem->type > 0) {
  * variables but can be of help in many other instances. After the broadcast
  * the semaphore counts is set to zero, thus all tasks waiting on it will
  * blocked.
+ * rt_sem_broadcast should not be used for resource semaphares.
  *
  * @param sem points to the structure used in the call to @ref
  * rt_sem_init().

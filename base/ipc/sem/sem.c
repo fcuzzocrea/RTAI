@@ -1856,7 +1856,7 @@ EXPORT_SYMBOL(rt_wakeup_pollers);
  *	- > 0 for an absolute deadline.
  *
  * @return:
- *	+ the number of structures for whch the poll succeeded;
+ *	+ the number of structures for which the poll succeeded;
  *	+ a minus sem error, the absolute value of sem errors being
  *	  the same as for sem_wait functions;
  *	+ -ENOMEM if CONFIG_RTAI_RT_POLL is set for heap usage and
@@ -1883,19 +1883,19 @@ EXPORT_SYMBOL(rt_wakeup_pollers);
  *	known that more tasks could have polled the same mechanism the "_if"
  *	version	of the needed action should be used if one wants to be sure
  *	of not blocking.
- *	WARNING: rt_poll needs a couple of dynamically assigned arrays.i
+ *	WARNING: rt_poll needs a couple of dynamically assigned arrays.
  *	In the default implementation they are alloced on the stack while
  *	keeping	interrupts unblocked as far as possible. So there is the
  *	danger that a very large polling list might exceed the kernel stack
  *	in use. Even if that is not the case a large polling coupled to a
- *	simultaneous flooding of nested interrupts can result in a stack
+ *	simultaneous flooding of nested interrupts could result in a stack
  *	overflow as well. The solution to such problems is to use rt_malloc,
  *	in which case the limit would be only in the memory assigned to the
  *	RTAI dynamic heap. To better perform allocation on the stack has been 
  *	chosen, on the assumption that a real time task will not have to poll
- *	too many object, say never exceed 100. If there is the need of very
- *	large lists the rt_malloced allocation can be forced by setting a 
- *	value CONFIG_RTAI_RT_POLL to be > 1.
+ *	too many objects simultaneously, say never exceed 50. If there is the
+ *	need of very large lists rt_malloced allocations should be forced by
+ *	setting the value of CONFIG_RTAI_RT_POLL to be > 1.
  */
 
 RTAI_SYSCALL_MODE int _rt_poll(struct rt_poll_s *pdsa, unsigned long nr, RTIME timeout, int space)

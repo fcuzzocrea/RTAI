@@ -1853,7 +1853,19 @@ EXPORT_SYMBOL(rt_wakeup_pollers);
  * value can be:
  * 	-   0 for an infinitely long wait;
  *	- < 0 for a relative timeout;
- *	- > 0 for an absolute deadline.
+ *	- > 0 for an absolute deadline. It has a subcase though. If it is
+ *	     set to 1, a meaningless absolute time value on any machine,
+ *	     rt_poll will not block waiting for the asked events but return
+ *	     immediately reporting all what is ready immediately available,
+ *	     thus making available a multiple conditional polling. In fact
+ *	     it should be enough to use any past absolute time to obtain
+ *	     the same result but the conventional value of 1 is chosen
+ *	     both to avoid the cost of getting the present time and to
+ *	     avoid reporting a time overrun error.
+ *	In such a way we have the usual 4 ways of RTAI IPC services within a
+ *	single call. This because rt_poll is seen as a less critical real 
+ *	service which can accept a few test mores to choose between different
+ *	requests.
  *
  * @return:
  *	+ the number of structures for which the poll succeeded;
@@ -1934,13 +1946,13 @@ RTAI_SYSCALL_MODE int _rt_poll(struct rt_poll_s *pdsa, unsigned long nr, RTIME t
 				if (pds[i].forwhat == RT_POLL_MBX_RECV) {
 					if (mbx->avbs > 0) {
 						pollink[i].task = NULL;
-						polled = 1;
+						polled++;
 					} else {
 						queue = &mbx->pollrecv;
 					}
 				} else if (mbx->frbs > 0) {
 					pollink[i].task = NULL;
-					polled = 1;
+					polled++;
 				} else {
 					queue = &mbx->pollsend;
 				}
@@ -1962,10 +1974,12 @@ RTAI_SYSCALL_MODE int _rt_poll(struct rt_poll_s *pdsa, unsigned long nr, RTIME t
 	if (!polled) {
 		if (timeout < 0) {
 			semret = -rt_sem_wait_timed(&sem, -timeout);
-		} else if (timeout > 0) {
+		} else if (timeout > 1) {
 			semret = -rt_sem_wait_until(&sem, timeout);
-		} else {
+		} else if (timeout < 1) {
 			semret = -rt_sem_wait(&sem);
+		} else {
+			semret = polled;
 		}
 	} else {
 		semret = 0;

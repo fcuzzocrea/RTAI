@@ -1841,7 +1841,7 @@ EXPORT_SYMBOL(rt_wakeup_pollers);
  *
  * RTAI _rt_poll roughly does what Linux "poll" does, i.e waits for a desired
  * state to be set upon an RTAI IPC mechanism. At the moment it supports MBXes
- * only. Other IPCs techniques will be added as soon as they are needed. It
+ * only. Other IPCs methods will be added as soon as they are needed. It
  * is usable for remote objects also, through RTAI netrpc support.
  *
  * @param pdsa is a pointer to an array of "struct rt_poll_s" containing
@@ -1867,7 +1867,7 @@ EXPORT_SYMBOL(rt_wakeup_pollers);
  *	struct rt_poll_s { void *what; unsigned long forwhat; }, as needed.
  *	In particular "what" must be set to the pointer of the IPC
  *      referenced mechanism, i.e. only a MBX pointer at the moment. Then the
- *	element "forwhat" can be set either to:
+ *	element "forwhat" can be set to:
  *	- RT_POLL_MBX_RECV, to wait for something sent to a MBX,
  *	- RT_POLL_MBX_SEND to wait for the possibility of sending from a MBX,
  *	without being blocked.
@@ -1882,7 +1882,8 @@ EXPORT_SYMBOL(rt_wakeup_pollers);
  *	it before depleting/filling the commonly polled object. So if it is
  *	known that more tasks could have polled the same mechanism the "_if"
  *	version	of the needed action should be used if one wants to be sure
- *	of not blocking.
+ *	of not blocking. If an "_if" call will fail then it will mean that
+ *	there was a competing polling on the same object.
  *	WARNING: rt_poll needs a couple of dynamically assigned arrays.
  *	In the default implementation they are alloced on the stack while
  *	keeping	interrupts unblocked as far as possible. So there is the

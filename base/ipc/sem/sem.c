@@ -1845,9 +1845,9 @@ EXPORT_SYMBOL(rt_wakeup_pollers);
  * is usable for remote objects also, through RTAI netrpc support.
  *
  * @param pdsa is a pointer to an array of "struct rt_poll_s" containing
- * the list of MBXes to poll, see the usage note below.
+ * the list of objects to poll, see the usage note below.
  *
- * @param nr is the number of pdsa elements.
+ * @param nr is the number of elements of pdsa.
  *
  * @param timeout sets a possible time boundary for the polling action; its 
  * value can be:
@@ -1856,41 +1856,72 @@ EXPORT_SYMBOL(rt_wakeup_pollers);
  *	- > 0 for an absolute deadline.
  *
  * @return:
- *	0 if nothing interacted with the polling action;
- *	a possible sem error, as for sem_wait functions.
+ *	+ the number of structures for whch the poll succeeded;
+ *	+ a minus sem error, the absolute value of sem errors being
+ *	  the same as for sem_wait functions;
+ *	+ -ENOMEM if CONFIG_RTAI_RT_POLL is set for heap usage and
+ *	  there is enough space nomore (see the WARNING below).
  * 
  * @usage note:
  *	the user sets the elements of the struct rt_poll_s array: 
  *	struct rt_poll_s { void *what; unsigned long forwhat; }, as needed.
- *	In particular "what" must be set to the pointer to the IPC
- *      referenced mechanism, i.e. only a MBX pointer at the moment; then the
- *	element "forwhat" can be set either to RT_POLL_MBX_RECV, to wait for
- *      something sent to a MBX, or as RT_POLL_MBX_SEND to wait for the 
- *	possibility of sending from a MBX without being blocked.
+ *	In particular "what" must be set to the pointer of the IPC
+ *      referenced mechanism, i.e. only a MBX pointer at the moment. Then the
+ *	element "forwhat" can be set either to:
+ *	- RT_POLL_MBX_RECV, to wait for something sent to a MBX,
+ *	- RT_POLL_MBX_SEND to wait for the possibility of sending from a MBX,
+ *	without being blocked.
  *	When _rt_poll returns a user can infer the results of her/his polling
  *	by looking at each "what' in the array, whereas a NULL value means
  *	that the polling of the related object succeded.
- *	It is important to remark that if more tasks are pointing to the same
- *	IPC mechanism it is not possible to be sure that a NULL "what" entails
- * 	the possibility of receiving/sending from/to a MBX, in fact the task
- *	at hand cannot be sure that another poller has done it before 
- *	depleting/filling the commonly polled IPC.
- *	It is important to remark that a non zero return value does not imply
- *	that all of the polling actions failed. So a user should always scan
- *	the content of "what"s anyhow.
+ *	It is important to remark that if more tasks point to the same IPC
+ *	mechanism simultaneously, it is not possible to assume that a NULL 
+ *	"what" entails the possibility of applying the desired IPC mechanism
+ *	without blocking.
+ *	In fact the task at hand cannot be sure that another poller has done
+ *	it before depleting/filling the commonly polled object. So if it is
+ *	known that more tasks could have polled the same mechanism the "_if"
+ *	version	of the needed action should be used if one wants to be sure
+ *	of not blocking.
+ *	WARNING: rt_poll needs a couple of dynamically assigned arrays.i
+ *	In the default implementation they are alloced on the stack while
+ *	keeping	interrupts unblocked as far as possible. So there is the
+ *	danger that a very large polling list might exceed the kernel stack
+ *	in use. Even if that is not the case a large polling coupled to a
+ *	simultaneous flooding of nested interrupts can result in a stack
+ *	overflow as well. The solution to such problems is to use rt_malloc,
+ *	in which case the limit would be only in the memory assigned to the
+ *	RTAI dynamic heap. To better perform allocation on the stack has been 
+ *	chosen, on the assumption that a real time task will not have to poll
+ *	too many object, say never exceed 100. If there is the need of very
+ *	large lists the rt_malloced allocation can be forced by setting a 
+ *	value CONFIG_RTAI_RT_POLL to be > 1.
  */
 
 RTAI_SYSCALL_MODE int _rt_poll(struct rt_poll_s *pdsa, unsigned long nr, RTIME timeout, int space)
 {
-	struct rt_poll_s *pds, pdsv[nr]; // BEWARE: consuming too much stack?
-	QUEUE pollink[nr];               // BEWARE: consuming too much stack?
-	long polled, i, retval;
+	
+	struct rt_poll_s *pds;
+	long polled, i, semret, pollret;
 	SEM sem = { { &sem.queue, &sem.queue }, RT_SEM_MAGIC, 0, 0, 0, RT_CURRENT, 1 };
-
+#if defined(CONFIG_RTAI_RT_POLL) && (CONFIG_RTAI_RT_POLL < 2)
+	struct rt_poll_s pdsv[nr]; // BEWARE: consuming too much stack?
+	QUEUE pollink[nr];         // BEWARE: consuming too much stack?
+#else
+	struct rt_poll_s *pdsv;
+	QUEUE *pollink;
+	if (!(pdsv = rt_malloc(nr*sizeof(struct rt_poll_s)))) {
+		return -ENOMEM;
+	}
+	if (!(pollink = rt_malloc(nr*sizeof(QUEUE)))) {
+		rt_free(pdsv);
+		return -ENOMEM;
+	}
+#endif
 	if (space) {
 		pds = pdsa;
 	} else {
-		rt_copy_from_user(pdsv, pdsa, sizeof(pdsv));
+		rt_copy_from_user(pdsv, pdsa, nr*sizeof(struct rt_poll_s));
 		pds = pdsv;
 	}
 	for (polled = i = 0; i < nr; i++) {
@@ -1929,16 +1960,16 @@ RTAI_SYSCALL_MODE int _rt_poll(struct rt_poll_s *pdsa, unsigned long nr, RTIME t
 	}
 	if (!polled) {
 		if (timeout < 0) {
-			retval = rt_sem_wait_timed(&sem, -timeout);
+			semret = -rt_sem_wait_timed(&sem, -timeout);
 		} else if (timeout > 0) {
-			retval = rt_sem_wait_until(&sem, timeout);
+			semret = -rt_sem_wait_until(&sem, timeout);
 		} else {
-			retval = rt_sem_wait(&sem);
+			semret = -rt_sem_wait(&sem);
 		}
 	} else {
-		retval = 0;
+		semret = 0;
 	} 
-	for (i = 0; i < nr; i++) {
+	for (pollret = i = 0; i < nr; i++) {
 		if (pds[i].forwhat) {
 			switch(pds[i].forwhat) {
 				case RT_POLL_MBX_RECV : 
@@ -1956,12 +1987,17 @@ RTAI_SYSCALL_MODE int _rt_poll(struct rt_poll_s *pdsa, unsigned long nr, RTIME t
 		}
 		if (!pollink[i].task) {
 			pds[i].what = NULL;
+			pollret++;
 		}
 	}
 	if (!space) {
-		rt_copy_to_user(pdsa, pds, sizeof(pdsv));
+		rt_copy_to_user(pdsa, pds, nr*sizeof(struct rt_poll_s));
 	}
-	return retval;
+#if defined(CONFIG_RTAI_RT_POLL) && (CONFIG_RTAI_RT_POLL > 1)
+	rt_free(pdsv);
+	rt_free(pollink);
+#endif
+	return pollret ? pollret : semret;
 }
 
 EXPORT_SYMBOL(_rt_poll);

@@ -1845,9 +1845,12 @@ EXPORT_SYMBOL(rt_wakeup_pollers);
  * is usable for remote objects also, through RTAI netrpc support.
  *
  * @param pdsa is a pointer to an array of "struct rt_poll_s" containing
- * the list of objects to poll, see the usage note below.
+ * the list of objects to poll. Its content is not preserved through the
+ * call, so it must be always initialised before any call, see also the
+ * usage note below.
  *
- * @param nr is the number of elements of pdsa.
+ * @param nr is the number of elements of pdsa. If zero rt_poll will simply
+ * suspend the polling task, as specified by a non null timeout value only.
  *
  * @param timeout sets a possible time boundary for the polling action; its 
  * value can be:
@@ -1868,7 +1871,8 @@ EXPORT_SYMBOL(rt_wakeup_pollers);
  *	requests.
  *
  * @return:
- *	+ the number of structures for which the poll succeeded;
+ *	+ the number of structures for which the poll succeeded, the related
+ *	  IPCs can be inferred by looking for null "what"s;
  *	+ a minus sem error, the absolute value of sem errors being
  *	  the same as for sem_wait functions;
  *	+ -ENOMEM if CONFIG_RTAI_RT_POLL is set for heap usage and
@@ -1923,10 +1927,10 @@ RTAI_SYSCALL_MODE int _rt_poll(struct rt_poll_s *pdsa, unsigned long nr, RTIME t
 #else
 	struct rt_poll_s *pdsv;
 	QUEUE *pollink;
-	if (!(pdsv = rt_malloc(nr*sizeof(struct rt_poll_s)))) {
+	if (nr > 0 && !(pdsv = rt_malloc(nr*sizeof(struct rt_poll_s)))) {
 		return -ENOMEM;
 	}
-	if (!(pollink = rt_malloc(nr*sizeof(QUEUE)))) {
+	if (nr > 0 && !(pollink = rt_malloc(nr*sizeof(QUEUE)))) {
 		rt_free(pdsv);
 		return -ENOMEM;
 	}

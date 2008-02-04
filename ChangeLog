@@ -1,3 +1,9 @@
+2008-02-04 Paolo Mantegazza <mantegazza@aero.polimi.it>
+
+	* base/include/rtai_netrpc.h: modified RT_poll wrappers to use the
+	  specific support for rt_poll on netrpc.
+	* base/ipc/sem/sem.c: added a specific entry for remote rt_poll.
+
 2008-02-03 Paolo Mantegazza <mantegazza@aero.polimi.it>
 
 	* base/include/rtai_netrpc.h: modified arg declaratios for user

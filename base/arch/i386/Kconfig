@@ -568,6 +568,15 @@ config RTAI_SEM
 	dynamically at run time.
 	The module will be called rtai_sem.o.
 
+config RTAI_RT_POLL
+	bool "Enable IPCs polling"
+	depends on RTAI_SEM
+	default n
+	help
+	This enable polling support of RTAI IPCs. At the moment only MBXes
+	are supported. The related support is embedded in the semaphores 
+	services.
+
 config RTAI_MSG
 	tristate "Message"
 	default m

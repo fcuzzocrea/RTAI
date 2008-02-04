@@ -1971,19 +1971,16 @@ RTAI_SYSCALL_MODE int _rt_poll(struct rt_poll_s *pdsa, unsigned long nr, RTIME t
 			}
 		}
 	}
+	semret = 0;
 	if (!polled) {
 		if (timeout < 0) {
 			semret = -rt_sem_wait_timed(&sem, -timeout);
 		} else if (timeout > 1) {
 			semret = -rt_sem_wait_until(&sem, timeout);
-		} else if (timeout < 1) {
+		} else if (timeout < 1 && nr > 0) {
 			semret = -rt_sem_wait(&sem);
-		} else {
-			semret = polled;
 		}
-	} else {
-		semret = 0;
-	} 
+	}
 	for (pollret = i = 0; i < nr; i++) {
 		if (pds[i].forwhat) {
 			switch(pds[i].forwhat) {

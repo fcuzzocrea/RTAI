@@ -577,6 +577,20 @@ config RTAI_RT_POLL
 	are supported. The related support is embedded in the semaphores 
 	services.
 
+config RTAI_RT_POLL_ON_STACK
+	bool "Use the stack for rt_poll dynamic arrays"
+	depends on RTAI_RT_POLL
+	default y
+	help
+	This let rt_poll alloc its dynamic data directly on the stack. It is
+	likely the most effective way but it can deplete the stack somewhat,
+	especially on 64 bits architectures, if polling requests are large,
+	say > 40. Notice that it might be important to limit stack usage also
+	if heavy interrupts floodings are expected.
+	By disabling this parameter RTAI will use its real time memory
+	allocation; with it the limits are just in the size you set for RTAI
+	dynamic heap.
+
 config RTAI_MSG
 	tristate "Message"
 	default m

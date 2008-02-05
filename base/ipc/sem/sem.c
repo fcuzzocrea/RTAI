@@ -1859,14 +1859,14 @@ EXPORT_SYMBOL(rt_wakeup_pollers);
  *	- > 0 for an absolute deadline. It has a subcase though. If it is
  *	     set to 1, a meaningless absolute time value on any machine,
  *	     rt_poll will not block waiting for the asked events but return
- *	     immediately reporting all what is ready immediately available,
- *	     thus making available a multiple conditional polling. In fact
- *	     it should be enough to use any past absolute time to obtain
- *	     the same result but the conventional value of 1 is chosen
- *	     both to avoid the cost of getting the present time and to
- *	     avoid reporting a time overrun error.
+ *	     immediately just reporting anything immediately available,
+ *	     thus becoming a multiple conditional polling. In fact it should
+ *	     be enough to use any past absolute time to obtain the same result
+ *	     but the conventional value of 1 is chosen both to avoid the cost
+ *	     of getting the present time and to avoid reporting a time overrun
+ *	     error.
  *	In such a way we have the usual 4 ways of RTAI IPC services within a
- *	single call. This because rt_poll is seen as a less critical real 
+ *	single call. That because rt_poll is seen as a less critical real 
  *	service which can accept a few test mores to choose between different
  *	requests.
  *
@@ -1875,8 +1875,9 @@ EXPORT_SYMBOL(rt_wakeup_pollers);
  *	  IPCs can be inferred by looking for null "what"s;
  *	+ a minus sem error, the absolute value of sem errors being
  *	  the same as for sem_wait functions;
- *	+ -ENOMEM if CONFIG_RTAI_RT_POLL is set for heap usage and
- *	  there is enough space nomore (see the WARNING below).
+ *	+ -ENOMEM if CONFIG_RTAI_RT_POLL_ON_STACK is not set, so that RTAI
+ *	   heap is used and there is enough space nomore (see the WARNING
+ *	   below).
  * 
  * @usage note:
  *	the user sets the elements of the struct rt_poll_s array: 
@@ -1895,11 +1896,11 @@ EXPORT_SYMBOL(rt_wakeup_pollers);
  *	"what" entails the possibility of applying the desired IPC mechanism
  *	without blocking.
  *	In fact the task at hand cannot be sure that another poller has done
- *	it before depleting/filling the commonly polled object. So if it is
- *	known that more tasks could have polled the same mechanism the "_if"
- *	version	of the needed action should be used if one wants to be sure
- *	of not blocking. If an "_if" call will fail then it will mean that
- *	there was a competing polling on the same object.
+ *	it before, so depleting/filling the commonly polled object. So if it
+ *	is known that more tasks could have polled the same mechanism the 
+ *	"_if" versioni of the needed action should be used if one wants to
+ *	be sure of not blocking. If an "_if" call will fail then it will mean
+ *	that there was a competing polling on the same object.
  *	WARNING: rt_poll needs a couple of dynamically assigned arrays.
  *	In the default implementation they are alloced on the stack while
  *	keeping	interrupts unblocked as far as possible. So there is the
@@ -1909,10 +1910,11 @@ EXPORT_SYMBOL(rt_wakeup_pollers);
  *	overflow as well. The solution to such problems is to use rt_malloc,
  *	in which case the limit would be only in the memory assigned to the
  *	RTAI dynamic heap. To better perform allocation on the stack has been 
- *	chosen, on the assumption that a real time task will not have to poll
- *	too many objects simultaneously, say never exceed 50. If there is the
- *	need of very large lists rt_malloced allocations should be forced by
- *	setting the value of CONFIG_RTAI_RT_POLL to be > 1.
+ *	set as default, on the assumption that a real time task will not have
+ *	to poll too many objects simultaneously, say never exceed 50. If there
+ *	is the need of very large lists rt_malloced allocations should be
+ *	forced by unsetting the value of CONFIG_RTAI_RT_POLL_ON_STACK when
+ *	configuring RTAI.
  */
 
 RTAI_SYSCALL_MODE int _rt_poll(struct rt_poll_s *pdsa, unsigned long nr, RTIME timeout, int space)
@@ -1921,16 +1923,16 @@ RTAI_SYSCALL_MODE int _rt_poll(struct rt_poll_s *pdsa, unsigned long nr, RTIME t
 	struct rt_poll_s *pds;
 	long polled, i, semret, pollret;
 	SEM sem = { { &sem.queue, &sem.queue }, RT_SEM_MAGIC, 0, 0, 0, RT_CURRENT, 1 };
-#if defined(CONFIG_RTAI_RT_POLL) && (CONFIG_RTAI_RT_POLL < 2)
+#ifdef CONFIG_RTAI_RT_POLL_ON_STACK
 	struct rt_poll_s pdsv[nr]; // BEWARE: consuming too much stack?
 	QUEUE pollink[nr];         // BEWARE: consuming too much stack?
 #else
 	struct rt_poll_s *pdsv;
 	QUEUE *pollink;
-	if (nr > 0 && !(pdsv = rt_malloc(nr*sizeof(struct rt_poll_s)))) {
+	if (!(pdsv = rt_malloc(nr*sizeof(struct rt_poll_s)))) {
 		return -ENOMEM;
 	}
-	if (nr > 0 && !(pollink = rt_malloc(nr*sizeof(QUEUE)))) {
+	if (!(pollink = rt_malloc(nr*sizeof(QUEUE)))) {
 		rt_free(pdsv);
 		return -ENOMEM;
 	}
@@ -2009,7 +2011,7 @@ RTAI_SYSCALL_MODE int _rt_poll(struct rt_poll_s *pdsa, unsigned long nr, RTIME t
 	if (!space) {
 		rt_copy_to_user(pdsa, pds, nr*sizeof(struct rt_poll_s));
 	}
-#if defined(CONFIG_RTAI_RT_POLL) && (CONFIG_RTAI_RT_POLL > 1)
+#ifndef CONFIG_RTAI_RT_POLL_ON_STACK
 	rt_free(pdsv);
 	rt_free(pollink);
 #endif

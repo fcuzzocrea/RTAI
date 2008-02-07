@@ -1929,10 +1929,10 @@ RTAI_SYSCALL_MODE int _rt_poll(struct rt_poll_s *pdsa, unsigned long nr, RTIME t
 #else
 	struct rt_poll_s *pdsv;
 	QUEUE *pollink;
-	if (!(pdsv = rt_malloc(nr*sizeof(struct rt_poll_s)))) {
+	if (!(pdsv = rt_malloc(nr*sizeof(struct rt_poll_s))) && nr > 0) {
 		return -ENOMEM;
 	}
-	if (!(pollink = rt_malloc(nr*sizeof(QUEUE)))) {
+	if (!(pollink = rt_malloc(nr*sizeof(QUEUE))) && nr > 0) {
 		rt_free(pdsv);
 		return -ENOMEM;
 	}

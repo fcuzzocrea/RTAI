@@ -161,6 +161,10 @@ void *rtheap_alloc(rtheap_t *heap, u_long size, int mode)
 	struct list_head *holder;
 	unsigned long flags;
 
+	if (!size) {
+		return NULL;
+	}
+
 	flags = rt_spin_lock_irqsave(&heap->lock);
 	list_for_each(holder, &heap->extents) {
 		if ((adr = malloc_ex(size, list_entry(holder, rtextent_t, link)->membase)) != NULL) {

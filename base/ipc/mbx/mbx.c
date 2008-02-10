@@ -141,7 +141,6 @@ static int mbxput(MBX *mbx, char **msg, int msg_size, int space)
 		*msg     += tocpy;
 		mbx->lbyte = MOD_SIZE(mbx->lbyte + tocpy);
 	}
-//	rt_wakeup_pollers(&mbx->pollrecv, &mbx->rpollock);
 	return msg_size;
 }
 
@@ -191,7 +190,6 @@ static int mbxovrwrput(MBX *mbx, char **msg, int msg_size, int space)
 			}
 		}		
 	}
-//	rt_wakeup_pollers(&mbx->pollrecv, &mbx->rpollock);
 	return 0;
 }
 
@@ -220,7 +218,6 @@ static int mbxget(MBX *mbx, char **msg, int msg_size, int space)
 		*msg     += tocpy;
 		mbx->fbyte = MOD_SIZE(mbx->fbyte + tocpy);
 	}
-//	rt_wakeup_pollers(&mbx->pollsend, &mbx->spollock);
 	return msg_size;
 }
 

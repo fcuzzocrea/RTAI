@@ -43,7 +43,7 @@ typedef struct rt_mailbox {
 	int size, fbyte, lbyte, avbs, frbs;
 	spinlock_t lock;
 	QUEUE pollrecv, pollsend;
-	spinlock_t pollock;
+	spinlock_t rpollock, spollock;
 } MBX;
 
 #else /* __cplusplus */

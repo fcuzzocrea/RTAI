@@ -34,7 +34,7 @@
 #define SEM_TIMOUT  (RTE_TIMOUT)
 
 #define CONFIG_RTAI_RT_POLL
-#define CONFIG_RTAI_RT_POLL_ON_STACK
+//#define CONFIG_RTAI_RT_POLL_ON_STACK
 
 struct rt_poll_s { void *what; unsigned long forwhat; };
 
@@ -55,7 +55,7 @@ typedef struct rt_semaphore {
 
 #ifdef CONFIG_RTAI_RT_POLL
 
-void rt_wakeup_pollers(QUEUE *queue, spinlock_t *qlock);
+void rt_wakeup_pollers(QUEUE *queue, spinlock_t *qlock, int reason);
 
 RTAI_SYSCALL_MODE int _rt_poll(struct rt_poll_s *pdsa, unsigned long nr, RTIME timeout, int space);
 static inline int rt_poll(struct rt_poll_s *pdsa, unsigned long nr, RTIME timeout)

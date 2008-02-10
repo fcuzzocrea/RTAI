@@ -379,8 +379,8 @@ RTAI_SYSCALL_MODE int rt_mbx_delete(MBX *mbx)
 {
 	CHK_MBX_MAGIC;
 	mbx->magic = 0;
-	rt_wakeup_pollers(&mbx->pollrecv, &mbx->rpollock);
-	rt_wakeup_pollers(&mbx->pollsend, &mbx->spollock);
+	rt_wakeup_pollers(&mbx->pollrecv, &mbx->rpollock, RTE_OBJREM);
+	rt_wakeup_pollers(&mbx->pollsend, &mbx->spollock, RTE_OBJREM);
 	if (rt_sem_delete(&mbx->sndsem) || rt_sem_delete(&mbx->rcvsem)) {
 		return -EFAULT;
 	}
@@ -426,13 +426,15 @@ RTAI_SYSCALL_MODE int _rt_mbx_send(MBX *mbx, void *msg, int msg_size, int space)
 	while (msg_size) {
 		if ((retval = mbx_wait(mbx, &mbx->frbs, rt_current))) {
 			rt_sem_signal(&mbx->sndsem);
-			return MBX_RET(msg_size, retval);
+			retval = MBX_RET(msg_size, retval);
+			rt_wakeup_pollers(&mbx->pollrecv, &mbx->rpollock, retval);
+			return retval;
 		}
 		msg_size = mbxput(mbx, (char **)(&msg), msg_size, space);
 		mbx_signal(mbx);
 	}
 	rt_sem_signal(&mbx->sndsem);
-	rt_wakeup_pollers(&mbx->pollrecv, &mbx->rpollock);
+	rt_wakeup_pollers(&mbx->pollrecv, &mbx->rpollock, 0);
 	return 0;
 }
 
@@ -457,6 +459,7 @@ RTAI_SYSCALL_MODE int _rt_mbx_send_wp(MBX *mbx, void *msg, int msg_size, int spa
 {
 	unsigned long flags;
 	RT_TASK *rt_current = RT_CURRENT;
+	int size = msg_size;
 
 	CHK_MBX_MAGIC;
 	flags = rt_global_save_flags_and_cli();
@@ -473,7 +476,9 @@ RTAI_SYSCALL_MODE int _rt_mbx_send_wp(MBX *mbx, void *msg, int msg_size, int spa
 	} else {
 		rt_global_restore_flags(flags);
 	}
-	rt_wakeup_pollers(&mbx->pollrecv, &mbx->rpollock);
+	if (msg_size < size) {
+		rt_wakeup_pollers(&mbx->pollrecv, &mbx->rpollock, 0);
+	}
 	return msg_size;
 }
 
@@ -508,10 +513,10 @@ RTAI_SYSCALL_MODE int _rt_mbx_send_if(MBX *mbx, void *msg, int msg_size, int spa
 		mbxput(mbx, (char **)(&msg), msg_size, space);
 		mbx_signal(mbx);
 		rt_sem_signal(&mbx->sndsem);
+		rt_wakeup_pollers(&mbx->pollrecv, &mbx->rpollock, 0);
 		return 0;
 	}
 	rt_global_restore_flags(flags);
-	rt_wakeup_pollers(&mbx->pollrecv, &mbx->rpollock);
 	return msg_size;
 }
 
@@ -551,13 +556,15 @@ RTAI_SYSCALL_MODE int _rt_mbx_send_until(MBX *mbx, void *msg, int msg_size, RTIM
 	while (msg_size) {
 		if ((retval = mbx_wait_until(mbx, &mbx->frbs, time, rt_current))) {
 			rt_sem_signal(&mbx->sndsem);
-			return MBX_RET(msg_size, retval);
+			retval = MBX_RET(msg_size, retval);
+			rt_wakeup_pollers(&mbx->pollrecv, &mbx->rpollock, retval);
+			return retval;
 		}
 		msg_size = mbxput(mbx, (char **)(&msg), msg_size, space);
 		mbx_signal(mbx);
 	}
 	rt_sem_signal(&mbx->sndsem);
-	rt_wakeup_pollers(&mbx->pollrecv, &mbx->rpollock);
+	rt_wakeup_pollers(&mbx->pollrecv, &mbx->rpollock, 0);
 	return 0;
 }
 
@@ -622,13 +629,16 @@ RTAI_SYSCALL_MODE int _rt_mbx_receive(MBX *mbx, void *msg, int msg_size, int spa
 	while (msg_size) {
 		if ((retval = mbx_wait(mbx, &mbx->avbs, rt_current))) {
 			rt_sem_signal(&mbx->rcvsem);
+			retval = MBX_RET(msg_size, retval);
+			rt_wakeup_pollers(&mbx->pollrecv, &mbx->rpollock, retval);
+			return retval;
 			return MBX_RET(msg_size, retval);
 		}
 		msg_size = mbxget(mbx, (char **)(&msg), msg_size, space);
 		mbx_signal(mbx);
 	}
 	rt_sem_signal(&mbx->rcvsem);
-	rt_wakeup_pollers(&mbx->pollsend, &mbx->spollock);
+	rt_wakeup_pollers(&mbx->pollsend, &mbx->spollock, 0);
 	return 0;
 }
 
@@ -654,6 +664,7 @@ RTAI_SYSCALL_MODE int _rt_mbx_receive_wp(MBX *mbx, void *msg, int msg_size, int 
 {
 	unsigned long flags;
 	RT_TASK *rt_current = RT_CURRENT;
+	int size = msg_size;
 
 	CHK_MBX_MAGIC;
 	flags = rt_global_save_flags_and_cli();
@@ -670,7 +681,9 @@ RTAI_SYSCALL_MODE int _rt_mbx_receive_wp(MBX *mbx, void *msg, int msg_size, int 
 	} else {
 		rt_global_restore_flags(flags);
 	}
-	rt_wakeup_pollers(&mbx->pollsend, &mbx->spollock);
+	if (msg_size < size) {
+		rt_wakeup_pollers(&mbx->pollsend, &mbx->spollock, 0);
+	}
 	return msg_size;
 }
 
@@ -710,10 +723,10 @@ RTAI_SYSCALL_MODE int _rt_mbx_receive_if(MBX *mbx, void *msg, int msg_size, int 
 		mbxget(mbx, (char **)(&msg), msg_size, space);
 		mbx_signal(mbx);
 		rt_sem_signal(&mbx->rcvsem);
+		rt_wakeup_pollers(&mbx->pollsend, &mbx->spollock, 0);
 		return 0;
 	}
 	rt_global_restore_flags(flags);
-	rt_wakeup_pollers(&mbx->pollsend, &mbx->spollock);
 	return msg_size;
 }
 
@@ -753,13 +766,15 @@ RTAI_SYSCALL_MODE int _rt_mbx_receive_until(MBX *mbx, void *msg, int msg_size, R
 	while (msg_size) {
 		if ((retval = mbx_wait_until(mbx, &mbx->avbs, time, rt_current))) {
 			rt_sem_signal(&mbx->rcvsem);
-			return MBX_RET(msg_size, retval);
+			retval = MBX_RET(msg_size, retval);
+			rt_wakeup_pollers(&mbx->pollrecv, &mbx->rpollock, retval);
+			return retval;
 		}
 		msg_size = mbxget(mbx, (char **)(&msg), msg_size, space);
 		mbx_signal(mbx);
 	}
 	rt_sem_signal(&mbx->rcvsem);
-	rt_wakeup_pollers(&mbx->pollsend, &mbx->spollock);
+	rt_wakeup_pollers(&mbx->pollsend, &mbx->spollock, 0);
 	return 0;
 }
 

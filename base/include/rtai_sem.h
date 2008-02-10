@@ -55,7 +55,7 @@ typedef struct rt_semaphore {
 
 #ifdef CONFIG_RTAI_RT_POLL
 
-void rt_wakeup_pollers(QUEUE *queue);
+void rt_wakeup_pollers(QUEUE *queue, spinlock_t *qlock);
 
 RTAI_SYSCALL_MODE int _rt_poll(struct rt_poll_s *pdsa, unsigned long nr, RTIME timeout, int space);
 static inline int rt_poll(struct rt_poll_s *pdsa, unsigned long nr, RTIME timeout)
@@ -65,7 +65,7 @@ static inline int rt_poll(struct rt_poll_s *pdsa, unsigned long nr, RTIME timeou
 
 #else
 
-#define rt_wakeup_pollers(queue)
+#define rt_wakeup_pollers(queue, qlock)
 
 #endif
 

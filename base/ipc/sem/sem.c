@@ -1791,7 +1791,7 @@ static inline int rt_poller_sem_signal_nosched(SEM *sem)
 
 	flags = rt_global_save_flags_and_cli();
 	sem->count++;
-	if ((task = (sem->queue.next)->task)) {
+	if ((task = (sem->queue.next)->task) && task->state != RT_SCHED_READY) {
 		dequeue_blocked(task);
 		rem_timed_task(task);
 		if ((task->state &= ~(RT_SCHED_SEMAPHORE | RT_SCHED_DELAYED)) == RT_SCHED_READY) {

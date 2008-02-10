@@ -2011,7 +2011,7 @@ RTAI_SYSCALL_MODE int _rt_poll(struct rt_poll_s *pdsa, unsigned long nr, RTIME t
 			}
 		}
 		if (pollq[i].task != (void *)&sem) {
-			pds[i].what = NULL;
+			pds[i].what = pollq[i].task;
 			pollret++;
 		}
 	}

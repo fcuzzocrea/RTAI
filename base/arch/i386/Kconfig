@@ -588,8 +588,8 @@ config RTAI_RT_POLL_ON_STACK
 	say > 40. Notice that it might be important to limit stack usage also
 	if heavy interrupts floodings are expected.
 	By disabling this parameter RTAI will use its real time memory
-	allocation; with it the limits are just in the size you set for RTAI
-	dynamic heap.
+	allocation; with it the limits are just in the size you set for the
+	RTAI dynamic heap and in a slightly greater overhead.
 
 config RTAI_MSG
 	tristate "Message"

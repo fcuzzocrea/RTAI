@@ -1804,7 +1804,7 @@ static inline int rt_poller_sem_signal_nosched(SEM *sem)
 	return 0;
 }
 
-void rt_wakeup_pollers(QUEUE *queue, spinlock_t *qlock)
+void rt_wakeup_pollers(QUEUE *queue, spinlock_t *qlock, int reason)
 {
        	QUEUE *q;
 
@@ -1814,7 +1814,7 @@ void rt_wakeup_pollers(QUEUE *queue, spinlock_t *qlock)
 		unsigned long tosched_mask = 0UL;
 		do {
 			sem = (SEM *)q->task;
-			q->task = NULL;
+			q->task = (void *)reason;
 			queue->next = q->next;
 			q = q->next;
 			q->prev = queue;
@@ -1868,7 +1868,13 @@ EXPORT_SYMBOL(rt_wakeup_pollers);
  *
  * @return:
  *	+ the number of structures for which the poll succeeded, the related
- *	  IPCs can be inferred by looking for null "what"s;
+ *	  IPCs can be inferred by looking at "what"s, which will be:
+ *	  - unchanged if nothing happened,
+ *	  - NULL if the related poll succeeded,
+ *	  - after a casting to int will signal an interrupted polling, either
+ *	    because the related IPC operation was not coompleted for lack of
+ *	    something, e.g. buffer space, or becuase of an error, as inferred
+ *	    by the related "what";
  *	+ a minus sem error, the absolute value of sem errors being
  *	  the same as for sem_wait functions;
  *	+ -ENOMEM if CONFIG_RTAI_RT_POLL_ON_STACK is not set, so that RTAI
@@ -1995,7 +2001,7 @@ RTAI_SYSCALL_MODE int _rt_poll(struct rt_poll_s *pdsa, unsigned long nr, RTIME t
 					spinlock_t *qlock;
 					qlock = pds[i].forwhat == RT_POLL_MBX_RECV ? &mbx->rpollock : &mbx->spollock;
 					rt_spin_lock_irq(qlock);
-					if (pollq[i].task) {
+					if (pollq[i].task == (void *)&sem) {
 						(pollq[i].prev)->next = pollq[i].next;
 						(pollq[i].next)->prev = pollq[i].prev;
 					}
@@ -2004,7 +2010,7 @@ RTAI_SYSCALL_MODE int _rt_poll(struct rt_poll_s *pdsa, unsigned long nr, RTIME t
 				}
 			}
 		}
-		if (!pollq[i].task) {
+		if (pollq[i].task != (void *)&sem) {
 			pds[i].what = NULL;
 			pollret++;
 		}

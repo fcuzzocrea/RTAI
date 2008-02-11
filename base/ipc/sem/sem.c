@@ -1815,13 +1815,11 @@ void rt_wakeup_pollers(QUEUE *queue, spinlock_t *qlock, int reason)
 		do {
 			sem = (SEM *)q->task;
 			q->task = (void *)reason;
-			queue->next = q->next;
-			q = q->next;
-			q->prev = queue;
+			(queue->next = q->next)->prev = queue;
 			rt_spin_unlock_irq(qlock);
 			tosched_mask |= rt_poller_sem_signal_nosched(sem);
 			rt_spin_lock_irq(qlock);
-		} while (q != queue);
+		} while ((q = queue->next) != queue);
 		rt_spin_unlock_irq(qlock);
 		RT_SCHEDULE_TOSCHED(tosched_mask);
 	} else {

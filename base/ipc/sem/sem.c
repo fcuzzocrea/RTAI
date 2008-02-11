@@ -1790,11 +1790,10 @@ static inline int rt_poller_sem_signal_nosched(SEM *sem)
 	RT_TASK *task;
 
 	flags = rt_global_save_flags_and_cli();
-	sem->count++;
-	if ((task = (sem->queue.next)->task) && task->state != RT_SCHED_READY) {
+	if ((task = (sem->queue.next)->task)) {
 		dequeue_blocked(task);
 		rem_timed_task(task);
-		if ((task->state &= ~(RT_SCHED_SEMAPHORE | RT_SCHED_DELAYED)) == RT_SCHED_READY) {
+		if (task->state != RT_SCHED_READY && (task->state &= ~(RT_SCHED_SEMAPHORE | RT_SCHED_DELAYED)) == RT_SCHED_READY) {
 			enq_ready_task(task);
 			rt_global_restore_flags(flags);
 			return (1 << task->runnable_on_cpus);
@@ -1813,7 +1812,7 @@ void rt_wakeup_pollers(QUEUE *queue, spinlock_t *qlock, int reason)
 	        SEM *sem;
 		unsigned long tosched_mask = 0UL;
 		do {
-			sem = q->task->pollsem;
+			sem = (SEM *)q->task;
 			q->task = (void *)reason;
 			(queue->next = q->next)->prev = queue;
 			tosched_mask |= rt_poller_sem_signal_nosched(sem);
@@ -1919,10 +1918,9 @@ EXPORT_SYMBOL(rt_wakeup_pollers);
 
 RTAI_SYSCALL_MODE int _rt_poll(struct rt_poll_s *pdsa, unsigned long nr, RTIME timeout, int space)
 {
-	RT_TASK *rt_current;
 	struct rt_poll_s *pds;
 	long polled, i, semret, pollret;
-	SEM sem = { { &sem.queue, &sem.queue, NULL }, RT_SEM_MAGIC, 0, 0, 0, NULL, 1 };
+	SEM sem = { { &sem.queue, &sem.queue, NULL }, RT_SEM_MAGIC, 0, 0, 0, RT_CURRENT, 1 };
 #ifdef CONFIG_RTAI_RT_POLL_ON_STACK
 	struct rt_poll_s pdsv[nr]; // BEWARE: consuming too much stack?
 	QUEUE pollq[nr];           // BEWARE: consuming too much stack?
@@ -1937,7 +1935,6 @@ RTAI_SYSCALL_MODE int _rt_poll(struct rt_poll_s *pdsa, unsigned long nr, RTIME t
 		return -ENOMEM;
 	}
 #endif
-	(rt_current =  rt_smp_current[rtai_cpuid()])->pollsem = &sem;
 	if (space) {
 		pds = pdsa;
 	} else {
@@ -1968,9 +1965,9 @@ RTAI_SYSCALL_MODE int _rt_poll(struct rt_poll_s *pdsa, unsigned long nr, RTIME t
 				}
 				if (queue) {
         				QUEUE *q = queue;
-					pollq[i].task = rt_current;
+					pollq[i].task = (RT_TASK *)&sem;
 					rt_spin_lock_irq(qlock);
-                			while ((q = q->next) != queue && q->task->priority <= rt_current->priority);
+					while ((q = q->next) != queue && (((SEM *)q->task)->owndby)->priority <= sem.owndby->priority);
 				        pollq[i].next = q;
 				        q->prev = (pollq[i].prev = q->prev)->next  = &pollq[i];
 					rt_spin_unlock_irq(qlock);
@@ -2000,7 +1997,7 @@ RTAI_SYSCALL_MODE int _rt_poll(struct rt_poll_s *pdsa, unsigned long nr, RTIME t
 					spinlock_t *qlock;
 					qlock = pds[i].forwhat == RT_POLL_MBX_RECV ? &mbx->rpollock : &mbx->spollock;
 					rt_spin_lock_irq(qlock);
-					if (pollq[i].task == rt_current) {
+					if (pollq[i].task == (void *)&sem) {
 						(pollq[i].prev)->next = pollq[i].next;
 						(pollq[i].next)->prev = pollq[i].prev;
 					}
@@ -2009,7 +2006,7 @@ RTAI_SYSCALL_MODE int _rt_poll(struct rt_poll_s *pdsa, unsigned long nr, RTIME t
 				}
 			}
 		}
-		if (pollq[i].task != rt_current) {
+		if (pollq[i].task != (void *)&sem) {
 			pds[i].what = pollq[i].task;
 			pollret++;
 		}

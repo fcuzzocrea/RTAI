@@ -1,3 +1,8 @@
+2008-02-12 Paolo Mantegazza <mantegazza@aero.polimi.it>
+
+	* base/ipc/shm/kvmem.c and base/malloc/malloc.c: fix problem with
+	  RAM > 1 GM (Linux HIGHMEM).
+
 2008-01-28 Paolo Mantegazza <mantegazza@aero.polimi.it>
 
 	* base/include/rtai_lxrt.h: allow use of SCHED_OTHER, lost since 3.2,

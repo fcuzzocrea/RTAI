@@ -34,7 +34,7 @@ static __inline__ int km_remap_page_range(struct vm_area_struct *vma, unsigned l
 	return mm_remap_page_range(vma, from, virt_to_phys((void *)to), size, PAGE_SHARED);
 }
 
-/* allocate user space mmapable block of memory in the kernel space */
+/* allocate user space mmapable block of memory in kernel space */
 void *rvmalloc(unsigned long size)
 {
 	void *mem;
@@ -43,7 +43,8 @@ void *rvmalloc(unsigned long size)
 	if ((mem = vmalloc(size))) {
 	        adr = (unsigned long)mem;
 		while (size > 0) {
-			mem_map_reserve(virt_to_page(__va(kvirt_to_pa(adr))));
+//			mem_map_reserve(virt_to_page(__va(kvirt_to_pa(adr))));
+			mem_map_reserve(vmalloc_to_page((void *)adr));
 			adr  += PAGE_SIZE;
 			size -= PAGE_SIZE;
 		}
@@ -57,7 +58,8 @@ void rvfree(void *mem, unsigned long size)
         
 	if ((adr = (unsigned long)mem)) {
 		while (size > 0) {
-			mem_map_unreserve(virt_to_page(__va(kvirt_to_pa(adr))));
+//			mem_map_unreserve(virt_to_page(__va(kvirt_to_pa(adr))));
+			mem_map_unreserve(vmalloc_to_page((void *)adr));
 			adr  += PAGE_SIZE;
 			size -= PAGE_SIZE;
 		}
@@ -66,13 +68,14 @@ void rvfree(void *mem, unsigned long size)
 }
 
 /* this function will map (fragment of) rvmalloc'ed memory area to user space */
-int rvmmap(void *mem, unsigned long memsize, struct vm_area_struct *vma) {
+int rvmmap(void *mem, unsigned long memsize, struct vm_area_struct *vma)
+{
 	unsigned long pos, size, offset;
 	unsigned long start  = vma->vm_start;
 
 	/* this is not time critical code, so we check the arguments */
 	/* vma->vm_offset HAS to be checked (and is checked)*/
-	if (vma->vm_pgoff > (0x7FFFFFFF >> PAGE_SHIFT)) { /* FIXME: 32bit dependency */
+	if (vma->vm_pgoff > (~0UL >> PAGE_SHIFT)) {
 		return -EFAULT;
 	}
 	offset = vma->vm_pgoff << PAGE_SHIFT;
@@ -96,7 +99,7 @@ int rvmmap(void *mem, unsigned long memsize, struct vm_area_struct *vma) {
 	return 0;
 }
 
-/* allocate user space mmapable block of memory in the kernel space */
+/* allocate user space mmapable block of memory in kernel space */
 void *rkmalloc(int *memsize, int suprt)
 {
 	unsigned long mem, adr, size;
@@ -135,7 +138,7 @@ int rkmmap(void *mem, unsigned long memsize, struct vm_area_struct *vma) {
 
 	/* this is not time critical code, so we check the arguments */
 	/* vma->vm_offset HAS to be checked (and is checked)*/
-	if (vma->vm_pgoff > (0x7FFFFFFF >> PAGE_SHIFT)) {
+	if (vma->vm_pgoff > (~0UL >> PAGE_SHIFT)) {
 		return -EFAULT;
 	}
 	offset = vma->vm_pgoff << PAGE_SHIFT;

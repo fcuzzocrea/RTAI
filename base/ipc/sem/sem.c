@@ -1869,12 +1869,12 @@ EXPORT_SYMBOL(rt_wakeup_pollers);
  *	  - unchanged if nothing happened,
  *	  - NULL if the related poll succeeded,
  *	  - after a casting to int will signal an interrupted polling, either
- *	    because the related IPC operation was not coompleted for lack of
+ *	    because the related IPC operation was not completed for lack of
  *	    something, e.g. buffer space, or becuase of an error, as inferred
  *	    by the related "what";
- *	+ a minus sem error, the absolute value of sem errors being
- *	  the same as for sem_wait functions;
- *	+ -ENOMEM if CONFIG_RTAI_RT_POLL_ON_STACK is not set, so that RTAI
+ *	+ a sem error, the value of sem errors being the same as for sem_wait
+ *	  functions;
+ *	+ ENOMEM, if CONFIG_RTAI_RT_POLL_ON_STACK is not set, so that RTAI
  *	   heap is used and there is enough space nomore (see the WARNING
  *	   below).
  * 
@@ -1885,21 +1885,21 @@ EXPORT_SYMBOL(rt_wakeup_pollers);
  *      referenced mechanism, i.e. only a MBX pointer at the moment. Then the
  *	element "forwhat" can be set to:
  *	- RT_POLL_MBX_RECV, to wait for something sent to a MBX,
- *	- RT_POLL_MBX_SEND to wait for the possibility of sending from a MBX,
+ *	- RT_POLL_MBX_SEND to wait for the possibility of sending to a MBX,
  *	without being blocked.
  *	When _rt_poll returns a user can infer the results of her/his polling
  *	by looking at each "what' in the array, whereas a NULL value means
  *	that the polling of the related object succeded.
- *	It is important to remark that if more tasks point to the same IPC
+ *	It is important to remark that if more tasks are using the same IPC
  *	mechanism simultaneously, it is not possible to assume that a NULL 
  *	"what" entails the possibility of applying the desired IPC mechanism
  *	without blocking.
- *	In fact the task at hand cannot be sure that another poller has done
- *	it before, so depleting/filling the commonly polled object. So if it
- *	is known that more tasks could have polled the same mechanism the 
- *	"_if" versioni of the needed action should be used if one wants to
- *	be sure of not blocking. If an "_if" call will fail then it will mean
- *	that there was a competing polling on the same object.
+ *	In fact the task at hand cannot be sure that another task has done
+ *	it before, so depleting/filling the polled object. Then, if it is known
+ *	that more tasks might have polled/accessed the same mechanism, the 
+ *	"_if" version of the needed action should be used if one wants to
+ *	be sure of not blocking. If an "_if" call fails then it will mean
+ *	that there was a competing polling/access on the same object.
  *	WARNING: rt_poll needs a couple of dynamically assigned arrays.
  *	In the default implementation they are alloced on the stack while
  *	keeping	interrupts unblocked as far as possible. So there is the
@@ -1908,18 +1908,17 @@ EXPORT_SYMBOL(rt_wakeup_pollers);
  *	simultaneous flooding of nested interrupts could result in a stack
  *	overflow as well. The solution to such problems is to use rt_malloc,
  *	in which case the limit would be only in the memory assigned to the
- *	RTAI dynamic heap. To better perform allocation on the stack has been 
- *	set as default, on the assumption that a real time task will not have
- *	to poll too many objects simultaneously, say never exceed 50. If there
- *	is the need of very large lists rt_malloced allocations should be
- *	forced by unsetting the value of CONFIG_RTAI_RT_POLL_ON_STACK when
- *	configuring RTAI.
+ *	RTAI dynamic heap. To be cautious rt_malloc has been set as default
+ *	int RTAI configuration. If one is sure that short enough lists, say
+ *	30 terms or so, will be used in her/his application the more effective
+ * 	allocation on the stack can be use by setting 
+ *	CONFIG_RTAI_RT_POLL_ON_STACK when configuring RTAI.
  */
 
 RTAI_SYSCALL_MODE int _rt_poll(struct rt_poll_s *pdsa, unsigned long nr, RTIME timeout, int space)
 {
 	struct rt_poll_s *pds;
-	long polled, i, semret, pollret;
+	long i, polled, semret;
 	SEM sem = { { &sem.queue, &sem.queue, NULL }, RT_SEM_MAGIC, 0, 0, 0, RT_CURRENT, 1 };
 #ifdef CONFIG_RTAI_RT_POLL_ON_STACK
 	struct rt_poll_s pdsv[nr]; // BEWARE: consuming too much stack?
@@ -1928,11 +1927,11 @@ RTAI_SYSCALL_MODE int _rt_poll(struct rt_poll_s *pdsa, unsigned long nr, RTIME t
 	struct rt_poll_s *pdsv;
 	QUEUE *pollq;
 	if (!(pdsv = rt_malloc(nr*sizeof(struct rt_poll_s))) && nr > 0) {
-		return -ENOMEM;
+		return ENOMEM;
 	}
 	if (!(pollq = rt_malloc(nr*sizeof(QUEUE))) && nr > 0) {
 		rt_free(pdsv);
-		return -ENOMEM;
+		return ENOMEM;
 	}
 #endif
 	if (space) {
@@ -1946,7 +1945,7 @@ RTAI_SYSCALL_MODE int _rt_poll(struct rt_poll_s *pdsa, unsigned long nr, RTIME t
 			case RT_POLL_MBX_RECV :
 			case RT_POLL_MBX_SEND : {
 				QUEUE *queue = NULL;
-				spinlock_t *qlock;
+				spinlock_t *qlock = NULL;
 				MBX *mbx = pds[i].what;
 				if (pds[i].forwhat == RT_POLL_MBX_RECV) {
 					if (mbx->avbs > 0) {
@@ -1981,14 +1980,14 @@ RTAI_SYSCALL_MODE int _rt_poll(struct rt_poll_s *pdsa, unsigned long nr, RTIME t
 	semret = 0;
 	if (!polled) {
 		if (timeout < 0) {
-			semret = -rt_sem_wait_timed(&sem, -timeout);
+			semret = rt_sem_wait_timed(&sem, -timeout);
 		} else if (timeout > 1) {
-			semret = -rt_sem_wait_until(&sem, timeout);
+			semret = rt_sem_wait_until(&sem, timeout);
 		} else if (timeout < 1 && nr > 0) {
-			semret = -rt_sem_wait(&sem);
+			semret = rt_sem_wait(&sem);
 		}
 	}
-	for (pollret = i = 0; i < nr; i++) {
+	for (polled = i = 0; i < nr; i++) {
 		if (pds[i].forwhat) {
 			switch(pds[i].forwhat) {
 				case RT_POLL_MBX_RECV : 
@@ -2008,7 +2007,7 @@ RTAI_SYSCALL_MODE int _rt_poll(struct rt_poll_s *pdsa, unsigned long nr, RTIME t
 		}
 		if (pollq[i].task != (void *)&sem) {
 			pds[i].what = pollq[i].task;
-			pollret++;
+			polled++;
 		}
 	}
 	if (!space) {
@@ -2018,7 +2017,7 @@ RTAI_SYSCALL_MODE int _rt_poll(struct rt_poll_s *pdsa, unsigned long nr, RTIME t
 	rt_free(pdsv);
 	rt_free(pollq);
 #endif
-	return pollret ? pollret : semret;
+	return polled ? polled : semret;
 }
 
 EXPORT_SYMBOL(_rt_poll);

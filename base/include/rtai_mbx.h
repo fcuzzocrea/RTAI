@@ -42,8 +42,10 @@ typedef struct rt_mailbox {
 	char *bufadr;
 	int size, fbyte, lbyte, avbs, frbs;
 	spinlock_t lock;
+#ifdef CONFIG_RTAI_RT_POLL
 	QUEUE pollrecv, pollsend;
 	spinlock_t rpollock, spollock;
+#endif
 } MBX;
 
 #else /* __cplusplus */

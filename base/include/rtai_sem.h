@@ -33,7 +33,7 @@
 #define SEM_ERR     (RTE_OBJINV)
 #define SEM_TIMOUT  (RTE_TIMOUT)
 
-#define CONFIG_RTAI_RT_POLL
+//#define CONFIG_RTAI_RT_POLL
 //#define CONFIG_RTAI_RT_POLL_ON_STACK
 
 struct rt_poll_s { void *what; unsigned long forwhat; };
@@ -65,7 +65,7 @@ static inline int rt_poll(struct rt_poll_s *pdsa, unsigned long nr, RTIME timeou
 
 #else
 
-#define rt_wakeup_pollers(queue, qlock)
+#define rt_wakeup_pollers(queue, qlock, reason)
 
 #endif
 

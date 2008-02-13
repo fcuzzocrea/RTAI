@@ -310,11 +310,13 @@ RTAI_SYSCALL_MODE int rt_typed_mbx_init(MBX *mbx, int size, int type)
 	mbx->owndby = mbx->waiting_task = NULL;
 	mbx->fbyte = mbx->lbyte = mbx->avbs = 0;
         spin_lock_init(&(mbx->lock));
+#ifdef CONFIG_RTAI_RT_POLL
 	mbx->pollrecv.prev = mbx->pollrecv.next = &(mbx->pollrecv);
 	mbx->pollsend.prev = mbx->pollsend.next = &(mbx->pollsend);
 	mbx->pollrecv.task = mbx->pollsend.task = NULL;
         spin_lock_init(&(mbx->rpollock));
         spin_lock_init(&(mbx->spollock));
+#endif
 	return 0;
 }
 

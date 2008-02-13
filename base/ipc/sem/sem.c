@@ -1762,20 +1762,24 @@ RTAI_SYSCALL_MODE int rt_named_spl_delete(SPL *spl)
 	return ret;
 }
 
+/* ++++++++++++++++++++++++++++++ POLLING SERVICE +++++++++++++++++++++++++++ */
+
 #ifdef CONFIG_RTAI_RT_POLL
 
-static inline void RT_SCHEDULE_TOSCHED(unsigned long tosched_mask)
+typedef struct rt_poll_sem { QUEUE queue; RT_TASK *task; int count; } POLL_SEM;
+
+static inline void rt_schedule_tosched(unsigned long tosched_mask)
 {
 	unsigned long flags;
 #ifdef CONFIG_SMP
-	unsigned long cpuid, rmask;
-	rmask = tosched_mask; 
-	if ((rmask &= ~(1 << (cpuid = rtai_cpuid())))) {
+	unsigned long cpumask, rmask;
+	rmask = tosched_mask & ~(cpumask = (1 << rtai_cpuid())); 
+	if (rmask) {
 		rtai_save_flags_and_cli(flags);
 		send_sched_ipi(rmask);
 		rtai_restore_flags(flags);
 	}
-	if ((tosched_mask | (1 << cpuid)))
+	if (tosched_mask | cpumask)
 #endif
 	{
 		flags = rt_global_save_flags_and_cli();
@@ -1784,23 +1788,78 @@ static inline void RT_SCHEDULE_TOSCHED(unsigned long tosched_mask)
 	}
 }
  
-static inline int rt_poller_sem_signal_nosched(SEM *sem)
+static inline int rt_poll_wait(POLL_SEM *sem, RT_TASK *rt_current)
 {
 	unsigned long flags;
-	RT_TASK *task;
+	int retval = 0;
 
 	flags = rt_global_save_flags_and_cli();
-	if ((task = (sem->queue.next)->task)) {
-		dequeue_blocked(task);
-		rem_timed_task(task);
-		if (task->state != RT_SCHED_READY && (task->state &= ~(RT_SCHED_SEMAPHORE | RT_SCHED_DELAYED)) == RT_SCHED_READY) {
-			enq_ready_task(task);
-			rt_global_restore_flags(flags);
-			return (1 << task->runnable_on_cpus);
+	if (!sem->count) {
+		void *retp;
+		rt_current->state |= RT_SCHED_POLL;
+		rem_ready_current(rt_current);
+		enqueue_blocked(rt_current, &sem->queue, 1);
+		rt_schedule();
+		if (unlikely((retp = rt_current->blocked_on))) { 
+			if (likely(retp != RTP_OBJREM)) { 
+				dequeue_blocked(rt_current);
+				retval = RTE_UNBLKD;
+			} else {
+				retval = RTE_OBJREM;
+			}
 		}
 	}
 	rt_global_restore_flags(flags);
-	return 0;
+	return retval;
+}
+
+static inline int rt_poll_wait_until(POLL_SEM *sem, RTIME time, RT_TASK *rt_current, int cpuid)
+{
+	unsigned long flags;
+	int retval = 0;
+
+	flags = rt_global_save_flags_and_cli();
+	if (!sem->count) {
+		void *retp;
+		rt_current->blocked_on = &sem->queue;
+		if ((rt_current->resume_time = time) > rt_time_h) {
+			rt_current->state |= (RT_SCHED_POLL | RT_SCHED_DELAYED);
+			rem_ready_current(rt_current);
+			enqueue_blocked(rt_current, &sem->queue, 1);
+			enq_timed_task(rt_current);
+			rt_schedule();
+		}
+		if (unlikely((retp = rt_current->blocked_on))) { 
+			if (likely(retp != RTP_OBJREM)) { 
+				dequeue_blocked(rt_current);
+				retval = likely(retp > RTP_HIGERR) ? RTE_TIMOUT : RTE_UNBLKD;
+			} else {
+				retval =  RTE_OBJREM;
+			}
+		}
+	}
+	rt_global_restore_flags(flags);
+	return retval;
+}
+
+static inline int rt_poll_signal(POLL_SEM *sem)
+{
+	unsigned long flags;
+	RT_TASK *task;
+	int retval = 0;
+
+	flags = rt_global_save_flags_and_cli();
+	sem->count = 1;
+	if ((task = (sem->queue.next)->task)) {
+		dequeue_blocked(task);
+		rem_timed_task(task);
+		if (task->state != RT_SCHED_READY && (task->state &= ~(RT_SCHED_POLL | RT_SCHED_DELAYED)) == RT_SCHED_READY) {
+			enq_ready_task(task);
+			retval = (1 << task->runnable_on_cpus);
+		}
+	}
+	rt_global_restore_flags(flags);
+	return retval;
 }
 
 void rt_wakeup_pollers(QUEUE *queue, spinlock_t *qlock, int reason)
@@ -1809,18 +1868,18 @@ void rt_wakeup_pollers(QUEUE *queue, spinlock_t *qlock, int reason)
 
 	rt_spin_lock_irq(qlock);
 	if ((q = queue->next) != queue) {
-	        SEM *sem;
+	        POLL_SEM *sem;
 		unsigned long tosched_mask = 0UL;
 		do {
-			sem = (SEM *)q->task;
+			sem = (POLL_SEM *)q->task;
 			q->task = (void *)((unsigned long)reason);
 			(queue->next = q->next)->prev = queue;
-			tosched_mask |= rt_poller_sem_signal_nosched(sem);
+			tosched_mask |= rt_poll_signal(sem);
 			rt_spin_unlock_irq(qlock);
 			rt_spin_lock_irq(qlock);
 		} while ((q = queue->next) != queue);
 		rt_spin_unlock_irq(qlock);
-		RT_SCHEDULE_TOSCHED(tosched_mask);
+		rt_schedule_tosched(tosched_mask);
 	} else {
 		rt_spin_unlock_irq(qlock);
 	}
@@ -1839,11 +1898,11 @@ EXPORT_SYMBOL(rt_wakeup_pollers);
  *
  * @param pdsa is a pointer to an array of "struct rt_poll_s" containing
  * the list of objects to poll. Its content is not preserved through the
- * call, so it must be always initialised before any call, see also the
+ * call, so it must be initialised before any call always, see also the
  * usage note below.
  *
  * @param nr is the number of elements of pdsa. If zero rt_poll will simply
- * suspend the polling task, as specified by a non null timeout value only.
+ * suspend the polling task, but only if a non null timeout is specified.
  *
  * @param timeout sets a possible time boundary for the polling action; its 
  * value can be:
@@ -1853,33 +1912,28 @@ EXPORT_SYMBOL(rt_wakeup_pollers);
  *	     set to 1, a meaningless absolute time value on any machine,
  *	     rt_poll will not block waiting for the asked events but return
  *	     immediately just reporting anything immediately available,
- *	     thus becoming a multiple conditional polling. In fact it should
- *	     be enough to use any past absolute time to obtain the same result
- *	     but the conventional value of 1 is chosen both to avoid the cost
- *	     of getting the present time and to avoid reporting a time overrun
- *	     error.
- *	In such a way we have the usual 4 ways of RTAI IPC services within a
- *	single call. That because rt_poll is seen as a less critical real 
- *	service which can accept a few test mores to choose between different
- *	requests.
+ *	     thus becoming a multiple conditional polling.
+ *	     In such a way we have the usual 4 ways of RTAI IPC services
+ *	     within a single call.
  *
  * @return:
  *	+ the number of structures for which the poll succeeded, the related
- *	  IPCs can be inferred by looking at "what"s, which will be:
+ *	  IPCs polling result can be inferred by looking at "what"s, which 
+ *	  will be:
  *	  - unchanged if nothing happened,
  *	  - NULL if the related poll succeeded,
- *	  - after a casting to int will signal an interrupted polling, either
- *	    because the related IPC operation was not completed for lack of
- *	    something, e.g. buffer space, or becuase of an error, as inferred
- *	    by the related "what";
+ *	  - after a casting to int it will signal an interrupted polling,
+ *	    either because the related IPC operation was not completed for
+ *	    lack of something, e.g. buffer space, or because of an error,
+ *	    which can be inferred from the content of "what";
  *	+ a sem error, the value of sem errors being the same as for sem_wait
  *	  functions;
- *	+ ENOMEM, if CONFIG_RTAI_RT_POLL_ON_STACK is not set, so that RTAI
- *	   heap is used and there is enough space nomore (see the WARNING
- *	   below).
+ *	+ ENOMEM, if CONFIG_RTAI_RT_POLL_ON_STACK is not set so that RTAI
+ *	   heap is used and there is not enough space anymore (see also the
+ *	   WARNING below).
  * 
  * @usage note:
- *	the user sets the elements of the struct rt_poll_s array: 
+ *	the user sets the elements of her/his struct rt_poll_s array: 
  *	struct rt_poll_s { void *what; unsigned long forwhat; }, as needed.
  *	In particular "what" must be set to the pointer of the IPC
  *      referenced mechanism, i.e. only a MBX pointer at the moment. Then the
@@ -1888,8 +1942,7 @@ EXPORT_SYMBOL(rt_wakeup_pollers);
  *	- RT_POLL_MBX_SEND to wait for the possibility of sending to a MBX,
  *	without being blocked.
  *	When _rt_poll returns a user can infer the results of her/his polling
- *	by looking at each "what' in the array, whereas a NULL value means
- *	that the polling of the related object succeded.
+ *	by looking at each "what' in the array, as explained above.
  *	It is important to remark that if more tasks are using the same IPC
  *	mechanism simultaneously, it is not possible to assume that a NULL 
  *	"what" entails the possibility of applying the desired IPC mechanism
@@ -1901,7 +1954,7 @@ EXPORT_SYMBOL(rt_wakeup_pollers);
  *	be sure of not blocking. If an "_if" call fails then it will mean
  *	that there was a competing polling/access on the same object.
  *	WARNING: rt_poll needs a couple of dynamically assigned arrays.
- *	In the default implementation they are alloced on the stack while
+ *	In the default implementation they are allocated on the stack,
  *	keeping	interrupts unblocked as far as possible. So there is the
  *	danger that a very large polling list might exceed the kernel stack
  *	in use. Even if that is not the case a large polling coupled to a
@@ -1909,17 +1962,17 @@ EXPORT_SYMBOL(rt_wakeup_pollers);
  *	overflow as well. The solution to such problems is to use rt_malloc,
  *	in which case the limit would be only in the memory assigned to the
  *	RTAI dynamic heap. To be cautious rt_malloc has been set as default
- *	int RTAI configuration. If one is sure that short enough lists, say
- *	30 terms or so, will be used in her/his application the more effective
- * 	allocation on the stack can be use by setting 
+ *	in the RTAI configuration. If one is sure that short enough lists,
+ *	say 30/40 terms or so, will be used in her/his application the more
+ *	effective allocation on the stack can be use by setting 
  *	CONFIG_RTAI_RT_POLL_ON_STACK when configuring RTAI.
  */
 
 RTAI_SYSCALL_MODE int _rt_poll(struct rt_poll_s *pdsa, unsigned long nr, RTIME timeout, int space)
 {
 	struct rt_poll_s *pds;
-	long i, polled, semret;
-	SEM sem = { { &sem.queue, &sem.queue, NULL }, RT_SEM_MAGIC, 0, 0, 0, RT_CURRENT, 1 };
+	int i, polled, semret, cpuid;
+	POLL_SEM sem = { { &sem.queue, &sem.queue, NULL }, rt_smp_current[cpuid = rtai_cpuid()], 0 };
 #ifdef CONFIG_RTAI_RT_POLL_ON_STACK
 	struct rt_poll_s pdsv[nr]; // BEWARE: consuming too much stack?
 	QUEUE pollq[nr];           // BEWARE: consuming too much stack?
@@ -1966,7 +2019,7 @@ RTAI_SYSCALL_MODE int _rt_poll(struct rt_poll_s *pdsa, unsigned long nr, RTIME t
         				QUEUE *q = queue;
 					pollq[i].task = (RT_TASK *)&sem;
 					rt_spin_lock_irq(qlock);
-					while ((q = q->next) != queue && (((SEM *)q->task)->owndby)->priority <= sem.owndby->priority);
+					while ((q = q->next) != queue && (((POLL_SEM *)q->task)->task)->priority <= sem.task->priority);
 				        pollq[i].next = q;
 				        q->prev = (pollq[i].prev = q->prev)->next  = &pollq[i];
 					rt_spin_unlock_irq(qlock);
@@ -1980,11 +2033,11 @@ RTAI_SYSCALL_MODE int _rt_poll(struct rt_poll_s *pdsa, unsigned long nr, RTIME t
 	semret = 0;
 	if (!polled) {
 		if (timeout < 0) {
-			semret = rt_sem_wait_timed(&sem, -timeout);
+			semret = rt_poll_wait_until(&sem, get_time() - timeout, sem.task, cpuid);
 		} else if (timeout > 1) {
-			semret = rt_sem_wait_until(&sem, timeout);
+			semret = rt_poll_wait_until(&sem, timeout, sem.task, cpuid);
 		} else if (timeout < 1 && nr > 0) {
-			semret = rt_sem_wait(&sem);
+			semret = rt_poll_wait(&sem, sem.task);
 		}
 	}
 	for (polled = i = 0; i < nr; i++) {
@@ -2031,6 +2084,8 @@ static RTAI_SYSCALL_MODE int rt_poll_netrpc(struct rt_poll_s *pdsa1, struct rt_p
 }
 
 #endif
+
+/* +++++++++++++++++++++++++++ END POLLING SERVICE ++++++++++++++++++++++++++ */
 
 /* +++++ SEMAPHORES, BARRIER, COND VARIABLES, RWLOCKS, SPINLOCKS ENTRIES ++++ */
 

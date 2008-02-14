@@ -1,3 +1,10 @@
+2008-02-15 Paolo Mantegazza <mantegazza@aero.polimi.it>
+
+	* base/include/rtai_sched.h: add RT_SCHED_POLL.
+	* base/include/rtai_schedcore.h: care of RT_SCHED_POLL in timed
+	  wakeups.
+	* base/ipc/sem/sem.c: use RT_SCHED_POLL and simplify.
+
 2008-02-14 Paolo Mantegazza <mantegazza@aero.polimi.it>
 
 	* base/ipc/sem/sem.c: rt_poll revised and optimised a bit more.

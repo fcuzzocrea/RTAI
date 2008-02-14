@@ -1,7 +1,5 @@
 2008-02-14 Paolo Mantegazza <mantegazza@aero.polimi.it>
 
-	* base/include/rtai_sched.h: added a specific task state for poll
-	  blocked tasks.
 	* base/ipc/sem/sem.c: rt_poll revised and optimised a bit more.
 
 2008-02-04 Paolo Mantegazza <mantegazza@aero.polimi.it>

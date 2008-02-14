@@ -1766,7 +1766,7 @@ RTAI_SYSCALL_MODE int rt_named_spl_delete(SPL *spl)
 
 #ifdef CONFIG_RTAI_RT_POLL
 
-typedef struct rt_poll_sem { QUEUE queue; RT_TASK *task; int count; } POLL_SEM;
+typedef struct rt_poll_sem { QUEUE queue; RT_TASK *task; int wait; } POLL_SEM;
 
 static inline void rt_schedule_tosched(unsigned long tosched_mask)
 {
@@ -1794,7 +1794,7 @@ static inline int rt_poll_wait(POLL_SEM *sem, RT_TASK *rt_current)
 	int retval = 0;
 
 	flags = rt_global_save_flags_and_cli();
-	if (!sem->count) {
+	if (sem->wait) {
 		void *retp;
 		rt_current->state |= RT_SCHED_SEMAPHORE;
 		rem_ready_current(rt_current);
@@ -1819,7 +1819,7 @@ static inline int rt_poll_wait_until(POLL_SEM *sem, RTIME time, RT_TASK *rt_curr
 	int retval = 0;
 
 	flags = rt_global_save_flags_and_cli();
-	if (!sem->count) {
+	if (sem->wait) {
 		void *retp;
 		rt_current->blocked_on = &sem->queue;
 		if ((rt_current->resume_time = time) > rt_time_h) {
@@ -1849,7 +1849,7 @@ static inline int rt_poll_signal(POLL_SEM *sem)
 	int retval = 0;
 
 	flags = rt_global_save_flags_and_cli();
-	sem->count = 1;
+	sem->wait = 0;
 	if ((task = (sem->queue.next)->task)) {
 		dequeue_blocked(task);
 		rem_timed_task(task);
@@ -1972,7 +1972,7 @@ RTAI_SYSCALL_MODE int _rt_poll(struct rt_poll_s *pdsa, unsigned long nr, RTIME t
 {
 	struct rt_poll_s *pds;
 	int i, polled, semret, cpuid;
-	POLL_SEM sem = { { &sem.queue, &sem.queue, NULL }, rt_smp_current[cpuid = rtai_cpuid()], 0 };
+	POLL_SEM sem = { { &sem.queue, &sem.queue, NULL }, rt_smp_current[cpuid = rtai_cpuid()], 1 };
 #ifdef CONFIG_RTAI_RT_POLL_ON_STACK
 	struct rt_poll_s pdsv[nr]; // BEWARE: consuming too much stack?
 	QUEUE pollq[nr];           // BEWARE: consuming too much stack?

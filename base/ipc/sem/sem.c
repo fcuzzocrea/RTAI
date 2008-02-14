@@ -1795,18 +1795,13 @@ static inline int rt_poll_wait(POLL_SEM *sem, RT_TASK *rt_current)
 
 	flags = rt_global_save_flags_and_cli();
 	if (sem->wait) {
-		void *retp;
-		rt_current->state |= RT_SCHED_SEMAPHORE;
+		rt_current->state |= RT_SCHED_POLL;
 		rem_ready_current(rt_current);
 		enqueue_blocked(rt_current, &sem->queue, 1);
 		rt_schedule();
-		if (unlikely((retp = rt_current->blocked_on))) { 
-			if (likely(retp != RTP_OBJREM)) { 
-				dequeue_blocked(rt_current);
-				retval = RTE_UNBLKD;
-			} else {
-				retval = RTE_OBJREM;
-			}
+		if (unlikely(rt_current->blocked_on)) { 
+			dequeue_blocked(rt_current);
+			retval = RTE_UNBLKD;
 		}
 	}
 	rt_global_restore_flags(flags);
@@ -1820,22 +1815,17 @@ static inline int rt_poll_wait_until(POLL_SEM *sem, RTIME time, RT_TASK *rt_curr
 
 	flags = rt_global_save_flags_and_cli();
 	if (sem->wait) {
-		void *retp;
 		rt_current->blocked_on = &sem->queue;
 		if ((rt_current->resume_time = time) > rt_time_h) {
-			rt_current->state |= (RT_SCHED_SEMAPHORE | RT_SCHED_DELAYED);
+			rt_current->state |= (RT_SCHED_POLL | RT_SCHED_DELAYED);
 			rem_ready_current(rt_current);
 			enqueue_blocked(rt_current, &sem->queue, 1);
 			enq_timed_task(rt_current);
 			rt_schedule();
 		}
-		if (unlikely((retp = rt_current->blocked_on))) { 
-			if (likely(retp != RTP_OBJREM)) { 
-				dequeue_blocked(rt_current);
-				retval = likely(retp > RTP_HIGERR) ? RTE_TIMOUT : RTE_UNBLKD;
-			} else {
-				retval =  RTE_OBJREM;
-			}
+		if (unlikely(rt_current->blocked_on)) { 
+			retval = likely((void *)rt_current->blocked_on > RTP_HIGERR) ? RTE_TIMOUT : RTE_UNBLKD;
+			dequeue_blocked(rt_current);
 		}
 	}
 	rt_global_restore_flags(flags);
@@ -1853,7 +1843,7 @@ static inline int rt_poll_signal(POLL_SEM *sem)
 	if ((task = (sem->queue.next)->task)) {
 		dequeue_blocked(task);
 		rem_timed_task(task);
-		if (task->state != RT_SCHED_READY && (task->state &= ~(RT_SCHED_SEMAPHORE | RT_SCHED_DELAYED)) == RT_SCHED_READY) {
+		if (task->state != RT_SCHED_READY && (task->state &= ~(RT_SCHED_POLL | RT_SCHED_DELAYED)) == RT_SCHED_READY) {
 			enq_ready_task(task);
 			retval = (1 << task->runnable_on_cpus);
 		}

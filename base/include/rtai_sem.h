@@ -33,9 +33,6 @@
 #define SEM_ERR     (RTE_OBJINV)
 #define SEM_TIMOUT  (RTE_TIMOUT)
 
-#define CONFIG_RTAI_RT_POLL
-//#define CONFIG_RTAI_RT_POLL_ON_STACK
-
 struct rt_poll_s { void *what; unsigned long forwhat; };
 
 #define RT_POLL_MBX_RECV 1

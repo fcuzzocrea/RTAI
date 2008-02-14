@@ -505,7 +505,7 @@ static inline void wake_up_timed_tasks(int cpuid)
 #endif
 	if (task->resume_time <= rt_time_h) {
 		do {
-        	        if ((task->state &= ~(RT_SCHED_DELAYED | RT_SCHED_SUSPENDED | RT_SCHED_SEMAPHORE | RT_SCHED_RECEIVE | RT_SCHED_SEND | RT_SCHED_RPC | RT_SCHED_RETURN | RT_SCHED_MBXSUSP)) == RT_SCHED_READY) {
+        	        if ((task->state &= ~(RT_SCHED_DELAYED | RT_SCHED_SUSPENDED | RT_SCHED_SEMAPHORE | RT_SCHED_RECEIVE | RT_SCHED_SEND | RT_SCHED_RPC | RT_SCHED_RETURN | RT_SCHED_MBXSUSP | RT_SCHED_POLL)) == RT_SCHED_READY) {
                 	        if (task->policy < 0) {
                         	        enq_ready_edf_task(task);
 	                        } else {

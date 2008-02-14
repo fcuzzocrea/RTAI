@@ -217,6 +217,12 @@
 #undef CONFIG_RTAI_RTDM_SHIRQ
 
 /* Kconfig */
+#undef CONFIG_RTAI_RT_POLL
+
+/* Kconfig */
+#undef CONFIG_RTAI_RT_POLL_ON_STACK
+
+/* Kconfig */
 #undef CONFIG_RTAI_SCHED_8254_LATENCY
 
 /* Kconfig */

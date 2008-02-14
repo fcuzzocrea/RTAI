@@ -394,6 +394,24 @@ if test x$CONFIG_RTAI_SEM = xy ; then
   RTAI_BUILTIN_MODLIST="$RTAI_BUILTIN_MODLIST ipc/sem"
 fi
 
+AC_MSG_CHECKING(for RT POLL support)
+AC_ARG_ENABLE(rt-poll,
+	[ --enable-rt-poll		enable polling support of RTAI IPCs],
+	[case "$enableval" in
+	y | yes) CONFIG_RTAI_RT_POLL=y ;;
+	*) unset CONFIG_RTAI_RT_POLL ;;
+	esac])
+AC_MSG_RESULT(${CONFIG_RTAI_RT_POLL:-no})
+
+AC_MSG_CHECKING(for RT POLL on stack)
+AC_ARG_ENABLE(rt-poll-on-stack,
+	[ --enable-rt-poll-on-stack	Use the stack for rt_poll dynamic arrays],
+	[case "$enableval" in
+	y | yes) CONFIG_RTAI_RT_POLL_ON_STACK=y ;;
+	*) unset CONFIG_RTAI_RT_POLL_ON_STACK ;;
+	esac])
+AC_MSG_RESULT(${CONFIG_RTAI_RT_POLL_ON_STACK:-no})
+
 AC_MSG_CHECKING(for messaging support)
 AC_ARG_ENABLE(mbx,
 	[ --enable-msg		Enable messaging support],
@@ -1128,6 +1146,18 @@ if test x$CONFIG_RTAI_NETRPC = xy ; then
    fi
 fi
 
+if test x$CONFIG_RTAI_RT_POLL = xy ; then
+   if test x$CONFIG_RTAI_SEM = x ; then
+      AC_MSG_ERROR([--enable-rt-poll requires --enable-sem])
+   fi
+fi
+
+if test x$CONFIG_RTAI_RT_POLL_ON_STACK = xy ; then
+   if test x$CONFIG_RTAI_RT_POLL = x ; then
+      AC_MSG_ERROR([--enable-rt-poll-on-stack requires --enable-rt-poll])
+   fi
+fi
+
 if test x$CONFIG_RTAI_MBX = xy -o x$CONFIG_RTAI_MBX = xm ; then
    if test x$CONFIG_RTAI_SEM = x ; then
       AC_MSG_ERROR([--enable-mbx requires --enable-sem])
@@ -1226,6 +1256,8 @@ test \! x$CONFIG_RTAI_FIFOS = x && AC_DEFINE(CONFIG_RTAI_FIFOS,1,[Kconfig])
 test \! x$CONFIG_RTAI_NETRPC = x && AC_DEFINE(CONFIG_RTAI_NETRPC,1,[Kconfig])
 test x$CONFIG_RTAI_NETRPC_RTNET = xy && AC_DEFINE(CONFIG_RTAI_NETRPC_RTNET,1,[Kconfig])
 test \! x$CONFIG_RTAI_SEM = x && AC_DEFINE(CONFIG_RTAI_SEM,1,[Kconfig])
+test \! x$CONFIG_RTAI_RT_POLL = x && AC_DEFINE(CONFIG_RTAI_RT_POLL,1,[Kconfig])
+test \! x$CONFIG_RTAI_RT_POLL_ON_STACK = x && AC_DEFINE(CONFIG_RTAI_RT_POLL_ON_STACK,1,[Kconfig])
 test \! x$CONFIG_RTAI_MSG = x && AC_DEFINE(CONFIG_RTAI_MSG,1,[Kconfig])
 test \! x$CONFIG_RTAI_MBX = x && AC_DEFINE(CONFIG_RTAI_MBX,1,[Kconfig])
 test \! x$CONFIG_RTAI_TBX = x && AC_DEFINE(CONFIG_RTAI_TBX,1,[Kconfig])
@@ -1409,6 +1441,8 @@ AM_CONDITIONAL(CONFIG_RTAI_BITS,[test -n "$CONFIG_RTAI_BITS"])
 AM_CONDITIONAL(CONFIG_RTAI_FIFOS,[test -n "$CONFIG_RTAI_FIFOS"])
 AM_CONDITIONAL(CONFIG_RTAI_NETRPC,[test -n "$CONFIG_RTAI_NETRPC"])
 AM_CONDITIONAL(CONFIG_RTAI_SEM,[test -n "$CONFIG_RTAI_SEM"])
+AM_CONDITIONAL(CONFIG_RTAI_RT_POLL,[test -n "$CONFIG_RTAI_RT_POLL"])
+AM_CONDITIONAL(CONFIG_RTAI_RT_POLL_ON_STACK,[test -n "$CONFIG_RTAI_RT_POLL_ON_STACK"])
 AM_CONDITIONAL(CONFIG_RTAI_MSG,[test -n "$CONFIG_RTAI_MSG"])
 AM_CONDITIONAL(CONFIG_RTAI_MBX,[test -n "$CONFIG_RTAI_MBX"])
 AM_CONDITIONAL(CONFIG_RTAI_TBX,[test -n "$CONFIG_RTAI_TBX"])

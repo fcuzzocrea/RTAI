@@ -1756,7 +1756,7 @@ new file mode 100644
 index 0000000..ce24db7
 --- /dev/null
 +++ b/arch/x86/kernel/ipipe.c
-@@ -0,0 +1,1037 @@
+@@ -0,0 +1,1042 @@
 +/*   -*- linux-c -*-
 + *   linux/arch/x86/kernel/ipipe.c
 + *
@@ -2403,8 +2403,13 @@ index 0000000..ce24db7
 +static void do_machine_check_vector(struct pt_regs *regs, long error_code)
 +{
 +#ifdef CONFIG_X86_MCE
++#ifdef CONFIG_X86_32
++	extern void (*machine_check_vector)(struct pt_regs *, long error_code);
++	machine_check_vector(regs, error_code);
++#else  /* !CONFIG_X86_32 */
 +	void do_machine_check(struct pt_regs *, long);
-+	do_machine_check(regs,error_code);
++	do_machine_check(regs, error_code);
++#endif /* !CONFIG_X86_32 */
 +#endif /* CONFIG_X86_MCE */
 +}
 +

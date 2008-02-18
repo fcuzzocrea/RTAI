@@ -1984,40 +1984,36 @@ RTAI_SYSCALL_MODE int _rt_poll(struct rt_poll_s *pdsa, unsigned long nr, RTIME t
 		pds = pdsv;
 	}
 	for (polled = i = 0; i < nr; i++) {
-		switch(pds[i].forwhat) {
-			case RT_POLL_MBX_RECV :
-			case RT_POLL_MBX_SEND : {
-				QUEUE *queue = NULL;
-				spinlock_t *qlock = NULL;
-				MBX *mbx = pds[i].what;
-				if (pds[i].forwhat == RT_POLL_MBX_RECV) {
-					if (mbx->avbs > 0) {
-						pollq[i].task = NULL;
-						polled++;
-					} else {
-						queue = &mbx->pollrecv;
-						qlock = &mbx->rpollock;
-					}
-				} else if (mbx->frbs > 0) {
-					pollq[i].task = NULL;
-					polled++;
-				} else {
-					queue = &mbx->pollsend;
-					qlock = &mbx->spollock;
-				}
-				if (queue) {
-        				QUEUE *q = queue;
-					pollq[i].task = (RT_TASK *)&sem;
-					rt_spin_lock_irq(qlock);
-					while ((q = q->next) != queue && (((POLL_SEM *)q->task)->task)->priority <= sem.task->priority);
-				        pollq[i].next = q;
-				        q->prev = (pollq[i].prev = q->prev)->next  = &pollq[i];
-					rt_spin_unlock_irq(qlock);
-				} else {
-					pds[i].forwhat = 0;
-				}
-				break;
+		QUEUE *queue = NULL;
+		spinlock_t *qlock = NULL;
+		MBX *mbx = pds[i].what;
+		if (pds[i].forwhat == RT_POLL_MBX_RECV) {
+			if (mbx->avbs > 0) {
+				pollq[i].task = NULL;
+				polled++;
+			} else {
+				queue = &mbx->pollrecv;
+				qlock = &mbx->rpollock;
 			}
+		} else {
+			if (mbx->frbs > 0) {
+				pollq[i].task = NULL;
+				polled++;
+			} else {
+				queue = &mbx->pollsend;
+				qlock = &mbx->spollock;
+			}
+		}
+		if (queue) {
+        		QUEUE *q = queue;
+			pollq[i].task = (RT_TASK *)&sem;
+			rt_spin_lock_irq(qlock);
+			while ((q = q->next) != queue && (((POLL_SEM *)q->task)->task)->priority <= sem.task->priority);
+		        pollq[i].next = q;
+		        q->prev = (pollq[i].prev = q->prev)->next  = &pollq[i];
+			rt_spin_unlock_irq(qlock);
+		} else {
+			pds[i].forwhat = 0;
 		}
 	}
 	semret = 0;
@@ -2032,21 +2028,15 @@ RTAI_SYSCALL_MODE int _rt_poll(struct rt_poll_s *pdsa, unsigned long nr, RTIME t
 	}
 	for (polled = i = 0; i < nr; i++) {
 		if (pds[i].forwhat) {
-			switch(pds[i].forwhat) {
-				case RT_POLL_MBX_RECV : 
-				case RT_POLL_MBX_SEND : {
-					MBX *mbx = pds[i].what;
-					spinlock_t *qlock;
-					qlock = pds[i].forwhat == RT_POLL_MBX_RECV ? &mbx->rpollock : &mbx->spollock;
-					rt_spin_lock_irq(qlock);
-					if (pollq[i].task == (void *)&sem) {
-						(pollq[i].prev)->next = pollq[i].next;
-						(pollq[i].next)->prev = pollq[i].prev;
-					}
-					rt_spin_unlock_irq(qlock);
-					break;
-				}
+			MBX *mbx = pds[i].what;
+			spinlock_t *qlock;
+			qlock = pds[i].forwhat == RT_POLL_MBX_RECV ? &mbx->rpollock : &mbx->spollock;
+			rt_spin_lock_irq(qlock);
+			if (pollq[i].task == (void *)&sem) {
+				(pollq[i].prev)->next = pollq[i].next;
+				(pollq[i].next)->prev = pollq[i].prev;
 			}
+			rt_spin_unlock_irq(qlock);
 		}
 		if (pollq[i].task != (void *)&sem) {
 			pds[i].what = pollq[i].task;

@@ -947,6 +947,15 @@ config RTAI_RTDM_FD_MAX
 	help
 	The maximum number of file descriptors in RTDM.
 
+config RTAI_RTDM_SELECT
+	depends on RTAI_RTDM
+	bool "Enable select multiplexing for RTDM services"
+        default n
+	help
+	By enabling this option, select(2) support can be used to monitor
+	access to multiple RTDM services all in one, as for the standard UNIX
+	support.
+
 config RTAI_RTDM_SHIRQ
 	depends on RTAI_RTDM
         bool "Shared interrupts"

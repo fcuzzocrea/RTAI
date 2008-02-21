@@ -1079,8 +1079,10 @@ Optional Features:
  --enable-sched-8254-latency	Set 8254 tuning latency
  --enable-sched-apic-latency	Set APIC tuning latency
  --enable-sched-lxrt-numslots	Set maximum number of LXRT slots
+ --enable-rtdm		Enable RTDM support
  --enable-rtdm-fd-max        	Set maximum number of RTDM file descriptor slots
  --enable-rtdm-shirq	Enable shared interrupts in RTDM
+ --enable-rtdm-select	Enable select support in RTDM
  --enable-debug-rtdm		Enable RTDM debug
  --enable-task-switch-signal		Enable RTAI task switch signal
  --enable-align-priority		Keep Linux task priority aligned to RTAI
@@ -4299,7 +4301,7 @@ ia64-*-hpux*)
   ;;
 *-*-irix6*)
   # Find out which ABI we are using.
-  echo '#line 4302 "configure"' > conftest.$ac_ext
+  echo '#line 4304 "configure"' > conftest.$ac_ext
   if { (eval echo "$as_me:$LINENO: \"$ac_compile\"") >&5
   (eval $ac_compile) 2>&5
   ac_status=$?
@@ -5407,7 +5409,7 @@ fi
 
 
 # Provide some information about the compiler.
-echo "$as_me:5410:" \
+echo "$as_me:5412:" \
      "checking for Fortran 77 compiler version" >&5
 ac_compiler=`set X $ac_compile; echo $2`
 { (eval echo "$as_me:$LINENO: \"$ac_compiler --version </dev/null >&5\"") >&5
@@ -6441,11 +6443,11 @@ else
    -e 's:.*FLAGS}? :&$lt_compiler_flag :; t' \
    -e 's: [^ ]*conftest\.: $lt_compiler_flag&:; t' \
    -e 's:$: $lt_compiler_flag:'`
-   (eval echo "\"\$as_me:6444: $lt_compile\"" >&5)
+   (eval echo "\"\$as_me:6446: $lt_compile\"" >&5)
    (eval "$lt_compile" 2>conftest.err)
    ac_status=$?
    cat conftest.err >&5
-   echo "$as_me:6448: \$? = $ac_status" >&5
+   echo "$as_me:6450: \$? = $ac_status" >&5
    if (exit $ac_status) && test -s "$ac_outfile"; then
      # The compiler can only warn and ignore the option if not recognized
      # So say no if there are warnings
@@ -6674,11 +6676,11 @@ else
    -e 's:.*FLAGS}? :&$lt_compiler_flag :; t' \
    -e 's: [^ ]*conftest\.: $lt_compiler_flag&:; t' \
    -e 's:$: $lt_compiler_flag:'`
-   (eval echo "\"\$as_me:6677: $lt_compile\"" >&5)
+   (eval echo "\"\$as_me:6679: $lt_compile\"" >&5)
    (eval "$lt_compile" 2>conftest.err)
    ac_status=$?
    cat conftest.err >&5
-   echo "$as_me:6681: \$? = $ac_status" >&5
+   echo "$as_me:6683: \$? = $ac_status" >&5
    if (exit $ac_status) && test -s "$ac_outfile"; then
      # The compiler can only warn and ignore the option if not recognized
      # So say no if there are warnings
@@ -6734,11 +6736,11 @@ else
    -e 's:.*FLAGS}? :&$lt_compiler_flag :; t' \
    -e 's: [^ ]*conftest\.: $lt_compiler_flag&:; t' \
    -e 's:$: $lt_compiler_flag:'`
-   (eval echo "\"\$as_me:6737: $lt_compile\"" >&5)
+   (eval echo "\"\$as_me:6739: $lt_compile\"" >&5)
    (eval "$lt_compile" 2>out/conftest.err)
    ac_status=$?
    cat out/conftest.err >&5
-   echo "$as_me:6741: \$? = $ac_status" >&5
+   echo "$as_me:6743: \$? = $ac_status" >&5
    if (exit $ac_status) && test -s out/conftest2.$ac_objext
    then
      # The compiler can only warn and ignore the option if not recognized
@@ -8068,7 +8070,7 @@ linux*)
   libsuff=
   case "$host_cpu" in
   x86_64*|s390x*|powerpc64*)
-    echo '#line 8071 "configure"' > conftest.$ac_ext
+    echo '#line 8073 "configure"' > conftest.$ac_ext
     if { (eval echo "$as_me:$LINENO: \"$ac_compile\"") >&5
   (eval $ac_compile) 2>&5
   ac_status=$?
@@ -8939,7 +8941,7 @@ else
   lt_dlunknown=0; lt_dlno_uscore=1; lt_dlneed_uscore=2
   lt_status=$lt_dlunknown
   cat > conftest.$ac_ext <<EOF
-#line 8942 "configure"
+#line 8944 "configure"
 #include "confdefs.h"
 
 #if HAVE_DLFCN_H
@@ -9037,7 +9039,7 @@ else
   lt_dlunknown=0; lt_dlno_uscore=1; lt_dlneed_uscore=2
   lt_status=$lt_dlunknown
   cat > conftest.$ac_ext <<EOF
-#line 9040 "configure"
+#line 9042 "configure"
 #include "confdefs.h"
 
 #if HAVE_DLFCN_H
@@ -11216,11 +11218,11 @@ else
    -e 's:.*FLAGS}? :&$lt_compiler_flag :; t' \
    -e 's: [^ ]*conftest\.: $lt_compiler_flag&:; t' \
    -e 's:$: $lt_compiler_flag:'`
-   (eval echo "\"\$as_me:11219: $lt_compile\"" >&5)
+   (eval echo "\"\$as_me:11221: $lt_compile\"" >&5)
    (eval "$lt_compile" 2>conftest.err)
    ac_status=$?
    cat conftest.err >&5
-   echo "$as_me:11223: \$? = $ac_status" >&5
+   echo "$as_me:11225: \$? = $ac_status" >&5
    if (exit $ac_status) && test -s "$ac_outfile"; then
      # The compiler can only warn and ignore the option if not recognized
      # So say no if there are warnings
@@ -11276,11 +11278,11 @@ else
    -e 's:.*FLAGS}? :&$lt_compiler_flag :; t' \
    -e 's: [^ ]*conftest\.: $lt_compiler_flag&:; t' \
    -e 's:$: $lt_compiler_flag:'`
-   (eval echo "\"\$as_me:11279: $lt_compile\"" >&5)
+   (eval echo "\"\$as_me:11281: $lt_compile\"" >&5)
    (eval "$lt_compile" 2>out/conftest.err)
    ac_status=$?
    cat out/conftest.err >&5
-   echo "$as_me:11283: \$? = $ac_status" >&5
+   echo "$as_me:11285: \$? = $ac_status" >&5
    if (exit $ac_status) && test -s out/conftest2.$ac_objext
    then
      # The compiler can only warn and ignore the option if not recognized
@@ -11787,7 +11789,7 @@ linux*)
   libsuff=
   case "$host_cpu" in
   x86_64*|s390x*|powerpc64*)
-    echo '#line 11790 "configure"' > conftest.$ac_ext
+    echo '#line 11792 "configure"' > conftest.$ac_ext
     if { (eval echo "$as_me:$LINENO: \"$ac_compile\"") >&5
   (eval $ac_compile) 2>&5
   ac_status=$?
@@ -12658,7 +12660,7 @@ else
   lt_dlunknown=0; lt_dlno_uscore=1; lt_dlneed_uscore=2
   lt_status=$lt_dlunknown
   cat > conftest.$ac_ext <<EOF
-#line 12661 "configure"
+#line 12663 "configure"
 #include "confdefs.h"
 
 #if HAVE_DLFCN_H
@@ -12756,7 +12758,7 @@ else
   lt_dlunknown=0; lt_dlno_uscore=1; lt_dlneed_uscore=2
   lt_status=$lt_dlunknown
   cat > conftest.$ac_ext <<EOF
-#line 12759 "configure"
+#line 12761 "configure"
 #include "confdefs.h"
 
 #if HAVE_DLFCN_H
@@ -13583,11 +13585,11 @@ else
    -e 's:.*FLAGS}? :&$lt_compiler_flag :; t' \
    -e 's: [^ ]*conftest\.: $lt_compiler_flag&:; t' \
    -e 's:$: $lt_compiler_flag:'`
-   (eval echo "\"\$as_me:13586: $lt_compile\"" >&5)
+   (eval echo "\"\$as_me:13588: $lt_compile\"" >&5)
    (eval "$lt_compile" 2>conftest.err)
    ac_status=$?
    cat conftest.err >&5
-   echo "$as_me:13590: \$? = $ac_status" >&5
+   echo "$as_me:13592: \$? = $ac_status" >&5
    if (exit $ac_status) && test -s "$ac_outfile"; then
      # The compiler can only warn and ignore the option if not recognized
      # So say no if there are warnings
@@ -13643,11 +13645,11 @@ else
    -e 's:.*FLAGS}? :&$lt_compiler_flag :; t' \
    -e 's: [^ ]*conftest\.: $lt_compiler_flag&:; t' \
    -e 's:$: $lt_compiler_flag:'`
-   (eval echo "\"\$as_me:13646: $lt_compile\"" >&5)
+   (eval echo "\"\$as_me:13648: $lt_compile\"" >&5)
    (eval "$lt_compile" 2>out/conftest.err)
    ac_status=$?
    cat out/conftest.err >&5
-   echo "$as_me:13650: \$? = $ac_status" >&5
+   echo "$as_me:13652: \$? = $ac_status" >&5
    if (exit $ac_status) && test -s out/conftest2.$ac_objext
    then
      # The compiler can only warn and ignore the option if not recognized
@@ -14957,7 +14959,7 @@ linux*)
   libsuff=
   case "$host_cpu" in
   x86_64*|s390x*|powerpc64*)
-    echo '#line 14960 "configure"' > conftest.$ac_ext
+    echo '#line 14962 "configure"' > conftest.$ac_ext
     if { (eval echo "$as_me:$LINENO: \"$ac_compile\"") >&5
   (eval $ac_compile) 2>&5
   ac_status=$?
@@ -15698,11 +15700,11 @@ else
    -e 's:.*FLAGS}? :&$lt_compiler_flag :; t' \
    -e 's: [^ ]*conftest\.: $lt_compiler_flag&:; t' \
    -e 's:$: $lt_compiler_flag:'`
-   (eval echo "\"\$as_me:15701: $lt_compile\"" >&5)
+   (eval echo "\"\$as_me:15703: $lt_compile\"" >&5)
    (eval "$lt_compile" 2>conftest.err)
    ac_status=$?
    cat conftest.err >&5
-   echo "$as_me:15705: \$? = $ac_status" >&5
+   echo "$as_me:15707: \$? = $ac_status" >&5
    if (exit $ac_status) && test -s "$ac_outfile"; then
      # The compiler can only warn and ignore the option if not recognized
      # So say no if there are warnings
@@ -15931,11 +15933,11 @@ else
    -e 's:.*FLAGS}? :&$lt_compiler_flag :; t' \
    -e 's: [^ ]*conftest\.: $lt_compiler_flag&:; t' \
    -e 's:$: $lt_compiler_flag:'`
-   (eval echo "\"\$as_me:15934: $lt_compile\"" >&5)
+   (eval echo "\"\$as_me:15936: $lt_compile\"" >&5)
    (eval "$lt_compile" 2>conftest.err)
    ac_status=$?
    cat conftest.err >&5
-   echo "$as_me:15938: \$? = $ac_status" >&5
+   echo "$as_me:15940: \$? = $ac_status" >&5
    if (exit $ac_status) && test -s "$ac_outfile"; then
      # The compiler can only warn and ignore the option if not recognized
      # So say no if there are warnings
@@ -15991,11 +15993,11 @@ else
    -e 's:.*FLAGS}? :&$lt_compiler_flag :; t' \
    -e 's: [^ ]*conftest\.: $lt_compiler_flag&:; t' \
    -e 's:$: $lt_compiler_flag:'`
-   (eval echo "\"\$as_me:15994: $lt_compile\"" >&5)
+   (eval echo "\"\$as_me:15996: $lt_compile\"" >&5)
    (eval "$lt_compile" 2>out/conftest.err)
    ac_status=$?
    cat out/conftest.err >&5
-   echo "$as_me:15998: \$? = $ac_status" >&5
+   echo "$as_me:16000: \$? = $ac_status" >&5
    if (exit $ac_status) && test -s out/conftest2.$ac_objext
    then
      # The compiler can only warn and ignore the option if not recognized
@@ -17325,7 +17327,7 @@ linux*)
   libsuff=
   case "$host_cpu" in
   x86_64*|s390x*|powerpc64*)
-    echo '#line 17328 "configure"' > conftest.$ac_ext
+    echo '#line 17330 "configure"' > conftest.$ac_ext
     if { (eval echo "$as_me:$LINENO: \"$ac_compile\"") >&5
   (eval $ac_compile) 2>&5
   ac_status=$?
@@ -18196,7 +18198,7 @@ else
   lt_dlunknown=0; lt_dlno_uscore=1; lt_dlneed_uscore=2
   lt_status=$lt_dlunknown
   cat > conftest.$ac_ext <<EOF
-#line 18199 "configure"
+#line 18201 "configure"
 #include "confdefs.h"
 
 #if HAVE_DLFCN_H
@@ -18294,7 +18296,7 @@ else
   lt_dlunknown=0; lt_dlno_uscore=1; lt_dlneed_uscore=2
   lt_status=$lt_dlunknown
   cat > conftest.$ac_ext <<EOF
-#line 18297 "configure"
+#line 18299 "configure"
 #include "confdefs.h"
 
 #if HAVE_DLFCN_H
@@ -20026,6 +20028,20 @@ fi
 echo "$as_me:$LINENO: result: $CONFIG_RTAI_SCHED_LXRT_NUMSLOTS" >&5
 echo "${ECHO_T}$CONFIG_RTAI_SCHED_LXRT_NUMSLOTS" >&6
 
+echo "$as_me:$LINENO: checking for RTDM support" >&5
+echo $ECHO_N "checking for RTDM support... $ECHO_C" >&6
+# Check whether --enable-rtdm or --disable-rtdm was given.
+if test "${enable_rtdm+set}" = set; then
+  enableval="$enable_rtdm"
+  case "$enableval" in
+	y | yes | b | builtin | built-in) CONFIG_RTAI_RTDM=y ;;
+	m | mod | module) CONFIG_RTAI_RTDM=m ;;
+	*) unset CONFIG_RTAI_RTDM ;;
+	esac
+fi;
+echo "$as_me:$LINENO: result: ${CONFIG_RTAI_RTDM:-no}" >&5
+echo "${ECHO_T}${CONFIG_RTAI_RTDM:-no}" >&6
+
 echo "$as_me:$LINENO: checking for maximum file descriptors in RTDM" >&5
 echo $ECHO_N "checking for maximum file descriptors in RTDM... $ECHO_C" >&6
 # Check whether --enable-rtdm-fd-max or --disable-rtdm-fd-max was given.
@@ -20064,6 +20080,19 @@ if test "${enable_rtdm_shirq+set}" = set; then
 fi;
 echo "$as_me:$LINENO: result: ${CONFIG_RTAI_RTDM_SHIRQ:-no}" >&5
 echo "${ECHO_T}${CONFIG_RTAI_RTDM_SHIRQ:-no}" >&6
+
+echo "$as_me:$LINENO: checking for select(2) support in RTDM" >&5
+echo $ECHO_N "checking for select(2) support in RTDM... $ECHO_C" >&6
+# Check whether --enable-rtdm-select or --disable-rtdm-select was given.
+if test "${enable_rtdm_select+set}" = set; then
+  enableval="$enable_rtdm_select"
+  case "$enableval" in
+	y | yes) CONFIG_RTAI_RTDM_SELECT=y ;;
+	*) unset CONFIG_RTAI_RTDM_SELECT ;;
+	esac
+fi;
+echo "$as_me:$LINENO: result: ${CONFIG_RTAI_RTDM_SELECT:-no}" >&5
+echo "${ECHO_T}${CONFIG_RTAI_RTDM_SELECT:-no}" >&6
 
 echo "$as_me:$LINENO: checking for RTDM debug" >&5
 echo $ECHO_N "checking for RTDM debug... $ECHO_C" >&6
@@ -23379,6 +23408,22 @@ echo "$as_me: error: --enable-usi=y requires --enable-sem=y and --enable-tasklet
    fi
 fi
 
+if test x$CONFIG_RTAI_RTDM_SELECT = xy ; then
+   if test x$CONFIG_RTAI_RTDM = x ; then
+      { { echo "$as_me:$LINENO: error: --enable-rtdm-select=y requires --enable-rtdm=y" >&5
+echo "$as_me: error: --enable-rtdm-select=y requires --enable-rtdm=y" >&2;}
+   { (exit 1); exit 1; }; }
+   fi
+fi
+
+if test x$CONFIG_RTAI_RTDM_SHIRQ = xy ; then
+   if test x$CONFIG_RTAI_RTDM = x ; then
+      { { echo "$as_me:$LINENO: error: --enable-rtdm-shirq=y requires --enable-rtdm=y" >&5
+echo "$as_me: error: --enable-rtdm-shirq=y requires --enable-rtdm=y" >&2;}
+   { (exit 1); exit 1; }; }
+   fi
+fi
+
 if test x$CONFIG_KBUILD = xy -a x$CONFIG_RTAI_MATH = xy ; then
    { { echo "$as_me:$LINENO: error: Built-in math support is not currently available with Linux >= 2.6.x" >&5
 echo "$as_me: error: Built-in math support is not currently available with Linux >= 2.6.x" >&2;}
@@ -23736,6 +23781,11 @@ _ACEOF
 test x$CONFIG_RTAI_RTDM_SHIRQ = xy &&
 cat >>confdefs.h <<\_ACEOF
 #define CONFIG_RTAI_RTDM_SHIRQ 1
+_ACEOF
+
+test x$CONFIG_RTAI_RTDM_SELECT = xy &&
+cat >>confdefs.h <<\_ACEOF
+#define CONFIG_RTAI_RTDM_SELECT 1
 _ACEOF
 
 test x$CONFIG_RTAI_DEBUG_RTDM = xy &&

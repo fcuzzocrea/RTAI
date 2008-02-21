@@ -971,7 +971,7 @@ config RTAI_RTDM_SELECT
 	bool "Enable select multiplexing for RTDM services"
         default n
 	help
-	Enabling this option it is possible to use select support to monitor
+	By enabling this option, select(2) support can be used to monitor
 	access to multiple RTDM services all in one, as for the standard UNIX
 	support.
 

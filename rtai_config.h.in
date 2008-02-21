@@ -214,6 +214,9 @@
 #undef CONFIG_RTAI_RTDM_FD_MAX
 
 /* Kconfig */
+#undef CONFIG_RTAI_RTDM_SELECT
+
+/* Kconfig */
 #undef CONFIG_RTAI_RTDM_SHIRQ
 
 /* Kconfig */

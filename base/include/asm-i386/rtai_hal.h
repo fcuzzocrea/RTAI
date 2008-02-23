@@ -448,7 +448,7 @@ extern struct rt_times rt_smp_times[RTAI_NR_CPUS];
 
 extern struct calibration_data rtai_tunables;
 
-extern volatile unsigned long rtai_cpu_lock;
+extern volatile unsigned long rtai_cpu_lock[];
 
 //#define RTAI_TASKPRI 0xf0  // simplest usage without changing Linux code base
 #if defined(CONFIG_X86_LOCAL_APIC) && defined(RTAI_TASKPRI)
@@ -568,35 +568,78 @@ static inline void rt_spin_unlock_irqrestore(unsigned long flags, spinlock_t *lo
 	rtai_restore_flags(flags);
 }
 
+#if RTAI_NR_CPUS > 0
+
+// taken from Linux, see the related code there for an explanation
+
+static inline void rtai_spin_glock(volatile unsigned long *lock)
+{
+ short inc = 0x0100;
+ __asm__ __volatile__ (
+ LOCK_PREFIX "xaddw %w0, %1\n"
+ "1:\t"
+ "cmpb %h0, %b0\n\t"
+ "je 2f\n\t"
+ "rep; nop\n\t"
+ "movb %1, %b0\n\t"
+ "jmp 1b\n"
+ "2:"
+ :"+Q" (inc), "+m" (lock[1])
+ :
+ :"memory", "cc");
+}
+
+#if defined(CONFIG_X86_OOSTORE) || defined(CONFIG_X86_PPRO_FENCE)
+# define UNLOCK_LOCK_PREFIX LOCK_PREFIX
+#else
+# define UNLOCK_LOCK_PREFIX
+#endif
+
+static inline void rtai_spin_gunlock(volatile unsigned long *lock)
+{
+ __asm__ __volatile__(
+ UNLOCK_LOCK_PREFIX "incb %0"
+ :"+m" (lock[1])
+ :
+ :"memory", "cc");
+}
+
+#else
+
+static inline void rtai_spin_glock(volatile unsigned long *lock)
+{
+	while (test_and_set_bit(31, lock)) {
+		cpu_relax();
+	}
+	barrier();
+}
+
+static inline void rtai_spin_gunlock(volatile unsigned long *lock)
+{
+	test_and_clear_bit(31, lock);
+	cpu_relax(); 
+}
+
+#endif
+
 static inline void rt_get_global_lock(void)
 {
 	barrier();
 	rtai_cli();
-	if (!test_and_set_bit(hal_processor_id(), &rtai_cpu_lock)) {
-		while (test_and_set_bit(31, &rtai_cpu_lock)) {
-			cpu_relax();
-		}
+	if (!test_and_set_bit(hal_processor_id(), &rtai_cpu_lock[0])) {
+		rtai_spin_glock(&rtai_cpu_lock[0]);
 	}
 	barrier();
 }
 
 static inline void rt_release_global_lock(void)
 {
-#if 0
 	barrier();
 	rtai_cli();
-	atomic_clear_mask((0xFFFF0001 << hal_processor_id()), (atomic_t *)&rtai_cpu_lock);
-	cpu_relax();
-	barrier();
-#else
-	barrier();
-	rtai_cli();
-	if (test_and_clear_bit(hal_processor_id(), &rtai_cpu_lock)) {
-		test_and_clear_bit(31, &rtai_cpu_lock);
-		cpu_relax();
+	if (test_and_clear_bit(hal_processor_id(), &rtai_cpu_lock[0])) {
+		rtai_spin_gunlock(&rtai_cpu_lock[0]);
 	}
 	barrier();
-#endif
 }
 
 /**
@@ -640,11 +683,8 @@ static inline int rt_global_save_flags_and_cli(void)
 
 	barrier();
 	flags = rtai_save_flags_irqbit_and_cli();
-	if (!test_and_set_bit(hal_processor_id(), &rtai_cpu_lock)) {
-		while (test_and_set_bit(31, &rtai_cpu_lock)) {
-			cpu_relax();
-		}
-		barrier();
+	if (!test_and_set_bit(hal_processor_id(), &rtai_cpu_lock[0])) {
+		rtai_spin_glock(&rtai_cpu_lock[0]);
 		return flags | 1;
 	}
 	barrier();
@@ -662,7 +702,7 @@ static inline void rt_global_save_flags(unsigned long *flags)
 {
 	unsigned long hflags = rtai_save_flags_irqbit_and_cli();
 
-	*flags = test_bit(hal_processor_id(), &rtai_cpu_lock) ? hflags : hflags | 1;
+	*flags = test_bit(hal_processor_id(), &rtai_cpu_lock[0]) ? hflags : hflags | 1;
 	if (hflags) {
 		rtai_sti();
 	}
@@ -1067,3 +1107,5 @@ do { \
 #endif /* END RTAI_TRIOSS */
 
 #endif /* !_RTAI_HAL_XN_H */
+
+

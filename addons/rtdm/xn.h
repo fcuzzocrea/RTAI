@@ -27,6 +27,8 @@
 #include <asm/uaccess.h>
 #include <asm/mman.h>
 
+#include <rtai.h>
+
 #define CONFIG_RTAI_OPT_PERVASIVE
 
 #ifndef CONFIG_RTAI_DEBUG_RTDM
@@ -72,10 +74,10 @@
 
 //recursive smp locks, as for RTAI global stuff + a name
 
-#define XNARCH_LOCK_UNLOCKED  (xnlock_t) { 0 }
+#define XNARCH_LOCK_UNLOCKED  (xnlock_t) { { 0, 0 } }
 
 typedef unsigned long spl_t;
-typedef struct { volatile unsigned long lock; } xnlock_t;
+typedef struct { volatile unsigned long lock[2]; } xnlock_t;
 
 extern xnlock_t nklock;
 
@@ -88,17 +90,15 @@ extern xnlock_t nklock;
 
 static inline void xnlock_init(xnlock_t *lock)
 {
-	*lock = XNARCH_LOCK_UNLOCKED;
+	*lock = (xnlock_t)XNARCH_LOCK_UNLOCKED;
 }
 
 static inline void xnlock_get(xnlock_t *lock)
 {
 	barrier();
 	rtai_cli();
-	if (!test_and_set_bit(hal_processor_id(), &lock->lock)) {
-		while (test_and_set_bit(31, &lock->lock)) {
-			cpu_relax();
-		}
+	if (!test_and_set_bit(hal_processor_id(), &lock->lock[0])) {
+		rtai_spin_glock(&lock->lock[0]);
 	}
 	barrier();
 }
@@ -107,9 +107,8 @@ static inline void xnlock_put(xnlock_t *lock)
 {
 	barrier();
 	rtai_cli();
-	if (test_and_clear_bit(hal_processor_id(), &lock->lock)) {
-		test_and_clear_bit(31, &lock->lock);
-		cpu_relax();
+	if (test_and_clear_bit(hal_processor_id(), &lock->lock[0])) {
+		rtai_spin_gunlock(&lock->lock[0]);
 	}
 	barrier();
 }
@@ -119,12 +118,9 @@ static inline spl_t __xnlock_get_irqsave(xnlock_t *lock)
 	unsigned long flags;
 
 	barrier();
-	rtai_save_flags_and_cli(flags);
-	flags &= (1 << RTAI_IFLAG);
-	if (!test_and_set_bit(hal_processor_id(), &lock->lock)) {
-		while (test_and_set_bit(31, &lock->lock)) {
-			cpu_relax();
-		}
+	flags = rtai_save_flags_irqbit_and_cli();
+	if (!test_and_set_bit(hal_processor_id(), &lock->lock[0])) {
+		rtai_spin_glock(&lock->lock[0]);
 		barrier();
 		return flags | 1;
 	}
@@ -140,16 +136,9 @@ static inline void xnlock_put_irqrestore(xnlock_t *lock, spl_t flags)
 	barrier();
 	rtai_cli();
 	if (test_and_clear_bit(0, &flags)) {
-		if (test_and_clear_bit(hal_processor_id(), &lock->lock)) {
-			test_and_clear_bit(31, &lock->lock);
-			cpu_relax();
-		}
+		xnlock_put(lock);
 	} else {
-		if (!test_and_set_bit(hal_processor_id(), &lock->lock)) {
-			while (test_and_set_bit(31, &lock->lock)) {
-				cpu_relax();
-			}
-		}
+		xnlock_get(lock);
 	}
 	if (flags) {
 		rtai_sti();

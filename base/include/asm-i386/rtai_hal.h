@@ -685,6 +685,7 @@ static inline int rt_global_save_flags_and_cli(void)
 	flags = rtai_save_flags_irqbit_and_cli();
 	if (!test_and_set_bit(hal_processor_id(), &rtai_cpu_lock[0])) {
 		rtai_spin_glock(&rtai_cpu_lock[0]);
+		barrier();
 		return flags | 1;
 	}
 	barrier();

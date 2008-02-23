@@ -1,3 +1,8 @@
+2008-02-25 Paolo Mantegazza <mantegazza@aero.polimi.it>
+
+	* addons/rtdm/xn.h: reviewed global locks to allow using ticket
+	  locking, as/when available in rtai_hals.
+
 2008-02-24 Paolo Mantegazza <mantegazza@aero.polimi.it>
 
 	* base/include/asm-i386/rtai_hal.h: copy Linux ticket locking for 

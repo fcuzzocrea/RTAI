@@ -177,37 +177,23 @@ do { \
 
 //#define rt_free_sched_ipi()     rt_release_irq(SCHED_IPI)
 
-#define sched_get_global_lock(cpuid) \
-do { \
-	barrier(); \
-	if (!test_and_set_bit(cpuid, &rtai_cpu_lock)) { \
-		while (test_and_set_bit(31, &rtai_cpu_lock)) { \
-			cpu_relax(); \
-		} \
-	} \
-	barrier(); \
-} while (0)
+static inline void sched_get_global_lock(int cpuid)
+{
+	barrier(); 
+	if (!test_and_set_bit(cpuid, &rtai_cpu_lock[0])) { 
+		rtai_spin_glock(&rtai_cpu_lock[0]);
+	}
+	barrier();
+}
 
-#if 0
-#include <asm/atomic.h>
-#define sched_release_global_lock(cpuid) \
-do { \
-	barrier(); \
-	atomic_clear_mask((0xFFFF0001 << cpuid), (atomic_t *)&rtai_cpu_lock); \
-	cpu_relax(); \
-	barrier(); \
-} while (0)
-#else
-#define sched_release_global_lock(cpuid) \
-do { \
-	barrier(); \
-	if (test_and_clear_bit(cpuid, &rtai_cpu_lock)) { \
-		test_and_clear_bit(31, &rtai_cpu_lock); \
-		cpu_relax(); \
-	} \
-	barrier(); \
-} while (0)
-#endif
+static inline void sched_release_global_lock(int cpuid)
+{
+	barrier();
+	if (test_and_clear_bit(cpuid, &rtai_cpu_lock[0])) {
+		rtai_spin_gunlock(&rtai_cpu_lock[0]);
+	} 
+	barrier(); 
+}
 
 #else /* !CONFIG_SMP */
 

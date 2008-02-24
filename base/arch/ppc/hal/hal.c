@@ -191,7 +191,7 @@ static struct {
 	unsigned long label;
 } rtai_sysreq_table[RTAI_NR_SRQS];
 
-volatile unsigned long rtai_cpu_lock;
+volatile unsigned long rtai_cpu_lock[2];
 struct hal_domain_struct rtai_domain;
 volatile unsigned long rtai_cpu_realtime;
 struct rt_times rt_times;

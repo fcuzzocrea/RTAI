@@ -322,7 +322,7 @@ static inline void rt_spin_unlock_irqrestore(unsigned long flags, spinlock_t *lo
 static inline void rtai_spin_glock(volatile unsigned long *lock)
 {
 	unsigned long owner;
-#if 0   // how to do them all with cmpxchg only
+#if 0   // how to do them all with cmpxchg only, used in rtai-24.x.x
 	do {
 		owner = lock[1];
 	} while (cmpxchg(lock[1], owner, (owner + 0x10000) & 0xFFF0FFF) != owner);

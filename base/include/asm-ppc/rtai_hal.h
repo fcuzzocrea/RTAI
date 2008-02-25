@@ -322,9 +322,13 @@ static inline void rt_spin_unlock_irqrestore(unsigned long flags, spinlock_t *lo
 static inline void rtai_spin_glock(volatile unsigned long *lock)
 {
 	unsigned long val, owner;
+#if 0
 	do {
 		val = lock[1];
 	} while (cmpxchg(&lock[1], val, (val + 0x10000) & 0x7FFF7FFF) != val);
+#else
+	val = atomic_add_return(0x10000, (atomic_t *)&lock[1]) - 0x10000;
+#endif
 	if ((owner = (val & 0x7FFF0000) >> 16) != (val & 0x7FFF)) {
 		while ((lock[1] & 0x7FFF) != owner) {
 			 cpu_relax();

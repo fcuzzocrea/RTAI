@@ -3,7 +3,7 @@
 	* base/include/asm-x86_64/rtai_hal.h: copy Linux ticket locking for 
 	  our recursive rtai_cpu_lock when RTAI_NR_CPUS > 2.
 
-	* base/include/asm-ppc/rtai_hal.h: copy Linux ticket locking for 
+	* base/include/asm-ppc/rtai_hal.h: implement ticket locking iin C for 
 	  our recursive rtai_cpu_lock when RTAI_NR_CPUS > 2.
 
 	* base/arch/x86_64/hal.immed: rtai_cpu_lock uses an array of 2 unsigned

@@ -337,6 +337,7 @@ static inline void rtai_spin_gunlock(volatile unsigned long *lock)
 	unsigned long val;
 	do {
 		val = lock[1];
+		cpu_relax();
 	} while (cmpxchg(&lock[1], val, (val + 1) & 0xFFF0FFF) != val);
 }
 

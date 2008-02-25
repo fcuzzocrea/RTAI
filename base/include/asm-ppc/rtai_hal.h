@@ -255,6 +255,20 @@ extern struct rtai_switch_data {
 	volatile unsigned long lflags;
 } rtai_linux_context[RTAI_NR_CPUS];
 
+static inline unsigned long rtai_save_flags_irqbit(void)
+{
+	unsigned long flags;
+	rtai_save_flags(flags);
+	return flags & (1 << RTAI_IFLAG);
+}
+
+static inline unsigned long rtai_save_flags_irqbit_and_cli(void)
+{
+	unsigned long flags;
+	rtai_save_flags_and_cli(flags);
+	return flags & (1 << RTAI_IFLAG);
+}
+
 #ifdef CONFIG_SMP
 
  #define SCHED_VECTOR  RTAI_SMP_NOTIFY_VECTOR
@@ -410,20 +424,6 @@ static inline void rt_global_sti(void)
 {
     rt_release_global_lock();
     rtai_sti();
-}
-
-static inline unsigned long rtai_save_flags_irqbit(void)
-{
-	unsigned long flags;
-	rtai_save_flags(flags);
-	return flags & (1 << RTAI_IFLAG);
-}
-
-static inline unsigned long rtai_save_flags_irqbit_and_cli(void)
-{
-	unsigned long flags;
-	rtai_save_flags_and_cli(flags);
-	return flags & (1 << RTAI_IFLAG);
 }
 
 /**

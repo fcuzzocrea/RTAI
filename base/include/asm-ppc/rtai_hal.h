@@ -321,22 +321,23 @@ static inline void rt_spin_unlock_irqrestore(unsigned long flags, spinlock_t *lo
 
 static inline void rtai_spin_glock(volatile unsigned long *lock)
 {
-	unsigned long owner;
-#if 0   // how to do them all with cmpxchg only, used in rtai-24.x.x
+	unsigned long val, owner;
 	do {
-		owner = lock[1];
-	} while (cmpxchg(lock[1], owner, (owner + 0x10000) & 0xFFF0FFF) != owner);
-#endif // but Linux has atomic_add_return ...
-	owner = (atomic_add_return(0x10000, &lock[1]) & 0xFFF) << 0xFFFF;
-	while ((lock[1] & 0xFFF0000) != owner) cpu_relax();
+		val = lock[1];
+	} while (cmpxchg(&lock[1], val, (val + 0x10000) & 0xFFF0FFF) != val);
+	if ((owner = (val & 0xFFF0000) >> 16) != (val & 0xFFF)) {
+		while ((lock[1] & 0xFFF) != owner) {
+			 cpu_relax();
+		}
+	}
 }
 
-static inline void rtai_spin_glock(volatile unsigned long *lock)
+static inline void rtai_spin_gunlock(volatile unsigned long *lock)
 {
 	unsigned long val;
 	do {
 		val = lock[1];
-	} while (cmpxchg(lock[1], val, (val + 1) & 0xFFF0FFF) != val);
+	} while (cmpxchg(&lock[1], val, (val + 1) & 0xFFF0FFF) != val);
 }
 
 #else

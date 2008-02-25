@@ -324,9 +324,9 @@ static inline void rtai_spin_glock(volatile unsigned long *lock)
 	unsigned long val, owner;
 	do {
 		val = lock[1];
-	} while (cmpxchg(&lock[1], val, (val + 0x10000) & 0xFFF0FFF) != val);
-	if ((owner = (val & 0xFFF0000) >> 16) != (val & 0xFFF)) {
-		while ((lock[1] & 0xFFF) != owner) {
+	} while (cmpxchg(&lock[1], val, (val + 0x10000) & 0x7FFF7FFF) != val);
+	if ((owner = (val & 0x7FFF0000) >> 16) != (val & 0x7FFF)) {
+		while ((lock[1] & 0x7FFF) != owner) {
 			 cpu_relax();
 		}
 	}
@@ -338,7 +338,7 @@ static inline void rtai_spin_gunlock(volatile unsigned long *lock)
 	do {
 		val = lock[1];
 		cpu_relax();
-	} while (cmpxchg(&lock[1], val, (val + 1) & 0xFFF0FFF) != val);
+	} while (cmpxchg(&lock[1], val, (val + 1) & 0x7FFF7FFF) != val);
 }
 
 #else

@@ -761,6 +761,26 @@ config RTAI_MALLOC
 	in the real-time domain.
 	The module will be called rtai_malloc.o.
 
+config RTAI_USE_TLSF
+	bool "Allocate memory using TLSF in place of BSD one"
+	depends on RTAI_MALLOC
+	default n
+	help
+	RTAI dynamic memory allocation support offers two different methods
+	to allocate memory chunks. The default one is along the lines 
+	illustrated in:
+	"Design of a General Purpose Memory Allocator for the 4.3BSD Unix
+	 Kernel" by Marshall K. McKusick. 
+	By enabling this option the:
+	"Two Levels Segregated Lists (TLSF)" as found at:
+	http://rtportal.upv.es/rtmalloc/allocators/tlsf/
+	will be used instead.
+	Rough measures seems to indicate small differences between the two
+	in term of alloc/free times, likely with BSD being better for the
+	tested allocation sizes (up to a few KBs), but TLSF seems to have
+	better, i.e. lower, fragmentation properties. In any case you should
+	check it yourself within your own applications.
+
 config RTAI_MALLOC_VMALLOC
 	bool "Use vmalloc() support"
 	depends on RTAI_MALLOC

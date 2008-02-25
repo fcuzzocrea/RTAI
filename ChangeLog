@@ -1,5 +1,19 @@
 2008-02-25 Paolo Mantegazza <mantegazza@aero.polimi.it>
 
+	* base/include/asm-x86_64/rtai_hal.h: copy Linux ticket locking for 
+	  our recursive rtai_cpu_lock when RTAI_NR_CPUS > 2.
+
+	* base/include/asm-ppc/rtai_hal.h: copy Linux ticket locking for 
+	  our recursive rtai_cpu_lock when RTAI_NR_CPUS > 2.
+
+	* base/arch/x86_64/hal.immed: rtai_cpu_lock uses an array of 2 unsigned
+	  long to allow rtai_cpu_lock to recurse using ticket locking.
+
+	* base/arch/ppc/hal.immed: rtai_cpu_lock uses an array of 2 unsigned
+	  long to allow rtai_cpu_lock to recurse using ticket locking.
+
+2008-02-24 Paolo Mantegazza <mantegazza@aero.polimi.it>
+
 	* addons/rtdm/xn.h: reviewed global locks to allow using ticket
 	  locking, as/when available in rtai_hals.
 
@@ -8,7 +22,7 @@
 	* base/include/asm-i386/rtai_hal.h: copy Linux ticket locking for 
 	  our recursive rtai_cpu_lock when RTAI_NR_CPUS > 2.
 
-	* base/arc/i386/hal.immed: rtai_cpu_lock uses an array of 2 unsigned
+	* base/arch/i386/hal.immed: rtai_cpu_lock uses an array of 2 unsigned
 	  long to allow rtai_cpu_lock to recurse using ticket locking.
 
 	* base/sched/sched.c: cleanup and refactor internal sched locks.

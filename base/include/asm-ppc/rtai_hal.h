@@ -310,24 +310,28 @@ static inline void rt_spin_unlock_hw_irqrestore(unsigned long flags, spinlock_t 
 	rtai_hw_restore_flags(flags);
 }
 
-static inline void rt_spin_lock_irq(spinlock_t *lock) {
+static inline void rt_spin_lock_irq(spinlock_t *lock)
+{
     rtai_cli();
     rt_spin_lock(lock);
 }
 
-static inline void rt_spin_unlock_irq(spinlock_t *lock) {
+static inline void rt_spin_unlock_irq(spinlock_t *lock)
+{
     rt_spin_unlock(lock);
     rtai_sti();
 }
 
-static inline unsigned long rt_spin_lock_irqsave(spinlock_t *lock) {
+static inline unsigned long rt_spin_lock_irqsave(spinlock_t *lock)
+{
     unsigned long flags;
     rtai_save_flags_and_cli(flags);
     rt_spin_lock(lock);
     return flags;
 }
 
-static inline void rt_spin_unlock_irqrestore(unsigned long flags, spinlock_t *lock) {
+static inline void rt_spin_unlock_irqrestore(unsigned long flags, spinlock_t *lock)
+{
 	rt_spin_unlock(lock);
 	rtai_local_irq_restore(flags);
 }
@@ -487,6 +491,8 @@ static inline void rt_global_restore_flags(unsigned long flags)
 }
 
 #else /* !CONFIG_SMP */
+
+#define _send_sched_ipi(dest)
 
 #define rt_spin_lock(lock)
 #define rt_spin_unlock(lock)

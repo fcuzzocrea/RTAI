@@ -118,16 +118,16 @@ static inline unsigned long long rtai_llimd(unsigned long long ull, unsigned lon
 //---------------------------------------------------------------------------//
 
 #if defined(__KERNEL__) && !defined(__cplusplus)
- #include <linux/sched.h>
- #include <linux/interrupt.h>
+#include <linux/sched.h>
+#include <linux/interrupt.h>
 
- #include <asm/system.h>
- #include <asm/io.h>
- #include <asm/time.h>
+#include <asm/system.h>
+#include <asm/io.h>
+#include <asm/time.h>
 
- #include <asm/rtai_atomic.h>
- #include <asm/rtai_fpu.h>
- #include <rtai_trace.h>
+#include <asm/rtai_atomic.h>
+#include <asm/rtai_fpu.h>
+#include <rtai_trace.h>
 
 struct rtai_realtime_irq_s {
         int (*handler)(unsigned irq, void *cookie);
@@ -137,40 +137,40 @@ struct rtai_realtime_irq_s {
         int (*irq_ack)(unsigned int);
 };
 
- #define RTAI_DOMAIN_ID  0x52544149
- #define RTAI_NR_TRAPS   HAL_NR_FAULTS
- #define RTAI_NR_SRQS    32
+#define RTAI_DOMAIN_ID  0x52544149
+#define RTAI_NR_TRAPS   HAL_NR_FAULTS
+#define RTAI_NR_SRQS    32
 
- #define RTAI_TIMER_DECR_IRQ       IPIPE_VIRQ_BASE
- #define RTAI_TIMER_8254_IRQ       RTAI_TIMER_DECR_IRQ
- #define RTAI_FREQ_DECR            (rtai_tunables.cpu_freq)
- #define RTAI_FREQ_8254            (rtai_tunables.cpu_freq)
- #define RTAI_LATENCY_8254         CONFIG_RTAI_SCHED_8254_LATENCY
- #define RTAI_SETUP_TIME_8254      500
+#define RTAI_TIMER_DECR_IRQ       IPIPE_VIRQ_BASE
+#define RTAI_TIMER_8254_IRQ       RTAI_TIMER_DECR_IRQ
+#define RTAI_FREQ_DECR            (rtai_tunables.cpu_freq)
+#define RTAI_FREQ_8254            (rtai_tunables.cpu_freq)
+#define RTAI_LATENCY_8254         CONFIG_RTAI_SCHED_8254_LATENCY
+#define RTAI_SETUP_TIME_8254      500
 
- #define RTAI_TIME_LIMIT           0x7000000000000000LL
+#define RTAI_TIME_LIMIT           0x7000000000000000LL
 
- #define RTAI_IFLAG  15
+#define RTAI_IFLAG  15
 
- #define rtai_cpuid()       hal_processor_id()
- #define rtai_tskext(idx)   hal_tskext[idx]
+#define rtai_cpuid()       hal_processor_id()
+#define rtai_tskext(idx)   hal_tskext[idx]
 
 /* Use these to grant atomic protection when accessing the hardware */
- #define rtai_hw_cli()                  hal_hw_cli()
- #define rtai_hw_sti()                  hal_hw_sti()
- #define rtai_hw_save_flags_and_cli(x)  hal_hw_local_irq_save(x)
- #define rtai_hw_restore_flags(x)       hal_hw_local_irq_restore(x)
- #define rtai_hw_save_flags(x)          hal_hw_local_irq_flags(x)
+#define rtai_hw_cli()                  hal_hw_cli()
+#define rtai_hw_sti()                  hal_hw_sti()
+#define rtai_hw_save_flags_and_cli(x)  hal_hw_local_irq_save(x)
+#define rtai_hw_restore_flags(x)       hal_hw_local_irq_restore(x)
+#define rtai_hw_save_flags(x)          hal_hw_local_irq_flags(x)
 
 /* Use these to grant atomic protection in hard real time code */
- #define rtai_cli()                  hal_hw_cli()
- #define rtai_sti()                  hal_hw_sti()
- #define rtai_save_flags_and_cli(x)  hal_hw_local_irq_save(x)
- #define rtai_restore_flags(x)       hal_hw_local_irq_restore(x)
- #define rtai_save_flags(x)          hal_hw_local_irq_flags(x)
+#define rtai_cli()                  hal_hw_cli()
+#define rtai_sti()                  hal_hw_sti()
+#define rtai_save_flags_and_cli(x)  hal_hw_local_irq_save(x)
+#define rtai_restore_flags(x)       hal_hw_local_irq_restore(x)
+#define rtai_save_flags(x)          hal_hw_local_irq_flags(x)
 
 /* The only Linux irq flags manipulation lacking in its system.h */
- #define local_irq_restore_nosync(flags, cpuid)  do { adp_root->cpudata[cpuid].status = flags; } while (0)
+#define local_irq_restore_nosync(flags, cpuid)  do { adp_root->cpudata[cpuid].status = flags; } while (0)
 
 extern volatile unsigned long hal_pended;
 
@@ -271,17 +271,18 @@ static inline unsigned long rtai_save_flags_irqbit_and_cli(void)
 
 #ifdef CONFIG_SMP
 
- #define SCHED_VECTOR  RTAI_SMP_NOTIFY_VECTOR
- #define SCHED_IPI     RTAI_SMP_NOTIFY_IPI
+#define SCHED_VECTOR  RTAI_SMP_NOTIFY_VECTOR
+#define SCHED_IPI     RTAI_SMP_NOTIFY_IPI
+
+#define _send_sched_ipi(dest)  do { mb(); mpic_send_ipi(0x2, dest); } while (0)
 
 #ifdef CONFIG_PREEMPT
- #define rt_spin_lock(lock)    do { barrier(); _raw_spin_lock(lock); barrier(); } while (0)
- #define rt_spin_unlock(lock)  do { barrier(); _raw_spin_unlock(lock); barrier(); } while (0)
+#define rt_spin_lock(lock)    do { barrier(); _raw_spin_lock(lock); barrier(); } while (0)
+#define rt_spin_unlock(lock)  do { barrier(); _raw_spin_unlock(lock); barrier(); } while (0)
 #else /* !CONFIG_PREEMPT */
- #define rt_spin_lock(lock)    spin_lock(lock)
- #define rt_spin_unlock(lock)  spin_unlock(lock)
+#define rt_spin_lock(lock)    spin_lock(lock)
+#define rt_spin_unlock(lock)  spin_unlock(lock)
 #endif /* CONFIG_PREEMPT */
-
 
 static inline void rt_spin_lock_hw_irq(spinlock_t *lock)
 {

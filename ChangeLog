@@ -1,3 +1,9 @@
+2008-03-01 Paolo Mantegazza <mantegazza@aero.polimi.it>
+
+	* base/ipc/shm/shm.c: fixed wrong arg passing to rt_shm_alloc_usp 
+	  when called from ioct support. 
+	  Bug pointed out by: Calin A. Culianu <calin@ajvar.org>. 
+
 2008-02-25 Paolo Mantegazza <mantegazza@aero.polimi.it>
 
 	* base/include/asm-x86_64/rtai_hal.h: copy Linux ticket locking for 

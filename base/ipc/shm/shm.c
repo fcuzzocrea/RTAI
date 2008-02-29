@@ -209,7 +209,7 @@ static int rtai_shm_f_ioctl(struct inode *inode, struct file *file, unsigned int
 	switch (cmd) {
 		case SHM_ALLOC: {
 			TRACE_RTAI_SHM(TRACE_RTAI_EV_SHM_MALLOC, ((unsigned long *)arg)[0], cmd, current->pid);
-			return rt_shm_alloc_usp(((unsigned long *)arg)[0], ((int *)arg)[1], ((int *)arg)[2]);
+			return rt_shm_alloc_usp(((unsigned long *)arg)[0], ((long *)arg)[1], ((long *)arg)[2]);
 		}
 		case SHM_FREE: {
 			TRACE_RTAI_SHM(TRACE_RTAI_EV_SHM_FREE, arg, cmd, current->pid);

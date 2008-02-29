@@ -1377,8 +1377,10 @@ RTAI_PROTO(void, rt_get_exectime, (RT_TASK *task, RTIME *exectime))
 
 RTAI_PROTO(void, rt_gettimeorig, (RTIME time_orig[]))
 {
-	struct { RTIME *time_orig; } arg = { time_orig };
+	RTIME lorig[2];
+	struct { RTIME *time_orig; } arg = { lorig };
 	rtai_lxrt(BIDX, SIZARG, GET_TIMEORIG, &arg);
+	memcpy(time_orig, lorig, sizeof(lorig));
 }
 
 RTAI_PROTO(RT_TASK *,ftask_init,(unsigned long name, int priority))

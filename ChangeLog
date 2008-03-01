@@ -1,5 +1,11 @@
 2008-03-01 Paolo Mantegazza <mantegazza@aero.polimi.it>
 
+	* base/include/rtai_netrpc.h: revised for 32/64 bits compatibilty.
+
+	* base/ipc/netrpc.c: revised for 32/64 bits compatibilty.
+
+2008-02-29 Paolo Mantegazza <mantegazza@aero.polimi.it>
+
 	* base/ipc/shm/shm.c: fixed wrong arg passing to rt_shm_alloc_usp 
 	  when called from ioct support. 
 	  Bug pointed out by: Calin A. Culianu <calin@ajvar.org>. 

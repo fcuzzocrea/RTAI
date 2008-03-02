@@ -547,6 +547,7 @@ distclean-generic:
 maintainer-clean-generic:
 	@echo "This command is intended for maintainers to use"
 	@echo "it deletes files that may require special tools to rebuild."
+@CONFIG_KBUILD_FALSE@distclean-local:
 @CONFIG_KBUILD_FALSE@clean-local:
 clean: clean-am
 
@@ -557,7 +558,7 @@ distclean: distclean-am
 	-rm -rf ./$(DEPDIR)
 	-rm -f GNUmakefile
 distclean-am: clean-am distclean-compile distclean-generic \
-	distclean-libtool distclean-tags
+	distclean-libtool distclean-local distclean-tags
 
 dvi: dvi-am
 
@@ -602,9 +603,9 @@ uninstall-am: uninstall-info-am
 .PHONY: CTAGS GTAGS all all-am all-local check check-am clean \
 	clean-generic clean-libtool clean-local clean-noinstLIBRARIES \
 	ctags distclean distclean-compile distclean-generic \
-	distclean-libtool distclean-tags distdir dvi dvi-am html \
-	html-am info info-am install install-am install-data \
-	install-data-am install-exec install-exec-am \
+	distclean-libtool distclean-local distclean-tags distdir dvi \
+	dvi-am html html-am info info-am install install-am \
+	install-data install-data-am install-exec install-exec-am \
 	install-exec-local install-info install-info-am install-man \
 	install-strip installcheck installcheck-am installdirs \
 	maintainer-clean maintainer-clean-generic mostlyclean \
@@ -621,6 +622,9 @@ uninstall-am: uninstall-info-am
 
 @CONFIG_KBUILD_TRUE@clean-local:
 @CONFIG_KBUILD_TRUE@	@RTAI_KBUILD_CLEAN@
+
+@CONFIG_KBUILD_TRUE@distclean-local:
+@CONFIG_KBUILD_TRUE@	@RTAI_KBUILD_DISTCLEAN@
 
 @CONFIG_KBUILD_FALSE@rtai_hal.o: libhal.a
 @CONFIG_KBUILD_FALSE@	$(CROSS_COMPILE)$(LD) --whole-archive $< -r -o $@

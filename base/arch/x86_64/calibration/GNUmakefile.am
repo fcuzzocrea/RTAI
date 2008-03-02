@@ -16,6 +16,10 @@ calibrate_rt.ko: $(libcalibrate_rt_a_SOURCES)
 
 clean-local:
 	@RTAI_KBUILD_CLEAN@
+
+distclean-local:
+	@RTAI_KBUILD_DISTCLEAN@
+	rm -f Makefile
 else
 noinst_LIBRARIES = libcalibrate_rt.a
 

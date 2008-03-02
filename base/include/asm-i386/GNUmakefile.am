@@ -1,4 +1,4 @@
-includedir = $(prefix)/include/asm-i386
+includedir = @includedir@/asm-i386
 
 include_HEADERS = \
 		rtai.h \

@@ -15,6 +15,9 @@ rtai_hal.ko: $(libhal_a_SOURCES)
 
 clean-local:
 	@RTAI_KBUILD_CLEAN@
+
+distclean-local:
+	@RTAI_KBUILD_DISTCLEAN@
 else
 noinst_LIBRARIES = libhal.a
 

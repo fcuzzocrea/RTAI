@@ -23,7 +23,7 @@
 
 #include <rtai_types.h>
 
-#ifdef CONFIG_RTAI_INTERNAL_LEDS_SUPPORT
+#if defined(CONFIG_RTAI_INTERNAL_LEDS_SUPPORT) && defined(CONFIG_RTAI_LEDS)
 
 #include <asm/rtai_leds.h>
 

@@ -159,7 +159,8 @@ dnl file, therefore we must unset it before later checking if the kernel
 dnl actually defined it as required too.
 unset CONFIG_MODULES
 
-RTAI_LINUX_DIR=$CONFIG_RTAI_LINUXDIR
+dnl safe default
+RTAI_LINUX_DIR="/usr/src/linux"
 
 AC_ARG_WITH(linux-dir,
     [  --with-linux-dir=<linux-dir>      RTAI-enabled Linux kernel tree],

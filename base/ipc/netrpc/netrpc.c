@@ -40,12 +40,12 @@ MODULE_LICENSE("GPL");
 
 /* ethernet support(s) we want to use: 1 -> DO, 0 -> DO NOT */
 
-#define SOFT_RTNET      1
+#define SOFT_RTNET  1
 
 #ifdef CONFIG_RTAI_NETRPC_RTNET
-#define HARD_RTNET      1
+#define HARD_RTNET  1
 #else
-#define HARD_RTNET      0
+#define HARD_RTNET  0
 #endif
 
 /* end of ethernet support(s) we want to use */
@@ -54,8 +54,8 @@ MODULE_LICENSE("GPL");
 #ifndef COMPILE_ANYHOW
 #include <rtnet.h>  // must be the true RTNet header file
 #endif
-#define MSG_SOFT 0
-#define MSG_HARD 1
+#define MSG_SOFT  0
+#define MSG_HARD  1
 #define hard_rt_socket           	rt_dev_socket
 #define hard_rt_bind             	rt_dev_bind
 #define hard_rt_close            	rt_dev_close
@@ -73,12 +73,12 @@ MODULE_LICENSE("GPL");
 #define hard_rt_sendto           	soft_rt_sendto
 #endif
 
-#define LOCALHOST         "127.0.0.1"
+#define LOCALHOST  "127.0.0.1"
 
 #if BITS_PER_LONG == 32
-#define BASEPORT           (NETRPC_BASEPORT_32)
+#define BASEPORT  (NETRPC_BASEPORT_32)
 #else
-#define BASEPORT           (NETRPC_BASEPORT_64)
+#define BASEPORT  (NETRPC_BASEPORT_64)
 #endif
 
 #define NETRPC_STACK_SIZE  6000
@@ -219,11 +219,12 @@ struct reply_t { long long wsize, w2size, myport; unsigned long long retval; cha
 static inline int argconv(void *ain, void *aout, int send_mach, int argsize, unsigned int partypes)
 {
 #define recv_mach  (sizeof(long))
-	int argsizeout = 0;
+	int argsizeout;
 	if (send_mach == recv_mach) {
 		memcpy(aout, ain, argsize);
 		return argsize;
 	}
+	argsizeout = 0;
 	if (send_mach == 4 && recv_mach == 8) {
 		long *out = aout;
 		int *in = ain;

@@ -563,12 +563,13 @@ static void hard_stub_fun(struct portslot_t *portslotp)
 	SEM *sem;
 	struct par_t *par;
 	long wsize, w2size, sock;
-	long *a;
+	long *ain;
 	long type;
+
 	addr = (struct sockaddr *)&portslotp->addr;
 	sock = portslotp->socket[1];
 	sem  = &portslotp->sem;
-	a = (par = (void *)msg)->a;
+	ain = (par = (void *)msg)->a;
 	task = (RT_TASK *)portslotp->task;
 	if (task->lnxtsk) {
 		sprintf(current->comm, "HRDSTB-%ld", sock);
@@ -583,6 +584,7 @@ recvryh:
 		}
 		if (portslotp->owner != par->owner)	{
 			unsigned long flags;
+
 			flags = rt_spin_lock_irqsave(&recovery_lock);
 			recovery.msg[recovery.in].priority = par->priority;
 			recovery.msg[recovery.in].owner = par->owner;
@@ -592,25 +594,28 @@ recvryh:
 			rt_spin_unlock_irqrestore(flags, &recovery_lock);
 			rt_sem_signal(&portslot[0].sem);
 		} else {
+			int argsize;
+			long a[par->argsize/sizeof(long) + 1];
 			if(par->priority >= 0 && par->priority < RT_SCHED_LINUX_PRIORITY) {
 				if ((wsize = par->priority) < task->priority) {
 					task->priority = wsize;
 				}
 				task->base_priority = par->base_priority;
 			}
+			argsize = argconv(ain, a, par->mach, par->argsize, par->partypes);
 			type = par->type;
 			if (par->rsize) {
-				a[USP_RBF1(type) - 1] = (long)((char *)a + par->argsize);
+				a[USP_RBF1(type) - 1] = (long)((char *)ain + par->argsize);
 			}
 			if (NEED_TO_W(type)) {
 				wsize = USP_WSZ1(type);
-				wsize = wsize ? a[wsize - 1] : sizeof(long);
+				wsize = wsize ? a[wsize - 1] : par->mach; //sizeof(long);
 			} else {
 				wsize = 0;
 			}
 			if (NEED_TO_W2ND(type)) {
 				w2size = USP_WSZ2(type);
-				w2size = w2size ? a[w2size - 1] : sizeof(long);
+				w2size = w2size ? a[w2size - 1] : par->mach; //sizeof(long);
 			} else {
 				w2size = 0;
 			}
@@ -792,7 +797,7 @@ RTAI_SYSCALL_MODE int rt_send_req_rel_port(unsigned long node, int op, unsigned 
 				portslotp->mbx  = mbx;
 				portslotp->recovered = 1;
 				portslotp->addr.sin_addr.s_addr = msg.rem_node;	
-				if (msg.port < NETRPC_BASEPORT_64) {
+				if ((((unsigned long)msg.port)/1000) == (NETRPC_BASEPORT_32/1000)) {
 					return (portslotp->indx << PORT_SHF);
 				} else {
 					return (portslotp->indx << PORT_SHF) + PORT_INC;

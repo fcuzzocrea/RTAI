@@ -1,3 +1,11 @@
+2008-03-03 Paolo Mantegazza <mantegazza@aero.polimi.it>
+
+	* base/include/rtai_netrpc.h: updated kernel/user space rt_poll for
+	  32/64 interoperability.
+
+	* base/ipc/sem/sem.c: ensure rt_poll_netrpc cares of adapting remote
+	  addresses.
+
 2008-03-01 Paolo Mantegazza <mantegazza@aero.polimi.it>
 
 	* base/include/rtai_netrpc.h: revised for 32/64 bits compatibilty.

@@ -325,11 +325,51 @@ static inline int RT_sem_wait_timed(unsigned long node, int port, SEM *sem, RTIM
 
 #ifdef CONFIG_RTAI_RT_POLL
 
+static inline int RT_poll_4to8(unsigned long node, int port, struct rt_poll_s *pdsain, unsigned long nr, RTIME timeout)
+{
+	int i, retval;
+	struct rt_poll_lls { unsigned long long what, forwhat; } pdsa[nr];
+	struct { void *pdsa1; void *pdsa2; unsigned long pdsa_size; RTIME timeout; } arg = { pdsa, pdsa, nr*sizeof(struct rt_poll_lls), timeout };
+	for (i = 0; i < nr; i++) {
+		pdsa[nr].what    = (unsigned long)pdsain[nr].what;
+		pdsa[nr].forwhat = pdsain[nr].forwhat;
+	}
+	retval = (int)rt_net_rpc(PACKPORT(port, NET_RPC_EXT, SEM_RT_POLL_NETRPC, 3), UR1(1, 3) | UW1(2, 3), &arg, SIZARG, 1, PARTYPES4(UINT, UINT, UINT, RTIM));
+	for (i = 0; i < nr; i++) {
+		pdsain[nr].what    = (void *)(unsigned long)pdsa[nr].what;
+		pdsain[nr].forwhat = pdsa[nr].forwhat;
+	}
+	return retval;
+} 
+
+static inline int RT_poll_8to4(unsigned long node, int port, struct rt_poll_s *pdsain, unsigned long nr, RTIME timeout)
+{
+	int i, retval;
+	struct rt_poll_is { unsigned int what, forwhat; } pdsa[nr];
+	struct { void *pdsa1; void *pdsa2; unsigned long pdsa_size; RTIME timeout; } arg = { pdsa, pdsa, nr*sizeof(struct rt_poll_is), timeout };
+	for (i = 0; i < nr; i++) {
+		pdsa[nr].what    = (unsigned int)pdsain[nr].what;
+		pdsa[nr].forwhat = pdsain[nr].forwhat;
+	}
+	retval = (int)rt_net_rpc(PACKPORT(port, NET_RPC_EXT, SEM_RT_POLL_NETRPC, 3), UR1(1, 3) | UW1(2, 3), &arg, SIZARG, 1, PARTYPES4(UINT, UINT, UINT, RTIM));
+	for (i = 0; i < nr; i++) {
+		pdsain[nr].what    = (void *)(unsigned long)pdsa[nr].what;
+		pdsain[nr].forwhat = pdsa[nr].forwhat;
+	}
+	return retval;
+} 
+
 static inline int RT_poll(unsigned long node, int port, struct rt_poll_s *pdsa, unsigned long nr, RTIME timeout)
 {
 	if (node) {
-		struct { struct rt_poll_s *pdsa1; struct rt_poll_s *pdsa2; unsigned long pdsa_size; RTIME timeout; } arg = { pdsa, pdsa, nr*sizeof(struct rt_poll_s), timeout };
-		return (int)rt_net_rpc(PACKPORT(port, NET_RPC_EXT, SEM_RT_POLL_NETRPC, 3), UR1(1, 3) | UW1(2, 3), &arg, SIZARG, 1, PARTYPES4(UINT, UINT, UINT, RTIM));
+		if (sizeof(long) == 4 && (abs(port) & PORT_MSK)) {
+			return RT_poll_4to8(node, port, pdsa, nr, timeout);
+		} else if (sizeof(long) == 8 && !(abs(port) & PORT_MSK)) {
+			return RT_poll_8to4(node, port, pdsa, nr, timeout);
+		} else {
+			struct { struct rt_poll_s *pdsa1; struct rt_poll_s *pdsa2; unsigned long pdsa_size; RTIME timeout; } arg = { pdsa, pdsa, nr*sizeof(struct rt_poll_s), timeout };
+			return (int)rt_net_rpc(PACKPORT(port, NET_RPC_EXT, SEM_RT_POLL_NETRPC, 3), UR1(1, 3) | UW1(2, 3), &arg, SIZARG, 1, PARTYPES4(UINT, UINT, UINT, RTIM));
+		}
 	}
 	return rt_poll(pdsa, nr, nano2count(timeout));
 } 
@@ -956,12 +996,54 @@ static inline int RT_sem_wait_timed(unsigned long node, int port, SEM *sem, RTIM
 
 #ifdef CONFIG_RTAI_RT_POLL
 
+static inline int RT_poll_4to8(unsigned long node, int port, struct rt_poll_s *pdsain, unsigned long nr, RTIME timeout)
+{
+	int i, retval;
+	struct rt_poll_lls { unsigned long long what, forwhat; } pdsa[nr];
+	struct { void *pdsa1; void *pdsa2; unsigned long pdsa_size; RTIME timeout; } arg = { pdsa, pdsa, nr*sizeof(struct rt_poll_lls), timeout };
+	struct { unsigned long fun; long type; void *args; long argsize; long space; } args = { PACKPORT(port, NET_RPC_EXT, SEM_RT_POLL_NETRPC, 3), UR1(1, 3) | UW1(2, 3), &arg, SIZARG, 0 };
+	for (i = 0; i < nr; i++) {
+		pdsa[nr].what    = (unsigned long)pdsain[nr].what;
+		pdsa[nr].forwhat = pdsain[nr].forwhat;
+	}
+	retval = rtai_lxrt(NET_RPC_IDX, SIZARGS, NETRPC, &args).i[LOW];
+	for (i = 0; i < nr; i++) {
+		pdsain[nr].what    = (void *)(unsigned long)pdsa[nr].what;
+		pdsain[nr].forwhat = pdsa[nr].forwhat;
+	}
+	return retval;
+} 
+
+static inline int RT_poll_8to4(unsigned long node, int port, struct rt_poll_s *pdsain, unsigned long nr, RTIME timeout)
+{
+	int i, retval;
+	struct rt_poll_is { unsigned int what, forwhat; } pdsa[nr];
+	struct { void *pdsa1; void *pdsa2; unsigned long pdsa_size; RTIME timeout; } arg = { pdsa, pdsa, nr*sizeof(struct rt_poll_is), timeout };
+	struct { unsigned long fun; long type; void *args; long argsize; long space; } args = { PACKPORT(port, NET_RPC_EXT, SEM_RT_POLL_NETRPC, 3), UR1(1, 3) | UW1(2, 3), &arg, SIZARG, 0 };
+	for (i = 0; i < nr; i++) {
+		pdsa[nr].what    = (unsigned int)pdsain[nr].what;
+		pdsa[nr].forwhat = pdsain[nr].forwhat;
+	}
+	retval = rtai_lxrt(NET_RPC_IDX, SIZARGS, NETRPC, &args).i[LOW];
+	for (i = 0; i < nr; i++) {
+		pdsain[nr].what    = (void *)(unsigned long)pdsa[nr].what;
+		pdsain[nr].forwhat = pdsa[nr].forwhat;
+	}
+	return retval;
+} 
+
 static inline int RT_poll(unsigned long node, int port, struct rt_poll_s *pdsa, unsigned long nr, RTIME timeout)
 {
 	if (node) {
-		struct { struct rt_poll_s *pdsa1; struct rt_poll_s *pdsa2; unsigned long pdsa_size; RTIME timeout; } arg = { pdsa, pdsa, nr*sizeof(struct rt_poll_s), timeout };
-		struct { unsigned long fun; long type; void *args; long argsize; long space; } args = { PACKPORT(port, NET_RPC_EXT, SEM_RT_POLL_NETRPC, 3), UR1(1, 3) | UW1(2, 3), &arg, SIZARG, 0 };
-		return rtai_lxrt(NET_RPC_IDX, SIZARGS, NETRPC, &args).i[LOW];
+		if (sizeof(long) == 4 && (abs(port) & PORT_MSK)) {
+			return RT_poll_4to8(node, port, pdsa, nr, timeout);
+		} else if (sizeof(long) == 8 && !(abs(port) & PORT_MSK)) {
+			return RT_poll_8to4(node, port, pdsa, nr, timeout);
+		} else {
+			struct { struct rt_poll_s *pdsa1; struct rt_poll_s *pdsa2; unsigned long pdsa_size; RTIME timeout; } arg = { pdsa, pdsa, nr*sizeof(struct rt_poll_s), timeout };
+			struct { unsigned long fun; long type; void *args; long argsize; long space; } args = { PACKPORT(port, NET_RPC_EXT, SEM_RT_POLL_NETRPC, 3), UR1(1, 3) | UW1(2, 3), &arg, SIZARG, 0 };
+			return rtai_lxrt(NET_RPC_IDX, SIZARGS, NETRPC, &args).i[LOW];
+		}
 	}
 	return rt_poll(pdsa, nr, nano2count(timeout));
 } 

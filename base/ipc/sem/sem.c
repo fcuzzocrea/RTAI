@@ -2058,6 +2058,12 @@ EXPORT_SYMBOL(_rt_poll);
 static RTAI_SYSCALL_MODE int rt_poll_netrpc(struct rt_poll_s *pdsa1, struct rt_poll_s *pdsa2, unsigned long pdsa_size, RTIME timeout)
 {
 	int ret;
+	if (sizeof(long) == 8 && !((unsigned long)pdsa1[0].what & 0xFFFFFFFF00000000ULL)) {
+		int i;
+		for (i = 0; i < pdsa_size/sizeof(struct rt_poll_s); i++) {
+			pdsa1[i].what = (void *)(((unsigned long)pdsa1[i].what | 0x80000000) ? ((unsigned long)pdsa1[i].what & 0x7FFFFFFF) | VMALLOC_START : (unsigned long)pdsa1[i].what | PAGE_OFFSET);
+		}
+	}
 	ret = _rt_poll(pdsa1, pdsa_size/sizeof(struct rt_poll_s), timeout, 1);
 	memcpy(pdsa2, pdsa1, pdsa_size);
 	return ret;

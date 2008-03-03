@@ -1175,17 +1175,40 @@ RTAI_SYSCALL_MODE unsigned long rt_set_this_node(const char *ddn, unsigned long 
 	return this_node[hard ? MSG_HARD : MSG_SOFT] = ddn ? ddn2nl(ddn) : node;
 }
 
+#ifdef CONFIG_RTAI_RT_POLL
+
+RTAI_SYSCALL_MODE int rt_poll_netrpc(struct rt_poll_s *pdsa1, struct rt_poll_s *pdsa2, unsigned long pdsa_size, RTIME timeout)
+{
+	int retval = pdsa_size/sizeof(struct rt_poll_s);
+	if (sizeof(long) == 8 && !((unsigned long)pdsa1[0].what & 0xFFFFFFFF00000000ULL)) {
+		int i;
+		for (i = 0; i < retval; i++) {
+			pdsa1[i].what = (void *)(((unsigned long)pdsa1[i].what | 0x80000000) ? ((unsigned long)pdsa1[i].what & 0x7FFFFFFF) | VMALLOC_START : (unsigned long)pdsa1[i].what | PAGE_OFFSET);
+		}
+	}
+	retval = _rt_poll(pdsa1, retval, timeout, 1);
+	memcpy(pdsa2, pdsa1, pdsa_size);
+	return retval;
+}
+
+EXPORT_SYMBOL(rt_poll_netrpc);
+
+#endif
+
 /* +++++++++++++++++++++++++++ NETRPC ENTRIES +++++++++++++++++++++++++++++++ */
 
 struct rt_native_fun_entry rt_netrpc_entries[] = {
-    { { 1, _rt_net_rpc           },	NETRPC },
-    { { 0, rt_set_netrpc_timeout   },	SET_NETRPC_TIMEOUT },
-	{ { 1, rt_send_req_rel_port },	SEND_REQ_REL_PORT },
-	{ { 0, ddn2nl               },	DDN2NL },
-	{ { 0, rt_set_this_node     },	SET_THIS_NODE },
-	{ { 0, rt_find_asgn_stub    },	FIND_ASGN_STUB },
-	{ { 0, rt_rel_stub          },	REL_STUB },
-	{ { 0, rt_waiting_return    },	WAITING_RETURN },
+	{ { 1, _rt_net_rpc           },  NETRPC },
+	{ { 0, rt_set_netrpc_timeout },	 SET_NETRPC_TIMEOUT },
+	{ { 1, rt_send_req_rel_port  },	 SEND_REQ_REL_PORT },
+	{ { 0, ddn2nl                },	 DDN2NL },
+	{ { 0, rt_set_this_node      },	 SET_THIS_NODE },
+	{ { 0, rt_find_asgn_stub     },	 FIND_ASGN_STUB },
+	{ { 0, rt_rel_stub           },	 REL_STUB },
+	{ { 0, rt_waiting_return     },	 WAITING_RETURN },
+#ifdef CONFIG_RTAI_RT_POLL
+	{ { 1, rt_poll_netrpc        },  RT_POLL_NETRPC },
+#endif
 	{ { 0, 0 },                    	000 }
 };
 
@@ -1835,3 +1858,4 @@ EXPORT_SYMBOL(ddn2nl);
 
 EXPORT_SYMBOL(rt_net_rpc_fun_hook);
 #endif /* CONFIG_KBUILD */
+

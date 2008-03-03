@@ -206,7 +206,7 @@ void set_netrpc_encoding(void *encode_fun, void *decode_fun, void *ext)
 	rt_net_rpc_fun_ext[1] = ext;
 }
 
-struct req_rel_msg { long long op, port, priority, hard; unsigned long long owner, name, rem_node, chkspare;};
+struct req_rel_msg { long long op, port, priority, hard, mach; unsigned long long owner, name, rem_node, chkspare;};
 
 struct par_t { long long mach, priority, base_priority, argsize, rsize, fun_ext_timed, type; unsigned long long owner, partypes; long a[1]; };
 
@@ -719,6 +719,7 @@ static void port_server_fun(RT_TASK *port_server)
 		portslot[msg.port].recovered = recovered;
 		msg.rem_node = this_node[msg.hard];
 		msg.port += BASEPORT;
+		msg.mach  = sizeof(long);
 ret:
 		if (recovered) {
 			rt_task_masked_unblock((RT_TASK *)portslot[msg.port-BASEPORT].task,~RT_SCHED_READY);
@@ -794,9 +795,11 @@ RTAI_SYSCALL_MODE int rt_send_req_rel_port(unsigned long node, int op, unsigned 
 				portslotp->mbx  = mbx;
 				portslotp->recovered = 1;
 				portslotp->addr.sin_addr.s_addr = msg.rem_node;	
-				if (sizeof(long) == 4) {
+				if (msg.mach == 4) {
+rt_printk("44444444444444 %d %d\n", portslotp->indx, portslotp->indx << PORT_SHF);
 					return (portslotp->indx << PORT_SHF);
 				} else {
+rt_printk("44444444444444 %d %d\n", portslotp->indx, (portslotp->indx << PORT_SHF) + PORT_INC);
 					return (portslotp->indx << PORT_SHF) + PORT_INC;
 				}
 			}

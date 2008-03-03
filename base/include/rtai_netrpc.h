@@ -1041,7 +1041,7 @@ static inline int RT_poll(unsigned long node, int port, struct rt_poll_s *pdsa, 
 			return RT_poll_8to4(node, port, pdsa, nr, timeout);
 		} else {
 			struct { struct rt_poll_s *pdsa1; struct rt_poll_s *pdsa2; unsigned long pdsa_size; RTIME timeout; } arg = { pdsa, pdsa, nr*sizeof(struct rt_poll_s), timeout };
-			struct { unsigned long fun; long type; void *args; long argsize; long space; unsigned long partypes; } args = { PACKPORT(port, NET_RPC_EXT, SEM_RT_POLL_NETRPC, 3), UR1(1, 3) | UW1(2, 3), &arg, SIZARG, 0, PARTYPES4(VADR, UINT, UINT, RTIM) };
+			struct { unsigned long fun; long type; void *args; long argsize; long space; unsigned long partypes; } args = { PACKPORT(port, NET_RPC_EXT, SEM_RT_POLL_NETRPC, 3), UR1(1, 3) | UW1(2, 3), &arg, SIZARG, 0, PARTYPES4(VADR, VADR, UINT, RTIM) };
 			return rtai_lxrt(NET_RPC_IDX, SIZARGS, NETRPC, &args).i[LOW];
 		}
 	}

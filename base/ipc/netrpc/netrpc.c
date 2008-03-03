@@ -796,10 +796,8 @@ RTAI_SYSCALL_MODE int rt_send_req_rel_port(unsigned long node, int op, unsigned 
 				portslotp->recovered = 1;
 				portslotp->addr.sin_addr.s_addr = msg.rem_node;	
 				if (msg.mach == 4) {
-rt_printk("44444444444444 %d %d\n", portslotp->indx, portslotp->indx << PORT_SHF);
 					return (portslotp->indx << PORT_SHF);
 				} else {
-rt_printk("44444444444444 %d %d\n", portslotp->indx, (portslotp->indx << PORT_SHF) + PORT_INC);
 					return (portslotp->indx << PORT_SHF) + PORT_INC;
 				}
 			}

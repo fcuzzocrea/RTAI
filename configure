@@ -18902,7 +18902,11 @@ echo $ECHO_N "checking for Linux source tree... $ECHO_C" >&6
 
 unset CONFIG_MODULES
 
-RTAI_LINUX_DIR="/usr/src/linux"
+if test x$CONFIG_RTAI_LINUXDIR != x ; then
+	RTAI_LINUX_DIR=$CONFIG_RTAI_LINUXDIR
+else
+	RTAI_LINUX_DIR="/usr/src/linux"
+fi
 
 
 # Check whether --with-linux-dir or --without-linux-dir was given.

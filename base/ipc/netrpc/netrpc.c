@@ -75,11 +75,7 @@ MODULE_LICENSE("GPL");
 
 #define LOCALHOST  "127.0.0.1"
 
-#if BITS_PER_LONG == 32
-#define BASEPORT  (NETRPC_BASEPORT_32)
-#else
-#define BASEPORT  (NETRPC_BASEPORT_64)
-#endif
+#define BASEPORT  (NETRPC_BASEPORT)
 
 #define NETRPC_STACK_SIZE  6000
 
@@ -798,7 +794,7 @@ RTAI_SYSCALL_MODE int rt_send_req_rel_port(unsigned long node, int op, unsigned 
 				portslotp->mbx  = mbx;
 				portslotp->recovered = 1;
 				portslotp->addr.sin_addr.s_addr = msg.rem_node;	
-				if ((((unsigned long)msg.port)/1000) == (NETRPC_BASEPORT_32/1000)) {
+				if (sizeof(long) == 4) {
 					return (portslotp->indx << PORT_SHF);
 				} else {
 					return (portslotp->indx << PORT_SHF) + PORT_INC;

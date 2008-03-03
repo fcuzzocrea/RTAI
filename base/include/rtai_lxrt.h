@@ -332,7 +332,7 @@
 #define RT_SIGNAL_TRIGGER	       227
 
 #define SEM_RT_POLL 		       228
-#define SEM_RT_POLL_NETRPC	       229
+#define RT_POLL_NETRPC		       229
 
 #define MAX_LXRT_FUN		       230
 

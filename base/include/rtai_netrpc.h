@@ -310,7 +310,7 @@ static inline int RT_sem_wait_until(unsigned long node, int port, SEM *sem, RTIM
 {
 	if (node) {
 		struct { SEM *sem; RTIME time; } arg = { sem, time };
-		return rt_net_rpc(PACKPORT(port, NET_RPC_EXT, SEM_WAIT_UNTIL, 2), 0, &arg, SIZARG, 1, PARTYPES1(VADR)).i[LOW];
+		return rt_net_rpc(PACKPORT(port, NET_RPC_EXT, SEM_WAIT_UNTIL, 2), 0, &arg, SIZARG, 1, PARTYPES2(VADR, RTIM)).i[LOW];
 	}
 	return rt_sem_wait_until(sem, nano2count(time));
 } 
@@ -319,7 +319,7 @@ static inline int RT_sem_wait_timed(unsigned long node, int port, SEM *sem, RTIM
 {
 	if (node) {
 		struct { SEM *sem; RTIME delay; } arg = { sem, delay };
-		return rt_net_rpc(PACKPORT(port, NET_RPC_EXT, SEM_WAIT_TIMED, 2), 0, &arg, SIZARG, 1, PARTYPES1(VADR)).i[LOW];
+		return rt_net_rpc(PACKPORT(port, NET_RPC_EXT, SEM_WAIT_TIMED, 2), 0, &arg, SIZARG, 1, PARTYPES2(VADR, RTIM)).i[LOW];
 	}
 	return rt_sem_wait_timed(sem, nano2count(delay));
 } 
@@ -841,7 +841,7 @@ static inline RTIME RT_get_time_ns(unsigned long node, int port)
 {
 	if (node) {
 		struct { long dummy; } arg = { 0 };
-		struct { unsigned long fun; long type; void *args; long argsize; long space; } args = { PACKPORT(port, NET_RPC_EXT, GET_TIME_NS, 0), 0, &arg, SIZARG, 0 };
+		struct { unsigned long fun; long type; void *args; long argsize; long space; unsigned long partypes; } args = { PACKPORT(port, NET_RPC_EXT, GET_TIME_NS, 0), 0, &arg, SIZARG, 0, PARTYPES1(UINT) };
 		return rtai_lxrt(NET_RPC_IDX, SIZARGS, NETRPC, &args).rt;
 	}
 	return rt_get_time_ns();
@@ -851,7 +851,7 @@ static inline RTIME RT_get_time_ns_cpuid(unsigned long node, int port, int cpuid
 {
 	if (node) {
 		struct { long cpuid; } arg = { cpuid };
-		struct { unsigned long fun; long type; void *args; long argsize; long space; } args = { PACKPORT(port, NET_RPC_EXT, GET_TIME_NS_CPUID, 0), 0, &arg, SIZARG, 0 };
+		struct { unsigned long fun; long type; void *args; long argsize; long space; unsigned long partypes; } args = { PACKPORT(port, NET_RPC_EXT, GET_TIME_NS_CPUID, 0), 0, &arg, SIZARG, 0, PARTYPES1(UINT) };
 		return rtai_lxrt(NET_RPC_IDX, SIZARGS, NETRPC, &args).rt;
 	}
 	return rt_get_time_ns_cpuid(cpuid);
@@ -861,7 +861,7 @@ static inline RTIME RT_get_cpu_time_ns(unsigned long node, int port)
 {
 	if (node) {
 		struct { long dummy; } arg = { 0 };
-		struct { unsigned long fun; long type; void *args; long argsize; long space; } args = { PACKPORT(port, NET_RPC_EXT, GET_CPU_TIME_NS, 0), 0, &arg, SIZARG, 0 };
+		struct { unsigned long fun; long type; void *args; long argsize; long space; unsigned long partypes; } args = { PACKPORT(port, NET_RPC_EXT, GET_CPU_TIME_NS, 0), 0, &arg, SIZARG, 0, PARTYPES1(UINT) };
 		return rtai_lxrt(NET_RPC_IDX, SIZARGS, NETRPC, &args).rt;
 	}
 	return rt_get_cpu_time_ns();
@@ -871,7 +871,7 @@ static inline void RT_task_suspend(unsigned long node, int port, RT_TASK *task)
 {
 	if (node) {
 		struct { RT_TASK *task; } arg = { task };
-		struct { unsigned long fun; long type; void *args; long argsize; long space; } args = { PACKPORT(port, NET_RPC_EXT, SUSPEND, 0), 0, &arg, SIZARG, 0 };
+		struct { unsigned long fun; long type; void *args; long argsize; long space; unsigned long partypes; } args = { PACKPORT(port, NET_RPC_EXT, SUSPEND, 0), 0, &arg, SIZARG, 0, PARTYPES1(VADR) };
 		rtai_lxrt(NET_RPC_IDX, SIZARGS, NETRPC, &args);
 		return;
 	}
@@ -882,7 +882,7 @@ static inline void RT_task_resume(unsigned long node, int port, RT_TASK *task)
 {
 	if (node) {
 		struct { RT_TASK *task; } arg = { task };
-		struct { unsigned long fun; long type; void *args; long argsize; long space; } args = { PACKPORT(port, NET_RPC_EXT, RESUME, 0), 0, &arg, SIZARG, 0 };
+		struct { unsigned long fun; long type; void *args; long argsize; long space; unsigned long partypes; } args = { PACKPORT(port, NET_RPC_EXT, RESUME, 0), 0, &arg, SIZARG, 0, PARTYPES1(VADR) };
 		rtai_lxrt(NET_RPC_IDX, SIZARGS, NETRPC, &args);
 		return;
 	}
@@ -893,7 +893,7 @@ static inline void RT_sleep(unsigned long node, int port, RTIME delay)
 {
 	if (node) {
 		struct { RTIME delay; } arg = { delay };
-		struct { unsigned long fun; long type; void *args; long argsize; long space; } args = { PACKPORT(port, NET_RPC_EXT, SLEEP, 1), 0, &arg, SIZARG, 0 };
+		struct { unsigned long fun; long type; void *args; long argsize; long space; unsigned long partypes; } args = { PACKPORT(port, NET_RPC_EXT, SLEEP, 1), 0, &arg, SIZARG, 0, PARTYPES1(RTIM) };
 		rtai_lxrt(NET_RPC_IDX, SIZARGS, NETRPC, &args);
 		return;
 	}
@@ -904,7 +904,7 @@ static inline void RT_sleep_until(unsigned long node, int port, RTIME time)
 {
 	if (node) {
 		struct { RTIME time; } arg = { time };
-		struct { unsigned long fun; long type; void *args; long argsize; long space; } args = { PACKPORT(port, NET_RPC_EXT, SLEEP_UNTIL, 1), 0, &arg, SIZARG, 0 };
+		struct { unsigned long fun; long type; void *args; long argsize; long space; unsigned long partypes; } args = { PACKPORT(port, NET_RPC_EXT, SLEEP_UNTIL, 1), 0, &arg, SIZARG, 0, PARTYPES1(RTIM) };
 		rtai_lxrt(NET_RPC_IDX, SIZARGS, NETRPC, &args);
 		return;
 	}
@@ -917,8 +917,7 @@ static inline SEM *RT_typed_named_sem_init(unsigned long node, int port, const c
 {
 	if (node) {
 		struct { unsigned long sem_name; long value; long type; unsigned long *handle; } arg = { nam2num(sem_name), value, type, NULL };
-		struct { unsigned long fun; long type; void *args; long argsize; long space; } args = { PACKPORT(port, NET_RPC_EXT, NAMED_SEM_INIT, 0), 0, &arg, SIZARG, 0 };
-//		return (SEM *)rtai_lxrt(NET_RPC_IDX, SIZARGS, NETRPC, &args).v[LOW];
+		struct { unsigned long fun; long type; void *args; long argsize; long space; unsigned long partypes; } args = { PACKPORT(port, NET_RPC_EXT, NAMED_SEM_INIT, 0), 0, &arg, SIZARG, 0, PARTYPES3(VADR, SINT, SINT) };
 		return (SEM *)RTAI_LXRT(port, rtai_lxrt(NET_RPC_IDX, SIZARGS, NETRPC, &args));
 	}
 	return rt_typed_named_sem_init(sem_name, value, type);
@@ -928,7 +927,7 @@ static inline int RT_named_sem_delete(unsigned long node, int port, SEM *sem)
 {
 	if (node) {
 		struct { SEM *sem; } arg = { sem };
-		struct { unsigned long fun; long type; void *args; long argsize; long space; } args = { PACKPORT(port, NET_RPC_EXT, NAMED_SEM_DELETE, 0), 0, &arg, SIZARG, 0 };
+		struct { unsigned long fun; long type; void *args; long argsize; long space; unsigned long partypes; } args = { PACKPORT(port, NET_RPC_EXT, NAMED_SEM_DELETE, 0), 0, &arg, SIZARG, 0, PARTYPES1(VADR) };
 		return rtai_lxrt(NET_RPC_IDX, SIZARGS, NETRPC, &args).i[LOW];
 	}
 	return rt_named_sem_delete(sem);
@@ -938,7 +937,7 @@ static inline int RT_sem_signal(unsigned long node, int port, SEM *sem)
 {
 	if (node) {
 		struct { SEM *sem; } arg = { sem };
-		struct { unsigned long fun; long type; void *args; long argsize; long space; } args = { PACKPORT(port, NET_RPC_EXT, SEM_SIGNAL, 0), 0, &arg, SIZARG, 0 };
+		struct { unsigned long fun; long type; void *args; long argsize; long space; unsigned long partypes; } args = { PACKPORT(port, NET_RPC_EXT, SEM_SIGNAL, 0), 0, &arg, SIZARG, 0, PARTYPES1(VADR) };
 		return rtai_lxrt(NET_RPC_IDX, SIZARGS, NETRPC, &args).i[LOW];
 	} 
 	return rt_sem_signal(sem);
@@ -948,7 +947,7 @@ static inline int RT_sem_broadcast(unsigned long node, int port, SEM *sem)
 {
 	if (node) {
 		struct { SEM *sem; } arg = { sem };
-		struct { unsigned long fun; long type; void *args; long argsize; long space; } args = { PACKPORT(port, NET_RPC_EXT, SEM_BROADCAST, 0), 0, &arg, SIZARG, 0 };
+		struct { unsigned long fun; long type; void *args; long argsize; long space; unsigned long partypes; } args = { PACKPORT(port, NET_RPC_EXT, SEM_BROADCAST, 0), 0, &arg, SIZARG, 0, PARTYPES1(VADR) };
 		return rtai_lxrt(NET_RPC_IDX, SIZARGS, NETRPC, &args).i[LOW];
 	}
 	return rt_sem_broadcast(sem);
@@ -958,7 +957,7 @@ static inline int RT_sem_wait(unsigned long node, int port, SEM *sem)
 {
 	if (node) {
 		struct { SEM *sem; } arg = { sem };
-		struct { unsigned long fun; long type; void *args; long argsize; long space; } args = { PACKPORT(port, NET_RPC_EXT, SEM_WAIT, 0), 0, &arg, SIZARG, 0 };
+		struct { unsigned long fun; long type; void *args; long argsize; long space; unsigned long partypes; } args = { PACKPORT(port, NET_RPC_EXT, SEM_WAIT, 0), 0, &arg, SIZARG, 0, PARTYPES1(VADR) };
 		return rtai_lxrt(NET_RPC_IDX, SIZARGS, NETRPC, &args).i[LOW];
 	} 
 	return rt_sem_wait(sem);
@@ -968,7 +967,7 @@ static inline int RT_sem_wait_if(unsigned long node, int port, SEM *sem)
 {
 	if (node) {
 		struct { SEM *sem; } arg = { sem };
-		struct { unsigned long fun; long type; void *args; long argsize; long space; } args = { PACKPORT(port, NET_RPC_EXT, SEM_WAIT_IF, 0), 0, &arg, SIZARG, 0 };
+		struct { unsigned long fun; long type; void *args; long argsize; long space; unsigned long partypes; } args = { PACKPORT(port, NET_RPC_EXT, SEM_WAIT_IF, 0), 0, &arg, SIZARG, 0, PARTYPES1(VADR) };
 		return rtai_lxrt(NET_RPC_IDX, SIZARGS, NETRPC, &args).i[LOW];
 	}
 	return rt_sem_wait_if(sem);
@@ -978,7 +977,7 @@ static inline int RT_sem_wait_until(unsigned long node, int port, SEM *sem, RTIM
 {
 	if (node) {
 		struct { SEM *sem; RTIME time; } arg = { sem, time };
-		struct { unsigned long fun; long type; void *args; long argsize; long space; } args = { PACKPORT(port, NET_RPC_EXT, SEM_WAIT_UNTIL, 2), 0, &arg, SIZARG, 0 };
+		struct { unsigned long fun; long type; void *args; long argsize; long space; unsigned long partypes; } args = { PACKPORT(port, NET_RPC_EXT, SEM_WAIT_UNTIL, 2), 0, &arg, SIZARG, 0, PARTYPES2(VADR, RTIM) };
 		return rtai_lxrt(NET_RPC_IDX, SIZARGS, NETRPC, &args).i[LOW];
 	}
 	return rt_sem_wait_until(sem, nano2count(time));
@@ -988,7 +987,7 @@ static inline int RT_sem_wait_timed(unsigned long node, int port, SEM *sem, RTIM
 {
 	if (node) {
 		struct { SEM *sem; RTIME delay; } arg = { sem, delay };
-		struct { unsigned long fun; long type; void *args; long argsize; long space; } args = { PACKPORT(port, NET_RPC_EXT, SEM_WAIT_TIMED, 2), 0, &arg, SIZARG, 0 };
+		struct { unsigned long fun; long type; void *args; long argsize; long space; unsigned long partypes; } args = { PACKPORT(port, NET_RPC_EXT, SEM_WAIT_TIMED, 2), 0, &arg, SIZARG, 0, PARTYPES2(VADR, RTIM) };
 		return rtai_lxrt(NET_RPC_IDX, SIZARGS, NETRPC, &args).i[LOW];
 	} 
 	return rt_sem_wait_timed(sem, nano2count(delay));
@@ -1058,8 +1057,7 @@ static inline RT_TASK *RT_send(unsigned long node, int port, RT_TASK *task, unsi
 {
 	if (node) {
 		struct { RT_TASK *task; unsigned long msg; } arg = { task, msg };
-		struct { unsigned long fun; long type; void *args; long argsize; long space; } args = { PACKPORT(port, NET_RPC_EXT, SENDMSG, 0), 0, &arg, SIZARG, 0 };
-//		return (RT_TASK *)rtai_lxrt(NET_RPC_IDX, SIZARGS, NETRPC, &args).v[LOW];
+		struct { unsigned long fun; long type; void *args; long argsize; long space; unsigned long partypes; } args = { PACKPORT(port, NET_RPC_EXT, SENDMSG, 0), 0, &arg, SIZARG, 0, PARTYPES2(VADR, UINT) };
 		return (RT_TASK *)RTAI_LXRT(port, rtai_lxrt(NET_RPC_IDX, SIZARGS, NETRPC, &args));
 	} 
 	return rt_send(task, msg);
@@ -1069,8 +1067,7 @@ static inline RT_TASK *RT_send_if(unsigned long node, int port, RT_TASK *task, u
 {
 	if (node) {
 		struct { RT_TASK *task; unsigned long msg; } arg = { task, msg };
-		struct { unsigned long fun; long type; void *args; long argsize; long space; } args = { PACKPORT(port, NET_RPC_EXT, SEND_IF, 0), 0, &arg, SIZARG, 0 };
-//		return (RT_TASK *)rtai_lxrt(NET_RPC_IDX, SIZARGS, NETRPC, &args).v[LOW];
+		struct { unsigned long fun; long type; void *args; long argsize; long space; unsigned long partypes; } args = { PACKPORT(port, NET_RPC_EXT, SEND_IF, 0), 0, &arg, SIZARG, 0, PARTYPES2(VADR, UINT) };
 		return (RT_TASK *)RTAI_LXRT(port, rtai_lxrt(NET_RPC_IDX, SIZARGS, NETRPC, &args));
 	} 
 	return rt_send_if(task, msg);
@@ -1080,8 +1077,7 @@ static inline RT_TASK *RT_send_until(unsigned long node, int port, RT_TASK *task
 {
 	if (node) {
 		struct { RT_TASK *task; unsigned long msg; RTIME time; } arg = { task, msg, time };
-		struct { unsigned long fun; long type; void *args; long argsize; long space; } args = { PACKPORT(port, NET_RPC_EXT, SEND_UNTIL, 3), 0, &arg, SIZARG, 0 };
-//		return (RT_TASK *)rtai_lxrt(NET_RPC_IDX, SIZARGS, NETRPC, &args).v[LOW];
+		struct { unsigned long fun; long type; void *args; long argsize; long space; unsigned long partypes; } args = { PACKPORT(port, NET_RPC_EXT, SEND_UNTIL, 3), 0, &arg, SIZARG, 0, PARTYPES3(VADR, UINT, RTIM) };
 		return (RT_TASK *)RTAI_LXRT(port, rtai_lxrt(NET_RPC_IDX, SIZARGS, NETRPC, &args));
 	} 
 	return rt_send_until(task, msg, nano2count(time));
@@ -1091,8 +1087,7 @@ static inline RT_TASK *RT_send_timed(unsigned long node, int port, RT_TASK *task
 {
 	if (node) {
 		struct { RT_TASK *task; unsigned long msg; RTIME delay; } arg = { task, msg, delay };
-		struct { unsigned long fun; long type; void *args; long argsize; long space; } args = { PACKPORT(port, NET_RPC_EXT, SEND_TIMED, 3), 0, &arg, SIZARG, 0 };
-//		return (RT_TASK *)rtai_lxrt(NET_RPC_IDX, SIZARGS, NETRPC, &args).v[LOW];
+		struct { unsigned long fun; long type; void *args; long argsize; long space; unsigned long partypes; } args = { PACKPORT(port, NET_RPC_EXT, SEND_TIMED, 3), 0, &arg, SIZARG, 0, PARTYPES3(VADR, UINT, RTIM) };
 		return (RT_TASK *)RTAI_LXRT(port, rtai_lxrt(NET_RPC_IDX, SIZARGS, NETRPC, &args));
 	} 
 	return rt_send_timed(task, msg, nano2count(delay));
@@ -1143,7 +1138,6 @@ static inline RT_TASK *RT_rpc(unsigned long node, int port, RT_TASK *task, unsig
 	if (node) {
 		struct { RT_TASK *task; unsigned long msg; void *ret; } arg = { task, msg, ret };
 		struct { unsigned long fun; long type; void *args; long argsize; long space; unsigned long partypes; } args = { PACKPORT(port, NET_RPC_EXT, RPCMSG, 0), UW1(3, 0), &arg, SIZARG, 0, PARTYPES3(VADR, UINT, UINT) };
-//		return (RT_TASK *)rtai_lxrt(NET_RPC_IDX, SIZARGS, NETRPC, &args).v[LOW];
 		return (RT_TASK *)RTAI_LXRT(port, rtai_lxrt(NET_RPC_IDX, SIZARGS, NETRPC, &args));
 	}
 	return rt_rpc(task, msg, ret);
@@ -1153,8 +1147,7 @@ static inline RT_TASK *RT_rpc_if(unsigned long node, int port, RT_TASK *task, un
 {
 	if (node) {
 		struct { RT_TASK *task; unsigned long msg; void *ret; } arg = { task, msg, ret };
-		struct { unsigned long fun; long type; void *args; long argsize; long space; } args = { PACKPORT(port, NET_RPC_EXT, RPC_IF, 0), UW1(3, 0), &arg, SIZARG, 0 };
-//		return (RT_TASK *)rtai_lxrt(NET_RPC_IDX, SIZARGS, NETRPC, &args).v[LOW];
+		struct { unsigned long fun; long type; void *args; long argsize; long space; unsigned long partypes; } args = { PACKPORT(port, NET_RPC_EXT, RPC_IF, 0), UW1(3, 0), &arg, SIZARG, 0, PARTYPES3(VADR, UINT, UINT) };
 		return (RT_TASK *)RTAI_LXRT(port, rtai_lxrt(NET_RPC_IDX, SIZARGS, NETRPC, &args));
 	}
 	return rt_rpc_if(task, msg, ret);
@@ -1164,8 +1157,7 @@ static inline RT_TASK *RT_rpc_until(unsigned long node, int port, RT_TASK *task,
 {
 	if (node) {
 		struct { RT_TASK *task; unsigned long msg; void *ret; RTIME time; } arg = { task, msg, ret, time };
-		struct { unsigned long fun; long type; void *args; long argsize; long space; } args = { PACKPORT(port, NET_RPC_EXT, RPC_UNTIL, 4), UW1(3, 0), &arg, SIZARG, 0 };
-//		return (RT_TASK *)rtai_lxrt(NET_RPC_IDX, SIZARGS, NETRPC, &args).v[LOW];
+		struct { unsigned long fun; long type; void *args; long argsize; long space; unsigned long partypes; } args = { PACKPORT(port, NET_RPC_EXT, RPC_UNTIL, 4), UW1(3, 0), &arg, SIZARG, 0, PARTYPES4(VADR, UINT, UINT, RTIM) };
 		return (RT_TASK *)RTAI_LXRT(port, rtai_lxrt(NET_RPC_IDX, SIZARGS, NETRPC, &args));
 	}
 	return rt_rpc_until(task, msg, ret, nano2count(time));
@@ -1175,8 +1167,7 @@ static inline RT_TASK *RT_rpc_timed(unsigned long node, int port, RT_TASK *task,
 {
 	if (node) {
 		struct { RT_TASK *task; unsigned long msg; void *ret; RTIME delay; } arg = { task, msg, ret, delay };
-		struct { unsigned long fun; long type; void *args; long argsize; long space; } args = { PACKPORT(port, NET_RPC_EXT, RPC_TIMED, 4), UW1(3, 0), &arg, SIZARG, 0 };
-//		return (RT_TASK *)rtai_lxrt(NET_RPC_IDX, SIZARGS, NETRPC, &args).v[LOW];
+		struct { unsigned long fun; long type; void *args; long argsize; long space; unsigned long partypes; } args = { PACKPORT(port, NET_RPC_EXT, RPC_TIMED, 4), UW1(3, 0), &arg, SIZARG, 0, PARTYPES4(VADR, UINT, UINT, RTIM) };
 		return (RT_TASK *)RTAI_LXRT(port, rtai_lxrt(NET_RPC_IDX, SIZARGS, NETRPC, &args));
 	}
 	return rt_rpc_timed(task, msg, ret, nano2count(delay));
@@ -1186,7 +1177,7 @@ static inline int RT_isrpc(unsigned long node, int port, RT_TASK *task)
 {
 	if (node) {
 		struct { RT_TASK *task; } arg = { task };
-		struct { unsigned long fun; long type; void *args; long argsize; long space; } args = { PACKPORT(port, NET_RPC_EXT, ISRPC, 0), 0, &arg, SIZARG, 0 };
+		struct { unsigned long fun; long type; void *args; long argsize; long space; unsigned long partypes; } args = { PACKPORT(port, NET_RPC_EXT, ISRPC, 0), 0, &arg, SIZARG, 0, PARTYPES1(VADR) };
 		return rtai_lxrt(NET_RPC_IDX, SIZARGS, NETRPC, &args).i[LOW];
 	} 
 	return rt_isrpc(task);
@@ -1205,8 +1196,7 @@ static inline RT_TASK *RT_rpcx(unsigned long node, int port, RT_TASK *task, void
 {
 	if (node) {
 		struct { RT_TASK *task; void *smsg, *rmsg; long ssize, rsize; } arg = { task, smsg, rmsg, ssize, rsize };
-		struct { unsigned long fun; long type; void *args; long argsize; long space; } args = { PACKPORT(port, NET_RPC_EXT, RPCX, 0), UR1(2, 4) | UW1(3, 5), &arg, SIZARG, 0 };
-//		return (RT_TASK *)rtai_lxrt(NET_RPC_IDX, SIZARGS, NETRPC, &args).v[LOW];
+		struct { unsigned long fun; long type; void *args; long argsize; long space; unsigned long partypes; } args = { PACKPORT(port, NET_RPC_EXT, RPCX, 0), UR1(2, 4) | UW1(3, 5), &arg, SIZARG, 0, PARTYPES5(VADR, UINT, UINT, UINT, UINT) };
 		return (RT_TASK *)RTAI_LXRT(port, rtai_lxrt(NET_RPC_IDX, SIZARGS, NETRPC, &args));
 	}
 	return rt_rpcx(task, smsg, rmsg, ssize, rsize);
@@ -1216,8 +1206,7 @@ static inline RT_TASK *RT_rpcx_if(unsigned long node, int port, RT_TASK *task, v
 {
 	if (node) {
 		struct { RT_TASK *task; void *smsg, *rmsg; long ssize, rsize; } arg = { task, smsg, rmsg, ssize, rsize };
-		struct { unsigned long fun; long type; void *args; long argsize; long space; } args = { PACKPORT(port, NET_RPC_EXT, RPCX_IF, 0), UR1(2, 4) | UW1(3, 5), &arg, SIZARG, 0 };
-//		return (RT_TASK *)rtai_lxrt(NET_RPC_IDX, SIZARGS, NETRPC, &args).v[LOW];
+		struct { unsigned long fun; long type; void *args; long argsize; long space; unsigned long partypes; } args = { PACKPORT(port, NET_RPC_EXT, RPCX_IF, 0), UR1(2, 4) | UW1(3, 5), &arg, SIZARG, 0, PARTYPES5(VADR, UINT, UINT, UINT, UINT) };
 		return (RT_TASK *)RTAI_LXRT(port, rtai_lxrt(NET_RPC_IDX, SIZARGS, NETRPC, &args));
 	}
 	return rt_rpcx_if(task, smsg, rmsg, ssize, rsize);
@@ -1227,8 +1216,7 @@ static inline RT_TASK *RT_rpcx_until(unsigned long node, int port, RT_TASK *task
 {
 	if (node) {
 		struct { RT_TASK *task; void *smsg, *rmsg; long ssize, rsize; RTIME time; } arg = { task, smsg, rmsg, ssize, rsize, time };
-		struct { unsigned long fun; long type; void *args; long argsize; long space; } args = { PACKPORT(port, NET_RPC_EXT, RPCX_UNTIL, 6), UR1(2, 4) | UW1(3, 5), &arg, SIZARG, 0 };
-//		return (RT_TASK *)rtai_lxrt(NET_RPC_IDX, SIZARGS, NETRPC, &args).v[LOW];
+		struct { unsigned long fun; long type; void *args; long argsize; long space; unsigned long partypes; } args = { PACKPORT(port, NET_RPC_EXT, RPCX_UNTIL, 6), UR1(2, 4) | UW1(3, 5), &arg, SIZARG, 0, PARTYPES6(VADR, UINT, UINT, UINT, UINT, RTIM) };
 		return (RT_TASK *)RTAI_LXRT(port, rtai_lxrt(NET_RPC_IDX, SIZARGS, NETRPC, &args));
 	}
 	return rt_rpcx_until(task, smsg, rmsg, ssize, rsize, nano2count(time));
@@ -1238,8 +1226,7 @@ static inline RT_TASK *RT_rpcx_timed(unsigned long node, int port, RT_TASK *task
 {
 	if (node) {
 		struct { RT_TASK *task; void *smsg, *rmsg; long ssize, rsize; RTIME delay; } arg = { task, smsg, rmsg, ssize, rsize, delay };
-		struct { unsigned long fun; long type; void *args; long argsize; long space; } args = { PACKPORT(port, NET_RPC_EXT, RPCX_TIMED, 6), UR1(2, 4) | UW1(3, 5), &arg, SIZARG, 0 };
-//		return (RT_TASK *)rtai_lxrt(NET_RPC_IDX, SIZARGS, NETRPC, &args).v[LOW];
+		struct { unsigned long fun; long type; void *args; long argsize; long space; unsigned long partypes; } args = { PACKPORT(port, NET_RPC_EXT, RPCX_TIMED, 6), UR1(2, 4) | UW1(3, 5), &arg, SIZARG, 0, PARTYPES6(VADR, UINT, UINT, UINT, UINT, RTIM) };
 		return (RT_TASK *)RTAI_LXRT(port, rtai_lxrt(NET_RPC_IDX, SIZARGS, NETRPC, &args));
 	}
 	return rt_rpcx_timed(task, smsg, rmsg, ssize, rsize, nano2count(delay));
@@ -1249,8 +1236,7 @@ static inline RT_TASK *RT_sendx(unsigned long node, int port, RT_TASK *task, voi
 {
 	if (node) {
 		struct { RT_TASK *task; void *msg; long size; } arg = { task, msg, size };
-		struct { unsigned long fun; long type; void *args; long argsize; long space; } args = { PACKPORT(port, NET_RPC_EXT, SENDX, 0), UR1(2, 3), &arg, SIZARG, 0 };
-//		return (RT_TASK *)rtai_lxrt(NET_RPC_IDX, SIZARGS, NETRPC, &args).v[LOW];
+		struct { unsigned long fun; long type; void *args; long argsize; long space; unsigned long partypes; } args = { PACKPORT(port, NET_RPC_EXT, SENDX, 0), UR1(2, 3), &arg, SIZARG, 0, PARTYPES3(VADR, UINT, UINT) };
 		return (RT_TASK *)RTAI_LXRT(port, rtai_lxrt(NET_RPC_IDX, SIZARGS, NETRPC, &args));
 	}
 	return rt_sendx(task, msg, size);
@@ -1260,7 +1246,7 @@ static inline RT_TASK *RT_sendx_if(unsigned long node, int port, RT_TASK *task, 
 {
 	if (node) {
 		struct { RT_TASK *task; void *msg; long size; } arg = { task, msg, size };
-		struct { unsigned long fun; long type; void *args; long argsize; long space; } args = { PACKPORT(port, NET_RPC_EXT, SENDX_IF, 0), UR1(2, 3), &arg, SIZARG, 0 };
+		struct { unsigned long fun; long type; void *args; long argsize; long space; unsigned long partypes; } args = { PACKPORT(port, NET_RPC_EXT, SENDX_IF, 0), UR1(2, 3), &arg, SIZARG, 0, PARTYPES3(VADR, UINT, UINT) };
 //		return (RT_TASK *)rtai_lxrt(NET_RPC_IDX, SIZARGS, NETRPC, &args).v[LOW];
 		return (RT_TASK *)RTAI_LXRT(port, rtai_lxrt(NET_RPC_IDX, SIZARGS, NETRPC, &args));
 	}
@@ -1271,8 +1257,7 @@ static inline RT_TASK *RT_sendx_until(unsigned long node, int port, RT_TASK *tas
 {
 	if (node) {
 		struct { RT_TASK *task; void *msg; long size; RTIME time; } arg = { task, msg, size, time };
-		struct { unsigned long fun; long type; void *args; long argsize; long space; } args = { PACKPORT(port, NET_RPC_EXT, SENDX_UNTIL, 4), UR1(2, 3), &arg, SIZARG, 0 };
-//		return (RT_TASK *)rtai_lxrt(NET_RPC_IDX, SIZARGS, NETRPC, &args).v[LOW];
+		struct { unsigned long fun; long type; void *args; long argsize; long space; unsigned long partypes; } args = { PACKPORT(port, NET_RPC_EXT, SENDX_UNTIL, 4), UR1(2, 3), &arg, SIZARG, 0, PARTYPES4(VADR, UINT, UINT, RTIM) };
 		return (RT_TASK *)RTAI_LXRT(port, rtai_lxrt(NET_RPC_IDX, SIZARGS, NETRPC, &args));
 	}
 	return rt_sendx_until(task, msg, size, nano2count(time));
@@ -1282,8 +1267,7 @@ static inline RT_TASK *RT_sendx_timed(unsigned long node, int port, RT_TASK *tas
 {
 	if (node) {
 		struct { RT_TASK *task; void *msg; long size; RTIME delay; } arg = { task, msg, size, delay };
-		struct { unsigned long fun; long type; void *args; long argsize; long space; } args = { PACKPORT(port, NET_RPC_EXT, SENDX_TIMED, 4), UR1(2, 3), &arg, SIZARG, 0 };
-//		return (RT_TASK *)rtai_lxrt(NET_RPC_IDX, SIZARGS, NETRPC, &args).v[LOW];
+		struct { unsigned long fun; long type; void *args; long argsize; long space; unsigned long partypes; } args = { PACKPORT(port, NET_RPC_EXT, SENDX_TIMED, 4), UR1(2, 3), &arg, SIZARG, 0, PARTYPES4(VADR, UINT, UINT, RTIM) };
 		return (RT_TASK *)RTAI_LXRT(port, rtai_lxrt(NET_RPC_IDX, SIZARGS, NETRPC, &args));
 	}
 	return rt_sendx_timed(task, msg, size, nano2count(delay));
@@ -1376,7 +1360,7 @@ static inline int RT_mbx_send_wp(unsigned long node, int port, MBX *mbx, void *m
 {
 	if (node) {
 		struct { MBX *mbx; void *msg; long msg_size; long space; } arg = { mbx, msg, msg_size, 1 };
-		struct { unsigned long fun; long type; void *args; long argsize; long space; } args = { PACKPORT(port, NET_RPC_EXT, MBX_SEND_WP, 0), UR1(2, 3), &arg, SIZARG, 0 };
+		struct { unsigned long fun; long type; void *args; long argsize; long space; unsigned long partypes; } args = { PACKPORT(port, NET_RPC_EXT, MBX_SEND_WP, 0), UR1(2, 3), &arg, SIZARG, 0, PARTYPES4(VADR, UINT, SINT, SINT) };
 		return rtai_lxrt(NET_RPC_IDX, SIZARGS, NETRPC, &args).i[LOW];
 	} 
 	return rt_mbx_send_wp(mbx, msg, msg_size);
@@ -1386,7 +1370,7 @@ static inline int RT_mbx_send_if(unsigned long node, int port, MBX *mbx, void *m
 {
 	if (node) {
 		struct { MBX *mbx; void *msg; long msg_size; long space; } arg = { mbx, msg, msg_size, 1 };
-		struct { unsigned long fun; long type; void *args; long argsize; long space; } args = { PACKPORT(port, NET_RPC_EXT, MBX_SEND_IF, 0), UR1(2, 3), &arg, SIZARG, 0 };
+		struct { unsigned long fun; long type; void *args; long argsize; long space; unsigned long partypes; } args = { PACKPORT(port, NET_RPC_EXT, MBX_SEND_IF, 0), UR1(2, 3), &arg, SIZARG, 0, PARTYPES4(VADR, UINT, SINT, SINT) };
 		return rtai_lxrt(NET_RPC_IDX, SIZARGS, NETRPC, &args).i[LOW];
 	} 
 	return rt_mbx_send_if(mbx, msg, msg_size);
@@ -1396,7 +1380,7 @@ static inline int RT_mbx_ovrwr_send(unsigned long node, int port, MBX *mbx, void
 {
 	if (node) {
 		struct { MBX *mbx; void *msg; long msg_size; long space; } arg = { mbx, msg, msg_size, 1 };
-		struct { unsigned long fun; long type; void *args; long argsize; long space; } args = { PACKPORT(port, NET_RPC_EXT, MBX_OVRWR_SEND, 0), UR1(2, 3), &arg, SIZARG, 0 };
+		struct { unsigned long fun; long type; void *args; long argsize; long space; unsigned long partypes; } args = { PACKPORT(port, NET_RPC_EXT, MBX_OVRWR_SEND, 0), UR1(2, 3), &arg, SIZARG, 0, PARTYPES4(VADR, UINT, SINT, SINT) };
 		return rtai_lxrt(NET_RPC_IDX, SIZARGS, NETRPC, &args).i[LOW];
 	} 
 	return rt_mbx_ovrwr_send(mbx, msg, msg_size);
@@ -1406,7 +1390,7 @@ static inline int RT_mbx_send_until(unsigned long node, int port, MBX *mbx, void
 {
 	if (node) {
 		struct { MBX *mbx; void *msg; long msg_size; RTIME time; long space; } arg = { mbx, msg, msg_size, time, 1 };
-		struct { unsigned long fun; long type; void *args; long argsize; long space; } args = { PACKPORT(port, NET_RPC_EXT, MBX_SEND_UNTIL, 4), UR1(2, 3), &arg, SIZARG, 0 };
+		struct { unsigned long fun; long type; void *args; long argsize; long space; unsigned long partypes; } args = { PACKPORT(port, NET_RPC_EXT, MBX_SEND_UNTIL, 4), UR1(2, 3), &arg, SIZARG, 0, PARTYPES5(VADR, UINT, SINT, RTIM, SINT) };
 		return rtai_lxrt(NET_RPC_IDX, SIZARGS, NETRPC, &args).i[LOW];
 	} 
 	return rt_mbx_send_until(mbx, msg, msg_size, nano2count(time));
@@ -1416,7 +1400,7 @@ static inline int RT_mbx_send_timed(unsigned long node, int port, MBX *mbx, void
 {
 	if (node) {
 		struct { MBX *mbx; void *msg; long msg_size; RTIME delay; long space; } arg = { mbx, msg, msg_size, delay, 1 };
-		struct { unsigned long fun; long type; void *args; long argsize; long space; } args = { PACKPORT(port, NET_RPC_EXT, MBX_SEND_TIMED, 4), UR1(2, 3), &arg, SIZARG, 0 };
+		struct { unsigned long fun; long type; void *args; long argsize; long space; unsigned long partypes; } args = { PACKPORT(port, NET_RPC_EXT, MBX_SEND_TIMED, 4), UR1(2, 3), &arg, SIZARG, 0, PARTYPES5(VADR, UINT, SINT, RTIM, SINT) };
 		return rtai_lxrt(NET_RPC_IDX, SIZARGS, NETRPC, &args).i[LOW];
 	} 
 	return rt_mbx_send_until(mbx, msg, msg_size, nano2count(delay));
@@ -1426,7 +1410,7 @@ static inline int RT_mbx_evdrp(unsigned long node, int port, MBX *mbx, void *msg
 {
 	if (node) {
 		struct { MBX *mbx; void *msg; long msg_size; long space; } arg = { mbx, msg, msg_size, 1 };
-		struct { unsigned long fun; long type; void *args; long argsize; long space; } args = { PACKPORT(port, NET_RPC_EXT, MBX_EVDRP, 0), UW1(2, 3), &arg, SIZARG, 0 };
+		struct { unsigned long fun; long type; void *args; long argsize; long space; unsigned long partypes; } args = { PACKPORT(port, NET_RPC_EXT, MBX_EVDRP, 0), UW1(2, 3), &arg, SIZARG, 0, PARTYPES4(VADR, UINT, SINT, SINT) };
 		return rtai_lxrt(NET_RPC_IDX, SIZARGS, NETRPC, &args).i[LOW];
 	} 
 	return rt_mbx_evdrp(mbx, msg, msg_size);
@@ -1436,7 +1420,7 @@ static inline int RT_mbx_receive(unsigned long node, int port, MBX *mbx, void *m
 {
 	if (node) {
 		struct { MBX *mbx; void *msg; long msg_size; long space; } arg = { mbx, msg, msg_size, 1 };
-		struct { unsigned long fun; long type; void *args; long argsize; long space; } args = { PACKPORT(port, NET_RPC_EXT, MBX_RECEIVE, 0), UW1(2, 3), &arg, SIZARG, 0 };
+		struct { unsigned long fun; long type; void *args; long argsize; long space; unsigned long partypes; } args = { PACKPORT(port, NET_RPC_EXT, MBX_RECEIVE, 0), UW1(2, 3), &arg, SIZARG, 0, PARTYPES4(VADR, UINT, SINT, SINT) };
 		return rtai_lxrt(NET_RPC_IDX, SIZARGS, NETRPC, &args).i[LOW];
 	} 
 	return rt_mbx_receive(mbx, msg, msg_size);
@@ -1446,7 +1430,7 @@ static inline int RT_mbx_receive_wp(unsigned long node, int port, MBX *mbx, void
 {
 	if (node) {
 		struct { MBX *mbx; void *msg; long msg_size; long space; } arg = { mbx, msg, msg_size, 1 };
-		struct { unsigned long fun; long type; void *args; long argsize; long space; } args = { PACKPORT(port, NET_RPC_EXT, MBX_RECEIVE_WP, 0), UW1(2, 3), &arg, SIZARG, 0 };
+		struct { unsigned long fun; long type; void *args; long argsize; long space; unsigned long partypes; } args = { PACKPORT(port, NET_RPC_EXT, MBX_RECEIVE_WP, 0), UW1(2, 3), &arg, SIZARG, 0, PARTYPES4(VADR, UINT, SINT, SINT) };
 		return rtai_lxrt(NET_RPC_IDX, SIZARGS, NETRPC, &args).i[LOW];
 	} 
 	return rt_mbx_receive_wp(mbx, msg, msg_size);
@@ -1456,7 +1440,7 @@ static inline int RT_mbx_receive_if(unsigned long node, int port, MBX *mbx, void
 {
 	if (node) {
 		struct { MBX *mbx; void *msg; long msg_size; long space; } arg = { mbx, msg, msg_size, 1 };
-		struct { unsigned long fun; long type; void *args; long argsize; long space; } args = { PACKPORT(port, NET_RPC_EXT, MBX_RECEIVE_IF, 0), UW1(2, 3), &arg, SIZARG, 0 };
+		struct { unsigned long fun; long type; void *args; long argsize; long space; unsigned long partypes; } args = { PACKPORT(port, NET_RPC_EXT, MBX_RECEIVE_IF, 0), UW1(2, 3), &arg, SIZARG, 0, PARTYPES4(VADR, UINT, SINT, SINT) };
 		return rtai_lxrt(NET_RPC_IDX, SIZARGS, NETRPC, &args).i[LOW];
 	} 
 	return rt_mbx_receive_if(mbx, msg, msg_size);
@@ -1466,7 +1450,7 @@ static inline int RT_mbx_receive_until(unsigned long node, int port, MBX *mbx, v
 {
 	if (node) {
 		struct { MBX *mbx; void *msg; long msg_size; RTIME time; long space; } arg = { mbx, msg, msg_size, time, 1 };
-		struct { unsigned long fun; long type; void *args; long argsize; long space; } args = { PACKPORT(port, NET_RPC_EXT, MBX_RECEIVE_UNTIL, 4), UW1(2, 3), &arg, SIZARG, 0 };
+		struct { unsigned long fun; long type; void *args; long argsize; long space; unsigned long partypes; } args = { PACKPORT(port, NET_RPC_EXT, MBX_RECEIVE_UNTIL, 4), UW1(2, 3), &arg, SIZARG, 0, PARTYPES5(VADR, UINT, SINT, RTIM, SINT) };
 		return rtai_lxrt(NET_RPC_IDX, SIZARGS, NETRPC, &args).i[LOW];
 	}
 	return rt_mbx_receive_until(mbx, msg, msg_size, nano2count(time));
@@ -1476,7 +1460,7 @@ static inline int RT_mbx_receive_timed(unsigned long node, int port, MBX *mbx, v
 {
 	if (node) {
 		struct { MBX *mbx; void *msg; long msg_size; RTIME delay; long space; } arg = { mbx, msg, msg_size, delay, 1 };
-		struct { unsigned long fun; long type; void *args; long argsize; long space; } args = { PACKPORT(port, NET_RPC_EXT, MBX_RECEIVE_TIMED, 4), UW1(2, 3), &arg, SIZARG, 0 };
+		struct { unsigned long fun; long type; void *args; long argsize; long space; unsigned long partypes; } args = { PACKPORT(port, NET_RPC_EXT, MBX_RECEIVE_TIMED, 4), UW1(2, 3), &arg, SIZARG, 0, PARTYPES5(VADR, UINT, SINT, RTIM, SINT) };
 		return rtai_lxrt(NET_RPC_IDX, SIZARGS, NETRPC, &args).i[LOW];
 	}
 	return rt_mbx_receive_timed(mbx, msg, msg_size, nano2count(delay));

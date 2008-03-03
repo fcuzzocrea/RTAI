@@ -164,7 +164,7 @@ if test x$CONFIG_RTAI_LINUXDIR != x ; then
 	RTAI_LINUX_DIR=$CONFIG_RTAI_LINUXDIR
 else
 	RTAI_LINUX_DIR="/usr/src/linux"
-end
+fi
 
 AC_ARG_WITH(linux-dir,
     [  --with-linux-dir=<linux-dir>      RTAI-enabled Linux kernel tree],

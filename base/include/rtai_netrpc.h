@@ -33,8 +33,7 @@
 
 #define NET_RPC_EXT  0
 
-#define NETRPC_BASEPORT_32  5000
-#define NETRPC_BASEPORT_64  6000
+#define NETRPC_BASEPORT  5000
 
 #define PORT_SHF  1
 #define PORT_INC  1

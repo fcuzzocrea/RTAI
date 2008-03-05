@@ -424,7 +424,7 @@ static inline int gvb_stub(int slot, unsigned long long owner)
 				}
 				kfree(task);
 			} else {
-				slot = !portslot[slot].owner ? slot+BASEPORT : -ENXIO;
+				slot = !portslot[slot].owner ? slot + BASEPORT : -ENXIO;
 				rt_spin_unlock_irqrestore(flags, &stub_lock);
 			}
 		} else {
@@ -574,7 +574,7 @@ static void hard_stub_fun(struct portslot_t *portslotp)
 	
 recvryh:
 
-	while (rt_sem_wait(sem)< RTE_LOWERR) {
+	while (rt_sem_wait(sem) < RTE_LOWERR) {
 		wsize = hard_rt_recvfrom(sock, msg, MAX_MSG_SIZE, 0, addr, &w2size);
 		if (decode) {
 			decode(portslotp, msg, wsize, RPC_SRV);
@@ -1015,7 +1015,7 @@ RTAI_SYSCALL_MODE long long _rt_net_rpc(long fun_ext_timed, long type, void *arg
 						rsize = decode(portslotp, msg, rsize, RPC_RCV);
 					}
 						if((reply = (void *)msg)->myport) {
-							if (reply->myport<0) {
+							if (reply->myport < 0) {
 								RETURN_ERR(-RTE_CHGPORTERR);
 							}
 

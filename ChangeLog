@@ -1,3 +1,8 @@
+2008-03-05 Paolo Mantegazza <mantegazza@aero.polimi.it>
+
+	* base/include/rtai_netrpc.h: set 32nd bit (i.e.: | 0x80000000), in
+	  OWNER macro so that there are no 32/64 bits problems.
+
 2008-03-04 Paolo Mantegazza <mantegazza@aero.polimi.it>
 
 	* base/ipc/sem/sem.c and base/ipc/netrpc/netrpc.c: move rt_poll_netrpc

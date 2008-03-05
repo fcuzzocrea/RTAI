@@ -75,7 +75,9 @@
 #define RPC_RCV  8
 
 #define OWNER(node, task) \
-	((((unsigned long long)(node)) << 32) | (unsigned long)(task))
+	( (((unsigned long long)(node)) << 32)  |
+	  (((unsigned long)(task)) & 0xFFFFFFFF) |
+	  0x80000000 )
 	
 #define TSK_FRM_WNR(i)	((i) & 0xFFFFFFFF);
 

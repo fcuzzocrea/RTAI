@@ -74,9 +74,11 @@
 #define RPC_RTR  7
 #define RPC_RCV  8
 
+#define ADR_CNV_MSK  (0x3)
+
 #define OWNER(node, task) \
 	( (((unsigned long long)(node)) << 32)   | \
-	  (((unsigned long)(task)) & ~(0x3)) )
+	  (((unsigned long)(task)) & ~ADR_CNV_MSK) )
 	
 #define TSK_FRM_WNR(i)	((i) & 0xFFFFFFFF);
 
@@ -105,7 +107,7 @@ static unsigned long long kadr_ofst[] =
 	{0xFFFFC20000000000ULL, 0xFFFF810000000000ULL, 0xFFFFFFFF80000000ULL };
 static inline unsigned long reset_kadr(unsigned long val)
 {
-	return (val & ~(0x3)) | kadr_ofst[val & 3];
+	return (val & ~ADR_CNV_MSK) | kadr_ofst[val & ADR_CNV_MSK];
 }
 #endif
 

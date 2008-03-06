@@ -235,7 +235,7 @@ static inline int argconv(void *ain, void *aout, int send_mach, int argsize, uns
 					*out++ = (unsigned int)*in++;
 					break;
 				case VADR:
-					*out++ = (*in | 0x80000000) ? (unsigned int)(*in++ & 0x7FFFFFFF) | VMALLOC_START : (unsigned int)*in++ | PAGE_OFFSET;
+					*out++ = reset_kadr(*in++);
 					break;
 				case RTIM: 
 					*out++ = (long)*in++;
@@ -685,7 +685,7 @@ static void port_server_fun(RT_TASK *port_server)
 			}
 		}
 		if (msg.op) {
-			msg.port = gvb_stub(msg.op - BASEPORT,msg.owner);
+			msg.port = gvb_stub(msg.op - BASEPORT, msg.owner);
 			goto ret;
 		}
 		if (!(msg.port = get_stub(msg.owner))) {
@@ -1183,7 +1183,7 @@ RTAI_SYSCALL_MODE int rt_poll_netrpc(struct rt_poll_s *pdsa1, struct rt_poll_s *
 	if (sizeof(long) == 8 && !((unsigned long)pdsa1[0].what & 0xFFFFFFFF00000000ULL)) {
 		int i;
 		for (i = 0; i < retval; i++) {
-			pdsa1[i].what = (void *)(((unsigned long)pdsa1[i].what | 0x80000000) ? ((unsigned long)pdsa1[i].what & 0x7FFFFFFF) | VMALLOC_START : (unsigned long)pdsa1[i].what | PAGE_OFFSET);
+			pdsa1[i].what = (void *)reset_kadr((unsigned long)pdsa1[i].what);
 		}
 	}
 	retval = _rt_poll(pdsa1, retval, timeout, 1);

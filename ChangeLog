@@ -1,3 +1,10 @@
+2008-03-06 Paolo Mantegazza <mantegazza@aero.polimi.it>
+
+	* base/include/rtai_netrpc.h: extend 32/64 operability to kernl/user
+	  space remote nteractions.
+	* base/ipc/netrpc.c: use an inlined function of rtai_netrpc.h to 
+	  reset remote adrresses.
+
 2008-03-05 Paolo Mantegazza <mantegazza@aero.polimi.it>
 
 	* base/include/rtai_netrpc.h: set 32nd bit (i.e.: | 0x80000000), in
@@ -12,14 +19,12 @@
 
 	* base/include/rtai_netrpc.h: updated kernel/user space rt_poll for
 	  32/64 interoperability.
-
 	* base/ipc/sem/sem.c: ensure rt_poll_netrpc cares of adapting remote
 	  addresses.
 
 2008-03-01 Paolo Mantegazza <mantegazza@aero.polimi.it>
 
 	* base/include/rtai_netrpc.h: revised for 32/64 bits compatibilty.
-
 	* base/ipc/netrpc.c: revised for 32/64 bits compatibilty.
 
 2008-02-29 Paolo Mantegazza <mantegazza@aero.polimi.it>
@@ -32,13 +37,10 @@
 
 	* base/include/asm-x86_64/rtai_hal.h: copy Linux ticket locking for 
 	  our recursive rtai_cpu_lock when RTAI_NR_CPUS > 2.
-
 	* base/include/asm-ppc/rtai_hal.h: implement ticket locking in C for 
 	  our recursive rtai_cpu_lock when RTAI_NR_CPUS > 2.
-
 	* base/arch/x86_64/hal.immed: rtai_cpu_lock uses an array of 2 unsigned
 	  long to allow rtai_cpu_lock to recurse using ticket locking.
-
 	* base/arch/ppc/hal.immed: rtai_cpu_lock uses an array of 2 unsigned
 	  long to allow rtai_cpu_lock to recurse using ticket locking.
 
@@ -51,10 +53,8 @@
 
 	* base/include/asm-i386/rtai_hal.h: copy Linux ticket locking for 
 	  our recursive rtai_cpu_lock when RTAI_NR_CPUS > 2.
-
 	* base/arch/i386/hal.immed: rtai_cpu_lock uses an array of 2 unsigned
 	  long to allow rtai_cpu_lock to recurse using ticket locking.
-
 	* base/sched/sched.c: cleanup and refactor internal sched locks.
 
 2008-02-15 Paolo Mantegazza <mantegazza@aero.polimi.it>

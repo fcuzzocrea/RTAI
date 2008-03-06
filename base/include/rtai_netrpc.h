@@ -76,8 +76,7 @@
 
 #define OWNER(node, task) \
 	( (((unsigned long long)(node)) << 32)   | \
-	  (((unsigned long)(task)) & 0xFFFFFFFF) | \
-	  (0x80000000) )
+	  (((unsigned long)(task)) & 0xFFFFFFFCUL) )
 	
 #define TSK_FRM_WNR(i)	((i) & 0xFFFFFFFF);
 
@@ -100,22 +99,35 @@
 #define PARTYPES9(a, b, c, d, e, f, g, h, i)  (((i) << 8*WDW) | ((h) << 7*WDW) | ((g) << 6*WDW) | ((f) << 5*WDW) | ((e) << 4*WDW) | ((d) << 3*WDW) | ((c) << 2*WDW) | ((b) << WDW) | (a))
 
 // must be as Linux puts them, always the same likely
-#define VMS_X86_64  0xFFFFC20000000000ULL
-#define VMS_PPC_64  0xD000000000000000ULL
+#ifndef KERNEL_64_ADDRESS_OFFSET
+#define KERNEL_64_ADDRESS_OFFSET
+static unsigned long long kadr_ofst[] = 
+	{0xFFFFC20000000000ULL, 0xFFFF810000000000ULL, 0xFFFFFFFF80000000ULL };
+static inline unsigned long reset_kadr(unsigned long val)
+{
+	return (val & 0xFFFFFFFCUL) | kadr_ofst[val & 3];
+}
+#endif
 
 static inline void *RTAI_LXRT(int port, union rtai_lxrt_t retval)
 {
 	if (sizeof(long) == 4 && (abs(port) & PORT_MSK)) {
-		if ((retval.rt & 0x80000000UL)) {
-			retval.rt = RTE_OBJINV;
-		} else if ((retval.rt & VMS_X86_64) == VMS_X86_64 || (retval.rt & VMS_PPC_64) == VMS_PPC_64) {
-			retval.rt |= 0x80000000;
+		int i;
+		for (i = 0; i < 3; i++) {
+			if ((retval.rt & 0xFF0000000000ULL) == (kadr_ofst[i] & 0xFF0000000000ULL)) {
+				retval.rt |= i;
+				return retval.v[LOW];
+			}
 		}
+		return (void *)RTE_OBJINV;
 	}
 	return retval.v[LOW];
 }
 
 #define RT_NET_RPC(port, retval)  RTAI_LXRT(port, (union rtai_lxrt_t)retval)
+
+#define RT_NET_ADR(port, adr) \
+	 RTAI_LXRT(port, (union rtai_lxrt_t)((long long)(adr)))
 
 #ifdef __KERNEL__
 

@@ -76,7 +76,7 @@
 
 #define OWNER(node, task) \
 	( (((unsigned long long)(node)) << 32)   | \
-	  (((unsigned long)(task)) & 0xFFFFFFFCUL) )
+	  (((unsigned long)(task)) & ~(0x3)) )
 	
 #define TSK_FRM_WNR(i)	((i) & 0xFFFFFFFF);
 
@@ -105,7 +105,7 @@ static unsigned long long kadr_ofst[] =
 	{0xFFFFC20000000000ULL, 0xFFFF810000000000ULL, 0xFFFFFFFF80000000ULL };
 static inline unsigned long reset_kadr(unsigned long val)
 {
-	return (val & 0xFFFFFFFCUL) | kadr_ofst[val & 3];
+	return (val & ~(0x3)) | kadr_ofst[val & 3];
 }
 #endif
 

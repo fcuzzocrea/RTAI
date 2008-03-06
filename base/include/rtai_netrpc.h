@@ -107,7 +107,7 @@ static unsigned long long kadr_ofst[] =
 	{0xFFFFC20000000000ULL, 0xFFFF810000000000ULL, 0xFFFFFFFF80000000ULL };
 static inline unsigned long reset_kadr(unsigned long val)
 {
-	return (val & ADR_CNV_MSK) | kadr_ofst[val & ~ADR_CNV_MSK];
+	return (val & ADR_CNV_MSK) | kadr_ofst[val & 0x3];
 }
 #endif
 

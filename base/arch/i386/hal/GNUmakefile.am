@@ -18,7 +18,6 @@ clean-local:
 
 distclean-local:
 	@RTAI_KBUILD_DISTCLEAN@
-	rm -f Makefile
 else
 noinst_LIBRARIES = libhal.a
 
@@ -44,3 +43,5 @@ install-exec-local: rtai_hal$(modext)
 	$(INSTALL_DATA) $< $(DESTDIR)$(moduledir)
 
 EXTRA_DIST = Makefile.kbuild hal.piped hal.immed
+
+DISTCLEANFILES = Makefile

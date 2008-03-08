@@ -28,6 +28,6 @@ if CONFIG_RTAI_LEDS
 OPTDIRS += leds
 endif
 
-SUBDIRS = include ipc $(OPTDIRS) sched arch scripts posix
+SUBDIRS = include sched ipc arch posix $(OPTDIRS) scripts
 
 EXTRA_DIST = config

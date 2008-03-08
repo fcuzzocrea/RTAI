@@ -39,6 +39,7 @@ rtai_sched_extradef = -DUSE_RTAI_TASKS=1
 if CONFIG_KBUILD
 rtai_sched.ko: @RTAI_KBUILD_ENV@
 rtai_sched.ko: $(libsched_sched_a_SOURCES) $(builtins_srclist)
+	@(cd ../arch && $(MAKE) rtai_hal$(modext))
 	@RTAI_KBUILD_TOP@ \
 	@RTAI_KBUILD_CMD@ rtai_extradef="$(rtai_sched_extradef)" \
 	@RTAI_KBUILD_BOTTOM@

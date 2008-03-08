@@ -1,3 +1,7 @@
+2008-03-08 Pierangelo Masarati <masarati@aero.polimi.it>
+	* Fix for Module.symvers (thanks to patch from Paul)
+	* Minor build cleanup
+
 2008-03-06 Paolo Mantegazza <mantegazza@aero.polimi.it>
 
 	* base/include/rtai_netrpc.h: extend 32/64 operability to kernl/user

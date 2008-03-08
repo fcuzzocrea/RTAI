@@ -17,6 +17,7 @@ rtai_16550A$(modext): $(lib16550A_a_SOURCES) FORCE
 
 clean-local:
 	@RTAI_KBUILD_CLEAN@
+	rm -f FORCE
 
 distclean-local:
 	@RTAI_KBUILD_DISTCLEAN@

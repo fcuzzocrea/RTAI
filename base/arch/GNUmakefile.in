@@ -340,6 +340,7 @@ target_alias = @target_alias@
 @CONFIG_X86_64_TRUE@ARCHDIR = x86_64
 @CONFIG_X86_TRUE@ARCHDIR = i386
 SUBDIRS = $(ARCHDIR)
+modext = @RTAI_MODULE_EXT@
 all: all-recursive
 
 .SUFFIXES:
@@ -648,6 +649,9 @@ uninstall-info: uninstall-info-recursive
 	mostlyclean-recursive pdf pdf-am ps ps-am tags tags-recursive \
 	uninstall uninstall-am uninstall-info-am
 
+
+rtai_hal$(modext):
+	@(cd $(ARCHDIR)/hal && make rtai_hal$(modext))
 # Tell versions [3.59,3.63) of GNU make to not export all variables.
 # Otherwise a system limit (for SysV at least) may be exceeded.
 .NOEXPORT:

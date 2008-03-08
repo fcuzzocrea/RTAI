@@ -28,6 +28,12 @@
 #define _MATH_H         1
 
 #include <rtai_types.h>
+#ifdef __attribute_pure__
+#undef __attribute_pure__
+#endif
+#ifdef __attribute_used__
+#undef __attribute_used__
+#endif
 #include <features.h>
 
 __BEGIN_DECLS

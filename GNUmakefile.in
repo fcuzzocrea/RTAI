@@ -370,7 +370,7 @@ README.LXRT_EXTS_IN_USE \
 README.SMI \
 @RTAI_MAYBE_SIMDIR@
 
-DISTCLEANFILES = .rtai_config .rtai_config.old .cfok .cfchanged
+DISTCLEANFILES = .rtai_config .rtai_config.old .cfok .cfchanged Module.symvers
 all: rtai_config.h
 	$(MAKE) $(AM_MAKEFLAGS) all-recursive
 
@@ -854,6 +854,9 @@ reconfig xconfig gconfig mconfig menuconfig config oldconfig:
 install-data-local: .rtai_config
 	$(mkinstalldirs) $(DESTDIR)$(pkgdatadir)
 	$(INSTALL_DATA) .rtai_config $(DESTDIR)$(pkgdatadir)/config-rtai-$(VERSION)
+	if -f Module.symvers ; then \
+	    $(INSTALL_DATA) $(DESTDIR)$(includedir)/Module.symvers \
+	fi
 
 install-exec-local: devices
 

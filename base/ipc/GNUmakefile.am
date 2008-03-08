@@ -8,10 +8,6 @@ if CONFIG_RTAI_FIFOS
 OPTDIRS += fifos
 endif
 
-if CONFIG_RTAI_NETRPC
-OPTDIRS += netrpc
-endif
-
 if CONFIG_RTAI_SHM
 OPTDIRS += shm
 endif
@@ -34,6 +30,10 @@ endif
 
 if CONFIG_RTAI_MQ
 OPTDIRS += mq
+endif
+
+if CONFIG_RTAI_NETRPC
+OPTDIRS += netrpc
 endif
 
 SUBDIRS = $(OPTDIRS)

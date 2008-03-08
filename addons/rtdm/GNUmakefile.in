@@ -791,6 +791,7 @@ uninstall-info: uninstall-info-recursive
 
 @CONFIG_KBUILD_TRUE@clean-local:
 @CONFIG_KBUILD_TRUE@	@RTAI_KBUILD_CLEAN@
+@CONFIG_KBUILD_TRUE@	rm -f FORCE
 
 @CONFIG_KBUILD_TRUE@distclean-local:
 @CONFIG_KBUILD_TRUE@	@RTAI_KBUILD_DISTCLEAN@

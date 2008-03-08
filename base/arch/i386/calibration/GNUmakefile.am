@@ -78,6 +78,12 @@ all-local: rtai_calibrate$(modext) rtai_smi$(modext)
 
 RT_MODULES = rtai_calibrate$(modext) rtai_smi$(modext)
 
+calibrate_DEPENDENCIES = liblxrt.la
+liblxrt.la:
+	@(cd ../../../sched/liblxrt && make liblxrt.la)
+
+.PHONY: liblxrt.la
+
 install-exec-local: $(RT_MODULES)
 	$(mkinstalldirs) $(DESTDIR)$(moduledir)
 	@for m in $(RT_MODULES) ; do \

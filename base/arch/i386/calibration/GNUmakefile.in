@@ -397,6 +397,7 @@ calibration_helper_LDADD = \
 	-lpthread
 
 RT_MODULES = rtai_calibrate$(modext) rtai_smi$(modext)
+calibrate_DEPENDENCIES = liblxrt.la
 EXTRA_DIST = runinfo README.SMI Makefile.kbuild
 DISTCLEANFILES = Makefile
 all: all-am
@@ -779,6 +780,10 @@ uninstall-am: uninstall-calibrationPROGRAMS uninstall-info-am
 @CONFIG_KBUILD_FALSE@	$(CROSS_COMPILE)$(LD) --whole-archive $< -r -o $@
 
 all-local: rtai_calibrate$(modext) rtai_smi$(modext)
+liblxrt.la:
+	@(cd ../../../sched/liblxrt && make liblxrt.la)
+
+.PHONY: liblxrt.la
 
 install-exec-local: $(RT_MODULES)
 	$(mkinstalldirs) $(DESTDIR)$(moduledir)

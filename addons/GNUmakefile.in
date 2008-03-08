@@ -36,8 +36,8 @@ POST_UNINSTALL = :
 build_triplet = @build@
 host_triplet = @host@
 @CONFIG_RTAI_CPLUSPLUS_TRUE@am__append_1 = cpp
-@CONFIG_RTAI_COMEDI_LXRT_TRUE@am__append_2 = comedi
-@CONFIG_RTAI_RTDM_TRUE@am__append_3 = rtdm
+@CONFIG_RTAI_RTDM_TRUE@am__append_2 = rtdm
+@CONFIG_RTAI_COMEDI_LXRT_TRUE@am__append_3 = comedi
 subdir = addons
 DIST_COMMON = $(srcdir)/GNUmakefile.am $(srcdir)/GNUmakefile.in
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
@@ -60,7 +60,7 @@ RECURSIVE_TARGETS = all-recursive check-recursive dvi-recursive \
 	uninstall-recursive
 ETAGS = etags
 CTAGS = ctags
-DIST_SUBDIRS = drivers cpp comedi rtdm
+DIST_SUBDIRS = cpp rtdm comedi drivers
 DISTFILES = $(DIST_COMMON) $(DIST_SOURCES) $(TEXINFOS) $(EXTRA_DIST)
 ACLOCAL = @ACLOCAL@
 AMDEP_FALSE = @AMDEP_FALSE@
@@ -334,7 +334,7 @@ sharedstatedir = @sharedstatedir@
 subdirs = @subdirs@
 sysconfdir = @sysconfdir@
 target_alias = @target_alias@
-OPTDIRS = drivers $(am__append_1) $(am__append_2) $(am__append_3)
+OPTDIRS = $(am__append_1) $(am__append_2) $(am__append_3) drivers
 SUBDIRS = $(OPTDIRS)
 all: all-recursive
 

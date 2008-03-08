@@ -15,3 +15,8 @@ ARCHDIR = ppc
 endif
 
 SUBDIRS = $(ARCHDIR)
+
+modext = @RTAI_MODULE_EXT@
+
+rtai_hal$(modext):
+	@(cd $(ARCHDIR)/hal && make rtai_hal$(modext))

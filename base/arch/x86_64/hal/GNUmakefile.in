@@ -352,6 +352,7 @@ libhal_a_SOURCES = hal.c hal.immed rtc.c
 @CONFIG_KBUILD_FALSE@	-I../../../include
 
 EXTRA_DIST = Makefile.kbuild hal.immed
+DISTCLEANFILES = Makefile
 all: all-am
 
 .SUFFIXES:
@@ -532,6 +533,7 @@ clean-generic:
 
 distclean-generic:
 	-test -z "$(CONFIG_CLEAN_FILES)" || rm -f $(CONFIG_CLEAN_FILES)
+	-test -z "$(DISTCLEANFILES)" || rm -f $(DISTCLEANFILES)
 
 maintainer-clean-generic:
 	@echo "This command is intended for maintainers to use"
@@ -614,7 +616,6 @@ uninstall-am: uninstall-info-am
 
 @CONFIG_KBUILD_TRUE@distclean-local:
 @CONFIG_KBUILD_TRUE@	@RTAI_KBUILD_DISTCLEAN@
-@CONFIG_KBUILD_TRUE@	rm -f Makefile
 
 @CONFIG_KBUILD_FALSE@rtai_hal.o: libhal.a
 @CONFIG_KBUILD_FALSE@	$(CROSS_COMPILE)$(LD) --whole-archive $< -r -o $@

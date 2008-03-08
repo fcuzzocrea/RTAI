@@ -26,7 +26,6 @@ clean-local:
 
 distclean-local:
 	@RTAI_KBUILD_DISTCLEAN@
-	rm -f Makefile
 else
 noinst_LIBRARIES = libcalibrate_rt.a libsmi_rt.a
 
@@ -99,3 +98,5 @@ run: all
 	@$(top_srcdir)/rtai-scripts/rtai-load --verbose
 
 EXTRA_DIST = runinfo README.SMI Makefile.kbuild
+
+DISTCLEANFILES = Makefile

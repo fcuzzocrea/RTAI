@@ -43,3 +43,5 @@ install-exec-local: rtai_hal$(modext)
 	$(INSTALL_DATA) $< $(DESTDIR)$(moduledir)
 
 EXTRA_DIST = Makefile.kbuild
+
+DISTCLEANFILES = Makefile

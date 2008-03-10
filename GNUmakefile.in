@@ -375,6 +375,7 @@ README.SMI \
 @RTAI_MAYBE_SIMDIR@
 
 DISTCLEANFILES = .rtai_config .rtai_config.old .cfok .cfchanged Module.symvers
+moduledir = @RTAI_MODULE_DIR@
 all: rtai_config.h
 	$(MAKE) $(AM_MAKEFLAGS) all-recursive
 
@@ -859,7 +860,7 @@ install-data-local: .rtai_config
 	$(mkinstalldirs) $(DESTDIR)$(pkgdatadir)
 	$(INSTALL_DATA) .rtai_config $(DESTDIR)$(pkgdatadir)/config-rtai-$(VERSION)
 	if test -f Module.symvers ; then \
-	    $(INSTALL_DATA) Module.symvers $(DESTDIR)$(includedir)/Module.symvers \
+	    $(INSTALL_DATA) Module.symvers $(DESTDIR)$(moduledir)/Module.symvers ; \
 	fi
 
 install-exec-local: devices

@@ -33,6 +33,8 @@ README.SMI \
 
 DISTCLEANFILES = .rtai_config .rtai_config.old .cfok .cfchanged Module.symvers
 
+moduledir = @RTAI_MODULE_DIR@
+
 all-recursive install-recursive: base/GNUmakefile clean-if-reconfigured
 
 base/GNUmakefile: @RTAI_LINUX_DIR@/.config
@@ -78,7 +80,7 @@ install-data-local: .rtai_config
 	$(mkinstalldirs) $(DESTDIR)$(pkgdatadir)
 	$(INSTALL_DATA) .rtai_config $(DESTDIR)$(pkgdatadir)/config-rtai-$(VERSION)
 	if test -f Module.symvers ; then \
-	    $(INSTALL_DATA) Module.symvers $(DESTDIR)$(includedir)/Module.symvers \
+	    $(INSTALL_DATA) Module.symvers $(DESTDIR)$(moduledir)/Module.symvers ; \
 	fi
 
 install-exec-local: devices

@@ -3749,6 +3749,7 @@ function Code=make_standalone42()
         '{'
         '  int nevprt=1;'
         '  int local_flag;'
+        '  int i;'
         '  double *args[100];']
 
   if (x <> []) then

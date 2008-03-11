@@ -248,8 +248,7 @@ void put_current_on_cpu(int cpuid)
 	}
 #else /* KERNEL_VERSION >= 2.6.0 */
 	if (set_cpus_allowed(task, cpumask_of_cpu(cpuid))) {
-		((RT_TASK *)(task->rtai_tskext(TSKEXT0)))->runnable_on_cpus = smp_processor_id();
-		set_cpus_allowed(current, cpumask_of_cpu(smp_processor_id()));
+		set_cpus_allowed(current, cpumask_of_cpu(((RT_TASK *)(task->rtai_tskext(TSKEXT0)))->runnable_on_cpus = rtai_cpuid()));
 	}
 #endif  /* KERNEL_VERSION < 2.6.0 */
 #endif /* CONFIG_SMP */
@@ -2330,7 +2329,7 @@ static int lxrt_handle_trap(int vec, int signo, struct pt_regs *regs, void *dumm
 {
 	RT_TASK *rt_task;
 
-	rt_task = rt_smp_current[smp_processor_id()];
+	rt_task = rt_smp_current[rtai_cpuid()];
 	if (USE_RTAI_TASKS && !rt_task->lnxtsk) {
 		if (rt_task->task_trap_handler[vec]) {
 			return rt_task->task_trap_handler[vec](vec, signo, regs, rt_task);
@@ -2429,7 +2428,7 @@ static int lxrt_intercept_schedule_head (unsigned long event, struct prev_next_t
 static int lxrt_intercept_schedule_tail (unsigned event, void *nothing)
 
 {
-	int cpuid = smp_processor_id();
+	int cpuid = rtai_cpuid();
 #if LINUX_VERSION_CODE < KERNEL_VERSION(2,6,11)
 	if (in_hrt_mode(cpuid)) {
 		return 1;

@@ -205,7 +205,7 @@ static inline RT_TASK* __task_init(unsigned long name, int prio, int stack_size,
 		if (num_online_cpus() > 1 && cpus_allowed) {
 	    		cpus_allowed = hweight32(cpus_allowed) > 1 ? get_min_tasks_cpuid() : ffnz(cpus_allowed);
 		} else {
-			cpus_allowed = smp_processor_id();
+			cpus_allowed = rtai_cpuid();
 		}
 		put_current_on_cpu(cpus_allowed);
 		return rt_task;
@@ -230,9 +230,9 @@ static inline RT_TASK* __task_init(unsigned long name, int prio, int stack_size,
 	if (rt_task) {
 	    rt_task->magic = 0;
 	    if (num_online_cpus() > 1 && cpus_allowed) {
-	    cpus_allowed = hweight32(cpus_allowed) > 1 ? get_min_tasks_cpuid() : ffnz(cpus_allowed);
+			cpus_allowed = hweight32(cpus_allowed) > 1 ? get_min_tasks_cpuid() : ffnz(cpus_allowed);
 	    } else {
-	    cpus_allowed = smp_processor_id();
+			cpus_allowed = rtai_cpuid();
 	    }
 	    if (!set_rtext(rt_task, prio, 0, 0, cpus_allowed, 0)) {
 	        rt_task->fun_args = (long *)((struct fun_args *)(rt_task + 1));

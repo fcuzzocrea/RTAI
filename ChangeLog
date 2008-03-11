@@ -1,3 +1,8 @@
+2008-03-11  Roberto Bucher <roberto.bucher@supsi.ch>
+
+	* rtai-lab/scilab/macros/RTAI/RTAICodeGen_.sci: Modified for
+	handling some special event blocks.
+
 2008-03-11 Paolo Mantegazza <mantegazza@aero.polimi.it>
 
 	* base/sched/sched.c and sys.c: got rid of Linux smp_processor_id().

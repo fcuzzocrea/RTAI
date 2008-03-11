@@ -1,3 +1,7 @@
+2008-03-11 Paolo Mantegazza <mantegazza@aero.polimi.it>
+
+	* base/sched/sched.c and sys.c: got rid of Linux smp_processor_id().
+
 2008-03-08 Pierangelo Masarati <masarati@aero.polimi.it>
 	* Fix for Module.symvers (thanks to patch from Paul)
 	* Minor build cleanup

@@ -788,7 +788,7 @@ static inline int rt_cndmtx_signal(SEM *mtx, RT_TASK *rt_current)
 		}
 	}
 	mtx->owndby = 0;
-	dequeue_resqel_reset_current_priority(&mtx->resq, rt_current);
+	dequeue_resqel_reset_current_priority_norenq(&mtx->resq, rt_current);
 	if (task) {
 		 RT_SCHEDULE_BOTH(task, rtai_cpuid());
 	} else {

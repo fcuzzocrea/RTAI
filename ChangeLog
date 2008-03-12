@@ -1,3 +1,10 @@
+2008-03-13 Paolo Mantegazza <mantegazza@aero.polimi.it>
+
+	* base/include/rtai_prinher.h: add resource queue removal without
+	  renqueuing.
+	* base/ipc/sem/sem.c: do not renqueue the task waiting on a condvar
+	  when it releases the mutex and recovering its priority.
+
 2008-03-11  Roberto Bucher <roberto.bucher@supsi.ch>
 
 	* rtai-lab/scilab/macros/RTAI/RTAICodeGen_.sci: Modified for

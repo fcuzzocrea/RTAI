@@ -73,16 +73,6 @@ static inline int dequeue_resqel_reset_current_priority(QUEUE *resqel, RT_TASK *
 	return renq_current(rt_current, ((q = rt_current->msg_queue.next) != &rt_current->msg_queue && (prio = (q->task)->priority) < hprio) ? prio : hprio);
 }
 
-static inline void dequeue_resqel_reset_current_priority_norenq(QUEUE *resqel, RT_TASK *rt_current)
-{
-	int hprio, prio;
-	QUEUE *q;
-	(resqel->prev)->next = resqel->next;
-	(resqel->next)->prev = resqel->prev;
-	hprio = _set_task_prio_from_resq(rt_current);
-	rt_current->priority = ((q = rt_current->msg_queue.next) != &rt_current->msg_queue && (prio = (q->task)->priority) < hprio) ? prio : hprio;
-}
-
 static inline int set_task_prio_from_resq(RT_TASK *resownr)
 {
 	int hprio, prio;
@@ -140,9 +130,6 @@ static inline int dequeue_resqel_reset_current_priority(QUEUE *resqel, RT_TASK *
 	}
 	return 0;
 }
-
-#define dequeue_resqel_reset_current_priority_norenq(resqel, rt_current) \
-	dequeue_resqel_reset_current_priority(resqel, rt_current)
 
 static inline int set_task_prio_from_resq(RT_TASK *resownr)
 {

@@ -1,3 +1,9 @@
+2008-03-13 Paolo Mantegazza <mantegazza@aero.polimi.it>
+
+	* base/include/rtai_schedcore.h: in renq_current check if rt_current
+	  is ready before renqueuing, needed for sure in condvars mutex
+	  releases at least.
+
 2008-03-11  Roberto Bucher <roberto.bucher@supsi.ch>
 
 	* rtai-lab/scilab/macros/RTAI/RTAICodeGen_.sci: Modified for

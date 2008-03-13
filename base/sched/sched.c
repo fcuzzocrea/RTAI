@@ -294,7 +294,7 @@ int set_rtext(RT_TASK *task, int priority, int uses_fpu, void(*signal)(void), un
 	task->rt_signals = NULL;
 	memset(task->task_trap_handler, 0, RTAI_NR_TRAPS*sizeof(void *));
 	task->linux_syscall_server = NULL;
-	task->trap_handler_data = NULL;
+	task->busy_time_align = 0;
 	task->resync_frame = 0;
 	task->ExitHook = 0;
 	task->usp_flags = task->usp_flags_mask = task->force_soft = 0;
@@ -428,7 +428,7 @@ int rt_task_init_cpuid(RT_TASK *task, void (*rt_thread)(long), long data, int st
 		task->task_trap_handler[i] = NULL;
 	}
 	task->linux_syscall_server = NULL;
-	task->trap_handler_data = NULL;
+	task->busy_time_align = 0;
 	task->resync_frame = 0;
 	task->ExitHook = 0;
 	task->exectime[0] = task->exectime[1] = 0;
@@ -856,8 +856,8 @@ static void rt_schedule_on_schedule_ipi(void)
 sched_exit:
 	rtai_cli();
 #if CONFIG_RTAI_BUSY_TIME_ALIGN
-	if (rt_current->trap_handler_data) {
-		rt_current->trap_handler_data = 0;
+	if (rt_current->busy_time_align) {
+		rt_current->busy_time_align = 0;
 		while(rdtsc() < rt_current->resume_time);
 	}
 #endif
@@ -998,8 +998,8 @@ sched_exit:
 	sched_get_global_lock(cpuid);
 sched_exit1:
 #if CONFIG_RTAI_BUSY_TIME_ALIGN
-	if (rt_current->trap_handler_data) {
-		rt_current->trap_handler_data = 0;
+	if (rt_current->busy_time_align) {
+		rt_current->busy_time_align = 0;
 		while(rdtsc() < rt_current->resume_time);
 	}
 #endif

@@ -346,7 +346,8 @@ static inline int RT_sem_wait_timed(unsigned long node, int port, SEM *sem, RTIM
 
 static inline int RT_poll_4to8(unsigned long node, int port, struct rt_poll_s *pdsain, unsigned long nr, RTIME timeout)
 {
-	int i, retval;
+	unsigned int i;
+	int retval;
 	struct rt_poll_lls { unsigned long long what, forwhat; } pdsa[nr];
 	struct { void *pdsa1; void *pdsa2; unsigned long pdsa_size; RTIME timeout; } arg = { pdsa, pdsa, nr*sizeof(struct rt_poll_lls), timeout };
 	for (i = 0; i < nr; i++) {
@@ -363,7 +364,8 @@ static inline int RT_poll_4to8(unsigned long node, int port, struct rt_poll_s *p
 
 static inline int RT_poll_8to4(unsigned long node, int port, struct rt_poll_s *pdsain, unsigned long nr, RTIME timeout)
 {
-	int i, retval;
+	unsigned int i;
+	int retval;
 	struct rt_poll_is { unsigned int what, forwhat; } pdsa[nr];
 	struct { void *pdsa1; void *pdsa2; unsigned long pdsa_size; RTIME timeout; } arg = { pdsa, pdsa, nr*sizeof(struct rt_poll_is), timeout };
 	for (i = 0; i < nr; i++) {

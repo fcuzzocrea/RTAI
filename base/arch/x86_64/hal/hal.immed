@@ -2378,21 +2378,25 @@ static int _rt_linux_hrt_next_shot(unsigned long delay, struct ipipe_tick_device
 	return 0;
 }
 
+#ifdef __IPIPE_FEATURE_REQUEST_TICKDEV
+#define  IPIPE_REQUEST_TICKDEV(a, b, c, d, e)  ipipe_request_tickdev(a, (void *)(b), (void *)(c), d, e)
+#else
+#define  IPIPE_REQUEST_TICKDEV(a, b, c, d, e)  ipipe_request_tickdev(a, b, c, d)
+#endif
+ 
 static int rtai_request_tickdev(void)
 {
 	int mode, cpuid;
+	unsigned long tmfreq;
 	for (cpuid = 0; cpuid < num_online_cpus(); cpuid++) {
 		if ((void *)rt_linux_hrt_set_mode != (void *)rt_linux_hrt_next_shot) {
-			mode = ipipe_request_tickdev(HRT_LINUX_TIMER_NAME, rt_linux_hrt_set_mode, rt_linux_hrt_next_shot, cpuid);
+			mode = IPIPE_REQUEST_TICKDEV(HRT_LINUX_TIMER_NAME, rt_linux_hrt_set_mode, rt_linux_hrt_next_shot, cpuid, &tmfreq);
 		} else {
-			mode = ipipe_request_tickdev(HRT_LINUX_TIMER_NAME, _rt_linux_hrt_set_mode, _rt_linux_hrt_next_shot, cpuid);
+			mode = IPIPE_REQUEST_TICKDEV(HRT_LINUX_TIMER_NAME, _rt_linux_hrt_set_mode, _rt_linux_hrt_next_shot, cpuid, &tmfreq);
 		}
-		if (mode == CLOCK_EVT_MODE_PERIODIC) {
-//			rt_times.linux_tick = TEST_LINUX_TICK;
-//			rt_times.linux_tick = nano2count_cpuid((1000000000 + HZ/2)/HZ, cpuid);
-		} else if (mode == CLOCK_EVT_MODE_UNUSED || mode == CLOCK_EVT_MODE_ONESHOT) {
+		if (mode == CLOCK_EVT_MODE_UNUSED || mode == CLOCK_EVT_MODE_ONESHOT) {
 			rt_times.linux_tick = 0;
-		} else {
+		} else if (mode != CLOCK_EVT_MODE_PERIODIC) {
 			return mode;
 		}
 	}

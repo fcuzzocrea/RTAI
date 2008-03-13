@@ -398,9 +398,11 @@ static inline int renq_current(RT_TASK *rt_current, int priority)
 	int retval;
 	if ((retval = rt_current->priority != priority)) {
 		rt_current->priority = priority;
-		(rt_current->rprev)->rnext = rt_current->rnext;
-		(rt_current->rnext)->rprev = rt_current->rprev;
-		enq_ready_task(rt_current);
+		if (rt_current->state == RT_SCHED_READY) {
+			(rt_current->rprev)->rnext = rt_current->rnext;
+			(rt_current->rnext)->rprev = rt_current->rprev;
+			enq_ready_task(rt_current);
+		}
 	}
 	return retval;
 }

@@ -1,3 +1,11 @@
+2008-03-14 Paolo Mantegazza <mantegazza@aero.polimi.it>
+
+	* base/include/rtai_sched.h: redifine the variable in rt_task_struct
+	  used for busy time align of the scheduler with a more appropriate
+	  name. (Following a warning from Paul Corner <paul_c@tuxcnc.org>)
+	* base/include/rtai_schedcore.h and
+	* base/sched/sched.c: comply to the above change.
+
 2008-03-13 Paolo Mantegazza <mantegazza@aero.polimi.it>
 
 	* base/include/rtai_schedcore.h: in renq_current check if rt_current 

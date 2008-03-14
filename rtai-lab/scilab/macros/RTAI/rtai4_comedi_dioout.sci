@@ -32,7 +32,7 @@ function [x,y,typ] = rtai4_comedi_dioout(job,arg1,arg2)
         model.ipar=[ch;
                     length(name);
                     ascii(name)'];
-        model.dstate=[1];
+        model.dstate=[];
         x.graphics=graphics;x.model=model
         break
       end
@@ -49,7 +49,7 @@ function [x,y,typ] = rtai4_comedi_dioout(job,arg1,arg2)
     model.ipar=[ch;
                 length(name);
                 ascii(name)']
-    model.dstate=[1];
+    model.dstate=[];
     model.blocktype='d'
     model.dep_ut=[%t %f]
     exprs=[sci2exp(ch),name,sci2exp(thresh)]

@@ -49,7 +49,7 @@ case 'set' then
       model.evtin=ci
       model.evtout=[]
       model.state=[]
-      model.dstate=0
+      model.dstate=[]
       model.rpar=rpar
       model.ipar=[]
       model.firing=[]

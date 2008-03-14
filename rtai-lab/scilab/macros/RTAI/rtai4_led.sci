@@ -29,6 +29,7 @@ function [x,y,typ] = rtai4_led(job,arg1,arg2)
         model.rpar=[];
         model.ipar=[length(name);
                     ascii(name)'];
+        model.dstate=[];
         x.graphics=graphics;x.model=model
         break
       end
@@ -43,6 +44,7 @@ function [x,y,typ] = rtai4_led(job,arg1,arg2)
     model.rpar=[]
     model.ipar=[length(name);
                 ascii(name)']
+    model.dstate=[];
     model.blocktype='d'
     model.dep_ut=[%t %f]
     exprs=[sci2exp(inport),name]

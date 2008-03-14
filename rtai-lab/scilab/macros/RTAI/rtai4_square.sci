@@ -30,6 +30,7 @@ function [x,y,typ] = rtai4_square(job,arg1,arg2)
         graphics.exprs=exprs;
         model.rpar=[A;prd;pulse;bias;delay];
         model.ipar=[];
+        model.dstate=[];
         x.graphics=graphics;x.model=model
         break
       end
@@ -46,6 +47,7 @@ function [x,y,typ] = rtai4_square(job,arg1,arg2)
     model.evtin=1
     model.rpar=[A;prd;pulse;bias;delay]
     model.ipar=[]
+    model.dstate=[];
     model.blocktype='d'
     model.dep_ut=[%t %f]
     exprs=[sci2exp(A),sci2exp(prd),sci2exp(pulse),sci2exp(bias),sci2exp(delay)]

@@ -35,6 +35,7 @@ function [x,y,typ] = rtai4_sinus(job,arg1,arg2)
                     bias;
                     delay];
         model.ipar=[];
+        model.dstate=[];
         x.graphics=graphics;x.model=model
         break
       end
@@ -55,6 +56,7 @@ function [x,y,typ] = rtai4_sinus(job,arg1,arg2)
                 bias;
                 delay]
     model.ipar=[]
+    model.dstate=[];
     model.blocktype='d'
     model.dep_ut=[%t %f]
     exprs=[sci2exp(A),sci2exp(frq),sci2exp(phase),sci2exp(bias),sci2exp(delay)]

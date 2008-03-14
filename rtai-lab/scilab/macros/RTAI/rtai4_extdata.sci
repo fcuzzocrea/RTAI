@@ -28,6 +28,7 @@ function [x,y,typ] = rtai4_extdata(job,arg1,arg2)
         graphics.exprs=exprs;
         model.rpar=[];
         model.ipar=[npts;0;length(filename);ascii(filename)'];
+        model.dstate=[];
         x.graphics=graphics;x.model=model
         break
       end
@@ -41,6 +42,7 @@ function [x,y,typ] = rtai4_extdata(job,arg1,arg2)
     model.evtin=1
     model.rpar=[]
     model.ipar=[npts;0;length(filename);ascii(filename)']
+    model.dstate=[];
     model.blocktype='d'
     model.dep_ut=[%t %f]
     exprs=[filename,sci2exp(npts)]

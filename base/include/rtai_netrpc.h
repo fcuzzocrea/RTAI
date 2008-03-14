@@ -1017,7 +1017,8 @@ static inline int RT_sem_wait_timed(unsigned long node, int port, SEM *sem, RTIM
 
 static inline int RT_poll_4to8(unsigned long node, int port, struct rt_poll_s *pdsain, unsigned long nr, RTIME timeout)
 {
-	int i, retval;
+	unsigned int i;
+	int retval;
 	struct rt_poll_lls { unsigned long long what, forwhat; } pdsa[nr];
 	struct { void *pdsa1; void *pdsa2; unsigned long pdsa_size; RTIME timeout; } arg = { pdsa, pdsa, nr*sizeof(struct rt_poll_lls), timeout };
 	struct { unsigned long fun; long type; void *args; long argsize; long space; unsigned long partypes; } args = { PACKPORT(port, NET_RPC_EXT, RT_POLL_NETRPC, 3), UR1(1, 3) | UW1(2, 3), &arg, SIZARG, 0, PARTYPES4(UINT, UINT, UINT, RTIM) };
@@ -1035,7 +1036,8 @@ static inline int RT_poll_4to8(unsigned long node, int port, struct rt_poll_s *p
 
 static inline int RT_poll_8to4(unsigned long node, int port, struct rt_poll_s *pdsain, unsigned long nr, RTIME timeout)
 {
-	int i, retval;
+	unsigned int i;
+	int retval;
 	struct rt_poll_is { unsigned int what, forwhat; } pdsa[nr];
 	struct { void *pdsa1; void *pdsa2; unsigned long pdsa_size; RTIME timeout; } arg = { pdsa, pdsa, nr*sizeof(struct rt_poll_is), timeout };
 	struct { unsigned long fun; long type; void *args; long argsize; long space; unsigned long partypes; } args = { PACKPORT(port, NET_RPC_EXT, RT_POLL_NETRPC, 3), UR1(1, 3) | UW1(2, 3), &arg, SIZARG, 0, PARTYPES4(VADR, UINT, UINT, RTIM) };

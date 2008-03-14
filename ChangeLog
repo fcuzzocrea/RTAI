@@ -1,7 +1,13 @@
+2008-03-14 Paolo Mantegazza <mantegazza@aero.polimi.it>
+
+	* base/include/rtai_schedcore.h and rtai_prinher.h: cleaned 
+	  duplications related to dequeueing ready tasks from resource
+	  queues and their renqueing on the ready list, if truly ready.
+
 2008-03-14 Roberto Bucher <roberto.bucher@supsi.ch>
 
 	* rtai-lab/scilab/macros/RTAI/RTAI/*.sci: Set allways dstate=[]
-	to avoid generation of unused code.
+	  to avoid generation of unused code.
 
 2008-03-14 Paolo Mantegazza <mantegazza@aero.polimi.it>
 

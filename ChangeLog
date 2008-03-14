@@ -1,3 +1,8 @@
+2008-03-14 Roberto Bucher <roberto.bucher@supsi.ch>
+
+	* rtai-lab/scilab/macros/RTAI/RTAI/*.sci: Set allways dstate=[]
+	to avoid generation of unused code.
+
 2008-03-14 Paolo Mantegazza <mantegazza@aero.polimi.it>
 
 	* base/include/rtai_sched.h: redefine the variable in rt_task_struct

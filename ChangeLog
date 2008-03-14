@@ -1,3 +1,8 @@
+2008-03-14  Roberto Bucher <roberto.bucher@supsi.ch>
+
+	* rtai-lab/scilab/macros/RTAI/RTAI*.sci: Set allways dstate=[]
+	to avoid code generation of unused code.
+
 2008-03-13 Paolo Mantegazza <mantegazza@aero.polimi.it>
 
 	* base/include/rtai_schedcore.h: in renq_current check if rt_current

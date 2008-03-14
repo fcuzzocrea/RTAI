@@ -1114,7 +1114,7 @@ void rt_dequeue_blocked(RT_TASK *task)
 
 int rt_renq_current(RT_TASK *rt_current, int priority)
 {
-	return renq_current(rt_current, priority);
+	return renq_ready_task(rt_current, priority);
 }
 
 /* ++++++++++++++++++++++++ NAMED TASK INIT/DELETE ++++++++++++++++++++++++++ */

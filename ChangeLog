@@ -1,3 +1,12 @@
+2008-03-14 Paolo Mantegazza <mantegazza@aero.polimi.it>
+
+	* base/include/rtai_sched.h: redefine the variable in rt_task_struct
+	  used for the busy time alignement of the scheduler with a more
+	  appropriate name.
+	  (Following a warning from Paul Corner <paul_c@tuxcnc.org>)
+	* base/include/rtai_schedcore.h and
+	* base/sched/sched.c: comply to the above change.
+
 2008-03-14  Roberto Bucher <roberto.bucher@supsi.ch>
 
 	* rtai-lab/scilab/macros/RTAI/RTAI*.sci: Set allways dstate=[]

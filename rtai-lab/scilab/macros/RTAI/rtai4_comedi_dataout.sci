@@ -35,7 +35,7 @@ function [x,y,typ] = rtai4_comedi_dataout(job,arg1,arg2)
                     aref;
                     length(name);
                     ascii(name)'];
-        model.dstate=[1];
+        model.dstate=[];
         x.graphics=graphics;x.model=model
         break
       end
@@ -55,7 +55,7 @@ function [x,y,typ] = rtai4_comedi_dataout(job,arg1,arg2)
                 aref;
                 length(name);
                 ascii(name)']
-    model.dstate=[1];
+    model.dstate=[];
     model.blocktype='d'
     model.dep_ut=[%t %f]
     exprs=[sci2exp(ch),name,sci2exp(comedi_range),sci2exp(aref)]

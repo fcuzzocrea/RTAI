@@ -32,7 +32,7 @@ function [x,y,typ] = rtai4_mbx_rcv_if(job,arg1,arg2)
                     length(ipaddr);
                     ascii(name)';
                     ascii(ipaddr)'];
-        model.dstate=[1];
+        model.dstate=[];
         x.graphics=graphics;x.model=model
         break
       end
@@ -50,7 +50,7 @@ function [x,y,typ] = rtai4_mbx_rcv_if(job,arg1,arg2)
                 length(ipaddr);
                 ascii(name)';
                 ascii(ipaddr)']
-    model.dstate=[1];
+    model.dstate=[];
     model.blocktype='d'
     model.dep_ut=[%t %f]
     exprs=[sci2exp(outport),name,ipaddr]

@@ -514,7 +514,7 @@ static inline void wake_up_timed_tasks(int cpuid)
         	                        enq_ready_task(task);
                 	        }
 #if defined(CONFIG_RTAI_BUSY_TIME_ALIGN) && CONFIG_RTAI_BUSY_TIME_ALIGN
-	                        task->trap_handler_data = (void *)oneshot_timer;
+	                        task->busy_time_align = oneshot_timer;
 #endif
         	        }
 			rb_erase_task(task, cpuid);

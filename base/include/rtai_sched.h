@@ -207,7 +207,7 @@ typedef struct rt_task_struct {
 	unsigned long force_soft;
 	volatile int is_hard;
 
-	void *trap_handler_data;
+	long long busy_time_align;
 	struct linux_syscalls_list *linux_syscall_server; 
 
 	/* For use by watchdog. */

@@ -2,7 +2,8 @@
 
 	* base/include/rtai_schedcore.h and rtai_prinher.h: cleaned 
 	  duplications related to dequeueing ready tasks from resource
-	  queues and their renqueing on the ready list, if truly ready.
+	  queues and their renqueing on the ready list, checking if truly
+	  ready always.
 
 2008-03-14 Roberto Bucher <roberto.bucher@supsi.ch>
 

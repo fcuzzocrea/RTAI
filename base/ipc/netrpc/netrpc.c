@@ -229,7 +229,7 @@ static void net_resume_task(int sock, struct portslot_t *p)
 		addr = (struct sockaddr*)&p->addr;
 		
 		if (my->is_hard) {
-			while (hard_rt_recvfrom(p->socket[1], msg, MAX_MSG_SIZE, 0, addr, &i) == -EAGAIN);
+			while (hard_rt_recvfrom(p->socket[1], msg, MAX_MSG_SIZE, 0, addr, (void *)&i) == -EAGAIN);
 		} else {
 			soft_rt_recvfrom(p->socket[0], msg, MAX_MSG_SIZE, 0, addr, &i);
 		}
@@ -507,7 +507,7 @@ static void hard_stub_fun(struct portslot_t *portslotp)
 recvryh:
 
 	while (rt_sem_wait(sem)< RTE_LOWERR) {
-		wsize = hard_rt_recvfrom(sock, msg, MAX_MSG_SIZE, 0, addr, &w2size);
+		wsize = hard_rt_recvfrom(sock, msg, MAX_MSG_SIZE, 0, addr, (void *)&w2size);
 		if (decode) {
 			decode(portslotp, msg, wsize, RPC_SRV);
 		}
@@ -902,7 +902,7 @@ RTAI_SYSCALL_MODE long long _rt_net_rpc(long fun_ext_timed, long type, void *arg
 			} else {
 				rt_sem_wait(&portslotp->sem);
 			}
-			if ((rsize = portslotp->hard ? hard_rt_recvfrom(portslotp->socket[1], msg, MAX_MSG_SIZE, 0, &addr, &i) : soft_rt_recvfrom(portslotp->socket[0], msg, MAX_MSG_SIZE, 0, &addr, &i))) {
+			if ((rsize = portslotp->hard ? hard_rt_recvfrom(portslotp->socket[1], msg, MAX_MSG_SIZE, 0, &addr, (void *)&i) : soft_rt_recvfrom(portslotp->socket[0], msg, MAX_MSG_SIZE, 0, &addr, &i))) {
 				if (decode) {
 					rsize = decode(portslotp, msg, rsize, RPC_RCV);
 				}
@@ -931,7 +931,7 @@ RTAI_SYSCALL_MODE long long _rt_net_rpc(long fun_ext_timed, long type, void *arg
 				long i;
 				struct sockaddr addr;
 				
-				if ((rsize = portslotp->hard ? hard_rt_recvfrom(portslotp->socket[1], msg, MAX_MSG_SIZE, 0, &addr, &i) : soft_rt_recvfrom(portslotp->socket[0], msg, MAX_MSG_SIZE, 0, &addr, &i))) {
+				if ((rsize = portslotp->hard ? hard_rt_recvfrom(portslotp->socket[1], msg, MAX_MSG_SIZE, 0, &addr, (void *)&i) : soft_rt_recvfrom(portslotp->socket[0], msg, MAX_MSG_SIZE, 0, &addr, &i))) {
 					if (decode) {
 						rsize = decode(portslotp, msg, rsize, RPC_RCV);
 					}
@@ -1003,7 +1003,7 @@ RTAI_SYSCALL_MODE long long _rt_net_rpc(long fun_ext_timed, long type, void *arg
 		} else {
 			rt_sem_wait(&portslotp->sem);
 		}
-		rsize = portslotp->hard ? hard_rt_recvfrom(portslotp->socket[1], msg, MAX_MSG_SIZE, 0, &addr, &port) : soft_rt_recvfrom(portslotp->socket[0], msg, MAX_MSG_SIZE, 0, &addr, &port);
+		rsize = portslotp->hard ? hard_rt_recvfrom(portslotp->socket[1], msg, MAX_MSG_SIZE, 0, &addr, (void *)&port) : soft_rt_recvfrom(portslotp->socket[0], msg, MAX_MSG_SIZE, 0, &addr, &port);
 		if (decode) {
 			decode(portslotp, portslotp->msg, rsize, RPC_RCV);
 		}

@@ -1,3 +1,9 @@
+2008-03-28 Paolo Mantegazza <mantegazza@aero.polimi.it>
+
+	* base/include/rtai_mq.h and rtai_pmq.h: added a missing RTAI_PROTO
+	  in the definition of rt_request_signal_mq.
+	  (Pointed at by from Felix Frey" <frey@stettbacher.ch>)
+
 2008-03-14 Paolo Mantegazza <mantegazza@aero.polimi.it>
 
 	* base/include/rtai_schedcore.h and rtai_prinher.h: cleaned 

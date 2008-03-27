@@ -239,7 +239,7 @@ static void signal_suprt_fun_mq(struct suprt_fun_arg *fun_arg)
 
 #endif
 
-int rt_request_signal_mq(mqd_t mq)
+RTAI_PROTO(int, rt_request_signal_mq, (mqd_t mq))
 {
 		struct suprt_fun_arg arg = { mq, NULL, 0, pthread_self() };
 		arg.cpuid = rtai_lxrt(RTAI_SIGNALS_IDX, sizeof(void *), RT_SIGNAL_HELPER, (void *)&arg.task).i[LOW];

@@ -2054,10 +2054,17 @@ static void rt_daemonize(void)
 	(current->signal)->pgrp    = 1;
 	(current->signal)->tty     = NULL;
 #endif
+#if LINUX_VERSION_CODE < KERNEL_VERSION(2,6,0)
+	spin_lock_irq(&current->sigmask_lock);
+	sigfillset(&current->blocked);
+	recalc_sigpending(current);
+	spin_unlock_irq(&current->sigmask_lock);
+#else
 	spin_lock_irq(&(current->sighand)->siglock);
 	sigfillset(&current->blocked);
 	recalc_sigpending();
 	spin_unlock_irq(&(current->sighand)->siglock);
+#endif
 }
 #else
 extern void rt_daemonize(void);

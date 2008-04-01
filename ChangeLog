@@ -1,3 +1,10 @@
+2008-04-01 Bill Barton <peabody@rahul.net>
+
+	* base/sched/sched.c: ensure traps are catched in kernel space also,
+	  through PF_EVNOTIFY for hardened krnel threads and set/clear
+	  foreign stack for RTAI own kernel tasks. Indeed Bill's fix is not 
+	  a first of April Fool.
+
 2008-03-28 Paolo Mantegazza <mantegazza@aero.polimi.it>
 
 	* base/include/rtai_mq.h and rtai_pmq.h: added a missing RTAI_PROTO

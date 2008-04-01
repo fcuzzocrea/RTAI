@@ -1,7 +1,7 @@
 2008-04-01 Bill Barton <peabody@rahul.net>
 
 	* base/sched/sched.c: ensure traps are catched in kernel space also,
-	  through PF_EVNOTIFY for hardened krnel threads and set/clear
+	  through PF_EVNOTIFY for hardened kernel threads and set/clear
 	  foreign stack for RTAI own kernel tasks. Indeed Bill's fix is not 
 	  a first of April Fool.
 

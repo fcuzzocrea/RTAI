@@ -2077,6 +2077,9 @@ static void kthread_fun(int cpuid)
 	init_hard_fpu(current);
 	task->msg_queue.next = &task->msg_queue;
 	task->resq.next = &task->resq;
+#ifdef PF_EVNOTIFY
+	current->flags |= PF_EVNOTIFY;
+#endif
 	steal_from_linux(task);
 	while(1) {
 		rt_task_suspend(task);
@@ -2913,6 +2916,10 @@ static int __rtai_lxrt_init(void)
 {
 	int cpuid, retval;
 	
+#ifdef IPIPE_NOSTACK_FLAG
+	ipipe_set_foreign_stack(&rtai_domain);
+#endif
+
 #ifdef CONFIG_RTAI_MALLOC
 	rtai_kstack_heap_size = (rtai_kstack_heap_size + PAGE_SIZE - 1) & ~(PAGE_SIZE - 1);
 	if (rtheap_init(&rtai_kstack_heap, NULL, rtai_kstack_heap_size, PAGE_SIZE, GFP_KERNEL)) {
@@ -3080,6 +3087,10 @@ static void __rtai_lxrt_exit(void)
 
 #ifdef DECLR_8254_TSC_EMULATION
 	CLEAR_8254_TSC_EMULATION;
+#endif
+
+#ifdef IPIPE_NOSTACK_FLAG
+	ipipe_clear_foreign_stack(&rtai_domain);
 #endif
 
 	printk(KERN_INFO "RTAI[sched]: unloaded (forced hard/soft/hard transitions: traps %lu, syscalls %lu).\n", traptrans, systrans);

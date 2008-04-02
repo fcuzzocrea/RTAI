@@ -734,6 +734,9 @@ static RT_TASK *switch_rtai_tasks(RT_TASK *rt_current, RT_TASK *new_task, int cp
 {
 	if (rt_current->lnxtsk) {
 		unsigned long sflags;
+#ifdef IPIPE_NOSTACK_FLAG
+		ipipe_set_foreign_stack(&rtai_domain);
+#endif
 		SAVE_LOCK_LINUX(cpuid);
 		rt_linux_task.prevp = rt_current;
 		save_fpcr_and_enable_fpu(linux_cr0);
@@ -746,6 +749,9 @@ static RT_TASK *switch_rtai_tasks(RT_TASK *rt_current, RT_TASK *new_task, int cp
 		rt_exchange_tasks(rt_smp_current[cpuid], new_task);
 		restore_fpcr(linux_cr0);
 		RESTORE_UNLOCK_LINUX(cpuid);
+#ifdef IPIPE_NOSTACK_FLAG
+		ipipe_clear_foreign_stack(&rtai_domain);
+#endif
 		if (rt_linux_task.nextp != rt_current) {
 			return rt_linux_task.nextp;
 		}
@@ -2061,6 +2067,7 @@ static void rt_daemonize(void)
 extern void rt_daemonize(void);
 #endif
 
+#define HARD_KTHREAD_IN_USE ((char)220)
 
 static void kthread_fun(int cpuid) 
 {
@@ -2083,7 +2090,7 @@ static void kthread_fun(int cpuid)
 	steal_from_linux(task);
 	while(1) {
 		rt_task_suspend(task);
-		current->comm[0] = 'U';
+		current->comm[0] = HARD_KTHREAD_IN_USE; //'U'
 		if (!(task = current->rtai_tskext(TSKEXT0))->max_msg_size[0]) {
 			break;
 		}
@@ -2340,7 +2347,7 @@ static int lxrt_handle_trap(int vec, int signo, struct pt_regs *regs, void *dumm
 	RT_TASK *rt_task;
 
 	rt_task = rt_smp_current[rtai_cpuid()];
-	if (USE_RTAI_TASKS && !rt_task->lnxtsk) {
+	if ((USE_RTAI_TASKS && !rt_task->lnxtsk) || (rt_task->lnxtsk)->comm[0] == HARD_KTHREAD_IN_USE) {
 		if (rt_task->task_trap_handler[vec]) {
 			return rt_task->task_trap_handler[vec](vec, signo, regs, rt_task);
 		}
@@ -2917,7 +2924,7 @@ static int __rtai_lxrt_init(void)
 	int cpuid, retval;
 	
 #ifdef IPIPE_NOSTACK_FLAG
-	ipipe_set_foreign_stack(&rtai_domain);
+//	ipipe_set_foreign_stack(&rtai_domain);
 #endif
 
 #ifdef CONFIG_RTAI_MALLOC

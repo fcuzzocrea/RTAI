@@ -1,3 +1,8 @@
+2008-04-03 Bill Barton <peabody@rahul.net>
+
+	* base/include/rtai_fifos.h and base/ipc/fifos-fisos.c: refurbished
+	  fifo handler stuff.
+
 2008-04-01 Bill Barton <peabody@rahul.net>
 
 	* base/sched/sched.c: ensure traps are catched in kernel space also,

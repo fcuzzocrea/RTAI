@@ -211,7 +211,7 @@ typedef struct rt_fifo_struct {
 	int pol_asyn_pended;
 	wait_queue_head_t pollq;
 	struct fasync_struct *asynq;
-	int (*handler)(unsigned int arg);
+	rtf_handler_t handler;
 	F_SEM sem;
 	char name[RTF_NAMELEN+1];
 } FIFO;
@@ -228,7 +228,7 @@ static FIFO *fifo;
 static struct { int in, out; struct task_struct *task[MAXREQS]; } taskq;
 static struct { int in, out; FIFO *fifo[MAXREQS]; } pol_asyn_q;
 
-static int do_nothing(unsigned int arg) { return 0; }
+static int do_nothing(unsigned int arg, int rw) { return 0; }
 
 static inline void enqueue_blocked(LX_TASK *task, F_QUEUE *queue, int qtype, int priority)
 {
@@ -1074,7 +1074,7 @@ RTAI_SYSCALL_MODE int rtf_destroy(unsigned int minor)
  * or not. The next call of rtf_create will uninstall the handler just
  * "installed".
  */
-int rtf_create_handler(unsigned int minor, int (*handler) (unsigned int fifo))
+int rtf_create_handler(unsigned int minor, void *handler)
 {
 	if (minor >= MAX_FIFOS || !handler) {
 		return -EINVAL;
@@ -1362,7 +1362,7 @@ static ssize_t rtf_read(struct file *filp, char *buf, size_t count, loff_t* ppos
 
 	if (count) {
 		inode->i_atime = CURRENT_TIME;
-		if ((handler_ret = ((int (*)(int, ...))(fifo[minor].handler))(minor, 'r')) < 0) {
+		if ((handler_ret = (fifo[minor].handler)(minor, 'r')) < 0) {
 			return handler_ret;
 		}
 	}
@@ -1388,7 +1388,7 @@ static ssize_t rtf_write(struct file *filp, const char *buf, size_t count, loff_
 	}
 
 	inode->i_ctime = inode->i_mtime = CURRENT_TIME;
-	if ((handler_ret = ((int (*)(int, ...))(fifo[minor].handler))(minor, 'w')) < 0) {
+	if ((handler_ret = (fifo[minor].handler)(minor, 'w')) < 0) {
 		return handler_ret;
 	}
 
@@ -1433,7 +1433,8 @@ static int rtf_ioctl(struct inode *inode, struct file *filp, unsigned int cmd, u
 			args.count -= mbx_receive(&(fifop->mbx), args.buf, args.count, 1);
 			if (args.count) {
 				inode->i_atime = CURRENT_TIME;
-				if ((handler_ret = ((int (*)(int, ...))(fifo[minor].handler))(minor, 'r')) < 0) {
+				if ((handler_ret = (fifo[minor].handler)(minor,
+'r')) < 0) {
 					return handler_ret;
 				}
 				return args.count;
@@ -1461,7 +1462,7 @@ static int rtf_ioctl(struct inode *inode, struct file *filp, unsigned int cmd, u
 			if (args.count) {
 				inode->i_atime = CURRENT_TIME;
 //				if ((handler_ret = (fifop->handler)(minor)) < 0) {
-				if ((handler_ret = ((int (*)(int, ...))(fifo[minor].handler))(minor, 'r')) < 0) {
+				if ((handler_ret = (fifop->handler)(minor, 'r')) < 0) {
 					return handler_ret;
 				}
 				return args.count;
@@ -1475,7 +1476,7 @@ static int rtf_ioctl(struct inode *inode, struct file *filp, unsigned int cmd, u
 			args.count -= mbx_receive_if(&(fifop->mbx), args.buf, args.count, 1);
 			if (args.count) {
 				inode->i_atime = CURRENT_TIME;
-				if ((handler_ret = ((int (*)(int, ...))(fifo[minor].handler))(minor, 'r')) < 0) {
+				if ((handler_ret = (fifo[minor].handler)(minor, 'r')) < 0) {
 					return handler_ret;
 				}
 				return args.count;
@@ -1497,7 +1498,7 @@ static int rtf_ioctl(struct inode *inode, struct file *filp, unsigned int cmd, u
 			}
 			inode->i_ctime = inode->i_mtime = CURRENT_TIME;
 //			if ((handler_ret = (fifop->handler)(minor)) < 0) {
-			if ((handler_ret = ((int (*)(int, ...))(fifo[minor].handler))(minor, 'w')) < 0) {
+			if ((handler_ret = (fifop->handler)(minor, 'w')) < 0) {
 				return handler_ret;
 			}
 			return args.count;
@@ -1513,7 +1514,8 @@ static int rtf_ioctl(struct inode *inode, struct file *filp, unsigned int cmd, u
 				}
 			}
 			inode->i_ctime = inode->i_mtime = CURRENT_TIME;
-			if ((handler_ret = ((int (*)(int, ...))(fifo[minor].handler))(minor, 'w')) < 0) {
+			if ((handler_ret = (fifo[minor].handler)(minor, 'w')) <
+0) {
 				return handler_ret;
 			}
 			return args.count;

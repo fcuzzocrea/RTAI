@@ -105,6 +105,8 @@ void __rtai_fifos_exit(void);
 
 int rtf_init(void);
 
+typedef int (*rtf_handler_t)(unsigned int fifo, int rw);
+
 /* Attach a handler to an RT-FIFO.
  *
  * Allow function handler to be called when a user process reads or writes to 
@@ -113,7 +115,7 @@ int rtf_init(void);
  */
 
 int rtf_create_handler(unsigned int fifo,	/* RT-FIFO */
-		       int (*handler)(unsigned int fifo)	/* function to be called */);
+		       void *handler		/* function to be called */);
 
 
 /**
@@ -128,7 +130,7 @@ int rtf_create_handler(unsigned int fifo,	/* RT-FIFO */
  * to allow the user to easily understand if the handler was called at fifo
  * read (@a rw is 'r') or write (rw is 'w').
  */
-#define X_FIFO_HANDLER(handler) ((int (*)(unsigned int))(handler))
+#define X_FIFO_HANDLER(handler) ((int (*)(unsigned int, int rw))(handler))
 
 /* Create an RT-FIFO.
  * 

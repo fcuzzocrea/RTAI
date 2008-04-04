@@ -22,7 +22,7 @@ may be a more viable way of controlling SMI. Such a choice may however
 be not a trivial one, entailing some testing trials. In fact it is in view
 of the need of easily fiddling with such a bit mask, without recompiling the
 related support, that the alternative of setting it at RTAI configuration
-as been dismissed.
+has been dismissed.
 
 To reset SMI to its previous state simply run: "rstsmi". 
 

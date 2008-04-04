@@ -746,6 +746,9 @@ static RT_TASK *switch_rtai_tasks(RT_TASK *rt_current, RT_TASK *new_task, int cp
 {
 	if (rt_current->lnxtsk) {
 		unsigned long sflags;
+#ifdef IPIPE_NOSTACK_FLAG
+		ipipe_set_foreign_stack(&rtai_domain);
+#endif
 		SAVE_LOCK_LINUX(cpuid);
 		rt_linux_task.prevp = rt_current;
 		save_fpcr_and_enable_fpu(linux_cr0);
@@ -758,6 +761,9 @@ static RT_TASK *switch_rtai_tasks(RT_TASK *rt_current, RT_TASK *new_task, int cp
 		rt_exchange_tasks(rt_smp_current[cpuid], new_task);
 		restore_fpcr(linux_cr0);
 		RESTORE_UNLOCK_LINUX(cpuid);
+#ifdef IPIPE_NOSTACK_FLAG
+		ipipe_clear_foreign_stack(&rtai_domain);
+#endif
 		if (rt_linux_task.nextp != rt_current) {
 			return rt_linux_task.nextp;
 		}
@@ -2950,7 +2956,7 @@ static int __rtai_lxrt_init(void)
 	int cpuid, retval;
 	
 #ifdef IPIPE_NOSTACK_FLAG
-	ipipe_set_foreign_stack(&rtai_domain);
+//	ipipe_set_foreign_stack(&rtai_domain);
 #endif
 
 #ifdef CONFIG_RTAI_MALLOC

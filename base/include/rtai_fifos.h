@@ -130,7 +130,7 @@ int rtf_create_handler(unsigned int fifo,	/* RT-FIFO */
  * to allow the user to easily understand if the handler was called at fifo
  * read (@a rw is 'r') or write (rw is 'w').
  */
-#define X_FIFO_HANDLER(handler) ((int (*)(unsigned int))(handler))
+#define X_FIFO_HANDLER(handler) ((int (*)(unsigned int, int rw))(handler))
 
 /* Create an RT-FIFO.
  * 

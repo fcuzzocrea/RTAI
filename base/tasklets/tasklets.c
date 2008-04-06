@@ -755,8 +755,9 @@ static void rt_timers_manager(long cpuid)
 struct rt_tasklet_struct *rt_init_tasklet(void)
 {
 	struct rt_tasklet_struct *tasklet;
-	tasklet = rt_malloc(sizeof(struct rt_tasklet_struct));
-	memset(tasklet, 0, sizeof(struct rt_tasklet_struct));
+	if ((tasklet = rt_malloc(sizeof(struct rt_tasklet_struct)))) {
+		memset(tasklet, 0, sizeof(struct rt_tasklet_struct));
+	}
 	return tasklet;
 }
 
@@ -767,13 +768,21 @@ RTAI_SYSCALL_MODE void rt_register_task(struct rt_tasklet_struct *tasklet, struc
 	rt_copy_to_user(usptasklet, tasklet, sizeof(struct rt_tasklet_struct));
 }
 
-RTAI_SYSCALL_MODE void rt_wait_tasklet_is_hard(struct rt_tasklet_struct *tasklet, long thread)
+RTAI_SYSCALL_MODE int rt_wait_tasklet_is_hard(struct rt_tasklet_struct *tasklet, long thread)
 {
+#define POLLS_PER_SEC 100
+	int i;
 	tasklet->thread = thread;
-	while (!tasklet->task || !((tasklet->task)->state & RT_SCHED_SUSPENDED)) {
-		current->state = TASK_INTERRUPTIBLE;
-		schedule_timeout(2);
+	for (i = 0; i < POLLS_PER_SEC/5; i++) {
+		if (!tasklet->task || !((tasklet->task)->state & RT_SCHED_SUSPENDED)) {
+			current->state = TASK_INTERRUPTIBLE;
+			schedule_timeout(HZ/POLLS_PER_SEC);
+		} else {
+			return 0;
+		}
 	}
+	return 1;
+#undef POLLS_PER_SEC
 }
 
 /**

@@ -263,7 +263,7 @@ do { \
 
 #define rt_timer_use_fpu rt_tasklet_use_fpu
 
-RTAI_SYSCALL_MODE void rt_wait_tasklet_is_hard(struct rt_tasklet_struct *tasklet, long thread);
+RTAI_SYSCALL_MODE int rt_wait_tasklet_is_hard(struct rt_tasklet_struct *tasklet, long thread);
 
 RTAI_SYSCALL_MODE void rt_register_task(struct rt_tasklet_struct *tasklet, struct rt_tasklet_struct *usptasklet, struct rt_task_struct *task);
  
@@ -306,29 +306,30 @@ static int support_tasklet(void *tasklet)
 	struct rt_tasklet_struct usptasklet;
 	struct { struct rt_tasklet_struct *tasklet; void *handler; } arg = { (struct rt_tasklet_struct *)tasklet, };
 
-	if (!(task = rt_thread_init((unsigned long)arg.tasklet, 98, 0, SCHED_FIFO, 0xF))) {
-		printf("CANNOT INIT SUPPORT TASKLET\n");
-		return -1;
-	} else {
+	if ((task = rt_thread_init((unsigned long)arg.tasklet, 98, 0, SCHED_FIFO, 0xF))) {
+	{
 		struct { struct rt_tasklet_struct *tasklet, *usptasklet; RT_TASK *task; } reg = { arg.tasklet, &usptasklet, task };
 		rtai_lxrt(TASKLETS_IDX, sizeof(reg), REG_TASK, &reg);
 	}
-
-	mlockall(MCL_CURRENT | MCL_FUTURE);
-	rt_make_hard_real_time();
-	while (1) {
-		rt_task_suspend(task);
-		if (usptasklet.handler) {
-			usptasklet.handler(usptasklet.data);
-		} else {
-			break;
+		rt_grow_and_lock_stack(TASKLET_STACK_SIZE/2);
+		mlockall(MCL_CURRENT | MCL_FUTURE);
+		rt_make_hard_real_time();
+		while (1) {
+			rt_task_suspend(task);
+			if (usptasklet.handler) {
+				usptasklet.handler(usptasklet.data);
+			} else {
+				break;
+			}
 		}
+		rtai_sti();
+		rt_make_soft_real_time();
+		rt_task_delete(task);
+		return 0;
 	}
-	rtai_sti();
-	rt_make_soft_real_time();
-	rt_task_delete(task);
-
-	return 0;
+	printf("CANNOT INIT SUPPORT TASKLET\n");
+	return -1;
+	
 }
 #endif /* __SUPPORT_TASKLET__ */
 
@@ -336,21 +337,25 @@ static int support_tasklet(void *tasklet)
 extern "C" {
 #endif /* __cplusplus */
 
+RTAI_PROTO(void, rt_delete_tasklet,(struct rt_tasklet_struct *tasklet));
+
 RTAI_PROTO(struct rt_tasklet_struct *, rt_init_tasklet,(void))
 {
 	int is_hard;
 	struct { struct rt_tasklet_struct *tasklet; long thread; } arg;
 
-	arg.tasklet = (struct rt_tasklet_struct*)rtai_lxrt(TASKLETS_IDX, SIZARG, INIT, &arg).v[LOW];
-	if ((is_hard = rt_is_hard_real_time(NULL))) {
-		rt_make_soft_real_time();
+	if ((arg.tasklet = (struct rt_tasklet_struct*)rtai_lxrt(TASKLETS_IDX, SIZARG, INIT, &arg).v[LOW])) {
+		if ((is_hard = rt_is_hard_real_time(NULL))) {
+			rt_make_soft_real_time();
+		}
+		if (!(arg.thread = rt_thread_create((void *)support_tasklet, arg.tasklet, TASKLET_STACK_SIZE)) || rtai_lxrt(TASKLETS_IDX, SIZARG, WAIT_IS_HARD, &arg).i[LOW]) {
+			rt_delete_tasklet(arg.tasklet);
+			arg.tasklet = NULL;
+		}
+		if (is_hard) {
+			rt_make_hard_real_time();
+		}
 	}
-	arg.thread = rt_thread_create((void *)support_tasklet, arg.tasklet, TASKLET_STACK_SIZE);
-	rtai_lxrt(TASKLETS_IDX, SIZARG, WAIT_IS_HARD, &arg);
-	if (is_hard) {
-		rt_make_hard_real_time();
-	}
-
 	return arg.tasklet;
 }
 

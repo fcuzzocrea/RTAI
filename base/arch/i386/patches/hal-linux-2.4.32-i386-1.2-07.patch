@@ -3053,14 +3053,14 @@ diff -uNrp 2.4.32/include/linux/ipipe.h 2.4.32-i386-ipipe/include/linux/ipipe.h
 +static inline void ipipe_set_foreign_stack(struct ipipe_domain *ipd)
 +{
 +	/* Must be called hw interrupts off. */
-+	ipipe_declare_cpuid;
++	ipipe_declare_cpuid; ipipe_load_cpuid();
 +	__set_bit(IPIPE_NOSTACK_FLAG, &ipd->cpudata[cpuid].status);
 +}
 +
 +static inline void ipipe_clear_foreign_stack(struct ipipe_domain *ipd)
 +{
 +	/* Must be called hw interrupts off. */
-+	ipipe_declare_cpuid;
++	ipipe_declare_cpuid; ipipe_load_cpuid();
 +	__clear_bit(IPIPE_NOSTACK_FLAG, &ipd->cpudata[cpuid].status);
 +}
 +

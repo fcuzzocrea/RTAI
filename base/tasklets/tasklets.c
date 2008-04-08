@@ -255,7 +255,7 @@ RTAI_SYSCALL_MODE int rt_insert_tasklet(struct rt_tasklet_struct *tasklet, int p
 		tasklet->task = 0;
 	} else {
 		(tasklet->task)->priority = priority;
-		rt_copy_to_user(tasklet->usptasklet, tasklet, sizeof(struct rt_tasklet_struct));
+		rt_copy_to_user(tasklet->usptasklet, tasklet, sizeof(struct rt_usp_tasklet_struct));
 	}
 // tasklet insertion tasklets_list
 	flags = rt_spin_lock_irqsave(&tasklets_lock);
@@ -364,7 +364,7 @@ RTAI_SYSCALL_MODE int rt_set_tasklet_handler(struct rt_tasklet_struct *tasklet, 
 	}
 	tasklet->handler = handler;
 	if (tasklet->task) {
-		rt_copy_to_user(tasklet->usptasklet, tasklet, sizeof(struct rt_tasklet_struct));
+		rt_copy_to_user(tasklet->usptasklet, tasklet, sizeof(struct rt_usp_tasklet_struct));
 	}
 	return 0;
 }
@@ -373,7 +373,7 @@ RTAI_SYSCALL_MODE void rt_set_tasklet_data(struct rt_tasklet_struct *tasklet, un
 {
 	tasklet->data = data;
 	if (tasklet->task) {
-		rt_copy_to_user(tasklet->usptasklet, tasklet, sizeof(struct rt_tasklet_struct));
+		rt_copy_to_user(tasklet->usptasklet, tasklet, sizeof(struct rt_usp_tasklet_struct));
 	}
 }
 
@@ -499,7 +499,7 @@ RTAI_SYSCALL_MODE int rt_insert_timer(struct rt_tasklet_struct *timer, int prior
 	} else {
 		timer->cpuid = cpuid = NUM_CPUS > 1 ? (timer->task)->runnable_on_cpus : 0;
 		(timer->task)->priority = priority;
-		rt_copy_to_user(timer->usptasklet, timer, sizeof(struct rt_tasklet_struct));
+		rt_copy_to_user(timer->usptasklet, timer, sizeof(struct rt_usp_tasklet_struct));
 	}
 // timer insertion in timers_list
 	flags = rt_spin_lock_irqsave(lock = &timers_lock[LIST_CPUID]);
@@ -765,7 +765,7 @@ RTAI_SYSCALL_MODE void rt_register_task(struct rt_tasklet_struct *tasklet, struc
 {
 	tasklet->task = task;
 	tasklet->usptasklet = usptasklet;
-	rt_copy_to_user(usptasklet, tasklet, sizeof(struct rt_tasklet_struct));
+	rt_copy_to_user(usptasklet, tasklet, sizeof(struct rt_usp_tasklet_struct));
 }
 
 RTAI_SYSCALL_MODE int rt_wait_tasklet_is_hard(struct rt_tasklet_struct *tasklet, long thread)
@@ -806,7 +806,7 @@ RTAI_SYSCALL_MODE int rt_delete_tasklet(struct rt_tasklet_struct *tasklet)
 
 	rt_remove_tasklet(tasklet);
 	tasklet->handler = 0;
-	rt_copy_to_user(tasklet->usptasklet, tasklet, sizeof(struct rt_tasklet_struct));
+	rt_copy_to_user(tasklet->usptasklet, tasklet, sizeof(struct rt_usp_tasklet_struct));
 	rt_task_resume(tasklet->task);
 	thread = tasklet->thread;	
 	rt_free(tasklet);
@@ -943,7 +943,7 @@ RTAI_SYSCALL_MODE int rt_ptimer_delete(timer_t timer, long space)
 	rt_remove_tasklet(tasklet);	
 	if (space) {
 		tasklet->handler = 0;
-		rt_copy_to_user(tasklet->usptasklet, tasklet, sizeof(struct rt_tasklet_struct));
+		rt_copy_to_user(tasklet->usptasklet, tasklet, sizeof(struct rt_usp_tasklet_struct));
 		rt_task_resume(tasklet->task);
 		rtn = tasklet->thread;	
 	} 

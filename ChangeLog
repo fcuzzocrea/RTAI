@@ -1,3 +1,11 @@
+2008-04-08 Paolo Mantegazza <mantegazza@aero.polimi.it>
+
+	* base/include/rtai_tasklets.h: define a user space tasklet struct
+	  spanning just the part of the kernel allocated structure needed in
+	  user space; add checks for value returned during user space init.
+	* base/tasklets/tasklets.c: copy to user space just the needed parts,
+	  add some safety tests in registration and support tasklet init.
+
 2008-04-03 Bill Barton <peabody@rahul.net>
 
 	* base/include/rtai_fifos.h and base/ipc/fifos-fisos.c: refurbished 

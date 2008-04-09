@@ -330,7 +330,7 @@ static int support_tasklet(struct support_tasklet_s *args)
 		rt_grow_and_lock_stack(TASKLET_STACK_SIZE/2);
 		mlockall(MCL_CURRENT | MCL_FUTURE);
 		rt_make_hard_real_time();
-		args->done = 0;
+		args->done = 1;
 		while (1) {
 			rt_task_suspend(task);
 			if (usptasklet.handler) {
@@ -354,9 +354,9 @@ static int support_tasklet(struct support_tasklet_s *args)
 extern "C" {
 #endif /* __cplusplus */
 
-RTAI_PROTO(void, rt_delete_tasklet,(struct rt_tasklet_struct *tasklet));
+RTAI_PROTO(void, rt_delete_tasklet, (struct rt_tasklet_struct *tasklet));
 
-RTAI_PROTO(struct rt_tasklet_struct *, rt_init_tasklet,(void))
+RTAI_PROTO(struct rt_tasklet_struct *, rt_init_tasklet, (void))
 {
 	int is_hard;
 	struct support_tasklet_s arg;
@@ -367,14 +367,19 @@ RTAI_PROTO(struct rt_tasklet_struct *, rt_init_tasklet,(void))
 		}
 		arg.done = 0;
 		if ((arg.thread = rt_thread_create((void *)support_tasklet, &arg.tasklet, TASKLET_STACK_SIZE))) {
-#define POLLS_PER_SEC 100
 			int i;
-		        for (i = 0; i < POLLS_PER_SEC/5 && !arg.done; i++) {
-				poll(NULL, 0, 1000/POLLS_PER_SEC);
+#define POLLS_PER_SEC 100
+		        for (i = 0; i < POLLS_PER_SEC && !arg.done; i++) {
+				struct timespec delay = { 0, 1000000000/POLLS_PER_SEC };
+				nanosleep(&delay, NULL);
        			}
 #undef POLLS_PER_SEC
+			if (!arg.done) {
+				goto notdone;
+			}
 			rtai_lxrt(TASKLETS_IDX, SIZARG, WAIT_IS_HARD, &arg);
 		} else {
+notdone:
 			rt_delete_tasklet(arg.tasklet);
 			arg.tasklet = NULL;
 		}
@@ -387,7 +392,7 @@ RTAI_PROTO(struct rt_tasklet_struct *, rt_init_tasklet,(void))
 
 #define rt_init_timer rt_init_tasklet
 
-RTAI_PROTO(void, rt_delete_tasklet,(struct rt_tasklet_struct *tasklet))
+RTAI_PROTO(void, rt_delete_tasklet, (struct rt_tasklet_struct *tasklet))
 {
 	int thread;
 	struct { struct rt_tasklet_struct *tasklet; } arg = { tasklet };

@@ -315,20 +315,22 @@ struct rt_tasklet_struct {
 #ifndef __SUPPORT_TASKLET__
 #define __SUPPORT_TASKLET__
 
-static int support_tasklet(void *tasklet)
+struct support_tasklet_s { struct rt_tasklet_struct *tasklet; long thread; volatile int done; };
+
+static int support_tasklet(struct support_tasklet_s *args)
 {
 	RT_TASK *task;
 	struct rt_tasklet_struct usptasklet;
-	struct { struct rt_tasklet_struct *tasklet; void *handler; } arg = { (struct rt_tasklet_struct *)tasklet, };
 
-	if ((task = rt_thread_init((unsigned long)arg.tasklet, 98, 0, SCHED_FIFO, 0xF))) {
+	if ((task = rt_thread_init((unsigned long)args->tasklet, 98, 0, SCHED_FIFO, 0xF))) {
 	{
-		struct { struct rt_tasklet_struct *tasklet, *usptasklet; RT_TASK *task; } reg = { arg.tasklet, &usptasklet, task };
+		struct { struct rt_tasklet_struct *tasklet, *usptasklet; RT_TASK *task; } reg = { args->tasklet, &usptasklet, task };
 		rtai_lxrt(TASKLETS_IDX, sizeof(reg), REG_TASK, &reg);
 	}
 		rt_grow_and_lock_stack(TASKLET_STACK_SIZE/2);
 		mlockall(MCL_CURRENT | MCL_FUTURE);
 		rt_make_hard_real_time();
+		args->done = 0;
 		while (1) {
 			rt_task_suspend(task);
 			if (usptasklet.handler) {
@@ -357,13 +359,22 @@ RTAI_PROTO(void, rt_delete_tasklet,(struct rt_tasklet_struct *tasklet));
 RTAI_PROTO(struct rt_tasklet_struct *, rt_init_tasklet,(void))
 {
 	int is_hard;
-	struct { struct rt_tasklet_struct *tasklet; long thread; } arg;
+	struct support_tasklet_s arg;
 
 	if ((arg.tasklet = (struct rt_tasklet_struct*)rtai_lxrt(TASKLETS_IDX, SIZARG, INIT, &arg).v[LOW])) {
 		if ((is_hard = rt_is_hard_real_time(NULL))) {
 			rt_make_soft_real_time();
 		}
-		if (!(arg.thread = rt_thread_create((void *)support_tasklet, arg.tasklet, TASKLET_STACK_SIZE)) || rtai_lxrt(TASKLETS_IDX, SIZARG, WAIT_IS_HARD, &arg).i[LOW]) {
+		arg.done = 0;
+		if ((arg.thread = rt_thread_create((void *)support_tasklet, &arg.tasklet, TASKLET_STACK_SIZE))) {
+#define POLLS_PER_SEC 100
+			int i;
+		        for (i = 0; i < POLLS_PER_SEC/5 && !arg.done; i++) {
+				poll(NULL, 0, 1000/POLLS_PER_SEC);
+       			}
+#undef POLLS_PER_SEC
+			rtai_lxrt(TASKLETS_IDX, SIZARG, WAIT_IS_HARD, &arg);
+		} else {
 			rt_delete_tasklet(arg.tasklet);
 			arg.tasklet = NULL;
 		}

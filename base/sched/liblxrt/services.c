@@ -30,3 +30,6 @@
 #ifdef CONFIG_RTAI_DRIVERS_SERIAL
 #include <rtai_serial.h>
 #endif /* CONFIG_RTAI_DRIVERS_SERIAL */
+#ifdef CONFIG_RTAI_TASKLETS
+#include <rtai_tasklets.h>
+#endif /* CONFIG_RTAI_TASKLETS */

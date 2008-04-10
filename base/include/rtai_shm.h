@@ -35,7 +35,7 @@ ACKNOWLEDGMENTS:
 /** @addtogroup shm
  *@{*/
 
-#define GLOBAL_HEAP_ID  0x9ac6d9e5  // nam2num("RTGLBH");
+#define GLOBAL_HEAP_ID  0x9ac6d9e7  // nam2num("RTGLBH");
 
 #define USE_VMALLOC     0
 #define USE_GFP_KERNEL  1

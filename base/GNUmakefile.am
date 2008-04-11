@@ -1,4 +1,12 @@
-OPTDIRS =
+OPTDIRS = include
+
+# `malloc', in $(OPTDIRS), must be after `sched' when compiling
+# with kernel 2.4 and builtin RTAI malloc support
+if CONFIG_RTAI_MALLOC
+OPTDIRS += malloc
+endif
+
+OPTDIRS += sched ipc arch posix
 
 if CONFIG_RTAI_TRACE
 OPTDIRS += trace
@@ -6,10 +14,6 @@ endif
 
 if CONFIG_RTAI_MATH
 OPTDIRS += math
-endif
-
-if CONFIG_RTAI_MALLOC
-OPTDIRS += malloc
 endif
 
 if CONFIG_RTAI_TASKLETS
@@ -28,8 +32,6 @@ if CONFIG_RTAI_LEDS
 OPTDIRS += leds
 endif
 
-# `malloc', in $(OPTDIRS), must be after `sched' when compiling
-# with kernel 2.4 and builtin RTAI malloc support
-SUBDIRS = include ipc arch posix $(OPTDIRS) sched scripts
+SUBDIRS = $(OPTDIRS) scripts
 
 EXTRA_DIST = config

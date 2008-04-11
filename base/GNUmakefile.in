@@ -35,9 +35,12 @@ PRE_UNINSTALL = :
 POST_UNINSTALL = :
 build_triplet = @build@
 host_triplet = @host@
-@CONFIG_RTAI_TRACE_TRUE@am__append_1 = trace
-@CONFIG_RTAI_MATH_TRUE@am__append_2 = math
-@CONFIG_RTAI_MALLOC_TRUE@am__append_3 = malloc
+
+# `malloc', in $(OPTDIRS), must be after `sched' when compiling
+# with kernel 2.4 and builtin RTAI malloc support
+@CONFIG_RTAI_MALLOC_TRUE@am__append_1 = malloc
+@CONFIG_RTAI_TRACE_TRUE@am__append_2 = trace
+@CONFIG_RTAI_MATH_TRUE@am__append_3 = math
 @CONFIG_RTAI_TASKLETS_TRUE@am__append_4 = tasklets
 @CONFIG_RTAI_USI_TRUE@am__append_5 = usi
 @CONFIG_RTAI_WD_TRUE@am__append_6 = wd
@@ -64,8 +67,8 @@ RECURSIVE_TARGETS = all-recursive check-recursive dvi-recursive \
 	uninstall-recursive
 ETAGS = etags
 CTAGS = ctags
-DIST_SUBDIRS = include ipc arch posix trace math malloc tasklets usi \
-	wd leds sched scripts
+DIST_SUBDIRS = include malloc sched ipc arch posix trace math tasklets \
+	usi wd leds scripts
 DISTFILES = $(DIST_COMMON) $(DIST_SOURCES) $(TEXINFOS) $(EXTRA_DIST)
 ACLOCAL = @ACLOCAL@
 AMDEP_FALSE = @AMDEP_FALSE@
@@ -343,13 +346,10 @@ sharedstatedir = @sharedstatedir@
 subdirs = @subdirs@
 sysconfdir = @sysconfdir@
 target_alias = @target_alias@
-OPTDIRS = $(am__append_1) $(am__append_2) $(am__append_3) \
-	$(am__append_4) $(am__append_5) $(am__append_6) \
-	$(am__append_7)
-
-# `malloc', in $(OPTDIRS), must be after `sched' when compiling
-# with kernel 2.4 and builtin RTAI malloc support
-SUBDIRS = include ipc arch posix $(OPTDIRS) sched scripts
+OPTDIRS = include $(am__append_1) sched ipc arch posix $(am__append_2) \
+	$(am__append_3) $(am__append_4) $(am__append_5) \
+	$(am__append_6) $(am__append_7)
+SUBDIRS = $(OPTDIRS) scripts
 EXTRA_DIST = config
 all: all-recursive
 

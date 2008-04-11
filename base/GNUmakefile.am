@@ -28,6 +28,8 @@ if CONFIG_RTAI_LEDS
 OPTDIRS += leds
 endif
 
-SUBDIRS = include sched ipc arch posix $(OPTDIRS) scripts
+# `malloc', in $(OPTDIRS), must be after `sched' when compiling
+# with kernel 2.4 and builtin RTAI malloc support
+SUBDIRS = include ipc arch posix $(OPTDIRS) sched scripts
 
 EXTRA_DIST = config

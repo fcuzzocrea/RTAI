@@ -64,8 +64,8 @@ RECURSIVE_TARGETS = all-recursive check-recursive dvi-recursive \
 	uninstall-recursive
 ETAGS = etags
 CTAGS = ctags
-DIST_SUBDIRS = include sched ipc arch posix trace math malloc tasklets \
-	usi wd leds scripts
+DIST_SUBDIRS = include ipc arch posix trace math malloc tasklets usi \
+	wd leds sched scripts
 DISTFILES = $(DIST_COMMON) $(DIST_SOURCES) $(TEXINFOS) $(EXTRA_DIST)
 ACLOCAL = @ACLOCAL@
 AMDEP_FALSE = @AMDEP_FALSE@
@@ -346,7 +346,10 @@ target_alias = @target_alias@
 OPTDIRS = $(am__append_1) $(am__append_2) $(am__append_3) \
 	$(am__append_4) $(am__append_5) $(am__append_6) \
 	$(am__append_7)
-SUBDIRS = include sched ipc arch posix $(OPTDIRS) scripts
+
+# `malloc', in $(OPTDIRS), must be after `sched' when compiling
+# with kernel 2.4 and builtin RTAI malloc support
+SUBDIRS = include ipc arch posix $(OPTDIRS) sched scripts
 EXTRA_DIST = config
 all: all-recursive
 

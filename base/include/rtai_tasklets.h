@@ -511,6 +511,86 @@ RTAI_PROTO(int, rt_exec_tasklet, (struct rt_tasklet_struct *tasklet))
 	return rtai_lxrt(TASKLETS_IDX, SIZARG, EXEC_TASKLET, &arg).i[LOW];
 }
 
+#include <stdlib.h>
+
+struct rt_tasklets_struct { volatile int in, out, avb, ntasklets; struct rt_tasklet_struct **tasklets; unsigned long lock; };
+
+RTAI_PROTO(struct rt_tasklets_struct *, rt_create_tasklets, (int ntasklets))
+{
+	struct rt_tasklets_struct *tasklets;
+	if ((tasklets = (struct rt_tasklets_struct *)malloc(sizeof(struct rt_tasklets_struct)))) {
+		if ((tasklets->tasklets = (struct rt_tasklet_struct **)malloc(ntasklets*sizeof(struct rt_tasklet_struct *)))) {
+			int i;
+			for (i = 0; i < ntasklets; i++) {
+				if (!(tasklets->tasklets[i] = rt_init_tasklet())) {
+					int k;
+					for (k = 0; k < i; k++) {
+						rt_delete_tasklet(tasklets->tasklets[k]);
+					}
+					free(tasklets->tasklets);
+					goto free_tasklets;
+				}
+			}
+			tasklets->lock = 0;
+			tasklets->ntasklets = tasklets->avb = tasklets->in = tasklets->out = ntasklets;
+			return tasklets;
+		} else {
+free_tasklets:
+			free(tasklets);
+		}
+	}
+	return NULL;
+}
+
+#define rt_create_timers  rt_create_tasklets
+
+RTAI_PROTO(void, rt_destroy_tasklets, (struct rt_tasklets_struct *tasklets))
+{
+	int i;
+	for (i = 0; i < tasklets->ntasklets; i++) {
+		rt_delete_tasklet(tasklets->tasklets[i]);
+	}
+	free(tasklets->tasklets);
+	free(tasklets);
+}
+
+#define rt_destroy_timers  rt_destroy_tasklets
+
+#include <asm/rtai_atomic.h>
+
+RTAI_PROTO(struct rt_tasklet_struct *, rt_get_tasklet, (struct rt_tasklets_struct *tasklets))
+{
+	struct rt_tasklet_struct *tasklet;
+	while (atomic_cmpxchg((atomic_t *)&tasklets->lock, 0, 1));
+	if (tasklets->avb > 0) {
+		if (tasklets->out >= tasklets->ntasklets) {
+			tasklets->out = 0;
+		}
+		tasklets->avb--;
+		tasklet = tasklets->tasklets[tasklets->out++];
+		tasklets->lock = 0;
+		return tasklet;
+	}
+	tasklets->lock = 0;
+	return NULL;
+}
+
+RTAI_PROTO(int, rt_gvb_tasklet, (struct rt_tasklet_struct *tasklet, struct rt_tasklets_struct *tasklets))
+{
+	while (atomic_cmpxchg((atomic_t *)&tasklets->lock, 0, 1));
+	if (tasklets->avb < tasklets->ntasklets) {
+		if (tasklets->in >= tasklets->ntasklets) {
+			tasklets->in = 0;
+		}
+		tasklets->avb++;
+		tasklets->tasklets[tasklets->in++] = tasklet;
+		tasklets->lock = 0;
+		return 0;
+	}
+	tasklets->lock = 0;
+	return EINVAL;
+}
+
 #ifdef __cplusplus
 }
 #endif /* __cplusplus */

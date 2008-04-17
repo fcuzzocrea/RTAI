@@ -1,3 +1,9 @@
+2008-04-17 Paolo Mantegazza <mantegazza@aero.polimi.it>
+
+	* base/include/rtai_tasklets.h: implemented tasklets/timers 
+	  reservoirs, to make it possible getting/releasing them dynamically
+	  in hard real time operations.
+
 2008-04-08 Paolo Mantegazza <mantegazza@aero.polimi.it>
 
 	* base/include/rtai_tasklets.h: define a user space tasklet struct

@@ -896,12 +896,12 @@ RTAI_SYSCALL_MODE int rt_spopen(unsigned int tty, unsigned int baud, unsigned in
 	int base_adr;
 
 	CHECK_SPINDX(tty);
-	if ( baud<50 || baud > 115200 ||
-	     (mode&0x03) != mode ||
-	     (parity&0x38) != parity ||
-		 stopbits<1 || stopbits>2 ||
-		 numbits<5 || numbits>8 ||
-	     (fifotrig&0xC0) != fifotrig )
+	if ( baud < 50 || baud > 115200 ||
+	     (mode & 0x03) != mode ||
+	     (parity & 0x38) != parity ||
+		 stopbits < 1 || stopbits > 2 ||
+		 numbits < 5 || numbits > 8 ||
+	     (fifotrig & 0xC0) != fifotrig )
 		return -EINVAL;	
 
 	if ((p = spct + tty)->opened)

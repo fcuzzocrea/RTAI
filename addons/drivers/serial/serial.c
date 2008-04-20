@@ -38,7 +38,7 @@
 #include <rtai_serial.h>
 #include "serialP.h"
 
-MODULE_AUTHOR("Paolo Mantegazza, Giuseppe Renoldi, Renato C.");
+MODULE_AUTHOR("Paolo Mantegazza, Giuseppe Renoldi, Renato Castello.");
 MODULE_DESCRIPTION("RTAI real time serial ports driver with multiport support");
 MODULE_LICENSE("GPL");
 

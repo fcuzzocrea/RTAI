@@ -1,6 +1,7 @@
 /*
- * Copyright (C) 2002,2003 Paolo Mantegazza <mantegazza@aero.polimi.it>
+ * Copyright (C) 2002-2008 Paolo Mantegazza <mantegazza@aero.polimi.it>
  *                         Giuseppe Renoldi <giuseppe@renoldi.org>
+ *                         Renato Castello  <zx81@gmx.net>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License as
@@ -37,13 +38,13 @@
 #include <rtai_serial.h>
 #include "serialP.h"
 
-MODULE_AUTHOR("Paolo Mantegazza, Giuseppe Renoldi");
-MODULE_DESCRIPTION("RTAI real time serial ports driver");
+MODULE_AUTHOR("Paolo Mantegazza, Giuseppe Renoldi, Renato C.");
+MODULE_DESCRIPTION("RTAI real time serial ports driver with multiport support");
 MODULE_LICENSE("GPL");
 
-static unsigned long spconfig[CONFIG_SIZE] = RT_SP_CONFIG_INIT; 
-static int spconfig_size = CONFIG_SIZE; 
-RTAI_MODULE_PARM_ARRAY(spconfig, ulong, &spconfig_size, CONFIG_SIZE);
+struct base_adr_irq_s { unsigned long base_adr, irq; } spconfig[CONFIG_SIZE] = RT_SP_CONFIG_INIT; 
+static int spconfig_size = 2*CONFIG_SIZE; 
+RTAI_MODULE_PARM_ARRAY(spconfig, ulong, &spconfig_size, 2*CONFIG_SIZE);
 
 static int spbufsiz = SPBUFSIZ;
 RTAI_MODULE_PARM(spbufsiz, int);
@@ -63,6 +64,7 @@ static int spbufull;	// threshold for receive buffer to have the
                         // buffer full error
 
 #define CHECK_SPINDX(indx)  do { if (indx >= spcnt) return -ENODEV; } while (0)
+
 
 static void mbx_init(struct rt_spmbx *mbx);
 
@@ -90,13 +92,13 @@ RTAI_SYSCALL_MODE int rt_spclear_rx(unsigned int tty)
 	if (!test_and_set_bit(0, &(p = spct + tty)->just_oner)) {
 		mbx_init(&(p = spct + tty)->ibuf);
 		chip_atomic_bgn(flags);
-    	if (p->fifotrig) {
+		if (p->fifotrig) {
 			outb(inb(p->base_adr + RT_SP_FCR) | FCR_INPUT_FIFO_RESET, p->base_adr + RT_SP_FCR);
 		}
-	    if (p->mode & RT_SP_HW_FLOW) {
+		if (p->mode & RT_SP_HW_FLOW) {
 			outb(p->mcr |= MCR_RTS, p->base_adr + RT_SP_MCR);
 		}
-	    chip_atomic_end(flags);
+		chip_atomic_end(flags);
 		clear_bit(0, &p->just_oner);
 		return 0;
 	}
@@ -162,8 +164,9 @@ RTAI_SYSCALL_MODE int rt_spclear_tx(unsigned int tty)
 RTAI_SYSCALL_MODE int rt_spset_mode(unsigned int tty, int mode)
 {
 	CHECK_SPINDX(tty);
-	if ( (mode&(RT_SP_DSR_ON_TX|RT_SP_HW_FLOW)) != mode )
-		return -EINVAL;	
+	if ((mode & (RT_SP_DSR_ON_TX|RT_SP_HW_FLOW)) != mode) {
+		return -EINVAL;
+	}
 	// Enable MODEM status interrupt if RT_SP_DSR_ON_TX or RT_SP_HW_FLOW mode
 	outb ((spct[tty].mode = mode) == RT_SP_NO_HAND_SHAKE ? (spct[tty].ier &= ~IER_EDSSI) : (spct[tty].ier |= IER_EDSSI), spct[tty].base_adr + RT_SP_IER);
 	return 0;
@@ -194,8 +197,9 @@ RTAI_SYSCALL_MODE int rt_spset_mode(unsigned int tty, int mode)
 RTAI_SYSCALL_MODE int rt_spset_fifotrig(unsigned int tty, int fifotrig)
 {
 	CHECK_SPINDX(tty);
-	if ( (fifotrig&0xC0) != fifotrig)
-		return -EINVAL;	
+	if ((fifotrig & 0xC0) != fifotrig) {
+		return -EINVAL;
+	}
 	outb(spct[tty].fifotrig ? spct[tty].fifotrig | FCR_FIFO_ENABLE : 0, spct[tty].base_adr + RT_SP_FCR);
 	return 0;
 }
@@ -224,8 +228,9 @@ RTAI_SYSCALL_MODE int rt_spset_fifotrig(unsigned int tty, int fifotrig)
 RTAI_SYSCALL_MODE int rt_spset_mcr(unsigned int tty, int mask, int setbits)
 {
 	CHECK_SPINDX(tty);
-	if ( (mask&(RT_SP_DSR_ON_TX|RT_SP_HW_FLOW)) != mask)
-		return -EINVAL;	
+	if ((mask & (RT_SP_DSR_ON_TX|RT_SP_HW_FLOW)) != mask) {
+		return -EINVAL;
+	}
 	outb(setbits ? (spct[tty].mcr |= mask) : (spct[tty].mcr &= ~mask), spct[tty].base_adr + RT_SP_MCR);
 	return 0;
 }
@@ -281,9 +286,9 @@ RTAI_SYSCALL_MODE int rt_spget_err(unsigned int tty)
    	int tmp;
 
 	CHECK_SPINDX(tty);
-    tmp = spct[tty].error;
-    spct[tty].error = 0;
-    return tmp;
+	tmp = spct[tty].error;
+	spct[tty].error = 0;
+	return tmp;
 }
 
 
@@ -318,7 +323,7 @@ static inline int mbxput(struct rt_spmbx *mbx, char **msg, int msg_size)
 		buf_atomic_end(flags, mbx);
 		msg_size  -= tocpy;
 		*msg      += tocpy;
-        mbx->lbyte = MOD_SIZE(mbx->lbyte + tocpy);
+		mbx->lbyte = MOD_SIZE(mbx->lbyte + tocpy);
 	}
 	return msg_size;
 }
@@ -342,7 +347,7 @@ static inline int mbxget(struct rt_spmbx *mbx, char **msg, int msg_size)
 		buf_atomic_end(flags, mbx);
 		msg_size  -= tocpy;
 		*msg      += tocpy;
-        mbx->fbyte = MOD_SIZE(mbx->fbyte + tocpy);
+		mbx->fbyte = MOD_SIZE(mbx->fbyte + tocpy);
 	}
 	return msg_size;
 }
@@ -364,7 +369,7 @@ static inline int mbxevdrp(struct rt_spmbx *mbx, char **msg, int msg_size)
 		avbs     -= tocpy;
 		msg_size -= tocpy;
 		*msg     += tocpy;
-        fbyte = MOD_SIZE(fbyte + tocpy);
+		fbyte = MOD_SIZE(fbyte + tocpy);
 	}
 	return msg_size;
 }
@@ -477,7 +482,7 @@ RTAI_SYSCALL_MODE int rt_spevdrp(unsigned int tty, char *msg, int msg_size)
 			msg_size = mbxevdrp(&p->ibuf, &msg, msg_size);
 		}
 		clear_bit(0, &p->just_oner);
-    }
+	}
 	return msg_size;
 }
 
@@ -634,7 +639,7 @@ static inline int rt_spget_irq(struct rt_spct_t *p, unsigned char *c)
 		p->obuf.avbs--;
 		p->obuf.frbs++;
 		buf_atomic_end(flags, &p->obuf);
-        p->obuf.fbyte = MOD_SIZE(p->obuf.fbyte + 1);
+		p->obuf.fbyte = MOD_SIZE(p->obuf.fbyte + 1);
 		return 0;
 	}
 	return -ENOSPC;
@@ -655,24 +660,32 @@ static inline int rt_spset_irq(struct rt_spct_t *p, unsigned char ch)
 	return -ENOSPC;
 }
 
-static int rt_spisr(int irq, struct rt_spct_t *p)
+
+static int rt_spisr(int irq, struct rt_spct_t *pp)
 {
-	unsigned int  base_adr = p->base_adr;
+{
+	unsigned int  base_adr;
 	int           data_to_tx;
-	int           toFifo = p->tx_fifo_depth;
-	int 	      rxedchar = 0;	
-	int 	      txedchar = 0;	
-	int 	      errdetected = 0;	
+	int           toFifo;
+	int 	      rxedchar;	
+	int 	      txedchar;	
+	int 	      errdetected;	
 	int 	      txed, rxed;	
 	unsigned char data, iir, msr, lsr;
-
-	iir = inb(base_adr + RT_SP_IIR);	
+	struct rt_spct_t *p = pp;
+	
 	do {
+		base_adr = p->base_adr;
+		toFifo   = p->tx_fifo_depth;
+		rxedchar = txedchar = errdetected = 0;	
+	
+		iir = inb(base_adr + RT_SP_IIR);	
+		do {
 		//rt_printk("rt_spisr irq=%d, iir=0x%02x\n",irq,iir);	
-		switch (iir & 0x0f) {
-			case 0x06: // Receiver Line Status
-					   // Overrun Error or Parity Error or 
-					   // Framing Error or Break Interrupt
+			switch (iir & 0x0f) {
+				case 0x06: // Receiver Line Status
+				   // Overrun Error or Parity Error or 
+				   // Framing Error or Break Interrupt
 				
 				if ((lsr = inb(base_adr + RT_SP_LSR)) & 0x1e) {
 					p->error &= ~0x1e;
@@ -681,8 +694,8 @@ static int rt_spisr(int irq, struct rt_spct_t *p)
 				}	
 				break;
 	
-			case 0x04: // Received Data Available
-			case 0x0C: // Character Timeout Indication
+				case 0x04: // Received Data Available
+				case 0x0C: // Character Timeout Indication
 				rxedchar = 1;
 				/* get available data from base_adr */
 				do {
@@ -702,14 +715,14 @@ static int rt_spisr(int irq, struct rt_spct_t *p)
 					p->error |= RT_SP_BUFFER_FULL;
 				}
 				// if RTS-CTS hardware flow control, check if received
-				// buffer full enough to stop removing RTS signal
+				// buffer is full enough to stop removing RTS signal
 				if ((p->mode & RT_SP_HW_FLOW) && p->ibuf.frbs < spbuflow) {
 					// disable RTS	
 					outb(p->mcr &= ~MCR_RTS, p->base_adr + RT_SP_MCR);
 				}
 				break;
 	
-			case 0x02: // Transmitter Holding Register Empty
+				case 0x02: // Transmitter Holding Register Empty
 	
 				/* if possible, put data to base_adr */
 				msr = inb(base_adr + RT_SP_MSR);
@@ -717,8 +730,7 @@ static int rt_spisr(int irq, struct rt_spct_t *p)
 					 ((p->mode == RT_SP_DSR_ON_TX) && (MSR_DSR & msr)) || 
 					 ((p->mode == RT_SP_HW_FLOW) && (MSR_CTS & msr)) ||
 					 ((p->mode == (RT_SP_HW_FLOW|RT_SP_DSR_ON_TX)) &&
-                                          (MSR_CTS & msr) && (MSR_DSR & msr)) ) 
-{
+                                          (MSR_CTS & msr) && (MSR_DSR & msr)) ) {
 			    	// if there are data to transmit 
 					if (!(data_to_tx = rt_spget_irq(p, &data))) {
 						txedchar = 1;	
@@ -735,88 +747,107 @@ static int rt_spisr(int irq, struct rt_spct_t *p)
 				}
 				break;
 	
-			case 0x00: // MODEM Status
+				case 0x00: // MODEM Status
 				msr = inb(base_adr + RT_SP_MSR);
 				break;
 	
-			default:
+				default:
 				break;
+			}
+		} while (!((iir = inb(base_adr + RT_SP_IIR)) & 1) );
+
+	    /* controls on buffer full and RTS clear on hardware flow control */
+		if (p->ibuf.frbs < spbufull) {
+			errdetected = 1;	
+			p->error = RT_SP_BUFFER_FULL;
 		}
-	} while (!((iir = inb(base_adr + RT_SP_IIR)) & 1) );
-
-	/* controls on buffer full and RTS clear on hardware flow control */
-	if (p->ibuf.frbs < spbufull) {
-		errdetected = 1;	
-		p->error = RT_SP_BUFFER_FULL;
-	}
-	if ((p->mode & RT_SP_HW_FLOW) && p->ibuf.frbs < spbuflow) {
-		outb(p->mcr &= ~MCR_RTS, p->base_adr + RT_SP_MCR);
-	}
-
-	// call the error callback function if it is defined
-	p->call_usr = 0;
-	if (errdetected) {
-		// 
-                if (p->err_callback_fun) {
-			(p->err_callback_fun)(p->error);
-                } else if (p->callback_task) {
-			p->call_usr = 1;
-                }                                                               
-		//
-	}
-
-	// call the callback function is it is defined and 
-	// chars in receive buffer are more than rxthrs or
-	// free chars in transmit buffer are more than txthrs 
-
-	rxed = rxedchar && p->rxthrs && p->ibuf.avbs >= abs(p->rxthrs) ? p->rxthrs : 0;
-	txed = txedchar && p->txthrs && p->obuf.frbs >= abs(p->txthrs) ? p->txthrs : 0;
-	if (rxed < 0 && txed < 0 && p->rxsem.count < 0 && p->txsem.count < 0) {
-		hard_sti();
-        	p->rxthrs = p->txthrs = 0;
-		ENABLE_SP(irq);
-		if (p->rxsem.queue.next->task->priority < p->txsem.queue.next->task->priority) {
-			rt_sem_signal(&p->rxsem);
-			rt_sem_signal(&p->txsem);
-		} else {
-			rt_sem_signal(&p->txsem);
-			rt_sem_signal(&p->rxsem);
+		if ((p->mode & RT_SP_HW_FLOW) && p->ibuf.frbs < spbuflow) {
+			outb(p->mcr &= ~MCR_RTS, p->base_adr + RT_SP_MCR);
 		}
-		return 0;
-        }
-	if (rxed < 0 && p->rxsem.count < 0) {
-		hard_sti();
-        	p->rxthrs = 0;
-		ENABLE_SP(irq);
-		rt_sem_signal(&p->rxsem);
-		return 0;
-        }
-	if (txed < 0 && p->txsem.count < 0) {
-		hard_sti();
-        	p->txthrs = 0;
-		ENABLE_SP(irq);
-		rt_sem_signal(&p->txsem);
-		return 0;
-	}
-        if (rxed || txed) {
-                if (p->callback_fun) {
-                        (p->callback_fun)(p->ibuf.avbs, p->obuf.frbs);
-			ENABLE_SP(irq);
-			return 0;
-                } else if (p->callback_task) {
-                        p->call_usr |= 2;
-                }
-        }
-        if (p->call_usr) {
-		hard_sti();
-		ENABLE_SP(irq);
-                rt_task_resume(p->callback_task);
-		return 0;
-        } 
+
+	    // call the error callback function if it is defined
+		p->call_usr = 0;
+		if (errdetected) {
+			if (p->err_callback_fun) {
+				p->call_err_callback_fun = p->err_callback_fun;
+			} else if (p->callback_task) {
+				p->call_usr = 1;
+			} 
+		}
+
+	    // call the callback function is it is defined and 
+	    // chars in receive buffer are more than rxthrs or
+	    // free chars in transmit buffer are more than txthrs 
+
+		rxed = rxedchar && p->rxthrs && p->ibuf.avbs >= abs(p->rxthrs) ? p->rxthrs : 0;
+		txed = txedchar && p->txthrs && p->obuf.frbs >= abs(p->txthrs) ? p->txthrs : 0;
+		if (rxed < 0 && txed < 0 && p->rxsem.count < 0 && p->txsem.count < 0) {
+			p->rxthrs = p->txthrs = 0;
+			if (p->rxsem.queue.next->task->priority < p->txsem.queue.next->task->priority) {
+				p->rxtxsem[0] = &p->rxsem;
+				p->rxtxsem[1] = &p->txsem;
+			} else {
+				p->rxtxsem[0] = &p->txsem;
+				p->rxtxsem[1] = &p->rxsem;
+			}
+			continue;
+		}
+		if (rxed < 0 && p->rxsem.count < 0) {
+			p->rxthrs = 0;
+			p->rxtxsem[0] = &p->rxsem;
+			continue;
+		}	
+		if (txed < 0 && p->txsem.count < 0) {
+			p->txthrs = 0;
+			p->rxtxsem[0] = &p->txsem;
+			continue;
+		}
+		if (rxed || txed) {
+			if (p->callback_fun) {
+				p->call_callback_fun = p->callback_fun;
+			} else if (p->callback_task) {
+				p->call_usr |= 2;
+			}
+		}
+	} while ((p = p->next));
+}	
 	ENABLE_SP(irq);
+	hard_sti();
+{
+	SEM *sem;
+	do {
+		if (pp->call_err_callback_fun) {
+			pp->call_err_callback_fun = NULL;
+			(pp->err_callback_fun)(pp->error);
+			continue;
+		}
+		if (pp->rxtxsem[0]) {
+			sem = pp->rxtxsem[0];
+			pp->rxtxsem[0] = NULL;
+			rt_sem_signal(sem);
+			if (pp->rxtxsem[1]) {
+				goto extxsem1;
+			}
+			continue;
+		}
+		if (pp->rxtxsem[1]) {
+extxsem1:
+			sem = pp->rxtxsem[1];
+			pp->rxtxsem[1] = NULL;
+			rt_sem_signal(sem);
+			continue;
+		}
+		if (pp->call_callback_fun) {
+			pp->call_callback_fun = NULL;
+			(pp->callback_fun)(pp->ibuf.avbs, pp->obuf.frbs);
+		} else if (pp->call_usr) {
+			pp->call_usr = 0;
+			rt_task_resume(pp->callback_task);
+		}
+	} while ((pp = pp->next));
+}
 	return 0;
 }
-
 
 /*
  * rt_spopen
@@ -944,7 +975,7 @@ RTAI_SYSCALL_MODE int rt_spclose(unsigned int tty)
 	
 	CHECK_SPINDX(tty);
 	// disable interrupt
-	rt_disable_irq(spct[tty].irq);
+//	rt_disable_irq(spct[tty].irq);
 	// disable interrupt generation for UART
 	outb(0, base_adr + RT_SP_IER);
 	// reset possible pending interrupts
@@ -1162,11 +1193,14 @@ static struct rt_fun_entry rtai_spdrv_fun[] = {
 
 int __rtai_serial_init(void)
 {
-	int i, j;
-
-	for (spcnt=0; spcnt < CONFIG_SIZE/2; spcnt++) {
-		if (!spconfig[spcnt + spcnt] || !spconfig[spcnt + spcnt + 1]) break;
-		printk("TTY_INDX: %d, PORT: %lx, IRQ %ld.\n", spcnt, spconfig[spcnt + spcnt], spconfig[spcnt + spcnt + 1]);
+	int i, k, newirq;
+	struct rt_spct_t *p;
+		
+	for (spcnt = 0; spcnt < CONFIG_SIZE; spcnt++) {
+		if (!spconfig[spcnt].base_adr || !spconfig[spcnt].irq) {
+			break;
+		}
+		printk("TTY_INDX: %d, PORT: %lx, IRQ %ld.\n", spcnt, spconfig[spcnt].base_adr, spconfig[spcnt].irq);
 	}
 	printk("# OF PORTS: %d, BUFFER SIZE: %d.\n", spcnt, spbufsiz);
 	if (!(spct = kmalloc(spcnt*sizeof(struct rt_spct_t), GFP_KERNEL))) {
@@ -1174,30 +1208,69 @@ int __rtai_serial_init(void)
 		return -ENOMEM;
 	}
 	memset(spct, 0, spcnt*sizeof(struct rt_spct_t));
+
 	for (i = 0; i < spcnt; i++) {
-		rt_disable_irq(spconfig[i + i + 1]);
-		if (rt_request_global_irq_ext(spconfig[i + i + 1], (void *)rt_spisr, (unsigned long)(spct + i)) || !(spct[i].ibuf.bufadr = kmalloc(spbufsiz, GFP_KERNEL)) || !(spct[i].obuf.bufadr = kmalloc(spbufsiz, GFP_KERNEL))) {
-			printk("EITHER IRQ NOT AVAILABLE OR NO MEMORY AVAILABLE FOR READ/WRITE BUFFERS (TTY INDEX: %d).\n", i);
-			for (j = 0; j < i; j++) {
-				rt_free_global_irq(spconfig[j + j + 1]);
-				release_region(spconfig[j + j], 8);
-				kfree(spct[i].ibuf.bufadr);
-				kfree(spct[i].obuf.bufadr);
+		spct[i].next = NULL;
+		for (k = i + 1; k < spcnt; k++) {
+			if (spconfig[i].irq == spconfig[k].irq) {
+				spct[i].next = &spct[k];
+				break;
 			}
-			kfree(spct);
-			return -ENODEV;
 		}
-		if (request_region(spconfig[i + i], 8, RTAI_SPDRV_NAME) == NULL)
-		    {
-		    release_region(spconfig[i + i], 8);
-		    request_region(spconfig[i + i], 8, RTAI_SPDRV_NAME);
-		    }
+		//printk("spct[%d].my_index = %d    spct[%d].next = %p\n", i , spct[i].my_index, i, spct[i].next);
+	}
+
+	for (i = 0; i < spcnt; i++) {
+		newirq = 1;
+		for (k = i - 1; k >= 0 ; k--) {
+			if (spconfig[i].irq == spconfig[k].irq) {
+				newirq = 0;
+			}
+		}
+		//printk("TTY INDEX = %d    newirq = %d\n", i, newirq);
+		if (newirq) {
+			rt_disable_irq(spconfig[i].irq);
+			if (rt_request_irq(spconfig[i].irq, (void *)rt_spisr, (void *)(spct + i), 1)) {
+				printk("IRQ NOT AVAILABLE (TTY INDEX: %d).\n", i);
+				newirq = 0;
+			}
+		    
+			p = &spct[i];
+			do {
+				if (!newirq || !(p->ibuf.bufadr = kmalloc(2*spbufsiz, GFP_KERNEL))) {
+					int retval;
+					if (!newirq) {
+						retval = -ENODEV;
+					} else {
+						retval = -ENOMEM;
+						printk("NO MEMORY AVAILABLE FOR READ/WRITE BUFFERS (TTY INDEX: %d).\n", k);
+					}
+					for (k = 0; k < spcnt; k++) {
+						if (spct[k].ibuf.bufadr) {
+					  		rt_release_irq(spconfig[k].irq);
+							release_region(spconfig[k].base_adr, 8);
+							kfree(spct[k].ibuf.bufadr);
+						}
+					}
+					kfree(spct);
+					return retval;
+				} else {
+					p->obuf.bufadr = p->ibuf.bufadr + spbufsiz;
+//					printk("ALLOCATED MEMORY FOR TTY INDEX %d\n", k);
+				}
+			} while ((p = p->next));
+		}
+
+		if (request_region(spconfig[i].base_adr, 8, RTAI_SPDRV_NAME) == NULL) {
+			release_region(spconfig[i].base_adr, 8);
+			request_region(spconfig[i].base_adr, 8, RTAI_SPDRV_NAME);
+		}
 		spct[i].callback_task = 0;
 		spct[i].opened = 0;
 		// set base address for UART
-		spct[i].base_adr = spconfig[i + i];
+		spct[i].base_adr = spconfig[i].base_adr;
 		// set irq 
-		spct[i].irq      = spconfig[i + i + 1];
+		spct[i].irq      = spconfig[i].irq;
 		// set default values for RX FIFO trigger level
 		spct[i].fifotrig = RT_SP_FIFO_SIZE_DEFAULT;
 		// sef default thresholds for callback function 
@@ -1208,6 +1281,7 @@ int __rtai_serial_init(void)
 		rt_sem_init(&spct[i].txsem, 0);
 		rt_sem_init(&spct[i].rxsem, 0);
 	}
+	
 	spbuflow = spbufsiz / 3;
 	spbufhi  = spbufsiz - spbuflow;
 	spbufull = spbufsiz / 10;
@@ -1233,12 +1307,12 @@ void __rtai_serial_exit(void)
 		if (spct[i].callback_task) {
 			rt_task_resume(spct[i].callback_task);
 		}
-		rt_free_global_irq(spct[i].irq);
+  		rt_release_irq(spct[i].irq);
 		release_region(spct[i].base_adr, 8);
 		kfree(spct[i].ibuf.bufadr);
-		kfree(spct[i].obuf.bufadr);
 		rt_sem_delete(&spct[i].txsem);
 		rt_sem_delete(&spct[i].rxsem);
+		printk("removed IRQ %d\n", spct[i].irq);
 	}
 	kfree(spct);
 }

@@ -1,7 +1,6 @@
 /*
  * Copyright (C) 2002-2008 Paolo Mantegazza <mantegazza@aero.polimi.it>
  *                         Giuseppe Renoldi <giuseppe@renoldi.org>
- *                         Renato Castello  <zx81@gmx.net>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License as
@@ -18,8 +17,9 @@
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
  */
 
-/* Nov. 2002, Rich Walker (rw@shadow.org.uk) fixed support for UART 16450 */
-/* Jan. 2003, Richard Brunelle <rbrunelle@envitech.com> fixed ISR hard flow */
+/* Nov. 2002, Rich Walker <rw@shadow.org.uk>, fixed support for UART 16450   */
+/* Jan. 2003, Richard Brunelle <rbrunelle@envitech.com>, fixed ISR hard flow */
+/* Apr. 2008, Renato Castello <zx81@gmx.net>, support for shared interrupts  */
 
 #include <linux/module.h>
 #include <linux/kernel.h>
@@ -660,6 +660,7 @@ static inline int rt_spset_irq(struct rt_spct_t *p, unsigned char ch)
 	return -ENOSPC;
 }
 
+/* Extended to support shared interrupts, by: Renato Castello <zx81@gmx.net> */
 
 static int rt_spisr(int irq, struct rt_spct_t *pp)
 {
@@ -1190,6 +1191,8 @@ static struct rt_fun_entry rtai_spdrv_fun[] = {
 	[_SPREAD_TIMED]        = { UW1(2, 3), rt_spread_timed },
 	[_SPWRITE_TIMED]       = { UR1(2, 3), rt_spwrite_timed }
 };
+
+/* Extended to support shared interrupts, by: Renato Castello <zx81@gmx.net> */
 
 int __rtai_serial_init(void)
 {

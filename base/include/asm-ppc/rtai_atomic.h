@@ -19,12 +19,11 @@
 #ifndef _RTAI_ASM_PPC_ATOMIC_H
 #define _RTAI_ASM_PPC_ATOMIC_H
 
-#include <asm/atomic.h>
-
 #ifdef __KERNEL__
 
 #include <linux/bitops.h>
 #include <asm/system.h>
+#include <asm/atomic.h>
 
 #if LINUX_VERSION_CODE < KERNEL_VERSION(2,6,15)
 #define atomic_xchg(ptr, v)  xchg(ptr,v)
@@ -36,6 +35,8 @@ static __inline__ unsigned long atomic_cmpxchg(void *ptr, unsigned long o, unsig
 #endif
 
 #else /* !__KERNEL__ */
+
+typedef struct { volatile int counter; } atomic_t;
 
 // shamelessly taken from Linux as they are
 

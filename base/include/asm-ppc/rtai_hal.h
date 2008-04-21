@@ -200,8 +200,6 @@ do { \
 	} \
 } while (0)
 
-#define hal_pend_uncond(irq, cpuid)  hal_pend_domain_uncond(irq, hal_root_domain, cpuid)
-
 #define hal_fast_flush_pipeline(cpuid) \
 do { \
 	if (hal_root_domain->cpudata[cpuid].irq_pending_hi != 0) { \
@@ -217,21 +215,21 @@ do { \
 
 #define hal_pend_domain_uncond(irq, domain, cpuid) \
 do { \
-	  if (likely(!test_bit(IPIPE_LOCK_FLAG, &(domain)->irqs[irq].control))) { \
-		  __set_bit((irq) & IPIPE_IRQ_IMASK, &ipipe_cpudom_var(domain, irqpend_lomask)[(irq) >> IPIPE_IRQ_ISHIFT]); \
-		  __set_bit((irq) >> IPIPE_IRQ_ISHIFT, &ipipe_cpudom_var(domain, irqpend_himask)); \
-	  } else { \
-		  __set_bit((irq) & IPIPE_IRQ_IMASK, &ipipe_cpudom_var(domain, irqheld_mask)[(irq) >> IPIPE_IRQ_ISHIFT]); \
-	  } \
-	  ipipe_cpudom_var(domain, irqall)[irq]++; \
+	if (likely(!test_bit(IPIPE_LOCK_FLAG, &(domain)->irqs[irq].control))) { \
+		__set_bit((irq) & IPIPE_IRQ_IMASK, &ipipe_cpudom_var(domain, irqpend_lomask)[(irq) >> IPIPE_IRQ_ISHIFT]); \
+		__set_bit((irq) >> IPIPE_IRQ_ISHIFT, &ipipe_cpudom_var(domain, irqpend_himask)); \
+	} else { \
+		__set_bit((irq) & IPIPE_IRQ_IMASK, &ipipe_cpudom_var(domain, irqheld_mask)[(irq) >> IPIPE_IRQ_ISHIFT]); \
+	} \
+	ipipe_cpudom_var(domain, irqall)[irq]++; \
 } while (0)
 
 #define hal_fast_flush_pipeline(cpuid) \
 do { \
-	  if (ipipe_cpudom_var(hal_root_domain, irqpend_himask) != 0) { \
-		  rtai_cli(); \
-		  hal_sync_stage(IPIPE_IRQMASK_ANY); \
-	  } \
+	if (ipipe_cpudom_var(hal_root_domain, irqpend_himask) != 0) { \
+		rtai_cli(); \
+		hal_sync_stage(IPIPE_IRQMASK_ANY); \
+	} \
 } while (0)
 
 #endif

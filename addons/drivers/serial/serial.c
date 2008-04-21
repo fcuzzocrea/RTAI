@@ -791,7 +791,7 @@ static int rt_spisr(int irq, struct rt_spct_t *pp)
 				p->rxtxsem[0] = &p->txsem;
 				p->rxtxsem[1] = &p->rxsem;
 			}
-			goto redo;
+			goto nextport;
 		}
 		if (rxed < 0 && p->rxsem.count < 0) {
 			p->rxthrs = 0;

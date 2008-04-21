@@ -1,10 +1,13 @@
+2008-04-22 Paolo Mantegazza <mantegazza@aero.polimi.it>
+
+	* base/arch/ppc/hal/hal.c, 
+	  base/include/asm-ppc/rtai_atomic.h and rtai_hal.h: updated for use 
+	  with the latest Linux versions.
+
 2008-04-21 Paolo Mantegazza <mantegazza@aero.polimi.it>
 
 	* base/ipc/bits.c: changed names of internal static set/clear bits, 
 	  conflicting with some Linux definitions (PPC).
-
- addons/drivers/serial/serial.c: enable/disable interrupts at each 
-	  multiport loop.
 
 2008-04-21 Paolo Mantegazza <mantegazza@aero.polimi.it>
 

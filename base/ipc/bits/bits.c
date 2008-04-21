@@ -112,17 +112,17 @@ static int all_clr_or_any_clr(BITS *bits, unsigned long masks)
 	return (~bits->mask & MASK1(masks)) || (~bits->mask & MASK0(masks)) == MASK0(masks);
 }
 
-static void set_bits(BITS *bits, unsigned long mask)
+static void set_bits_mask(BITS *bits, unsigned long mask)
 {
 	bits->mask |= mask;
 }
 
-static void clr_bits(BITS *bits, unsigned long mask)
+static void clr_bits_mask(BITS *bits, unsigned long mask)
 {
 	bits->mask &= ~mask;
 }
 
-static void set_clr_bits(BITS *bits, unsigned long masks)
+static void set_clr_bits_mask(BITS *bits, unsigned long masks)
 {
 	bits->mask =  (bits->mask | MASK0(masks)) & ~MASK1(masks);
 }
@@ -142,8 +142,8 @@ static int (*test_fun[])(BITS *, unsigned long) = {
 };
 
 static void (*exec_fun[])(BITS *, unsigned long) = {
-	set_bits, clr_bits,
-	          set_clr_bits,
+	set_bits_mask, clr_bits_mask,
+	          set_clr_bits_mask,
 	nop_fun
 };
 

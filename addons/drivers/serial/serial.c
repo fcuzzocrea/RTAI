@@ -767,7 +767,7 @@ static int rt_spisr(int irq, struct rt_spct_t *pp)
 		}
 
 	    // call the error callback function if it is defined
-//		p->call_usr = 0;
+		p->call_usr = 0;
 		if (errdetected) {
 			if (p->err_callback_fun) {
 				p->call_err_callback_fun = 1;
@@ -791,17 +791,17 @@ static int rt_spisr(int irq, struct rt_spct_t *pp)
 				p->rxtxsem[0] = &p->txsem;
 				p->rxtxsem[1] = &p->rxsem;
 			}
-			continue;
+			goto redo;
 		}
 		if (rxed < 0 && p->rxsem.count < 0) {
 			p->rxthrs = 0;
 			p->rxtxsem[0] = &p->rxsem;
-			continue;
+			goto nextport;
 		}	
 		if (txed < 0 && p->txsem.count < 0) {
 			p->txthrs = 0;
 			p->rxtxsem[0] = &p->txsem;
-			continue;
+			goto nextport;
 		}
 		if (rxed || txed) {
 			if (p->callback_fun) {
@@ -810,6 +810,10 @@ static int rt_spisr(int irq, struct rt_spct_t *pp)
 				p->call_usr |= 2;
 			}
 		}
+nextport:
+		hard_sti();
+		cpu_relax();
+		hard_cli();
 	} while ((p = p->next));
 }	
 	ENABLE_SP(irq);
@@ -842,7 +846,6 @@ extxsem1:
 			pp->call_callback_fun = 0;
 			(pp->callback_fun)(pp->ibuf.avbs, pp->obuf.frbs);
 		} else if (pp->call_usr) {
-			pp->call_usr = 0;
 			rt_task_resume(pp->callback_task);
 		}
 	} while ((pp = pp->next));

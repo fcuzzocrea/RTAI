@@ -561,7 +561,7 @@ RTAI_PROTO(void, rt_destroy_tasklets, (struct rt_tasklets_struct *tasklets))
 RTAI_PROTO(struct rt_tasklet_struct *, rt_get_tasklet, (struct rt_tasklets_struct *tasklets))
 {
 	struct rt_tasklet_struct *tasklet;
-	while (atomic_cmpxchg((atomic_t *)&tasklets->lock, 0, 1));
+	while (atomic_cmpxchg((void *)&tasklets->lock, 0, 1));
 	if (tasklets->avb > 0) {
 		if (tasklets->out >= tasklets->ntasklets) {
 			tasklets->out = 0;
@@ -575,9 +575,11 @@ RTAI_PROTO(struct rt_tasklet_struct *, rt_get_tasklet, (struct rt_tasklets_struc
 	return NULL;
 }
 
+#define rt_get_timer  rt_get_tasklet
+
 RTAI_PROTO(int, rt_gvb_tasklet, (struct rt_tasklet_struct *tasklet, struct rt_tasklets_struct *tasklets))
 {
-	while (atomic_cmpxchg((atomic_t *)&tasklets->lock, 0, 1));
+	while (atomic_cmpxchg((void *)&tasklets->lock, 0, 1));
 	if (tasklets->avb < tasklets->ntasklets) {
 		if (tasklets->in >= tasklets->ntasklets) {
 			tasklets->in = 0;
@@ -590,6 +592,8 @@ RTAI_PROTO(int, rt_gvb_tasklet, (struct rt_tasklet_struct *tasklet, struct rt_ta
 	tasklets->lock = 0;
 	return EINVAL;
 }
+
+#define rt_gvb_timer  rt_gvb_tasklet
 
 #ifdef __cplusplus
 }

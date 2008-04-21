@@ -1,4 +1,12 @@
-2008-04-20 Paolo Mantegazza <mantegazza@aero.polimi.it>
+2008-04-21 Paolo Mantegazza <mantegazza@aero.polimi.it>
+
+	* base/ipc/bits.c: changed names of internal static set/clear bits, 
+	  conflicting with some Linux definitions (PPC).
+
+ addons/drivers/serial/serial.c: enable/disable interrupts at each 
+	  multiport loop.
+
+2008-04-21 Paolo Mantegazza <mantegazza@aero.polimi.it>
 
 	* addons/drivers/serial/serial.c: enable/disable interrupts at each 
 	  multiport loop.

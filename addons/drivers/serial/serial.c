@@ -42,9 +42,10 @@ MODULE_AUTHOR("Paolo Mantegazza, Giuseppe Renoldi, Renato Castello.");
 MODULE_DESCRIPTION("RTAI real time serial ports driver with multiport support");
 MODULE_LICENSE("GPL");
 
-struct base_adr_irq_s { unsigned long base_adr, irq; } spconfig[CONFIG_SIZE] = RT_SP_CONFIG_INIT; 
+static unsigned long spconfig[2*CONFIG_SIZE] = RT_SP_CONFIG_INIT;
 static int spconfig_size = 2*CONFIG_SIZE; 
 RTAI_MODULE_PARM_ARRAY(spconfig, ulong, &spconfig_size, 2*CONFIG_SIZE);
+struct base_adr_irq_s { unsigned long base_adr, irq; } *sp_config = (void *)spconfig; 
 
 static int spbufsiz = SPBUFSIZ;
 RTAI_MODULE_PARM(spbufsiz, int);
@@ -1203,10 +1204,10 @@ int __rtai_serial_init(void)
 	struct rt_spct_t *p;
 		
 	for (spcnt = 0; spcnt < CONFIG_SIZE; spcnt++) {
-		if (!spconfig[spcnt].base_adr || !spconfig[spcnt].irq) {
+		if (!sp_config[spcnt].base_adr || !sp_config[spcnt].irq) {
 			break;
 		}
-		printk("TTY_INDX: %d, PORT: %lx, IRQ %ld.\n", spcnt, spconfig[spcnt].base_adr, spconfig[spcnt].irq);
+		printk("TTY_INDX: %d, PORT: %lx, IRQ %ld.\n", spcnt, sp_config[spcnt].base_adr, sp_config[spcnt].irq);
 	}
 	printk("# OF PORTS: %d, BUFFER SIZE: %d.\n", spcnt, spbufsiz);
 	if (!(spct = kmalloc(spcnt*sizeof(struct rt_spct_t), GFP_KERNEL))) {
@@ -1218,7 +1219,7 @@ int __rtai_serial_init(void)
 	for (i = 0; i < spcnt; i++) {
 		spct[i].next = NULL;
 		for (k = i + 1; k < spcnt; k++) {
-			if (spconfig[i].irq == spconfig[k].irq) {
+			if (sp_config[i].irq == sp_config[k].irq) {
 				spct[i].next = &spct[k];
 				break;
 			}
@@ -1229,14 +1230,14 @@ int __rtai_serial_init(void)
 	for (i = 0; i < spcnt; i++) {
 		newirq = 1;
 		for (k = i - 1; k >= 0 ; k--) {
-			if (spconfig[i].irq == spconfig[k].irq) {
+			if (sp_config[i].irq == sp_config[k].irq) {
 				newirq = 0;
 			}
 		}
 		//printk("TTY INDEX = %d    newirq = %d\n", i, newirq);
 		if (newirq) {
-			rt_disable_irq(spconfig[i].irq);
-			if (rt_request_irq(spconfig[i].irq, (void *)rt_spisr, (void *)(spct + i), 1)) {
+			rt_disable_irq(sp_config[i].irq);
+			if (rt_request_irq(sp_config[i].irq, (void *)rt_spisr, (void *)(spct + i), 1)) {
 				printk("IRQ NOT AVAILABLE (TTY INDEX: %d).\n", i);
 				newirq = 0;
 			}
@@ -1253,8 +1254,8 @@ int __rtai_serial_init(void)
 					}
 					for (k = 0; k < spcnt; k++) {
 						if (spct[k].ibuf.bufadr) {
-					  		rt_release_irq(spconfig[k].irq);
-							release_region(spconfig[k].base_adr, 8);
+					  		rt_release_irq(sp_config[k].irq);
+							release_region(sp_config[k].base_adr, 8);
 							kfree(spct[k].ibuf.bufadr);
 						}
 					}
@@ -1267,16 +1268,16 @@ int __rtai_serial_init(void)
 			} while ((p = p->next));
 		}
 
-		if (request_region(spconfig[i].base_adr, 8, RTAI_SPDRV_NAME) == NULL) {
-			release_region(spconfig[i].base_adr, 8);
-			request_region(spconfig[i].base_adr, 8, RTAI_SPDRV_NAME);
+		if (request_region(sp_config[i].base_adr, 8, RTAI_SPDRV_NAME) == NULL) {
+			release_region(sp_config[i].base_adr, 8);
+			request_region(sp_config[i].base_adr, 8, RTAI_SPDRV_NAME);
 		}
 		spct[i].callback_task = 0;
 		spct[i].opened = 0;
 		// set base address for UART
-		spct[i].base_adr = spconfig[i].base_adr;
+		spct[i].base_adr = sp_config[i].base_adr;
 		// set irq 
-		spct[i].irq      = spconfig[i].irq;
+		spct[i].irq      = sp_config[i].irq;
 		// set default values for RX FIFO trigger level
 		spct[i].fifotrig = RT_SP_FIFO_SIZE_DEFAULT;
 		// sef default thresholds for callback function 

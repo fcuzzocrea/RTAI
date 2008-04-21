@@ -25,7 +25,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA.
 
 #define CONFIG_SIZE  40   // likely abundant, twice the max # of serial ports
 #define SPBUFSIZ     512  // bufsize will be (1 << SPBUFMSB)
-#define RT_SP_CONFIG_INIT  { { 0x3f8, 4 }, { 0x2f8, 3 }, }
+#define RT_SP_CONFIG_INIT  { 0x3f8, 4, 0x2f8, 3, }
 
 #ifdef CONFIG_SMP
 static spinlock_t splock = SPIN_LOCK_UNLOCKED;

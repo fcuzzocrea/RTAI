@@ -1,3 +1,7 @@
+2008-04-20 Paolo Mantegazza <mantegazza@aero.polimi.it>
+
+	* addons/drivers/serial/serial.c: enable/disable interrupts at each 
+	  multiport loop.
 
 2008-04-20 Renato Castello <zx81@gmx.net>
            Paolo Mantegazza <mantegazza@aero.polimi.it>

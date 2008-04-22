@@ -62,7 +62,9 @@ static int spbuflow;	// received buffer low level threshold for
 static int spbufhi;	// received buffer high level threshold for
                         // RTS-CTS hardware flow control
 static int spbufull;	// threshold for receive buffer to have the
-                        // buffer full error
+			// buffer full error
+
+static int max_opncnt;
 
 #define CHECK_SPINDX(indx)  do { if (indx >= spcnt) return -ENODEV; } while (0)
 
@@ -661,25 +663,27 @@ static inline int rt_spset_irq(struct rt_spct_t *p, unsigned char ch)
 	return -ENOSPC;
 }
 
-/* Extended to support shared interrupts, by: Renato Castello <zx81@gmx.net> */
+/* Extended to support shared interrupts, by: Renato Castello <zx81@gmx.net>, */
+/* with a lot of rewrites by: Paolo Mantegazza <mantegazza@aero.polimi.it>    */
 
 static int rt_spisr(int irq, struct rt_spct_t *pp)
 {
+	unsigned char er[max_opncnt];
+	char rtxs[2][max_opncnt], cb[max_opncnt];
 {
-	unsigned int  base_adr;
-	int           data_to_tx;
-	int           toFifo;
-	int 	      rxedchar;	
-	int 	      txedchar;	
-	int 	      errdetected;	
-	int 	      txed, rxed;	
-	unsigned char data, iir, msr, lsr;
+	unsigned int base_adr;
+	int          data_to_tx;
+	int          toFifo;
+	int 	     txed, rxed;	
+	unsigned char data, iir, msr, lsr, error;
 	struct rt_spct_t *p = pp;
+	int i = 0;
 	
 	do {
 		base_adr = p->base_adr;
 		toFifo   = p->tx_fifo_depth;
-		rxedchar = txedchar = errdetected = 0;	
+		rxed = txed = 0;	
+		rtxs[0][i] = rtxs[1][i] = cb[i] = error = 0;
 	
 		iir = inb(base_adr + RT_SP_IIR);	
 		do {
@@ -690,31 +694,27 @@ static int rt_spisr(int irq, struct rt_spct_t *pp)
 				   // Framing Error or Break Interrupt
 				
 				if ((lsr = inb(base_adr + RT_SP_LSR)) & 0x1e) {
-					p->error &= ~0x1e;
-					p->error |= (lsr & 0x1e);
-					errdetected = 1;	
+					error &= ~0x1e;
+					error |= (lsr & 0x1e);
 				}	
 				break;
 	
 				case 0x04: // Received Data Available
 				case 0x0C: // Character Timeout Indication
-				rxedchar = 1;
+				rxed = 1;
 				/* get available data from base_adr */
 				do {
 					if (rt_spset_irq(p, inb(base_adr + RT_SP_RXB))) {
-						errdetected = 1;	
-						p->error |= RT_SP_BUFFER_OVF;
+						error |= RT_SP_BUFFER_OVF;
 					}
 					if ((lsr = inb(base_adr + RT_SP_LSR)) & 0x1e) {
-						p->error &= ~0x1e;
-						p->error |= (lsr & 0x1e);
-						errdetected = 1;	
+						error &= ~0x1e;
+						error |= (lsr & 0x1e);
 					}
 				} while (LSR_DATA_READY & lsr);
 				// check for received buffer full
 				if (p->ibuf.frbs < spbufull) {
-					errdetected = 1;	
-					p->error |= RT_SP_BUFFER_FULL;
+					error |= RT_SP_BUFFER_FULL;
 				}
 				// if RTS-CTS hardware flow control, check if received
 				// buffer is full enough to stop removing RTS signal
@@ -735,7 +735,7 @@ static int rt_spisr(int irq, struct rt_spct_t *pp)
                                           (MSR_CTS & msr) && (MSR_DSR & msr)) ) {
 			    	// if there are data to transmit 
 					if (!(data_to_tx = rt_spget_irq(p, &data))) {
-						txedchar = 1;	
+						txed = 1;	
 						do {
 //							rt_printk("->%c] ",data);	
 							outb(data, base_adr + RT_SP_TXB);
@@ -760,93 +760,73 @@ static int rt_spisr(int irq, struct rt_spct_t *pp)
 
 	    /* controls on buffer full and RTS clear on hardware flow control */
 		if (p->ibuf.frbs < spbufull) {
-			errdetected = 1;	
-			p->error = RT_SP_BUFFER_FULL;
+			error = RT_SP_BUFFER_FULL;
 		}
 		if ((p->mode & RT_SP_HW_FLOW) && p->ibuf.frbs < spbuflow) {
 			outb(p->mcr &= ~MCR_RTS, p->base_adr + RT_SP_MCR);
 		}
 
-	    // call the error callback function if it is defined
-		p->call_usr = 0;
-		if (errdetected) {
-			if (p->err_callback_fun) {
-				p->call_err_callback_fun = 1;
-			} else if (p->callback_task) {
-				p->call_usr = 1;
-			} 
-		}
-
-	    // call the callback function is it is defined and 
-	    // chars in receive buffer are more than rxthrs or
-	    // free chars in transmit buffer are more than txthrs 
-
-		rxed = rxedchar && p->rxthrs && p->ibuf.avbs >= abs(p->rxthrs) ? p->rxthrs : 0;
-		txed = txedchar && p->txthrs && p->obuf.frbs >= abs(p->txthrs) ? p->txthrs : 0;
+		er[i] = p->error = error;
+		rxed = rxed && p->rxthrs && p->ibuf.avbs >= abs(p->rxthrs) ? p->rxthrs : 0;
+		txed = txed && p->txthrs && p->obuf.frbs >= abs(p->txthrs) ? p->txthrs : 0;
+		cb[i] = (rxed || txed) && (p->callback_fun || p->callback_task);
 		if (rxed < 0 && txed < 0 && p->rxsem.count < 0 && p->txsem.count < 0) {
 			p->rxthrs = p->txthrs = 0;
 			if (p->rxsem.queue.next->task->priority < p->txsem.queue.next->task->priority) {
-				p->rxtxsem[0] = &p->rxsem;
-				p->rxtxsem[1] = &p->txsem;
+				rtxs[0][i] = 1;
+				rtxs[1][i] = -1;
 			} else {
-				p->rxtxsem[0] = &p->txsem;
-				p->rxtxsem[1] = &p->rxsem;
+				rtxs[0][i] = -1;
+				rtxs[1][i] = 1;
 			}
 			goto nextport;
 		}
 		if (rxed < 0 && p->rxsem.count < 0) {
 			p->rxthrs = 0;
-			p->rxtxsem[0] = &p->rxsem;
+			rtxs[0][i] = 1;
 			goto nextport;
 		}	
 		if (txed < 0 && p->txsem.count < 0) {
 			p->txthrs = 0;
-			p->rxtxsem[0] = &p->txsem;
+			rtxs[0][i] = -1;
 			goto nextport;
-		}
-		if (rxed || txed) {
-			if (p->callback_fun) {
-				p->call_callback_fun = 1;
-			} else if (p->callback_task) {
-				p->call_usr |= 2;
-			}
 		}
 nextport:
 		hard_sti();
-		cpu_relax();
+		i++;
 		hard_cli();
 	} while ((p = p->next));
 }	
 	ENABLE_SP(irq);
 	hard_sti();
 {
-	SEM *sem;
+	int tsk, i = -1;
 	do {
-		if (pp->call_err_callback_fun) {
-			pp->call_err_callback_fun = 0;
-			(pp->err_callback_fun)(pp->error);
-			continue;
+		tsk = 0;
+		i++;
+		if (er[i]) {
+			if (pp->err_callback_fun) {
+				(pp->err_callback_fun)(pp->error = er[i]);
+			} else if (pp->callback_task) {
+				tsk = 1;
+			} 
 		}
-		if (pp->rxtxsem[0]) {
-			sem = pp->rxtxsem[0];
-			pp->rxtxsem[0] = NULL;
-			rt_sem_signal(sem);
-			if (pp->rxtxsem[1]) {
-				goto extxsem1;
+		if (rtxs[0][i]) {
+			rt_sem_signal(rtxs[0][i] > 0 ? &pp->rxsem : &pp->txsem);
+			if (rtxs[1][i]) {
+				rt_sem_signal(rtxs[1][i] > 0 ? &pp->rxsem : &pp->txsem);
 			}
-			continue;
 		}
-		if (pp->rxtxsem[1]) {
-extxsem1:
-			sem = pp->rxtxsem[1];
-			pp->rxtxsem[1] = NULL;
-			rt_sem_signal(sem);
-			continue;
+		if (cb[i]) {
+			if (pp->callback_fun) {
+				(pp->callback_fun)(pp->ibuf.avbs, pp->obuf.frbs);
+				continue;
+			} else if (pp->callback_task) {
+				tsk |= 2;
+			}
 		}
-		if (pp->call_callback_fun) {
-			pp->call_callback_fun = 0;
-			(pp->callback_fun)(pp->ibuf.avbs, pp->obuf.frbs);
-		} else if (pp->call_usr) {
+		if (tsk) {
+			pp->call_usr = tsk;
 			rt_task_resume(pp->callback_task);
 		}
 	} while ((pp = pp->next));
@@ -1224,7 +1204,14 @@ int __rtai_serial_init(void)
 				break;
 			}
 		}
-		//printk("spct[%d].my_index = %d    spct[%d].next = %p\n", i , spct[i].my_index, i, spct[i].next);
+ 		for (newirq = k = 0; k < spcnt; k++) {
+			if (sp_config[i].irq == sp_config[k].irq) {
+ 	    			newirq++;
+ 			}
+ 		}
+		if (max_opncnt < newirq) {
+			max_opncnt = newirq;
+ 		}
 	}
 
 	for (i = 0; i < spcnt; i++) {
@@ -1234,7 +1221,6 @@ int __rtai_serial_init(void)
 				newirq = 0;
 			}
 		}
-		//printk("TTY INDEX = %d    newirq = %d\n", i, newirq);
 		if (newirq) {
 			rt_disable_irq(sp_config[i].irq);
 			if (rt_request_irq(sp_config[i].irq, (void *)rt_spisr, (void *)(spct + i), 1)) {
@@ -1263,7 +1249,6 @@ int __rtai_serial_init(void)
 					return retval;
 				} else {
 					p->obuf.bufadr = p->ibuf.bufadr + spbufsiz;
-//					printk("ALLOCATED MEMORY FOR TTY INDEX %d\n", k);
 				}
 			} while ((p = p->next));
 		}

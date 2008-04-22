@@ -105,16 +105,13 @@ struct rt_spct_t {
 	int tx_fifo_depth;
 	struct rt_spmbx ibuf, obuf;
 	void (*callback_fun)(int, int);
-	int call_callback_fun;
 	volatile int rxthrs, txthrs;
 	void (*err_callback_fun)(int);
-	int call_err_callback_fun;
 	RT_TASK *callback_task;
 	unsigned long callback_fun_usr;
 	unsigned long err_callback_fun_usr;
 	volatile unsigned long call_usr;
 	SEM txsem, rxsem;
-	SEM *rxtxsem[2];
 	struct rt_spct_t *next;
 };
 

@@ -518,17 +518,16 @@ RTAI_SYSCALL_MODE int rt_spwrite_timed(unsigned int tty, char *msg, int msg_size
 	CHECK_SPINDX(tty);
 	if (msg_size > 0) {
 		if (!test_and_set_bit(0, &(p = spct + tty)->just_onew)) {
-			(p->txsem).count = 0;
-			p->txthrs = -msg_size;
 			if (msg_size > p->obuf.frbs) {
 				int semret;
-				if ((semret = rt_sem_wait_timed(&p->txsem, delay))) {
-					p->txthrs = 0;
+				p->txsem.count = 0;
+				p->txthrs = -msg_size;
+				semret = rt_sem_wait_timed(&p->txsem, delay);
+				p->txthrs = 0;
+				if (semret) {
 					clear_bit(0, &p->just_onew);
 					return semret;
 				}
-			} else {
-				p->txthrs = 0;
 			}
 			mbxput(&p->obuf, &msg, msg_size);
 			outb(p->ier |= IER_ETBEI, p->base_adr + RT_SP_IER);
@@ -568,17 +567,16 @@ RTAI_SYSCALL_MODE int rt_spread_timed(unsigned int tty, char *msg, int msg_size,
 	CHECK_SPINDX(tty);
 	if (msg_size > 0) {
 		if (!test_and_set_bit(0, &(p = spct + tty)->just_oner)) {
-			(p->rxsem).count = 0;
-			p->rxthrs = -msg_size;
 			if (msg_size > p->ibuf.avbs) {
 				int semret;
-				if ((semret = rt_sem_wait_timed(&p->rxsem, delay))) {
-					p->txthrs = 0;
+				p->rxsem.count = 0;
+				p->rxthrs = -msg_size;
+				semret = rt_sem_wait_timed(&p->rxsem, delay);
+				p->rxthrs = 0;
+				if (semret) {
 					clear_bit(0, &p->just_oner);
 					return semret;
 				}
-			} else {
-				p->txthrs = 0;
 			}
 			mbxget(&p->ibuf, &msg, msg_size);
 			if ((p->mode & RT_SP_HW_FLOW) && p->ibuf.frbs > spbufhi) {

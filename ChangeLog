@@ -3,7 +3,7 @@
 	* addons/drivers/serial/serial.c: just register callbacks and sem 
 	  waiters within rt_spisr interrupt handling body, then process them
 	  with interrupt fully enabled (CPU flag and PIC) before leaving the
-	  handler.
+	  handler; reworked _timeout functions.
 
 2008-04-22 Paolo Mantegazza <mantegazza@aero.polimi.it>
 

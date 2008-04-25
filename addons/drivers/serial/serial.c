@@ -676,7 +676,7 @@ static int rt_spisr(int irq, struct rt_spct_t *pp)
 	struct rt_spct_t *p = pp;
 	int i = 0;
 	
-	do {
+	while (1) {
 		base_adr = p->base_adr;
 		toFifo   = p->tx_fifo_depth;
 		rxed = txed = 0;	
@@ -776,12 +776,14 @@ static int rt_spisr(int irq, struct rt_spct_t *pp)
 			todo[i].txs = 1;
 		}
 		hard_sti();
+		if (!(p = p->next)) {
+			break;
+		}
 		i++;
 		hard_cli();
-	} while ((p = p->next));
+	}
 }	
 	ENABLE_SP(irq);
-	hard_sti();
 {
 	int tsk, i = 0;
 	do {

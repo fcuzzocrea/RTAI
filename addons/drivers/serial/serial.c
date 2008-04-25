@@ -666,8 +666,7 @@ static inline int rt_spset_irq(struct rt_spct_t *p, unsigned char ch)
 
 static int rt_spisr(int irq, struct rt_spct_t *pp)
 {
-	unsigned char er[max_opncnt];
-	char rtxs[2][max_opncnt], cb[max_opncnt];
+	struct { unsigned char er, cb, txs, rxs; } todo[max_opncnt];
 {
 	unsigned int base_adr;
 	int          data_to_tx;
@@ -681,7 +680,7 @@ static int rt_spisr(int irq, struct rt_spct_t *pp)
 		base_adr = p->base_adr;
 		toFifo   = p->tx_fifo_depth;
 		rxed = txed = 0;	
-		rtxs[0][i] = rtxs[1][i] = cb[i] = error = 0;
+		todo[i].txs = todo[i].rxs = todo[i].cb = error = 0;
 	
 		iir = inb(base_adr + RT_SP_IIR);	
 		do {
@@ -764,32 +763,18 @@ static int rt_spisr(int irq, struct rt_spct_t *pp)
 			outb(p->mcr &= ~MCR_RTS, p->base_adr + RT_SP_MCR);
 		}
 
-		er[i] = p->error = error;
 		rxed = rxed && p->rxthrs && p->ibuf.avbs >= abs(p->rxthrs) ? p->rxthrs : 0;
 		txed = txed && p->txthrs && p->obuf.frbs >= abs(p->txthrs) ? p->txthrs : 0;
-		cb[i] = (rxed || txed) && (p->callback_fun || p->callback_task);
-		if (rxed < 0 && txed < 0 && p->rxsem.count < 0 && p->txsem.count < 0) {
-			p->rxthrs = p->txthrs = 0;
-			if (p->rxsem.queue.next->task->priority < p->txsem.queue.next->task->priority) {
-				rtxs[0][i] = 1;
-				rtxs[1][i] = -1;
-			} else {
-				rtxs[0][i] = -1;
-				rtxs[1][i] = 1;
-			}
-			goto nextport;
-		}
+		todo[i].er = p->error = error;
+		todo[i].cb = (rxed || txed);
 		if (rxed < 0 && p->rxsem.count < 0) {
 			p->rxthrs = 0;
-			rtxs[0][i] = 1;
-			goto nextport;
+			todo[i].rxs = 1;
 		}	
 		if (txed < 0 && p->txsem.count < 0) {
 			p->txthrs = 0;
-			rtxs[0][i] = -1;
-			goto nextport;
+			todo[i].txs = 1;
 		}
-nextport:
 		hard_sti();
 		i++;
 		hard_cli();
@@ -798,35 +783,46 @@ nextport:
 	ENABLE_SP(irq);
 	hard_sti();
 {
-	int tsk, i = -1;
+	int tsk, i = 0;
 	do {
-		tsk = 0;
-		i++;
-		if (er[i]) {
+		if (todo[i].er) {
 			if (pp->err_callback_fun) {
-				(pp->err_callback_fun)(pp->error = er[i]);
-			} else if (pp->callback_task) {
-				tsk = 1;
-			} 
-		}
-		if (rtxs[0][i]) {
-			rt_sem_signal(rtxs[0][i] > 0 ? &pp->rxsem : &pp->txsem);
-			if (rtxs[1][i]) {
-				rt_sem_signal(rtxs[1][i] > 0 ? &pp->rxsem : &pp->txsem);
+				(pp->err_callback_fun)(pp->error = todo[i].er);
 			}
+			tsk = 1;
+		} else {
+			tsk = 0;
 		}
-		if (cb[i]) {
+		if (todo[i].cb) {
 			if (pp->callback_fun) {
 				(pp->callback_fun)(pp->ibuf.avbs, pp->obuf.frbs);
-				continue;
-			} else if (pp->callback_task) {
-				tsk |= 2;
 			}
+			tsk |= 2;
 		}
-		if (tsk) {
+		if (todo[i].rxs && todo[i].txs) {
+			if (pp->rxsem.queue.next->task->priority < pp->txsem.queue.next->task->priority) {
+				rt_sem_signal(&pp->rxsem);
+				rt_sem_signal(&pp->txsem);
+			} else {
+				rt_sem_signal(&pp->txsem);
+				rt_sem_signal(&pp->rxsem);
+			}
+			goto again;
+                }
+		if (todo[i].rxs) {
+			rt_sem_signal(&pp->rxsem);
+			goto again;
+		}
+		if (todo[i].txs) {
+			rt_sem_signal(&pp->txsem);
+			goto again;
+		}
+		if (pp->callback_task && tsk) {
 			pp->call_usr = tsk;
 			rt_task_resume(pp->callback_task);
 		}
+again:
+		i++;
 	} while ((pp = pp->next));
 }
 	return 0;

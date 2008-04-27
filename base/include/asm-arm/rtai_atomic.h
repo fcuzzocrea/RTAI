@@ -46,13 +46,13 @@
 
 #include <linux/version.h>
 #include <linux/bitops.h>
-#include <asm/atomic.h>
 #include <rtai_config.h>
 #include <asm/rtai_hal.h>
 
 #ifdef __KERNEL__
 
 #include <asm/system.h>
+#include <asm/atomic.h>
 
 #define atomic_xchg(ptr,v)      xchg(ptr,v)
 
@@ -76,6 +76,8 @@
 #else
 #include <asm/system.h>
 #endif
+
+typedef struct { volatile int counter; } atomic_t;
 
 static inline unsigned long
 atomic_xchg(volatile void *ptr, unsigned long x)

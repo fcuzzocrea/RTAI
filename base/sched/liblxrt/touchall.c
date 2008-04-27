@@ -24,6 +24,11 @@
 #include <sys/mman.h>
 #include <malloc.h>
 
+#include <asm/rtai_atomic.h>
+#ifdef _RTAI_ASM_PPC_ATOMIC_H
+#include <asm-ppc/page.h>
+#endif
+
 #define TOUCH_BUFSIZE 256
 #define GROW_STACK (64*1024)
 #define GROW_HEAP  (64*1024)

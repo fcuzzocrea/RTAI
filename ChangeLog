@@ -1,3 +1,8 @@
+2008-01-02 Paolo Mantegazza <mantegazza@aero.polimi.it>
+
+	* base/sched/api.c: overwite syscall requests but do not resume the
+	  server if it is full already.
+
 2008-04-23 Paolo Mantegazza <mantegazza@aero.polimi.it>
 
 	* addons/drivers/serial/serial.c: just register callbacks and sem 

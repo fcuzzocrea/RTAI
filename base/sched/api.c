@@ -1963,7 +1963,9 @@ void rt_exec_linux_syscall(RT_TASK *rt_current, struct linux_syscalls_list *sysc
 		from.in = 0;
 	}
 	rt_put_user(from.in, &syscalls->in);
-	rt_task_resume(from.serv);
+	if (from.serv->suspdepth >= -from.nr) {
+		rt_task_resume(from.serv);
+	}
 	if (from.mode == SYNC_LINUX_SYSCALL) {
 		rt_task_suspend(rt_current);
 		rt_get_user(regs->LINUX_SYSCALL_RETREG, &syscalls->retval);

@@ -6,7 +6,7 @@
  * implementation for just a single writer (producer) and reader
  * (consumer) and, under such a constraint, it can be a specific
  * substitute for RTAI mailboxes. There are other constraints that
- * must be satisfied so it cannot be a general substitute for the more
+ * must be satisfied, so it cannot be a general substitute for the more
  * flexible RTAI mailboxes. In fact it provides just functions
  * corresponding to RTAI mailboxes non blocking atomic send/receive of
  * messages, i.e. the equivalents of rt_mbx_send_if and
@@ -55,7 +55,7 @@ struct task_struct;
  *
  * @internal
  *
- * rt_scb_init is used to allocate and initialize a shared memory circular
+ * rt_scb_init is used to allocate and/or initialize a shared memory circular
  * buffer.
  *
  * @param name is an unsigned long identifier;
@@ -67,24 +67,26 @@ struct task_struct;
  * - USE_GFP_KERNEL, use kmalloc with GFP_KERNEL;
  * - USE_GFP_ATOMIC, use kmalloc with GFP_ATOMIC;
  * - USE_GFP_DMA, use kmalloc with GFP_DMA.
- * - for use in kernel/user space only applications the user can use "suprt"
- *   to pass the address of any memory area (s)he has allocated on her/his own.
+ * - for use in kernel/(multi-threaded)user space only applications the 
+ *   user can use "suprt" to pass the address of any memory area (s)he has
+ *   allocated on her/his own.
  *
- * Since @a name can be a clumsy identifier, services are provided to
- * convert 6 characters identifiers to unsigned long, and vice versa.
+ * Since @a an unsigned long can be a clumsy identifier, services are provided
+ * to convert 6 characters identifiers to unsigned long, and vice versa.
  *
  * @see nam2num() and num2nam().
  *
  * It must be remarked that only the very first call does a real allocation,
- * any following call to allocate with the same name from anywhere will just
- * increase the usage count and maps the circular buffer to the user space, or 
- * return the related pointer to the already allocated buffer in kernel space.
+ * any following call to allocate with the same name, from anywhere, will just
+ * increase the usage count and map the circular buffer to the user space, or 
+ * return the related pointer to the already allocated buffer in kernel/user
+ * space.
  * In any case the functions return a pointer to the circular buffer,
  * appropriately mapped to the memory space in use. So if one is really sure
- * that the named circular buffer has been initted already parameters size
- * and suprt are not used and can be assigned any value.
+ * that the named circular buffer has been initted already parameters "size"
+ * and "suprt" are not used and can be assigned any value.
  *
- * @returns a valid address on succes, 0 on failure.
+ * @returns a valid address on succes, you must use it, 0 on failure.
  *
  */
 
@@ -119,7 +121,7 @@ RTAI_PROTO(void *, rt_scb_init, (unsigned long name, int size, unsigned long sup
  *
  * @returns the size of the succesfully freed buffer, 0 on failure.
  *
- * Do not call this function if you provided your own memory to the circular
+ * Never call this function if you provided your own memory to the circular
  * buffer. 
  *
  */

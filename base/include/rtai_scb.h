@@ -121,8 +121,8 @@ RTAI_PROTO(void *, rt_scb_init, (unsigned long name, int size, unsigned long sup
  *
  * @returns the size of the succesfully freed buffer, 0 on failure.
  *
- * Never call this function if you provided your own memory to the circular
- * buffer. 
+ * No need to call this function if you provided your own memory for the
+ * circular buffer. 
  *
  */
 

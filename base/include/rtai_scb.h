@@ -55,7 +55,8 @@ struct task_struct;
  *
  * @internal
  *
- * rt_scb_init is used to allocate and initialize a shared memory circular buffer.
+ * rt_scb_init is used to allocate and initialize a shared memory circular
+ * buffer.
  *
  * @param name is an unsigned long identifier;
  *
@@ -66,8 +67,8 @@ struct task_struct;
  * - USE_GFP_KERNEL, use kmalloc with GFP_KERNEL;
  * - USE_GFP_ATOMIC, use kmalloc with GFP_ATOMIC;
  * - USE_GFP_DMA, use kmalloc with GFP_DMA.
- * - for use in kernel only applications the user can use "suprt" to pass 
- *   the address of any memory area (s)he has allocated on her/his own.
+ * - for use in kernel/user space only applications the user can use "suprt"
+ *   to pass the address of any memory area (s)he has allocated on her/his own.
  *
  * Since @a name can be a clumsy identifier, services are provided to
  * convert 6 characters identifiers to unsigned long, and vice versa.

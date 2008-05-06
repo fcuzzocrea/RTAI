@@ -1,3 +1,9 @@
+2008-05-07 Paolo Mantegazza <mantegazza@aero.polimi.it>
+
+	* base/include/rtai_scb.h: fixed a possible mem leak with user
+	  allocated buffers; added put with over write, simplified a few
+	  lines of code.
+
 2008-05-06 Paolo Mantegazza <mantegazza@aero.polimi.it>
 
 	* base/arch/x86_64/hal/hal.immed: grab exceptions as in i386, process

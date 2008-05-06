@@ -1,3 +1,8 @@
+2008-05-06 Paolo Mantegazza <mantegazza@aero.polimi.it>
+
+	* base/arch/x86_64/hal/hal.immed: grab exceptions as in i386, process
+	  floating point enabling immediately.
+
 2008-04-03 Bill Barton <peabody@rahul.net>
 
 	* base/include/rtai_fifos.h and base/ipc/fifos-fisos.c: refurbished

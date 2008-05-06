@@ -1628,16 +1628,78 @@ static int rtai_hirq_dispatcher(struct pt_regs *regs)
 #define HINT_DIAG_MSG(x)
 #endif
 
-#ifdef UNWRAPPED_CATCH_EVENT
+static int PrintFpuTrap = 0;
+RTAI_MODULE_PARM(PrintFpuTrap, int);
+static int PrintFpuInit = 0;
+RTAI_MODULE_PARM(PrintFpuInit, int);
+
 static int rtai_trap_fault (unsigned event, void *evdata)
 {
-	return 0;
-}
-#else
-static void rtai_trap_fault (adevinfo_t *evinfo) {
-	hal_propagate_event(evinfo);
-}
+#ifdef HINT_DIAG_TRAPS
+	static unsigned long traps_in_hard_intr = 0;
+        do {
+                unsigned long flags;
+                rtai_save_flags_and_cli(flags);
+                if (!test_bit(RTAI_IFLAG, &flags)) {
+                        if (!test_and_set_bit(event, &traps_in_hard_intr)) {
+                                HINT_DIAG_MSG(rt_printk("TRAP %d HAS INTERRUPT DISABLED (TRAPS PICTURE %lx).\n", event, traps_in_hard_intr););
+                        }
+                }
+        } while (0);
 #endif
+	static const int trap2sig[] = {
+    		SIGFPE,         //  0 - Divide error
+		SIGTRAP,        //  1 - Debug
+		SIGSEGV,        //  2 - NMI (but we ignore these)
+		SIGTRAP,        //  3 - Software breakpoint
+		SIGSEGV,        //  4 - Overflow
+		SIGSEGV,        //  5 - Bounds
+		SIGILL,         //  6 - Invalid opcode
+		SIGSEGV,        //  7 - Device not available
+		SIGSEGV,        //  8 - Double fault
+		SIGFPE,         //  9 - Coprocessor segment overrun
+		SIGSEGV,        // 10 - Invalid TSS
+		SIGBUS,         // 11 - Segment not present
+		SIGBUS,         // 12 - Stack segment
+		SIGSEGV,        // 13 - General protection fault
+		SIGSEGV,        // 14 - Page fault
+		0,              // 15 - Spurious interrupt
+		SIGFPE,         // 16 - Coprocessor error
+		SIGBUS,         // 17 - Alignment check
+		SIGSEGV,        // 18 - Reserved
+		SIGFPE,         // 19 - XMM fault
+		0,0,0,0,0,0,0,0,0,0,0,0
+	};
+
+	if (!in_hrt_mode(rtai_cpuid())) {
+		goto propagate;
+	}
+
+	if (event == 7)	{ /* (FPU) Device not available. */
+		struct task_struct *linux_task = current;
+		rtai_hw_cli();
+		if (lnxtsk_uses_fpu(linux_task)) {
+			restore_fpu(linux_task);
+			if (PrintFpuTrap) {
+				rt_printk("\nWARNING: FPU TRAP FROM HARD PID = %d\n", linux_task->pid);
+			}
+		} else {
+			init_hard_fpu(linux_task);
+			if (PrintFpuInit) {
+				rt_printk("\nWARNING: FPU INITIALIZATION FROM HARD PID = %d\n", linux_task->pid);
+			}
+		}
+		rtai_hw_sti();
+		goto endtrap;
+	}
+	if (rtai_trap_handler && rtai_trap_handler(event, trap2sig[event], (struct pt_regs *)evdata, NULL)) {
+		goto endtrap;
+	}
+propagate:
+	return 0;
+endtrap:
+	return 1;
+}
 
 static void rtai_lsrq_dispatcher (unsigned virq)
 {
@@ -2383,7 +2445,7 @@ static int _rt_linux_hrt_next_shot(unsigned long delay, struct ipipe_tick_device
 #else
 #define  IPIPE_REQUEST_TICKDEV(a, b, c, d, e)  ipipe_request_tickdev(a, b, c, d)
 #endif
- 
+
 static int rtai_request_tickdev(void)
 {
 	int mode, cpuid;

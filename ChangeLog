@@ -1,4 +1,9 @@
-2008-01-02 Paolo Mantegazza <mantegazza@aero.polimi.it>
+2008-05-06 Paolo Mantegazza <mantegazza@aero.polimi.it>
+
+	* base/arch/x86_64/hal/hal.immed: grab exception as in i386, process
+	  floating point enabling iimediately.
+
+2008-05-02 Paolo Mantegazza <mantegazza@aero.polimi.it>
 
 	* base/sched/api.c: overwite syscall requests but do not resume the
 	  server if it is full already.

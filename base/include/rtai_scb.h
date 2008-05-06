@@ -11,11 +11,12 @@
  * corresponding to RTAI mailboxes non blocking atomic send/receive of
  * messages, i.e. the equivalents of rt_mbx_send_if and
  * rt_mbx_receive_if. Moreover the circular buffer size must be >= to
- * the largest message to be sent/received. Thus sending/receiving a
- * message either succeeds of fails.  However thanks to the use of
- * shared memory it should be more efficient than mailboxes in atomic
- * exchanges of messages from kernel to user space. So it is a good
- * candidate for supporting drivers development.
+ * the largest message to be sent/received. At least the double of the 
+ * largest message to be sent/received is strongly recommended.
+ * Thus sending/receiving a message either succeeds of fails. However 
+ * thanks to the use of shared memory it should be more efficient than
+ * mailboxes in atomic exchanges of messages from kernel to user space.
+ * So it is a good candidate for supporting drivers development.
  *
  * @author Paolo Mantegazza
  *
@@ -69,7 +70,8 @@ struct task_struct;
  * - USE_GFP_DMA, use kmalloc with GFP_DMA.
  * - for use in kernel/(multi-threaded)user space only applications the 
  *   user can use "suprt" to pass the address of any memory area (s)he has
- *   allocated on her/his own.
+ *   allocated on her/his own. In such a case the actual buffer should be
+ *   greater than the requested size by the amount HDRSIZ at least.
  *
  * Since @a an unsigned long can be a clumsy identifier, services are provided
  * to convert 6 characters identifiers to unsigned long, and vice versa.
@@ -93,7 +95,12 @@ struct task_struct;
 RTAI_PROTO(void *, rt_scb_init, (unsigned long name, int size, unsigned long suprt))
 {	
 	void *scb;
-	scb = suprt > 1000 ? (void *)suprt : rt_shm_alloc(name, size + HDRSIZ + 1, suprt);
+	if (suprt > 1000) {
+		size -=  HDRSIZ + 1;
+		scb = (void *)suprt;
+	} else {
+		scb = rt_shm_alloc(name, size + HDRSIZ + 1, suprt);
+	}
 	if (scb && !atomic_cmpxchg((atomic_t *)scb, 0, name)) {
 		((int *)scb)[1] = ((int *)scb)[2] = 0;
 		((int *)scb)[0] = size + 1;
@@ -166,16 +173,14 @@ RTAI_PROTO (int, rt_scb_bytes, (void *scb))
 RTAI_PROTO(int, rt_scb_get, (void *scb, void *msg, int msg_size))
 { 
 	int size = SIZE, fbyte = FBYTE, lbyte = LBYTE;
-	if (msg_size > 0 && (lbyte >= fbyte ? lbyte - fbyte : size + lbyte - fbyte) >= msg_size) {
+	if (msg_size > 0 && ((lbyte -= fbyte) >= 0 ? lbyte : size + lbyte) >= msg_size) {
 		int tocpy;
 		if ((tocpy = size - fbyte) > msg_size) {
 			memcpy(msg, SCB + fbyte, msg_size);
 			FBYTE = fbyte + msg_size;
 		} else {
 			memcpy(msg, SCB + fbyte, tocpy);
-			if ((msg_size -= tocpy)) {
-				memcpy(msg + tocpy, SCB, msg_size);
-			}
+			memcpy(msg + tocpy, SCB, msg_size -= tocpy);
 			FBYTE = msg_size;
 		}
 		return 0;
@@ -198,15 +203,13 @@ RTAI_PROTO(int, rt_scb_get, (void *scb, void *msg, int msg_size))
 RTAI_PROTO(int, rt_scb_evdrp, (void *scb, void *msg, int msg_size))
 { 
 	int size = SIZE, fbyte = FBYTE, lbyte = LBYTE;
-	if (msg_size > 0 && (lbyte >= fbyte ? lbyte - fbyte : size + lbyte - fbyte) >= msg_size) {
+	if (msg_size > 0 && ((lbyte -= fbyte) >= 0 ? lbyte : size + lbyte) >= msg_size) {
 		int tocpy;
 		if ((tocpy = size - fbyte) > msg_size) {
 			memcpy(msg, SCB + fbyte, msg_size);
 		} else {
 			memcpy(msg, SCB + fbyte, tocpy);
-			if ((msg_size -= tocpy)) {
-				memcpy(msg + tocpy, SCB, msg_size);
-			}
+			memcpy(msg + tocpy, SCB, msg_size - tocpy);
 		}
 		return 0;
 	}
@@ -228,16 +231,32 @@ RTAI_PROTO(int, rt_scb_evdrp, (void *scb, void *msg, int msg_size))
 RTAI_PROTO(int, rt_scb_put, (void *scb, void *msg, int msg_size))
 { 
 	int size = SIZE, fbyte = FBYTE, lbyte = LBYTE;
-	if (msg_size > 0 && (lbyte >= fbyte ? size - (lbyte - fbyte) : fbyte - lbyte) > msg_size) {
+	if (msg_size > 0 && ((fbyte -= lbyte) <= 0 ? size + fbyte : fbyte) > msg_size) {
 		int tocpy;
 		if ((tocpy = size - lbyte) > msg_size) {
 			memcpy(SCB + lbyte, msg, msg_size);
 			LBYTE = lbyte + msg_size;
 		} else {
 			memcpy(SCB + lbyte, msg, tocpy);
-			if ((msg_size -= tocpy)) {
-				memcpy(SCB, msg + tocpy, msg_size);
-			}
+			memcpy(SCB, msg + tocpy, msg_size -= tocpy);
+			LBYTE = msg_size;
+		}
+		return 0;
+	}
+	return msg_size;
+}
+
+RTAI_PROTO(int, rt_scb_ovrwr, (void *scb, void *msg, int msg_size))
+{ 
+	int size = SIZE, lbyte = LBYTE;
+	if (msg_size > 0 && msg_size < size) {
+		int tocpy;
+		if ((tocpy = size - lbyte) > msg_size) {
+			memcpy(SCB + lbyte, msg, msg_size);
+			LBYTE = lbyte + msg_size;
+		} else {
+			memcpy(SCB + lbyte, msg, tocpy);
+			memcpy(SCB, msg + tocpy, msg_size -= tocpy);
 			LBYTE = msg_size;
 		}
 		return 0;

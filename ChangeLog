@@ -1,3 +1,8 @@
+2008-05-08 Roland Stigge <stigge@antcom.de>
+
+	* base/sched/liblxrt/touchall.c: avoid using Linux "asm/page.h" in
+	  user space by calling glibc "getpagesize" to get arch page size.
+
 2008-05-06 Paolo Mantegazza <mantegazza@aero.polimi.it>
 
 	* base/arch/x86_64/hal/hal.immed: grab exceptions as in i386, process

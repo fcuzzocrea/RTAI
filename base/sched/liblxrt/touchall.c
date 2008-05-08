@@ -19,15 +19,9 @@
 
 #include <stdio.h>
 #include <stdlib.h>
-#include <asm/page.h>
 #include <sys/user.h>
 #include <sys/mman.h>
 #include <malloc.h>
-
-#include <asm/rtai_atomic.h>
-#ifdef _RTAI_ASM_PPC_ATOMIC_H
-#include <asm-ppc/page.h>
-#endif
 
 #define TOUCH_BUFSIZE 256
 #define GROW_STACK (64*1024)
@@ -36,10 +30,11 @@
 
 void touch_area(void *begin, size_t len, int writeable) {
 	volatile char *ptr = begin;
-	int i;
+	int i, page_size;
 	volatile int tmp;
 	
-	for(i=0;i<len;i+=PAGE_SIZE) {
+	page_size = getpagesize();
+	for(i=0;i<len;i+=page_size) {
 		tmp=ptr[i];
 	/*	printf("R:%p",ptr+i); */
 		if(writeable) {

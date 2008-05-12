@@ -1744,7 +1744,7 @@ static inline long long rtai_usrq_dispatcher (unsigned long srq, unsigned long l
 }
 
 #include <asm/rtai_usi.h>
-long long (*rtai_lxrt_dispatcher)(unsigned long, unsigned long, void *);
+long long (*rtai_lxrt_dispatcher)(unsigned long, unsigned long);
 
 static int (*sched_intercept_syscall_prologue)(struct pt_regs *);
 
@@ -1753,7 +1753,7 @@ static int intercept_syscall_prologue(unsigned long event, struct pt_regs *regs)
 	if (likely(regs->LINUX_SYSCALL_NR >= RTAI_SYSCALL_NR)) {
 		unsigned long srq  = regs->LINUX_SYSCALL_REG1;
 		IF_IS_A_USI_SRQ_CALL_IT(srq, regs->LINUX_SYSCALL_REG2, (long long *)regs->LINUX_SYSCALL_REG3, regs->LINUX_SYSCALL_FLAGS, 1);
-		*((long long *)regs->LINUX_SYSCALL_REG3) = srq > RTAI_NR_SRQS ? rtai_lxrt_dispatcher(srq, regs->LINUX_SYSCALL_REG2, regs) : rtai_usrq_dispatcher(srq, regs->LINUX_SYSCALL_REG2);
+		*((long long *)regs->LINUX_SYSCALL_REG3) = srq > RTAI_NR_SRQS ? rtai_lxrt_dispatcher(srq, regs->LINUX_SYSCALL_REG2) : rtai_usrq_dispatcher(srq, regs->LINUX_SYSCALL_REG2);
 		if (!in_hrt_mode(srq = rtai_cpuid())) {
 			hal_test_and_fast_flush_pipeline(srq);
 			return 0;
@@ -1768,7 +1768,7 @@ asmlinkage int rtai_syscall_dispatcher (struct pt_regs *regs)
 {
 	unsigned long srq  = regs->eax;
 	IF_IS_A_USI_SRQ_CALL_IT(srq, regs->ecx, (long long *)regs->edx, regs->eflags, 0);
-	*((long long *)regs->edx) = srq > RTAI_NR_SRQS ? rtai_lxrt_dispatcher(srq, regs->ecx, regs) : rtai_usrq_dispatcher(srq, regs->ecx);
+	*((long long *)regs->edx) = srq > RTAI_NR_SRQS ? rtai_lxrt_dispatcher(srq, regs->ecx) : rtai_usrq_dispatcher(srq, regs->ecx);
 	if (!in_hrt_mode(srq = rtai_cpuid())) {
 		hal_test_and_fast_flush_pipeline(srq);
 		return 1;
@@ -1780,7 +1780,7 @@ asmlinkage int rtai_syscall_dispatcher (struct pt_regs regs)
 {
 	int cpuid;
 	IF_IS_A_USI_SRQ_CALL_IT(regs.eax, regs.ecx, (long long *)regs.edx, regs.eflags, 0);
-	*((long long *)regs.edx) = regs.eax > RTAI_NR_SRQS ? rtai_lxrt_dispatcher(regs.eax, regs.ecx, &regs) : rtai_usrq_dispatcher(regs.eax, regs.ecx);
+	*((long long *)regs.edx) = regs.eax > RTAI_NR_SRQS ? rtai_lxrt_dispatcher(regs.eax, regs.ecx) : rtai_usrq_dispatcher(regs.eax, regs.ecx);
 	if (!in_hrt_mode(cpuid = rtai_cpuid())) {
 		hal_test_and_fast_flush_pipeline(cpuid);
 		return 1;

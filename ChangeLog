@@ -1,9 +1,9 @@
 2008-05-13 Paolo Mantegazza <mantegazza@aero.polimi.it>
 
 	* base/sched/sys.c: revised hard/soft switches orders following 
-	  unblocking, forced soft, trap and Linux syscalls; do not allowed
-	  deletion of the RTAI real time extensions to Linux sched structs
-	  from other tasks.
+	  unblocking, forced soft, trap and Linux syscalls; do not allow
+	  deletion from other tasks of the RTAI real time extensions of 
+	  Linux sched structs.
 	* base/arch/*/hal: redefine lxrt dispatcher arg list to fit sys.c
 	  related change.
 

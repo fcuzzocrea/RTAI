@@ -6867,7 +6867,7 @@ new file mode 100644
 index 0000000..3d9c1e3
 --- /dev/null
 +++ b/kernel/ipipe/core.c
-@@ -0,0 +1,1633 @@
+@@ -0,0 +1,1630 @@
 +/* -*- linux-c -*-
 + * linux/kernel/ipipe/core.c
 + *
@@ -7828,15 +7828,12 @@ index 0000000..3d9c1e3
 +			rank = __ipipe_ffnz(submask);
 +			irq = (level << IPIPE_IRQ_ISHIFT) + rank;
 +
-+			if (test_bit(IPIPE_LOCK_FLAG, &ipd->irqs[irq].control)) {
-+				__clear_bit(rank, &ipipe_this_cpudom_var(irqpend_lomask)[level]);
-+				continue;
-+			}
-+
 +			__clear_bit(rank, &ipipe_this_cpudom_var(irqpend_lomask)[level]);
 +
 +			if (ipipe_this_cpudom_var(irqpend_lomask)[level] == 0)
 +				__clear_bit(level, &ipipe_this_cpudom_var(irqpend_himask));
++			if (test_bit(IPIPE_LOCK_FLAG, &ipd->irqs[irq].control))
++				continue;
 +
 +			__set_bit(IPIPE_STALL_FLAG, &ipipe_this_cpudom_var(status));
 +

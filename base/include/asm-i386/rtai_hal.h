@@ -568,7 +568,7 @@ static inline void rt_spin_unlock_irqrestore(unsigned long flags, spinlock_t *lo
 	rtai_restore_flags(flags);
 }
 
-#if RTAI_NR_CPUS > 0
+#if RTAI_NR_CPUS > 2
 
 // taken from Linux, see the related code there for an explanation
 

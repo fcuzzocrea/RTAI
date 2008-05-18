@@ -1,3 +1,10 @@
+2008-05-18 Paolo Mantegazza <mantegazza@aero.polimi.it>
+
+	* base/sched/sched.c: revised oneshot firing; when the shot has
+	  been overrun already we basically avoid causing a timer interrupt
+	  by pending a call to the timer handler, which will be served when
+	  the task context has been done.
+
 2008-05-13 Paolo Mantegazza <mantegazza@aero.polimi.it>
 
 	* base/sched/sys.c: revised hard/soft switches orders following 
@@ -129,15 +136,16 @@
 
 2008-03-08 Pierangelo Masarati <masarati@aero.polimi.it>
 
-	* Fix for Module.symvers (thanks to patch from Paul)
+	* Fix for Module.symvers (thanks to a patch from Paul Corner,
+	  <paul_c@tuxcnc.org> )
 	* Minor build cleanup
 
 2008-03-06 Paolo Mantegazza <mantegazza@aero.polimi.it>
 
 	* base/include/rtai_netrpc.h: extend 32/64 operability to kernl/user
-	  space remote nteractions.
+	  space remote interactions.
 	* base/ipc/netrpc.c: use an inlined function of rtai_netrpc.h to 
-	  reset remote adrresses.
+	  reset remote adresses.
 
 2008-03-05 Paolo Mantegazza <mantegazza@aero.polimi.it>
 

@@ -969,7 +969,6 @@ sched_soft:
 			LOCK_LINUX(cpuid);
 			enq_soft_ready_task(rt_current);
 			rt_smp_current[cpuid] = rt_current;
-			return;
 		}
 	}
 sched_exit:

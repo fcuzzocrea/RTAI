@@ -487,9 +487,9 @@ static inline long long handle_lxrt_request (unsigned int lxsrq, long *arg, RT_T
 		}
 
 		case NONROOT_HRT: {
-			current->cap_effective |= ((1 << CAP_IPC_LOCK)  |
-						   (1 << CAP_SYS_RAWIO) | 
-						   (1 << CAP_SYS_NICE));
+			cap_raise(current->cap_effective, CAP_IPC_LOCK);
+			cap_raise(current->cap_effective, CAP_SYS_RAWIO);
+			cap_raise(current->cap_effective, CAP_SYS_NICE);
 			return 0;
 		}
 

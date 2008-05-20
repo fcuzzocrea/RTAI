@@ -1065,10 +1065,10 @@ int _rtai_8254_timer_handler(struct pt_regs regs)
 		HAL_TICK_REGS.ebp    = regs.ebp;
 #endif /* CONFIG_SMP && CONFIG_FRAME_POINTER */
 #else
-		__raw_get_cpu_var(__ipipe_tick_regs).eflags = regs.eflags;
-		__raw_get_cpu_var(__ipipe_tick_regs).eip    = regs.eip;
-		__raw_get_cpu_var(__ipipe_tick_regs).xcs    = regs.xcs;
-		__raw_get_cpu_var(__ipipe_tick_regs).ebp    = regs.ebp;
+		__raw_get_cpu_var(__ipipe_tick_regs).REG_FLAGS = regs.REG_FLAGS;
+		__raw_get_cpu_var(__ipipe_tick_regs).REG_IP    = regs.REG_IP;
+		__raw_get_cpu_var(__ipipe_tick_regs).REG_CS    = regs.REG_CS;
+		__raw_get_cpu_var(__ipipe_tick_regs).REG_BP    = regs.REG_BP;
 #endif
 		hal_fast_flush_pipeline(cpuid);
 #if defined(CONFIG_SMP) && LINUX_VERSION_CODE >= KERNEL_VERSION(2,4,32)
@@ -1505,7 +1505,7 @@ static int rtai_hirq_dispatcher (struct pt_regs regs)
 #if LINUX_VERSION_CODE < KERNEL_VERSION(2,6,18)
 	if (rtai_realtime_irq[irq = regs.orig_eax & 0xFF].handler) {
 #else
-	if (rtai_realtime_irq[irq = ~regs.orig_eax].handler) {
+	if (rtai_realtime_irq[irq = ~regs.REG_ORIG_AX].handler) {
 #endif
 		unsigned long sflags;
 #ifdef RTAI_SYSCALLS_USE_HIRQ_DISPATCHER
@@ -1552,10 +1552,10 @@ static int rtai_hirq_dispatcher (struct pt_regs regs)
 		HAL_TICK_REGS.ebp    = regs.ebp;
 #endif /* CONFIG_SMP && CONFIG_FRAME_POINTER */
 #else
-		__raw_get_cpu_var(__ipipe_tick_regs).eflags = regs.eflags;
-		__raw_get_cpu_var(__ipipe_tick_regs).eip    = regs.eip;
-		__raw_get_cpu_var(__ipipe_tick_regs).xcs    = regs.xcs;
-		__raw_get_cpu_var(__ipipe_tick_regs).ebp    = regs.ebp;
+		__raw_get_cpu_var(__ipipe_tick_regs).REG_FLAGS = regs.REG_FLAGS;
+		__raw_get_cpu_var(__ipipe_tick_regs).REG_IP    = regs.REG_IP;
+		__raw_get_cpu_var(__ipipe_tick_regs).REG_CS    = regs.REG_CS;
+		__raw_get_cpu_var(__ipipe_tick_regs).REG_BP    = regs.REG_BP;
 #endif
 	}
 	hal_fast_flush_pipeline(cpuid);
@@ -1766,9 +1766,9 @@ static int intercept_syscall_prologue(unsigned long event, struct pt_regs *regs)
 #ifdef RTAI_SYSCALLS_USE_HIRQ_DISPATCHER
 asmlinkage int rtai_syscall_dispatcher (struct pt_regs *regs)
 {
-	unsigned long srq  = regs->eax;
-	IF_IS_A_USI_SRQ_CALL_IT(srq, regs->ecx, (long long *)regs->edx, regs->eflags, 0);
-	*((long long *)regs->edx) = srq > RTAI_NR_SRQS ? rtai_lxrt_dispatcher(srq, regs->ecx) : rtai_usrq_dispatcher(srq, regs->ecx);
+	unsigned long srq = regs->LINUX_SYSCALL_RETREG;
+	IF_IS_A_USI_SRQ_CALL_IT(srq, regs->LINUX_SYSCALL_REG2, (long long *)regs->LINUX_SYSCALL_REG3, regs->LINUX_SYSCALL_FLAGS, 0);
+	*((long long *)regs->LINUX_SYSCALL_REG3) = srq > RTAI_NR_SRQS ? rtai_lxrt_dispatcher(srq, regs->LINUX_SYSCALL_REG2) : rtai_usrq_dispatcher(srq, regs->LINUX_SYSCALL_REG2);
 	if (!in_hrt_mode(srq = rtai_cpuid())) {
 		hal_test_and_fast_flush_pipeline(srq);
 		return 1;
@@ -1779,8 +1779,8 @@ asmlinkage int rtai_syscall_dispatcher (struct pt_regs *regs)
 asmlinkage int rtai_syscall_dispatcher (struct pt_regs regs)
 {
 	int cpuid;
-	IF_IS_A_USI_SRQ_CALL_IT(regs.eax, regs.ecx, (long long *)regs.edx, regs.eflags, 0);
-	*((long long *)regs.edx) = regs.eax > RTAI_NR_SRQS ? rtai_lxrt_dispatcher(regs.eax, regs.ecx) : rtai_usrq_dispatcher(regs.eax, regs.ecx);
+	IF_IS_A_USI_SRQ_CALL_IT(regs.LINUX_SYSCALL_RETREG, regs.LINUX_SYSCALL_REG2, (long long *)regs.LINUX_SYSCALL_REG3, regs.LINUX_SYSCALL_FLAGS, 0);
+	*((long long *)regs.LINUX_SYSCALL_REG3) = regs.LINUX_SYSCALL_RETREG > RTAI_NR_SRQS ? rtai_lxrt_dispatcher(regs.LINUX_SYSCALL_RETREG, regs.LINUX_SYSCALL_REG2) : rtai_usrq_dispatcher(regs.LINUX_SYSCALL_RETREG, regs.LINUX_SYSCALL_REG2);
 	if (!in_hrt_mode(cpuid = rtai_cpuid())) {
 		hal_test_and_fast_flush_pipeline(cpuid);
 		return 1;

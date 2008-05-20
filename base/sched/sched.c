@@ -556,15 +556,7 @@ if (CONFIG_RTAI_ALLOW_RR && rt_current->policy > 0) { \
 	} \
 } 
 
-#define ONESHOT_TASK_TO_SCHEDULE() \
-do { \
-	prio = (new_task = rt_linux_task.rnext)->priority; \
-	if (CONFIG_RTAI_ALLOW_RR && new_task->policy > 0) { \
-		new_task->yield_time = rt_times.tick_time + new_task->rr_remaining; \
-	} \
-} while (0)
-
-#define PERIODIC_TASK_TO_SCHEDULE() \
+#define TASK_TO_SCHEDULE() \
 do { \
 	new_task = rt_linux_task.rnext; \
 	if (CONFIG_RTAI_ALLOW_RR && new_task->policy > 0) { \
@@ -773,7 +765,8 @@ static void rt_schedule_on_schedule_ipi(void)
 
 		rt_time_h = rdtsc() + rt_half_tick;
 		wake_up_timed_tasks(cpuid);
-		ONESHOT_TASK_TO_SCHEDULE();
+		TASK_TO_SCHEDULE();
+		prio = new_task->priority;
 
 		RR_INTR_TIME((prio == RT_SCHED_LINUX_PRIORITY) && !shot_fired);
 		task = &rt_linux_task;
@@ -796,7 +789,7 @@ static void rt_schedule_on_schedule_ipi(void)
 			}
 		}
 	} else {
-		PERIODIC_TASK_TO_SCHEDULE();
+		TASK_TO_SCHEDULE();
 		sched_release_global_lock(cpuid);
 	}
 
@@ -857,7 +850,8 @@ void rt_schedule(void)
 
 		rt_time_h = rdtsc() + rt_half_tick;
 		wake_up_timed_tasks(cpuid);
-		ONESHOT_TASK_TO_SCHEDULE();
+		TASK_TO_SCHEDULE();
+		prio = new_task->priority;
 
 		islnx = (prio == RT_SCHED_LINUX_PRIORITY) && !shot_fired;
 		RR_INTR_TIME(islnx);
@@ -898,7 +892,7 @@ void rt_schedule(void)
 			}
 		}
 	} else {
-		PERIODIC_TASK_TO_SCHEDULE();
+		TASK_TO_SCHEDULE();
 		sched_release_global_lock(cpuid);
 	}
 
@@ -1191,11 +1185,12 @@ timer_handler_:
 	sched_get_global_lock(cpuid);
 	wake_up_timed_tasks(cpuid);
 	RR_YIELD();
+	TASK_TO_SCHEDULE();
 
 	if (oneshot_timer) {
 		int prio, islnx, preempt;
 
-		ONESHOT_TASK_TO_SCHEDULE();
+		prio = new_task->priority;
 		shot_fired = 0;
 		rt_times.intr_time = rt_times.tick_time + ONESHOT_SPAN;
 		islnx = (prio == RT_SCHED_LINUX_PRIORITY);
@@ -1238,7 +1233,6 @@ timer_handler_:
 			}
 		}
 	} else {
-		PERIODIC_TASK_TO_SCHEDULE();
 		sched_release_global_lock(cpuid);
 		rt_times.intr_time += rt_times.periodic_tick;
                 rt_set_timer_delay(0);

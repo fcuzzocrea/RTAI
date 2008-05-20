@@ -796,8 +796,8 @@ static void rt_schedule_on_schedule_ipi(void)
 			}
 		}
 	} else {
-		sched_release_global_lock(cpuid);
 		PERIODIC_TASK_TO_SCHEDULE();
+		sched_release_global_lock(cpuid);
 	}
 
 	if (new_task != rt_current) {
@@ -898,8 +898,8 @@ void rt_schedule(void)
 			}
 		}
 	} else {
-		sched_release_global_lock(cpuid);
 		PERIODIC_TASK_TO_SCHEDULE();
+		sched_release_global_lock(cpuid);
 	}
 
 	if (new_task != rt_current) {
@@ -1239,8 +1239,8 @@ timer_handler_:
 			}
 		}
 	} else {
-		sched_release_global_lock(cpuid);
 		PERIODIC_TASK_TO_SCHEDULE();
+		sched_release_global_lock(cpuid);
 		rt_times.intr_time += rt_times.periodic_tick;
                 rt_set_timer_delay(0);
 	}

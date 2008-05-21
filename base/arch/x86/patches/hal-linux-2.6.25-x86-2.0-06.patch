@@ -2758,7 +2758,7 @@ index 0000000..7a6d403
 +extern struct desc_struct idt_table[];
 +#else
 +extern ipipe_spinlock_t i8259A_lock;
-+extern struct gate_struct idt_table[];
++extern gate_desc idt_table[];
 +EXPORT_PER_CPU_SYMBOL(vector_irq);
 +#endif
 +EXPORT_SYMBOL(idt_table);

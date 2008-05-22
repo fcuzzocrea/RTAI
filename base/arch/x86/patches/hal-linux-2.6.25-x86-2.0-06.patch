@@ -10201,7 +10201,7 @@ diff --git a/kernel/sched.c b/kernel/sched.c
 index 8dcdec6..c0cd432 100644
 --- a/kernel/sched.c
 +++ b/kernel/sched.c
-@@ -1905,7 +1905,7 @@ static int try_to_wake_up(struct task_st
+@@ -1842,7 +1842,7 @@ static int try_to_wake_up(struct task_st
  	smp_wmb();
  	rq = task_rq_lock(p, &flags);
  	old_state = p->state;
@@ -10210,7 +10210,7 @@ index 8dcdec6..c0cd432 100644
  		goto out;
  
  	if (p->se.on_rq)
-@@ -2254,21 +2254,28 @@ asmlinkage void schedule_tail(struct tas
+@@ -2191,21 +2191,28 @@ asmlinkage void schedule_tail(struct tas
  #endif
  	if (current->set_child_tid)
  		put_user(task_pid_vnr(current), current->set_child_tid);
@@ -10234,21 +10234,21 @@ index 8dcdec6..c0cd432 100644
  	oldmm = prev->active_mm;
 +
 +if (!rq) {
-+        switch_mm(oldmm, next->active_mm, next);
-+        if (!mm) enter_lazy_tlb(oldmm, next);
++	switch_mm(oldmm, next->active_mm, next);
++	if (!mm) enter_lazy_tlb(oldmm, next);
 +} else {
 +        prepare_task_switch(rq, prev, next);
  	/*
  	 * For paravirt, this is coupled with an exit in switch_to to
  	 * combine the page table reload and the switch backend into
-@@ -2296,11 +2303,17 @@ context_switch(struct rq *rq, struct tas
+@@ -2233,11 +2240,17 @@ context_switch(struct rq *rq, struct tas
  #ifndef __ARCH_WANT_UNLOCKED_CTXSW
  	spin_release(&rq->lock.dep_map, 1, _THIS_IP_);
  #endif
 -
 +}
 +#ifdef CONFIG_IPIPE
-+        next->ptd[IPIPE_ROOT_NPTDKEYS - 1] = prev;
++	next->ptd[IPIPE_ROOT_NPTDKEYS - 1] = prev;
 +#endif /* CONFIG_IPIPE */
  	/* Here we just switch the register state and the stack. */
  	switch_to(prev, next, prev);
@@ -10260,7 +10260,7 @@ index 8dcdec6..c0cd432 100644
  	/*
  	 * this_rq must be evaluated again because prev may have moved
  	 * CPUs since it called schedule(), thus the 'rq' on its stack
-@@ -2308,6 +2321,10 @@ context_switch(struct rq *rq, struct tas
+@@ -2245,6 +2258,10 @@ context_switch(struct rq *rq, struct tas
  	 */
  	finish_task_switch(this_rq(), prev);
  }
@@ -10271,7 +10271,7 @@ index 8dcdec6..c0cd432 100644
  
  /*
   * nr_running, nr_uninterruptible and nr_context_switches:
-@@ -3843,6 +3860,7 @@ void scheduler_tick(void)
+@@ -3780,6 +3797,7 @@ void scheduler_tick(void)
  
  void __kprobes add_preempt_count(int val)
  {
@@ -10279,7 +10279,7 @@ index 8dcdec6..c0cd432 100644
  	/*
  	 * Underflow?
  	 */
-@@ -3859,6 +3877,7 @@ EXPORT_SYMBOL(add_preempt_count);
+@@ -3796,6 +3814,7 @@ EXPORT_SYMBOL(add_preempt_count);
  
  void __kprobes sub_preempt_count(int val)
  {
@@ -10287,7 +10287,7 @@ index 8dcdec6..c0cd432 100644
  	/*
  	 * Underflow?
  	 */
-@@ -3970,6 +3989,11 @@ need_resched:
+@@ -3907,6 +3926,11 @@ need_resched:
  	rcu_qsctr_inc(cpu);
  	prev = rq->curr;
  	switch_count = &prev->nivcsw;
@@ -10299,7 +10299,7 @@ index 8dcdec6..c0cd432 100644
  
  	release_kernel_lock(prev);
  need_resched_nonpreemptible:
-@@ -4014,7 +4038,8 @@ need_resched_nonpreemptible:
+@@ -3951,7 +3975,8 @@ need_resched_nonpreemptible:
  		rq->curr = next;
  		++*switch_count;
  
@@ -10309,7 +10309,7 @@ index 8dcdec6..c0cd432 100644
  		/*
  		 * the context switch might have flipped the stack from under
  		 * us, hence refresh the local variables.
-@@ -4699,6 +4724,7 @@ recheck:
+@@ -4636,6 +4661,7 @@ recheck:
  
  	oldprio = p->prio;
  	__setscheduler(rq, p, policy, param->sched_priority);
@@ -10317,7 +10317,7 @@ index 8dcdec6..c0cd432 100644
  
  	if (running)
  		p->sched_class->set_curr_task(rq);
-@@ -5014,6 +5040,7 @@ static void __cond_resched(void)
+@@ -4951,6 +4977,7 @@ static void __cond_resched(void)
  #ifdef CONFIG_DEBUG_SPINLOCK_SLEEP
  	__might_sleep(__FILE__, __LINE__);
  #endif
@@ -10325,7 +10325,7 @@ index 8dcdec6..c0cd432 100644
  	/*
  	 * The BKS might be reacquired before we have dropped
  	 * PREEMPT_ACTIVE, which could trigger a second
-@@ -8202,3 +8229,60 @@ struct cgroup_subsys cpuacct_subsys = {
+@@ -8138,3 +8165,60 @@ struct cgroup_subsys cpuacct_subsys = {
  	.subsys_id = cpuacct_subsys_id,
  };
  #endif	/* CONFIG_CGROUP_CPUACCT */

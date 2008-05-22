@@ -61,14 +61,18 @@
 #define _RTAI_SCHED_XN_H
 
 #if defined(CONFIG_RTAI_IMMEDIATE_LINUX_SYSCALL) && CONFIG_RTAI_IMMEDIATE_LINUX_SYSCALL
+
 #if LINUX_VERSION_CODE < KERNEL_VERSION(2,6,0)
 #define SKIP_IMMEDIATE_LINUX_SYSCALL() \
 	if (regs->LINUX_SYSCALL_NR == __NR_kill || regs->LINUX_SYSCALL_NR == __NR_rt_sigsuspend) { return 0; }
 #else
 #define SKIP_IMMEDIATE_LINUX_SYSCALL()
 #endif
+
 #else
+
 #define SKIP_IMMEDIATE_LINUX_SYSCALL()  do { return 0; } while (0)
+
 #endif
 
 #ifdef RTAI_TRIOSS

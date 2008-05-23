@@ -337,6 +337,7 @@ target_alias = @target_alias@
 @CONFIG_X86_TRUE@ARCHDIR = i386
 SUBDIRS = $(ARCHDIR)
 modext = @RTAI_MODULE_EXT@
+EXTRA_DIST = x86/patches
 all: all-recursive
 
 .SUFFIXES:
@@ -513,6 +514,7 @@ distclean-tags:
 	-rm -f TAGS ID GTAGS GRTAGS GSYMS GPATH tags
 
 distdir: $(DISTFILES)
+	$(mkdir_p) $(distdir)/x86
 	@srcdirstrip=`echo "$(srcdir)" | sed 's|.|.|g'`; \
 	topsrcdirstrip=`echo "$(top_srcdir)" | sed 's|.|.|g'`; \
 	list='$(DISTFILES)'; for file in $$list; do \

@@ -1,3 +1,7 @@
+2008-05-23 Pierangelo Masarati <masarati@aero.polimi.it>
+
+	* RTAI 3.6.1
+
 2008-05-08 Roland Stigge <stigge@antcom.de>
 
 	* base/sched/liblxrt/touchall.c: avoid using Linux "asm/page.h" in

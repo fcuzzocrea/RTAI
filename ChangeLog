@@ -1,3 +1,11 @@
+2008-05-32 Paolo Mantegazza <mantegazza@aero.polimi.it>
+
+	* base/sched/sched.c: use macros for common parts of revised oneshot
+	  programming; ifdef shots overruns to allow using the old mode for
+	  testing.
+	* base/archx86s/hal and base/include/asm-x86s: revised, with some
+	  cleaning, while porting to 2.6.25.
+
 2008-05-18 Paolo Mantegazza <mantegazza@aero.polimi.it>
 
 	* base/sched/sched.c: revised oneshot firing; when the shot has

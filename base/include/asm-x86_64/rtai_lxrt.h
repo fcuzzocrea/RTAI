@@ -43,10 +43,13 @@
 
 #define REG_ORIG_AX           orig_ax
 #define REG_SP                sp
+#define REG_SS                ss
 #define REG_FLAGS             flags
 #define REG_IP                ip
 #define REG_CS                cs
 #define REG_BP                bp
+#define REG_BX                bx
+#define REG_CX                cx
 
 #define RTAI_SYSCALL_CODE     di
 #define RTAI_SYSCALL_ARGS     si
@@ -66,10 +69,13 @@
 
 #define REG_ORIG_AX           orig_rax
 #define REG_SP                rsp
+#define REG_SS                ss
 #define REG_FLAGS             eflags
 #define REG_IP                rip
-#define REG_CS                rcs
+#define REG_CS                cs
 #define REG_BP                rbp
+#define REG_BX                rbx
+#define REG_CX                rcx
 
 #define RTAI_SYSCALL_CODE     rdi
 #define RTAI_SYSCALL_ARGS     rsi
@@ -90,8 +96,8 @@
 
 #define LXRT_DO_IMMEDIATE_LINUX_SYSCALL(regs) \
 	do { \
-		regs->rcx = regs->r10; \
-		regs->LINUX_SYSCALL_RETREG = ((asmlinkage int (*)(long, ...))sys_call_table[regs->rax])(regs->rdi, regs->rsi, regs->rdx, regs->rcx, regs->rax, regs->r8, regs->r9, regs->r10, regs->r11, regs->rbx, regs->rbp, regs->r12, regs->r13, regs->r14, regs->r15); \
+		regs->REG_CX = regs->r10; \
+		regs->LINUX_SYSCALL_RETREG = ((asmlinkage int (*)(long, ...))sys_call_table[regs->LINUX_SYSCALL_RETREG])(regs->LINUX_SYSCALL_REG1, regs->LINUX_SYSCALL_REG2, regs->LINUX_SYSCALL_REG3, regs->REG_CX, regs->LINUX_SYSCALL_RETREG, regs->r8, regs->r9, regs->r10, regs->r11, regs->REG_BX, regs->REG_BP, regs->r12, regs->r13, regs->r14, regs->r15); \
 	} while (0)
 
 #define SET_LXRT_RETVAL_IN_SYSCALL(regs, retval) \

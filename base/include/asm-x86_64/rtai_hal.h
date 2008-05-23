@@ -353,7 +353,7 @@ extern struct calibration_data rtai_tunables;
 
 extern volatile unsigned long rtai_cpu_lock[];
 
-#if LINUX_VERSION_CODE > KERNEL_VERSION(2,6,18)
+#if LINUX_VERSION_CODE > KERNEL_VERSION(2,6,18) && LINUX_VERSION_CODE < KERNEL_VERSION(2,6,25)
 #define apic_write_around apic_write
 #endif
 
@@ -825,19 +825,6 @@ void rt_unmask_irq(unsigned irq);
 void rt_ack_irq(unsigned irq);
 
 /*@}*/
-
-// this is machine dominance and must stay in our hands, long live DOS!
-#define rtai_do_x86int(irq, handler) \
-do { \
-	__asm__ __volatile__ ( "pushfl; push %%cs; call *%1": : "a" (irq), "m" (handler)); \
-} while (0)
-
-struct gate_struct rtai_set_gate_vector (unsigned vector, int type, int dpl, void *handler);
-
-void rtai_reset_gate_vector(unsigned vector, struct gate_struct e);
-// end of machine dominance
-
-void rt_do_irq(unsigned irq);
 
 int rt_request_linux_irq(unsigned irq,
 			 void *handler,

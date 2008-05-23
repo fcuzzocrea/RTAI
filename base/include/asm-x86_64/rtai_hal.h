@@ -15,8 +15,8 @@
  *   Copyright &copy 2002 Philippe Gerum.
  *
  *   Porting to x86_64 architecture:
- *   Copyright &copy; 2005 Paolo Mantegazza, \n
- *   Copyright &copy; 2005 Daniele Gasperini \n
+ *   Copyright &copy; 2005-2008 Paolo Mantegazza, \n
+ *   Copyright &copy; 2005      Daniele Gasperini \n
  *
  *   This program is free software; you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by

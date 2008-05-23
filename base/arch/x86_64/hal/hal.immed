@@ -15,7 +15,7 @@
  *   Copyright &copy 2002 Philippe Gerum.
  *
  *   Porting to x86_64 architecture:
- *   Copyright &copy; 2005 Paolo Mantegazza, \n
+ *   Copyright &copy; 2005-2008 Paolo Mantegazza, \n
  *   Copyright &copy; 2005 Daniele Gasperini \n
  *
  *   This program is free software; you can redistribute it and/or modify
@@ -42,10 +42,6 @@
  *
  *@{*/
 
-
-#if 0	/* defined & set in rtai_config.h */
-#define CONFIG_RTAI_DONT_DISPATCH_CORE_IRQS  0
-#endif
 
 #include <linux/version.h>
 #include <linux/slab.h>
@@ -133,8 +129,6 @@ struct { volatile int locked, rqsted; } rt_scheduling[RTAI_NR_CPUS];
 static void (*rtai_isr_hook)(int cpuid);
 #endif /* CONFIG_RTAI_SCHED_ISR_LOCK */
 
-extern struct gate_struct idt_table[];
-
 struct hal_domain_struct rtai_domain;
 
 struct rtai_realtime_irq_s rtai_realtime_irq[RTAI_NR_IRQS];
@@ -167,12 +161,6 @@ static atomic_t rtai_sync_count = ATOMIC_INIT(1);
 static int rtai_last_8254_counter2;
 
 static RTIME rtai_ts_8254;
-
-//#define RTAI_SYSCALLS_USE_HIRQ_DISPATCHER
-
-#ifndef RTAI_SYSCALLS_USE_HIRQ_DISPATCHER
-static struct gate_struct rtai_sysvec;
-#endif
 
 static RT_TRAP_HANDLER rtai_trap_handler;
 
@@ -869,290 +857,6 @@ irqreturn_t rtai_broadcast_to_local_timers (int irq, void *dev_id, struct pt_reg
 #define HAL_UNLOCK_LINUX()  do { rtai_cli(); ROOT_STATUS_VAL(cpuid) = sflags; } while (0)
 #endif
 
-#if LINUX_VERSION_CODE > KERNEL_VERSION(2,6,18)
-#define __ALIGN_STR ".align 16,0x90"
-#endif
-
-#ifndef STR
-#define __STR(x) #x
-#define STR(x) __STR(x)
-#endif
-
-#ifndef SYMBOL_NAME_STR
-#define SYMBOL_NAME_STR(X) #X
-#endif
-
-#if CONFIG_RTAI_DONT_DISPATCH_CORE_IRQS
-
-#define SET_INTR_GATE(vector, handler, save) \
-	do { save = rtai_set_gate_vector(vector, GATE_INTERRUPT, 0, handler); } while (0)
-#define RESET_INTR_GATE(vector, save) \
-	do { rtai_reset_gate_vector(vector, save); } while (0)
-
-#ifdef CONFIG_SMP
-int _rtai_sched_on_ipi_handler(void)
-{
-        unsigned long cpuid;
-        unsigned long sflags;
-
-        RTAI_SCHED_ISR_LOCK();
-        HAL_LOCK_LINUX();
-        __ack_APIC_irq();
-//      rtai_realtime_irq[SCHED_IPI].irq_ack(SCHED_IPI);
-//      hal_root_domain->irqs[SCHED_IPI].acknowledge(SCHED_IPI);
-        ((void (*)(void))rtai_realtime_irq[SCHED_IPI].handler)();
-        HAL_UNLOCK_LINUX();
-        RTAI_SCHED_ISR_UNLOCK();
-	if (!test_bit(IPIPE_STALL_FLAG, ROOT_STATUS_ADR(cpuid))) {
-                rtai_sti();
-                hal_fast_flush_pipeline(cpuid);
-#if defined(CONFIG_SMP) &&  LINUX_VERSION_CODE < KERNEL_VERSION(2,6,19)
-                __set_bit(IPIPE_STALL_FLAG, ROOT_STATUS_ADR(rtai_cpuid()]);
-#endif
-                return 1;
-        }
-        return 0;
-}
-
-void rtai_sched_on_ipi_handler (void);
-	__asm__ ( \
-        "\n" __ALIGN_STR"\n\t" \
-        SYMBOL_NAME_STR(rtai_sched_on_ipi_handler) ":\n\t" \
-	"\n .p2align\n" \
-	"pushq $0\n" \
-	"cld\n" \
-	"sub    $0x48,%rsp\n" \
-	"mov    %rdi,0x40(%rsp)\n" \
-	"mov    %rsi,0x38(%rsp)\n" \
-	"mov    %rdx,0x30(%rsp)\n" \
-	"mov    %rcx,0x28(%rsp)\n" \
-	"mov    %rax,0x20(%rsp)\n" \
-	"mov    %r8,0x18(%rsp)\n" \
-	"mov    %r9,0x10(%rsp)\n" \
-	"mov    %r10,0x8(%rsp)\n" \
-	"mov    %r11,(%rsp)\n" \
-	"lea    0xffffffffffffffd0(%rsp),%rdi\n" \
-	"testl  $0x3,0x88(%rdi)\n" \
-	"je 1f\n" \
-	"swapgs\n" \
-	"1:addl   $0x1,%gs:0x30\n" \
-	"mov    %gs:0x38,%rax\n" \
-	"cmove  %rax,%rsp\n" \
-	"push   %rdi\n" \
-        "call "SYMBOL_NAME_STR(_rtai_sched_on_ipi_handler)"\n\t" \
-	"test   %rax,%rax\n" \
-	"jnz  ret_from_intr\n" \
-	"pop    %rdi\n" \
-	"cli\n" \
-	"subl   $0x1,%gs:0x30\n" \
-	"lea    0x30(%rdi),%rsp\n" \
-	"mov    %gs:0x18,%rcx\n" \
-	"sub    $0x1fd8,%rcx\n" \
-	"testl  $0x3,0x58(%rsp)\n" \
-	"je 2f\n" \
-	"swapgs\n" \
-	"2:mov    (%rsp),%r11\n" \
-	"mov    0x8(%rsp),%r10\n" \
-	"mov    0x10(%rsp),%r9\n" \
-	"mov    0x18(%rsp),%r8\n" \
-	"mov    0x20(%rsp),%rax\n" \
-	"mov    0x28(%rsp),%rcx\n" \
-	"mov    0x30(%rsp),%rdx\n" \
-	"mov    0x38(%rsp),%rsi\n" \
-	"mov    0x40(%rsp),%rdi\n" \
-	"add    $0x50,%rsp\n" \
-	"iretq");
-
-
-static struct gate_struct rtai_sched_on_ipi_sysvec;
-
-void rt_set_sched_ipi_gate(void)
-{
-	SET_INTR_GATE(SCHED_VECTOR, rtai_sched_on_ipi_handler, rtai_sched_on_ipi_sysvec);
-}
-
-void rt_reset_sched_ipi_gate(void)
-{
-	RESET_INTR_GATE(SCHED_VECTOR, rtai_sched_on_ipi_sysvec);
-}
-#endif
-
-int _rtai_apic_timer_handler(void)
-{
-        unsigned long cpuid;
-        unsigned long sflags;
-
-	RTAI_SCHED_ISR_LOCK();
-        HAL_LOCK_LINUX();
-        __ack_APIC_irq();
-//      rtai_realtime_irq[RTAI_APIC_TIMER_IPI].irq_ack(RTAI_APIC_TIMER_IPI);
-//      hal_root_domain->irqs[RTAI_APIC_TIMER_IPI].acknowledge(RTAI_APIC_TIMER_IPI);
-        ((void (*)(void))rtai_realtime_irq[RTAI_APIC_TIMER_IPI].handler)();
-        HAL_UNLOCK_LINUX();
-	RTAI_SCHED_ISR_UNLOCK();
-	if (!test_bit(IPIPE_STALL_FLAG, ROOT_STATUS_ADR(cpuid))) {
-                rtai_sti();
-                hal_fast_flush_pipeline(cpuid);
-#if defined(CONFIG_SMP) &&  LINUX_VERSION_CODE < KERNEL_VERSION(2,6,19)
-                __set_bit(IPIPE_STALL_FLAG, ROOT_STATUS_ADR(rtai_cpuid());
-#endif
-                return 1;
-        }
-        return 0;
-}
-
-void rtai_apic_timer_handler (void);
-	__asm__ ( \
-	"\n" __ALIGN_STR"\n\t" \
-	SYMBOL_NAME_STR(rtai_apic_timer_handler) ":\n\t" \
-	"\n .p2align\n" \
-	"pushq $0\n" \
-	"cld\n" \
-	"sub    $0x48,%rsp\n" \
-	"mov    %rdi,0x40(%rsp)\n" \
-	"mov    %rsi,0x38(%rsp)\n" \
-	"mov    %rdx,0x30(%rsp)\n" \
-	"mov    %rcx,0x28(%rsp)\n" \
-	"mov    %rax,0x20(%rsp)\n" \
-	"mov    %r8,0x18(%rsp)\n" \
-	"mov    %r9,0x10(%rsp)\n" \
-	"mov    %r10,0x8(%rsp)\n" \
-	"mov    %r11,(%rsp)\n" \
-	"lea    0xffffffffffffffd0(%rsp),%rdi\n" \
-	"testl  $0x3,0x88(%rdi)\n" \
-	"je 1f\n" \
-	"swapgs\n" \
-	"1:addl   $0x1,%gs:0x30\n" \
-	"mov    %gs:0x38,%rax\n" \
-	"cmove  %rax,%rsp\n" \
-	"push   %rdi\n" \
-	"call "SYMBOL_NAME_STR(_rtai_apic_timer_handler)"\n\t" \
-	"test   %rax,%rax\n" \
-	"jnz  ret_from_intr\n" \
-	"pop    %rdi\n" \
-	"cli\n" \
-	"subl   $0x1,%gs:0x30\n" \
-	"lea    0x30(%rdi),%rsp\n" \
-	"mov    %gs:0x18,%rcx\n" \
-	"sub    $0x1fd8,%rcx\n" \
-	"testl  $0x3,0x58(%rsp)\n" \
-	"je 2f\n" \
-	"swapgs\n" \
-	"2:mov    (%rsp),%r11\n" \
-	"mov    0x8(%rsp),%r10\n" \
-	"mov    0x10(%rsp),%r9\n" \
-	"mov    0x18(%rsp),%r8\n" \
-	"mov    0x20(%rsp),%rax\n" \
-	"mov    0x28(%rsp),%rcx\n" \
-	"mov    0x30(%rsp),%rdx\n" \
-	"mov    0x38(%rsp),%rsi\n" \
-	"mov    0x40(%rsp),%rdi\n" \
-	"add    $0x50,%rsp\n" \
-	"iretq");
-
-static struct gate_struct rtai_apic_timer_sysvec;
-
-/* this can be a prototype for a handler pending something for Linux */
-int _rtai_8254_timer_handler(struct pt_regs *regs)
-{
-        unsigned long cpuid;
-        unsigned long sflags;
-
-        RTAI_SCHED_ISR_LOCK();
-        HAL_LOCK_LINUX();
-        rtai_realtime_irq[RTAI_TIMER_8254_IRQ].irq_ack(RTAI_TIMER_8254_IRQ);
-        ((void (*)(void))rtai_realtime_irq[RTAI_TIMER_8254_IRQ].handler)();
-        HAL_UNLOCK_LINUX();
-        RTAI_SCHED_ISR_UNLOCK();
-	if (!test_bit(IPIPE_STALL_FLAG, ROOT_STATUS_ADR(cpuid))) {
-		rtai_sti();
-#if LINUX_VERSION_CODE < KERNEL_VERSION(2,6,22)
-/* specific for the Linux tick, do not cre in a generic handler */
-		HAL_TICK_REGS.eflags = regs->eflags;
-		HAL_TICK_REGS.rip    = regs->rip;
-		HAL_TICK_REGS.cs     = regs->cs;
-		HAL_TICK_REGS.rsp    = regs->rsp;
-#if defined(CONFIG_SMP) && defined(CONFIG_FRAME_POINTER) && LINUX_VERSION_CODE < KERNEL_VERSION(2,6,19)
-		HAL_TICK_REGS.rbp    = regs->rbp;
-#endif /* CONFIG_SMP && CONFIG_FRAME_POINTER */
-#else
-		__raw_get_cpu_var(__ipipe_tick_regs).rip    = regs->rip;
-		__raw_get_cpu_var(__ipipe_tick_regs).cs     = regs->cs;
-		__raw_get_cpu_var(__ipipe_tick_regs).eflags = regs->eflags;
-		__raw_get_cpu_var(__ipipe_tick_regs).rbp    = regs->rbp;
-		__raw_get_cpu_var(__ipipe_tick_regs).rsp    = regs->rsp;
-		__raw_get_cpu_var(__ipipe_tick_regs).ss     = regs->ss;
-#endif
-		hal_fast_flush_pipeline(cpuid);
-#if defined(CONFIG_SMP) && LINUX_VERSION_CODE < KERNEL_VERSION(2,6,19)
-                __set_bit(IPIPE_STALL_FLAG, ROOT_STATUS_ADR(rtai_cpuid()));
-#endif
-                return 1;
-        }
-	return 0;
-}
-
-void rtai_8254_timer_handler (void);
-	__asm__ ( \
-        "\n" __ALIGN_STR"\n\t" \
-        SYMBOL_NAME_STR(rtai_8254_timer_handler) ":\n\t" \
-	"\n .p2align\n" \
-	"pushq $0\n" \
-	"cld\n" \
-	"sub    $0x48,%rsp\n" \
-	"mov    %rdi,0x40(%rsp)\n" \
-	"mov    %rsi,0x38(%rsp)\n" \
-	"mov    %rdx,0x30(%rsp)\n" \
-	"mov    %rcx,0x28(%rsp)\n" \
-	"mov    %rax,0x20(%rsp)\n" \
-	"mov    %r8,0x18(%rsp)\n" \
-	"mov    %r9,0x10(%rsp)\n" \
-	"mov    %r10,0x8(%rsp)\n" \
-	"mov    %r11,(%rsp)\n" \
-	"lea    0xffffffffffffffd0(%rsp),%rdi\n" \
-	"testl  $0x3,0x88(%rdi)\n" \
-	"je 1f\n" \
-	"swapgs\n" \
-	"1:addl   $0x1,%gs:0x30\n" \
-	"mov    %gs:0x38,%rax\n" \
-	"cmove  %rax,%rsp\n" \
-	"push   %rdi\n" \
-	"call "SYMBOL_NAME_STR(_rtai_8254_timer_handler)"\n\t" \
-	"test   %rax,%rax\n" \
-	"jnz  ret_from_intr\n" \
-	"pop    %rdi\n" \
-	"cli\n" \
-	"subl   $0x1,%gs:0x30\n" \
-	"lea    0x30(%rdi),%rsp\n" \
-	"mov    %gs:0x18,%rcx\n" \
-	"sub    $0x1fd8,%rcx\n" \
-	"testl  $0x3,0x58(%rsp)\n" \
-	"je 2f\n" \
-	"swapgs\n" \
-	"2:mov    (%rsp),%r11\n" \
-	"mov    0x8(%rsp),%r10\n" \
-	"mov    0x10(%rsp),%r9\n" \
-	"mov    0x18(%rsp),%r8\n" \
-	"mov    0x20(%rsp),%rax\n" \
-	"mov    0x28(%rsp),%rcx\n" \
-	"mov    0x30(%rsp),%rdx\n" \
-	"mov    0x38(%rsp),%rsi\n" \
-	"mov    0x40(%rsp),%rdi\n" \
-	"add    $0x50,%rsp\n" \
-	"iretq");
-
-static struct gate_struct rtai_8254_timer_sysvec;
-
-#else
-
-#define SET_INTR_GATE(vector, handler, save) 
-#define RESET_INTR_GATE(vector, save)
-
-void rt_set_sched_ipi_gate(void) { }
-void rt_reset_sched_ipi_gate(void) { }
-
-#endif
-
 #ifdef CONFIG_SMP
 
 static unsigned long rtai_old_irq_affinity[IPIPE_NR_XIRQS];
@@ -1258,7 +962,6 @@ void rt_request_apic_timers (void (*handler)(void), struct apic_timer_setup_data
 
 	rt_release_irq(RTAI_APIC_TIMER_IPI);
 	rt_request_irq(RTAI_APIC_TIMER_IPI, (rt_irq_handler_t)handler, NULL, 0);
-	SET_INTR_GATE(RTAI_APIC_TIMER_VECTOR, rtai_apic_timer_handler, rtai_apic_timer_sysvec);
 
 	REQUEST_LINUX_IRQ_BROADCAST_TO_APIC_TIMERS();
 
@@ -1289,7 +992,6 @@ void rt_free_apic_timers(void)
 	rtai_release_tickdev();
 	rtai_sync_level = 3;
 	rtai_setup_periodic_apic(RTAI_APIC_ICOUNT,LOCAL_TIMER_VECTOR);
-	RESET_INTR_GATE(RTAI_APIC_TIMER_VECTOR, rtai_apic_timer_sysvec);
 	rt_release_irq(RTAI_APIC_TIMER_IPI);
 	rtai_critical_exit(flags);
 }
@@ -1435,7 +1137,6 @@ int rt_request_timer (void (*handler)(void), unsigned tick, int use_apic)
 		if (use_apic) {
 			rt_release_irq(RTAI_APIC_TIMER_IPI);
 			rt_request_irq(RTAI_APIC_TIMER_IPI, (rt_irq_handler_t)handler, NULL, 0);
-			SET_INTR_GATE(RTAI_APIC_TIMER_VECTOR, rtai_apic_timer_handler, rtai_apic_timer_sysvec);
 			rtai_setup_periodic_apic(tick,RTAI_APIC_TIMER_VECTOR);
 			retval = REQUEST_LINUX_IRQ_BROADCAST_TO_APIC_TIMERS();
 		} else {
@@ -1444,7 +1145,6 @@ int rt_request_timer (void (*handler)(void), unsigned tick, int use_apic)
 			outb(tick >> 8, 0x40);
 			rt_release_irq(RTAI_TIMER_8254_IRQ);
 		    	retval = rt_request_irq(RTAI_TIMER_8254_IRQ, (rt_irq_handler_t)handler, NULL, 0);
-			SET_INTR_GATE(ext_irq_vector(RTAI_TIMER_8254_IRQ), rtai_8254_timer_handler, rtai_8254_timer_sysvec);
 		}
 	} else {
 		rt_times.linux_tick = rtai_imuldiv(LATCH,rtai_tunables.cpu_freq,RTAI_FREQ_8254);
@@ -1455,7 +1155,6 @@ int rt_request_timer (void (*handler)(void), unsigned tick, int use_apic)
 		if (use_apic) {
 			rt_release_irq(RTAI_APIC_TIMER_IPI);
 			rt_request_irq(RTAI_APIC_TIMER_IPI, (rt_irq_handler_t)handler, NULL, 0);
-			SET_INTR_GATE(RTAI_APIC_TIMER_VECTOR, rtai_apic_timer_handler, rtai_apic_timer_sysvec);
 			rtai_setup_oneshot_apic(RTAI_APIC_ICOUNT,RTAI_APIC_TIMER_VECTOR);
     			retval = REQUEST_LINUX_IRQ_BROADCAST_TO_APIC_TIMERS();
 		} else {
@@ -1464,7 +1163,6 @@ int rt_request_timer (void (*handler)(void), unsigned tick, int use_apic)
 			outb(LATCH >> 8, 0x40);
 			rt_release_irq(RTAI_TIMER_8254_IRQ);
 			retval = rt_request_irq(RTAI_TIMER_8254_IRQ, (rt_irq_handler_t)handler, NULL, 0);
-			SET_INTR_GATE(ext_irq_vector(RTAI_TIMER_8254_IRQ), rtai_8254_timer_handler, rtai_8254_timer_sysvec);
 		}
 	}
 	rtai_request_tickdev();
@@ -1488,7 +1186,6 @@ void rt_free_timer (void)
 	if (used_apic) {
 		FREE_LINUX_IRQ_BROADCAST_TO_APIC_TIMERS();
 		rtai_setup_periodic_apic(RTAI_APIC_ICOUNT, LOCAL_TIMER_VECTOR);
-		RESET_INTR_GATE(RTAI_APIC_TIMER_VECTOR, rtai_apic_timer_sysvec);
 		rt_release_irq(RTAI_APIC_TIMER_IPI);
 		used_apic = 0;
 	} else {
@@ -1496,7 +1193,6 @@ void rt_free_timer (void)
 		outb(LATCH & 0xff, 0x40);
 		outb(LATCH >> 8,0x40);
 		if (!rt_release_irq(RTAI_TIMER_8254_IRQ)) {
-			RESET_INTR_GATE(ext_irq_vector(RTAI_TIMER_8254_IRQ), rtai_8254_timer_sysvec);
 		}
 	}
 	rtai_restore_flags(flags);
@@ -1549,22 +1245,10 @@ static int rtai_hirq_dispatcher(struct pt_regs *regs)
 #if LINUX_VERSION_CODE < KERNEL_VERSION(2,6,19)
         if (rtai_realtime_irq[irq = regs->orig_rax & 0xFF].handler) {
 #else
-        unsigned long vector = ~regs->orig_rax;
+        unsigned long vector = ~regs->REG_ORIG_AX;
         if (rtai_realtime_irq[irq = vector >= FIRST_SYSTEM_VECTOR ? ipipe_apic_vector_irq(vector) : __get_cpu_var(vector_irq)[vector]].handler) {
 #endif
                 unsigned long sflags;
-
-#ifdef RTAI_SYSCALLS_USE_HIRQ_DISPATCHER
-		if (irq == RTAI_SYS_IRQ) {
-			int retval;
-			asmlinkage int rtai_syscall_dispatcher(struct pt_regs *);
-			rtai_sti();
-			retval = rtai_syscall_dispatcher(regs);
-			rtai_cli();
-			return retval;
-		}
-#endif
-
                 RTAI_SCHED_ISR_LOCK();
                 HAL_LOCK_LINUX();
                 rtai_realtime_irq[irq].irq_ack(irq); mb();
@@ -1604,12 +1288,12 @@ static int rtai_hirq_dispatcher(struct pt_regs *regs)
 		HAL_TICK_REGS.rbp    = regs->rbp;
 #endif /* CONFIG_SMP && CONFIG_FRAME_POINTER */
 #else
-		__raw_get_cpu_var(__ipipe_tick_regs).rip    = regs->rip;
-		__raw_get_cpu_var(__ipipe_tick_regs).cs     = regs->cs;
-		__raw_get_cpu_var(__ipipe_tick_regs).eflags = regs->eflags;
-		__raw_get_cpu_var(__ipipe_tick_regs).rbp    = regs->rbp;
-		__raw_get_cpu_var(__ipipe_tick_regs).rsp    = regs->rsp;
-		__raw_get_cpu_var(__ipipe_tick_regs).ss     = regs->ss;
+		__raw_get_cpu_var(__ipipe_tick_regs).REG_IP    = regs->REG_IP;
+		__raw_get_cpu_var(__ipipe_tick_regs).REG_CS    = regs->REG_CS;
+		__raw_get_cpu_var(__ipipe_tick_regs).REG_FLAGS = regs->REG_FLAGS;
+		__raw_get_cpu_var(__ipipe_tick_regs).REG_BP    = regs->REG_BP;
+		__raw_get_cpu_var(__ipipe_tick_regs).REG_SP    = regs->REG_SP;
+		__raw_get_cpu_var(__ipipe_tick_regs).REG_SS    = regs->REG_SS;
 #endif
 	}
 	hal_fast_flush_pipeline(cpuid);
@@ -1751,162 +1435,11 @@ static int intercept_syscall_prologue(unsigned long event, struct pt_regs *regs)
                 }
                 return 1;
         } 
-	if (likely(sched_intercept_syscall_prologue != NULL)) {
-		if (sched_intercept_syscall_prologue(regs)) {
-	                return 1;
-		}
-	}
-	return 0;
-}
-
-int rtai_syscall_dispatcher (struct pt_regs *regs)
-{
-	unsigned long srq = regs->rax;
-	IF_IS_A_USI_SRQ_CALL_IT(srq, regs->rcx, (long long *)regs->rdx, regs->eflags, 1);
-	*((long long *)regs->rdx) = srq > RTAI_NR_SRQS ? rtai_lxrt_dispatcher(srq, regs->rcx) : rtai_usrq_dispatcher(srq, regs->rcx);
-	if (!in_hrt_mode(srq = rtai_cpuid())) {
-		hal_test_and_fast_flush_pipeline(srq);
-		return 1;
-	}
-	return 0;
-}
-
-#if 0
-void rtai_uvec_handler (void);
-        __asm__ ( \
-        "\n" __ALIGN_STR"\n\t" \
-        SYMBOL_NAME_STR(rtai_uvec_handler) ":\n\t" \
-	"\n .p2align\n" \
-	"pushq $0\n" \
-	"cld\n" \
-	"sub    $0x48,%rsp\n" \
-	"mov    %rdi,0x40(%rsp)\n" \
-	"mov    %rsi,0x38(%rsp)\n" \
-	"mov    %rdx,0x30(%rsp)\n" \
-	"mov    %rcx,0x28(%rsp)\n" \
-	"mov    %rax,0x20(%rsp)\n" \
-	"mov    %r8,0x18(%rsp)\n" \
-	"mov    %r9,0x10(%rsp)\n" \
-	"mov    %r10,0x8(%rsp)\n" \
-	"mov    %r11,(%rsp)\n" \
-	"lea    0xffffffffffffffd0(%rsp),%rdi\n" \
-	"testl  $0x3,0x88(%rdi)\n" \
-	"je 1f\n" \
-	"swapgs\n" \
-	"1:addl   $0x1,%gs:0x30\n" \
-	"mov    %gs:0x38,%rax\n" \
-	"cmove  %rax,%rsp\n" \
-	"push   %rdi\n" \
-	"sti\n" \
-	"call "SYMBOL_NAME_STR(rtai_syscall_dispatcher)"\n" \
-	"cli\n" \
-	"test   %rax,%rax\n" \
-	"jnz  ret_from_intr\n" \
-	"pop    %rdi\n" \
-	"subl   $0x1,%gs:0x30\n" \
-	"lea    0x30(%rdi),%rsp\n" \
-	"mov    %gs:0x18,%rcx\n" \
-	"sub    $0x1fd8,%rcx\n" \
-	"testl  $0x3,0x58(%rsp)\n" \
-	"je 2f\n" \
-	"swapgs\n" \
-	"2:mov    (%rsp),%r11\n" \
-	"mov    0x8(%rsp),%r10\n" \
-	"mov    0x10(%rsp),%r9\n" \
-	"mov    0x18(%rsp),%r8\n" \
-	"mov    0x20(%rsp),%rax\n" \
-	"mov    0x28(%rsp),%rcx\n" \
-	"mov    0x30(%rsp),%rdx\n" \
-	"mov    0x38(%rsp),%rsi\n" \
-	"mov    0x40(%rsp),%rdi\n" \
-	"add    $0x50,%rsp\n" \
-	"iretq");
-#else
-void rtai_uvec_handler (void);
-        __asm__ ( \
-        "\n" __ALIGN_STR"\n\t" \
-        SYMBOL_NAME_STR(rtai_uvec_handler) ":\n\t" \
-        "\n .p2align\n" \
-	"pushq $0\n" \
-	"cld\n" \
-	"pushq %rdi\n" \
-	"pushq %rsi\n" \
-	"pushq %rdx\n" \
-	"pushq %rcx\n" \
-	"pushq %rax\n" \
-	"pushq %r8\n" \
-	"pushq %r9\n" \
-	"pushq %r10\n" \
-	"pushq %r11\n" \
-	"pushq %rbx\n" \
-	"pushq %rbp\n" \
-	"pushq %r12\n" \
-	"pushq %r13\n" \
-	"pushq %r14\n" \
-	"pushq %r15\n" \
-	"movq %rsp, %rdi\n" \
-	"movq %rsp, %rbp\n" \
-	"testl $3, 136(%rdi)\n" \
-	"je 1f\n" \
-	"swapgs\n" \
-	"1: movq %gs:56, %rax\n" \
-	"cmoveq %rax, %rsp\n" \
-	"pushq %rdi\n" \
-	"sti\n" \
-	"call "SYMBOL_NAME_STR(rtai_syscall_dispatcher)"\n" \
-	"cli\n" \
-	"popq %rdi\n" \
-	"testl $3, 136(%rdi)\n" \
-        "je 2f\n" \
-	"swapgs\n" \
-	"2:\n" \
-	"movq %rdi, %rsp\n" \
-	"popq %r15\n" \
-	"popq %r14\n" \
-	"popq %r13\n" \
-	"popq %r12\n" \
-	"popq %rbp\n" \
-	"popq %rbx\n" \
-	"popq %r11\n" \
-	"popq %r10\n" \
-	"popq %r9\n" \
-	"popq %r8\n" \
-	"popq %rax\n" \
-	"popq %rcx\n" \
-	"popq %rdx\n" \
-	"popq %rsi\n" \
-	"popq %rdi\n" \
-	"addq $8, %rsp\n" \
-        "iretq");
-#endif
-
-struct gate_struct rtai_set_gate_vector (unsigned vector, int type, int dpl, void *handler)
-{
-	struct gate_struct e = idt_table[vector];
-	_set_gate(&idt_table[vector], type, (unsigned long)handler, dpl, 0);
-	return e;
-}
-
-void rtai_reset_gate_vector (unsigned vector, struct gate_struct e)
-{
-	idt_table[vector] = e;
+	return likely(sched_intercept_syscall_prologue != NULL) ? sched_intercept_syscall_prologue(regs) : 0;
 }
 
 static void rtai_install_archdep (void)
 {
-#ifndef RTAI_SYSCALLS_USE_HIRQ_DISPATCHER
-	unsigned long flags;
-
-	flags = rtai_critical_enter(NULL);
-    /* Backup and replace the sysreq vector. */
-	rtai_sysvec = rtai_set_gate_vector(RTAI_SYS_VECTOR, GATE_INTERRUPT, 3, rtai_uvec_handler);
-	rtai_critical_exit(flags);
-#else
-//	idt_table[RTAI_SYS_VECTOR].type = 0xE;
-	idt_table[RTAI_SYS_VECTOR].dpl  = 0x3;
-	rt_request_irq(RTAI_SYS_IRQ, (void *)rtai_syscall_dispatcher, 0, 1);
-#endif
-
         hal_catch_event(hal_root_domain, HAL_SYSCALL_PROLOGUE, (void *)intercept_syscall_prologue);
 
 	if (rtai_cpufreq_arg == 0) {
@@ -1926,18 +1459,6 @@ static void rtai_install_archdep (void)
 
 static void rtai_uninstall_archdep(void)
 {
-#ifndef RTAI_SYSCALLS_USE_HIRQ_DISPATCHER
-	unsigned long flags;
-
-	flags = rtai_critical_enter(NULL);
-	idt_table[RTAI_SYS_VECTOR] = rtai_sysvec;
-	rtai_critical_exit(flags);
-#else
-	rt_release_irq(RTAI_SYS_IRQ);
-//	idt_table[RTAI_SYS_VECTOR].type = 0xE;
-	idt_table[RTAI_SYS_VECTOR].dpl  = 0x0;
-#endif
-
 	hal_catch_event(hal_root_domain, HAL_SYSCALL_PROLOGUE, NULL);
 }
 
@@ -2142,6 +1663,9 @@ void ack_bad_irq(unsigned int irq)
 }
 #endif
 
+void rt_set_sched_ipi_gate(void)   { }
+void rt_reset_sched_ipi_gate(void) { }
+
 static void rt_printk_srq_handler(void);
 #define RT_PRINTK_SRQ  1
 
@@ -2217,7 +1741,7 @@ int __rtai_hal_init (void)
 	IsolCpusMask = 0;
 #endif
 
-	printk(KERN_INFO "RTAI[hal]: mounted (%s, IMMEDIATE (INTERNAL IRQs %s), ISOL_CPUS_MASK: %lx).\n", HAL_TYPE, CONFIG_RTAI_DONT_DISPATCH_CORE_IRQS ? "VECTORED" : "DISPATCHED", IsolCpusMask);
+	printk(KERN_INFO "RTAI[hal]: mounted (%s, IMMEDIATE (INTERNAL IRQs DISPATCHED), ISOL_CPUS_MASK: %lx).\n", HAL_TYPE, IsolCpusMask);
 
 	printk("PIPELINE layers:\n");
 	for (trapnr = 1; ; trapnr++) {
@@ -2387,8 +1911,6 @@ EXPORT_SYMBOL(rt_smp_times);
 
 EXPORT_SYMBOL(rt_printk);
 
-EXPORT_SYMBOL(rtai_set_gate_vector);
-EXPORT_SYMBOL(rtai_reset_gate_vector);
 EXPORT_SYMBOL(rtai_catch_event);
 
 EXPORT_SYMBOL(rtai_lxrt_dispatcher);
@@ -2397,6 +1919,7 @@ EXPORT_SYMBOL(rt_scheduling);
 EXPORT_SYMBOL(ipipe_root_status);
 #endif
 
+EXPORT_SYMBOL(IsolCpusMask);
 
 #ifdef CONFIG_SMP
 EXPORT_SYMBOL(rt_set_sched_ipi_gate);
@@ -2488,5 +2011,3 @@ static void rtai_release_tickdev(void)  {  return;  }
 
 EXPORT_SYMBOL(rt_linux_hrt_set_mode);
 EXPORT_SYMBOL(rt_linux_hrt_next_shot);
-
-EXPORT_SYMBOL(IsolCpusMask);

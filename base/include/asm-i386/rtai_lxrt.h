@@ -99,6 +99,7 @@
 #if defined(CONFIG_RTAI_RTC_FREQ) && CONFIG_RTAI_RTC_FREQ >= 2
 
 #define TIMER_NAME        "RTC"
+#define HRT_LINUX_TIMER_NAME  "alien"
 #define TIMER_FREQ        CONFIG_RTAI_RTC_FREQ
 #define TIMER_LATENCY     0
 #define TIMER_SETUP_TIME  0

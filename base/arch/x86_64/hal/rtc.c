@@ -17,9 +17,15 @@
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
  */
 
+
 #ifdef INCLUDED_BY_HAL_C
 
 #include <linux/mc146818rtc.h>
+static inline unsigned char RT_CMOS_READ(unsigned char addr)
+{
+	outb_p(addr, RTC_PORT(0));
+	return inb_p(RTC_PORT(1));
+}
 
 //#define TEST_RTC
 #define MIN_RTC_FREQ  2
@@ -30,7 +36,8 @@ static void rt_broadcast_rtc_interrupt(void)
 {
 #ifdef CONFIG_SMP
 	apic_wait_icr_idle();
-	apic_write_around(APIC_ICR, APIC_DM_FIXED | APIC_DEST_ALLINC | RTAI_APIC_TIMER_VECTOR | APIC_DEST_LOGICAL);
+	apic_write_around(APIC_ICR, APIC_DM_FIXED | APIC_DEST_ALLBUT | RTAI_APIC_TIMER_VECTOR | APIC_DEST_LOGICAL);
+	((void (*)(void))rtai_realtime_irq[RTAI_APIC_TIMER_IPI].handler)();
 #endif
 }
 
@@ -45,7 +52,7 @@ static void rtc_handler(int irq, int rtc_freq)
 		cnt = 0;
 	}
 #endif
- 	CMOS_READ(RTC_INTR_FLAGS);
+ 	RT_CMOS_READ(RTC_INTR_FLAGS); // CMOS_READ(RTC_INTR_FLAGS);
 	rt_enable_irq(RTC_IRQ);
 	if (usr_rtc_handler) {
 		usr_rtc_handler();

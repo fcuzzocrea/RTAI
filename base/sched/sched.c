@@ -3004,7 +3004,7 @@ static int __rtai_lxrt_init(void)
 	retval = rtai_init_features(); /* see rtai_schedcore.h */
 
 exit:
-#ifdef CONFIG_GENERIC_CLOCKEVENTS
+#if defined(CONFIG_GENERIC_CLOCKEVENTS) && CONFIG_RTAI_RTC_FREQ == 0
 	rt_linux_hrt_set_mode  = _rt_linux_hrt_set_mode;
 	rt_linux_hrt_next_shot = _rt_linux_hrt_next_shot;
 #endif
@@ -3030,7 +3030,7 @@ static void __rtai_lxrt_exit(void)
 {
 	unregister_reboot_notifier(&lxrt_notifier_reboot);
 
-#ifdef CONFIG_GENERIC_CLOCKEVENTS
+#if defined(CONFIG_GENERIC_CLOCKEVENTS) && CONFIG_RTAI_RTC_FREQ == 0
 	rt_linux_hrt_set_mode  = NULL;
 	rt_linux_hrt_next_shot = NULL;
 #endif

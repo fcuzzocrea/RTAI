@@ -6,9 +6,9 @@
  *   the original RTAI layer for x86.
  *
  *   Original RTAI/x86 layer implementation: \n
- *   Copyright &copy; 2000 Paolo Mantegazza, \n
- *   Copyright &copy; 2000 Steve Papacharalambous, \n
- *   Copyright &copy; 2000 Stuart Hughes, \n
+ *   Copyright &copy; 2000-2008 Paolo Mantegazza, \n
+ *   Copyright &copy; 2000      Steve Papacharalambous, \n
+ *   Copyright &copy; 2000      Stuart Hughes, \n
  *   and others.
  *
  *   RTAI/x86 rewrite over Adeos: \n
@@ -1928,7 +1928,7 @@ EXPORT_SYMBOL(rt_reset_sched_ipi_gate);
 
 /*@}*/
 
-#ifdef CONFIG_GENERIC_CLOCKEVENTS
+#ifdef CONFIG_GENERIC_CLOCKEVENTS && CONFIG_RTAI_RTC_FREQ == 0
 
 #include <linux/clockchips.h>
 #include <linux/ipipe_tickdev.h>

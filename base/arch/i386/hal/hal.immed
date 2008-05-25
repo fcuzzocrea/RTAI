@@ -2407,10 +2407,10 @@ static void hal_request_apic_freq(unsigned long *apic_freq)
 		avrg_freq += freq;
 	}
 	if (avrg_freq) {
-		if (avrg_freq/num_online_cpus() != freq) {
+		if ((avrg_freq /= num_online_cpus()) != freq) {
 			printk("*** APICs FREQs DIFFER ***\n"); 
 		}
-		*apic_freq = avrg_freq/num_online_cpus();
+		*apic_freq = avrg_freq;
 	}
 }
 

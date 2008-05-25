@@ -564,15 +564,15 @@ do { \
 	} \
 } while (0)
 
-#define RR_INTR_TIME(val) \
+#define RR_INTR_TIME(fire_shot, shot_init) \
 do { \
 	if (CONFIG_RTAI_ALLOW_RR && new_task->policy > 0) { \
-		preempt = 1; \
+		fire_shot = 1; \
 		if (new_task->yield_time < rt_times.intr_time) { \
 			rt_times.intr_time = new_task->yield_time; \
 		} \
         } else { \
-                preempt = val; \
+                fire_shot = shot_init; \
         } \
 } while (0)
 
@@ -748,13 +748,13 @@ static RT_TASK *switch_rtai_tasks(RT_TASK *rt_current, RT_TASK *new_task, int cp
 		RTAI_TASK_SWITCH_SIGNAL(); \
 	} while (0)
 
-#define SET_NEXT_TIMER_SHOT(preempt) \
+#define SET_NEXT_TIMER_SHOT(fire_shot) \
 do { \
 	task = &rt_linux_task; \
 	while ((task = task->tnext) != &rt_linux_task && task->resume_time < rt_times.intr_time) { \
 		if (task->priority <= prio) { \
 			rt_times.intr_time = task->resume_time; \
-			preempt = 1; \
+			fire_shot = 1; \
 			break; \
 		} \
 	} \
@@ -817,17 +817,17 @@ static void rt_schedule_on_schedule_ipi(void)
 	sched_get_global_lock(cpuid);
 	RR_YIELD();
 	if (oneshot_running) {
-		int prio, preempt;
+		int prio, fire_shot;
 
 		rt_time_h = rdtsc() + rt_half_tick;
 		wake_up_timed_tasks(cpuid);
 		TASK_TO_SCHEDULE();
 		prio = new_task->priority;
 
-		RR_INTR_TIME((prio == RT_SCHED_LINUX_PRIORITY) && !shot_fired);
-		SET_NEXT_TIMER_SHOT(preempt);
+		RR_INTR_TIME(fire_shot, (prio == RT_SCHED_LINUX_PRIORITY) && !shot_fired);
+		SET_NEXT_TIMER_SHOT(fire_shot);
 		sched_release_global_lock(cpuid);
-		if (preempt) {
+		if (fire_shot) {
 			FIRE_NEXT_TIMER_SHOT();
 		}
 	} else {
@@ -886,7 +886,7 @@ void rt_schedule(void)
 
 	RR_YIELD();
 	if (oneshot_running) {
-		int prio, islnx, preempt;
+		int prio, islnx, fire_shot;
 
 		rt_time_h = rdtsc() + rt_half_tick;
 		wake_up_timed_tasks(cpuid);
@@ -894,27 +894,27 @@ void rt_schedule(void)
 		prio = new_task->priority;
 
 		islnx = (prio == RT_SCHED_LINUX_PRIORITY) && !shot_fired;
-		RR_INTR_TIME(islnx);
-		SET_NEXT_TIMER_SHOT(preempt);
+		RR_INTR_TIME(fire_shot, islnx);
+		SET_NEXT_TIMER_SHOT(fire_shot);
 		sched_release_global_lock(cpuid);
 #ifdef USE_LINUX_TIMER
 		if (islnx) {
 #ifdef CONFIG_GENERIC_CLOCKEVENTS
 			if (rt_times.linux_time < rt_times.intr_time) {
 				rt_times.intr_time = rt_times.linux_time;
-				preempt = 1;
+				fire_shot = 1;
 			}
 #else
 			RTIME linux_intr_time;
 			linux_intr_time = rt_times.linux_time > rt_times.tick_time ? rt_times.linux_time : rt_times.tick_time + rt_times.linux_tick;
 			if (linux_intr_time < rt_times.intr_time) {
 				rt_times.intr_time = linux_intr_time;
-				preempt = 1;
+				fire_shot = 1;
 			}
 #endif
 		}
 #endif
-		if (preempt) {
+		if (fire_shot) {
 			FIRE_NEXT_TIMER_SHOT();
 		}
 	} else {
@@ -1212,17 +1212,17 @@ redo_timer_handler:
 	TASK_TO_SCHEDULE();
 
 	if (oneshot_timer) {
-		int prio, islnx, preempt;
+		int prio, islnx, fire_shot;
 
 		prio = new_task->priority;
 		shot_fired = 0;
 		rt_times.intr_time = rt_times.tick_time + ONESHOT_SPAN;
 		islnx = (prio == RT_SCHED_LINUX_PRIORITY);
-		RR_INTR_TIME(islnx);
-		SET_NEXT_TIMER_SHOT(preempt);
+		RR_INTR_TIME(fire_shot, islnx);
+		SET_NEXT_TIMER_SHOT(fire_shot);
 		sched_release_global_lock(cpuid);
 #ifdef USE_LINUX_TIMER
-		if (islnx || preempt) {
+		if (islnx || fire_shot) {
 			if (islnx) {
 #ifdef CONFIG_GENERIC_CLOCKEVENTS
 				if (rt_times.linux_time < rt_times.intr_time) {
@@ -1237,7 +1237,7 @@ redo_timer_handler:
 #endif /* CONFIG_GENERIC_CLOCKEVENTS */
 			}
 #else
-		if (preempt) {
+		if (fire_shot) {
 #endif
 			FIRE_NEXT_TIMER_SHOT();
 		}

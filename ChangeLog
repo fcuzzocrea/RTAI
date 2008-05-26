@@ -1,8 +1,14 @@
+2008-05-25 Paolo Mantegazza <mantegazza@aero.polimi.it>
+
+	* base/archx86s/hal/hal.immed: use the apic freq from the HAL when 
+	  available.
+
 2008-05-24 Paolo Mantegazza <mantegazza@aero.polimi.it>
 
-	base/archx86s/hal/hal.immed: discard CLOCKEVENTS if RTC is being used.
-	base/archx86s/hal/rtc.c: revised to work with CLOCKEVENTS.
-	base/sched/sched.c: discard CLOCKEVENTS if RTC is being used.
+	* base/archx86s/hal/hal.immed: discard CLOCKEVENTS if RTC is being
+	  used.
+	* base/archx86s/hal/rtc.c: revised to work with CLOCKEVENTS.
+	* base/sched/sched.c: discard CLOCKEVENTS if RTC is being used.
 
 2008-05-23 Paolo Mantegazza <mantegazza@aero.polimi.it>
 

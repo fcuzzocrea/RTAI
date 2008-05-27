@@ -1799,7 +1799,7 @@ static inline int rt_poll_wait(POLL_SEM *sem, RT_TASK *rt_current)
 		rem_ready_current(rt_current);
 		enqueue_blocked(rt_current, &sem->queue, 1);
 		rt_schedule();
-		if (unlikely(rt_current->blocked_on)) { 
+		if (unlikely(rt_current->blocked_on != NULL)) { 
 			dequeue_blocked(rt_current);
 			retval = RTE_UNBLKD;
 		}
@@ -1823,7 +1823,7 @@ static inline int rt_poll_wait_until(POLL_SEM *sem, RTIME time, RT_TASK *rt_curr
 			enq_timed_task(rt_current);
 			rt_schedule();
 		}
-		if (unlikely(rt_current->blocked_on)) { 
+		if (unlikely(rt_current->blocked_on != NULL)) { 
 			retval = likely((void *)rt_current->blocked_on > RTP_HIGERR) ? RTE_TIMOUT : RTE_UNBLKD;
 			dequeue_blocked(rt_current);
 		}
@@ -2127,7 +2127,6 @@ module_init(__rtai_sem_init);
 module_exit(__rtai_sem_exit);
 #endif /* !CONFIG_RTAI_SEM_BUILTIN */
 
-#ifdef CONFIG_KBUILD
 EXPORT_SYMBOL(rt_typed_sem_init);
 EXPORT_SYMBOL(rt_sem_init);
 EXPORT_SYMBOL(rt_sem_delete);
@@ -2169,4 +2168,3 @@ EXPORT_SYMBOL(rt_spl_lock_timed);
 EXPORT_SYMBOL(rt_spl_unlock);
 EXPORT_SYMBOL(_rt_named_spl_init);
 EXPORT_SYMBOL(rt_named_spl_delete);
-#endif /* CONFIG_KBUILD */

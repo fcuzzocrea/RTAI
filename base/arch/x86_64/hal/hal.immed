@@ -1931,7 +1931,7 @@ EXPORT_SYMBOL(rt_reset_sched_ipi_gate);
 
 /*@}*/
 
-#ifdef CONFIG_GENERIC_CLOCKEVENTS && CONFIG_RTAI_RTC_FREQ == 0
+#if defined(CONFIG_GENERIC_CLOCKEVENTS) && CONFIG_RTAI_RTC_FREQ == 0
 
 #include <linux/clockchips.h>
 #include <linux/ipipe_tickdev.h>

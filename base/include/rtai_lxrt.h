@@ -1090,8 +1090,12 @@ RTAI_PROTO(int,rt_linux_use_fpu,(int use_fpu_flag))
 */
 RTAI_PROTO(int, rt_get_priorities, (RT_TASK *task, int *priority, int *base_priority))
 {
-	struct { RT_TASK *task; int *priority, *base_priority; } arg = { task, priority, base_priority };
-	return rtai_lxrt(BIDX, SIZARG, GET_PRIORITIES, &arg).i[LOW];
+	int lpriority, lbase_priority, retval;
+	struct { RT_TASK *task; int *priority, *base_priority; } arg = { task, &lpriority, &lbase_priority };
+	retval = rtai_lxrt(BIDX, SIZARG, GET_PRIORITIES, &arg).i[LOW];
+	*priority = lpriority;
+	*base_priority = lbase_priority;
+	return retval;
 }
 
 RTAI_PROTO(int, rt_hard_timer_tick, (void))

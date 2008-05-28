@@ -1,3 +1,8 @@
+2008-05-29 Paolo Mantegazza <mantegazza@aero.polimi.it>
+
+	* base/include/rtai_lxrt.h: ensure rt_get_priorities has values to be
+	  returned pointers on the stack.
+
 2008-05-25 Paolo Mantegazza <mantegazza@aero.polimi.it>
 
 	* base/archx86s/hal/hal.immed: use the apic freq from the HAL when 

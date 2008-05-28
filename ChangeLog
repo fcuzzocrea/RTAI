@@ -1,3 +1,8 @@
+2008-05-29 Paolo Mantegazza <mantegazza@aero.polimi.it>
+
+	* base/include/rtai_lxrt.h: ensure rt_get_priorities has values to be
+	  returned pointers on the stack.
+
 2008-05-23 Pierangelo Masarati <masarati@aero.polimi.it>
 
 	* RTAI 3.6.1

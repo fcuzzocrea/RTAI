@@ -95,7 +95,7 @@ static int rt_smp_half_tick[NR_RT_CPUS];
 
 static int rt_smp_oneshot_running[NR_RT_CPUS];
 
-static volatile int rt_smp_shot_fired[NR_RT_CPUS];
+static volatile int rt_smp_timer_shot_fired[NR_RT_CPUS];
 
 static struct rt_times *linux_times;
 
@@ -127,7 +127,7 @@ static int endkthread;
 
 #define oneshot_timer_cpuid (rt_smp_oneshot_timer[rtai_cpuid()])
 
-#define shot_fired (rt_smp_shot_fired[cpuid])
+#define timer_shot_fired (rt_smp_timer_shot_fired[cpuid])
 
 #define rt_times (rt_smp_times[cpuid])
 
@@ -564,15 +564,15 @@ do { \
 	} \
 } while (0)
 
-#define RR_INTR_TIME(fire_shot, shot_init) \
+#define RR_INTR_TIME(fire_shot) \
 do { \
+	fire_shot = 0; \
+	prio = new_task->priority; \
 	if (CONFIG_RTAI_ALLOW_RR && new_task->policy > 0) { \
-		fire_shot = 1; \
 		if (new_task->yield_time < rt_times.intr_time) { \
 			rt_times.intr_time = new_task->yield_time; \
+			fire_shot = 1; \
 		} \
-        } else { \
-                fire_shot = shot_init; \
         } \
 } while (0)
 
@@ -748,8 +748,54 @@ static RT_TASK *switch_rtai_tasks(RT_TASK *rt_current, RT_TASK *new_task, int cp
 		RTAI_TASK_SWITCH_SIGNAL(); \
 	} while (0)
 
+
+#ifdef USE_LINUX_TIMER
+
+#define SET_NEXT_LINUX_TIMER_SHOT(fire_shot) \
+do { \
+	if (prio == RT_SCHED_LINUX_PRIORITY) { \
+		if (rt_times.linux_time < rt_times.intr_time) { \
+			rt_times.intr_time = rt_times.linux_time; \
+			fire_shot = 1; \
+			break; \
+		} \
+	} \
+	if (!timer_shot_fired) {\
+		fire_shot = 1; \
+	} \
+} while (0)
+
+#define SET_PEND_LINUX_TIMER_SHOT() \
+do { \
+	if (rt_times.tick_time >= rt_times.linux_time) { \
+		if (rt_times.linux_tick > 0) { \
+			rt_times.linux_time += rt_times.linux_tick; \
+		} else { \
+			rt_times.linux_time = RT_TIME_END; \
+		} \
+		update_linux_timer(cpuid); \
+	} \
+} while (0)
+
+#else
+
+#define SET_NEXT_LINUX_TIMER_SHOT(fire_shot)
+
+#define SET_PEND_LINUX_TIMER_SHOT()
+
+#endif
+
+
 #define SET_NEXT_TIMER_SHOT(fire_shot) \
 do { \
+	fire_shot = 0; \
+	prio = new_task->priority; \
+	if (CONFIG_RTAI_ALLOW_RR && new_task->policy > 0) { \
+		if (new_task->yield_time < rt_times.intr_time) { \
+			rt_times.intr_time = new_task->yield_time; \
+			fire_shot = 1; \
+		} \
+        } \
 	task = &rt_linux_task; \
 	while ((task = task->tnext) != &rt_linux_task && task->resume_time < rt_times.intr_time) { \
 		if (task->priority <= prio) { \
@@ -762,8 +808,6 @@ do { \
 
 #if 1
 
-#define NO_TIMER_SHOT_FOR_OVERRUNS
-
 static void rt_timer_handler(void);
 
 #define FIRE_NEXT_TIMER_SHOT() \
@@ -772,20 +816,33 @@ do { \
 	delay = (int)(rt_times.intr_time - rt_time_h) - tuned.latency; \
 	if (delay > tuned.setup_time_TIMER_CPUNIT) { \
 		rt_set_timer_delay(imuldiv(delay, TIMER_FREQ, tuned.cpu_freq));\
-		shot_fired =  1; \
+		timer_shot_fired = 1; \
 	} else { \
 		rt_times.intr_time = rt_time_h + tuned.setup_time_TIMER_CPUNIT;\
-		shot_fired = -1; \
+		timer_shot_fired = -1;\
 	} \
 } while (0)
 
+#define FIRE_IMMEDIATE_LINUX_TIMER_SHOT() \
+do { \
+	LOCK_LINUX(cpuid); \
+	rt_timer_handler(); \
+	UNLOCK_LINUX(cpuid); \
+} while (0)
+
 #define CALL_TIMER_HANDLER() \
-	do { if (shot_fired < 0) rt_timer_handler(); } while (0)
+	do { if (timer_shot_fired < 0) rt_timer_handler(); } while (0)
 
 #define REDO_TIMER_HANDLER() \
-	do { if (shot_fired < 0) goto redo_timer_handler; } while (0)
+	do { if (timer_shot_fired < 0) goto redo_timer_handler; } while (0)
 
 #else
+
+#define FIRE_IMMEDIATE_TIMER_SHOT() \
+do { \
+	rt_set_timer_delay(tuned.setup_time_TIMER_UNIT); \
+	rt_times.intr_time = rt_time_h + tuned.setup_time_TIMER_CPUNIT; \
+} while (0)
 
 #define FIRE_NEXT_TIMER_SHOT() \
 do { \
@@ -794,11 +851,12 @@ do { \
 	if (delay > tuned.setup_time_TIMER_CPUNIT) { \
 		rt_set_timer_delay(imuldiv(delay, TIMER_FREQ, tuned.cpu_freq));\
 	} else { \
-		rt_set_timer_delay(tuned.setup_time_TIMER_UNIT); \
-		rt_times.intr_time = rt_time_h + tuned.setup_time_TIMER_CPUNIT;\
+		FIRE_IMMEDIATE_TIMER_SHOT(); \
 	} \
-	shot_fired = 1; \
+	timer_shot_fired = 1; \
 } while (0)
+
+#define FIRE_IMMEDIATE_LINUX_TIMER_SHOT  FIRE_IMMEDIATE_TIMER_SHOT
 
 #define CALL_TIMER_HANDLER()
 
@@ -822,11 +880,10 @@ static void rt_schedule_on_schedule_ipi(void)
 		rt_time_h = rdtsc() + rt_half_tick;
 		wake_up_timed_tasks(cpuid);
 		TASK_TO_SCHEDULE();
-		prio = new_task->priority;
 
-		RR_INTR_TIME(fire_shot, (prio == RT_SCHED_LINUX_PRIORITY) && !shot_fired);
 		SET_NEXT_TIMER_SHOT(fire_shot);
 		sched_release_global_lock(cpuid);
+		SET_NEXT_LINUX_TIMER_SHOT(fire_shot);
 		if (fire_shot) {
 			FIRE_NEXT_TIMER_SHOT();
 		}
@@ -886,34 +943,15 @@ void rt_schedule(void)
 
 	RR_YIELD();
 	if (oneshot_running) {
-		int prio, islnx, fire_shot;
+		int prio, fire_shot;
 
 		rt_time_h = rdtsc() + rt_half_tick;
 		wake_up_timed_tasks(cpuid);
 		TASK_TO_SCHEDULE();
-		prio = new_task->priority;
 
-		islnx = (prio == RT_SCHED_LINUX_PRIORITY) && !shot_fired;
-		RR_INTR_TIME(fire_shot, islnx);
 		SET_NEXT_TIMER_SHOT(fire_shot);
 		sched_release_global_lock(cpuid);
-#ifdef USE_LINUX_TIMER
-		if (islnx) {
-#ifdef CONFIG_GENERIC_CLOCKEVENTS
-			if (rt_times.linux_time < rt_times.intr_time) {
-				rt_times.intr_time = rt_times.linux_time;
-				fire_shot = 1;
-			}
-#else
-			RTIME linux_intr_time;
-			linux_intr_time = rt_times.linux_time > rt_times.tick_time ? rt_times.linux_time : rt_times.tick_time + rt_times.linux_tick;
-			if (linux_intr_time < rt_times.intr_time) {
-				rt_times.intr_time = linux_intr_time;
-				fire_shot = 1;
-			}
-#endif
-		}
-#endif
+		SET_NEXT_LINUX_TIMER_SHOT(fire_shot);
 		if (fire_shot) {
 			FIRE_NEXT_TIMER_SHOT();
 		}
@@ -1191,54 +1229,23 @@ redo_timer_handler:
 
 	rt_times.tick_time = oneshot_timer ? rdtsc() : rt_times.intr_time;
 	rt_time_h = rt_times.tick_time + rt_half_tick;
-#ifdef USE_LINUX_TIMER
-	if (rt_times.tick_time >= rt_times.linux_time) {
-#ifdef CONFIG_GENERIC_CLOCKEVENTS
-		if (rt_times.linux_tick > 0) {
-			rt_times.linux_time += rt_times.linux_tick;
-		} else {
-			rt_times.linux_time = RT_TIME_END;
-		}
-#else
-		rt_times.linux_time += rt_times.linux_tick;
-#endif
-		update_linux_timer(cpuid);
-	}
-#endif
+	SET_PEND_LINUX_TIMER_SHOT();
 
 	sched_get_global_lock(cpuid);
-	wake_up_timed_tasks(cpuid);
 	RR_YIELD();
+	wake_up_timed_tasks(cpuid);
 	TASK_TO_SCHEDULE();
 
 	if (oneshot_timer) {
-		int prio, islnx, fire_shot;
+		int prio, fire_shot;
 
-		prio = new_task->priority;
-		shot_fired = 0;
+		timer_shot_fired = 0;
 		rt_times.intr_time = rt_times.tick_time + ONESHOT_SPAN;
-		islnx = (prio == RT_SCHED_LINUX_PRIORITY);
-		RR_INTR_TIME(fire_shot, islnx);
+
 		SET_NEXT_TIMER_SHOT(fire_shot);
 		sched_release_global_lock(cpuid);
-#ifdef USE_LINUX_TIMER
-		if (islnx || fire_shot) {
-			if (islnx) {
-#ifdef CONFIG_GENERIC_CLOCKEVENTS
-				if (rt_times.linux_time < rt_times.intr_time) {
-					rt_times.intr_time = rt_times.linux_time;
-				}
-#else /* !CONFIG_GENERIC_CLOCKEVENTS */
-				RTIME linux_intr_time;
-				linux_intr_time = rt_times.linux_time > rt_times.tick_time ? rt_times.linux_time : rt_times.tick_time + rt_times.linux_tick;
-				if (linux_intr_time < rt_times.intr_time) {
-					rt_times.intr_time = linux_intr_time;
-				}
-#endif /* CONFIG_GENERIC_CLOCKEVENTS */
-			}
-#else
+		SET_NEXT_LINUX_TIMER_SHOT(fire_shot);
 		if (fire_shot) {
-#endif
 			FIRE_NEXT_TIMER_SHOT();
 		}
 	} else {
@@ -1450,19 +1457,12 @@ static int _rt_linux_hrt_next_shot(unsigned long deltat, struct ipipe_tick_devic
 			if (delay > tuned.setup_time_TIMER_CPUNIT) {
 				rt_set_timer_delay(imuldiv(delay, TIMER_FREQ, tuned.cpu_freq));
 			} else {
-#ifdef NO_TIMER_SHOT_FOR_OVERRUNS
-				LOCK_LINUX(cpuid);
-				rt_timer_handler();
-				UNLOCK_LINUX(cpuid);
-#else
-				rt_set_timer_delay(tuned.setup_time_TIMER_UNIT);
-				rt_times.intr_time = rt_time_h + (tuned.setup_time_TIMER_CPUNIT);
-#endif
+				FIRE_IMMEDIATE_LINUX_TIMER_SHOT();
 			}
-			shot_fired = 1;
 		}
 	}
 	rtai_sti();
+printk("LINUX SHOT %lld\n", rt_times.linux_time);
 	return 0;
 }
 
@@ -1485,7 +1485,6 @@ RTAI_SYSCALL_MODE void start_rt_apic_timers(struct apic_timer_setup_data *setup_
 			tuned.timers_tol[cpuid] = rt_half_tick = (tuned.latency + 1)>>1;
 		}
 		rt_time_h = rt_times.tick_time + rt_half_tick;
-		shot_fired = 1;
 	}
 	rt_sched_timed = 1;
 	linux_times = rt_smp_times + (rcvr_jiffies_cpuid < NR_RT_CPUS ? rcvr_jiffies_cpuid : 0);
@@ -1544,7 +1543,7 @@ RTAI_SYSCALL_MODE RTIME start_rt_timer(int period)
         if (oneshot_timer) {
 		rt_request_timer(rt_timer_handler, 0, TIMER_TYPE);
                 tuned.timers_tol[0] = rt_half_tick = (tuned.latency + 1)>>1;
-                oneshot_running = shot_fired = 1;
+                oneshot_running = 1;
         } else {
 		rt_request_timer(rt_timer_handler, !TIMER_TYPE && period > LATCH ? LATCH: period, TIMER_TYPE);
                 tuned.timers_tol[0] = rt_half_tick = (rt_times.periodic_tick + 1)>>1;
@@ -3097,3 +3096,4 @@ EXPORT_SYMBOL(switch_time);
 #endif
 
 #endif /* CONFIG_KBUILD */
+

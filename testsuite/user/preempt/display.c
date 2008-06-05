@@ -52,7 +52,7 @@ int main(int argc,char *argv[])
 	signal(SIGTERM, endme);
 	signal(SIGALRM, endme);
 
-        if (!rt_thread_init(nam2num("DSPLY"), 0, 0, SCHED_FIFO, 1)) {
+        if (!rt_thread_init(nam2num("DSPLY"), 0, 0, SCHED_FIFO, 0xF)) {
                 printf("CANNOT INIT DISPLAY TASK\n");
                 exit(1);
         }

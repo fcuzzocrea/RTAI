@@ -138,7 +138,6 @@ static void *latency_fun(void *arg)
 	rt_make_hard_real_time();
 	rt_sem_wait_barrier(barrier);
 	period = nano2count(TICK_TIME);
-	start = rt_get_time() + nano2count(200000000);
 	expected = start + 3*period;
 	rt_task_make_periodic(Latency_Task, expected, period);
 	while (!end) {  
@@ -195,6 +194,7 @@ int main(void)
 	latency_thread = rt_thread_create(latency_fun, NULL, 0);
 	fast_thread    = rt_thread_create(fast_fun, NULL, 0);
 	slow_thread    = rt_thread_create(slow_fun, NULL, 0);
+	start = rt_get_time() + nano2count(200000000);
 	rt_sem_wait_barrier(barrier);
 	pause();
 	end = 1;

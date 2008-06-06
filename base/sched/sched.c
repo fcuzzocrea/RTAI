@@ -838,12 +838,6 @@ do { \
 
 #else
 
-#define FIRE_IMMEDIATE_TIMER_SHOT() \
-do { \
-	rt_set_timer_delay(tuned.setup_time_TIMER_UNIT); \
-	rt_times.intr_time = rt_time_h + tuned.setup_time_TIMER_CPUNIT; \
-} while (0)
-
 #define FIRE_NEXT_TIMER_SHOT() \
 do { \
 	int delay; \
@@ -851,12 +845,11 @@ do { \
 	if (delay > tuned.setup_time_TIMER_CPUNIT) { \
 		rt_set_timer_delay(imuldiv(delay, TIMER_FREQ, tuned.cpu_freq));\
 	} else { \
-		FIRE_IMMEDIATE_TIMER_SHOT(); \
+		rt_set_timer_delay(tuned.setup_time_TIMER_UNIT); \
+		rt_times.intr_time = rt_time_h + tuned.setup_time_TIMER_CPUNIT;\
 	} \
 	timer_shot_fired = 1; \
 } while (0)
-
-#define FIRE_IMMEDIATE_LINUX_TIMER_SHOT  FIRE_IMMEDIATE_TIMER_SHOT
 
 #define CALL_TIMER_HANDLER()
 
@@ -1452,12 +1445,14 @@ static int _rt_linux_hrt_next_shot(unsigned long deltat, struct ipipe_tick_devic
 	if (oneshot_running) {
 		if (rt_times.linux_time < rt_times.intr_time) {
 			int delay;
-			rt_times.intr_time = rt_times.linux_time;
 			delay = deltat - tuned.latency;
 			if (delay > tuned.setup_time_TIMER_CPUNIT) {
+				rt_times.intr_time = rt_times.linux_time;
 				rt_set_timer_delay(imuldiv(delay, TIMER_FREQ, tuned.cpu_freq));
+				timer_shot_fired = 1;
 			} else {
-				FIRE_IMMEDIATE_LINUX_TIMER_SHOT();
+				rt_times.linux_time = RT_TIME_END;
+                		update_linux_timer(cpuid);
 			}
 		}
 	}
@@ -1484,6 +1479,7 @@ RTAI_SYSCALL_MODE void start_rt_apic_timers(struct apic_timer_setup_data *setup_
 			tuned.timers_tol[cpuid] = rt_half_tick = (tuned.latency + 1)>>1;
 		}
 		rt_time_h = rt_times.tick_time + rt_half_tick;
+		timer_shot_fired = 1;
 	}
 	rt_sched_timed = 1;
 	linux_times = rt_smp_times + (rcvr_jiffies_cpuid < NR_RT_CPUS ? rcvr_jiffies_cpuid : 0);
@@ -1542,7 +1538,7 @@ RTAI_SYSCALL_MODE RTIME start_rt_timer(int period)
         if (oneshot_timer) {
 		rt_request_timer(rt_timer_handler, 0, TIMER_TYPE);
                 tuned.timers_tol[0] = rt_half_tick = (tuned.latency + 1)>>1;
-                oneshot_running = 1;
+                oneshot_running = timer_shot_fired = 1;
         } else {
 		rt_request_timer(rt_timer_handler, !TIMER_TYPE && period > LATCH ? LATCH: period, TIMER_TYPE);
                 tuned.timers_tol[0] = rt_half_tick = (rt_times.periodic_tick + 1)>>1;

@@ -1462,7 +1462,6 @@ static int _rt_linux_hrt_next_shot(unsigned long deltat, struct ipipe_tick_devic
 		}
 	}
 	rtai_sti();
-printk("LINUX SHOT %lld\n", rt_times.linux_time);
 	return 0;
 }
 

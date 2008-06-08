@@ -751,19 +751,12 @@ static RT_TASK *switch_rtai_tasks(RT_TASK *rt_current, RT_TASK *new_task, int cp
 
 #ifdef USE_LINUX_TIMER
 
-#define SET_NEXT_LINUX_TIMER_SHOT(fire_shot) \
-do { \
-	if (prio == RT_SCHED_LINUX_PRIORITY) { \
-		if (rt_times.linux_time < rt_times.intr_time) { \
-			rt_times.intr_time = rt_times.linux_time; \
-			fire_shot = 1; \
-			break; \
-		} \
-	} \
-	if (!timer_shot_fired) {\
+#define CHECK_LINUX_TIME() \
+	if (rt_times.linux_time < rt_times.intr_time) { \
+		rt_times.intr_time = rt_times.linux_time; \
 		fire_shot = 1; \
-	} \
-} while (0)
+		break; \
+	}
 
 #define SET_PEND_LINUX_TIMER_SHOT() \
 do { \
@@ -779,7 +772,7 @@ do { \
 
 #else
 
-#define SET_NEXT_LINUX_TIMER_SHOT(fire_shot)
+#define CHECK_LINUX_TIME()
 
 #define SET_PEND_LINUX_TIMER_SHOT()
 
@@ -806,12 +799,23 @@ do { \
 	} \
 } while (0) 
 
+#define IF_GOING_TO_LINUX_CHECK_TIMER_SHOT(fire_shot) \
+do { \
+	if (prio == RT_SCHED_LINUX_PRIORITY) { \
+		CHECK_LINUX_TIME(); \
+		if (!timer_shot_fired) {\
+			fire_shot = 1; \
+		} \
+	} \
+} while (0)
+
 #if 1
 
 static void rt_timer_handler(void);
 
 #define FIRE_NEXT_TIMER_SHOT() \
 do { \
+if (fire_shot) { \
 	int delay; \
 	delay = (int)(rt_times.intr_time - rt_time_h) - tuned.latency; \
 	if (delay > tuned.setup_time_TIMER_CPUNIT) { \
@@ -821,13 +825,7 @@ do { \
 		rt_times.intr_time = rt_time_h + tuned.setup_time_TIMER_CPUNIT;\
 		timer_shot_fired = -1;\
 	} \
-} while (0)
-
-#define FIRE_IMMEDIATE_LINUX_TIMER_SHOT() \
-do { \
-	LOCK_LINUX(cpuid); \
-	rt_timer_handler(); \
-	UNLOCK_LINUX(cpuid); \
+} \
 } while (0)
 
 #define CALL_TIMER_HANDLER() \
@@ -836,10 +834,18 @@ do { \
 #define REDO_TIMER_HANDLER() \
 	do { if (timer_shot_fired < 0) goto redo_timer_handler; } while (0)
 
+#define FIRE_IMMEDIATE_LINUX_TIMER_SHOT() \
+do { \
+	LOCK_LINUX(cpuid); \
+	rt_timer_handler(); \
+	UNLOCK_LINUX(cpuid); \
+} while (0)
+
 #else
 
 #define FIRE_NEXT_TIMER_SHOT() \
 do { \
+if (fire_shot) { \
 	int delay; \
 	delay = (int)(rt_times.intr_time - rt_time_h) - tuned.latency; \
 	if (delay > tuned.setup_time_TIMER_CPUNIT) { \
@@ -849,6 +855,7 @@ do { \
 		rt_times.intr_time = rt_time_h + tuned.setup_time_TIMER_CPUNIT;\
 	} \
 	timer_shot_fired = 1; \
+} \
 } while (0)
 
 #define CALL_TIMER_HANDLER()
@@ -876,10 +883,8 @@ static void rt_schedule_on_schedule_ipi(void)
 
 		SET_NEXT_TIMER_SHOT(fire_shot);
 		sched_release_global_lock(cpuid);
-		SET_NEXT_LINUX_TIMER_SHOT(fire_shot);
-		if (fire_shot) {
-			FIRE_NEXT_TIMER_SHOT();
-		}
+		IF_GOING_TO_LINUX_CHECK_TIMER_SHOT(fire_shot);
+		FIRE_NEXT_TIMER_SHOT();
 	} else {
 		TASK_TO_SCHEDULE();
 		sched_release_global_lock(cpuid);
@@ -944,10 +949,8 @@ void rt_schedule(void)
 
 		SET_NEXT_TIMER_SHOT(fire_shot);
 		sched_release_global_lock(cpuid);
-		SET_NEXT_LINUX_TIMER_SHOT(fire_shot);
-		if (fire_shot) {
-			FIRE_NEXT_TIMER_SHOT();
-		}
+		IF_GOING_TO_LINUX_CHECK_TIMER_SHOT(fire_shot);
+		FIRE_NEXT_TIMER_SHOT();
 	} else {
 		TASK_TO_SCHEDULE();
 		sched_release_global_lock(cpuid);
@@ -1237,10 +1240,8 @@ redo_timer_handler:
 
 		SET_NEXT_TIMER_SHOT(fire_shot);
 		sched_release_global_lock(cpuid);
-		SET_NEXT_LINUX_TIMER_SHOT(fire_shot);
-		if (fire_shot) {
-			FIRE_NEXT_TIMER_SHOT();
-		}
+		IF_GOING_TO_LINUX_CHECK_TIMER_SHOT(fire_shot);
+		FIRE_NEXT_TIMER_SHOT();
 	} else {
 		sched_release_global_lock(cpuid);
 		rt_times.intr_time += rt_times.periodic_tick;
@@ -1438,17 +1439,19 @@ static void _rt_linux_hrt_set_mode(enum clock_event_mode mode, struct ipipe_tick
 static int _rt_linux_hrt_next_shot(unsigned long deltat, struct ipipe_tick_device *hrt_dev)
 {
 	int cpuid = rtai_cpuid();
+	RTIME linux_time;
 
 	deltat = nano2count_cpuid(deltat, cpuid);
+	linux_time = rt_get_time_cpuid(cpuid) + deltat;
+	deltat = deltat > (tuned.setup_time_TIMER_CPUNIT + tuned.latency) ? imuldiv(deltat - tuned.latency, TIMER_FREQ, tuned.cpu_freq) : 0;
+
 	rtai_cli();
-	rt_times.linux_time = rt_get_time_cpuid(cpuid) + deltat;
+	rt_times.linux_time = linux_time;
 	if (oneshot_running) {
-		if (rt_times.linux_time < rt_times.intr_time) {
-			int delay;
-			delay = deltat - tuned.latency;
-			if (delay > tuned.setup_time_TIMER_CPUNIT) {
-				rt_times.intr_time = rt_times.linux_time;
-				rt_set_timer_delay(imuldiv(delay, TIMER_FREQ, tuned.cpu_freq));
+		if (linux_time < rt_times.intr_time) {
+			if (deltat > 0) {
+				rt_times.intr_time = linux_time;
+				rt_set_timer_delay(deltat);
 				timer_shot_fired = 1;
 			} else {
 				rt_times.linux_time = RT_TIME_END;

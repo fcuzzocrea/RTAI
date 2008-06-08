@@ -1,3 +1,10 @@
+2008-06-08 Paolo Mantegazza <mantegazza@aero.polimi.it>
+
+	* testsuite/user/preempt/preempt.c and display.c: consistently 
+	  revised against their counterparts in showrrom.
+	* base/sched/sched.c: a few changes to the revised oneshot firing
+	  to have it work on older Linux versions.
+
 2008-05-29 Paolo Mantegazza <mantegazza@aero.polimi.it>
 
 	* base/include/rtai_lxrt.h: ensure rt_get_priorities has values to be

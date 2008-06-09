@@ -1,3 +1,7 @@
+2008-06-09 Roberto Bucher <roberto.bucher@supsi.ch>
+
+	* rtai-lab/scilab/*: Some changes to avoid #include <MODEL>.c
+
 2008-06-08 Paolo Mantegazza <mantegazza@aero.polimi.it>
 
 	* testsuite/user/preempt/preempt.c and display.c: consistently 

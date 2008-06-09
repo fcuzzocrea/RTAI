@@ -1339,9 +1339,13 @@ function  [ok,XX,alreadyran,flgcdgen,szclkINTemp,freof]=do_compile_superblock42(
     if all_scs_m.objs(o_ev).gui=='SampleCLK' then
       sTsamp=all_scs_m.objs(o_ev).model.rpar(1);
       sTsamp=sci2exp(sTsamp);
+      Tsamp_delay=all_scs_m.objs(o_ev).model.rpar(2);
+      Tsamp_delay=sci2exp(Tsamp_delay);
     else
       sTsamp=all_scs_m.objs(o_ev).model.rpar.objs(2).graphics.exprs(1);
       sTsamp=sci2exp(eval(sTsamp));
+      Tsamp_delay=all_scs_m.objs(o_ev).model.rpar.objs(2).graphics.exprs(2);
+      Tsamp_delay=sci2exp(eval(Tsamp_delay));
     end
   end
 
@@ -2048,40 +2052,40 @@ function Code=make_computational42()
 
   Code=[Code;
         '/* Table of constant values */'
-        'static integer nrd_'+string(0:maxtotal)'+' = '+string(0:maxtotal)'+';']
+        'static int nrd_'+string(0:maxtotal)'+' = '+string(0:maxtotal)'+';']
 
   if maxtotal<10 then
     Code=[Code;
-          'static integer nrd_10 = 10;']
+          'static int nrd_10 = 10;']
   end
   if maxtotal<11 then
     Code=[Code;
-          'static integer nrd_11 = 11;']
+          'static int nrd_11 = 11;']
   end
 
   if maxtotal<81 then
     Code=[Code;
-          'static integer nrd_81 = 81;']
+          'static int nrd_81 = 81;']
   end
   if maxtotal<82 then
     Code=[Code;
-          'static integer nrd_82 = 82;']
+          'static int nrd_82 = 82;']
   end
   if maxtotal<84 then
     Code=[Code;
-          'static integer nrd_84 = 84;']
+          'static int nrd_84 = 84;']
   end
   if maxtotal<811 then
     Code=[Code;
-          'static integer nrd_811 = 811;']
+          'static int nrd_811 = 811;']
   end
   if maxtotal<812 then
     Code=[Code;
-          'static integer nrd_812 = 812;']
+          'static int nrd_812 = 812;']
   end
   if maxtotal<814 then
     Code=[Code;
-          'static integer nrd_814 = 814;']
+          'static int nrd_814 = 814;']
   end
 
   Code=[Code;
@@ -3286,7 +3290,7 @@ function Code=make_standalone42()
     Code=[Code
           '/* Code prototype for standalone use  */'
           'int C2F('+rdnom+'simblk)(double , double *, double *);'
-          'extern  integer C2F(dset)();'
+          'extern  int C2F(dset)();'
           'int ode1();'
           'int ode2();'
           'int ode4();'
@@ -3295,40 +3299,40 @@ function Code=make_standalone42()
 
   Code=[Code;
         '/* Table of constant values */'
-        'static integer nrd_'+string(0:maxtotal)'+' = '+string(0:maxtotal)'+';']
+        'static int nrd_'+string(0:maxtotal)'+' = '+string(0:maxtotal)'+';']
 
   if maxtotal<10 then
     Code=[Code;
-          'static integer nrd_10 = 10;']
+          'static int nrd_10 = 10;']
   end
   if maxtotal<11 then
     Code=[Code;
-          'static integer nrd_11 = 11;']
+          'static int nrd_11 = 11;']
   end
 
   if maxtotal<81 then
     Code=[Code;
-          'static integer nrd_81 = 81;']
+          'static int nrd_81 = 81;']
   end
   if maxtotal<82 then
     Code=[Code;
-          'static integer nrd_82 = 82;']
+          'static int nrd_82 = 82;']
   end
   if maxtotal<84 then
     Code=[Code;
-          'static integer nrd_84 = 84;']
+          'static int nrd_84 = 84;']
   end
   if maxtotal<811 then
     Code=[Code;
-          'static integer nrd_811 = 811;']
+          'static int nrd_811 = 811;']
   end
   if maxtotal<812 then
     Code=[Code;
-          'static integer nrd_812 = 812;']
+          'static int nrd_812 = 812;']
   end
   if maxtotal<814 then
     Code=[Code;
-          'static integer nrd_814 = 814;']
+          'static int nrd_814 = 814;']
   end
 
   Code=[Code;
@@ -3382,6 +3386,11 @@ function Code=make_standalone42()
 	 'double get_tsamp()'
 	 '{'
 	 '  return(' + string(Tsamp) + ');'
+	 '}'
+	 ''
+	 'double get_tsamp_delay()'
+	 '{'
+	 '  return(' + string(Tsamp_delay) + ');'
 	 '}'
 	 ''
 	 '#include ""' + rdnom + '_io.c""'
@@ -3622,13 +3631,13 @@ function Code=make_standalone42()
       if (rpptr(kf+1)-rpptr(kf)>0) then
         Code=[Code;
               '  block_'+rdnom+'['+string(kf-1)+...
-              '].rpar=&(RPAR1['+string(rpptr(kf)-1)+']);']
+              '].rpar=&(RPAR['+string(rpptr(kf)-1)+']);']
       end
       //** ipar **//
       if (ipptr(kf+1)-ipptr(kf)>0) then
         Code=[Code;
               '  block_'+rdnom+'['+string(kf-1)+...
-              '].ipar=&(IPAR1['+string(ipptr(kf)-1)+']);']
+              '].ipar=&(IPAR['+string(ipptr(kf)-1)+']);']
       end
       //** opar **//
       if (opptr(kf+1)-opptr(kf)>0) then
@@ -4127,9 +4136,9 @@ function txt=make_static_standalone42()
         '/* def continuous state */'
         cformatline('double x[]={'+strcat(string(x),',')+'};',70)
         cformatline('double xd[]={'+strcat(string(x),',')+'};',70)
-        'static integer c__1 = 1;'
+        'static int c__1 = 1;'
         'static double c_b14 = 0.;'
-        'static integer neq='+string(nX)+';'
+        'static int neq='+string(nX)+';'
         '']
   end
   //************************//
@@ -4143,7 +4152,7 @@ function txt=make_static_standalone42()
   if size(rpar,1) <> 0 then
     txt=[txt;
 	 '/* def real parameters */'
-         'static double RPAR1[ ] = {'];
+         'double RPAR[ ] = {'];
 
     for i=1:(length(rpptr)-1)
       if rpptr(i+1)-rpptr(i)>0  then
@@ -4197,23 +4206,23 @@ function txt=make_static_standalone42()
     txt=[txt;
            '};']
   else
-    txt($+1)='static double RPAR1[1];';
+    txt($+1)='double RPAR[1];';
   end
 
   txt = [txt;''];
-  txt($+1) = 'static integer NRPAR1 = '+string(nbrpa)+';';
-  txt($+1) = 'static integer NTOTRPAR1 = '+string(ntot_r)+';';
+  txt($+1) = 'int NRPAR = '+string(nbrpa)+';';
+  txt($+1) = 'int NTOTRPAR = '+string(ntot_r)+';';
     
-  strRCode = 'char * strRPAR1[' + string(nbrpa) + '] = {' + ..
+  strRCode = 'char * strRPAR[' + string(nbrpa) + '] = {' + ..
              part(strRCode,[1:length(strRCode)-1]) + '};';
 
   if nbrpa <> 0 then
     txt($+1) = strRCode;
-    lenRCode = 'int lenRPAR1[' + string(nbrpa) + '] = {' + ..
+    lenRCode = 'int lenRPAR[' + string(nbrpa) + '] = {' + ..
                part(lenRCode,[1:length(lenRCode)-1]) + '};';
   else
-     txt($+1) = 'char * strRPAR1;'
-     lenRCode = 'int lenRPAR1[1] = {0};'
+     txt($+1) = 'char * strRPAR;'
+     lenRCode = 'int lenRPAR[1] = {0};'
   end
   txt($+1) = lenRCode;
 
@@ -4223,8 +4232,8 @@ function txt=make_static_standalone42()
   nbipa=0;strICode='';lenICode=[];ntot_i=0;
   if size(ipar,1) <> 0 then
     txt=[txt;
-           '/* def integer parameters */'
-           'static integer IPAR1[ ] = {'];
+           '/* def int parameters */'
+           'int IPAR[ ] = {'];
 
     for i=1:(length(ipptr)-1)
       if ipptr(i+1)-ipptr(i)>0  then
@@ -4278,22 +4287,22 @@ function txt=make_static_standalone42()
     txt=[txt;
          '};']
   else
-    txt($+1)='static integer IPAR1[1];';
+    txt($+1)='int IPAR[1];';
   end
 
-  txt($+1) = 'static integer NIPAR1 = '+string(nbipa)+';';
-  txt($+1) = 'static integer NTOTIPAR1 = '+string(ntot_i)+';';
+  txt($+1) = 'int NIPAR = '+string(nbipa)+';';
+  txt($+1) = 'int NTOTIPAR = '+string(ntot_i)+';';
 
-  strICode = 'char * strIPAR1[' + string(nbipa) + '] = {' + ..
+  strICode = 'char * strIPAR[' + string(nbipa) + '] = {' + ..
              part(strICode,[1:length(strICode)-1]) + '};';
 
   if nbipa <> 0 then
      txt($+1) = strICode;
-     lenICode = 'int lenIPAR1[' + string(nbipa) + '] = {' + ..
+     lenICode = 'int lenIPAR[' + string(nbipa) + '] = {' + ..
                 part(lenICode,[1:length(lenICode)-1]) + '};';
   else
-     txt($+1) = 'char * strIPAR1;'
-     lenICode = 'int lenIPAR1[1] = {0};'
+     txt($+1) = 'char * strIPAR;'
+     lenICode = 'int lenIPAR[1] = {0};'
   end
   txt($+1) = lenICode;
 
@@ -4880,7 +4889,7 @@ function [txt]=write_code_cdoit(flag)
         //** C **//
         tmp_='*(('+TYPE+' *)'+rdnom+'_block_outtbptr['+string(ix)+'])'
         txt=[txt;
-             '  i=max(min((integer) '+...
+             '  i=max(min((int) '+...
               tmp_+',block_'+rdnom+'['+string(bk-1)+'].evout),1);'
              '  switch(i)'
              '  {']
@@ -4993,7 +5002,7 @@ function [txt]=write_code_doit(ev,flag)
         tmp_='*(('+TYPE+' *)'+rdnom+'_block_outtbptr['+string(ix)+'])'
         //** C **//
         txt=[txt;
-             '    i=max(min((integer) '+...
+             '    i=max(min((int) '+...
               tmp_+',block_'+rdnom+'['+string(bk-1)+'].evout),1);'
              '    switch(i)'
              '    {']
@@ -5106,7 +5115,7 @@ function [txt]=write_code_idoit()
         //** C **//
         tmp_='*(('+TYPE+' *)'+rdnom+'_block_outtbptr['+string(ix)+'])'
         txt=[txt;
-             '  i=max(min((integer) '+...
+             '  i=max(min((int) '+...
               tmp_+',block_'+rdnom+'['+string(bk-1)+'].evout),1);']
         txt=[txt;
              '  switch(i)'
@@ -5221,7 +5230,7 @@ function [txt]=write_code_odoit(flag)
         tmp_='*(('+TYPE+' *)'+rdnom+'_block_outtbptr['+string(ix)+'])'
         txt=[txt;
              '    if (block_'+rdnom+'['+string(bk-1)+'].nmode<0) {';
-             '      i=max(min((integer) '+...
+             '      i=max(min((int) '+...
                 tmp_+',block_'+rdnom+'['+string(bk-1)+'].evout),1);'
              '    }'
              '    else {'
@@ -5352,7 +5361,7 @@ function [txt]=write_code_ozdoit(ev,flag)
         tmp_='*(('+TYPE+' *)'+rdnom+'_block_outtbptr['+string(ix)+'])'
         txt=[txt;
              '    if (phase==1 || block_'+rdnom+'['+string(bk-1)+'].nmode==0) {';
-             '      i=max(min((integer) '+...
+             '      i=max(min((int) '+...
               tmp_+',block_'+rdnom+'['+string(bk-1)+'].evout),1);'
              '    }'
              '    else {'
@@ -5485,7 +5494,7 @@ function [txt]=write_code_zdoit()
         tmp_='*(('+TYPE+' *)'+rdnom+'_block_outtbptr['+string(ix)+'])'
         txt=[txt;
              '    if (phase==1 || block_'+rdnom+'['+string(bk-1)+'].nmode==0){';
-             '      i=max(min((integer) '+...
+             '      i=max(min((int) '+...
                tmp_+',block_'+rdnom+'['+string(bk-1)+'].evout),1);'
              '    else {'
              '      i=block_'+rdnom+'['+string(bk-1)+'].mode[0];'
@@ -5607,7 +5616,7 @@ function [txt]=write_code_zdoit()
         if II<>[] then
           //** C **//
           txt=[txt;
-               '    j=max(min((integer) '+...
+               '    j=max(min((int) '+...
                 tmp_+',block_'+rdnom+'['+string(bk-1)+'].nevout),1);']
           txt=[txt;
                '    switch(j)'
@@ -5636,7 +5645,7 @@ function [txt]=write_code_zdoit()
              '    g['+string(zcptr(bk)-1)+'+jj]=(double)'+tmp_+'-(double)(jj+2);'
              '  }'
              '  if(phase==1 && block_'+rdnom+'['+string(bk-1)+'].nmode>0){'
-             '    j=max(min((integer) '+tmp_+','
+             '    j=max(min((int) '+tmp_+','
              '              block_'+rdnom+'['+string(bk-1)+'].nevout),1);'
              '    block_'+rdnom+'['+string(bk-1)+'].mode[0]= j;'
              '  }']
@@ -5752,7 +5761,7 @@ function [txt]=write_code_zzdoit(ev,flag)
         if II<>[] then
           //** C **//
           txt=[txt;
-               '    j=max(min((integer) '+...
+               '    j=max(min((int) '+...
                 tmp_+',block_'+rdnom+'['+string(bk-1)+'].nevout),1);']
           txt=[txt;
                '    switch(j)'
@@ -5781,7 +5790,7 @@ function [txt]=write_code_zzdoit(ev,flag)
              '    g['+string(zcptr(bk)-1)+'+jj]=(double)'+tmp_+'-(double)(jj+2);'
              '  }'
              '  if(phase==1 && block_'+rdnom+'['+string(bk-1)+'].nmode>0){'
-             '    j=max(min((integer) '+tmp_+','
+             '    j=max(min((int) '+tmp_+','
              '              block_'+rdnom+'['+string(bk-1)+'].nevout),1);'
              '    block_'+rdnom+'['+string(bk-1)+'].mode[0]= j;'
              '  }']

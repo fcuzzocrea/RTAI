@@ -7,3 +7,4 @@ DIR = get_absolute_file_path('loader.sce');
 // Scilab primitive for the path
 
 rtailib = lib(DIR+'/macros/')
+exec('SCI/contrib/RTAI/routines/loader.sce');

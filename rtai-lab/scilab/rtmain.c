@@ -34,13 +34,14 @@
 
 #include <sys/mman.h>
 #include <sys/poll.h>
+#include <sys/io.h>
 
 #include <rtai_netrpc.h>
 #include <rtai_msg.h>
 #include <rtai_mbx.h>
 #include <rtai_fifos.h>
 
-#define RTAILAB_VERSION         "3.5.1"
+#define RTAILAB_VERSION         "3.6.1"
 #define MAX_ADR_SRCH      500
 #define MAX_NAME_SIZE     256
 #define MAX_SCOPES        100
@@ -144,7 +145,7 @@ char *get_a_name(const char *root, char *name)
 {
   unsigned long i;
   for (i = 0; i < MAX_ADR_SRCH; i++) {
-    sprintf(name, "%s%d", root, i);
+    sprintf(name, "%s%ld", root, i);
     if (!rt_get_adr(nam2num(name))) {
       return name;
     }
@@ -222,20 +223,37 @@ static unsigned long TimingEventArg;
 #define XSTR(x)    #x
 #define STR(x)     XSTR(x)
 
-#define MODELNAME  STR(MODELN)
-#include MODELNAME
+/* #define MODELNAME  STR(MODELN) */
+/* #include MODELNAME */
 
-double get_scicos_time()
+int NAME(MODEL,_init)(void);
+int NAME(MODEL,_isr)(double);
+int NAME(MODEL,_end )(void);
+double get_tsamp(void);
+double get_tsamp_delay(void);
+
+extern int NTOTRPAR;
+extern int NTOTIPAR;
+extern double RPAR[];
+extern int IPAR[];
+extern int NRPAR;
+extern int NIPAR;
+extern char * strRPAR[];
+extern char * strIPAR[];
+extern int lenRPAR[];
+extern int lenIPAR[];
+
+double get_scicos_time(void)
 {
   return(TIME);
 }
 
 static inline int rtModifyRParam(int i, double *param)
 {
-  if (i >= 0 && i < NTOTRPAR1) {
-    set_double(&RPAR1[i], param);
+  if (i >= 0 && i < NTOTRPAR) {
+    set_double(&RPAR[i], param);
     if (verbose) {
-      printf("RPAR1[%d] : %le.\n", i, RPAR1[i]);
+      printf("RPAR[%d] : %le.\n", i, RPAR[i]);
     }
     return 0;
   }
@@ -244,10 +262,10 @@ static inline int rtModifyRParam(int i, double *param)
 
 static inline int rtModifyIParam(int i, int param)
 {
-  if (i >= 0 && i < NTOTIPAR1) {
-    IPAR1[i] = param;
+  if (i >= 0 && i < NTOTIPAR) {
+    IPAR[i] = param;
     if (verbose) {
-      printf("IPAR1[%d] : %d.\n", i, IPAR1[i]);
+      printf("IPAR[%d] : %d.\n", i, IPAR[i]);
     }
     return 0;
   }
@@ -310,10 +328,10 @@ static void *rt_BaseRate(void *args)
 
 static inline void modify_any_param(int index, double param)
 {
-  if (index < NTOTRPAR1) {
+  if (index < NTOTRPAR) {
     rtModifyRParam(index, &param);
   } else {
-    rtModifyIParam(index -= NTOTRPAR1, (int)param);
+    rtModifyIParam(index -= NTOTRPAR, (int)param);
   }
 }
 
@@ -321,7 +339,8 @@ static void *rt_HostInterface(void *args)
 {
   RT_TASK *task;
   unsigned int Request;
-  int Reply, len;
+  int Reply;
+  long int len;
 
   if (!(rt_HostInterfaceTask = rt_task_init_schmod(nam2num(HostInterfaceTaskName), rt_HostInterfaceTaskPriority, 0, 0, SCHED_RR, 0xFF))) {
     fprintf(stderr,"Cannot init rt_HostInterfaceTask.\n");
@@ -345,29 +364,29 @@ static void *rt_HostInterface(void *args)
 	rtParam.nRows = 1;
 	rtParam.nCols = 1;
 
-	rt_return(task, (isRunning << 16) | ((NTOTRPAR1 + NTOTIPAR1) & 0xFFFF));
+	rt_return(task, (isRunning << 16) | ((NTOTRPAR + NTOTIPAR) & 0xFFFF));
 	rt_receivex(task, &Request, 1, &len);
 	rt_returnx(task, &rtParam, sizeof(rtParam));
 					  
-	for (i = 0; i < NRPAR1; i++) {
-	  sprintf(rtParam.blockName,"%s/%s",rtParam.modelName,strRPAR1[i]);
+	for (i = 0; i < NRPAR; i++) {
+	  sprintf(rtParam.blockName,"%s/%s",rtParam.modelName,strRPAR[i]);
 	  if(i==0) Idx = 0;
-	  else     Idx += lenRPAR1[i-1];
-	  for(j=0;j<lenRPAR1[i];j++) {
+	  else     Idx += lenRPAR[i-1];
+	  for(j=0;j<lenRPAR[i];j++) {
 	    rt_receivex(task, &Request, 1, &len);
 	    sprintf(rtParam.paramName, "Value[%d]",j);
-	    rtParam.dataValue[0] = RPAR1[Idx+j];
+	    rtParam.dataValue[0] = RPAR[Idx+j];
 	    rt_returnx(task, &rtParam, sizeof(rtParam));
 	  }
 	}
-	for (i = 0; i < NIPAR1; i++) {
-	  sprintf(rtParam.blockName,"%s/%s",rtParam.modelName,strIPAR1[i]);
+	for (i = 0; i < NIPAR; i++) {
+	  sprintf(rtParam.blockName,"%s/%s",rtParam.modelName,strIPAR[i]);
 	  if(i==0) Idx = 0;
-	  else     Idx += lenIPAR1[i-1];
-	  for(j=0;j<lenIPAR1[i];j++) {
+	  else     Idx += lenIPAR[i-1];
+	  for(j=0;j<lenIPAR[i];j++) {
 	    rt_receivex(task, &Request, 1, &len);
 	    sprintf(rtParam.paramName, "Value[%d]",j);
-	    rtParam.dataValue[0] = IPAR1[Idx+j];
+	    rtParam.dataValue[0] = IPAR[Idx+j];
 	    rt_returnx(task, &rtParam, sizeof(rtParam));
 	  }
 	}
@@ -487,7 +506,7 @@ static void *rt_HostInterface(void *args)
 	break;			
       }
       case 'g': {
-	int i, j, Idx;
+	int i, j, Idx=0;
 	rtTargetParamInfo rtParam;
 
 	strncpyz(rtParam.modelName, STR(MODEL), MAX_NAME_SIZE);
@@ -497,25 +516,25 @@ static void *rt_HostInterface(void *args)
 	rtParam.nCols = 1;
 	rt_return(task, isRunning);
 
-	for (i = 0; i < NRPAR1; i++) {
-	  sprintf(rtParam.blockName,"%s/%s",rtParam.modelName,strRPAR1[i]);
+	for (i = 0; i < NRPAR; i++) {
+	  sprintf(rtParam.blockName,"%s/%s",rtParam.modelName,strRPAR[i]);
 	  if(i==0) Idx = 0;
-	  else     Idx += lenRPAR1[i-1];
-	  for(j=0;j<lenRPAR1[i];j++) {
+	  else     Idx += lenRPAR[i-1];
+	  for(j=0;j<lenRPAR[i];j++) {
 	    rt_receivex(task, &Request, 1, &len);
 	    sprintf(rtParam.paramName, "Value[%d]",j);
-	    rtParam.dataValue[0] = RPAR1[Idx+j];
+	    rtParam.dataValue[0] = RPAR[Idx+j];
 	    rt_returnx(task, &rtParam, sizeof(rtParam));
 	  }
 	}
-	for (i = 0; i < NIPAR1; i++) {
-	  sprintf(rtParam.blockName,"%s/%s",rtParam.modelName,strIPAR1[i]);
+	for (i = 0; i < NIPAR; i++) {
+	  sprintf(rtParam.blockName,"%s/%s",rtParam.modelName,strIPAR[i]);
 	  if(i==0) Idx = 0;
-	  else     Idx += lenIPAR1[i-1];
-	  for(j=0;j<lenIPAR1[i];j++) {
+	  else     Idx += lenIPAR[i-1];
+	  for(j=0;j<lenIPAR[i];j++) {
 	    rt_receivex(task, &Request, 1, &len);
 	    sprintf(rtParam.paramName, "Value[%d]",j);
-	    rtParam.dataValue[j] = IPAR1[Idx+j];
+	    rtParam.dataValue[j] = IPAR[Idx+j];
 	    rt_returnx(task, &rtParam, sizeof(rtParam));
 	  } 
 	}
@@ -566,7 +585,7 @@ static void *rt_HostInterface(void *args)
 
 static int rt_Main(int priority)
 {
-  SEM *hard_timers_cnt;
+  SEM *hard_timers_cnt = NULL;
   char name[7];
   RTIME rt_BaseTaskPeriod;
   struct timespec err_timeout;
@@ -754,7 +773,7 @@ static void endme(int dummy)
   endex = 1;
 }
 
-void exit_on_error()
+void exit_on_error(void)
 {
   endme(0);
 }

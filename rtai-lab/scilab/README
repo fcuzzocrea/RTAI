@@ -2,8 +2,13 @@ This directory contains the support for modifing the Scilab/Scicos code
 generation, so that it can be used within RTAI user space soft/hard real time
 and monitered with RTAI-Lab.
 
-Please refer to the "scilab-howto" manual which contains a detailed description
-about installing RTAI, RTAI-LAb and the Scilab/Scicos addons.
+Please refer to the online manual "RTAI-LaRTAI-Lab tutorial: Scilab, Comedi, and real-time control"
+available at the RTAI-Lab repository.
+
+After installing RTAI and RTAI-Lab simply go in the folder "macros" and run:
+
+1) make install (as superuser)
+2) the each scilab user must run "make user" to install the startup script.
 
 Old RTAI Scicos block diagrams are no more supported with the new approach implemented in this new release. I'm sorry for this (little) problem. Old RTAI-Lib blocks must simply be substituted with the new ones!
 

@@ -36,6 +36,8 @@
 
 #if LINUX_VERSION_CODE < KERNEL_VERSION(2,6,0)
 
+typedef int clockid_t
+
 #ifndef TIMER_ABSTIME
 #define TIMER_ABSTIME  0x01
 #endif
@@ -78,6 +80,14 @@ typedef int timer_t;
 #if LINUX_VERSION_CODE < KERNEL_VERSION(2,4,23) || __cplusplus
 typedef void irqreturn_t;
 #endif  /* LINUX_VERSION_CODE < KERNEL_VERSION(2,4,23) || __cplusplus */
+
+#if LINUX_VERSION_CODE < KERNEL_VERSION(2,4,28)
+#define msleep(delay) \
+do { \
+	set_current_state(TASK_UNINTERRUPTIBLE); \
+	schedule_timeout(((delay)*HZ)/1000); \
+} while(0)
+#endif
 
 #define get_tsk_addr_limit(t) ((t)->addr_limit.seg)
 

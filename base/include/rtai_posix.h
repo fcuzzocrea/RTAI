@@ -148,11 +148,20 @@
 
 
 #ifndef MAX_PRIO
-#define MIN_PRIO  99
+#define MAX_PRIO  99
 #endif
 #ifndef MIN_PRIO
 #define MIN_PRIO  1
 #endif
+
+#ifndef CLOCK_REALTIME
+#define CLOCK_REALTIME  0
+#endif
+
+#ifndef CLOCK_MONOTONIC
+#define CLOCK_MONOTONIC  1
+#endif
+
 #define STACK_SIZE     8192
 #define RR_QUANTUM_NS  1000000
 

@@ -36,7 +36,7 @@
 
 #if LINUX_VERSION_CODE < KERNEL_VERSION(2,6,0)
 
-typedef int clockid_t
+typedef int clockid_t;
 
 #ifndef TIMER_ABSTIME
 #define TIMER_ABSTIME  0x01

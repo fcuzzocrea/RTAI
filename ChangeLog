@@ -1,3 +1,10 @@
+2008-06-10 Paolo Mantegazza <mantegazza@aero.polimi.it>
+
+	* base/include/rtai_posix.h: fixed duplicated macro and add 
+	  CLOCKREALTIME/MONOTONIC for posix in kernel space.
+	* base/include/rtai_wrappers.h; define clockid_t and msleep for 
+	  posix in kernel space.
+
 2008-06-09 Roberto Bucher <roberto.bucher@supsi.ch>
 
 	* rtai-lab/scilab/*: Some changes to avoid #include <MODEL>.c

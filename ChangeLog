@@ -1,7 +1,14 @@
+2008-06-11 Calin A. Culianu <calin@ajvar.org>. 
+
+	* base/include/rtai_posix.h: fixed a couple of bugs related to 
+	  cookie creation and initialisiation in kernel space pthread_create.
+
 2008-06-10 Paolo Mantegazza <mantegazza@aero.polimi.it>
 
 	* base/include/rtai_posix.h: fixed duplicated macro and add 
-	  CLOCKREALTIME/MONOTONIC for posix in kernel space.
+	  CLOCKREALTIME/MONOTONIC for posix in kernel space; declare
+	  handler_wrpr as static to avoid warning of multiple definitions;
+	  fixes pointed by: Paul Stein <stein@cepel.br>.
 	* base/include/rtai_wrappers.h; define clockid_t and msleep for 
 	  posix in kernel space.
 

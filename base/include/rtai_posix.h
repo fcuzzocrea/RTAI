@@ -711,22 +711,28 @@ static void posix_wrapper_fun(pthread_cookie_t *cookie)
 
 static inline int pthread_create(pthread_t *thread, const pthread_attr_t *attr, void *(*start_routine)(void *), void *arg)
 {
-	pthread_cookie_t *cookie;
-	cookie = (void *)rt_malloc(sizeof(pthread_cookie_t) + L1_CACHE_BYTES);
-	if (cookie) {
-		cookie = (void *)(((unsigned long)cookie + L1_CACHE_BYTES) & ~(L1_CACHE_BYTES - 1));
-		cookie->cookie = cookie;
+	void *cookie_mem;
+
+	cookie_mem = (void *)rt_malloc(sizeof(pthread_cookie_t) + L1_CACHE_BYTES);
+	if (cookie_mem) {
+		pthread_cookie_t *cookie;
+		int err;
+		/* align memory for RT_TASK to L1_CACHE_BYTES boundary */
+		cookie = (pthread_cookie_t *)( (((unsigned long)cookie_mem) + ((unsigned long)L1_CACHE_BYTES)) & ~(((unsigned long)L1_CACHE_BYTES) - 1UL) );
+		cookie->cookie = cookie_mem; /* save real memory block for pthread_join to free for us */
 		(cookie->task).magic = 0;
 		cookie->task_fun = (void *)start_routine;
 		cookie->arg = (long)arg;
-		if (!rt_task_init(&cookie->task, (void *)posix_wrapper_fun, (long)cookie, (attr) ? attr->stacksize : STACK_SIZE, (attr) ? attr->priority : RT_SCHED_LOWEST_PRIORITY, 1, NULL)) {
+		if (!(err = rt_task_init(&cookie->task, (void *)posix_wrapper_fun, (long)cookie, (attr) ? attr->stacksize : STACK_SIZE, (attr) ? attr->priority : RT_SCHED_LOWEST_PRIORITY, 1, NULL))) {
 			rt_typed_sem_init(&cookie->sem, 0, BIN_SEM | FIFO_Q);
 			rt_task_resume(&cookie->task);
 			*thread = &cookie->task;
 			return 0;
+		} else {
+			rt_free(cookie->cookie);
+			return err;
 		}
 	}
-	rt_free(cookie->cookie);
 	return -ENOMEM;
 }
 
@@ -1009,10 +1015,15 @@ struct rt_handler_support {
 	sigval_t funarg;
 };
 
+#ifndef RTAI_POSIX_HANDLER_WRPR
+#define RTAI_POSIX_HANDLER_WRPR
+
 void handler_wrpr(unsigned long sup_data)
 {
 	((struct rt_handler_support *)sup_data)->_function(((struct rt_handler_support *)sup_data)->funarg);
 }
+
+#endif
 
 static inline int timer_create(clockid_t clockid, struct sigevent *evp, timer_t *timerid)
 {

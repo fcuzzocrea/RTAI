@@ -1018,7 +1018,7 @@ struct rt_handler_support {
 #ifndef RTAI_POSIX_HANDLER_WRPR
 #define RTAI_POSIX_HANDLER_WRPR
 
-void handler_wrpr(unsigned long sup_data)
+static void handler_wrpr(unsigned long sup_data)
 {
 	((struct rt_handler_support *)sup_data)->_function(((struct rt_handler_support *)sup_data)->funarg);
 }

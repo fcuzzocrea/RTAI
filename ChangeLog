@@ -1,6 +1,6 @@
 2008-06-12 Paolo Mantegazza <mantegazza@aero.polimi.it>
 
-	* base/include/rtai_netrpc.h: fixed wrong arg position assignement 
+	* base/include/rtai_netrpc.h: fixed wrong arg position assignment 
 	  for timeout in all of RT_poll.
 
 2008-06-11 Calin A. Culianu <calin@ajvar.org>. 

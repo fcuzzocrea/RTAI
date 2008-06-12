@@ -3,7 +3,6 @@
 	* base/include/rtai_netrpc.h: fixed wrong arg position assignement 
 	  for timeout in all of RT_poll.
 
-posix.h: fixed duplicated macro and add 
 2008-06-11 Calin A. Culianu <calin@ajvar.org>. 
 
 	* base/include/rtai_posix.h: fixed a couple of bugs related to 

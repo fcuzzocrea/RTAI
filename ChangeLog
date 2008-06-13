@@ -1,3 +1,7 @@
+2008-06-13 Pierangelo Masarati <masarati@aero.polimi.it>
+
+	* base/scripts/rtai-load.in: /bin/sh compatibility
+
 2008-06-12 Paolo Mantegazza <mantegazza@aero.polimi.it>
 
 	* base/include/rtai_netrpc.h: fixed wrong arg position assignment 

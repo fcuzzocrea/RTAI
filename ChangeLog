@@ -1,3 +1,7 @@
+2008-06-16 Pierangelo Masarati <masarati@aero.polimi.it>
+
+	* base/scripts/rtai-load.in: /bin/sh compatibility
+
 2008-06-11 Calin A. Culianu <calin@ajvar.org>.
 
 	* base/include/rtai_posix.h: fixed a couple of bugs related to

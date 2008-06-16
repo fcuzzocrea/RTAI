@@ -78,7 +78,7 @@ fi
 
 eval $user_moddir
 
-if `$modprobe -nq adeos >& /dev/null`; then
+if `$modprobe -nq adeos > /dev/null 2>&1`; then
    target_deps="adeos+"
 else
    target_deps=
@@ -128,8 +128,8 @@ children_pids=""
 cleanup () {
 
     if test \! "x$children_pids" = x; then
-#      $sudo kill -SIGINT $children_pids >& /dev/null see comment below
-       $sudo kill -INT $children_pids >& /dev/null
+#      $sudo kill -SIGINT $children_pids > /dev/null 2>&1 see comment below
+       $sudo kill -INT $children_pids > /dev/null 2>&1
        children_pids=""
        sleep 1
     fi
@@ -168,7 +168,7 @@ while test -n "$target_deps" ; do
 	   echo "ERROR: cannot load $rtai_moddir/rtai_$mod$modext"
 	   break
         fi
-     elif `$modprobe -n $mod >& /dev/null`; then
+     elif `$modprobe -n $mod > /dev/null 2>&1`; then
         test $verbose = 1 && echo "+ $modprobe $mod"
         $sudo $modprobe $mod
         inslist="$mod $inslist"

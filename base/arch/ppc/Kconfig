@@ -869,21 +869,17 @@ config RTAI_TRACE
 	You may refer to http://www.opersys.com/LTT/ for more information.
 
 config RTAI_USI
-	tristate "User-space interrupts"
-	default m
-	depends on RTAI_SEM && RTAI_TASKLETS
-	default y if RTAI_SEM=y || RTAI_TASKLETS=y
-	default m if RTAI_SEM=m || RTAI_TASKLETS=m
+	bool "User-space interrupts"
+	default n
 	help
-	RTAI already contains some examples hinting at managing
-	interrupts in user space, e.g: resumefromintr in lxrt-net_rpc,
-	pressa in lxrt, but all of them require installing a proper
-	handler in kernel space to wake up a hard real-time
-	LXRT/NEWLXRT task.
-	The user space interrupt support does the same but adds something 
-	that permits you to avoid writing anything in kernel space.
+	RTAI examples are available to show managing interrupts in user 
+	space, e.g: resumefromintr in "showroom" CVS (kernel/user/netrpc),
+	"pressa" in "showroom" (user); but all of them require installing
+	a proper handler in kernel space, to wake up a hard real-time user
+	space task.
+	The user space interrupt support does much of the same, but adds 
+	something that permits you to write nothing in kernel space.
 	The module will be called rtai_usi.o.
-	
 
 config RTAI_WD
 	bool "Watchdog support"

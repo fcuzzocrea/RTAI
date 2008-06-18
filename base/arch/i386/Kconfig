@@ -926,7 +926,7 @@ endmenu
 menu "Add-ons"
 
 config RTAI_COMEDI_LXRT
-	bool "Comedi support over LXRT"
+	bool "Real Time COMEDI support in user space"
 	default n
 	help
 	RTAI offers a unified kcomedilib interface to kernel/user space 

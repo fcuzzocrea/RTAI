@@ -35,6 +35,8 @@
 
 #ifdef __KERNEL__
 
+#ifdef CONFIG_RTAI_USI
+
 static void usi_cli(unsigned long arg, unsigned long *eflags) 
 {
 	clear_bit(RTAI_IFLAG, eflags);
@@ -75,14 +77,15 @@ static unsigned long (*usi_fun_entry[ ])(unsigned long, unsigned long *) = {
 	[_RESTORE_FLAGS]    = (void *)usi_restore_flags
 };
 
-#ifdef USI_SRQ_MASK
 #define IF_IS_A_USI_SRQ_CALL_IT(srq, args, retval, psr, retpath) \
 	if (srq > USI_SRQ_MASK) { \
 		*retval = usi_fun_entry[srq & ~USI_SRQ_MASK](args, &(psr)); \
 		return retpath; \
 	}
 #else
+
 #define IF_IS_A_USI_SRQ_CALL_IT(srq, args, retval, psr, retpath)
+
 #endif
 
 #endif /* __KERNEL__ */

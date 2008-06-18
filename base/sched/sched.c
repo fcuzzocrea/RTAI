@@ -2723,6 +2723,7 @@ static struct rt_native_fun_entry rt_sched_entries[] = {
 	{ { 1, rt_task_suspend_timed },		    SUSPEND_TIMED },
 	{ { 1, rt_task_resume },		    RESUME },
 	{ { 1, rt_set_linux_syscall_mode },	    SET_LINUX_SYSCALL_MODE },
+#ifdef CONFIG_RTAI_USI
 	{ { 1, rt_irq_wait },			    IRQ_WAIT },
 	{ { 1, rt_irq_wait_if },		    IRQ_WAIT_IF },
 	{ { 1, rt_irq_wait_until },		    IRQ_WAIT_UNTIL },
@@ -2730,6 +2731,7 @@ static struct rt_native_fun_entry rt_sched_entries[] = {
 	{ { 0, rt_irq_signal },			    IRQ_SIGNAL },
 	{ { 0, rt_request_irq_task },		    REQUEST_IRQ_TASK },
 	{ { 0, rt_release_irq_task },		    RELEASE_IRQ_TASK },
+#endif
 	{ { 1, rt_task_make_periodic_relative_ns }, MAKE_PERIODIC_NS },
 	{ { 1, rt_task_make_periodic },		    MAKE_PERIODIC },
 	{ { 1, rt_task_set_resume_end_times },	    SET_RESUME_END },

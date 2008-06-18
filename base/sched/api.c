@@ -1867,6 +1867,8 @@ void krtai_objects_release(void)
 
 /* +++++++++++++++++++++++++ SUPPORT FOR IRQ TASKS ++++++++++++++++++++++++++ */
 
+#ifdef CONFIG_RTAI_USI
+
 #include <rtai_tasklets.h>
 
 extern struct rtai_realtime_irq_s rtai_realtime_irq[];
@@ -1935,6 +1937,8 @@ RTAI_SYSCALL_MODE int rt_release_irq_task (unsigned irq)
 	}
 	return retval;
 }
+
+#endif
 
 //extern void usp_request_rtc(int, void *);
 RTAI_SYSCALL_MODE void usp_request_rtc(int rtc_freq, void *handler)

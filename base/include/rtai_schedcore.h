@@ -678,12 +678,12 @@ static inline int rtai_init_features (void)
 #ifdef CONFIG_RTAI_SHM_BUILTIN
     __rtai_shm_init();
 #endif /* CONFIG_RTAI_SHM_BUILTIN */
-#ifdef CONFIG_RTAI_USI_BUILTIN
-    __rtai_usi_init();
-#endif /* CONFIG_RTAI_USI_BUILTIN */
 #ifdef CONFIG_RTAI_MATH_BUILTIN
     __rtai_math_init();
 #endif /* CONFIG_RTAI_MATH_BUILTIN */
+#ifdef CONFIG_RTAI_USI
+        printk(KERN_INFO "RTAI[usi]: enabled.\n");
+#endif /* CONFIG_RTAI_USI */
 
 	return 0;
 }
@@ -693,9 +693,6 @@ static inline void rtai_cleanup_features (void) {
 #ifdef CONFIG_RTAI_MATH_BUILTIN
     __rtai_math_exit();
 #endif /* CONFIG_RTAI_MATH_BUILTIN */
-#ifdef CONFIG_RTAI_USI_BUILTIN
-    __rtai_usi_exit();
-#endif /* CONFIG_RTAI_USI_BUILTIN */
 #ifdef CONFIG_RTAI_SHM_BUILTIN
     __rtai_shm_exit();
 #endif /* CONFIG_RTAI_SHM_BUILTIN */

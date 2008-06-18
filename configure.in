@@ -1218,18 +1218,6 @@ if test x$CONFIG_RTAI_MQ = xy ; then
    fi
 fi
 
-if test x$CONFIG_RTAI_USI = xy -o x$CONFIG_RTAI_USI = xm ; then
-   if test x$CONFIG_RTAI_SEM = x -o x$CONFIG_RTAI_TASKLETS = x; then
-      AC_MSG_ERROR([--enable-usi requires --enable-sem and --enable-tasklets])
-   fi
-fi
-
-if test x$CONFIG_RTAI_USI = xy ; then
-   if test x$CONFIG_RTAI_SEM = xm -o x$CONFIG_RTAI_TASKLETS = xm; then
-      AC_MSG_ERROR([--enable-usi=y requires --enable-sem=y and --enable-tasklets=y])
-   fi
-fi
-
 if test x$CONFIG_RTAI_RTDM_SELECT = xy ; then
    if test x$CONFIG_RTAI_RTDM = x ; then
       AC_MSG_ERROR([--enable-rtdm-select=y requires --enable-rtdm=y])

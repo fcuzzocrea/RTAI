@@ -1,8 +1,10 @@
-2008-06-12 Paolo Mantegazza <mantegazza@aero.polimi.it>
+2008-06-18 Paolo Mantegazza <mantegazza@aero.polimi.it>
 
+	* base/arch/i386-x86_64-ppc/Kconfig: revised CONFIG_RTAI_USI.
+	* base/include/rtai_schedcore.h: just indicate USI enabled, since 
+	  if so it is embedded always.
 	* base/include/asm/rtai_usi.h and
 	* base/sched/sched.c and api.c: do not use USI stuff if not configured.
-	* base/arch/i386-x86_64-ppc/Kconfig: revised CONFIG_RTAI_USI.
 
 2008-06-13 Pierangelo Masarati <masarati@aero.polimi.it>
 

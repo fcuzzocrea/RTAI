@@ -16,8 +16,8 @@
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
  */
 
-#ifndef _RTAI_ASM_USI_H
-#define _RTAI_ASM_USI_H
+#ifndef _RTAI_ASM_PPC_USI_H
+#define _RTAI_ASM_PPC_USI_H
 
 #define USI_SRQ_MASK  0xFFFFFFF0
 
@@ -34,6 +34,8 @@
 #define _RESTORE_FLAGS    11
 
 #ifdef __KERNEL__
+
+#ifdef CONFIG_RTAI_USI
 
 static void usi_cli(unsigned long arg, unsigned long *eflags) 
 {
@@ -75,16 +77,17 @@ static unsigned long (*usi_fun_entry[ ])(unsigned long, unsigned long *) = {
 	[_RESTORE_FLAGS]    = (void *)usi_restore_flags
 };
 
-#ifdef USI_SRQ_MASK
 #define IF_IS_A_USI_SRQ_CALL_IT(srq, args, retval, psr, retpath) \
 	if (srq > USI_SRQ_MASK) { \
 		*retval = usi_fun_entry[srq & ~USI_SRQ_MASK](args, &(psr)); \
 		return retpath; \
 	}
 #else
+
 #define IF_IS_A_USI_SRQ_CALL_IT(srq, args, retval, psr, retpath)
+
 #endif
 
 #endif /* __KERNEL__ */
 
-#endif /* !_RTAI_ASM_USI_H */
+#endif /* !_RTAI_ASM_PPC_USI_H */

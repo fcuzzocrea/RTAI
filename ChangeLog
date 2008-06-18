@@ -6,6 +6,10 @@
 	* base/include/asm-i386-x86_64-ppc/rtai_usi.h and
 	* base/sched/sched.c and api.c: do not use USI stuff if not configured.
 
+2008-06-18 Pierangelo Masarati <masarati@aero.polimi.it>
+
+	* configure.in: revised CONFIG_RTAI_USI and related issues
+
 2008-06-13 Pierangelo Masarati <masarati@aero.polimi.it>
 
 	* base/scripts/rtai-load.in: /bin/sh compatibility

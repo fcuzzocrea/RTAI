@@ -19345,16 +19345,11 @@ if test "${enable_usi+set}" = set; then
   enableval="$enable_usi"
   case "$enableval" in
 	y | yes | b | builtin | built-in) CONFIG_RTAI_USI=y ;;
-	m | mod | module) CONFIG_RTAI_USI=m ;;
 	*) unset CONFIG_RTAI_USI ;;
 	esac
 fi;
 echo "$as_me:$LINENO: result: ${CONFIG_RTAI_USI:-no}" >&5
 echo "${ECHO_T}${CONFIG_RTAI_USI:-no}" >&6
-
-if test x$CONFIG_RTAI_USI = xy ; then
-  RTAI_BUILTIN_MODLIST="$RTAI_BUILTIN_MODLIST usi"
-fi
 
 echo "$as_me:$LINENO: checking for watchdog support" >&5
 echo $ECHO_N "checking for watchdog support... $ECHO_C" >&6
@@ -22871,22 +22866,6 @@ if test x$CONFIG_RTAI_MQ = xy ; then
    if test x$CONFIG_RTAI_SEM = xm ; then
       { { echo "$as_me:$LINENO: error: --enable-mq=y requires --enable-sem=y" >&5
 echo "$as_me: error: --enable-mq=y requires --enable-sem=y" >&2;}
-   { (exit 1); exit 1; }; }
-   fi
-fi
-
-if test x$CONFIG_RTAI_USI = xy -o x$CONFIG_RTAI_USI = xm ; then
-   if test x$CONFIG_RTAI_SEM = x -o x$CONFIG_RTAI_TASKLETS = x; then
-      { { echo "$as_me:$LINENO: error: --enable-usi requires --enable-sem and --enable-tasklets" >&5
-echo "$as_me: error: --enable-usi requires --enable-sem and --enable-tasklets" >&2;}
-   { (exit 1); exit 1; }; }
-   fi
-fi
-
-if test x$CONFIG_RTAI_USI = xy ; then
-   if test x$CONFIG_RTAI_SEM = xm -o x$CONFIG_RTAI_TASKLETS = xm; then
-      { { echo "$as_me:$LINENO: error: --enable-usi=y requires --enable-sem=y and --enable-tasklets=y" >&5
-echo "$as_me: error: --enable-usi=y requires --enable-sem=y and --enable-tasklets=y" >&2;}
    { (exit 1); exit 1; }; }
    fi
 fi

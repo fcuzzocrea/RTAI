@@ -2953,36 +2953,7 @@ diff --git a/arch/x86/kernel/process_32.c b/arch/x86/kernel/process_32.c
 index 43930e7..e29e59c 100644
 --- a/arch/x86/kernel/process_32.c
 +++ b/arch/x86/kernel/process_32.c
-@@ -111,20 +111,25 @@ void default_idle(void)
- 		 */
- 		smp_mb();
- 
--		local_irq_disable();
-+		local_irq_disable_hw();
- 		if (!need_resched()) {
-+#ifndef CONFIG_IPIPE
- 			ktime_t t0, t1;
- 			u64 t0n, t1n;
- 
- 			t0 = ktime_get();
- 			t0n = ktime_to_ns(t0);
-+#endif
- 			safe_halt();	/* enables interrupts racelessly */
-+#ifndef CONFIG_IPIPE
- 			local_irq_disable();
- 			t1 = ktime_get();
- 			t1n = ktime_to_ns(t1);
- 			sched_clock_idle_wakeup_event(t1n - t0n);
--		}
--		local_irq_enable();
-+			local_irq_enable(); /* This will force enable_hw as well. */
-+#endif
-+		} else
-+			local_irq_enable_hw();
- 		current_thread_info()->status |= TS_POLLING;
- 	} else {
- 		/* loop is done by the caller */
-@@ -203,6 +208,7 @@ void cpu_idle(void)
+@@ -203,6 +203,7 @@ void cpu_idle(void)
  				play_dead();
  
  			__get_cpu_var(irq_stat).idle_timestamp = jiffies;
@@ -2990,7 +2961,7 @@ index 43930e7..e29e59c 100644
  			idle();
  		}
  		tick_nohz_restart_sched_tick();
-@@ -269,6 +275,11 @@ static int __cpuinit mwait_usable(const 
+@@ -269,6 +270,11 @@ static int __cpuinit mwait_usable(const 
  
  void __cpuinit select_idle_routine(const struct cpuinfo_x86 *c)
  {
@@ -3002,7 +2973,7 @@ index 43930e7..e29e59c 100644
  	static int selected;
  
  	if (selected)
-@@ -284,7 +295,7 @@ void __cpuinit select_idle_routine(const
+@@ -284,7 +290,7 @@ void __cpuinit select_idle_routine(const
  		 * Skip, if setup has overridden idle.
  		 * One CPU supports mwait => All CPUs supports mwait
  		 */
@@ -3024,36 +2995,7 @@ index 46c4c54..fa242a4 100644
  unsigned long kernel_thread_flags = CLONE_VM | CLONE_UNTRACED;
  
  unsigned long boot_option_idle_override = 0;
-@@ -105,20 +107,25 @@ void default_idle(void)
- 	 * test NEED_RESCHED:
- 	 */
- 	smp_mb();
--	local_irq_disable();
-+	local_irq_disable_hw();
- 	if (!need_resched()) {
-+#ifndef CONFIG_IPIPE
- 		ktime_t t0, t1;
- 		u64 t0n, t1n;
- 
- 		t0 = ktime_get();
- 		t0n = ktime_to_ns(t0);
-+#endif
- 		safe_halt();	/* enables interrupts racelessly */
-+#ifndef CONFIG_IPIPE
- 		local_irq_disable();
- 		t1 = ktime_get();
- 		t1n = ktime_to_ns(t1);
- 		sched_clock_idle_wakeup_event(t1n - t0n);
--	}
--	local_irq_enable();
-+		local_irq_enable(); /* This will force enable_hw as well. */
-+#endif
-+	} else
-+		local_irq_enable_hw();
- 	current_thread_info()->status |= TS_POLLING;
- }
- 
-@@ -185,6 +192,7 @@ void cpu_idle(void)
+@@ -185,6 +187,7 @@ void cpu_idle(void)
  			 */
  			local_irq_disable();
  			enter_idle();
@@ -3061,7 +3003,7 @@ index 46c4c54..fa242a4 100644
  			idle();
  			/* In many cases the interrupt that ended idle
  			   has already called exit_idle. But some idle
-@@ -265,6 +273,11 @@ static int __cpuinit mwait_usable(const 
+@@ -265,6 +268,11 @@ static int __cpuinit mwait_usable(const 
  
  void __cpuinit select_idle_routine(const struct cpuinfo_x86 *c)
  {
@@ -3073,7 +3015,7 @@ index 46c4c54..fa242a4 100644
  	static int selected;
  
  	if (selected)
-@@ -280,7 +293,7 @@ void __cpuinit select_idle_routine(const
+@@ -280,7 +288,7 @@ void __cpuinit select_idle_routine(const
  		 * Skip, if setup has overridden idle.
  		 * One CPU supports mwait => All CPUs supports mwait
  		 */
@@ -3082,7 +3024,7 @@ index 46c4c54..fa242a4 100644
  			printk(KERN_INFO "using mwait in idle threads.\n");
  			pm_idle = mwait_idle;
  		}
-@@ -483,6 +496,7 @@ int copy_thread(int nr, unsigned long cl
+@@ -483,6 +491,7 @@ int copy_thread(int nr, unsigned long cl
  	p->thread.sp = (unsigned long) childregs;
  	p->thread.sp0 = (unsigned long) (childregs+1);
  	p->thread.usersp = me->thread.usersp;
@@ -3090,7 +3032,7 @@ index 46c4c54..fa242a4 100644
  
  	set_tsk_thread_flag(p, TIF_FORK);
  
-@@ -602,7 +616,7 @@ __switch_to(struct task_struct *prev_p, 
+@@ -602,7 +611,7 @@ __switch_to(struct task_struct *prev_p, 
  {
  	struct thread_struct *prev = &prev_p->thread,
  				 *next = &next_p->thread;

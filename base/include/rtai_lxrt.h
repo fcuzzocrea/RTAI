@@ -692,8 +692,9 @@ static void linux_syscall_server_fun(struct linux_syscalls_list *list)
 
 	if ((syscalls.serv = rtai_lxrt(BIDX, sizeof(struct linux_syscalls_list), LINUX_SERVER_INIT, &syscalls).v[LOW])) {
 		struct pt_regs *regs;
-		syscalls.moderegs = (struct mode_regs *)malloc(syscalls.nr*sizeof(struct mode_regs));
-		memset(syscalls.moderegs, syscalls.nr*sizeof(struct mode_regs), 0);
+		struct mode_regs moderegs[syscalls.nr];
+		syscalls.moderegs = moderegs;
+		memset(moderegs, syscalls.nr*sizeof(struct mode_regs), 0);
                 mlockall(MCL_CURRENT | MCL_FUTURE);
 		rtai_lxrt(BIDX, sizeof(RT_TASK *), RESUME, &syscalls.task);
 		for (;;) {
@@ -711,7 +712,6 @@ static void linux_syscall_server_fun(struct linux_syscalls_list *list)
 				syscalls.out = 0;
 			}
 		}
-		free(syscalls.moderegs);
         }
 }
 
@@ -731,7 +731,7 @@ RTAI_PROTO(int, rt_sync_async_linux_syscall_server_create, (RT_TASK *task, int m
 		syscalls.callback_fun = callback_fun;
 		syscalls.mode         = mode;
 		syscalls.nr           = nr_bufd_async_calls;
-		if (rt_thread_create((void *)linux_syscall_server_fun, &syscalls, 0)) {
+		if (rt_thread_create((void *)linux_syscall_server_fun, &syscalls, RT_THREAD_STACK_MIN + syscalls.nr*sizeof(struct mode_regs))) {
 			rtai_lxrt(BIDX, sizeof(RT_TASK *), SUSPEND, &task);
 			return 0;
 		}

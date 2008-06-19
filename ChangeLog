@@ -1,3 +1,8 @@
+2008-06-19 Paolo Mantegazza <mantegazza@aero.polimi.it>
+
+	* base/sched/api.c: force -ENOSYS return for async Linux syscalls 		  processed by a Linux server, leaving the related register unchanged
+	  can cause troubles.
+
 2008-06-18 Paolo Mantegazza <mantegazza@aero.polimi.it>
 
 	* base/arch/i386-x86_64-ppc/Kconfig: revised CONFIG_RTAI_USI.

@@ -1957,12 +1957,12 @@ RTAI_SYSCALL_MODE void rt_set_linux_syscall_mode(long mode, void (*callback_fun)
 
 void rt_exec_linux_syscall(RT_TASK *rt_current, struct linux_syscalls_list *syscalls, struct pt_regs *regs)
 {
-	struct { long in, nr, mode; RT_TASK *serv; struct mode_regs *moderegs; } from;
+	struct { long in, nr, mode; RT_TASK *serv; } from;
 
 	rt_copy_from_user(&from, syscalls, sizeof(from));
 	from.serv->priority = rt_current->priority + BASE_SOFT_PRIORITY;
-	rt_put_user(from.mode, &from.moderegs[from.in].mode);
-	rt_copy_to_user(&from.moderegs[from.in].regs, regs, sizeof(struct pt_regs));
+	rt_copy_to_user(&syscalls->moderegs[from.in].regs, regs, sizeof(struct pt_regs));
+	rt_put_user(from.mode, &syscalls->moderegs[from.in].mode);
 	if (++from.in >= from.nr) {
 		from.in = 0;
 	}

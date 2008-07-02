@@ -140,6 +140,7 @@ int rtdm_task_init(rtdm_task_t *task, const char *name,
 		   rtdm_task_proc_t task_proc, void *arg,
 		   int priority, nanosecs_rel_t period)
 {
+	char *lname;
 	if (rt_task_init(task, (void *)task_proc, (long)arg, PAGE_SIZE, priority, 0, 0)) {
         	return -ENOMEM;
 	}
@@ -148,6 +149,8 @@ int rtdm_task_init(rtdm_task_t *task, const char *name,
 	} else {
 		rt_task_resume(task);
 	}
+	lname = (char *)((unsigned long)name + strlen(name) - 6);
+	rt_register(nam2num(lname > name ? lname : name), task, IS_TASK, 0);
 	return 0;
 }
 

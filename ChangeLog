@@ -3,6 +3,12 @@
 	* addons/rtdm/drvilib.c and rtdm_driver.h: added rtdm task registration
 	  deregistration.
 
+2008-06-27 Paolo Mantegazza <mantegazza@aero.polimi.it>
+
+	* base/sched/sys.c and base/include/rtai_lxrt.h: make avoid duplicating
+	  rt_printk code in rtai_print_to_screen, just force it to rt_printk
+	  alone.
+
 2008-06-19 Paolo Mantegazza <mantegazza@aero.polimi.it>
 
 	* base/sched/api.c: force -EINPROGRESS return for async Linux syscalls 		  processed by a Linux server, leaving the related register unchanged

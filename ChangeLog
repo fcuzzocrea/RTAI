@@ -1,3 +1,9 @@
+2008-07-04 Paolo Mantegazza <mantegazza@aero.polimi.it>
+
+	* addons/rtdm/drvilib.c and rtdm_driver.h: added rtdm_task_init_cpuid
+	  to allow assigning cpu to tu on at the very task creation.
+	* base/sched/sched.c: deregister exiting RTAI own tasks.
+
 2008-07-02 Paolo Mantegazza <mantegazza@aero.polimi.it>
 
 	* addons/rtdm/drvilib.c and rtdm_driver.h: added rtdm task registration

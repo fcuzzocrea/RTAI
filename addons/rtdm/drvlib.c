@@ -123,6 +123,10 @@ nanosecs_abs_t rtdm_clock_read_monotonic(void);
  * @ref taskprio "Task Priority Range"
  * @param[in] period Period in nanoseconds of a cyclic task, 0 for non-cyclic
  * mode
+ * @param[in] cpuid number of the cpu onto which the task will execute
+ *
+ * @note the simplified version "rtdm_task_init" has no cpuid arg and let the
+ * underlying RTOS decide onto which cpu the task will be run.
  *
  * @return 0 on success, otherwise negative error code
  *
@@ -136,12 +140,12 @@ nanosecs_abs_t rtdm_clock_read_monotonic(void);
  *
  * Rescheduling: possible.
  */
-int rtdm_task_init(rtdm_task_t *task, const char *name,
-		   rtdm_task_proc_t task_proc, void *arg,
-		   int priority, nanosecs_rel_t period)
+int rtdm_task_init_cpuid(rtdm_task_t *task, const char *name,
+			 rtdm_task_proc_t task_proc, void *arg,
+			 int priority, nanosecs_rel_t period, int cpuid)
 {
 	char *lname;
-	if (rt_task_init(task, (void *)task_proc, (long)arg, PAGE_SIZE, priority, 0, 0)) {
+	if (rt_task_init_cpuid(task, (void *)task_proc, (long)arg, PAGE_SIZE, priority, 0, 0, cpuid)) {
         	return -ENOMEM;
 	}
 	if (period > 0) {
@@ -169,7 +173,7 @@ int rtdm_task_init(rtdm_task_t *task, const char *name,
 
 
 
-EXPORT_SYMBOL(rtdm_task_init);
+EXPORT_SYMBOL(rtdm_task_init_cpuid);
 
 #ifdef DOXYGEN_CPP /* Only used for doxygen doc generation */
 /**
@@ -414,6 +418,7 @@ void rtdm_task_join_nrt(rtdm_task_t *task, unsigned int poll_delay)
 	for (t = 0; task->magic && t < JOIN_TIMEOUT; t += poll_delay) {
 		msleep(poll_delay);
 	}
+	rt_drg_on_adr(task);
 	if (task->magic) {
 		rt_task_delete(task);
 	}

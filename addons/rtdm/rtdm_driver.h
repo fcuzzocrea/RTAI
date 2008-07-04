@@ -914,17 +914,25 @@ typedef void (*rtdm_task_proc_t)(void *arg);
 
 /** @} rtdmtask */
 
-int rtdm_task_init(rtdm_task_t *task, const char *name,
-		   rtdm_task_proc_t task_proc, void *arg,
-		   int priority, nanosecs_rel_t period);
+int rtdm_task_init_cpuid(rtdm_task_t *task, const char *name,
+			 rtdm_task_proc_t task_proc, void *arg,
+			 int priority, nanosecs_rel_t period, int cpuid);
+
+extern int get_min_tasks_cpuid(void);
+static inline int rtdm_task_init(rtdm_task_t *task, const char *name,
+				 rtdm_task_proc_t task_proc, void *arg,
+				 int priority, nanosecs_rel_t period)
+{
+	return rtdm_task_init_cpuid(task, name, task_proc, arg, priority, period, get_min_tasks_cpuid());
+}
 
 void rtdm_task_busy_sleep(nanosecs_rel_t delay);
 
 #ifndef DOXYGEN_CPP /* Avoid static inline tags for RTDM in doxygen */
 static inline void rtdm_task_destroy(rtdm_task_t *task)
 {
-	rt_task_delete(task);
 	rt_drg_on_adr(task);
+	rt_task_delete(task);
 }
 
 void rtdm_task_join_nrt(rtdm_task_t *task, unsigned int poll_delay);

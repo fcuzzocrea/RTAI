@@ -343,6 +343,7 @@ asmlinkage static void rt_startup(void(*rt_thread)(long), long data)
 	rt_current->exectime[1] = rdtsc();
 #endif
 	((void (*)(long))rt_current->max_msg_size[0])(rt_current->max_msg_size[1]);
+	rt_drg_on_adr(rt_current);
 	rt_task_delete(rt_smp_current[rtai_cpuid()]);
 	rt_printk("LXRT: task %p returned but could not be delated.\n", rt_current); 
 }

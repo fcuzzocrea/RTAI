@@ -2056,30 +2056,38 @@ void ack_bad_irq(unsigned int irq)
 
 int __rtai_hal_init (void)
 {
-	int trapnr, halinv;
+	int trapnr, halinv = 0;
 	struct hal_attr_struct attr;
 
 	for (halinv = trapnr = 0; trapnr < HAL_NR_EVENTS; trapnr++) {
 		if (hal_root_domain->hal_event_handler_fun(trapnr)) {
 			halinv = 1;
-			printk("EVENT %d INVALID\n", trapnr);
+			printk("EVENT %d INVALID.\n", trapnr);
 		}
 	}
 	if (halinv) {
-		printk(KERN_ERR "RTAI[hal]: HAL IMMEDIATE EVENT DISPATCHING BROKEN\n");
-		return -1;
+		printk(KERN_ERR "RTAI[hal]: HAL IMMEDIATE EVENT DISPATCHING BROKEN.\n");
+	}
+
+	if (num_online_cpus() > RTAI_NR_CPUS) {
+		printk("RTAI[hal]: RTAI CONFIGURED WITH LESS THAN NUM ONLINE CPUS.\n");
+		halinv = 1;
 	}
 
 #ifdef CONFIG_X86_LOCAL_APIC
 	if (!test_bit(X86_FEATURE_APIC, boot_cpu_data.x86_capability)) {
-		printk("RTAI[hal]: ERROR, LOCAL APIC CONFIGURED BUT NOT AVAILABLE/ENABLED\n");
-		return -1;
+		printk("RTAI[hal]: ERROR, LOCAL APIC CONFIGURED BUT NOT AVAILABLE/ENABLED.\n");
+		halinv = 1;
 	}
 #endif
 
 	if (!(rtai_sysreq_virq = hal_alloc_irq())) {
-		printk(KERN_ERR "RTAI[hal]: no virtual interrupt available.\n");
-		return 1;
+		printk(KERN_ERR "RTAI[hal]: NO VIRTUAL INTERRUPT AVAILABLE.\n");
+		halinv = 1;
+	}
+
+	if (halinv) {
+		return -1;
 	}
 
 	for (trapnr = 0; trapnr < RTAI_NR_IRQS; trapnr++) {

@@ -1,3 +1,8 @@
+2008-07-07 Paolo Mantegazza <mantegazza@aero.polimi.it>
+
+	* base/arch/i386/hal/hal.immed and base/arch/x86_64/hal/hal.immed:
+	  do not insmod RTAI HAL if "num_online_cpus() > RTAI_NR_CPUS".
+
 2008-07-04 Paolo Mantegazza <mantegazza@aero.polimi.it>
 
 	* addons/rtdm/drvilib.c and rtdm_driver.h: added rtdm_task_init_cpuid

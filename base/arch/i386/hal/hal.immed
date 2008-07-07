@@ -2077,6 +2077,7 @@ int __rtai_hal_init (void)
 		printk("RTAI[hal]: RTAI CONFIGURED WITH LESS THAN NUM ONLINE CPUS.\n");
 		halinv = 1;
 	}
+
 #ifdef CONFIG_X86_LOCAL_APIC
 	if (!test_bit(X86_FEATURE_APIC, boot_cpu_data.x86_capability)) {
 		printk("RTAI[hal]: ERROR, LOCAL APIC CONFIGURED BUT NOT AVAILABLE/ENABLED.\n");

@@ -1228,7 +1228,7 @@ void rt_request_apic_timers (void (*handler)(void), struct apic_timer_setup_data
 	flags = rtai_critical_enter(rtai_critical_sync);
 	rtai_sync_level = 1;
 	rtai_timers_sync_time = rtai_rdtsc() + rtai_imuldiv(LATCH, rtai_tunables.cpu_freq, RTAI_FREQ_8254);
-	for (cpuid = 0; cpuid < RTAI_NR_CPUS; cpuid++) {
+	for (cpuid = 0; cpuid < num_online_cpus(); cpuid++) {
 		p = &rtai_timer_mode[cpuid];
 		*p = tmdata[cpuid];
 		rtimes = &rt_smp_times[cpuid];
@@ -1262,7 +1262,7 @@ void rt_request_apic_timers (void (*handler)(void), struct apic_timer_setup_data
 
 	REQUEST_LINUX_IRQ_BROADCAST_TO_APIC_TIMERS();
 
-	for (cpuid = 0; cpuid < RTAI_NR_CPUS; cpuid++) {
+	for (cpuid = 0; cpuid < num_online_cpus(); cpuid++) {
 		p = &tmdata[cpuid];
 		if (p->mode) {
 			p->count = rtai_imuldiv(p->count,RTAI_FREQ_APIC,1000000000);
@@ -2187,7 +2187,7 @@ int __rtai_hal_init (void)
         }
 
 #if LINUX_VERSION_CODE < KERNEL_VERSION(2,6,22)
-        for (trapnr = 0; trapnr < RTAI_NR_CPUS; trapnr++) {
+        for (trapnr = 0; trapnr < num_online_cpus(); trapnr++) {
                 ipipe_root_status[trapnr] = &hal_root_domain->cpudata[trapnr].status;
         }
 #endif

@@ -961,7 +961,7 @@ int __rtai_tasklets_init(void)
 	if (init_ptimers()) {
 		return -ENOMEM;
 	}	
-	for (cpuid = 0; cpuid < NUM_CPUS; cpuid++) {
+	for (cpuid = 0; cpuid < num_online_cpus(); cpuid++) {
 		timers_lock[cpuid] = timers_lock[0];
 		timers_list[cpuid] = timers_list[0];
 		timers_list[cpuid].cpuid = cpuid;
@@ -978,7 +978,7 @@ void __rtai_tasklets_exit(void)
 	int cpuid;
  	reset_rt_fun_ext_index(rt_tasklet_fun, TASKLETS_IDX);
 	cleanup_ptimers();    
-	for (cpuid = 0; cpuid < NUM_CPUS; cpuid++) {
+	for (cpuid = 0; cpuid < num_online_cpus(); cpuid++) {
 		rt_task_delete(&timers_manager[cpuid]);
 	}
 	printk(KERN_INFO "RTAI[tasklets]: unloaded.\n");

@@ -2633,7 +2633,7 @@ static int rtai_read_sched(char *page, char **start, off_t off, int count,
 	PROC_PRINT("    Calibrated interrupt to scheduler latency: %d ns\n", (int)imuldiv(tuned.latency - tuned.setup_time_TIMER_CPUNIT, 1000000000, tuned.cpu_freq));
 	PROC_PRINT("    Calibrated oneshot timer setup_to_firing time: %d ns\n\n",
                   (int)imuldiv(tuned.setup_time_TIMER_CPUNIT, 1000000000, tuned.cpu_freq));
-	PROC_PRINT("Number of RT CPUs in system: %d\n\n", num_online_cpus());
+	PROC_PRINT("Number of RT CPUs in system: %d (sized for %d)\n\n", num_online_cpus(), NR_RT_CPUS);
 
 	PROC_PRINT("Real time kthreads in resorvoir (cpu/#)");
         for (cpuid = 0; cpuid < NR_RT_CPUS; cpuid++) {
@@ -2645,7 +2645,7 @@ static int rtai_read_sched(char *page, char **start, off_t off, int count,
 
 	PROC_PRINT("Priority  Period(ns)  FPU  Sig  State  CPU  Task  HD/SF  PID  RT_TASK *  TIME\n" );
 	PROC_PRINT("------------------------------------------------------------------------------\n" );
-        for (cpuid = 0; cpuid < NR_RT_CPUS; cpuid++) {
+        for (cpuid = 0; cpuid < num_online_cpus(); cpuid++) {
                 task = &rt_linux_task;
 /*
 * Display all the active RT tasks and their state.

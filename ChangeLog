@@ -4,6 +4,9 @@
 	  otherwise.
 	* base/sched/sched.c: use num_online_cpus(), in place of NR_RT_CPUS,
 	  in get_min_tasks_cpuid.
+	* base/arch/i386/hal/hal.immed and base/arch/x86_64/hal/hal.immed:
+	  use use num_online_cpus(), in place of RTAI_NR_CPUS, in timer 
+	  requests and module initialisation.
 
 2008-07-07 Paolo Mantegazza <mantegazza@aero.polimi.it>
 

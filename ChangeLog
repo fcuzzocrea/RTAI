@@ -1,3 +1,8 @@
+2008-07-08 Paolo Mantegazza <mantegazza@aero.polimi.it>
+
+	* base/wd/wd.c: use NR_RT_CPUS in declarations only, num_online_cpus()
+	  otherwise
+
 2008-07-07 Paolo Mantegazza <mantegazza@aero.polimi.it>
 
 	* base/arch/i386/hal/hal.immed and base/arch/x86_64/hal/hal.immed:

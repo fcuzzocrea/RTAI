@@ -89,7 +89,7 @@
  * 5. Keeps a record of bad tasks (apart from those that have been killed) that 
  *    can be examined via a /proc interface. (/proc/rtai/watchdog)
  * 
- * ID: @(#)$Id: wd.c,v 1.9 2007/12/18 15:09:08 mante Exp $
+ * ID: @(#)$Id: wd.c,v 1.10 2008/07/08 07:02:24 mante Exp $
  *
  *******************************************************************************/
 
@@ -139,7 +139,7 @@ static BAD_RT_TASK bad_task_pool[BAD_TASK_MAX];
 #endif
 
 // The current version number
-static char version[] = "$Revision: 1.9 $";
+static char version[] = "$Revision: 1.10 $";
 static char ver[10];
 
 // User friendly policy names
@@ -329,7 +329,7 @@ static int which_cpu(RT_TASK *t)	// Only reliable if task suspended
 	case RT_SCHED_MUP: 		// Same as calling watchdog task
 	    return hard_cpu_id();
 	case RT_SCHED_SMP:			// Deduce from position in list
-	    for (cpuid = 0; cpuid < NR_RT_CPUS; cpuid++) {
+	    for (cpuid = 0; cpuid < num_online_cpus(); cpuid++) {
 		if (t == smp_current[cpuid]) {
 		    return cpuid;
 		}
@@ -697,17 +697,13 @@ int __rtai_wd_init(void)
     if (Policy == WD_DEBUG)   Safety = Limit = -1;
 
     // Deduce number of watchdogs needed from scheduler type
-    switch (sched = rt_sched_type()) {
-	case RT_SCHED_UP  : 			 // Fall through
-	case RT_SCHED_SMP : num_wdogs = 1;          break;
-	case RT_SCHED_MUP : num_wdogs = NR_RT_CPUS; break;
-    }
+    num_wdogs = num_online_cpus();
 
     // Fill array of pointers to scheduler's task lists
     lnx0 = rt_get_base_linux_task(tlists);
 
     // Register watchdogs with scheduler (SMP returns pointer to rt_smp_current)
-    for (dog = 0; dog < NR_RT_CPUS; dog++) {
+    for (dog = 0; dog < num_online_cpus(); dog++) {
 	if ((smp_current = rt_register_watchdog(&wdog[dog], dog)) < 0) {
 	    WDLOG("Failed to register watchdog %d with RTAI scheduler\n", dog);
 	    for (dog--; dog >= 0; dog--) rt_deregister_watchdog(&wdog[dog], dog);
@@ -740,7 +736,7 @@ int __rtai_wd_init(void)
     // many real watchdogs as there are task lists. However we must protect 
     // the remaining CPUs with dummy watchdogs to prevent them being hogged 
     // by overrunning tasks (only relevant on SMP not MUP).
-    for (dog = 0; dog < NR_RT_CPUS; dog++) {
+    for (dog = 0; dog < num_online_cpus(); dog++) {
 	rt_task_init_cpuid( 	&wdog[dog], 
 			    	(dog < num_wdogs) ? watchdog : dummy, 
 			    	dog, 2000, RT_SCHED_HIGHEST_PRIORITY, 0, 0, dog);
@@ -809,14 +805,14 @@ void __rtai_wd_exit(void)
     remove_proc_entry("watchdog", rtai_proc_root);
 #endif
     // Deregister all watchdogs and shutdown the timer
-    for (dog = 0; dog < NR_RT_CPUS; dog++) {
+    for (dog = 0; dog < num_online_cpus(); dog++) {
 	rt_deregister_watchdog(&wdog[dog], dog);
     }
     stop_rt_timer();
     rt_busy_sleep(TickPeriod);
 
     // Cleanup and remove all watchdogs and bad task lists
-    for (dog = 0; dog < NR_RT_CPUS; dog++) {
+    for (dog = 0; dog < num_online_cpus(); dog++) {
 	rt_task_delete(&wdog[dog]);
 	if (dog < num_wdogs) {
 	    for (bt = bad_tl[dog]; bt;) {

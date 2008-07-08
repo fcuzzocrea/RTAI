@@ -242,7 +242,7 @@ int get_min_tasks_cpuid(void)
 {
 	int i, cpuid, min;
 	min =  tasks_per_cpu[cpuid = 0];
-	for (i = 1; i < NR_RT_CPUS; i++) {
+	for (i = 1; i < num_online_cpus(); i++) {
 		if (tasks_per_cpu[i] < min) {
 			min = tasks_per_cpu[cpuid = i];
 		}
@@ -2633,7 +2633,7 @@ static int rtai_read_sched(char *page, char **start, off_t off, int count,
 	PROC_PRINT("    Calibrated interrupt to scheduler latency: %d ns\n", (int)imuldiv(tuned.latency - tuned.setup_time_TIMER_CPUNIT, 1000000000, tuned.cpu_freq));
 	PROC_PRINT("    Calibrated oneshot timer setup_to_firing time: %d ns\n\n",
                   (int)imuldiv(tuned.setup_time_TIMER_CPUNIT, 1000000000, tuned.cpu_freq));
-	PROC_PRINT("Number of RT CPUs in system: %d\n\n", NR_RT_CPUS);
+	PROC_PRINT("Number of RT CPUs in system: %d\n\n", num_online_cpus());
 
 	PROC_PRINT("Real time kthreads in resorvoir (cpu/#)");
         for (cpuid = 0; cpuid < NR_RT_CPUS; cpuid++) {

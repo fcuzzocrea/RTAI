@@ -7,6 +7,8 @@
 	* base/arch/i386/hal/hal.immed and base/arch/x86_64/hal/hal.immed:
 	  use use num_online_cpus(), in place of RTAI_NR_CPUS, in timer 
 	  requests and module initialisation.
+	* base/tasklets/tasklets.c and addon/rtdm/module.c: 
+	  use num_online_cpus() in timers servers creation/delation.
 
 2008-07-07 Paolo Mantegazza <mantegazza@aero.polimi.it>
 

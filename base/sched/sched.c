@@ -2636,7 +2636,7 @@ static int rtai_read_sched(char *page, char **start, off_t off, int count,
 	PROC_PRINT("Number of RT CPUs in system: %d (sized for %d)\n\n", num_online_cpus(), NR_RT_CPUS);
 
 	PROC_PRINT("Real time kthreads in resorvoir (cpu/#)");
-        for (cpuid = 0; cpuid < NR_RT_CPUS; cpuid++) {
+        for (cpuid = 0; cpuid < num_online_cpus(); cpuid++) {
                 PROC_PRINT(": (%d/%d)", cpuid, taskidx[cpuid]);
         }
 	PROC_PRINT("\n\n");
@@ -2826,7 +2826,7 @@ static int lxrt_init(void)
     if (Reservoir <= 0)
 	Reservoir = 1;
 
-    Reservoir = (Reservoir + NR_RT_CPUS - 1)/NR_RT_CPUS;
+    Reservoir = (Reservoir + num_online_cpus() - 1)/num_online_cpus();
 
     for (cpuid = 0; cpuid < num_online_cpus(); cpuid++)
 	{

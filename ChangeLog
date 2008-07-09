@@ -1,5 +1,10 @@
 2008-07-08 Paolo Mantegazza <mantegazza@aero.polimi.it>
 
+	* base/malloc/malloc.c: align TLSF allocator to its distributed 
+	  version 2.4.2.
+
+2008-07-08 Paolo Mantegazza <mantegazza@aero.polimi.it>
+
 	* base/wd/wd.c: use NR_RT_CPUS in declarations only, num_online_cpus()
 	  otherwise, get rid of the switch related to scheduler type.
 	* base/sched/sched.c: use num_online_cpus(), in place of NR_RT_CPUS,

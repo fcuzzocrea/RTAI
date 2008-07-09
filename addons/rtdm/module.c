@@ -841,7 +841,7 @@ static int rtai_timers_init(void)
 {
 	int cpuid;
 	
-	for (cpuid = 0; cpuid < NUM_CPUS; cpuid++) {
+	for (cpuid = 0; cpuid < num_online_cpus(); cpuid++) {
 		timers_lock[cpuid] = timers_lock[0];
 		timers_list[cpuid] = timers_list[0];
 		timers_list[cpuid].cpuid = cpuid;
@@ -855,7 +855,7 @@ static int rtai_timers_init(void)
 static void rtai_timers_cleanup(void)
 {
 	int cpuid;
-	for (cpuid = 0; cpuid < NUM_CPUS; cpuid++) {
+	for (cpuid = 0; cpuid < num_online_cpus(); cpuid++) {
 		rt_task_delete(&timers_manager[cpuid]);
 	}
 }

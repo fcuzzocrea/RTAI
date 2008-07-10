@@ -194,17 +194,21 @@ static void kthread_fun(void *null)
 
 void init_tsc_sync(void)
 {
-	kernel_thread((void *)kthread_fun, NULL, 0);
-	while(!first_sync_loop_done) {
-		msleep(100);
+	if (num_online_cpus() > 1) {
+		kernel_thread((void *)kthread_fun, NULL, 0);
+		while(!first_sync_loop_done) {
+			msleep(100);
+		}
 	}
 }
 
 void cleanup_tsc_sync(void)
 {
-	end = 1;
-	while(end) {
-		msleep(100);
+	if (num_online_cpus() > 1) {
+		end = 1;
+		while(end) {
+			msleep(100);
+		}
 	}
 }
 

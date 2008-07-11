@@ -2109,7 +2109,7 @@ static void kthread_m(int cpuid)
 	rtai_set_linux_task_priority(current, SCHED_FIFO, KTHREAD_M_PRIO);
 	up(&resem[cpuid]);
 	while (!endkthread) {
-		current->state = TASK_UNINTERRUPTIBLE;
+		current->state = TASK_RTAISRVSLEEP;
 		schedule();
 #if defined(CONFIG_SMP) && LINUX_VERSION_CODE < KERNEL_VERSION(2,6,0)
 		WAKE_UP_TASKs(wake_up_hts);

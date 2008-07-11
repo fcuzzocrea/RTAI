@@ -323,7 +323,13 @@ static inline void send_sched_ipi(unsigned long dest)
 
 #define BASE_SOFT_PRIORITY 1000000000
 
+#ifdef TASK_KILLABLE
+#define TASK_HARDREALTIME  TASK_KILLABLE
+#define TASK_RTAISRVSLEEP  TASK_KILLABLE
+#else
 #define TASK_HARDREALTIME  TASK_UNINTERRUPTIBLE
+#define TASK_RTAISRVSLEEP  TASK_UNINTERRUPTIBLE
+#endif
 #define TASK_SOFTREALTIME  TASK_INTERRUPTIBLE
 
 static inline void enq_ready_edf_task(RT_TASK *ready_task)

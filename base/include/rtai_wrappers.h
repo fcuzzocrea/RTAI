@@ -84,7 +84,7 @@ typedef void irqreturn_t;
 #if LINUX_VERSION_CODE < KERNEL_VERSION(2,4,28)
 #define msleep(delay) \
 do { \
-	set_current_state(TASK_UNINTERRUPTIBLE); \
+	set_current_state(TASK_RTAISRVSLEEP); \
 	schedule_timeout(((delay)*HZ)/1000); \
 } while(0)
 #endif

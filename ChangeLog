@@ -1,3 +1,8 @@
+2008-07-15 Roberto Bucher <roberto.bucher@supsi.ch>
+
+	* rtai-lab/Fl_*_Manager.cpp: Modified for compatibility 32/64 bit
+	systems. Thanks to Joe Brandt.
+
 2008-07-10 Paolo Mantegazza <mantegazza@aero.polimi.it>
 
 	* base/arch/i386/hal/hal.c: if configured do not enable TSCs sync 

@@ -314,7 +314,7 @@ void Fl_Scopes_Manager::trace_flags(int n, int t, int flags)
 inline void Fl_Scopes_Manager::enter_trigger_mode_i(Fl_Choice *b, void *v)
 {
 	int modes[] = {tmRoll, tmOverwrite, tmTriggerCh1Pos, tmTriggerCh1Neg, tmHold};
-	int n = (int)v;
+	int n = (int)(long)v;
 	int val = b->value();
 	Scope_Windows[n]->Plot->trigger_mode(modes[val]);
 	
@@ -333,12 +333,12 @@ inline void Fl_Scopes_Manager::enter_options_i(Fl_Menu_Button *b, void *v)
         int i;
  	
         for(i=0;i<b->children();i++) { // loop through all menu items, and add checked items to the value
-	  if( b->child(i)->value() ) val |= (int)b->child(i)->user_data();
+	  if( b->child(i)->value() ) val |= (int)(long)b->child(i)->user_data();
 	} 
 	if ( b->label() == "Options " ) { // callback is used for trace and scope flags, if there is a space after "Options" set trace flags
 	  Scope_Windows[idx->scope_idx]->Plot->trace_flags(idx->trace_idx, val); 
 	} else {
-	  Scope_Windows[(int)v]->Plot->scope_flags(val);
+	  Scope_Windows[(int)(long)v]->Plot->scope_flags(val);
 	}
 }
 
@@ -448,7 +448,7 @@ void Fl_Scopes_Manager::select_scope(Fl_Browser *b, void *v)
 
 inline void Fl_Scopes_Manager::show_scope_i(Fl_Check_Button *b, void *v)
 {
-	int n = (int)v;
+	int n = (int)(long)v;
 	if (b->value()) {
 		Scopes[n].visible = true;
 		Scope_Pause[n]->activate();
@@ -468,7 +468,7 @@ void Fl_Scopes_Manager::show_scope(Fl_Check_Button *b, void *v)
 inline void Fl_Scopes_Manager::pause_scope_i(Fl_Button *b, void *v)
 {
 
-	int n = (int)v;
+	int n = (int)(long)v;
 	if (b->value()) {
 		Scope_Windows[n]->Plot->pause(false);
 	} else {
@@ -483,7 +483,7 @@ void Fl_Scopes_Manager::pause_scope(Fl_Button *b, void *v)
 
 inline void Fl_Scopes_Manager::oneshot_scope_i(Fl_Check_Button *b, void *v)
 {
-	int n = (int)v;
+	int n = (int)(long)v;
 	Scope_Windows[n]->Plot->oneshot(b->value() != 0);
         if ( b->value() ) 
   	  Scope_Pause[n]->activate();
@@ -499,7 +499,7 @@ void Fl_Scopes_Manager::oneshot_scope(Fl_Check_Button *b, void *v)
 
 inline void Fl_Scopes_Manager::select_grid_color_i(Fl_Button *bb, void *v)
 {
-	int n = (int)v;
+	int n = (int)(long)v;
 	uchar r,g,b;
 	Fl_Color c;
 
@@ -519,7 +519,7 @@ void Fl_Scopes_Manager::select_grid_color(Fl_Button *bb, void *v)
 
 inline void Fl_Scopes_Manager::select_bg_color_i(Fl_Button *bb, void *v)
 {
-	int n = (int)v;
+	int n = (int)(long)v;
 	uchar r,g,b;
 	Fl_Color c;
 
@@ -539,7 +539,7 @@ void Fl_Scopes_Manager::select_bg_color(Fl_Button *bb, void *v)
 
 inline void Fl_Scopes_Manager::enter_secdiv_i(Fl_Input_Browser *b, void *v)
 {
-	int n = (int)v;
+	int n = (int)(long)v;
 	float val = (float)atof(b->value());
 
 	if (val > 0.) {
@@ -554,7 +554,7 @@ void Fl_Scopes_Manager::enter_secdiv(Fl_Input_Browser *b, void *v)
 
 inline void Fl_Scopes_Manager::select_save_i(Fl_Check_Button *b, void *v)
 {
-	int n = (int)v;
+	int n = (int)(long)v;
 	if (b->value()) {
 		Save_Points[n]->activate();
 		Save_Time[n]->deactivate();
@@ -572,7 +572,7 @@ void Fl_Scopes_Manager::select_save(Fl_Check_Button *b, void *v)
 
 inline void Fl_Scopes_Manager::enable_saving_i(Fl_Light_Button *b, void *v)
 {
-	int n = (int)v;
+	int n = (int)(long)v;
 	if (b->value()) {
 		if ((Save_File_Pointer[n] = fopen(Save_File[n]->value(), "a+")) == NULL) {
 			fl_alert("Error in opening file %s", Save_File[n]->value());

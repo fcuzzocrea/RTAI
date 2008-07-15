@@ -179,7 +179,7 @@ void Fl_Logs_Manager::select_log(Fl_Browser *b, void *v)
 
 inline void Fl_Logs_Manager::select_save_i(Fl_Check_Button *b, void *v)
 {
-	int n = (int)v;
+	int n = (int)(long)v;
 	if (b->value()) {
 		Save_Points[n]->activate();
 		Save_Time[n]->deactivate();
@@ -197,7 +197,7 @@ void Fl_Logs_Manager::select_save(Fl_Check_Button *b, void *v)
 
 inline void Fl_Logs_Manager::enable_saving_i(Fl_Light_Button *b, void *v)
 {
-	int n = (int)v;
+	int n = (int)(long)v;
 	if (b->value()) {
 		if ((Save_File_Pointer[n] = fopen(Save_File[n]->value(), "a+")) == NULL) {
 			fl_alert("Error in opening file %s", Save_File[n]->value());

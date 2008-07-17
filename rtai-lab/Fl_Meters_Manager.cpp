@@ -213,7 +213,7 @@ void Fl_Meters_Manager::select_meter(Fl_Browser *b, void *v)
 
 inline void Fl_Meters_Manager::show_meter_i(Fl_Check_Button *b, void *v)
 {
-	int n = (int)(long)v;
+	long n = (long)v;
 	if (b->value()) {
 		Meters[n].visible = true;
 	} else {
@@ -228,7 +228,7 @@ void Fl_Meters_Manager::show_meter(Fl_Check_Button *b, void *v)
 
 inline void Fl_Meters_Manager::enter_minval_i(Fl_Float_Input *b, void *v)
 {
-	int n = (int)(long)v;
+	long n = (long)v;
 	float val = (float)atof(b->value());
 	Meter_Windows[n]->Meter->minimum_value(val);
 }
@@ -240,7 +240,7 @@ void Fl_Meters_Manager::enter_minval(Fl_Float_Input *b, void *v)
 
 inline void Fl_Meters_Manager::enter_maxval_i(Fl_Float_Input *b, void *v)
 {
-	int n = (int)(long)v;
+	long n = (long)v;
 	float val = (float)atof(b->value());
 	Meter_Windows[n]->Meter->maximum_value(val);
 }
@@ -252,7 +252,7 @@ void Fl_Meters_Manager::enter_maxval(Fl_Float_Input *b, void *v)
 
 inline void Fl_Meters_Manager::select_bg_color_i(Fl_Button *bb, void *v)
 {
-	int n = (int)(long)v;
+	long n = (long)v;
 	uchar r,g,b;
 	Fl_Color c;
 
@@ -272,7 +272,7 @@ void Fl_Meters_Manager::select_bg_color(Fl_Button *bb, void *v)
 
 inline void Fl_Meters_Manager::select_grid_color_i(Fl_Button *bb, void *v)
 {
-	int n = (int)(long)v;
+	long n = (long)v;
 	uchar r,g,b;
 	Fl_Color c;
 
@@ -292,7 +292,7 @@ void Fl_Meters_Manager::select_grid_color(Fl_Button *bb, void *v)
 
 inline void Fl_Meters_Manager::select_arrow_color_i(Fl_Button *bb, void *v)
 {
-	int n = (int)(long)v;
+	long n = (long)v;
 	uchar r,g,b;
 	Fl_Color c;
 
@@ -313,7 +313,7 @@ void Fl_Meters_Manager::select_arrow_color(Fl_Button *bb, void *v)
 inline void Fl_Meters_Manager::enter_meter_style_i(Fl_Choice *b, void *v)
 {
 	int styles[] = {MS_DIAL, MS_BAR, MS_BARCENTER, MS_ANGLE, MS_VALUE};
-	int n = (int)(long)v;
+	long n = (long)v;
 	int val = b->value();
 	Meter_Windows[n]->Meter->meter_style(styles[val]);
 	
@@ -326,7 +326,7 @@ void Fl_Meters_Manager::enter_meter_style(Fl_Choice *b, void *v)
 
 inline void Fl_Meters_Manager::enter_options_i(Fl_Menu_Button *b, void *v)
 {
-	int n = (int)(long)v;
+	long n = (long)v;
 	int val = 0;
         int i;
  	

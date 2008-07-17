@@ -112,7 +112,7 @@ void Fl_Synchs_Manager::select_synch(Fl_Browser *b, void *v)
 
 inline void Fl_Synchs_Manager::show_synch_i(Fl_Check_Button *b, void *v)
 {
-	int n = (int)(long)v;
+	long n = (long)v;
 	if (b->value()) {
 		Synchs[n].visible = true;
 	} else {

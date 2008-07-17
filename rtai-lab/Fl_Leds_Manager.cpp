@@ -124,7 +124,7 @@ void Fl_Leds_Manager::select_led(Fl_Browser *b, void *v)
 
 inline void Fl_Leds_Manager::show_led_i(Fl_Check_Button *b, void *v)
 {
-	int n = (int)v;
+	long n = (long)v;
 	if (b->value()) {
 		Leds[n].visible = true;
 	} else {
@@ -139,7 +139,7 @@ void Fl_Leds_Manager::show_led(Fl_Check_Button *b, void *v)
 
 inline void Fl_Leds_Manager::select_led_color_i(Fl_Button_Group *bg, void *v)
 {
-	int n = (int)v;
+	long n = (long)v;
 	Fl_String s = bg->value();
 
 	Led_Windows[n]->led_color(s);
@@ -152,7 +152,7 @@ void Fl_Leds_Manager::select_led_color(Fl_Button_Group *bg, void *v)
 
 inline void Fl_Leds_Manager::led_layout_i(Fl_Value_Input *b, void *v)
 {
-	int n = (int)v;
+	long n = (long)v;
 	int value = (int)(b->value());
 
 	Led_Windows[n]->layout(value);

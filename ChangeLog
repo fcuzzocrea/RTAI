@@ -1,3 +1,8 @@
+2008-07-18 Roberto Bucher <roberto.bucher@supsi.ch>
+
+	* rtai-lab/Fl_*_Manager.cpp: Modified for compatibility 32/64 bit
+	  systems. Thanks to Joe Brandt.
+
 2008-07-11 Paolo Mantegazza <mantegazza@aero.polimi.it>
 
 	* base/include/rtai_schedcore.h, base/include/rtai_wrappers.h and

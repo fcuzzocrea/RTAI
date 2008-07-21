@@ -106,7 +106,7 @@ static inline unsigned long long rtai_ulldiv (unsigned long long ull,
 #else
 
 /* do_div below taken from Linux-2.6.20 */
-
+#ifndef do_div
 #define do_div(n,base) ({ \
         unsigned long __upper, __low, __high, __mod, __base; \
         __base = (base); \
@@ -120,6 +120,7 @@ static inline unsigned long long rtai_ulldiv (unsigned long long ull,
         asm("":"=A" (n):"a" (__low),"d" (__high)); \
         __mod; \
 })
+#endif
 
 static inline unsigned long long rtai_ulldiv (unsigned long long ull, unsigned long uld, unsigned long *r)
 {

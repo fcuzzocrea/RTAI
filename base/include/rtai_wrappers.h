@@ -108,8 +108,14 @@ do { \
 	module_param_array(name, type, addr, 0400);
 
 /* Basic class macros */
+
 #ifdef CONFIG_SYSFS
 #include <linux/device.h>
+#if  LINUX_VERSION_CODE > KERNEL_VERSION(2,6,25)
+typedef struct class class_t;
+#define CLASS_DEVICE_CREATE(cls, devt, device, fmt, arg...)  device_create(cls, NULL, devt, fmt, ##arg)
+#define class_device_destroy(a, b)  device_destroy(a, b)
+#else
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,15)
 typedef struct class class_t;
 #define CLASS_DEVICE_CREATE(cls, devt, device, fmt, arg...) class_device_create(cls, NULL, devt, device, fmt, ## arg)
@@ -125,6 +131,7 @@ typedef struct class_simple class_t;
 #define class_device_destroy(a, b) class_simple_device_remove(b)
 #endif /* LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,13) */
 #endif /* LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,15) */
+#endif
 #endif
 
 #define mm_remap_page_range(vma,from,to,size,prot) remap_page_range(vma,from,to,size,prot)

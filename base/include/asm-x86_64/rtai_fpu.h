@@ -7,11 +7,8 @@
  *   Copyright (C) 2000 Pierre Cloutier <pcloutier@PoseidonControls.com>
  *   and others.
  *
- *   RTAI/x86 rewrite over Adeos:
- *   Copyright (C) 2002 Philippe Gerum.
- * 
  *   Porting to x86_64 architecture:
- *   Copyright &copy; 2005 Paolo Mantegazza, \n
+ *   Copyright &copy; 2005-2008 Paolo Mantegazza, \n
  *   Copyright &copy; 2005 Daniele Gasperini \n
  *
  *   This program is free software; you can redistribute it and/or modify
@@ -37,11 +34,21 @@
 #include <asm/processor.h>
 #endif /* !__cplusplus */
 
+#if LINUX_VERSION_CODE <= KERNEL_VERSION(2,6,25)
 typedef union i387_union FPU_ENV;
+#define TASK_FPENV(tsk)  (&(tsk)->thread.i387.fxsave)
+#else
+typedef union thread_xstate FPU_ENV;
+#define TASK_FPENV(tsk)  (&(tsk)->thread.xstate->fxsave)
+#endif
    
 #ifdef CONFIG_RTAI_FPU_SUPPORT
 
-#define enable_fpu() clts()
+// RAW FPU MANAGEMENT FOR USAGE FROM WHAT/WHEREVER RTAI DOES IN KERNEL
+
+#define enable_fpu()  do { \
+	__asm__ __volatile__ ("clts"); \
+} while(0)
 
 #define save_fpcr_and_enable_fpu(fpcr)  do { \
 	fpcr = read_cr0(); \
@@ -67,23 +74,11 @@ typedef union i387_union FPU_ENV;
 } while (0)
 
 // initialise the given fpenv union, without touching the related hard fpu unit
-#define init_fpenv(fpenv)  do { \
-        memset(&(fpenv).fxsave, 0, sizeof(struct i387_fxsave_struct)); \
-        (fpenv).fxsave.cwd = 0x37f; \
-	(fpenv).fxsave.mxcsr = 0x1f80; \
+#define __init_fpenv(fpenv)  do { \
+	memset(fpenv, 0, sizeof(struct i387_fxsave_struct)); \
+	(fpenv)->cwd = 0x37f; \
+	(fpenv)->mxcsr = 0x1f80; \
 } while (0)
-
-#if 0
-
-#define save_fpenv(fpenv)  do { \
-	__asm__ __volatile__ ("rex64; fxsave %0; fnclex": "=m" ((fpenv).fxsave)); \
-} while (0)
-
-#define restore_fpenv(fpenv)  do { \
-        __asm__ __volatile__ ("fxrstor %0": : "m" ((fpenv).fxsave)); \
-} while (0)
-
-#else
 
 /* taken from Linux i387.h */
 
@@ -127,32 +122,27 @@ static inline int __restore_fpenv(struct i387_fxsave_struct *fx)
 	return err;
 } 
 
-#define save_fpenv(fpenv)  do { \
-	__save_fpenv(&fpenv.fxsave); \
-} while (0)
-
-#define restore_fpenv(fpenv)  do { \
-	__restore_fpenv(&fpenv.fxsave); \
-} while (0)
-#endif
+#define init_fpenv(fpenv)     do { __init_fpenv(&(fpenv).fxsave); } while (0)
+#define save_fpenv(fpenv)     do { __save_fpenv(&(fpenv).fxsave); } while (0)
+#define restore_fpenv(fpenv)  do { __restore_fpenv(&(fpenv).fxsave); } while (0)
 
 // FPU MANAGEMENT DRESSED FOR IN KTHREAD/THREAD/PROCESS FPU USAGE FROM RTAI
 
 #define init_hard_fpu(lnxtsk)  do { \
-        init_hard_fpenv(); \
-        set_lnxtsk_uses_fpu(lnxtsk); \
-        set_lnxtsk_using_fpu(lnxtsk); \
+	init_hard_fpenv(); \
+	set_lnxtsk_uses_fpu(lnxtsk); \
+	set_lnxtsk_using_fpu(lnxtsk); \
 } while (0)
 
 #define init_fpu(lnxtsk)  do { \
-        init_fpenv((lnxtsk)->thread.i387); \
-        set_lnxtsk_uses_fpu(lnxtsk); \
+	__init_fpenv(TASK_FPENV(lnxtsk)); \
+	set_lnxtsk_uses_fpu(lnxtsk); \
 } while (0)
 
 #define restore_fpu(lnxtsk)  do { \
-        enable_fpu(); \
-        restore_fpenv((lnxtsk)->thread.i387); \
-        set_lnxtsk_using_fpu(lnxtsk); \
+	enable_fpu(); \
+	__restore_fpenv(TASK_FPENV(lnxtsk)); \
+	set_lnxtsk_using_fpu(lnxtsk); \
 } while (0)
 
 #else /* !CONFIG_RTAI_FPU_SUPPORT */

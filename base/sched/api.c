@@ -1938,14 +1938,14 @@ RTAI_SYSCALL_MODE int rt_release_irq_task (unsigned irq)
 	return retval;
 }
 
-#endif
-
 //extern void usp_request_rtc(int, void *);
 RTAI_SYSCALL_MODE void usp_request_rtc(int rtc_freq, void *handler)
 {
 	rt_request_rtc(rtc_freq, !handler || (handler && handler == (void *)1) ? handler : rt_irq_signal);
 		
 }
+
+#endif
 
 /* +++++++++++++++++ SUPPORT FOR THE LINUX SYSCALL SERVER +++++++++++++++++++ */
 

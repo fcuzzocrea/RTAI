@@ -1,3 +1,12 @@
+2008-07-21 Paolo Mantegazza <mantegazza@aero.polimi.it>
+
+	* base/include/rtai_wrappers: add Linux version dependence for
+	  device support with > 2.6.25.
+	* base/include/asm-i386/rtai_fpu.h and rtai_hal.h: modified to 
+	  support > 2.6.25.
+	* base/include/asm-x86_64/rtai_fpu.h: modified to support > 2.6.25.
+	* base/sched/sched.c and api.c: put usp_request_rtc under the
+
 2008-07-18 Roberto Bucher <roberto.bucher@supsi.ch>
 
 	* rtai-lab/Fl_*_Manager.cpp: Modified for compatibility 32/64 bit

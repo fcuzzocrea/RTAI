@@ -24,7 +24,6 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA.
 #include <sched.h>
 #include <signal.h>
 #include <sys/mman.h>
-#include <asm/io.h>
 
 #include <rtai_mbx.h>
 #include <rtai_msg.h>

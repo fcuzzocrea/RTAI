@@ -52,6 +52,8 @@ MODULE_LICENSE("GPL");
 	Hacked from arch/ia64/kernel/smpboot.c.
 */
 
+static int sync_cnt[RTAI_NR_CPUS];
+
 volatile long rtai_tsc_ofst[RTAI_NR_CPUS];
 
 static inline long long readtsc(void)
@@ -148,11 +150,11 @@ static inline long long get_delta(long long *rt, long long *master, unsigned int
 static void sync_tsc(unsigned int master, unsigned int slave)
 {
 	unsigned long flags;
-	long long delta, rt, master_time_stamp;
+	long long delta, rt = 0, master_time_stamp = 0;
 
 	go[MASTER] = 1;
 	if (smp_call_function(sync_master, (void *)master, 1, 0) < 0) {
-//		printk(KERN_ERR "sync_tsc: failed to get attention of CPU %u!\n", master);
+//		printk(KERN_ERR "sync_tsc: slave CPU %u failed to get attention from master CPU %u!\n", slave, master);
 		return;
 	}
 	while (go[MASTER]) {
@@ -162,7 +164,7 @@ static void sync_tsc(unsigned int master, unsigned int slave)
 	delta = get_delta(&rt, &master_time_stamp, slave);
 	spin_unlock_irqrestore(&tsc_sync_lock, flags);
 
-//	printk(KERN_INFO "CPU %u: synced its TSC with CPU %u (master time stamp %llu cycles, < - OFFSET %lld cycles - > , max double tsc read span %llu cycles)\n", slave, master, master_time_stamp, delta, rt);
+	printk(KERN_INFO "# %d - CPU %u: synced its TSC with CPU %u (master time stamp %llu cycles, < - OFFSET %lld cycles - > , max double tsc read span %llu cycles)\n", ++sync_cnt[slave], slave, master, master_time_stamp, delta, rt);
 }
 
 //#define CONFIG_RTAI_MASTER_TSC_CPU  0
@@ -170,13 +172,36 @@ static void sync_tsc(unsigned int master, unsigned int slave)
 #define DSLEEP  500 // ms
 static volatile int end;
 
-static inline int irandu(void)
+// see: Computing Practices, ACM, vol. 31, n. 10, 1988, pgs 1192-1201.
+
+#define TWOPWR31M1 2147483647  // 2^31 - 1
+
+static inline long next_rand(long rand)
 {
-	static int i = 783637;
-	i = 125*i;
-	return i = i - (i/2796203)*2796203;
+	const long a = 16807;
+	const long m = TWOPWR31M1;
+	const long q = 127773;
+	const long r = 2836;
+
+	long lo, hi;
+
+	hi = rand/q;
+	lo = rand - hi*q;
+	rand = a*lo - r*hi;
+	if (rand <= 0) {
+		rand += m;
+	}
+	return rand;
 }
 
+static inline long irandu(unsigned long range)
+{
+	static long seed = 783637;
+	const long m = TWOPWR31M1;
+
+	seed = next_rand(seed);
+	return rtai_imuldiv(seed, range, m);
+}
 static void kthread_fun(void *null)
 {
 	int i;
@@ -187,7 +212,7 @@ static void kthread_fun(void *null)
 				sync_tsc(CONFIG_RTAI_MASTER_TSC_CPU, i);
 			}
 		}
-		msleep(SLEEP0 + irandu()%DSLEEP);
+		msleep(SLEEP0 + irandu(DSLEEP));
 	}
 	end = 0;
 }

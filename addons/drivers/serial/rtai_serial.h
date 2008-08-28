@@ -261,7 +261,7 @@ RTAI_PROTO(int, rt_spget_msr, (unsigned int tty, int mask))
 	return rtai_lxrt(FUN_EXT_RTAI_SP, SIZARG, _SPGET_MSR, &arg).i[LOW];
 }
 
-RTAI_PROTO(int, rt_spset_msr, (unsigned int tty, int mask, int setbits))
+RTAI_PROTO(int, rt_spset_mcr, (unsigned int tty, int mask, int setbits))
 {
 	struct { unsigned long tty; long mask, setbits; } arg = { tty, mask, setbits };
 	return rtai_lxrt(FUN_EXT_RTAI_SP, SIZARG, _SPSET_MCR, &arg).i[LOW];

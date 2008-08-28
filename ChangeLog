@@ -1,4 +1,8 @@
 2008-08-28 Pierangelo Masarati <masarati@aero.polimi.it>
+	* addons/drivers/serial/rtai_serial.h: typo in rt_spset_mcr
+	  function declaration; thanks to D Wysong
+
+2008-08-28 Pierangelo Masarati <masarati@aero.polimi.it>
 	* configure.in: fix drivers build when no other addon is configured
 	  thanks to D Wysong
 

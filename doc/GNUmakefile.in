@@ -337,7 +337,8 @@ sysconfdir = @sysconfdir@
 target_alias = @target_alias@
 SUBDIRS = docbook doxygen
 EXTRA_DIST = maintainers \
-	User-Manual.txt
+	User-Manual.txt \
+	Linux-syscalls-servers.txt
 
 all: all-recursive
 

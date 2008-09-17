@@ -1,3 +1,8 @@
+2008-09-16 Paolo Mantegazza <mantegazza@aero.polimi.it>
+
+	* base/include/rtai_nam2num.h: use RTAI_PROTO macro in place of 
+	  forcing "static inline" always.
+
 2008-08-28 Pierangelo Masarati <masarati@aero.polimi.it>
 	* addons/drivers/serial/rtai_serial.h: typo in rt_spset_mcr
 	  function declaration; thanks to D Wysong

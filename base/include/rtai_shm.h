@@ -219,7 +219,7 @@ int rkmmap(void *mem,
 
 #define RTAI_SHM_DEV  "/dev/rtai_shm"
 
-static inline void *_rt_shm_alloc(void *start, unsigned long name, int size, int suprt, int isheap)
+RTAI_PROTO (void *, _rt_shm_alloc, (void *start, unsigned long name, int size, int suprt, int isheap))
 {
 	int hook;
 	void *adr = NULL;
@@ -355,7 +355,7 @@ static inline void *_rt_shm_alloc(void *start, unsigned long name, int size, int
 #define rtai_malloc_adr(start_address, name, size)  \
 	_rt_shm_alloc(start_address, name, size, USE_VMALLOC, 0)  // legacy
 
-static inline int rt_shm_free(unsigned long name) 
+RTAI_PROTO(int, rt_shm_free, (unsigned long name))
 {
 	int hook, size;
 	struct { void *nameadr; } arg = { &name };

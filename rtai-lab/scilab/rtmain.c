@@ -3,6 +3,7 @@
   Paolo Mantegazza (mantegazza@aero.polimi.it)
   Roberto Bucher (roberto.bucher@supsi.ch)
   Daniele Gasperini (daniele.gasperini@elet.polimi.it)
+  Guillaume Millet <millet@isir.fr>
 
   This library is free software; you can redistribute it and/or
   modify it under the terms of the GNU Lesser General Public
@@ -41,7 +42,7 @@
 #include <rtai_mbx.h>
 #include <rtai_fifos.h>
 
-#define RTAILAB_VERSION         "3.6.1"
+#define RTAILAB_VERSION         "3.6.2"
 #define MAX_ADR_SRCH      500
 #define MAX_NAME_SIZE     256
 #define MAX_SCOPES        100
@@ -112,12 +113,14 @@ RTIME RTTSKinit=0, RTTSKper;
 #define msleep(t)  do { poll(0, 0, t); } while (0)
 
 #define MAX_COMEDI_DEVICES      11
+#define MAX_COMEDI_COUNTERS      8
 
 void *ComediDev[MAX_COMEDI_DEVICES];
 int ComediDev_InUse[MAX_COMEDI_DEVICES] = {0};
 int ComediDev_AIInUse[MAX_COMEDI_DEVICES] = {0};
 int ComediDev_AOInUse[MAX_COMEDI_DEVICES] = {0};
 int ComediDev_DIOInUse[MAX_COMEDI_DEVICES] = {0};
+int ComediDev_CounterInUse[MAX_COMEDI_DEVICES][MAX_COMEDI_COUNTERS] = {0};
 
 static void DummyWait(void) { }
 static void DummySend(void) { }

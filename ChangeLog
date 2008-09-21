@@ -1,3 +1,10 @@
+2008-09-21 Roberto Bucher <roberto.bucher@supsi.ch>
+
+	* rtai-lab/scilab/rtmain.c: Modified for adding COMEDI encoders
+	* rtai-lab/scilab/devices/rtai_comedi_encoders.c:
+	* rtai-lab/scilab/macros/RTAI/rtai4_comedi_encoders.sci: Tanks to
+	 Guillaume Millet.
+
 2008-09-20 Paolo Mantegazza <mantegazza@aero.polimi.it>
 
 	* base/include/rtai_shm.h and rtai_wd.h: use RTAI_PROTO macro in 

@@ -560,12 +560,13 @@ RTAI_SYSCALL_MODE RT_TASK *rt_rpc_until(RT_TASK *task, unsigned long to_do, void
 		if (task->state != RT_SCHED_READY && (task->state &= ~(RT_SCHED_RECEIVE | RT_SCHED_DELAYED)) == RT_SCHED_READY) {
 			enq_ready_task(task);
 		}
+		enqueue_blocked(rt_current, &task->ret_queue, 0);
 		rt_current->state |= (RT_SCHED_RETURN | RT_SCHED_DELAYED);
 	} else {
 		rt_current->msg = to_do;
+		enqueue_blocked(rt_current, &task->msg_queue, 0);
 		rt_current->state |= (RT_SCHED_RPC | RT_SCHED_DELAYED);
 	}
-	enqueue_blocked(rt_current, &task->ret_queue, 0);
 	enqueue_resqtsk(task);
 	pass_prio(task, rt_current);
 	rem_ready_current(rt_current);

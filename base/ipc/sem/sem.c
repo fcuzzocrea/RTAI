@@ -2053,9 +2053,16 @@ RTAI_SYSCALL_MODE int _rt_poll(struct rt_poll_s *pdsa, unsigned long nr, RTIME t
 	return polled ? polled : semret;
 }
 
-EXPORT_SYMBOL(_rt_poll);
+#else
+
+RTAI_SYSCALL_MODE int _rt_poll(struct rt_poll_s *pdsa, unsigned long nr, RTIME timeout, int space)
+{
+	return RTE_OBJINV;
+}
 
 #endif
+
+EXPORT_SYMBOL(_rt_poll);
 
 /* +++++++++++++++++++++++++++ END POLLING SERVICE ++++++++++++++++++++++++++ */
 

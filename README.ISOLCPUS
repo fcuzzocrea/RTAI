@@ -1,9 +1,9 @@
                       *** EXPLOITING CPUs ISOLATION ***
 
 Written by:
-Paolo Mantegazza <mantegazza@aero.polimi.it>
-and
 Bernhard Pfund <bernhard@chapter7.ch>
+and
+Paolo Mantegazza <mantegazza@aero.polimi.it>
 
 RTAI can take advantage of the possibility Linux affords to isolate CPUs
 from any of its scheduling activity on multi processor (MP) machines.

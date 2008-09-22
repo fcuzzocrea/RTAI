@@ -1,3 +1,10 @@
+2008-09-23 Paolo Mantegazza <mantegazza@aero.polimi.it>
+
+	* base/ipc/sem/sem.c: if ipc polling is not configured provide a do
+	  nothing rt_poll function returning an error always.
+	* base/include/rtai_sem.h: declare rt_poll even if not configured,
+	  sem.c provides an error return anyhow.
+
 2008-09-22 Bernhard Pfund <bernhard@chapter7.ch>
 
 	* base/README.ISOLCPUS: some editing of the existing isolcpus scheme

@@ -1,9 +1,9 @@
-2008-09-21 Roberto Bucher <roberto.bucher@supsi.ch>
+2008-09-22 Bernhard Pfund <bernhard@chapter7.ch>
 
-	* rtai-lab/scilab/rtmain.c: Modified for adding COMEDI encoders
-	* rtai-lab/scilab/devices/rtai_comedi_encoders.c:
-	* rtai-lab/scilab/macros/RTAI/rtai4_comedi_encoders.sci: Tanks to
-	 Guillaume Millet.
+	* base/README.ISOLCPUS: some editing of the existing isolcpus scheme
+	  plus a new explanation, with support scripts, to help in using the
+	  newer Linux Cpusets & CPU hotplug to isolate CPUs for hard real time
+	  only.
 
 2008-09-20 Paolo Mantegazza <mantegazza@aero.polimi.it>
 

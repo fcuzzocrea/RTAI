@@ -390,7 +390,7 @@ RTAI_SYSCALL_MODE RT_TASK *rt_rpc(RT_TASK *task, unsigned long to_do, void *resu
 	flags = rt_global_save_flags_and_cli();
 	ASSIGN_RT_CURRENT;
 	if ((task->state & RT_SCHED_RECEIVE) &&
-		(!task->msg_queue.task || task->msg_queue.task == rt_current)) {
+	    (!task->msg_queue.task || task->msg_queue.task == rt_current)) {
 		rt_current->msg = task->msg = to_do;
 		task->msg_queue.task = rt_current;
 		task->ret_queue.task = NULL;
@@ -470,7 +470,7 @@ RTAI_SYSCALL_MODE RT_TASK *rt_rpc_if(RT_TASK *task, unsigned long to_do, void *r
 	flags = rt_global_save_flags_and_cli();
 	ASSIGN_RT_CURRENT;
 	if ((task->state & RT_SCHED_RECEIVE) &&
-	      (!task->msg_queue.task || task->msg_queue.task == rt_current)) {
+	    (!task->msg_queue.task || task->msg_queue.task == rt_current)) {
 		rt_current->msg = task->msg = to_do;
 		task->msg_queue.task = rt_current;
 		task->ret_queue.task = NULL;

@@ -1,3 +1,7 @@
+2008-09-24 Paolo Mantegazza <mantegazza@aero.polimi.it>
+
+	* base/ipc/msg.c: fix missing blocked enqueuing in rt_rpc_until.
+
 2008-09-22 Bernhard Pfund <bernhard@chapter7.ch>
 
 	* base/README.ISOLCPUS: some editing of the existing isolcpus scheme

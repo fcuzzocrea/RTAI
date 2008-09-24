@@ -18,7 +18,7 @@ function [x,y,typ] = rtai4_extdata(job,arg1,arg2)
     while %t do
       [ok,filename,npts,exprs]=..
       getvalue('Set extdata data block parameters',..
-      ['Filename:';
+      ['Filename (max 29 chars) :';
        'Nr. of Points:'],..
       list('str',1,'vec',-1),exprs)
       if ~ok then break,end

@@ -242,4 +242,9 @@ RTAI_PROTO(int, rt_scb_put, (void *scb, void *msg, int msg_size))
 	return msg_size;
 }
 
+RTAI_PROTO(int, rt_scb_ovrwr, (void *scb, void *msg, int msg_size))
+{
+	return msg_size;
+}
+
 #endif /* _RTAI_SCB_H */

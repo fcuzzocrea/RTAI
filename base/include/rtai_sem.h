@@ -370,6 +370,11 @@ RTAI_PROTO(int, rt_cond_wait_timed,(CND *cnd, SEM *mutex, RTIME delay))
 	return rtai_lxrt(BIDX, SIZARG, COND_WAIT_TIMED, &arg).i[LOW];
 }
 
+RTAI_PROTO(int, rt_poll, (void *pdsa, unsigned long nr, RTIME timeout))
+{
+        return RTE_OBJINV;
+}
+
 #ifdef __cplusplus
 }
 #endif /* __cplusplus */

@@ -101,43 +101,43 @@ extern "C" {
 #endif /* __cplusplus */
 
 // API for setting parameters
-static inline int rt_wdset_grace(int new_value)
+RTAI_PROTO(int, rt_wdset_grace, (int new_value))
 {
 	struct { long new_value; } arg = { new_value };
 	return rtai_lxrt(WD_INDX, SIZARG, WD_SET_GRACE, &arg).i[LOW];
 }
 
-static inline int rt_wdset_gracediv(int new_value)
+RTAI_PROTO(int, rt_wdset_gracediv, (int new_value))
 {
 	struct { long new_value; } arg = { new_value };
 	return rtai_lxrt(WD_INDX, SIZARG, WD_SET_GRACEDIV, &arg).i[LOW];
 }
 
-static inline wd_policy rt_wdset_policy(wd_policy new_value)
+RTAI_PROTO(wd_policy, rt_wdset_policy, (wd_policy new_value))
 {
 	struct { long new_value; } arg = { new_value };
 	return (wd_policy)rtai_lxrt(WD_INDX, SIZARG, WD_SET_POLICY, &arg).i[LOW];
 }
 
-static inline int rt_wdset_slip(int new_value)
+RTAI_PROTO(int, rt_wdset_slip, (int new_value))
 {
 	struct { long new_value; } arg = { new_value };
 	return rtai_lxrt(WD_INDX, SIZARG, WD_SET_SLIP, &arg).i[LOW];
 }
 
-static inline int rt_wdset_stretch(int new_value)
+RTAI_PROTO(int, rt_wdset_stretch, (int new_value))
 {
 	struct { long new_value; } arg = { new_value };
 	return rtai_lxrt(WD_INDX, SIZARG, WD_SET_STRETCH, &arg).i[LOW];
 }
 
-static inline int rt_wdset_limit(int new_value)
+RTAI_PROTO(int, rt_wdset_limit, (int new_value))
 {
 	struct { long new_value; } arg = { new_value };
 	return rtai_lxrt(WD_INDX, SIZARG, WD_SET_LIMIT, &arg).i[LOW];
 }
 
-static inline int rt_wdset_safety(int new_value)
+RTAI_PROTO(int, rt_wdset_safety, (int new_value))
 {
 	struct { long new_value; } arg = { new_value };
 	return rtai_lxrt(WD_INDX, SIZARG, WD_SET_SAFETY, &arg).i[LOW];

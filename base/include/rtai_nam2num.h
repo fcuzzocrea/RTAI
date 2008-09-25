@@ -50,7 +50,7 @@
  *
  * @return the unsigned long associated with @a name.
  */
-static inline unsigned long nam2num (const char *name)
+RTAI_PROTO(unsigned long, nam2num, (const char *name))
 {
         unsigned long retval = 0;
 	int c, i;
@@ -84,7 +84,7 @@ static inline unsigned long nam2num (const char *name)
  * @param name is a pointer to a 6 characters buffer where the identifier will
  * be returned.
  */
-static inline void num2nam (unsigned long num, char *name)
+RTAI_PROTO(void, num2nam, (unsigned long num, char *name))
 {
         int c, i, k, q; 
 	if (num == 0xFFFFFFFF) {

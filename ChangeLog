@@ -1,3 +1,17 @@
+2008-09-25 Paolo Mantegazza <mantegazza@aero.polimi.it>
+
+	* base/include/rtai_scb.h: provide a dummy rt_scb_ovrwr for user 
+	  space.
+	* base/include/rtai_sem.h: provide a dummy rt_poll for user space.
+        * base/include/rtai_shm.h, rtai_nam2num.h, and rtai_wd.h: use 
+	  RTAI_PROTO macro in place of forcing "static inline" always.
+
+2008-09-16 Paolo Mantegazza <mantegazza@aero.polimi.it>
+
+        * base/include/rtai_nam2num.h: use RTAI_PROTO macro in place of
+          forcing "static inline" always.
+
+
 2008-09-24 Paolo Mantegazza <mantegazza@aero.polimi.it>
 
 	* base/ipc/msg.c: fix missing blocked enqueuing in rt_rpc_until.

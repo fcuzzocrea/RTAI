@@ -79,6 +79,6 @@ function [x,y,typ] = rtai4_comedi_encoder(job,arg1,arg2)
     model.dep_ut=[%t %f]
     exprs=[sci2exp(number),name,sci2exp(chA),sci2exp(chB),sci2exp(chZ),sci2exp(initval),sci2exp(index),sci2exp(cmode)]
     gr_i=['xstringb(orig(1),orig(2),[''COMEDI Encoder'';name+'' CTR-''+string(number)],sz(1),sz(2),''fill'');']
-    x=standard_define([4 2],model,exprs,gr_i)
+    x=standard_define([3 2],model,exprs,gr_i)
   end
 endfunction

@@ -7,7 +7,7 @@ COMEDIDIR = $(shell rtai-config --comedi-dir)
 SRCALL = $(wildcard *.c)
 
 ifeq ($(strip $(COMEDIDIR)),)
-EXCLUDE = exit_on_error.c rtai_comedi_datain.c rtai_comedi_dataout.c rtai_comedi_dioin.c rtai_comedi_dioout.c
+EXCLUDE = exit_on_error.c rtai_comedi_datain.c rtai_comedi_dataout.c rtai_comedi_dioin.c rtai_comedi_dioout.c rtai_comedi_encoder.c
 else
 EXCLUDE = exit_on_error.c
 endif

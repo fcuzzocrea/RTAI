@@ -120,7 +120,7 @@ int ComediDev_InUse[MAX_COMEDI_DEVICES] = {0};
 int ComediDev_AIInUse[MAX_COMEDI_DEVICES] = {0};
 int ComediDev_AOInUse[MAX_COMEDI_DEVICES] = {0};
 int ComediDev_DIOInUse[MAX_COMEDI_DEVICES] = {0};
-int ComediDev_CounterInUse[MAX_COMEDI_DEVICES][MAX_COMEDI_COUNTERS] = {0};
+int ComediDev_CounterInUse[MAX_COMEDI_DEVICES][MAX_COMEDI_COUNTERS] = {{0}};
 
 static void DummyWait(void) { }
 static void DummySend(void) { }

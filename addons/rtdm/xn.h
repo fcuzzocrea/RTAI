@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2005 Paolo Mantegazza <mantegazza@aero.polimi.it>
+ * Copyright (C) 2005-2008 Paolo Mantegazza <mantegazza@aero.polimi.it>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License as
@@ -23,11 +23,14 @@
 #ifndef _RTAI_XNSTUFF_H
 #define _RTAI_XNSTUFF_H
 
+#include <linux/version.h>
 #include <linux/proc_fs.h>
 #include <asm/uaccess.h>
 #include <asm/mman.h>
 
-#include <rtai.h>
+#include <rtai_schedcore.h>
+
+#define CONFIG_RTAI_RTDM_SELECT 1
 
 #define CONFIG_RTAI_OPT_PERVASIVE
 
@@ -74,10 +77,10 @@
 
 //recursive smp locks, as for RTAI global stuff + a name
 
-#define XNARCH_LOCK_UNLOCKED  (xnlock_t) { { 0, 0 } }
+#define XNARCH_LOCK_UNLOCKED  (xnlock_t) { 0 }
 
 typedef unsigned long spl_t;
-typedef struct { volatile unsigned long lock[2]; } xnlock_t;
+typedef struct { volatile unsigned long lock; } xnlock_t;
 
 extern xnlock_t nklock;
 
@@ -90,15 +93,17 @@ extern xnlock_t nklock;
 
 static inline void xnlock_init(xnlock_t *lock)
 {
-	*lock = (xnlock_t)XNARCH_LOCK_UNLOCKED;
+	*lock = XNARCH_LOCK_UNLOCKED;
 }
 
 static inline void xnlock_get(xnlock_t *lock)
 {
 	barrier();
 	rtai_cli();
-	if (!test_and_set_bit(hal_processor_id(), &lock->lock[0])) {
-		rtai_spin_glock(&lock->lock[0]);
+	if (!test_and_set_bit(hal_processor_id(), &lock->lock)) {
+		while (test_and_set_bit(31, &lock->lock)) {
+			cpu_relax();
+		}
 	}
 	barrier();
 }
@@ -107,8 +112,9 @@ static inline void xnlock_put(xnlock_t *lock)
 {
 	barrier();
 	rtai_cli();
-	if (test_and_clear_bit(hal_processor_id(), &lock->lock[0])) {
-		rtai_spin_gunlock(&lock->lock[0]);
+	if (test_and_clear_bit(hal_processor_id(), &lock->lock)) {
+		test_and_clear_bit(31, &lock->lock);
+		cpu_relax();
 	}
 	barrier();
 }
@@ -118,9 +124,12 @@ static inline spl_t __xnlock_get_irqsave(xnlock_t *lock)
 	unsigned long flags;
 
 	barrier();
-	flags = rtai_save_flags_irqbit_and_cli();
-	if (!test_and_set_bit(hal_processor_id(), &lock->lock[0])) {
-		rtai_spin_glock(&lock->lock[0]);
+	rtai_save_flags_and_cli(flags);
+	flags &= (1 << RTAI_IFLAG);
+	if (!test_and_set_bit(hal_processor_id(), &lock->lock)) {
+		while (test_and_set_bit(31, &lock->lock)) {
+			cpu_relax();
+		}
 		barrier();
 		return flags | 1;
 	}
@@ -136,9 +145,16 @@ static inline void xnlock_put_irqrestore(xnlock_t *lock, spl_t flags)
 	barrier();
 	rtai_cli();
 	if (test_and_clear_bit(0, &flags)) {
-		xnlock_put(lock);
+		if (test_and_clear_bit(hal_processor_id(), &lock->lock)) {
+			test_and_clear_bit(31, &lock->lock);
+			cpu_relax();
+		}
 	} else {
-		xnlock_get(lock);
+		if (!test_and_set_bit(hal_processor_id(), &lock->lock)) {
+			while (test_and_set_bit(31, &lock->lock)) {
+				cpu_relax();
+			}
+		}
 	}
 	if (flags) {
 		rtai_sti();
@@ -372,6 +388,8 @@ RTAI_SYSCALL_MODE int rt_timer_insert(struct rtdm_timer_struct *timer, int prior
 
 typedef struct rtdm_timer_struct xntimer_t;
 
+#define XN_INFINITE  (0)
+
 /* Timer modes */
 typedef enum xntmode {
         XN_RELATIVE,
@@ -416,5 +434,108 @@ long uld, unsigned long *r)
         }
         return ull;
 }
+
+// support for RTDM select
+
+DECLARE_EXTERN_XNLOCK(nklock);
+
+typedef struct xnholder {
+	struct xnholder *next;
+	struct xnholder *prev;
+} xnholder_t;
+
+typedef xnholder_t xnqueue_t;
+
+#define DEFINE_XNQUEUE(q) xnqueue_t q = { { &(q), &(q) } }
+
+#define inith(holder) \
+	do { *(holder) = (xnholder_t) { holder, holder }; } while (0)
+
+#define initq(queue) \
+	do { inith(queue); } while (0)
+
+#define appendq(queue, holder) \
+do { \
+	(holder)->prev = (queue); \
+	((holder)->next = (queue)->next)->prev = holder; \
+	(queue)->next = holder; \
+} while (0)
+
+#define removeq(queue, holder) \
+do { \
+	(holder)->prev->next = (holder)->next; \
+	(holder)->next->prev = (holder)->prev; \
+} while (0)
+
+static inline xnholder_t *getheadq(xnqueue_t *queue)
+{
+	xnholder_t *holder = queue->next;
+	return holder == queue ? NULL : holder;
+}
+
+static inline xnholder_t *getq(xnqueue_t *queue)
+{
+	xnholder_t *holder;
+	if ((holder = getheadq(queue))) {
+		removeq(queue, holder);
+	}
+	return holder;
+}
+
+static inline xnholder_t *nextq(xnqueue_t *queue, xnholder_t *holder)
+{
+	xnholder_t *nextholder = holder->next;
+	return nextholder == queue ? NULL : nextholder;
+}
+
+static inline int emptyq_p(xnqueue_t *queue)
+{
+	return queue->next == queue;
+}
+
+#include "rtai_taskq.h"
+
+#define xnpod_schedule  rt_schedule_readied
+
+#define xnthread_t            RT_TASK
+#define xnpod_current_thread  _rt_whoami
+#define xnthread_test_info    rt_task_test_taskq_retval
+
+#define xnsynch_t                   TASKQ
+#define xnsynch_init                rt_taskq_init
+#define xnsynch_destroy             rt_taskq_delete
+#define xnsynch_wakeup_one_sleeper  rt_taskq_ready_one
+#define xnsynch_flush               rt_taskq_ready_all
+static inline void xnsynch_sleep_on(void *synch, xnticks_t timeout, xntmode_t timeout_mode)
+{
+	if (timeout == XN_INFINITE) {
+		rt_taskq_wait(synch);
+	} else {
+		rt_taskq_wait_until(synch, timeout_mode == XN_RELATIVE ? rt_get_time() + timeout : timeout);
+	}
+}
+
+#define XNSYNCH_NOPIP    0
+#define XNSYNCH_PRIO     TASKQ_PRIO
+#define XNSYNCH_FIFO     TASKQ_FIFO
+#define XNSYNCH_RESCHED  1
+
+#ifdef CONFIG_RTAI_RTDM_SELECT
+
+#define SELECT_SIGNAL(select_block, state) \
+do { \
+	spl_t flags; \
+        xnlock_get_irqsave(&nklock, flags); \
+        if (xnselect_signal(select_block, state) && state) { \
+                xnpod_schedule(); \
+	} \
+	xnlock_put_irqrestore(&nklock, flags); \
+} while (0)
+
+#else
+
+#define SELECT_SIGNAL(select_block, state)
+
+#endif
 
 #endif /* !_RTAI_XNSTUFF_H */

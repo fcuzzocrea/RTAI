@@ -2,9 +2,9 @@
  * @file
  * Real-Time Driver Model for RTAI, user API header
  *
- * @note Copyright (C) 2005 Jan Kiszka <jan.kiszka@web.de>
+ * @note Copyright (C) 2005, 2006 Jan Kiszka <jan.kiszka@web.de>
  * @note Copyright (C) 2005 Joerg Langenberg <joerg.langenberg@gmx.net>
- * @note Copyright (C) 2005 Paolo Mantegazza <mantegazza@aero.polimi.it>
+ * @note Copyright (C) 2005-2008 Paolo Mantegazza <mantegazza@aero.polimi.it>
  *
  * RTAI is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License as published by
@@ -32,7 +32,7 @@
  * RT/non-RT systems like RTAI. RTDM conforms to POSIX
  * semantics (IEEE Std 1003.1) where available and applicable.
  *
- * @b API @b Revision: 6
+ * @b API @b Revision: 7
  */
 
 /*!
@@ -59,6 +59,7 @@
 #define __rtdm_write            6
 #define __rtdm_recvmsg          7
 #define __rtdm_sendmsg          8
+#define __rtdm_select           9
 
 #ifdef __KERNEL__
 
@@ -88,7 +89,7 @@ typedef struct task_struct rtdm_user_info_t;
  * @anchor api_versioning @name API Versioning
  * @{ */
 /** Common user and driver API version */
-#define RTDM_API_VER			6
+#define RTDM_API_VER			7
 
 /** Minimum API revision compatible with the current release */
 #define RTDM_API_MIN_COMPAT_VER		6
@@ -260,6 +261,8 @@ ssize_t __rt_dev_recvmsg(rtdm_user_info_t *user_info, int fd,
 			 struct msghdr *msg, int flags);
 ssize_t __rt_dev_sendmsg(rtdm_user_info_t *user_info, int fd,
 			 const struct msghdr *msg, int flags);
+#include "select.h"
+int __rt_dev_select(int nfds, fd_set *rfds, fd_set *wfds, fd_set *efds, nanosecs_rel_t timeout, struct xnselector *selector, int space);
 #endif /* __KERNEL__ */
 
 /* Define RTDM_NO_DEFAULT_USER_API to switch off the default rt_dev_xxx
@@ -313,6 +316,16 @@ static inline ssize_t rt_dev_recvfrom(int fd, void *buf, size_t len, int flags,
 	ret = rt_dev_recvmsg(fd, &msg, flags);
 	if (ret >= 0 && from)
 		*fromlen = msg.msg_namelen;
+	return ret;
+}
+
+static inline int rt_dev_select(int nfds, fd_set *rfds, fd_set *wfds, fd_set *efds, nanosecs_rel_t timeout)
+{
+	struct xnselector selector;
+	int ret;
+	xnselector_init(&selector);
+        ret = __rt_dev_select(nfds, rfds, wfds, efds, timeout, &selector, 1);
+	xnselector_destroy(&selector);
 	return ret;
 }
 
@@ -421,6 +434,12 @@ static inline ssize_t rt_dev_recvfrom(int fd, void *buf, size_t len, int flags,
 	if (ret >= 0 && from)
 		*fromlen = msg.msg_namelen;
 	return ret;
+}
+
+static inline int rt_dev_select(int nfds, fd_set *rfds, fd_set *wfds, fd_set *efds, nanosecs_rel_t timeout)
+{
+        struct { long nfds; fd_set *rfds; fd_set *wfds; fd_set *efds; nanosecs_rel_t timeout; } arg = { nfds, rfds, wfds, efds, timeout };
+        return RTAI_LXRT(RTDM_INDX, SIZARG, __rtdm_select, &arg);
 }
 
 #ifdef __cplusplus

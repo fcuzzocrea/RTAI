@@ -11,14 +11,16 @@ librtdm_a_SOURCES = \
 	drvlib.c \
 	module.c \
 	proc.c \
-	syscall.c \
-	xn.c
+	rtai_taskq.c \
+	select.c
 
 include_HEADERS = \
 	rtdm.h \
 	rtdm_driver.h \
 	rtserial.h \
-	xn.h
+	xn.h \
+	rtai_taskq.h \
+	select.h
 
 noinst_HEADERS = \
 	core.h \

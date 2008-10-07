@@ -983,7 +983,9 @@ void rtdm_task_busy_sleep(nanosecs_rel_t delay);
 static inline void rtdm_task_destroy(rtdm_task_t *task)
 {
 	rt_drg_on_adr(task);
-	rt_task_delete(task);
+	if (task->magic == RT_TASK_MAGIC) {
+		rt_task_delete(task);
+	}
 }
 
 void rtdm_task_join_nrt(rtdm_task_t *task, unsigned int poll_delay);

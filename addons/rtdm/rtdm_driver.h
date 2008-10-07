@@ -982,6 +982,7 @@ void rtdm_task_busy_sleep(nanosecs_rel_t delay);
 #ifndef DOXYGEN_CPP /* Avoid static inline tags for RTDM in doxygen */
 static inline void rtdm_task_destroy(rtdm_task_t *task)
 {
+	rt_drg_on_adr(task);
 	rt_task_delete(task);
 }
 

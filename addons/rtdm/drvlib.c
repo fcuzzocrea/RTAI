@@ -1103,7 +1103,7 @@ int rtdm_event_select_bind(rtdm_event_t *event, rtdm_selector_t *selector,
 		return -ENOMEM;
 
 	xnlock_get_irqsave(&nklock, s);
-	if (!unlikely(event->synch_base.magic != RT_SEM_MAGIC))
+	if (unlikely(event->synch_base.magic != RT_SEM_MAGIC))
 		err = -EIDRM;
 	else
 		err = xnselect_bind(&event->select_block,
@@ -1386,7 +1386,7 @@ int rtdm_sem_select_bind(rtdm_sem_t *sem, rtdm_selector_t *selector,
 		return -ENOMEM;
 
 	xnlock_get_irqsave(&nklock, s);
-	if (!unlikely(sem->sem.magic != RT_SEM_MAGIC))
+	if (unlikely(sem->sem.magic != RT_SEM_MAGIC))
 		err = -EIDRM;
 	else
 		err = xnselect_bind(&sem->select_block, binding, selector,

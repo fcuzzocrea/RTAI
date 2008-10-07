@@ -1,3 +1,21 @@
+2008-10-07 Paolo Mantegazza <mantegazza@aero.polimi.it> and
+	   Bernhard Pfund <bernhard@chapter7.ch> for testing support.
+
+	* base/addons/rtdm/select.c and select.h: inheredited select support.
+	* base/addons/rtdm/rtai_taskq.c and rtai_taskq.h: rtai own services
+	  to support new select add on.
+	* base/addons/rtdm/xn.h: upgraded locks to use tickets, added helpers
+	  to support select.
+	* base/addons/rtdm/core.c: added RTAI own __rt_dev_select.
+	* base/addons/rtdm/module.c: added user space sys interface for
+	  RTAI own rt_dev_select.
+	* base/addons/rtdm/rtdm.h: added RTAI own rt_dev_select call for 
+	  kernel/user space.
+	* base/addons/rtdm/device.c, drvlib.c and rtdm_driver.h: upgraded to
+	  the lates standard and added select support.
+	* base/addons/rtdm/GNUmakefile.am and GNUmakefile.in: modified for
+	  making with select.
+
 2008-09-24 Paolo Mantegazza <mantegazza@aero.polimi.it>
 
 	* base/ipc/msg.c: fix missing blocked enqueuing in rt_rpc_until.

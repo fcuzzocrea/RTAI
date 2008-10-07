@@ -415,10 +415,12 @@ void rtdm_task_join_nrt(rtdm_task_t *task, unsigned int poll_delay)
 	for (t = 0; task->magic && t < JOIN_TIMEOUT; t += poll_delay) {
 		msleep(poll_delay);
 	}
-	if (task->magic) {
-		rt_task_delete(task);
-	}
+	rtdm_task_destroy(task);
 }
+
+
+
+
 
 
 

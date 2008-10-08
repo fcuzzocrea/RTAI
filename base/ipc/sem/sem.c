@@ -44,6 +44,25 @@ MODULE_LICENSE("GPL");
 
 extern struct epoch_struct boot_epoch;
 
+#ifdef CONFIG_RTAI_RT_POLL
+
+#define WAKEUP_WAIT_ONE_POLLER(wakeup) \
+	if (wakeup) rt_wakeup_pollers(&sem->poll_wait_one, 0);
+
+#define WAKEUP_WAIT_ALL_POLLERS(wakeup) \
+	do { \
+		WAKEUP_WAIT_ONE_POLLER(wakeup) \
+		if (sem->count == 1) rt_wakeup_pollers(&sem->poll_wait_all, 0);\
+	} while (0)
+
+#else
+
+#define WAKEUP_WAIT_ONE_POLLER(wakeup)
+
+#define WAKEUP_WAIT_ALL_POLLERS(wakeup) 
+
+#endif
+
 /* +++++++++++++++++++++ ALL SEMAPHORES TYPES SUPPORT +++++++++++++++++++++++ */
 
 /**
@@ -128,6 +147,13 @@ RTAI_SYSCALL_MODE void rt_typed_sem_init(SEM *sem, int value, int type)
 
 	sem->resq.prev = sem->resq.next = &sem->resq;
 	sem->resq.task = (void *)&sem->queue;
+#ifdef CONFIG_RTAI_RT_POLL
+	sem->poll_wait_all.pollq.prev = sem->poll_wait_all.pollq.next = &(sem->poll_wait_all.pollq);
+	sem->poll_wait_one.pollq.prev = sem->poll_wait_one.pollq.next = &(sem->poll_wait_one.pollq);
+	sem->poll_wait_all.pollq.task = sem->poll_wait_one.pollq.task = NULL;
+        spin_lock_init(&(sem->poll_wait_all.pollock));
+        spin_lock_init(&(sem->poll_wait_one.pollock));
+#endif
 }
 
 
@@ -198,6 +224,8 @@ RTAI_SYSCALL_MODE int rt_sem_delete(SEM *sem)
 		return RTE_OBJINV;
 	}
 
+	rt_wakeup_pollers(&sem->poll_wait_all, RTE_OBJREM);
+	rt_wakeup_pollers(&sem->poll_wait_one, RTE_OBJREM);
 	schedmap = 0;
 	q = &(sem->queue);
 	flags = rt_global_save_flags_and_cli();
@@ -301,6 +329,7 @@ RTAI_SYSCALL_MODE int rt_sem_signal(SEM *sem)
 			if (sem->type <= 0) {
 				RT_SCHEDULE(task, rtai_cpuid());
 				rt_global_restore_flags(flags);
+				WAKEUP_WAIT_ALL_POLLERS(1);
 				return 0;
 			}
 			tosched = 1;
@@ -334,6 +363,7 @@ res:	if (sem->type > 0) {
 		}
 	}
 	rt_global_restore_flags(flags);
+	WAKEUP_WAIT_ALL_POLLERS(1);
 	return 0;
 }
 
@@ -387,6 +417,7 @@ RTAI_SYSCALL_MODE int rt_sem_broadcast(SEM *sem)
 		}
 	}
 	rt_global_restore_flags(flags);
+	WAKEUP_WAIT_ONE_POLLER(schedmap);
 	return 0;
 }
 
@@ -1764,6 +1795,22 @@ RTAI_SYSCALL_MODE int rt_named_spl_delete(SPL *spl)
 
 /* ++++++++++++++++++++++++++++++ POLLING SERVICE +++++++++++++++++++++++++++ */
 
+struct rt_poll_enc rt_poll_ofstfun[] = {
+	[RT_POLL_NOT_TO_USE]   = {            0           , NULL },
+#ifdef CONFIG_RTAI_RT_POLL
+	[RT_POLL_MBX_RECV]     = { offsetof(MBX, poll_recv), NULL }, 
+	[RT_POLL_MBX_SEND]     = { offsetof(MBX, poll_send), NULL },
+	[RT_POLL_SEM_WAIT_ALL] = { offsetof(SEM, poll_wait_all), NULL }, 
+	[RT_POLL_SEM_WAIT_ONE] = { offsetof(SEM, poll_wait_one), NULL }
+#else
+	[RT_POLL_MBX_RECV]     = { 0, NULL }, 
+	[RT_POLL_MBX_SEND]     = { 0, NULL },
+	[RT_POLL_SEM_WAIT_ALL] = { 0, NULL }, 
+	[RT_POLL_SEM_WAIT_ONE] = { 0, NULL }
+#endif
+};
+EXPORT_SYMBOL(rt_poll_ofstfun);
+
 #ifdef CONFIG_RTAI_RT_POLL
 
 typedef struct rt_poll_sem { QUEUE queue; RT_TASK *task; int wait; } POLL_SEM;
@@ -1852,9 +1899,10 @@ static inline int rt_poll_signal(POLL_SEM *sem)
 	return retval;
 }
 
-void rt_wakeup_pollers(QUEUE *queue, spinlock_t *qlock, int reason)
+void rt_wakeup_pollers(struct rt_poll_ql *ql, int reason)
 {
-       	QUEUE *q;
+       	QUEUE *q, *queue = &ql->pollq;
+       	spinlock_t *qlock = &ql->pollock;
 
 	rt_spin_lock_irq(qlock);
 	if ((q = queue->next) != queue) {
@@ -1958,6 +2006,8 @@ EXPORT_SYMBOL(rt_wakeup_pollers);
  *	CONFIG_RTAI_RT_POLL_ON_STACK when configuring RTAI.
  */
 
+#define QL(i) ((struct rt_poll_ql *)(pds[i].what + rt_poll_ofstfun[pds[i].forwhat].offset))
+
 RTAI_SYSCALL_MODE int _rt_poll(struct rt_poll_s *pdsa, unsigned long nr, RTIME timeout, int space)
 {
 	struct rt_poll_s *pds;
@@ -1986,23 +2036,13 @@ RTAI_SYSCALL_MODE int _rt_poll(struct rt_poll_s *pdsa, unsigned long nr, RTIME t
 	for (polled = i = 0; i < nr; i++) {
 		QUEUE *queue = NULL;
 		spinlock_t *qlock = NULL;
-		MBX *mbx = pds[i].what;
-		if (pds[i].forwhat == RT_POLL_MBX_RECV) {
-			if (mbx->avbs > 0) {
-				pollq[i].task = NULL;
-				polled++;
-			} else {
-				queue = &mbx->pollrecv;
-				qlock = &mbx->rpollock;
-			}
+		if (rt_poll_ofstfun[pds[i].forwhat].topoll(pds[i].what)) {
+			struct rt_poll_ql *ql = QL(i);
+			queue = &ql->pollq;
+			qlock = &ql->pollock;
 		} else {
-			if (mbx->frbs > 0) {
-				pollq[i].task = NULL;
-				polled++;
-			} else {
-				queue = &mbx->pollsend;
-				qlock = &mbx->spollock;
-			}
+			pollq[i].task = NULL;
+			polled++;
 		}
 		if (queue) {
         		QUEUE *q = queue;
@@ -2028,9 +2068,7 @@ RTAI_SYSCALL_MODE int _rt_poll(struct rt_poll_s *pdsa, unsigned long nr, RTIME t
 	}
 	for (polled = i = 0; i < nr; i++) {
 		if (pds[i].forwhat) {
-			MBX *mbx = pds[i].what;
-			spinlock_t *qlock;
-			qlock = pds[i].forwhat == RT_POLL_MBX_RECV ? &mbx->rpollock : &mbx->spollock;
+			spinlock_t *qlock = &QL(i)->pollock;
 			rt_spin_lock_irq(qlock);
 			if (pollq[i].task == (void *)&sem) {
 				(pollq[i].prev)->next = pollq[i].next;
@@ -2108,14 +2146,20 @@ struct rt_native_fun_entry rt_sem_entries[] = {
 extern int set_rt_fun_entries(struct rt_native_fun_entry *entry);
 extern void reset_rt_fun_entries(struct rt_native_fun_entry *entry);
 
+static int poll_wait(void *sem) { return ((SEM *)sem)->count <= 0; }
+
 int __rtai_sem_init (void)
 {
-    return set_rt_fun_entries(rt_sem_entries);
+	rt_poll_ofstfun[RT_POLL_SEM_WAIT_ALL].topoll =
+	rt_poll_ofstfun[RT_POLL_SEM_WAIT_ONE].topoll = poll_wait;
+	return set_rt_fun_entries(rt_sem_entries);
 }
 
 void __rtai_sem_exit (void)
 {
-    reset_rt_fun_entries(rt_sem_entries);
+	rt_poll_ofstfun[RT_POLL_SEM_WAIT_ALL].topoll =
+	rt_poll_ofstfun[RT_POLL_SEM_WAIT_ONE].topoll = NULL;
+	reset_rt_fun_entries(rt_sem_entries);
 }
 
 /* +++++++ END SEMAPHORES, BARRIER, COND VARIABLES, RWLOCKS, SPINLOCKS ++++++ */

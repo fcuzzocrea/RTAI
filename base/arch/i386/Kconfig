@@ -573,9 +573,9 @@ config RTAI_RT_POLL
 	depends on RTAI_SEM
 	default n
 	help
-	This enable polling support of RTAI IPCs. At the moment only MBXes
-	are supported. The related support is embedded in the semaphores 
-	services.
+	This enable polling support for RTAI services. At the moment only 
+	MBXes and SEMs are supported. The related service is embedded in 
+	the semaphores module.
 
 config RTAI_RT_POLL_ON_STACK
 	bool "Use the stack for rt_poll dynamic arrays"

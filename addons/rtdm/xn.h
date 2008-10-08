@@ -75,6 +75,12 @@
 
 #endif
 
+#if LINUX_VERSION_CODE < KERNEL_VERSION(2,6,24)
+#define trace_mark(ev, fmt, args...)    do { } while (0)
+#else
+#include <linux/marker.h>
+#endif /* LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,24) */
+
 //recursive smp locks, as for RTAI global stuff + a name
 
 #define XNARCH_LOCK_UNLOCKED  (xnlock_t) { 0 }

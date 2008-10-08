@@ -311,11 +311,11 @@ RTAI_SYSCALL_MODE int rt_typed_mbx_init(MBX *mbx, int size, int type)
 	mbx->fbyte = mbx->lbyte = mbx->avbs = 0;
         spin_lock_init(&(mbx->lock));
 #ifdef CONFIG_RTAI_RT_POLL
-	mbx->pollrecv.prev = mbx->pollrecv.next = &(mbx->pollrecv);
-	mbx->pollsend.prev = mbx->pollsend.next = &(mbx->pollsend);
-	mbx->pollrecv.task = mbx->pollsend.task = NULL;
-        spin_lock_init(&(mbx->rpollock));
-        spin_lock_init(&(mbx->spollock));
+	mbx->poll_recv.pollq.prev = mbx->poll_recv.pollq.next = &(mbx->poll_recv.pollq);
+	mbx->poll_send.pollq.prev = mbx->poll_send.pollq.next = &(mbx->poll_send.pollq);
+	mbx->poll_recv.pollq.task = mbx->poll_send.pollq.task = NULL;
+        spin_lock_init(&(mbx->poll_recv.pollock));
+        spin_lock_init(&(mbx->poll_send.pollock));
 #endif
 	return 0;
 }
@@ -378,8 +378,8 @@ RTAI_SYSCALL_MODE int rt_mbx_delete(MBX *mbx)
 {
 	CHK_MBX_MAGIC;
 	mbx->magic = 0;
-	rt_wakeup_pollers(&mbx->pollrecv, &mbx->rpollock, RTE_OBJREM);
-	rt_wakeup_pollers(&mbx->pollsend, &mbx->spollock, RTE_OBJREM);
+	rt_wakeup_pollers(&mbx->poll_recv, RTE_OBJREM);
+	rt_wakeup_pollers(&mbx->poll_send, RTE_OBJREM);
 	if (rt_sem_delete(&mbx->sndsem) || rt_sem_delete(&mbx->rcvsem)) {
 		return -EFAULT;
 	}
@@ -426,14 +426,14 @@ RTAI_SYSCALL_MODE int _rt_mbx_send(MBX *mbx, void *msg, int msg_size, int space)
 		if ((retval = mbx_wait(mbx, &mbx->frbs, rt_current))) {
 			rt_sem_signal(&mbx->sndsem);
 			retval = MBX_RET(msg_size, retval);
-			rt_wakeup_pollers(&mbx->pollrecv, &mbx->rpollock, retval);
+			rt_wakeup_pollers(&mbx->poll_recv, retval);
 			return retval;
 		}
 		msg_size = mbxput(mbx, (char **)(&msg), msg_size, space);
 		mbx_signal(mbx);
 	}
 	rt_sem_signal(&mbx->sndsem);
-	rt_wakeup_pollers(&mbx->pollrecv, &mbx->rpollock, 0);
+	rt_wakeup_pollers(&mbx->poll_recv, 0);
 	return 0;
 }
 
@@ -476,7 +476,7 @@ RTAI_SYSCALL_MODE int _rt_mbx_send_wp(MBX *mbx, void *msg, int msg_size, int spa
 		rt_global_restore_flags(flags);
 	}
 	if (msg_size < size) {
-		rt_wakeup_pollers(&mbx->pollrecv, &mbx->rpollock, 0);
+		rt_wakeup_pollers(&mbx->poll_recv, 0);
 	}
 	return msg_size;
 }
@@ -512,7 +512,7 @@ RTAI_SYSCALL_MODE int _rt_mbx_send_if(MBX *mbx, void *msg, int msg_size, int spa
 		mbxput(mbx, (char **)(&msg), msg_size, space);
 		mbx_signal(mbx);
 		rt_sem_signal(&mbx->sndsem);
-		rt_wakeup_pollers(&mbx->pollrecv, &mbx->rpollock, 0);
+		rt_wakeup_pollers(&mbx->poll_recv, 0);
 		return 0;
 	}
 	rt_global_restore_flags(flags);
@@ -556,14 +556,14 @@ RTAI_SYSCALL_MODE int _rt_mbx_send_until(MBX *mbx, void *msg, int msg_size, RTIM
 		if ((retval = mbx_wait_until(mbx, &mbx->frbs, time, rt_current))) {
 			rt_sem_signal(&mbx->sndsem);
 			retval = MBX_RET(msg_size, retval);
-			rt_wakeup_pollers(&mbx->pollrecv, &mbx->rpollock, retval);
+			rt_wakeup_pollers(&mbx->poll_recv, retval);
 			return retval;
 		}
 		msg_size = mbxput(mbx, (char **)(&msg), msg_size, space);
 		mbx_signal(mbx);
 	}
 	rt_sem_signal(&mbx->sndsem);
-	rt_wakeup_pollers(&mbx->pollrecv, &mbx->rpollock, 0);
+	rt_wakeup_pollers(&mbx->poll_recv, 0);
 	return 0;
 }
 
@@ -629,7 +629,7 @@ RTAI_SYSCALL_MODE int _rt_mbx_receive(MBX *mbx, void *msg, int msg_size, int spa
 		if ((retval = mbx_wait(mbx, &mbx->avbs, rt_current))) {
 			rt_sem_signal(&mbx->rcvsem);
 			retval = MBX_RET(msg_size, retval);
-			rt_wakeup_pollers(&mbx->pollrecv, &mbx->rpollock, retval);
+			rt_wakeup_pollers(&mbx->poll_recv, retval);
 			return retval;
 			return MBX_RET(msg_size, retval);
 		}
@@ -637,7 +637,7 @@ RTAI_SYSCALL_MODE int _rt_mbx_receive(MBX *mbx, void *msg, int msg_size, int spa
 		mbx_signal(mbx);
 	}
 	rt_sem_signal(&mbx->rcvsem);
-	rt_wakeup_pollers(&mbx->pollsend, &mbx->spollock, 0);
+	rt_wakeup_pollers(&mbx->poll_send, 0);
 	return 0;
 }
 
@@ -681,7 +681,7 @@ RTAI_SYSCALL_MODE int _rt_mbx_receive_wp(MBX *mbx, void *msg, int msg_size, int 
 		rt_global_restore_flags(flags);
 	}
 	if (msg_size < size) {
-		rt_wakeup_pollers(&mbx->pollsend, &mbx->spollock, 0);
+		rt_wakeup_pollers(&mbx->poll_send, 0);
 	}
 	return msg_size;
 }
@@ -722,7 +722,7 @@ RTAI_SYSCALL_MODE int _rt_mbx_receive_if(MBX *mbx, void *msg, int msg_size, int 
 		mbxget(mbx, (char **)(&msg), msg_size, space);
 		mbx_signal(mbx);
 		rt_sem_signal(&mbx->rcvsem);
-		rt_wakeup_pollers(&mbx->pollsend, &mbx->spollock, 0);
+		rt_wakeup_pollers(&mbx->poll_send, 0);
 		return 0;
 	}
 	rt_global_restore_flags(flags);
@@ -766,14 +766,14 @@ RTAI_SYSCALL_MODE int _rt_mbx_receive_until(MBX *mbx, void *msg, int msg_size, R
 		if ((retval = mbx_wait_until(mbx, &mbx->avbs, time, rt_current))) {
 			rt_sem_signal(&mbx->rcvsem);
 			retval = MBX_RET(msg_size, retval);
-			rt_wakeup_pollers(&mbx->pollrecv, &mbx->rpollock, retval);
+			rt_wakeup_pollers(&mbx->poll_recv, retval);
 			return retval;
 		}
 		msg_size = mbxget(mbx, (char **)(&msg), msg_size, space);
 		mbx_signal(mbx);
 	}
 	rt_sem_signal(&mbx->rcvsem);
-	rt_wakeup_pollers(&mbx->pollsend, &mbx->spollock, 0);
+	rt_wakeup_pollers(&mbx->poll_send, 0);
 	return 0;
 }
 
@@ -950,13 +950,20 @@ struct rt_native_fun_entry rt_mbx_entries[] = {
 extern int set_rt_fun_entries(struct rt_native_fun_entry *entry);
 extern void reset_rt_fun_entries(struct rt_native_fun_entry *entry);
 
+static int recv_blocks(void *mbx) { return ((MBX *)mbx)->avbs <= 0; }
+static int send_blocks(void *mbx) { return ((MBX *)mbx)->frbs <= 0; }
+
 int __rtai_mbx_init (void)
 {
+	rt_poll_ofstfun[RT_POLL_MBX_RECV].topoll = recv_blocks;
+	rt_poll_ofstfun[RT_POLL_MBX_SEND].topoll = send_blocks;
 	return set_rt_fun_entries(rt_mbx_entries);
 }
 
 void __rtai_mbx_exit (void)
 {
+	rt_poll_ofstfun[RT_POLL_MBX_RECV].topoll = NULL;
+	rt_poll_ofstfun[RT_POLL_MBX_SEND].topoll = NULL;
 	reset_rt_fun_entries(rt_mbx_entries);
 }
 

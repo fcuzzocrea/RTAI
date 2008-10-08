@@ -30,8 +30,6 @@
 
 #include <rtai_schedcore.h>
 
-#define CONFIG_RTAI_RTDM_SELECT 1
-
 #define CONFIG_RTAI_OPT_PERVASIVE
 
 #ifndef CONFIG_RTAI_DEBUG_RTDM

@@ -1,3 +1,14 @@
+2008-10-09 Paolo Mantegazza <mantegazza@aero.polimi.it> and
+
+	* base/include/rtai_sem.h: define structures to support rt_poll
+	  dynamic estenxion to other RTAI objects, add rt_poll support
+	  from semaphores.
+	* base/include/rtai_mbx.h: redefine rt_poll data in mail box 
+	  structure.
+	* base/ipc/sem.c: rework rt_poll anew to ease extension to new 
+	  objects to be poll, include semaphores polling.
+	* base/ipc/mbx.c: adapt to rt_poll rework.
+
 2008-10-07 Paolo Mantegazza <mantegazza@aero.polimi.it> and
 	   Bernhard Pfund <bernhard@chapter7.ch> for testing support.
 

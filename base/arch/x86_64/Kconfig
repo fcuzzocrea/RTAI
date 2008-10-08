@@ -971,7 +971,9 @@ config RTAI_RTDM_SELECT
 	help
 	By enabling this option, select(2) support can be used to monitor
 	access to multiple RTDM services all in one, as for the standard UNIX
-	support.
+	support, with the exception of the timeout argument format. Being it
+	RTDM specific nanoseconds are used directly in place of 
+	timeval/timespec.
 
 config RTAI_RTDM_SHIRQ
 	depends on RTAI_RTDM

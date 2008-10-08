@@ -1345,6 +1345,8 @@ int rt_dev_getpeername(int fd, struct sockaddr *name, socklen_t *namelen);
 
 #endif /* DOXYGEN_CPP */
 
+#ifdef CONFIG_RTAI_RTDM_SELECT
+
 /* RTAI extension to use select as any other usual RTDM rt_dev_xxx service   */
 /* At the moment selector kept and stack, initialised/destroyed at each call */
 
@@ -1430,3 +1432,5 @@ int __rt_dev_select(int nfds, fd_set *rfds, fd_set *wfds, fd_set *efds, nanosecs
 	}
 	return ret;
 }
+
+#endif

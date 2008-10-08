@@ -538,7 +538,7 @@ do { \
 
 #else
 
-#define SELECT_SIGNAL(select_block, state)
+#define SELECT_SIGNAL(select_block, state)  do { } while (0)
 
 #endif
 

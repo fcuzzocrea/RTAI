@@ -48,6 +48,8 @@
 
 #include "select.h"
 
+#ifdef CONFIG_RTAI_RTDM_SELECT
+
 #include <linux/types.h>
 #include <linux/bitops.h>	/* For hweight_long */
 
@@ -409,5 +411,7 @@ void xnselector_destroy(struct xnselector *selector)
 		xnpod_schedule();
 }
 EXPORT_SYMBOL(xnselector_destroy);
+
+#endif
 
 /*@}*/

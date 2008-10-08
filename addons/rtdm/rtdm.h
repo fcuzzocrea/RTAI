@@ -319,6 +319,8 @@ static inline ssize_t rt_dev_recvfrom(int fd, void *buf, size_t len, int flags,
 	return ret;
 }
 
+#ifdef CONFIG_RTAI_RTDM_SELECT
+
 static inline int rt_dev_select(int nfds, fd_set *rfds, fd_set *wfds, fd_set *efds, nanosecs_rel_t timeout)
 {
 	struct xnselector selector;
@@ -328,6 +330,8 @@ static inline int rt_dev_select(int nfds, fd_set *rfds, fd_set *wfds, fd_set *ef
 	xnselector_destroy(&selector);
 	return ret;
 }
+
+#endif
 
 #else /* !__KERNEL__ */
 

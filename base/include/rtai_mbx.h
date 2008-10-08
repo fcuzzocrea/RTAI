@@ -43,8 +43,8 @@ typedef struct rt_mailbox {
 	int size, fbyte, lbyte, avbs, frbs;
 	spinlock_t lock;
 #ifdef CONFIG_RTAI_RT_POLL
-	QUEUE pollrecv, pollsend;
-	spinlock_t rpollock, spollock;
+	struct rt_poll_ql poll_recv;
+	struct rt_poll_ql poll_send;
 #endif
 } MBX;
 

@@ -1352,26 +1352,24 @@ int rt_dev_getpeername(int fd, struct sockaddr *name, socklen_t *namelen);
 
 #define SELECT_DIM  XNSELECT_MAX_TYPES
 
-// kept in case we need a shift for fd being different from fd_index below
-// int rtdm_select_bind(int fd, rtdm_selector_t *selector, enum rtdm_selecttype type, unsigned fd_index)
+/*
+RTDM_FD_START kept in case we'll ever need a shift for fd being different from 
+fd_index in the call to:
+int rtdm_select_bind(int fd, rtdm_selector_t *selector, enum rtdm_selecttype type, unsigned fd_index);
+*/
 
-static int rtdm_fd_start = 0;
+#define RTDM_FD_START  0
 
-static inline int select_bind_one(struct xnselector *selector, unsigned type, int fd)
+static int select_bind_all(struct xnselector *selector, fd_set *fds[], int nfds)
 {
-	return rtdm_select_bind(fd - rtdm_fd_start, selector, type, fd);
-}
-
-static int select_bind_all(struct xnselector *selector, fd_set *fds[SELECT_DIM], int nfds)
-{
-	unsigned fd, type;
-	int err;
+	unsigned type;
 
 	for (type = 0; type < SELECT_DIM; type++) {
-		fd_set *set = fds[type];
-		if (set) {
+		int fd, err;
+		fd_set *set;
+		if ((set = fds[type])) {
 			for (fd = find_first_bit(set->fds_bits, nfds); fd < nfds; fd = find_next_bit(set->fds_bits, nfds, fd + 1)) {
-				err = select_bind_one(selector, type, fd);
+				err = rtdm_select_bind(fd - RTDM_FD_START, selector, type, fd);
 				if (err) {
 					return err;
 				}

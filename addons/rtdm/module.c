@@ -125,26 +125,19 @@ static RTAI_SYSCALL_MODE int sys_rtdm_sendmsg(long fd, const struct msghdr *msg,
 	return __rt_dev_sendmsg(curr, fd, &krnl_msg, flags);
 }
 
-#ifdef CONFIG_RTAI_RTDM_SELECT
-
 static RTAI_SYSCALL_MODE int sys_rtdm_select(int nfds, fd_set *rfds, fd_set *wfds, fd_set *efds, nanosecs_rel_t timeout)
 {
+#ifdef CONFIG_RTAI_RTDM_SELECT
 	struct xnselector selector;
 	int ret;
 	xnselector_init(&selector);
 	ret = __rt_dev_select(nfds, rfds, wfds, efds, timeout, &selector, 0);
 	xnselector_destroy(&selector);
 	return ret;
-}
-
 #else
-
-static RTAI_SYSCALL_MODE int sys_rtdm_select(int nfds, fd_set *rfds, fd_set *wfds, fd_set *efds, nanosecs_rel_t timeout)
-{
 	return -ENOSYS;
-}
-
 #endif
+}
 
 static struct rt_fun_entry rtdm[] = {
 	[__rtdm_fdcount] = { 0, sys_rtdm_fdcount },

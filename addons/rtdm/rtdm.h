@@ -319,19 +319,20 @@ static inline ssize_t rt_dev_recvfrom(int fd, void *buf, size_t len, int flags,
 	return ret;
 }
 
-#ifdef CONFIG_RTAI_RTDM_SELECT
 
 static inline int rt_dev_select(int nfds, fd_set *rfds, fd_set *wfds, fd_set *efds, nanosecs_rel_t timeout)
 {
+#ifdef CONFIG_RTAI_RTDM_SELECT
 	struct xnselector selector;
 	int ret;
 	xnselector_init(&selector);
         ret = __rt_dev_select(nfds, rfds, wfds, efds, timeout, &selector, 1);
 	xnselector_destroy(&selector);
 	return ret;
-}
-
+#else
+	return -ENOSYS;
 #endif
+}
 
 #else /* !__KERNEL__ */
 
@@ -442,8 +443,12 @@ static inline ssize_t rt_dev_recvfrom(int fd, void *buf, size_t len, int flags,
 
 static inline int rt_dev_select(int nfds, fd_set *rfds, fd_set *wfds, fd_set *efds, nanosecs_rel_t timeout)
 {
+#ifdef CONFIG_RTAI_RTDM_SELECT
         struct { long nfds; fd_set *rfds; fd_set *wfds; fd_set *efds; nanosecs_rel_t timeout; } arg = { nfds, rfds, wfds, efds, timeout };
         return RTAI_LXRT(RTDM_INDX, SIZARG, __rtdm_select, &arg);
+#else
+        return -ENOSYS;
+#endif
 }
 
 #ifdef __cplusplus

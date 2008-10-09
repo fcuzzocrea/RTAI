@@ -1,3 +1,8 @@
+2008-10-11 Paolo Mantegazza <mantegazza@aero.polimi.it> and
+
+	* base/ipc/netrpc/netrpc.c: fixed an imprecise setting of the owner
+	  for the port_server in netrpc init.
+
 2008-10-10 Paolo Mantegazza <mantegazza@aero.polimi.it> and
 
 	* addons/rtdm: appropriately take into account CONFIG_RTAI_RTDM_SELECT

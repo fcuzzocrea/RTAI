@@ -1789,7 +1789,7 @@ int __rtai_netrpc_init(void)
 	SPRT_ADDR.sin_port = htons(BASEPORT);
 	portslotsp = MaxStubs;
 	portslot[0].name = PRTSRVNAME;
-	portslot[0].owner = OWNER(this_node, (unsigned long)port_server);
+	portslot[0].owner = OWNER(this_node[1], (unsigned long)port_server);
 	port_server = kmalloc(sizeof(RT_TASK) + 3*sizeof(struct fun_args), GFP_KERNEL);
 	soft_kthread_init(port_server, (long)port_server_fun, (long)port_server, RT_SCHED_LOWEST_PRIORITY);
 	portslot[0].task = (long)port_server;

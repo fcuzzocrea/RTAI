@@ -1,3 +1,8 @@
+2008-10-10 Paolo Mantegazza <mantegazza@aero.polimi.it> and
+
+	* addons/rtdm: appropriately take into account CONFIG_RTAI_RTDM_SELECT
+	  when making.
+
 2008-10-09 Paolo Mantegazza <mantegazza@aero.polimi.it> and
 
 	* base/include/rtai_sem.h: define structures to support rt_poll

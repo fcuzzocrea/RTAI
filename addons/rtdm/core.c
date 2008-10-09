@@ -1360,7 +1360,7 @@ int rtdm_select_bind(int fd, rtdm_selector_t *selector, enum rtdm_selecttype typ
 
 #define RTDM_FD_START  0
 
-static int select_bind_all(struct xnselector *selector, fd_set *fds[], int nfds)
+static inline int select_bind_all(struct xnselector *selector, fd_set *fds[], int nfds)
 {
 	unsigned type;
 
@@ -1382,10 +1382,10 @@ static int select_bind_all(struct xnselector *selector, fd_set *fds[], int nfds)
 
 int __rt_dev_select(int nfds, fd_set *rfds, fd_set *wfds, fd_set *efds, nanosecs_rel_t timeout, struct xnselector *selector, int space)
 {
-	int i, ret;
+	int i, fd, ret;
 	fd_set *fds[SELECT_DIM] = { rfds, wfds, efds };
 	fd_set *reqp[SELECT_DIM], req[SELECT_DIM];
-	fd_set **bp = reqp;
+	fd_set **bp = reqp, *cp;
 	fd_set *resp[SELECT_DIM], res[SELECT_DIM];
 
 	for (ret = i = 0; i < SELECT_DIM; i++) {
@@ -1410,8 +1410,17 @@ int __rt_dev_select(int nfds, fd_set *rfds, fd_set *wfds, fd_set *efds, nanosecs
 	timeout = timeout ? rt_get_time() + nano2count(timeout) : 0;
 
 	do {
-		if ((ret = select_bind_all(selector, bp, nfds))) {
-			return ret;
+//		if ((ret = select_bind_all(selector, bp, nfds))) {
+//			return ret;
+//		}
+		for (i = 0; i < SELECT_DIM; i++) {
+			if ((cp = bp[i])) {
+				for (fd = find_first_bit(cp->fds_bits, nfds); fd < nfds; fd = find_next_bit(cp->fds_bits, nfds, fd + 1)) {
+					if ((ret = rtdm_select_bind(fd - RTDM_FD_START, selector, i, fd))) {
+						return ret;
+					}
+				}
+			}
 		}
 		bp = resp;
 		ret = xnselect(selector, resp, reqp, nfds, timeout, XN_ABSOLUTE);

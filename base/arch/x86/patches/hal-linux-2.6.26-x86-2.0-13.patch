@@ -10273,12 +10273,12 @@ index 4e2f603..effdf82 100644
  
  	barrier();
 +
-+#ifdef CONFIG_IPIPE_DELAYED_ATOMICSW
++if (unlikely(rq)) {
++#if 1 //def CONFIG_IPIPE_DELAYED_ATOMICSW
 +	current->state &= ~TASK_ATOMICSWITCH;
 +#else
 +	prev->state &= ~TASK_ATOMICSWITCH;
 +#endif
-+if (unlikely(rq)) {
 +	if (task_hijacked(prev))
 +		return 1; __ipipe_dispatch_event(IPIPE_FIRST_EVENT - 2, 0);
 +

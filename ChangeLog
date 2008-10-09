@@ -2,7 +2,7 @@
 
 	* base/include/rtai_sem.h: define structures to support rt_poll
 	  dynamic estenxion to other RTAI objects, add rt_poll support
-	  from semaphores.
+	  for semaphores.
 	* base/include/rtai_mbx.h: redefine rt_poll data in mail box 
 	  structure.
 	* base/ipc/sem.c: rework rt_poll anew to ease extension to new 

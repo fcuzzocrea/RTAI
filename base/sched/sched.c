@@ -2204,6 +2204,9 @@ void give_back_to_linux(RT_TASK *rt_task, int keeprio)
 	(rt_task->rnext)->rprev = rt_task->rprev;
 	rt_task->state = 0;
 	pend_wake_up_hts(lnxtsk = rt_task->lnxtsk, rt_task->runnable_on_cpus);
+#ifdef TASK_NOWAKEUP
+	set_task_state(lnxtsk, lnxtsk->state & ~TASK_NOWAKEUP);
+#endif
 	rt_schedule();
 	if (!(rt_task->is_hard = keeprio)) {
 		if (rt_task->priority < BASE_SOFT_PRIORITY) {
@@ -2339,6 +2342,12 @@ static int lxrt_handle_trap(int vec, int signo, struct pt_regs *regs, void *dumm
 static inline void rt_signal_wake_up(RT_TASK *task)
 {
 	if (task->state && task->state != RT_SCHED_READY) {
+		struct task_struct *lnxtsk;
+#ifdef TASK_NOWAKEUP
+		if ((lnxtsk = task->lnxtsk)->state & TASK_HARDREALTIME) {
+			set_task_state(lnxtsk, lnxtsk->state | TASK_NOWAKEUP);
+		}
+#endif
 		task->unblocked = 1;
 		rt_task_masked_unblock(task, ~RT_SCHED_READY);
 	} else {

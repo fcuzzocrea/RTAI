@@ -1,6 +1,12 @@
+2008-10-12 Paolo Mantegazza <mantegazza@aero.polimi.it> and
+
+	* base/sched/sched.c: exploit patch support to block signal when
+	  real time hardened tasks transition to Linux because of its
+	  signals.
+
 2008-10-11 Paolo Mantegazza <mantegazza@aero.polimi.it> and
 
-	* base/ipc/netrpc/netrpc.c: fixed an imprecise setting of the owner
+	* base/ipc/netrpc/netrpc.c: fixed an improper setting of the owner
 	  for the port_server in netrpc init.
 
 2008-10-10 Paolo Mantegazza <mantegazza@aero.polimi.it> and
@@ -11,12 +17,11 @@
 2008-10-09 Paolo Mantegazza <mantegazza@aero.polimi.it> and
 
 	* base/include/rtai_sem.h: define structures to support rt_poll
-	  dynamic estenxion to other RTAI objects, add rt_poll support
-	  for semaphores.
+	  estenxion to RTAI objects, add rt_poll support for semaphores.
 	* base/include/rtai_mbx.h: redefine rt_poll data in mail box 
 	  structure.
 	* base/ipc/sem.c: rework rt_poll anew to ease extension to new 
-	  objects to be poll, include semaphores polling.
+	  objects to be polled, implement semaphores polling.
 	* base/ipc/mbx.c: adapt to rt_poll rework.
 
 2008-10-07 Paolo Mantegazza <mantegazza@aero.polimi.it> and

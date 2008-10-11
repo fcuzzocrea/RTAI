@@ -52,8 +52,6 @@ MODULE_DESCRIPTION("Real-Time Driver Model");
 MODULE_AUTHOR("jan.kiszka@web.de");
 MODULE_LICENSE("GPL");
 
-DEFINE_XNLOCK(nklock);
-
 static RTAI_SYSCALL_MODE int sys_rtdm_fdcount(void)
 {
 	return RTDM_FD_MAX;
@@ -598,6 +596,9 @@ int xnintr_attach(xnintr_t *intr, void *cookie)
 	int err;
 	spl_t s;
 
+
+
+
 	intr->cookie = cookie;
 	memset(&intr->stat, 0, sizeof(intr->stat));
 
@@ -621,6 +622,8 @@ int xnintr_detach(xnintr_t *intr)
 	int err;
 	spl_t s;
 
+
+
 	xnlock_get_irqsave(&intrlock, s);
 
 	err = xnintr_irq_detach(intr);
@@ -635,12 +638,14 @@ int xnintr_detach(xnintr_t *intr)
 
 int xnintr_enable (xnintr_t *intr)
 {
+
         rt_enable_irq(intr->irq);
         return 0;
 }
 
 int xnintr_disable (xnintr_t *intr)
 {
+
         rt_disable_irq(intr->irq);
         return 0;
 }

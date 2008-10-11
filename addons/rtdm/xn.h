@@ -79,14 +79,14 @@
 #include <linux/marker.h>
 #endif
 
-//recursive smp locks, as for RTAI global stuff + a name
+//recursive smp locks, as for RTAI global lock stuff but with an own name
 
-#define XNARCH_LOCK_UNLOCKED  (xnlock_t) { 0 }
+#define nklock (*((xnlock_t *)rtai_cpu_lock))
+
+#define XNARCH_LOCK_UNLOCKED  (xnlock_t) { { 0, 0 } }
 
 typedef unsigned long spl_t;
-typedef struct { volatile unsigned long lock; } xnlock_t;
-
-extern xnlock_t nklock;
+typedef struct { volatile unsigned long lock[2]; } xnlock_t;
 
 #ifdef CONFIG_SMP
 
@@ -104,10 +104,8 @@ static inline void xnlock_get(xnlock_t *lock)
 {
 	barrier();
 	rtai_cli();
-	if (!test_and_set_bit(hal_processor_id(), &lock->lock)) {
-		while (test_and_set_bit(31, &lock->lock)) {
-			cpu_relax();
-		}
+	if (!test_and_set_bit(hal_processor_id(), &lock->lock[0])) {
+		rtai_spin_glock(&lock->lock[0]);
 	}
 	barrier();
 }
@@ -116,9 +114,8 @@ static inline void xnlock_put(xnlock_t *lock)
 {
 	barrier();
 	rtai_cli();
-	if (test_and_clear_bit(hal_processor_id(), &lock->lock)) {
-		test_and_clear_bit(31, &lock->lock);
-		cpu_relax();
+	if (test_and_clear_bit(hal_processor_id(), &lock->lock[0])) {
+		rtai_spin_gunlock(&lock->lock[0]);
 	}
 	barrier();
 }
@@ -128,12 +125,9 @@ static inline spl_t __xnlock_get_irqsave(xnlock_t *lock)
 	unsigned long flags;
 
 	barrier();
-	rtai_save_flags_and_cli(flags);
-	flags &= (1 << RTAI_IFLAG);
-	if (!test_and_set_bit(hal_processor_id(), &lock->lock)) {
-		while (test_and_set_bit(31, &lock->lock)) {
-			cpu_relax();
-		}
+	flags = rtai_save_flags_irqbit_and_cli();
+	if (!test_and_set_bit(hal_processor_id(), &lock->lock[0])) {
+		rtai_spin_glock(&lock->lock[0]);
 		barrier();
 		return flags | 1;
 	}
@@ -147,18 +141,10 @@ static inline spl_t __xnlock_get_irqsave(xnlock_t *lock)
 static inline void xnlock_put_irqrestore(xnlock_t *lock, spl_t flags)
 {
 	barrier();
-	rtai_cli();
 	if (test_and_clear_bit(0, &flags)) {
-		if (test_and_clear_bit(hal_processor_id(), &lock->lock)) {
-			test_and_clear_bit(31, &lock->lock);
-			cpu_relax();
-		}
+		xnlock_put(lock);
 	} else {
-		if (!test_and_set_bit(hal_processor_id(), &lock->lock)) {
-			while (test_and_set_bit(31, &lock->lock)) {
-				cpu_relax();
-			}
-		}
+		xnlock_get(lock);
 	}
 	if (flags) {
 		rtai_sti();
@@ -440,8 +426,6 @@ long uld, unsigned long *r)
 }
 
 // support for RTDM select
-
-DECLARE_EXTERN_XNLOCK(nklock);
 
 typedef struct xnholder {
 	struct xnholder *next;

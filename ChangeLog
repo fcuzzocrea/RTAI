@@ -1,5 +1,10 @@
 2008-10-12 Paolo Mantegazza <mantegazza@aero.polimi.it> and
 
+	* addons/rtdm/xn.h: locks reprogrammed as for RTAI own, including 
+	  ticket locking for better scalability with more tham 2 CPUs.
+
+2008-10-12 Paolo Mantegazza <mantegazza@aero.polimi.it> and
+
 	* base/sched/sched.c: exploit patch support to block signal when
 	  real time hardened tasks transition to Linux because of its
 	  signals.

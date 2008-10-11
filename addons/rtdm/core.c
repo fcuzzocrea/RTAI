@@ -1369,8 +1369,8 @@ int __rt_dev_select(int nfds, fd_set *rfds, fd_set *wfds, fd_set *efds, nanosecs
 	fd_set **bp, *cp;
 
 	for (ret = i = 0; i < SELECT_DIM; i++) {
-		if (fds[i]) {
-			ret += (find_first_bit(fds[i]->fds_bits, nfds) < nfds);
+		if (fds[i] && find_first_bit(fds[i]->fds_bits, nfds) < nfds) {
+			ret = 1;
 			reqp[i] = &req[i];
 			resp[i] = &res[i];
 			if (space) {

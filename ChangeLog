@@ -1,14 +1,14 @@
 2008-10-13 Paolo Mantegazza <mantegazza@aero.polimi.it> and
 
-	* base/malloc/malloc.c: enable TLSF used sieze statistics, fixed
-	  macro TLSF_ADD_SIZE and added tlsf_get_used_size.
+	* base/malloc/malloc.c: enabled TLSF used_size statistics, fixed
+	  macro TLSF_ADD_SIZE, added tlsf_get_used_size.
 	* base/sched/sched.c: report global and kstack heaps usage in sched
 	  proc file.
 
 2008-10-12 Paolo Mantegazza <mantegazza@aero.polimi.it> and
 
 	* addons/rtdm/xn.h: locks reprogrammed as for RTAI own, including 
-	  ticket locking for better scalability with more tham 2 CPUs.
+	  ticket locking for better scalability with more than 2 CPUs.
 
 2008-10-12 Paolo Mantegazza <mantegazza@aero.polimi.it> and
 

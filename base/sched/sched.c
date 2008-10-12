@@ -2585,6 +2585,9 @@ static int lxrt_intercept_syscall_epilogue(unsigned long event, void *nothing)
 #ifdef CONFIG_PROC_FS
 /* -----------------------< proc filesystem section >-------------------------*/
 
+extern int rtai_global_heap_size;
+extern size_t tlsf_get_used_size(rtheap_t *);
+
 static int rtai_read_sched(char *page, char **start, off_t off, int count,
                            int *eof, void *data)
 {
@@ -2605,6 +2608,20 @@ static int rtai_read_sched(char *page, char **start, off_t off, int count,
                 PROC_PRINT(": (%d/%d)", cpuid, taskidx[cpuid]);
         }
 	PROC_PRINT("\n\n");
+
+	PROC_PRINT("Global heap: size = %10d, used = ", rtai_global_heap_size);
+#ifdef CONFIG_RTAI_USE_TLSF
+	PROC_PRINT("%10u; <TLSF>.\n", tlsf_get_used_size(&rtai_global_heap));
+#else
+	PROC_PRINT("%10lu; <BSD>.\n", rtheap_used_mem(&rtai_global_heap));
+#endif
+
+	PROC_PRINT("Kstack heap: size = %10d, used = ", rtai_kstack_heap_size);
+#ifdef CONFIG_RTAI_USE_TLSF
+	PROC_PRINT("%10u; <TLSF>.\n\n", tlsf_get_used_size(&rtai_kstack_heap));
+#else
+	PROC_PRINT("%10lu; <BSD>.\n\n", rtheap_used_mem(&rtai_kstack_heap));
+#endif
 
 	PROC_PRINT("Number of forced hard/soft/hard transitions: traps %lu, syscalls %lu\n\n", traptrans, systrans);
 

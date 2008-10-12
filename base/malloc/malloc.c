@@ -257,7 +257,7 @@ int rtheap_free(rtheap_t *heap, void *block)
 #endif
 
 #ifndef TLSF_STATISTIC
-#define	TLSF_STATISTIC 	(0)
+#define	TLSF_STATISTIC 	(1)
 #endif
 
 #ifndef USE_MMAP
@@ -283,7 +283,8 @@ int rtheap_free(rtheap_t *heap, void *block)
 		tlsf->used_size += (b->size & BLOCK_SIZE) + BHDR_OVERHEAD;	\
 		if (tlsf->used_size > tlsf->max_size) {						\
 			tlsf->max_size = tlsf->used_size;						\
-		} while(0)
+		} 										\
+	} while(0)
 
 #define	TLSF_REMOVE_SIZE(tlsf, b) do {								\
 		tlsf->used_size -= (b->size & BLOCK_SIZE) + BHDR_OVERHEAD;	\
@@ -771,6 +772,16 @@ void free_ex(void *ptr, void *mem_pool)
     tmp_b = GET_NEXT_BLOCK(b->ptr.buffer, b->size & BLOCK_SIZE);
     tmp_b->size |= PREV_FREE;
     tmp_b->prev_hdr = b;
+}
+
+size_t tlsf_get_used_size(rtheap_t *heap) {
+#if TLSF_STATISTIC
+        struct list_head *holder;
+        list_for_each(holder, &heap->extents) { break; }
+	return ((tlsf_t *)(list_entry(holder, rtextent_t, link)->membase))->used_size;
+#else
+	return 0;
+#endif
 }
 
 /******************************** END TLSF ********************************/

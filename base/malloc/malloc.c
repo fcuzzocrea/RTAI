@@ -751,8 +751,7 @@ void free_ex(void *ptr, void *mem_pool)
 
     TLSF_REMOVE_SIZE(tlsf, b);
 
-    b->ptr.free_ptr = (free_ptr_t) {
-    NULL, NULL};
+    b->ptr.free_ptr = (free_ptr_t) { NULL, NULL};
     tmp_b = GET_NEXT_BLOCK(b->ptr.buffer, b->size & BLOCK_SIZE);
     if (tmp_b->size & FREE_BLOCK) {
         MAPPING_INSERT(tmp_b->size & BLOCK_SIZE, &fl, &sl);

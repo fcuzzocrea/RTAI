@@ -773,7 +773,7 @@ void free_ex(void *ptr, void *mem_pool)
     tmp_b->prev_hdr = b;
 }
 
-size_t tlsf_get_used_size(rtheap_t *heap) {
+unsigned long tlsf_get_used_size(rtheap_t *heap) {
 #if TLSF_STATISTIC
         struct list_head *holder;
         list_for_each(holder, &heap->extents) { break; }

@@ -2588,9 +2588,11 @@ static int lxrt_intercept_syscall_epilogue(unsigned long event, void *nothing)
 extern int rtai_global_heap_size;
 
 #ifdef CONFIG_RTAI_USE_TLSF
+#define RTAI_USES_TLSF  1
 extern unsigned long tlsf_get_used_size(rtheap_t *);
 #define rt_get_heap_mem_used(heap)  tlsf_get_used_size(heap)
 #else
+#define RTAI_USES_TLSF  0
 #define rt_get_heap_mem_used(heap)  rtheap_used_mem(heap)
 #endif
 
@@ -2615,9 +2617,9 @@ static int rtai_read_sched(char *page, char **start, off_t off, int count,
         }
 	PROC_PRINT("\n\n");
 
-	PROC_PRINT("Global heap: size = %10d, used = %10lu; <%s>.\n", rtai_global_heap_size, rt_get_heap_mem_used(&rtai_global_heap), CONFIG_RTAI_USE_TLSF ? "TLSF" : "BSD");
+	PROC_PRINT("Global heap: size = %10d, used = %10lu; <%s>.\n", rtai_global_heap_size, rt_get_heap_mem_used(&rtai_global_heap), RTAI_USES_TLSF ? "TLSF" : "BSD");
 
-	PROC_PRINT("Global heap: size = %10d, used = %10lu; <%s>.\n\n", rtai_kstack_heap_size, rt_get_heap_mem_used(&rtai_kstack_heap), CONFIG_RTAI_USE_TLSF ? "TLSF" : "BSD");
+	PROC_PRINT("Global heap: size = %10d, used = %10lu; <%s>.\n\n", rtai_kstack_heap_size, rt_get_heap_mem_used(&rtai_kstack_heap), RTAI_USES_TLSF ? "TLSF" : "BSD");
 
 	PROC_PRINT("Number of forced hard/soft/hard transitions: traps %lu, syscalls %lu\n\n", traptrans, systrans);
 

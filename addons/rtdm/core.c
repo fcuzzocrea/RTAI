@@ -1426,4 +1426,6 @@ int __rt_dev_select(int nfds, fd_set *rfds, fd_set *wfds, fd_set *efds, nanosecs
 	return ret;
 }
 
+EXPORT_SYMBOL(__rt_dev_select);
+
 #endif

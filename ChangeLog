@@ -1,7 +1,7 @@
 2008-10-31 Paolo Mantegazza <mantegazza@aero.polimi.it>
 
 	* base/include/rtai_lxrt.h: revert to the previous version of 
-	  rt_gettimeorig.
+	  rt_gettimeorig; thanks to John Ford <jford@nrao.edu>.
 
 2008-10-14 Paolo Mantegazza <mantegazza@aero.polimi.it>
 

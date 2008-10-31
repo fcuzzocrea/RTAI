@@ -1,3 +1,8 @@
+2008-10-31 Paolo Mantegazza <mantegazza@aero.polimi.it>
+
+	* base/include/rtai_lxrt.h: revert to the previous version of 
+	  rt_gettimeorig.
+
 2008-10-14 Paolo Mantegazza <mantegazza@aero.polimi.it>
 
 	* base/sched/sys.c: change order of mutually exclusive tests

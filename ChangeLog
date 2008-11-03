@@ -1,5 +1,9 @@
 2008-11-03 Pierangelo Masarati <masarati@aero.polimi.it>
 
+	* *.in, configure: regenerate with autoconf 2.61 and automake 1.10
+
+2008-11-03 Pierangelo Masarati <masarati@aero.polimi.it>
+
 	* addons/rtdm/Makefile.kbuild: fix build outside source tree
 
 2008-10-31 Paolo Mantegazza <mantegazza@aero.polimi.it>

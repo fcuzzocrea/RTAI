@@ -1,3 +1,7 @@
+2008-11-03 Pierangelo Masarati <masarati@aero.polimi.it>
+
+	* addons/rtdm/Makefile.kbuild: fix build outside source tree
+
 2008-10-31 Paolo Mantegazza <mantegazza@aero.polimi.it>
 
 	* base/include/rtai_lxrt.h: revert to the previous version of 

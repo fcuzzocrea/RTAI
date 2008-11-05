@@ -1,3 +1,11 @@
+2008-11-05 Roberto Bucher <roberto.bucher@supsi.ch>
+
+        * rtai-lab/scilab/macros/RTAI/RTAICodeGen_.sci:Completely rewritten
+          code generator. The code doesn't use dynamic allocation of 
+          structures anymore.
+        * rtai-lab/scilab/macros/RTAI/RT_templates:* New templates fitted
+          for the new Code generator
+
 2008-10-31 Paolo Mantegazza <mantegazza@aero.polimi.it>
 
         * base/include/rtai_lxrt.h: revert to the previous version of

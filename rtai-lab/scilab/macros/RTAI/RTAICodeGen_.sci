@@ -1,14 +1,17 @@
-function RTAICodeGen_()
-// 
+//** INRIA / SCILAB / Roberto Bucher / Simone Mannori / Paolo Gai
+//** 16 Jan 2008
+//**
 // Modified by Roberto Bucher roberto.bucher@supsi.ch from the original
 // CodeGeneration_.sci
 //
-//Input editor function of Scicos code generator
+// Input editor function of Scicos code generator
 //
-//@l@n, 15/10/07
 //
-//** 10 Set 2007 : cleaner startup code by
+//** 10 Set 2007 : cleaner startup code by Simone Mannori
 
+function RTAICodeGen_()
+
+//** ------------- Preliminary I/O section ___________________________________________________________________________
     k = [] ; //** index of the CodeGen source superbloc candidate
 
     xc = %pt(1); //** last valid click position 
@@ -22,101 +25,155 @@ function RTAICodeGen_()
     if k==[] then
       return
     //** check if we have clicked near a block
-    elseif typeof(scs_m.objs(k))<>'Block' then
+    elseif typeof(scs_m.objs(k))<>"Block" then
       return
     end
 
-//** If the clicked/selected block is really a superblock 
-//**             <k>
-    if scs_m.objs(k).model.sim(1)=='super' then
+    //** If the clicked/selected block is really a superblock 
+    //**         <k>
+    if scs_m.objs(k).model.sim(1)=="super" then
       
-        XX = scs_m.objs(k);
-        [ok, XX, alreadyran, flgcdgen, szclkINTemp, freof] = ...
-                        do_compile_superblock42(XX, scs_m, k, alreadyran);
+        XX = scs_m.objs(k); //** isolate the super block to use 
+        
+//---------------------------------------------------->       THE REAL CODE GEN IS HERE --------------------------------
+        //** the real code generator is here 
+        [ok, XX, alreadyran, flgcdgen, szclkINTemp, freof] =  do_compile_superblock42(XX, scs_m, k, alreadyran);
+        
+        
         //**quick fix for sblock that contains scope
-        gh_curwin=scf(curwin)
-
-      if ok then
-        scs_m = changeports(scs_m,list('objs',k), XX);  //scs_m.objs(k)=XX
-        if flgcdgen <> szclkINTemp then
-           // XX.graphics.pein($)=size(scs_m.objs)+2
-            XX.graphics.pein = [XX.graphics.pein ; size(scs_m.objs)+2]
-            scs_m.objs(k) = XX
-            bk = SampleCLK('define');
-            [posx,posy] = getinputports(XX)
-             posx = posx($); posy = posy($);
-             teta = XX.graphics.theta
-             pos  = rotate([posx;posy],teta*%pi/180, ...
-                           [XX.graphics.orig(1)+XX.graphics.sz(1)/2,...
-                            XX.graphics.orig(2)+XX.graphics.sz(2)/2]) ; 
-             posx = pos(1); posy = pos(2);
-             bk.graphics.orig = [posx posy]+[-30 20]
-             bk.graphics.sz = [60 40]
-             bk.graphics.exprs = [sci2exp(freof(1));sci2exp(freof(2))]
-             bk.model.rpar = freof;
-             bk.graphics.peout = size(scs_m.objs)+2
-             scs_m.objs($+1) = bk;
-             [posx2,posy2] = getoutputports(bk);
-             lnk    = scicos_link();
-             lnk.xx = [posx2;posx];
-             lnk.yy = [posy2;posy];
-             lnk.ct = [5 -1]
-             lnk.from = [size(scs_m.objs) 1 0]
-             lnk.to = [k flgcdgen 1]
-             scs_m.objs($+1) = lnk;
-        end
-        needcompile = 4  ;
-        Cmenu = "Replot" ;
-      else
-        Cmenu = "Open/Set"
-      end
+        gh_curwin = scf(curwin)
     
     else
       //** the clicked/selected block is NOT a superblock 
-      message("Generation Code only work for a Superblock ! ")
+      message("Generation Code only work for a Super Block ! ")
     end
+
 endfunction
 
 //==========================================================================
+//BlockProto : generate prototype
+//            of a scicos block
 //
-//16/06/07 Author : ?, A. Layec
 //
+//16/06/07 Author : A.Layec
 //Copyright INRIA
-function [Code,actt,proto]=call_actuator(i)
-  nin=inpptr(i+1)-inpptr(i);  //** number of input ports
-  nout=outptr(i+1)-outptr(i); //** number of output ports
+function [txt]=BlockProto(bk)
 
-  if funtyp(i)==0 then
-    if nin==0 then
-      uk    = 0;
-      nuk_1 = 0;
-      nuk_2 = 0;
-      uk_t  = 1;
-      //Code($+1)=+'  args[0]=(double *)outtbptr[0]);';
-    else
-      uk    = inplnk(inpptr(i));
-      nuk_1 = size(outtb(uk),1);
-      nuk_2 = size(outtb(uk),2);
-      uk_t  = mat2scs_c_nb(outtb(uk));
-      //Code($+1)=' args[0]=('+mat2scs_c_ptr(outtb(uk))+' *)outtbptr['+string(uk-1)+'];';
+  nin=inpptr(bk+1)-inpptr(bk);  //* number of input ports */
+  nout=outptr(bk+1)-outptr(bk); //* number of output ports */
+
+  //**
+  ftyp=funtyp(bk)
+  if ftyp>2000 then ftyp=ftyp-2000,end
+  if ftyp>1000 then ftyp=ftyp-1000,end
+
+  //** check function type
+  if ftyp < 0 then //** ifthenelse eselect blocks
+      txt = [];
+      return;
+  else
+    if (ftyp<>0 & ftyp<>1 & ftyp<>2 & ftyp<>3 & ftyp<>4) then
+      disp("types other than 0,1,2,3 or 4 are not yet supported.")
+      txt = [];
+      return;
     end
   end
-  //pour la fonction gui ont a : num de bloc l'adresse dans
-  //nouveau  z et la taille du port
-  actt=[i uk nuk_1 nuk_2 uk_t bllst(i).ipar]
 
-  Code($+1)='block_'+rdnom+'['+string(i-1)+'].nevprt=nevprt;'
+  //** add comment
+  txt=[get_comment('proto_blk',list(funs(bk),funtyp(bk),bk));]
 
-  Code=['/* Call of actuator (blk nb '+string(i)+') */'
-        Code;
-        'nport = '+string(nbact)+';';
-        rdnom+'_actuator(&flag, &nport, &block_'+rdnom+'['+string(i-1)+'].nevprt, told, '+..
-        '('+mat2scs_c_ptr(outtb(uk))+' *)outtbptr['+string(uk-1)+'], &nrd_'+string(nuk_1)+', &nrd_'+..
-        string(nuk_2)+', &nrd_'+string(uk_t)+',bbb);'];
+  select ftyp
+    //** zero funtyp
+    case 0 then
 
-  proto='void '+rdnom+'_actuator('+..
-        'int *, int *, int *, double *, void *, int *, int *,int *,int);'
-  proto=cformatline(proto,70);
+      //*********** prototype definition ***********//
+      txtp=['(int *, int *, double *, double *, double *, int *, double *, \';
+            ' int *, double *, int *, double *, int *,int *, int *, \';
+            ' double *, int *, double *, int *);'];
+      if (funtyp(bk)>2000 & funtyp(bk)<3000)
+        blank = get_blank('void '+funs(bk)+'(');
+        txtp(1) = 'void '+funs(bk)+txtp(1);
+      elseif (funtyp(bk)<2000)
+        txtp(1) = 'void C2F('+funs(bk)+')'+txtp(1);
+        blank = get_blank('void C2F('+funs(bk)+')');
+      end
+      txtp(2:$) = blank + txtp(2:$);
+      txt = [txt;txtp];
+      //*******************************************//
+
+
+    //**
+    case 1 then
+
+      //*********** prototype definition ***********//
+      txtp=['(int *, int *, double *, double *, double *, int *, double *, \';
+            ' int *, double *, int *, double *, int *,int *, int *';]
+      if (funtyp(bk)>2000 & funtyp(bk)<3000)
+        blank = get_blank('void '+funs(bk)+'(');
+        txtp(1) = 'void '+funs(bk)+txtp(1);
+      elseif (funtyp(bk)<2000)
+        txtp(1) = 'void C2F('+funs(bk)+')'+txtp(1);
+        blank = get_blank('void C2F('+funs(bk)+')');
+      end
+      if nin>=1 | nout>=1 then
+        txtp($)=txtp($)+', \'
+        txtp=[txtp;'']
+        if nin>=1 then
+          for k=1:nin
+            txtp($)=txtp($)+' double *, int * ,'
+          end
+          txtp($)=part(txtp($),1:length(txtp($))-1); //remove last ,
+        end
+        if nout>=1 then
+          if nin>=1 then
+            txtp($)=txtp($)+', \'
+            txtp=[txtp;'']
+          end
+          for k=1:nout
+            txtp($)=txtp($)+' double *, int * ,'
+          end
+          txtp($)=part(txtp($),1:length(txtp($))-1); //remove last ,
+        end
+      end
+
+      if ztyp(bk) then
+        txtp($)=txtp($)+', \'
+        txtp=[txtp;' double *,int *);'];
+      else
+        txtp($)=txtp($)+');';
+      end
+
+      txtp(2:$) = blank + txtp(2:$);
+      txt = [txt;txtp];
+      //*******************************************//
+
+    //**
+    case 2 then
+
+      //*********** prototype definition ***********//
+
+      txtp=['void '+funs(bk)+...
+            '(int *, int *, double *, double *, double *, int *, double *, \';
+            ' int *, double *, int *, double *, int *, int *, int *, \'
+            ' double **, int *, int *, double **,int *, int *'];
+      if ~ztyp(bk) then
+        txtp($)=txtp($)+');';
+      else
+        txtp($)=txtp($)+', \';
+        txtp=[txtp;
+              ' double *,int *);']
+      end
+      blank = get_blank('void '+funs(bk));
+      txtp(2:$) = blank + txtp(2:$);
+      txt = [txt;txtp];
+      //********************************************//
+
+    //**
+    case 4 then
+      txt=[txt;
+           'void '+funs(bk)+'(scicos_block *, int );'];
+
+  end
 endfunction
 
 //==========================================================================
@@ -132,6 +189,7 @@ endfunction
 //16/06/07 Authors : Alan Layec
 //Copyright INRIA
 function txt=call_block42(bk,pt,flag)
+
   txt=[]
   //**
   if flag==2 & ((zptr(bk+1)-zptr(bk))+..
@@ -183,8 +241,8 @@ function txt=call_block42(bk,pt,flag)
            rdnom+'_actuator(&local_flag, &nport, &block_'+rdnom+'['+string(bk-1)+'].nevprt, \'
            get_blank(rdnom+'_actuator')+' &t, ('+mat2scs_c_ptr(outtb(uk))+' *)'+rdnom+'_block_outtbptr['+string(uk-1)+'], \'
            get_blank(rdnom+'_actuator')+' &nrd_'+string(nuk_1)+', &nrd_'+string(nuk_2)+', &nrd_'+string(uk_t)+',bbb);']
-    txt = [txt;
-           'if(local_flag < 0) return(5 - local_flag);']
+//    txt = [txt;
+//           'if(local_flag < 0) return(5 - local_flag);']
     return
   elseif or(bk==capt(:,1)) then
     ind=find(bk==capt(:,1))
@@ -195,11 +253,11 @@ function txt=call_block42(bk,pt,flag)
     txt = [txt;
            'nport = '+string(ind)+';']
     txt = [txt;
-           rdnom+'_sensor(&local_flag, &nport, &block_'+rdnom+'['+string(bk-1)+'].nevprt, \'
+           rdnom+'_sensor(&local_flag, &nport, &block_'+rdnom+'['+string(i-1)+'].nevprt, \'
            get_blank(rdnom+'_sensor')+' &t, ('+mat2scs_c_ptr(outtb(yk))+' *)'+rdnom+'_block_outtbptr['+string(yk-1)+'], \'
            get_blank(rdnom+'_sensor')+' &nrd_'+string(nyk_1)+', &nrd_'+string(nyk_2)+', &nrd_'+string(yk_t)+',aaa);']
-    txt = [txt;
-           'if(local_flag < 0) return(5 - local_flag);']
+//    txt = [txt;
+//           'if(local_flag < 0) return(5 - local_flag);']
     return
   end
 
@@ -386,280 +444,578 @@ function txt=call_block42(bk,pt,flag)
 
   end
 
-  txt =[txt;'if(local_flag < 0) return(5 - local_flag);']
+//  txt =[txt;'if(local_flag < 0) return(5 - local_flag);']
 
 endfunction
 
 //==========================================================================
-//CallBlock : generate C calling sequence
-//            of a scicos block
-//
-//inputs : bk   : bloc index
-//         pt   :
-//         flag :block_'+rdnom+'[
-//
-//output : txt  :
-//
-//16/06/07 Authors : R.Nikoukhah, A.Layec
-//Copyright INRIA
-function txt=call_block4(bk)
-//   if flag==2 & ((zptr(bk+1)-zptr(bk))+(ozptr(bk+1)-ozptr(bk))==0 | pt<=0) then
-//     return // block without discrete state or continuously activated
-//            // If work allocated in the absence of z and oz, it does not work
-//   end
+//utilitary fonction used to format long C instruction
+//t : a string containing a C instruction
+//l : max line length allowed
 
-  //**
-  nx=xptr(bk+1)-xptr(bk);
-  nz=zptr(bk+1)-zptr(bk);
-  nrpar=rpptr(bk+1)-rpptr(bk);
-  nipar=ipptr(bk+1)-ipptr(bk);
-  nin=inpptr(bk+1)-inpptr(bk);  //* number of input ports */
-  nout=outptr(bk+1)-outptr(bk); //* number of output ports */
+// Copyright INRIA
+//Author : Rachid Djenidi
+function t1=cformatline(t ,l)
 
-  //**
-  //l'adresse du pointeur de ipar
-  if nipar<>0 then ipar=ipptr(bk), else ipar=1;end
-  //l'adresse du pointeur de rpar
-  if nrpar<>0 then rpar=rpptr(bk), else rpar=1; end
-  //l'adresse du pointeur de z attention -1 pas sur
-  if nz<>0 then z=zptr(bk)-1, else z=0;end
-  //l'adresse du pointeur de x
-  if nx<>0 then x=xptr(bk)-1, else x=0;end
+  sep=[',','+']
+  l1=l-2
+  t1=[]
+  kw=strindex(t,' ')
+  nw=0
+  if kw<>[] then
+    if kw(1)==1 then // there is leading blanks
+      k1=find(kw(2:$)-kw(1:$-1)<>1)
+      if k1==[] then // there is a single blank
+	nw=1
+      else
+	nw=kw(k1(1))
+      end
+    end
+  end
+  t=part(t,nw+1:length(t));
+  bl=part(' ',ones(1,nw))
+  l1=l-nw;first=%t
+  while %t 
+    if length(t)<=l then t1=[t1;bl+t],return,end
+    k=strindex(t,sep);
+    if k==[] then t1=[t1;bl+t],return,end
+    k($+1)=length(t)+1 // positions of the commas
+    i=find(k(1:$-1)<=l&k(2:$)>l) //nearest left comma (reltively to l)
+    if i==[] then i=1,end
+    t1=[t1;bl+part(t,1:k(i))]
+    t=part(t,k(i)+1:length(t))
+    if first then l1=l1-2;bl=bl+'  ';first=%f;end
+  end
+endfunction
 
-  //**
-  ftyp=funtyp(bk)
-  if ftyp>2000 then ftyp=ftyp-2000,end
-  if ftyp>1000 then ftyp=ftyp-1000,end
+//==========================================================================
+//used in do_compile_superblock
+function vec=codebinaire(v,szclkIN)
 
-  //** check function type
-  if ftyp < 0 then //** ifthenelse eselect blocks
-      txt = [];
-      return;
+  vec=zeros(1,szclkIN)
+  for i=1:szclkIN
+    w=v/2;
+    vec(i)=v-2*int(w);
+    v=int(w);
+  end
+endfunction
+
+//==========================================================================
+
+function ok = compile_standalone()
+//compile rt standalone executable for standalone
+// 22.01.2004
+//Author : Roberto Bucher (roberto.bucher@die.supsi.ch)
+
+
+  xinfo('Compiling standalone');
+  wd = pwd();
+  chdir(rpat);
+
+  if getenv('WIN32','NO')=='OK' then
+     unix_w('nmake -f Makefile.mak');
   else
-    if (ftyp<>0 & ftyp<>1 & ftyp<>2 & ftyp<>3 & ftyp<>4) then
-      disp("types other than 0,1,2,3 or 4 are not supported.")
-      txt = [];
-      return;
+     unix_w('make')
+  end
+  chdir(wd);
+  ok = %t;
+endfunction	
+
+//==========================================================================
+// Transforms a given Scicos discrete and continuous SuperBlock into a C defined Block
+// Copyright INRIA
+//
+function  [ok,XX,alreadyran,flgcdgen,szclkINTemp,freof] = do_compile_superblock42(XX,all_scs_m,numk,alreadyran)
+
+  scs_m = XX.model.rpar ; //** isolate the super block scs_m data structure 
+  par = scs_m.props;
+  
+  //** SAFETY : terminate current simulation 
+  if alreadyran then
+    //** terminate current simulation
+    do_terminate() ; 
+    alreadyran  = %f ;
+  end
+
+  hname = scs_m.props.title(1);  //** super block name
+
+  //***********************************************************
+  //Check blocks properties and adapt them if necessary
+  //***********************************************************
+
+
+  //**  These blocks are not ALLOWED for Emb code generation 
+  vorbidden_items=["CLKOUT_f","activation (events) output ports";
+                   "IN_f","input ports";
+                   "OUT_f","output ports";
+                   "CLKOUTV_f","activation outputs";
+                   "CLOCK_c","clocks";
+                   "CLOCK_f","clocks";
+                   "SampleCLK","clocks";
+                   "RFILE_f","Read block";
+                   "READC_f","Read_block";
+                   "WFILE_f","Write block";
+                   "WRITEC_f","Write block"]
+
+  clkIN = [];
+  
+  //** scan 
+  for i=1:size(scs_m.objs)
+
+    //** BLOCKS 
+    if typeof(scs_m.objs(i))=="Block" then
+      ind=find(vorbidden_items==scs_m.objs(i).gui);
+      if(ind~=[]) then
+        ok = %f ;
+        %cpr = list();
+        message(vorbidden_items(ind(1),2)+" not allowed in Superblock");
+        return; // EXIT point
+      
+      elseif scs_m.objs(i).gui=="CLKINV_f" then //** input clock from external diagram 
+        //** replace event input ports by  fictious block
+        scs_m.objs(i).gui="EVTGEN_f";
+        scs_m.objs(i).model.sim(1)="bidon"
+        if clkIN==[] then
+          clkIN = 1;
+        else
+          ok = %f;
+          %cpr = list();
+          message("Only one activation block allowed!");
+          return; // EXIT point
+        end
+      end
     end
   end
 
-  //** add comment
-  txt=[get_comment('call_blk',list(funs(bk),funtyp(bk),bk));]
+  
+  szclkIN = size(clkIN,2);
+  
 
-  //** write nevprt activation
-//   nclock=abs(pt);
-  txt=[txt;
-       'block_'+rdnom+'['+string(bk-1)+'].nevprt=nevprt;']
+  flgcdgen = szclkIN; //** pass the clock 
+  
+  //** 
+  //** BEWARE : the Scicos compiler is called here ! 
+  //**
+  [bllst,connectmat,clkconnect,cor,corinv,ok,scs_m,flgcdgen,freof] = c_pass1(scs_m,flgcdgen);
 
-  select ftyp
-    //** zero funtyp
-    case 0 then
-      //**** input/output addresses definition ****//
-      if nin>1 then
-        for k=1:nin
-          uk=inplnk(inpptr(bk)-1+k);
-          nuk=size(outtb(uk),'*');
-          TYPE=mat2scs_c_ptr(outtb(uk));//scilab index start from 1
-          txt=[txt;
-               'rdouttb['+string(k-1)+']=('+TYPE+' *)'+rdnom+'_block_outtbptr['+string(uk-1)+'];']
-        end
-        txt=[txt;
-             'args[0]=&(rdouttb[0]);']
-      elseif nin==0
-        uk=0;
-        nuk=0;
-        txt=[txt;
-             'args[0]=(SCSREAL_COP *)'+rdnom+'_block_outtbptr[0];']
-      else
-        uk=inplnk(inpptr(bk));
-        nuk=size(outtb(uk),'*');
-        TYPE=mat2scs_c_ptr(outtb(uk));//scilab index start from 1
-        txt=[txt;
-             'args[0]=('+TYPE+' *)'+rdnom+'_block_outtbptr['+string(uk-1)+'];']
-      end
+  if ~ok then
+    message("Sorry: problem in the pre-compilation step.")
+    return ; //** EXIT point 
+  end
 
-      if nout>1 then
-        for k=1:nout
-          yk=outlnk(outptr(bk)-1+k);
-          nyk=size(outtb(yk),'*');
-          TYPE=mat2scs_c_ptr(outtb(yk));//scilab index start from 1
-          txt=[txt;
-               'rdouttb['+string(k+nin-1)+']=('+TYPE+' *)'+rdnom+'_block_outtbptr['+string(yk-1)+'];'];
-        end
-        txt=[txt;
-             'args[1]=&(rdouttb['+string(nin)+']);'];
-      elseif nout==0
-        yk=0;
-        nyk=0;
-        txt=[txt;
-             'args[1]=(SCSREAL_COP *)'+rdnom+'_block_outtbptr[0];'];
-      else
-        yk=outlnk(outptr(bk));
-        nyk=size(outtb(yk),'*'),;
-        TYPE=mat2scs_c_ptr(outtb(yk));//scilab index start from 1
-        txt=[txt;
-             'args[1]=('+TYPE+' *)'+rdnom+'_block_outtbptr['+string(yk-1)+'];'];
-      end
-      //*******************************************//
-
-      //*********** call seq definition ***********//
-      txtc=['(&flag,&block_'+rdnom+'['+string(bk-1)+'].nevprt,told,block_'+rdnom+'['+string(bk-1)+'].xd, \';
-            'block_'+rdnom+'['+string(bk-1)+'].x,&block_'+rdnom+'['+string(bk-1)+'].nx, \';
-            'block_'+rdnom+'['+string(bk-1)+'].z,&block_'+rdnom+'['+string(bk-1)+'].nz,block_'+rdnom+'['+string(bk-1)+'].evout, \';
-            '&block_'+rdnom+'['+string(bk-1)+'].nevout,block_'+rdnom+'['+string(bk-1)+'].rpar,&block_'+rdnom+'['+string(bk-1)+'].nrpar, \';
-            'block_'+rdnom+'['+string(bk-1)+'].ipar,&block_'+rdnom+'['+string(bk-1)+'].nipar, \';
-            '(double *)args[0],&nrd_'+string(nuk)+',(double *)args[1],&nrd_'+string(nyk)+');'];
-      if (funtyp(bk)>2000 & funtyp(bk)<3000)
-        blank = get_blank(funs(bk)+'( ');
-        txtc(1) = funs(bk)+txtc(1);
-      elseif (funtyp(bk)<2000)
-        txtc(1) = 'C2F('+funs(bk)+')'+txtc(1);
-        blank = get_blank('C2F('+funs(bk)+') ');
-      end
-      txtc(2:$) = blank + txtc(2:$);
-      txt = [txt;txtc];
-      //*******************************************//
+  szclkINTemp = szclkIN;
+  szclkIN = flgcdgen;
 
 
-    //**
-    case 1 then
-      //**** input/output addresses definition ****//
-//       if nin>=1 then
-//         for k=1:nin
-//           uk=inplnk(inpptr(i)-1+k);
-//           nuk=size(outtb(uk),'*');
-//         end
-//       end
-//       if nout>=1 then
-//         for k=1:nout
-//           yk=outlnk(outptr(i)-1+k);
-//           nyk=size(outtb(yk),'*');
-//         end
-//       end
-      //*******************************************//
+  for i=1:size(bllst)
+    if (bllst(i).sim(1)=="bidon") then //** clock input 
+      howclk = i;
+    end
+  end
 
-      //*********** call seq definition ***********//
-      txtc=['(&flag,&block_'+rdnom+'['+string(bk-1)+'].nevprt,told,block_'+rdnom+'['+string(bk-1)+'].xd, \';
-            'block_'+rdnom+'['+string(bk-1)+'].x,&block_'+rdnom+'['+string(bk-1)+'].nx, \';
-            'block_'+rdnom+'['+string(bk-1)+'].z,&block_'+rdnom+'['+string(bk-1)+'].nz,block_'+rdnom+'['+string(bk-1)+'].evout, \';
-            '&block_'+rdnom+'['+string(bk-1)+'].nevout,block_'+rdnom+'['+string(bk-1)+'].rpar,&block_'+rdnom+'['+string(bk-1)+'].nrpar, \';
-            'block_'+rdnom+'['+string(bk-1)+'].ipar,&block_'+rdnom+'['+string(bk-1)+'].nipar'];
-      if (funtyp(bk)>2000 & funtyp(bk)<3000)
-        blank = get_blank(funs(bk)+'( ');
-        txtc(1) = funs(bk)+txtc(1);
-      elseif (funtyp(bk)<2000)
-        txtc(1) = 'C2F('+funs(bk)+')'+txtc(1);
-        blank = get_blank('C2F('+funs(bk)+') ');
-      end
-      if nin>=1 | nout>=1 then
-        txtc($)=txtc($)+', \'
-        txtc=[txtc;'']
-        if nin>=1 then
-          for k=1:nin
-            uk=inplnk(inpptr(bk)-1+k);
-            nuk=size(outtb(uk),'*');
-            txtc($)=txtc($)+'(SCSREAL_COP *)'+rdnom+'_block_outtbptr['+string(uk-1)+'],&nrd_'+string(nuk)+',';
-          end
-          txtc($)=part(txtc($),1:length(txtc($))-1); //remove last ,
-        end
-        if nout>=1 then
-          if nin>=1 then
-            txtc($)=txtc($)+', \'
-            txtc=[txtc;'']
-          end
-          for k=1:nout
-            yk=outlnk(outptr(bk)-1+k);
-            nyk=size(outtb(yk),'*');
-            txtc($)=txtc($)+'(SCSREAL_COP *)'+rdnom+'_block_outtbptr['+string(yk-1)+'],&nrd_'+string(nyk)+',';
-          end
-          txtc($)=part(txtc($),1:length(txtc($))-1); //remove last ,
-        end
-      end
+  
+  //** BEWARE : update to new graphics instructions ! 
+  %windo = xget('window') ; 
+  
+  cpr = c_pass2(bllst,connectmat,clkconnect,cor,corinv)
 
-      if ztyp(bk) then
-        txtc($)=txtc($)+', \'
-        txtc=[txtc;'w,&nrd_0);'];
-      else
-        txtc($)=txtc($)+');';
-      end
+  if cpr==list() then
+      ok = %f
+      return ; //** exit point 
+  end
 
-      txtc(2:$) = blank + txtc(2:$);
-      txt = [txt;txtc];
-      //*******************************************//
+  //** Alan's patch 5/07/07: try to solve
+  //   which blocks use work
+  //** 
+  funs_save = cpr.sim.funs           ;
+  funtyp_save = cpr.sim.funtyp       ;
+  with_work = zeros(cpr.sim.nblk,1)  ;
 
-    //**
-    case 2 then
 
-      //*********** call seq definition ***********//
-      txtc=[funs(bk)+'(&flag,&block_'+rdnom+'['+string(bk-1)+'].nevprt,told,block_'+rdnom+'['+string(bk-1)+'].xd, \';
-            'block_'+rdnom+'['+string(bk-1)+'].x,&block_'+rdnom+'['+string(bk-1)+'].nx, \';
-            'block_'+rdnom+'['+string(bk-1)+'].z,&block_'+rdnom+'['+string(bk-1)+'].nz,block_'+rdnom+'['+string(bk-1)+'].evout, \';
-            '&block_'+rdnom+'['+string(bk-1)+'].nevout,block_'+rdnom+'['+string(bk-1)+'].rpar,&block_'+rdnom+'['+string(bk-1)+'].nrpar, \';
-            'block_'+rdnom+'['+string(bk-1)+'].ipar,&block_'+rdnom+'['+string(bk-1)+'].nipar, \';
-            '(double **)block_'+rdnom+'['+string(bk-1)+'].inptr,block_'+rdnom+'['+string(bk-1)+'].insz,&block_'+rdnom+'['+string(bk-1)+'].nin, \';
-            '(double **)block_'+rdnom+'['+string(bk-1)+'].outptr,block_'+rdnom+'['+string(bk-1)+'].outsz, &block_'+rdnom+'['+string(bk-1)+'].nout'];
-      if ~ztyp(bk) then
-        txtc($)=txtc($)+');';
-      else
-        txtc($)=txtc($)+', \';
-        txtc=[txtc;
-              'block_'+rdnom+'['+string(bk-1)+'].g,&block_'+rdnom+'['+string(bk-1)+'].ng);']
-      end
-      blank = get_blank(funs(bk)+'( ');
-      txtc(2:$) = blank + txtc(2:$);
-      txt = [txt;txtc];
-      //*******************************************//
+  //** ------ Windows cleaning for internal Scopes -------------------
+  //**
+  //**
+  //** retrieve all open Scilab windows with winsid()
+  //**
 
-    //**
-    case 4 then
-      txt=[txt;
-           funs(bk)+'(&block_'+rdnom+'['+string(bk-1)+'],flag);'];
+  BeforeCG_WinList = winsid(); 
+
+  ierr=execstr('[state,t]=scicosim(cpr.state,0,0,cpr.sim,'+..
+               '''start'',scs_m.props.tol)','errcatch')
+  if ierr==0 then
+    for i=1:cpr.sim.nblk
+       if state.iz(i)<>0 then
+          with_work(i)=%t
+       end
+    end
+    ierr=execstr('[state,t]=scicosim(state,0,0,cpr.sim,'+..
+                 '''finish'',scs_m.props.tol)','errcatch')
+  end
+
+  //**
+  //** retrieve all open Scilab windows with winsid
+  //** and close the additional windows open since first
+  //** 
+ 
+  //** This code does not cover 100% of the possible situations because the user can 
+  //** destroy one or more Scicos wins manually during this intermediate phase
+  //** This code is 100% functional if the the user does not close manually any win.
+  //** TO BE updated in Scilab 5.0
+
+  AfterCG_WinList = winsid();
+  
+  AfterCG_size = size(AfterCG_WinList); //** matrix
+  AfterCG_size = AfterCG_size(2) ; //** vector lenght 
+
+  BeforeCG_size = size(BeforeCG_WinList); //** matrix
+  BeforeCG_size = BeforeCG_size(2) ; //** vector lenght
+
+  if (or(AfterCG_WinList<>BeforeCG_WinList)) & (AfterCG_size>BeforeCG_size) then
+     //** means that a scope or other scicos object has created some
+     //** output window
+
+     DiffCG_Winlist = AfterCG_WinList<>BeforeCG_WinList ; //** T/F mismatch 
+     DiffCG_Index = find(DiffCG_Winlist); //** recover the mismatched indexes only 
+
+     for win_idx = DiffCG_Index
+         delete( scf( AfterCG_WinList(win_idx) ) ) ; //** clear the spurious windows   
+     end 
+     
+  end  
+  //**------------- end of windows cleaning for internal scopes -------------------------------
+
+  cpr.sim.funs=funs_save;
+  cpr.sim.funtyp=funtyp_save;
+
+  //** BEWARE: replace this OLD graphics instruction !
+  xset('window',%windo) ; 
+
+  ///////////////////
+  //** %cpr pointers 
+  x = cpr.state.x;
+  z = cpr.state.z;
+  outtb = cpr.state.outtb;
+
+  // RN
+  zcptr = cpr.sim.zcptr;
+  ozptr = cpr.sim.ozptr;
+  rpptr = cpr.sim.rpptr;
+  ipptr = cpr.sim.ipptr;
+  opptr = cpr.sim.opptr;
+  funs = cpr.sim.funs;
+  xptr = cpr.sim.xptr;
+  zptr = cpr.sim.zptr;
+  inpptr = cpr.sim.inpptr;
+  inplnk = cpr.sim.inplnk;
+  outptr = cpr.sim.outptr;
+  outlnk = cpr.sim.outlnk;
+  
+  // @l@n lnkptr = cpr.sim.lnkptr; ???
+  
+  ordclk = cpr.sim.ordclk;
+  funtyp = cpr.sim.funtyp;
+  cord   = cpr.sim.cord;
+  ncord  = size(cord,1);
+  nblk   = cpr.sim.nb;
+  ztyp   = cpr.sim.ztyp;
+  clkptr = cpr.sim.clkptr
+  
+  // taille totale de z : nztotal
+  nztotal = size(z,1);
+
+  //*******************************
+  //Checking if superblock is valid
+  //*******************************
+  msg = []
+
+  for i=1:length(funs)-1
+
+    if funtyp(i)==3 then
+      msg = [msg;"Type 3 block''s not allowed"] ;
+   
+// Bubu 18.03.2008
+    elseif funtyp(i)==0 & funs(i)~="bidon"  then
+      msg = [msg;"Type 0 block''s"+" ''"+funs(i)+"''"+" not allowed"] ;
+//end
+   
+    elseif (clkptr(i+1)-clkptr(i))<>0 &funtyp(i)>-1 &funs(i)~="bidon" then
+
+      //Alan // msg=[msg;'Regular block generating activation not allowed yet']
+
+    end
+
+    if msg<>[] then 
+         message(msg) ;
+         ok = %f ;
+         return ; //** 
+    end
 
   end
+
+
+  //** Find the clock connected to the SuperBlock and retreive
+  //** the sampling time
+  
+  if XX.graphics.pein==[] | XX.graphics.pein(1)==0 then
+    sTsamp="0.001"; //** default value is ONE millisecond 
+  else
+    o_ev = XX.graphics.pein(1);
+    o_ev=all_scs_m.objs(o_ev).from(1);
+
+    while (all_scs_m.objs(o_ev).gui~='CLOCK_c' & ...
+           all_scs_m.objs(o_ev).gui~='CLOCK_f' & ...
+           all_scs_m.objs(o_ev).gui~='SampleCLK')
+
+               o_ev = all_scs_m.objs(o_ev).graphics.pein(1);
+               o_ev = all_scs_m.objs(o_ev).from(1);
+
+    end
+
+    if all_scs_m.objs(o_ev).gui=='SampleCLK' then
+      sTsamp=all_scs_m.objs(o_ev).model.rpar(1);
+      sTsamp=sci2exp(sTsamp);
+      Tsamp_delay=all_scs_m.objs(o_ev).model.rpar(2);
+      Tsamp_delay=sci2exp(Tsamp_delay);
+    else
+      sTsamp=all_scs_m.objs(o_ev).model.rpar.objs(2).graphics.exprs(1);
+      sTsamp=sci2exp(eval(sTsamp));
+      Tsamp_delay=all_scs_m.objs(o_ev).model.rpar.objs(2).graphics.exprs(2);
+      Tsamp_delay=sci2exp(eval(Tsamp_delay));
+    end
+
+  end
+
+  //***********************************
+  // Get the name of the file
+  //***********************************
+  foo = 3; //** probably this variable is never used ? 
+  okk = %f; 
+  rdnom='foo'; 
+  rpat = getcwd(); 
+  archname=''; 
+  Tsamp = sci2exp(eval(sTsamp));
+  
+  template = 'board_flex'; //** default values for this version 
+  
+  if XX.model.rpar.props.void3 == [] then
+	target = 'rtai'; //** default compilation chain 
+	odefun = 'ode4';  //** default solver 
+	odestep = '10';   //** default continous step size 
+  else
+	target  = XX.model.rpar.props.void3(1); //** user defined parameters 
+	odefun  = XX.model.rpar.props.void3(2);
+	odestep = XX.model.rpar.props.void3(3);
+  end
+
+  libs='';
+
+  //** dialog box default variables 
+  label1=[hname;getcwd()+'/'+hname+"_scig";target;template];
+  label2=[hname;getcwd()+'/'+hname+"_scig";target;template;odefun;odestep];
+  
+  ode_x=['ode1';'ode2';'ode4']; //** available continous solver 
+  
+  //** Open a dialog box 
+  while %t do
+    ok = %t ;
+    if x==[] then
+      //** Pure discrete system NO CONTINOUS blocks 
+     
+      [okk, rdnom, rpat,target,template,label1] = getvalue(..
+	            'Embedded Code Generation',..
+		        ['New block''s name :';
+		         'Created files Path:';
+			     'Toolchain: ';
+			     'Target Board: '],..
+		         list('str',1,'str',1,'str',1,'str',1),label1);
+    else
+      //** continous blocks are presents
+      [okk,rdnom,rpat,target,template,odefun,odestep,label2] = getvalue(..
+	            "Embedded Code Generation",..
+		        ["New block''s name: "  ;
+		         "Created files Path: " ;
+			     "Toolchain: "          ;
+			     "Target Board: "       ;
+		         "ODE solver type: "       ;
+		         "ODE solver steps betw. samples: "],..
+		         list('str',1,'str',1,'str',1,'str',1,'str',1,'str',1),label2);
+    end
+  
+    if okk==%f then
+      ok = %f
+      return ; //** EXIT point 
+    end
+    rpat = stripblanks(rpat);
+
+
+    //** I put a warning here in order to inform the user
+    //** that the name of the superblock will change
+    //** because the space char in name isn't allowed.
+    if grep(rdnom," ")<>[] then
+      message(['Superblock name cannot contains space characters.';
+               'space chars will be automatically substituted by ""_"" '])
+    end
+    rdnom = strsubst(rdnom,' ','_');
+
+    //** Put a warning here in order to inform the user
+    //** that the name of the superblock will change
+    //** because the "-" char could generate GCC problems
+    //** (the C functions contains the name of the superblock).
+    if grep(rdnom,"-")<>[] then
+      message(['For full C compiler compatibility ';
+               'Superblock name cannot contains ""-"" characters';
+               '""-"" chars will be automatically substituted by ""_"" '])
+    end
+
+    rdnom = strsubst(rdnom,'-','_'); 
+
+    dirinfo = fileinfo(rpat)
+    
+    if dirinfo==[] then
+      [pathrp, fnamerp, extensionrp] = fileparts(rpat); 
+      ok = mkdir(pathrp, fnamerp+extensionrp) ; 
+      if ~ok then 
+        message("Directory '+rpat+' cannot be created");
+      end
+    elseif filetype(dirinfo(2))<>'Directory' then
+      ok = %f;
+      message(rpat+" is not a directory");
+    end
+
+    if stripblanks(rdnom)==emptystr() then 
+      ok = %f;
+      message("Sorry: C file name not defined");
+    end
+
+
+    //** This comments will be moved in the documentation 
+
+    //** /contrib/RT_templates/pippo.gen
+
+    //** 1: pippo.mak 
+    //** 2: pippo.cmd
+
+    //** pippo.mak : scheletro del Makefile 
+    //**             - GNU/Linux : Makefile template
+    //**             - Windows/Erika : conf.oil
+    //**                               erika.cmd
+ 
+    //** pippo.cmd : sequenza di comandi Scilab 
+
+
+    TARGETDIR = SCI+"/contrib/RTAI/RT_templates";
+
+
+    [fd,ierr] = mopen(TARGETDIR+'/'+target+'.gen','r');
+
+    if ierr==0 then
+      mclose(fd);
+    else
+      ok = %f;
+      message("Target not valid " + target + ".gen");
+    end
+    
+    if ok then
+      target_t = mgetl(TARGETDIR+'/'+target+'.gen');
+      makfil = target_t(1);
+      cmdfil = target_t(2);
+
+      [fd,ierr]=mopen(TARGETDIR+'/'+makfil,'r');
+      if ierr==0 then
+        mclose(fd);
+      else
+        ok = %f ;
+        message("Makefile not valid " + makfil);
+      end
+    end
+
+    if x ~= [] then
+      if grep(odefun,ode_x) == [] then
+         message("Ode function not valid");
+         ok = %f;
+      end
+    end
+
+    if ok then break,end
+  end
+
+  //////////////////////////////////////////////////
+  maxnrpar=max(rpptr(2:$)-rpptr(1:$-1))
+  maxnipar=max(ipptr(2:$)-ipptr(1:$-1))
+  maxnx=max(xptr(2:$)-xptr(1:$-1))
+  maxnz=max(zptr(2:$)-zptr(1:$-1))
+  maxnin=max(inpptr(2:$)-inpptr(1:$-1))
+  maxnout=max(outptr(2:$)-outptr(1:$-1))
+  maxdim=[];
+  for i=1:lstsize(cpr.state.outtb)
+    maxdim=max(size(cpr.state.outtb(i)))
+  end
+  maxtotal=max([maxnrpar;maxnipar;maxnx;maxnz;maxnin;maxnout;maxdim]);
+
+//------------------ The real code generation is here ------------------------------------
+
+  //************************************************************************
+  //generate the call to the blocks and blocs simulation function prototypes
+  //************************************************************************
+  wfunclist = list();
+  nbcap = 0;
+  nbact = 0;
+  capt  = [];
+  actt  = [];
+  Protostalone = [];
+  Protos       = [];
+  dfuns        = [] ;
+  
+
+
+  //** scan the data structure and call the generating functions 
+  //** Substitute previous code!!!!
+  
+  for i=1:length(funs)
+    ki= find(funs(i) == dfuns) ; //** 
+    dfuns = [dfuns; funs(i)] ; 
+      
+    if ki==[] then
+      Protostalone=[Protostalone;'';BlockProto(i)];
+    end
+  end
+
+
+  //***********************************
+  // Scilab and C files generation
+  //***********************************
+
+  cmdseq = mgetl(TARGETDIR+'/' + cmdfil);
+  n_cmd = size(cmdseq,1);
+
+  for i=1:n_cmd
+  
+    if (cmdseq(i)~="") then
+         disp("Executing " + """" +cmdseq(i)+ """" + '...'); 
+    end;
+    
+    execstr(cmdseq(i));
+  
+  end
+
+  disp("----> Target generation terminated!");
+
 endfunction
 
 //==========================================================================
-//
-//16/06/07 Author : ?, A. Layec
-//
-//Copyright INRIA
-function [Code,capt,proto]=call_sensor(i)
-  nin=inpptr(i+1)-inpptr(i); ///* number of input ports */
-  nout=outptr(i+1)-outptr(i); ///* number of output ports */
-
-  //declaration des I/O des blocs de type 1
-  if funtyp(i)==0 then
-    if nout==0 then
-      yk    = 0;
-      nyk_1 = 0;
-      nyk_2 = 0;
-      yk_t  = 1;
-      //Code($+1)=+'  args[1]=(double *)(outtbptr[0]);';
-    else
-      yk    = outlnk(outptr(i));
-      nyk_1 = size(outtb(yk),1);
-      nyk_2 = size(outtb(yk),2);
-      yk_t  = mat2scs_c_nb(outtb(yk));
-      //Code($+1)='  args[1]=('+mat2scs_c_ptr(outtb(yk))+' *)(outtbptr['+string(yk-1)+']);';
-    end
-
-  end
-  capt=[i yk nyk_1 nyk_2 yk_t bllst(i).ipar]
-  Code($+1)='block_'+rdnom+'['+string(i-1)+'].nevprt=nevprt;'
-  Code=['/* Call of sensor (blk nb '+string(i)+') */'
-        Code;
-        'nport = '+string(nbcap)+';';
-        rdnom+'_sensor(&flag, &nport, &block_'+rdnom+'['+string(i-1)+'].nevprt, '+..
-        'told, ('+mat2scs_c_ptr(outtb(yk))+' *)(outtbptr['+string(yk-1)+']), &nrd_'+string(nyk_1)+..
-        ', &nrd_'+string(nyk_2)+', &nrd_'+string(yk_t)+',aaa);'];
-  proto='void '+rdnom+'_sensor('+..
-        'int *, int *, int *, double *,void *, int *, int *,int *, int);'
-  proto=cformatline(proto,70);
+function t=filetype(m)
+  m=int32(m)
+  filetypes=['Directory','Character device','Block device',...
+             'Regular file','FIFO','Symbolic link','Socket']
+  bits=[16384,8192,24576,32768,4096,40960,49152]
+  m=int32(m)&int32(61440)
+  t=filetypes(find(m==int32(bits)))
 endfunction
 
 //==========================================================================
 //Generates Code for dynamically linked Fortran and C Blocks
 function [CCode,FCode]=gen_blocks()
+
   CCode=[]
   FCode=[]
 
@@ -746,2470 +1102,98 @@ function [CCode,FCode]=gen_blocks()
 endfunction
 
 //==========================================================================
-
-//creates the Scicos GUI function associated with the new block
+//get_blank : return blanks with a length
+//            of the given input string
 //
-//Author : Rachid Djenidi, A.Layec
+//input : str : a string
 //
-//20/06/07, A.Layec : update with in2,out2,intyp,outtyp
-//27/06/07, A.Layec : update opar,oz
-//
-//Copyright INRIA
-function ok=gen_gui42();
-  clkinput=ones(clkIN)';
-  clkoutput=ones(clkOUT)';
-  //outtb=outtb;
-  oz=cpr.state.oz;
-
-  new_oz=list();
-  for i=1:lstsize(oz)
-    new_oz($+1) = oz(i)
-  end
-  for i=1:lstsize(outtb)
-    new_oz($+1) = outtb(i)
-  end
-
-  //outtb($+1) = zeros(nblk,1);
-  Code=['function [x,y,typ]='+rdnom+'_c(job,arg1,arg2)';
-        '// Copyright INRIA';
-        ' x=[];y=[];typ=[];';
-        ' select job';
-        ' case ''plot'' then';
-        '   standard_draw(arg1)';
-        ' case ''getinputs'' then';
-        '   [x,y,typ]=standard_inputs(arg1)';
-        ' case ''getoutputs'' then';
-        '   [x,y,typ]=standard_outputs(arg1)';
-        ' case ''getorigin'' then';
-        '   [x,y]=standard_origin(arg1)';
-        ' case ''set'' then';
-        '   x=arg1;';
-        ' case ''define'' then'
-        '   '+sci2exp(capt(:,3),'in',70); //input ports sizes 1
-        '   '+sci2exp(capt(:,4),'in2',70); //input ports sizes 2
-        '   '+sci2exp(scs_c_nb2scs_nb(capt(:,5)),'intyp',70); //input ports type
-        '   '+sci2exp(actt(:,3),'out',70); //output ports sizes 1
-        '   '+sci2exp(actt(:,4),'out2',70); //output ports sizes 2
-        '   '+sci2exp(scs_c_nb2scs_nb(actt(:,5)),'outtyp',70); //output ports type
-        '   '+sci2exp(x,'x',70); //initial continuous state
-        '   '+sci2exp(z,'z',70); //initial discrete state
-        '   work=zeros('+string(nblk)+',1)';
-        '   Z=[z;work]';
-        '   '+sci2exp(new_oz,'odstate',70);
-        '   '+sci2exp(cpr.sim.rpar,'rpar',70); //real parameters
-        '   '+sci2exp(cpr.sim.ipar,'ipar',70); //integer parameters
-        '   '+sci2exp(cpr.sim.opar,'opar',70); //object parameters
-        '   '+sci2exp(clkinput,'clkinput',70);
-        '   '+sci2exp(clkoutput,'clkoutput',70);
-        '   '+sci2exp(FIRING,'firing',70);
-        '   nzcross='+string(sum(cpr.sim.zcptr(2:$)-cpr.sim.zcptr(1:$-1)))';
-        '   nmode='+string(sum(cpr.sim.modptr(2:$)-cpr.sim.modptr(1:$-1)))';]
-
-  for i=1:length(bllst)
-    deput=[%t,%f]
-    if (bllst(i).dep_ut(2) == %t) then
-      deput(1,2)=%t;
-      break;
-    end
-  end
-  Code($+1)='   '+sci2exp(deput,'dep_ut',70);
-  Code=[Code
-        '   model=scicos_model(sim=list('''+rdnom+''',4),..'
-        '                      in=in,..'
-        '                      in2=in2,..'
-        '                      intyp=intyp,..'
-        '                      out=out,..'
-        '                      out2=out2,..'
-        '                      outtyp=outtyp,..'
-        '                      evtin=clkinput,..'
-        '                      evtout=clkoutput,..'
-        '                      firing=firing,..'
-        '                      state=x,..'
-        '                      dstate=Z,..'
-        '                      odstate=odstate,..'
-        '                      rpar=rpar,..'
-        '                      ipar=ipar,..'
-        '                      opar=opar,..'
-        '                      blocktype=''c'',..'
-        '                      dep_ut=dep_ut,..'
-        '                      nzcross=nzcross,..'
-        '                      nmode=nmode)'
-        '   gr_i=''xstringb(orig(1),orig(2),'''''+rdnom+''''',sz(1),..'
-        '          sz(2),''''fill'''')''';
-        '   x=standard_define([2 2],model,[],gr_i)';
-        ' end'
-        'endfunction'];
-  //Create file
-  ierr=execstr('mputl(Code,rpat+''/''+rdnom+''_c.sci'')','errcatch')
-  if ierr<>0 then
-    message(lasterror())
-    ok=%f
-  end
-endfunction
-
-//==========================================================================
-
-function [files]=write_code(Code,CCode,FCode)
-
-  ierr=execstr('mputl(Code,rpat+''/''+rdnom+''.c'')','errcatch')
-  if ierr<>0 then
-    message(lasterror())
-    ok=%f
-    return
-  end
-
-  if FCode<>[] then
-    ierr=execstr('mputl(FCode,rpat+''/''+rdnom+''f.f'')','errcatch')
-    if ierr<>0 then
-      message(lasterror())
-      ok=%f
-      return
-    end
-  end
-
-  if CCode<>[] then
-    CCode = [
-          '#include <math.h>';
-          '#include <stdlib.h>';
-          '#include <scicos/scicos_block4.h>';
-	  '';
-	  CCode];
-    ierr=execstr('mputl(CCode,rpat+''/''+rdnom+''_Cblocks.c'')','errcatch')
-    if ierr<>0 then
-      message(lasterror())
-      ok=%f
-      return
-    end
-  end
-
-  files=[]
-  [fd,ierr]=mopen(rpat+'/'+rdnom+'f.f','r')
-  if ierr==0 then mclose(fd),files=[files,rdnom+'f'],end
-  [fd,ierr]=mopen(rpat+'/'+rdnom+'_Cblocks.c','r')
-  if ierr==0 then mclose(fd),files=[files,rdnom+'_Cblocks'],end
-
-  //** copy source code of machine.h/scicos_block4.h
-  //   in target path
-  txt=mgetl(SCI+'/routines/machine.h');
-  ierr=execstr('mputl(txt,rpat+''/machine.h'')','errcatch')
-  if ierr<>0 then
-    message(lasterror())
-    ok=%f
-    return
-  end
-
-  txt=mgetl(SCI+'/routines/scicos/scicos_block4.h');
-  ierr=execstr('mputl(txt,rpat+''/scicos_block4.h'')','errcatch')
-  if ierr<>0 then
-    message(lasterror())
-    ok=%f
-    return
-  end
-
-endfunction
-
-//==========================================================================
-
-function write_act_sens()
-  nact=size(act,'*');
-  ncap=size(cap,'*');
-  if (nact+ncap)~=0 then
-    created=fileinfo(rpat+'/'+rdnom+'_io.c')
-    reponse=1;
-    if created~=[] then
-      reponse=1;
-      reponse=x_message(['File: ""'+rdnom+'_io.c"" already exists,';'do you want to replace it ?'],['Yes','No']);
-    end
-    if reponse==1 |  reponse==[] then
-      Code=['#include '"'+SCI+'/routines/machine.h'"';
-	    make_actuator(%t);
-	    make_sensor(%t)]
-      ierr=execstr('mputl(Code,rpat+''/''+rdnom+''_io.c'')','errcatch')
-    end
-  else
-    ierr=execstr('mputl([],rpat+''/''+rdnom+''_io.c'')','errcatch')
-  end  
-  if ierr<>0 then
-    message(lasterror())
-    ok=%f
-    return
-  end
-endfunction
-
-function  [ok,XX,alreadyran,flgcdgen,szclkINTemp,freof]=do_compile_superblock42(XX,all_scs_m,numk,alreadyran)
-// Transforms a given Scicos discrete and continuous SuperBlock into a C defined Block
-// Copyright INRIA
-
-  scs_m=XX.model.rpar
-  par=scs_m.props;
-  if alreadyran then
-    //terminate current simulation
-    do_terminate()
-    alreadyran=%f
-  end
-  hname=scs_m.props.title(1) //superblock name
-  //***********************************************************
-  //Check blocks properties and adapt them if necessary
-  //***********************************************************
-
-  IN=[];OUT=[];clkIN=[];clkOUT=[];numa=[];numc=[];
-  for i=1:size(scs_m.objs)
-    if typeof(scs_m.objs(i))=='Block' then
-      if scs_m.objs(i).gui=='CLKOUT_f' then
-        ok=%f;%cpr=list()
-        message('Superblock should not have any activation output port.')
-        return
-      elseif scs_m.objs(i).gui=='IN_f' then
-        //replace input ports by sensor blocks
-        numc=numc+1
-        scs_m.objs(i).gui='INPUTPORTEVTS';
-        scs_m.objs(i).model.evtin=1
-        scs_m.objs(i).model.sim(1)='capteur'+string(numc)
-        IN=[IN scs_m.objs(i).model.ipar]
-      elseif scs_m.objs(i).gui=='OUT_f' then
-        //replace output ports by actuator blocks
-        numa=numa+1
-        scs_m.objs(i).gui='OUTPUTPORTEVTS';
-        scs_m.objs(i).model.sim(1)='actionneur'+string(numa)
-        OUT=[OUT  scs_m.objs(i).model.ipar]
-      elseif scs_m.objs(i).gui=='CLKINV_f' then
-        //replace event input ports by  fictious block
-        scs_m.objs(i).gui='EVTGEN_f';
-        scs_m.objs(i).model.sim(1)='bidon'
-        clkIN=[clkIN scs_m.objs(i).model.ipar];
-        //elseif scs_m.objs(i).model.dep_ut(2)==%t then
-        //check for time dependency PAS IICI
-        //ok=%f;%cpr=list()
-        //message('a block have time dependence.')
-        //return
-      elseif scs_m.objs(i).gui=='CLKOUTV_f' then
-        scs_m.objs(i).gui='EVTOUT_f';
-        scs_m.objs(i).model.sim(1)='bidon2'
-        clkOUT=[clkOUT scs_m.objs(i).model.ipar];
-      end
-    end
-  end
-
-  //Check if input/output ports are numered properly
-  IN=-sort(-IN);
-  if or(IN<>[1:size(IN,'*')]) then
-    ok=%f;%cpr=list()
-    message('Input ports are not numbered properly.')
-    return
-  end
-  OUT=-sort(-OUT);
-  if or(OUT<>[1:size(OUT,'*')]) then
-    ok=%f;%cpr=list()
-    message('Output ports are not numbered properly.')
-    return
-  end
-  clkIN=-sort(-clkIN);
-  if or(clkIN<>[1:size(clkIN,'*')]) then
-    ok=%f;%cpr=list()
-    message('Event input ports are not numbered properly.')
-    return
-  end
-  clkOUT=-sort(-clkOUT);
-  if or(clkOUT<>[1:size(clkOUT,'*')]) then
-    ok=%f;%cpr=list()
-    message('Event output ports are not numbered properly.')
-    return
-  end
-
-  //Check if there is more than one clock in the diagram
-  szclkIN=size(clkIN,2);
-  if szclkIN==0 then
-    szclkIN=[]
-  end
-  flgcdgen=szclkIN;
-  [bllst,connectmat,clkconnect,cor,corinv,ok,scs_m,flgcdgen,freof]=c_pass1(scs_m,flgcdgen);
-  if flgcdgen<> szclkIN
-    clkIN=[clkIN flgcdgen]
-  end
-  szclkINTemp=szclkIN;
-  szclkIN=flgcdgen;
- // [bllst,connectmat,clkconnect,cor,corinv,ok]=c_pass1(scs_m);
-
-  //Test for  ALWAYS_ACTIVE sblock (RN -25/06/07)
-  ALWAYS_ACTIVE=%f;
-  for blki=bllst
-    if blki.dep_ut($) then
-      ALWAYS_ACTIVE=%t;
-      break;
-    end
-  end
-  if ALWAYS_ACTIVE then
-    CAPTEURS=[];
-    for Ii=1:length(bllst)
-      if part(bllst(Ii).sim(1),1:7)=='capteur' then
-        bllst(Ii).dep_ut($)=%t
-//       elseif part(bllst(Ii).sim(1),1:10)=='actionneur' then
-//         bllst(Ii).dep_ut($)=%t
-      end
-    end
-  end
-
-  if ~ok then
-    message('Sorry: problem in the pre-compilation step.')
-    return
-  end
-  a=[];
-  b=[];
-  tt=[];
-  howclk=[];
-  allhowclk=[];
-  allhowclk2=[];
-  cap=[];
-  act=[];
-
-  ///**********************************
-  for i=1:size(bllst)
-    for j=1:size(bllst)
-      if (bllst(i).sim(1)=='actionneur'+string(j)) then
-        if tt<>i then
-          act=[act;i];
-          tt=i;
-        end
-      elseif (bllst(i).sim(1)=='capteur'+string(j)) then
-        if tt<>i then
-          cap=[cap;i];
-          tt=i;
-        end
-      elseif (bllst(i).sim(1)=='bidon') then
-        if tt<>i then
-          allhowclk=[allhowclk;i];
-          tt=i;
-        end
-      elseif (bllst(i).sim(1)=='bidon2') then
-        if tt<>i then
-          allhowclk2=[allhowclk2;i];
-          tt=i;
-        end
-      end
-    end
-  end
-  ///**********************************
-
-  if szclkIN>1 then
-    //replace the N Event inputs by a fictious block with 2^N as many event
-    //outputs
-    output=ones((2^szclkIN)-1,1)
-    bllst($+1)=scicos_model(sim=list('bidon',1),evtout=output,..
-                            blocktype='d',..
-                            firing=-output',dep_ut=[%f %f])
-    corinv(size(bllst))=size(bllst)+1;
-    howclk=size(bllst)
-    // adjust the links accordingly
-    for i=1:(2^szclkIN)-1
-      vec=codebinaire(i,szclkIN)
-      for j=1:szclkIN
-        if vec(j)*allhowclk(j)>=1 then
-          for k=1:size(clkconnect,1)
-            if clkconnect(k,1)==allhowclk(j) then
-              clkconnect=[clkconnect;[howclk i clkconnect(k,3:4)]]
-            end
-          end
-        end
-      end
-    end
-  elseif szclkIN==[]&~ALWAYS_ACTIVE then
-    //superblock has no Event input, add a fictious clock
-    output=ones((2^(size(cap,'*')))-1,1)
-    if (output == []) then
-      output=0;
-    end
-    bllst($+1)=scicos_model(sim=list('bidon',1),evtout=output,..
-                            firing=-output,blocktype='d',dep_ut=[%f %f])
-    corinv(size(bllst))=size(bllst)+1;
-    howclk=size(bllst);
-  elseif szclkIN==1  then
-    howclk=allhowclk;
-  end
-
-  //mise en ordre de clkconnect
-  if szclkIN>1 then
-    newclkconnect=clkconnect;
-    clkconnect=[];
-    for i=1:size(newclkconnect,1)-1
-      if or(newclkconnect(i,:)<>newclkconnect(i+1,:)) then
-        clkconnect=[clkconnect;newclkconnect(i,:)]
-      end
-    end
-    if or(newclkconnect($-1,:)<>newclkconnect($,:)) then
-      clkconnect=[clkconnect;newclkconnect($,:)]
-    end
-
-    //suppression des blocs bidons
-    newclkconnect=clkconnect;nkt=[];
-    for i=1:szclkIN
-      for k=1:size(newclkconnect,1)
-        if newclkconnect(k,1)~=allhowclk(i) then
-          nkt=[nkt;newclkconnect(k,:)];
-        end
-      end
-      newclkconnect=nkt;
-      nkt=[];
-    end
-    clkconnect=newclkconnect;
-  end
-
-  //**************************************************
-  // nouveau clkconnect avec liaisons sur les capteurs
-  //**************************************************
-  //Test for  ALWAYS_ACTIVE sblock (RN -25/06/07)
-  if ~(ALWAYS_ACTIVE&szclkIN==[]) then
-    n=size(cap,1)
-    for i=1:n
-      if szclkIN>1 then
-        for j=1:(2^szclkIN)-1
-          clkconnect=[clkconnect;[howclk j cap(i) 1]];
-        end
-      elseif szclkIN==1 then
-        clkconnect=[clkconnect;[howclk 1 cap(i) 1]];
-      end
-    end
-
-    //codage de l'activation des capteurs dans le cas de l'heritage
-    for i=1:2^n-1
-      vec=codebinaire(i,n);
-      for j=1:n
-        if (vec(j)==1) then
-          clkconnect=[clkconnect;[howclk i cap(j) 1]];
-        end
-      end
-    end
-  end
-
-  FIRING=[]
-  for i=1:size(allhowclk2,1)
-    j = find(clkconnect(:,3)==allhowclk2(i))
-    if j<>[] then
-      FIRING=[FIRING;bllst(clkconnect(j,1)).firing(clkconnect(j,2))]
-    end
-  end
-
-  Code_gene_run=[];
-  %windo=xget('window')
-  cpr=c_pass2(bllst,connectmat,clkconnect,cor,corinv)
-
-  if cpr==list() then ok=%f,return, end
-
-  //** Alan's patch 5/07/07: try to solve
-  //   which blocks use work
-  funs_save=cpr.sim.funs;
-  funtyp_save=cpr.sim.funtyp;
-  with_work = zeros(cpr.sim.nblk,1)
-  for i=1:lstsize(cpr.sim.funs)
-    if part(cpr.sim.funs(i),1:10)=='actionneur' then
-       cpr.sim.funs(i) ='bidon'
-       cpr.sim.funtyp(i) = 1
-    elseif part(cpr.sim.funs(i),1:7)=='capteur' then
-       cpr.sim.funs(i) ='bidon'
-       cpr.sim.funtyp(i) = 1
-    end
-  end
-
-  //**
-  //** retrieve all open Scilab windows with winsid()
-  //**
-
-  BeforeCG_WinList = winsid(); 
-
-  ierr=execstr('[state,t]=scicosim(cpr.state,0,0,cpr.sim,'+..
-               '''start'',scs_m.props.tol)','errcatch')
-  if ierr==0 then
-    for i=1:cpr.sim.nblk
-       if state.iz(i)<>0 then
-          with_work(i)=%t
-       end
-    end
-    ierr=execstr('[state,t]=scicosim(state,0,0,cpr.sim,'+..
-                 '''finish'',scs_m.props.tol)','errcatch')
-  end
-
-  //**
-  //** retrieve all open Scilab windows with winsid
-  //** and close the additional windows open since first
-  //** 
- 
-  //** This code does not cover 100% of the possible situations because the user can 
-  //** destroy one or more Scicos wins manually during this intermediate phase
-  //** This code is 100% functional if the the user does not close manually any win.
-  //** TO BE updated in Scilab 5.0
-
-  AfterCG_WinList = winsid();
-  
-  AfterCG_size = size(AfterCG_WinList); //** matrix
-  AfterCG_size = AfterCG_size(2) ; //** vector lenght 
-
-  BeforeCG_size = size(BeforeCG_WinList); //** matrix
-  BeforeCG_size = BeforeCG_size(2) ; //** vector lenght
-
-  if (or(AfterCG_WinList<>BeforeCG_WinList)) & (AfterCG_size>BeforeCG_size) then
-     //** means that a scope or other scicos object has created some
-     //** output window
-
-     DiffCG_Winlist = AfterCG_WinList<>BeforeCG_WinList ; //** T/F mismatch 
-     DiffCG_Index = find(DiffCG_Winlist); //** recover the mismatched indexes only 
-
-     for win_idx = DiffCG_Index
-         delete( scf( AfterCG_WinList(win_idx) ) ) ; //** clear the spurious windows   
-     end 
-     
-  end  
-  //**------------- end of windows cleaning ----------------------------------------
-
-  cpr.sim.funs=funs_save;
-  cpr.sim.funtyp=funtyp_save;
-
-  xset('window',%windo)
-
-  ///////////////////
-  //les pointeurs de cpr :
-  x=cpr.state.x;
-  z=cpr.state.z;
-  outtb=cpr.state.outtb;
-
-  //RN
-  zcptr=cpr.sim.zcptr;
-  ozptr=cpr.sim.ozptr;
-  rpptr=cpr.sim.rpptr;
-  ipptr=cpr.sim.ipptr;
-  opptr=cpr.sim.opptr;
-  funs=cpr.sim.funs;
-  xptr=cpr.sim.xptr;
-  zptr=cpr.sim.zptr;
-  inpptr=cpr.sim.inpptr;
-  inplnk=cpr.sim.inplnk;
-  outptr=cpr.sim.outptr;
-  outlnk=cpr.sim.outlnk;
-  //@l@n lnkptr=cpr.sim.lnkptr;
-  ordclk=cpr.sim.ordclk;
-  funtyp=cpr.sim.funtyp;
-  cord=cpr.sim.cord;
-  ncord=size(cord,1);
-  nblk=cpr.sim.nb;
-  ztyp=cpr.sim.ztyp;
-  clkptr=cpr.sim.clkptr
-  //taille totale de z : nztotal
-  nztotal=size(z,1);
-
-  //*******************************
-  //Checking if superblock is valid
-  //*******************************
-  msg=[]
-  for i=1:length(funs)-1
-    if funtyp(i)==3 then
-      msg=[msg;'Type 3 block''s not allowed']
-//RN   elseif ztyp(i)<>0 then
-    //elseif (zcptr(i+1)-zcptr(i))<>0 then
-//
-      //msg=[msg;'Active zero crossing block''s not allowed']
-     elseif (clkptr(i+1)-clkptr(i))<>0 &funtyp(i)>-1 &funs(i)~='bidon' then
-      msg=[msg;'Regular block generating activation not allowed yet']
-    end
-    if msg<>[] then message(msg),ok=%f,return,end
-  end
-
-  //********************************************************
-  // Change logical units for readf and writef blocks if any ???
-  //********************************************************
-  lunit=0
-  for d=1:length(funs)
-    if funs(d)=='readf'  then
-      z(zptr(d)+2)=lunit
-      lunit=lunit+1;
-    elseif funs(d)=='writef'
-      z(zptr(d)+1)=lunit
-      lunit=lunit+1;
-    end
-  end
-
-  if XX.graphics.pein==[] | XX.graphics.pein(1)==0 then
-    sTsamp='0.001';
-  else
-    o_ev=XX.graphics.pein(1);
-    o_ev=all_scs_m.objs(o_ev).from(1);
-    while (all_scs_m.objs(o_ev).gui~='CLOCK_c' & ...
-           all_scs_m.objs(o_ev).gui~='CLOCK_f' & ...
-           all_scs_m.objs(o_ev).gui~='SampleCLK')
-      o_ev=all_scs_m.objs(o_ev).graphics.pein(1);
-      o_ev=all_scs_m.objs(o_ev).from(1);
-    end
-    if all_scs_m.objs(o_ev).gui=='SampleCLK' then
-      sTsamp=all_scs_m.objs(o_ev).model.rpar(1);
-      sTsamp=sci2exp(sTsamp);
-      Tsamp_delay=all_scs_m.objs(o_ev).model.rpar(2);
-      Tsamp_delay=sci2exp(Tsamp_delay);
-    else
-      sTsamp=all_scs_m.objs(o_ev).model.rpar.objs(2).graphics.exprs(1);
-      sTsamp=sci2exp(eval(sTsamp));
-      Tsamp_delay=all_scs_m.objs(o_ev).model.rpar.objs(2).graphics.exprs(2);
-      Tsamp_delay=sci2exp(eval(Tsamp_delay));
-    end
-  end
-
-  //***********************************
-  // Get the name of the file
-  //***********************************
-  foo=3;
-  okk=%f;
-  rdnom='foo';
-  rpat=getcwd();
-  archname='';
-  if XX.model.rpar.props.void3 == [] then
-	target = 'rtai';
-	odefun = 'ode4';
-	odestep = '10';
-  else
-	target = XX.model.rpar.props.void3(1);
-	odefun = XX.model.rpar.props.void3(2);
-	odestep = XX.model.rpar.props.void3(3);
-  end
-
-  libs='';
-  label1=[hname;getcwd()+'/'+hname+"_scig";target;sTsamp];
-  label2=[hname;getcwd()+'/'+hname+"_scig";target;sTsamp;odefun;odestep];
-  ode_x=['ode1';'ode2';'ode4'];
-
-  while %t do
-    ok=%t
-    if x == [] then 
-      [okk,rdnom,rpat,target,Tsamp,label1]=getvalue(..
-			'PLEASE, GIVE US SOME INFORMATION. ',..
-		        ['New block''s name :';
-		          'Created files Path: ';
-			  'Target: ';
-			  'Sampling Time: '],..
-		          list('str',1,'str',1,'str',1,'str',1),label1);
-    else
-      [okk,rdnom,rpat,target,Tsamp,odefun,odestep,label1]=getvalue(..
-			  'PLEASE, GIVE US SOME INFORMATION. ',..
-		          ['New block''s name: ';
-		          'Created files Path: ';
-			  'Target: ';
-			  'Sampling Time: ';
-		          'Ode function: ';
-		          'Step betw. Samples: '],..
-		          list('str',1,'str',1,'str',1,'str',1,'str',1,'str',1),label2);
-    end
-    if okk==%f then
-      ok=%f
-      return
-    end
-    rpat=stripblanks(rpat);
-
-    //** 1/07/06 Alan trying to solve multiple libraries during week-end
-    if strindex(libs,'''')<>[] | strindex(libs,'""')<>[] then
-      ierr=execstr('libs=evstr(libs)','errcatch')
-      if ierr<>0  then
-        message(['Can''t solve other files to link'])
-        ok=%f;
-        return
-      end
-    end
-
-    //** Alan, I put a warning here in order to inform the user
-    //** that the name of the superblock will change
-    //** because the space char in name isn't allowed.
-    if grep(rdnom," ")<>[] then
-      message(['Superblock name cannot contains space characters.';
-               'space chars will be automatically substituted by ""_"" '])
-    end
-    rdnom = strsubst(rdnom,' ','_');
-
-    //** Put a warning here in order to inform the user
-    //** that the name of the superblock will change
-    //** because the "-" char could generate GCC problems
-    //** (the C functions contains the name of the superblock).
-    if grep(rdnom,"-")<>[] then
-      message(['For full C compiler compatibility ';
-               'Superblock name cannot contains ""-"" characters';
-               '""-"" chars will be automatically substituted by ""_"" '])
-    end
-
-    rdnom = strsubst(rdnom,'-','_');
-
-    //**
-    //** rpat=strsubst(rpat,'-','_');
-    //**
-
-    dirinfo=fileinfo(rpat)
-    if dirinfo==[] then
-      [pathrp,fnamerp,extensionrp]=fileparts(rpat)
-      ok=mkdir(pathrp,fnamerp+extensionrp)
-      if ~ok then 
-        x_message('Directory '+rpat+' cannot be created');
-      end
-    elseif filetype(dirinfo(2))<>'Directory' then
-      ok=%f;
-      x_message(rpat+' is not a directory');
-    end
-
-    if stripblanks(rdnom)==emptystr() then 
-      ok=%f;
-      x_message('sorry C file name not defined');
-    end
-
-    TARGETDIR=SCI+'/contrib/RTAI/RT_templates';
-    if exists('TARGET_DIR') then
-      [fd,ierr]=mopen(TARGET_DIR+'/'+target+'.gen','r');
-      if ierr==0 then
-	 TARGETDIR=TARGET_DIR;
-         mclose(fd);
-      end
-    end
-
-    [fd,ierr]=mopen(TARGETDIR+'/'+target+'.gen','r');
-    if ierr==0 then
-      mclose(fd);
-    else
-      ok=%f;x_message('Target not valid '+target+'.gen');
-    end
-    
-    if ok then
-      target_t=mgetl(TARGETDIR+'/'+target+'.gen');
-      makfil = target_t(1);
-      cmdfil = target_t(2);
-
-      [fd,ierr]=mopen(TARGETDIR+'/'+makfil,'r');
-      if ierr==0 then
-        mclose(fd);
-      else
-        ok=%f;x_message('Makefile not valid '+makfil);
-      end
-    end
-
-    if x ~= [] then
-      if grep(odefun,ode_x) == [] then
-         x_message('Ode function not valid');
-         ok = %f;
-      end
-    end
-
-    if ok then break,end
-  end
-
-  //////////////////////////////////////////////////
-  maxnrpar=max(rpptr(2:$)-rpptr(1:$-1))
-  maxnipar=max(ipptr(2:$)-ipptr(1:$-1))
-  maxnx=max(xptr(2:$)-xptr(1:$-1))
-  maxnz=max(zptr(2:$)-zptr(1:$-1))
-  maxnin=max(inpptr(2:$)-inpptr(1:$-1))
-  maxnout=max(outptr(2:$)-outptr(1:$-1))
-  maxdim=[];
-  for i=1:lstsize(cpr.state.outtb)
-    maxdim=max(size(cpr.state.outtb(i)))
-  end
-  maxtotal=max([maxnrpar;maxnipar;maxnx;maxnz;maxnin;maxnout;maxdim]);
-
-  //************************************************************************
-  //generate the call to the blocks and blocs simulation function prototypes
-  //************************************************************************
-  wfunclist=list();
-  nbcap=0;nbact=0;capt=[];actt=[];Protostalone=[];Protos=[];
-  dfuns=[]
-  for i=1:length(funs)
-    if or(i==act) then //block is an actuator
-      nbact=nbact+1;
-      [Code,actti,protoi]=call_actuator(i)
-      wfunclist($+1)=[Code;'if(flag < 0 ) return(5 - flag);']
-      if nbact==1 then Protostalone=[Protostalone;'';protoi],end
-      actt=[actt;actti]
-    elseif or(i==cap) then //block is a sensor
-      nbcap=nbcap+1;
-      [Code,capti,protoi]=call_sensor(i)
-      wfunclist($+1)=[Code;'if(flag < 0 ) return(5 - flag);']
-      if nbcap==1 then Protostalone=[Protostalone;'';protoi] ,end
-      capt=[capt;capti]
-    elseif funs(i)=='bidon'
-      wfunclist($+1)=' '
-    elseif funs(i)=='bidon2'
-      wfunclist($+1)=' '
-    else
-      ki=find(funs(i)==dfuns)
-      dfuns=[dfuns;funs(i)]
-      //[Code,protoi]=call_block(i)
-      [Code]=call_block4(i)
-      if Code<>[] then
-        wfunclist($+1)=[Code;'if(flag < 0 ) return(5 - flag);']
-      else
-        wfunclist($+1)=' ';
-      end
-      if ki==[] then
-        Protos=[Protos;'';BlockProto(i)];
-        Protostalone=[Protostalone;'';BlockProto(i)];
-      end
-    end
-  end
-
-  //**************************************
-  //on prend en compte l'ordre des numerotation graphique des
-  //capteur et des actionneur
-  [junk,index]=sort(-actt(:,$));
-  actt=actt(index,1:$) ;
-  [junk,index]=sort(-capt(:,$));
-  capt=capt(index,1:$) ;
-
-  //***************************************************
-  //Compute the initial state and outtb (links)  values
-  //***************************************************
-  //petite modification pour uniformiser les fichiers capteurs
-  //et actionneurs ???
-  rdcpr=cpr.sim.funs;
-  for r=1:length(cap),rdcpr(cap(r))='bidon';end
-  for r=1:length(act),rdcpr(act(r))='bidon';end
-  Total_rdcpr=cpr.sim;Total_rdcpr.funs=rdcpr;
-  //
-  tcur=0;
-  tf=scs_m.props.tf;
-  tolerances=scs_m.props.tol;
-  //[state,t]=scicosim(cpr.state,tcur,tf,Total_rdcpr,'start',tolerances);
-  //cpr.state=state;
-  z=cpr.state.z;
-  outtb=cpr.state.outtb;
-  //[junk_state,t]=scicosim(cpr.state,tcur,tf,Total_rdcpr,'finish',tolerances);
-
-  //***********************************
-  // Scilab and C files generation
-  //***********************************
-
-  cmdseq = mgetl(TARGETDIR+'/'+cmdfil);
-  n_cmd=size(cmdseq,1);
-
-  for i=1:n_cmd
-    if (cmdseq(i)~="") then disp("Executing " + """" +cmdseq(i)+ """" + '...'); end;
-    execstr(cmdseq(i));
-  end
-  if dynflag then 
-    getf(rpat+'/'+rdnom+'_c.sci');
-    XX=update_block(XX);
-    execstr(rdnom+'_c=resume('+rdnom+'_c)')
-  end
-  disp("----> Target generation terminated!");
-endfunction
-
-//==========================================================================
-//BlockProto : generate prototype
-//            of a scicos block
-//
+//output : txt : blanks
 //
 //16/06/07 Author : A.Layec
 //Copyright INRIA
-function [txt]=BlockProto(bk)
-
-  nin=inpptr(bk+1)-inpptr(bk);  //* number of input ports */
-  nout=outptr(bk+1)-outptr(bk); //* number of output ports */
-
-  //**
-  ftyp=funtyp(bk)
-  if ftyp>2000 then ftyp=ftyp-2000,end
-  if ftyp>1000 then ftyp=ftyp-1000,end
-
-  //** check function type
-  if ftyp < 0 then //** ifthenelse eselect blocks
-      txt = [];
-      return;
-  else
-    if (ftyp<>0 & ftyp<>1 & ftyp<>2 & ftyp<>3 & ftyp<>4) then
-      disp("types other than 0,1,2,3 or 4 are not yet supported.")
-      txt = [];
-      return;
-    end
-  end
-
-  //** add comment
-  txt=[get_comment('proto_blk',list(funs(bk),funtyp(bk),bk));]
-
-  select ftyp
-    //** zero funtyp
-    case 0 then
-
-      //*********** prototype definition ***********//
-      txtp=['(int *, int *, double *, double *, double *, int *, double *, \';
-            ' int *, double *, int *, double *, int *,int *, int *, \';
-            ' double *, int *, double *, int *);'];
-      if (funtyp(bk)>2000 & funtyp(bk)<3000)
-        blank = get_blank('void '+funs(bk)+'(');
-        txtp(1) = 'void '+funs(bk)+txtp(1);
-      elseif (funtyp(bk)<2000)
-        txtp(1) = 'void C2F('+funs(bk)+')'+txtp(1);
-        blank = get_blank('void C2F('+funs(bk)+')');
-      end
-      txtp(2:$) = blank + txtp(2:$);
-      txt = [txt;txtp];
-      //*******************************************//
-
-
-    //**
-    case 1 then
-
-      //*********** prototype definition ***********//
-      txtp=['(int *, int *, double *, double *, double *, int *, double *, \';
-            ' int *, double *, int *, double *, int *,int *, int *';]
-      if (funtyp(bk)>2000 & funtyp(bk)<3000)
-        blank = get_blank('void '+funs(bk)+'(');
-        txtp(1) = 'void '+funs(bk)+txtp(1);
-      elseif (funtyp(bk)<2000)
-        txtp(1) = 'void C2F('+funs(bk)+')'+txtp(1);
-        blank = get_blank('void C2F('+funs(bk)+')');
-      end
-      if nin>=1 | nout>=1 then
-        txtp($)=txtp($)+', \'
-        txtp=[txtp;'']
-        if nin>=1 then
-          for k=1:nin
-            txtp($)=txtp($)+' double *, int * ,'
-          end
-          txtp($)=part(txtp($),1:length(txtp($))-1); //remove last ,
-        end
-        if nout>=1 then
-          if nin>=1 then
-            txtp($)=txtp($)+', \'
-            txtp=[txtp;'']
-          end
-          for k=1:nout
-            txtp($)=txtp($)+' double *, int * ,'
-          end
-          txtp($)=part(txtp($),1:length(txtp($))-1); //remove last ,
-        end
-      end
-
-      if ztyp(bk) then
-        txtp($)=txtp($)+', \'
-        txtp=[txtp;' double *,int *);'];
-      else
-        txtp($)=txtp($)+');';
-      end
-
-      txtp(2:$) = blank + txtp(2:$);
-      txt = [txt;txtp];
-      //*******************************************//
-
-    //**
-    case 2 then
-
-      //*********** prototype definition ***********//
-
-      txtp=['void '+funs(bk)+...
-            '(int *, int *, double *, double *, double *, int *, double *, \';
-            ' int *, double *, int *, double *, int *, int *, int *, \'
-            ' double **, int *, int *, double **,int *, int *'];
-      if ~ztyp(bk) then
-        txtp($)=txtp($)+');';
-      else
-        txtp($)=txtp($)+', \';
-        txtp=[txtp;
-              ' double *,int *);']
-      end
-      blank = get_blank('void '+funs(bk));
-      txtp(2:$) = blank + txtp(2:$);
-      txt = [txt;txtp];
-      //********************************************//
-
-    //**
-    case 4 then
-      txt=[txt;
-           'void '+funs(bk)+'(scicos_block *, int );'];
-
-  end
+function [txt] = get_blank(str)
+ txt='';
+ for i=1:length(str)
+     txt=txt+' ';
+ end
 endfunction
 
 //==========================================================================
-//Generating the routine for actuators interfacing
+// get_comment : return a C comment
+//               for generated code
 //
+//input : typ : a string
+//        param : a list
+//
+//output : a C comment
+//
+//16/06/07 Author : A.Layec
 //Copyright INRIA
-//
-//Authors : R. Djenid, R. Nikoukhah, A. Layec
-//
-//actt=[i uk nuk_1 nuk_2 uk_t bllst(i).ipar]
-function Code=make_actuator(standalone)
-  Call=['/*'+part('-',ones(1,40))+' Actuators */';
-        'void '+rdnom+'_actuator(flag,nport,nevprt,t,u,nu1,nu2,ut,flag1)']
+function [txt]=get_comment(typ,param)
+  txt = [];
+  select typ
+    //** main flag
+    case 'flag' then
+        select param(1)
+          case 0 then
+             txt = '/* Continuous state computation */'
+          case 1 then
+             txt = '/* Output computation */'
+          case 2 then
+             txt = '/* Discrete state computation */'
+          case 3 then
+             txt = '/* Output Event computation */'
+          case 4 then
+             txt = '/* Initialization */'
+          case 5 then
+             txt = '/* Ending */'
+          case 9 then
+             txt = '/* Update zero crossing surfaces */'
+        end
+    //** blocks activated on event number
+    case 'ev' then
+       txt = '/* Blocks activated on the event number '+string(param(1))+' */'
 
-  comments=['     /*'
-            '      * To be customized for standalone execution';
-            '      * flag  : specifies the action to be done'
-            '      * nport : specifies the  index of the Super Bloc'
-            '      *         regular input (The input ports are numbered'
-            '      *         from the top to the bottom )'
-            '      * nevprt: indicates if an activation had been received'
-            '      *         0 = no activation'
-            '      *         1 = activation'
-            '      * t     : the current time value'
-            '      * u     : the vector inputs value'
-            '      * nu1   : the input size 1'
-            '      * nu2   : the input size 2'
-            '      * ut    : the input type'
-            '      * flag1 : learn mode (0 from terminal,1 from input file'
-            '      */']
-
-  dcl=['     int *flag,*nevprt,*nport;'
-       '     int *nu1,*nu2,*ut,flag1;'
-       ''
-       '     double *t;'
-       '     void *u;'
-       '{'
-       '  int j,k,l;'];
-
-  if standalone then
-    a_actuator=['  /* skeleton to be customized */'
-                '    switch (*flag) {'
-                '    case 2 :'
-                '      /*if(*nevprt>0) { get the input value */'
-                '        switch (*ut) {'
-                '        case 10 :'
-                '          for (l=0;l<*nu2;l++) {'
-                '            for (k=0;k<*nu1;k++) {'
-                '              printf(""Actuator: time=%f, '+...
-                                  'u(%d,%d) of actuator %d is %f '+...
-                                  '\n"", \'
-                '                     *t, k, l, *nport,'+...
-                                      '*((double *) u+(k+l*(*nu1))));'
-                '            }'
-                '          }'
-                '          break;'
-                ''
-                '        case 11 :'
-                '          for (l=0;l<*nu2;l++) {'
-                '            for (k=0;k<*nu1;k++) {'
-                '              printf(""Actuator: time=%f, '+...
-                                  'u(%d,%d) of actuator %d is %f,%f '+...
-                                  '\n"", \'
-                '                     *t, k, l, *nport,'+...
-                                      '*((double *) u+(k+l*(*nu1))),'+...
-                                      '*((double *) u+((*nu1)*(*nu2)+k+l*(*nu1))));'
-                '            }'
-                '          }'
-                '          break;'
-                ''
-                '        case 81 :'
-                '          for (l=0;l<*nu2;l++) {'
-                '            for (k=0;k<*nu1;k++) {'
-                '              printf(""Actuator: time=%f, '+...
-                                  'u(%d,%d) of actuator %d is %i '+...
-                                  '\n"", \'
-                '                     *t, k, l, *nport,'+...
-                                      '*((char *) u+(k+l*(*nu1))));'
-                '            }'
-                '          }'
-                '          break;'
-                ''
-                '        case 82 :'
-                '          for (l=0;l<*nu2;l++) {'
-                '            for (k=0;k<*nu1;k++) {'
-                '              printf(""Actuator: time=%f, '+...
-                                  'u(%d,%d) of actuator %d is %hd '+...
-                                  '\n"", \'
-                '                     *t, k, l, *nport,'+...
-                                      '*((short *) u+(k+l*(*nu1))));'
-                '            }'
-                '          }'
-                '          break;'
-                ''
-                '        case 84 :'
-                '          for (l=0;l<*nu2;l++) {'
-                '            for (k=0;k<*nu1;k++) {'
-                '              printf(""Actuator: time=%f, '+...
-                                  'u(%d,%d) of actuator %d is %ld '+...
-                                  '\n"", \'
-                '                     *t, k, l, *nport,'+...
-                                      '*((long *) u+(k+l*(*nu1))));'
-                '            }'
-                '          }'
-                '          break;'
-                ''
-                '        case 811 :'
-                '          for (l=0;l<*nu2;l++) {'
-                '            for (k=0;k<*nu1;k++) {'
-                '              printf(""Actuator: time=%f, '+...
-                                  'u(%d,%d) of actuator %d is %d '+...
-                                  '\n"", \'
-                '                     *t, k, l, *nport,'+...
-                                      '*((unsigned char *) u+(k+l*(*nu1))));'
-                '            }'
-                '          }'
-                '          break;'
-                ''
-                '        case 812 :'
-                '          for (l=0;l<*nu2;l++) {'
-                '            for (k=0;k<*nu1;k++) {'
-                '              printf(""Actuator: time=%f, '+...
-                                  'u(%d,%d) of actuator %d is %hu '+...
-                                  '\n"", \'
-                '                     *t, k, l, *nport,'+...
-                                      '*((unsigned short *) u+(k+l*(*nu1))));'
-                '            }'
-                '          }'
-                '          break;'
-                ''
-                '        case 814 :'
-                '          for (l=0;l<*nu2;l++) {'
-                '            for (k=0;k<*nu1;k++) {'
-                '              printf(""Actuator: time=%f, '+...
-                                  'u(%d,%d) of actuator %d is %lu '+...
-                                  '\n"", \'
-                '                     *t, k, l, *nport,'+...
-                                      '*((unsigned long *) u+(k+l*(*nu1))));'
-                '            }'
-                '          }'
-                '          break;'
-                '        }'
-                '      /*} */'
-                '      break;'
-                '    case 4 : /* actuator initialisation */'
-                '      /* do whatever you want to initialize the actuator */'
-                '      break;'
-                '    case 5 : /* actuator ending */'
-                '      /* do whatever you want to end the actuator */'
-                '      break;'
-                '    }']
-  else
-    a_actuator=[]
-  end
-
-  // pour fprintf
-  nc=size(act,'*') // Alan : d'où viens act ?????
-                   // reponse : de do_compile_superblock!
-  typ=['""%f ']; //time
-  for i=1:nc
-    typ($)=typ($)+'"" \'
-    typ=[typ;'""'];
-    for j=1:sum(actt(i,3)*actt(i,4))
-      //typ=typ+'%f ';
-      typ($)=typ($)+scs_c_n2c_fmt(actt(i,5))+' ';
-    end
-  end
-  typ($)=typ($)+'\n"", \'
-  typ(1)='    fprintf(fprw,'+typ(1);
-  bl    ='                 ';
-  if size(typ,1) <> 1 then
-    typ(2:$) = bl+typ(2:$);
-  end
-  //Code1='    fprintf(fprw, '"'+typ+' \n'",*t'
-  Code1=[typ;bl+'*t'];
-  //actt=[i uk nuk_1 nuk_2 uk_t bllst(i).ipar]
-  for i=1:size(actt,1)
-    ni=actt(i,3)*actt(i,4) // dimension of ith output
-    Code1($)=Code1($)+','
-    Code1=[Code1;bl];
-    for j=1:ni
-      if actt(i,5)<>11 then
-        Code1($)=Code1($)+...
-                  '*((('+scs_c_n2c_typ(actt(i,5))+' *)('+...
-                   rdnom+'_block_outtbptr+'+string(actt(i,2)-1)+'))'+...
-                   '+'+string(j-1)+')';
-      else //CAS CMPLX
-        Code1($)=Code1($)+...
-                  '*((('+scs_c_n2c_typ(actt(i,5))+' *)('+...
-                   rdnom+'_block_outtbptr+'+string(actt(i,2)-1)+'))'+...
-                   '+'+string((j-1))+'), '+...
-                  '*((('+scs_c_n2c_typ(actt(i,5))+' *)('+...
-                   rdnom+'_block_outtbptr+'+string(actt(i,2)-1)+'))'+...
-                   '+'+string(ni+(j-1))+')';
-      end
-      if j<>ni then
-       Code1($)=Code1($)+', ';
-      end
-    end
-  end
-  Code1($)=Code1($)+');'
-
-  Code=[]
-
-  if nc==1|~standalone then
-    Code=[Call
-          comments
-          dcl
-          '  if (flag1 == 0) {'
-          a_actuator
-          '  }'
-          '  else if (flag1 == 1) {'
-          '    if (*flag == 4 && *nport == 1) {'
-          '      fprw=fopen(output,'"wt'");'
-          '      if( fprw == NULL )'
-          '        {'
-          '          printf('"Error opening file: %s\n'", output);'
-          '          return;'
-          '        }'
-          '    }else if (*flag == 2 /* && *nevprt>0 */) {'
-          Code1
-          '    }else if (*flag == 5 && *nport == 1) {'
-          '      fclose(fprw);'
-          '    }'
-          '  }'
-          '}']
-  elseif nc>1 then
-    S='  switch (*nport) {'
-    for k=1:nc
-      S=[S;
-         '  case '+string(k)+' :/* Port number '+string(k)+' ----------*/'
-         '  '+a_actuator
-         '  break;']
-    end
-    S=[S;'  }']
-
-    Code=[Code
-          Call
-          comments
-          dcl
-          '  if (flag1 == 0){'
-          S
-          '  }'
-          '  else if (flag1 == 1) {'
-          '    if (*flag == 4 && *nport == 1) {'
-          '      fprw=fopen(output,'"wt'");'
-          '      if( fprw == NULL ) {'
-          '        printf('"Error opening file: %s\n'", output);'
-          '        return;'
-          '        }'
-          '    }'
-          '    else if (*flag == 2 /*&& *nevprt>0*/ ) {'
-          Code1
-          '    }'
-          '    else if (*flag == 5 && *nport == 1) {'
-          '      fclose(fprw);'
-          '    }'
-          '  }'
-          '}']
-  end
-endfunction
-
-//==========================================================================
-//** Generates the scicos computational function
-//   associated with the block
-//12/07/07 Alan Layec
-//Copyright INRIA
-function Code=make_computational42()
-  z=cpr.state.z;
-  oz=cpr.state.oz;
-  outtb=cpr.state.outtb;
-  tevts=cpr.state.tevts;
-  evtspt=cpr.state.evtspt;
-  outptr=cpr.sim.outptr;
-  funtyp=cpr.sim.funtyp;
-  clkptr=cpr.sim.clkptr;
-  ordptr=cpr.sim.ordptr;
-  pointi=cpr.state.pointi;
-  ztyp=cpr.sim.ztyp;
-  zcptr=cpr.sim.zcptr;
-  zptr=cpr.sim.zptr;
-  ozptr=cpr.sim.ozptr;
-  opptr=cpr.sim.opptr;
-  opar=cpr.sim.opar;
-  rpptr=cpr.sim.rpptr;
-  ipptr=cpr.sim.ipptr;
-  inpptr=cpr.sim.inpptr;
-  funs=cpr.sim.funs;
-  xptr=cpr.sim.xptr;
-  modptr=cpr.sim.modptr;
-  inplnk=cpr.sim.inplnk;
-  nblk=cpr.sim.nb;
-  outlnk=cpr.sim.outlnk;
-  oord=cpr.sim.oord;
-  zord=cpr.sim.zord;
-  iord=cpr.sim.iord;
-  noord=size(cpr.sim.oord,1);
-  nzord=size(cpr.sim.zord,1);
-  niord=size(cpr.sim.iord,1);
-
-  Indent='  ';
-  Indent2=Indent+Indent;
-  BigIndent='          ';
-
-  nZ=size(z,'*'); //** index of work in z
-  nO=lstsize(oz); //** index of outtb in oz
-
-  stalone=%f
-
-  Code=['/* SCILAB Computational function  */'
-        '/*     Copyright INRIA */'
-        '/*     Generated by Code_Generation toolbox of Scicos with '+ ..
-        getversion()+' */';
-        '/*     date : '+date(getdate())+' */'
-        ''
-        '/* ---- Headers ---- */'
-        '#include <stdio.h>'
-        '#include <memory.h>'
-        '#include <string.h>'
-        '#include '"'+SCI+'/routines/machine.h'"'
-        '#include '"'+SCI+'/routines/os_specific/link.h'"'
-        '#include '"'+SCI+'/routines/scicos/scicos.h'"'
-        '']
-
-  if MSDOS then
-   Code=[Code;
-         ' '
-         '#define max(a,b) ((a) >= (b) ? (a) : (b))'
-         '#define min(a,b) ((a) <= (b) ? (a) : (b))'
-         ' '
-        ]
-  end
-
-  Code=[Code;
-        Protos
-        '']
-
-  Code=[Code;
-        '/* Table of constant values */'
-        'static int nrd_'+string(0:maxtotal)'+' = '+string(0:maxtotal)'+';']
-
-  if maxtotal<10 then
-    Code=[Code;
-          'static int nrd_10 = 10;']
-  end
-  if maxtotal<11 then
-    Code=[Code;
-          'static int nrd_11 = 11;']
-  end
-
-  if maxtotal<81 then
-    Code=[Code;
-          'static int nrd_81 = 81;']
-  end
-  if maxtotal<82 then
-    Code=[Code;
-          'static int nrd_82 = 82;']
-  end
-  if maxtotal<84 then
-    Code=[Code;
-          'static int nrd_84 = 84;']
-  end
-  if maxtotal<811 then
-    Code=[Code;
-          'static int nrd_811 = 811;']
-  end
-  if maxtotal<812 then
-    Code=[Code;
-          'static int nrd_812 = 812;']
-  end
-  if maxtotal<814 then
-    Code=[Code;
-          'static int nrd_814 = 814;']
-  end
-
-  Code=[Code;
-        ''
-        '/* Some general static variables */'
-        'static double zero=0;'
-        'static double w[1];'
-        'static int aaa=0, bbb=0;']
-
-  Code=[Code;
-        ''
-        '/*'+part('-',ones(1,40))+' Block Computational function */ ';
-        'int  '+rdnom+'(scicos_block *block, int flag)'
-        '{'
-        '  /* declaration of local variables for that block struct */'
-        '  double* z      = block->z;'
-        '  void **ozptr   = block->ozptr;'
-        '  void **oparptr = block->oparptr;'
-        '  int nopar      = block->nopar;'
-        '  double* x      = block->x;'
-        '  double* xd     = block->xd;'
-        '  double* res    = block->res;'
-        '  void** u       = block->inptr;'
-        '  void** y       = block->outptr;'
-        '  int nevprt     = block->nevprt;'
-        '  double* rpar   = block->rpar;'
-        '  int nrpar      = block->nrpar;'
-        '  int* ipar      = block->ipar;'
-        '  int nipar      = block->nipar;'
-        '  double* g      = block->g;'
-        '  int* mode      = block->mode;'
-        '  void **work    = block->work;'
-        ''
-        '  double t     = get_scicos_time();'
-        '  int    phase = get_phase_simulation();'
-        ''
-        '  int kf;'
-        '  int i;'
-        '  int* reentryflag;'
-        ''
-        '  double *args[100];'
-        '  int local_flag;'
-        '  int nport;'
-        '  void **'+rdnom+'_block_outtbptr;'
-        '  scicos_block *block_'+rdnom+';'
-        ''
-        '  /*  work of blocks are catenated at the end of z */'
-        '  work = (void **)(z+'+string(nZ)+');'
-        ''
-        '  /*  '+rdnom+'_block_outtbptr is catenated at the end of oz */'
-        '  '+rdnom+'_block_outtbptr = (void **)(ozptr+'+string(nO)+');'
-        ''
-        '  /* struct of all blocks are stored in work of that block struct */'
-        '  block_'+rdnom+'=(scicos_block*) *block->work;'
-        ''];
-
-  Code=[Code;
-        '  /* Copy inputs in the block outtb */'];
-
-  for i=1:size(capt,1)
-    ni=capt(i,3)*capt(i,4); //** dimension of ith input
-    if capt(i,5)<>11 then
-      Code=[Code;
-            '  memcpy(*('+rdnom+'_block_outtbptr+'+string(capt(i,2)-1)+'),'+...
-            '*(u+'+string(capt(i,6)-1)+'),'+...
-             string(ni)+'*sizeof('+mat2c_typ(capt(i,5))+'));']
-    else //** Cas cmplx
-      Code=[Code;
-            '  memcpy(*('+rdnom+'_block_outtbptr+'+string(capt(i,2)-1)+'),'+...
-            '*(u+'+string(capt(i,6)-1)+'),'+...
-             string(2*ni)+'*sizeof('+mat2c_typ(capt(i,5))+'));']
-    end
-  end
-
-  Code=[Code;
-        ''
-        '  if (flag != 4 && flag != 6 && flag != 5){'
-        '    reentryflag=(int*) ((scicos_block *)(*block->work)+'+string(nblk)+');'
-        '    if (*reentryflag==0){'
-        '      *reentryflag=1;']
-
-  for kf=1:nblk
-    nin=inpptr(kf+1)-inpptr(kf);  //** number of input ports
-    nout=outptr(kf+1)-outptr(kf); //** number of output ports
-    nx=xptr(kf+1)-xptr(kf);
-    ng=zcptr(kf+1)-zcptr(kf);
-    nmode=modptr(kf+1)-modptr(kf);
-
-    //** add comment
-    txt=[get_comment('set_blk',list(funs(kf),funtyp(kf),kf));]
-
-    Code=[Code;
-          ''
-          '      '+txt];
-
-    for k=1:nin
-      lprt=inplnk(inpptr(kf)-1+k);
-      Code=[Code;
-            '      block_'+rdnom+'['+string(kf-1)+'].inptr['+string(k-1)+']  = '+...
-            rdnom+'_block_outtbptr['+string(lprt-1)+'];']
-    end
-    for k=1:nout
-       lprt=outlnk(outptr(kf)-1+k);
-       Code=[Code
-             '      block_'+rdnom+'['+string(kf-1)+'].outptr['+string(k-1)+'] = '+...
-             rdnom+'_block_outtbptr['+string(lprt-1)+'];']
-    end
-    Code=[Code
-          '      block_'+rdnom+'['+string(kf-1)+'].z         = &(z['+...
-          string(zptr(kf)-1)+']);']
-    if nx <> 0 then
-      Code=[Code;
-            '      block_'+rdnom+'['+string(kf-1)+'].x         = &(x['+...
-            string(xptr(kf)-1)+']);']
+    //** blk calling sequence
+    case 'call_blk' then
+        txt = ['/* Call of '''+param(1) + ...
+               ''' (type '+string(param(2))+' - blk nb '+...
+                    string(param(3))];
+        if ztyp(param(3)) then
+          txt=txt+' - with zcross) */';
+        else
+          txt=txt+') */';
+        end
+    //** proto calling sequence
+    case 'proto_blk' then
+        txt = ['/* prototype of '''+param(1) + ...
+               ''' (type '+string(param(2))];
+        if ztyp(param(3)) then
+          txt=txt+' - with zcross) */';
+        else
+          txt=txt+') */';
+        end
+    //** ifthenelse calling sequence
+    case 'ifthenelse_blk' then
+        txt = ['/* Call of ''if-then-else'' blk (blk nb '+...
+                    string(param(1))+') */']
+    //** eventselect calling sequence
+    case 'evtselect_blk' then
+        txt = ['/* Call of ''event-select'' blk (blk nb '+...
+                    string(param(1))+') */']
+    //** set block structure
+    case 'set_blk' then
+        txt = ['/* set blk struc. of '''+param(1) + ...
+               ''' (type '+string(param(2))+' - blk nb '+...
+                    string(param(3))+') */'];
+    //** Update xd vector ptr
+    case 'update_xd' then
+        txt = ['/* Update xd vector ptr */'];
+    //** Update g vector ptr
+    case 'update_g' then
+        txt = ['/* Update g vector ptr */'];
     else
-      Code=[Code;
-            '      block_'+rdnom+'['+string(kf-1)+'].x         = &(zero);'
-            '      block_'+rdnom+'['+string(kf-1)+'].xd        = w;']
-    end
-    if ng <> 0 then
-      Code=[Code;
-            '      block_'+rdnom+'['+string(kf-1)+'].g         = &(g['+...
-            string(zcptr(kf)-1)+']);']
-    else
-      Code=[Code;
-            '      block_'+rdnom+'['+string(kf-1)+'].g         = &(zero);';]
-    end
-    if nmode <> 0 then
-      Code=[Code;
-            '      block_'+rdnom+'['+string(kf-1)+'].mode      = &(mode['+...
-            string(modptr(kf)-1)+']);']
-    end
-    if (part(funs(kf),1:7) ~= 'capteur' &...
-        part(funs(kf),1:10) ~= 'actionneur' &...
-        funs(kf) ~= 'bidon' &...
-        funs(kf) ~= 'bidon2') then
-      //** rpar **//
-      if (rpptr(kf+1)-rpptr(kf)>0) then
-        Code=[Code;
-              '      block_'+rdnom+'['+string(kf-1)+'].rpar      = &(rpar['+...
-              string(rpptr(kf)-1)+']);']
-      end
-      //** ipar **//
-      if (ipptr(kf+1)-ipptr(kf)>0) then
-         Code=[Code;
-               '      block_'+rdnom+'['+string(kf-1)+'].ipar      = &(ipar['+...
-               string(ipptr(kf)-1)+']);']
-      end
-      //** opar **//
-      if (opptr(kf+1)-opptr(kf)>0) then
-        nopar = opptr(kf+1)-opptr(kf);
-        for k=1:nopar
-          Code=[Code;
-                '      block_'+rdnom+'['+string(kf-1)+'].oparptr['+string(k-1)+...
-                '] = oparptr['+string(opptr(kf)-1+k-1)+'];'];
-        end
-      end
-      //** oz **//
-      if (ozptr(kf+1)-ozptr(kf)>0) then
-        noz = ozptr(kf+1)-ozptr(kf);
-        for k=1:noz
-          Code=[Code;
-                '      block_'+rdnom+'['+string(kf-1)+'].ozptr['+string(k-1)+...
-                ']  = ozptr['+string(ozptr(kf)-1+k-1)+'];'];
-        end
-      end
-    end
-    Code=[Code;
-          '      block_'+rdnom+'['+string(kf-1)+'].work      ='+...
-          ' (void **)(((double *)work)+'+string(kf-1)+');']
-  end
-  Code=[Code
-        '    }'
-        '  }'
-        ''
-       ]
-
-  /////////////////////////////////////////////
-
-
-  //** find activation number
-  blks=find(funtyp>-1);
-  evs=[];
-
-  for blk=blks
-    for ev=clkptr(blk):clkptr(blk+1)-1
-      if funs(blk)=='bidon' then
-        if ev > clkptr(howclk) -1
-         evs=[evs,ev];
-        end
-      end
-    end
-  end
-
-  //** flag 0
-  flag = 0;
-
-  block_has_output=%f
-  txt   = [];
-  txt22 = [];
-
-  for kf=1:nblk
-     nx=xptr(kf+1)-xptr(kf);
-     if nx <> 0 then
-          txt=[txt;
-               '    block_'+rdnom+'['+string(kf-1)+'].xd=&(xd['+...
-                string(xptr(kf)-1)+']);']
-     end
-     if part(funs(kf),1:10) == 'actionneur' then
-       block_has_output=%t
-     end
-  end
-  if txt<>[] then
-    txt22=[txt22;
-           '    '+get_comment('update_xd',list())
-           txt
-           ''
-          ]
-  end
-  txt22=[txt22;
-         write_code_odoit(1) //** first pass
-         write_code_odoit(0) //** second pass
-        ]
-
-  if txt22<>[] then
-    Code=[Code;
-          '  if (flag == 0) { '+get_comment('flag',list(flag))
-          txt22
-          '  }'];
-  end
-
-  //** flag 1,2,3
-  for flag=[1,2,3]
-
-    txt3=[]
-
-    //** continuous time blocks must be activated
-    //** for flag 1
-    if flag==1 then
-      txt = write_code_cdoit(flag);
-
-      if txt <> [] then
-        txt3=[txt3;
-             Indent+'  switch (nevprt) {'
-            ];
-        txt3=[txt3;
-              Indent2+'  case '+string(0)+' : '+...
-              get_comment('ev',list(0))
-              '    '+txt;
-             ];
-        txt3=[txt3;'      break;';'']
-      end
-    else
-      txt=[];
-    end
-
-    //** blocks with input discrete event must be activated
-    //** for flag 1, 2 and 3
-    if size(evs,2)>=1 then
-      txt4=[]
-      //**
-      for ev=evs
-        txt2=write_code_doit(ev,flag);
-        if txt2<>[] then
-          //** adjust event number because of bidon block
-          new_ev=ev-(clkptr(howclk)-1)
-          //**
-          txt4=[txt4;
-                Indent2+['  case '+string(new_ev)+' : '+...
-                get_comment('ev',list(new_ev))
-                   txt2];
-                '      break;';'']
-        end
-      end
-
-      //**
-      if txt == [] then
-        if txt4 <> [] then
-          txt3=[txt3;
-                Indent+'  switch (nevprt) {'
-                txt4
-                '    }'];
-        end
-      else
-        txt3=[txt3;
-              txt4]
-      end
-    end
-
-    //**
-    if txt <> [] then
-      txt3=[txt3;
-            '    }'];
-    end
-
-    //**
-    if txt3<>[] then
-      if flag==1 & txt22==[] then
-        Code=[Code;
-              '  if (flag == '+string(flag)+') { '+...
-              get_comment('flag',list(flag))
-              txt3
-              '  }'];
-      else
-        Code=[Code;
-              '  else if (flag == '+string(flag)+') { '+...
-              get_comment('flag',list(flag))
-              txt3
-              '  }'];
-      end
-    end
-  end
-
-  //** flag 9
-  ng=zcptr($)-1;
-  if (ng ~= 0) then
-    flag = 9;
-    Code=[Code;
-          '  else if (flag == '+string(flag)+') { '+...
-           get_comment('flag',list(flag))
-         ];
-
-    txt=[]
-    for kf=1:nblk
-      if zcptr(kf+1)-zcptr(kf) <> 0 then
-         txt=[txt;
-              '    block_'+rdnom+'['+string(kf-1)+'].g='+...
-              '&(g['+string(zcptr(kf)-1)+']);']
-      end
-    end
-
-    Code=[Code;
-          '    '+get_comment('update_g',list())
-          txt
-          ''
-          write_code_zdoit()
-         ]
-
-    Code=[Code;
-          '  }'];
-  end
-
-  //** flag 4
-  Code=[Code;
-        '  else if (flag == 4) { '+get_comment('flag',list(4))
-        '    if ((*block->work=scicos_malloc(sizeof(scicos_block)*'+...
-         string(nblk)+'+sizeof(int)))== NULL) return 0;';
-        '    reentryflag=(int*) ((scicos_block *)(*block->work)+'+string(nblk)+');'
-        '    *reentryflag=0;'
-        '    block_'+rdnom+'=(scicos_block*) *block->work;'];
-
-  for kf=1:nblk
-    nin=inpptr(kf+1)-inpptr(kf);  //* number of input ports */
-    nout=outptr(kf+1)-outptr(kf); //* number of output ports */
-    nx=xptr(kf+1)-xptr(kf);
-    ng=zcptr(kf+1)-zcptr(kf);
-    nmode=modptr(kf+1)-modptr(kf);
-
-    //** add comment
-    txt=[get_comment('set_blk',list(funs(kf),funtyp(kf),kf));]
-
-    Code=[Code;
-          ''
-          '    '+txt];
-
-    Code=[Code;
-          '    block_'+rdnom+'['+string(kf-1)+'].type   = '+...
-            string(funtyp(kf))+';';
-          '    block_'+rdnom+'['+string(kf-1)+'].ztyp   = '+...
-            string(ztyp(kf))+';';
-          '    block_'+rdnom+'['+string(kf-1)+'].ng     = '+...
-            string(zcptr(kf+1)-zcptr(kf))+';']
-
-    if nx <> 0 then
-      Code=[Code;
-            '    block_'+rdnom+'['+string(kf-1)+'].nx     = '+...
-             string(nx)+';';
-            '    block_'+rdnom+'['+string(kf-1)+'].x      = &(x['+...
-             string(xptr(kf)-1)+']);']
-    else
-      Code=[Code;
-            '    block_'+rdnom+'['+string(kf-1)+'].nx     = 1;';
-            '    block_'+rdnom+'['+string(kf-1)+'].x      = &(zero);'
-            '    block_'+rdnom+'['+string(kf-1)+'].xd     = w;']
-    end
-
-    if ng <> 0 then
-      Code=[Code;
-            '    block_'+rdnom+'['+string(kf-1)+'].g      = &(g['+...
-            string(zcptr(kf)-1)+']);']
-    else
-      Code=[Code;
-            '    block_'+rdnom+'['+string(kf-1)+'].g      = &(zero);';]
-    end
-    if nmode <> 0 then
-      Code=[Code;
-            '    block_'+rdnom+'['+string(kf-1)+'].mode   = &(mode['+...
-            string(modptr(kf)-1)+']);']
-    end
-    Code=[Code;
-          '    block_'+rdnom+'['+string(kf-1)+'].nz     = '+...
-            string(zptr(kf+1)-zptr(kf))+';';
-          '    block_'+rdnom+'['+string(kf-1)+'].noz    = '+...
-            string(ozptr(kf+1)-ozptr(kf))+';';
-          '    block_'+rdnom+'['+string(kf-1)+'].nrpar  = '+...
-            string(rpptr(kf+1)-rpptr(kf))+';';
-          '    block_'+rdnom+'['+string(kf-1)+'].nopar  = '+...
-            string(opptr(kf+1)-opptr(kf))+';';
-          '    block_'+rdnom+'['+string(kf-1)+'].nipar  = '+...
-            string(ipptr(kf+1)-ipptr(kf))+';'
-          '    block_'+rdnom+'['+string(kf-1)+'].nin    = '+...
-            string(inpptr(kf+1)-inpptr(kf))+';';
-          '    block_'+rdnom+'['+string(kf-1)+'].nout   = '+...
-            string(outptr(kf+1)-outptr(kf))+';';
-          '    block_'+rdnom+'['+string(kf-1)+'].nevout = '+...
-            string(clkptr(kf+1)-clkptr(kf))+';';
-          '    block_'+rdnom+'['+string(kf-1)+'].nmode  = '+...
-            string(modptr(kf+1)-modptr(kf))+';'];
-
-    Code=[Code;
-          '    if ((block_'+rdnom+'['+string(kf-1)+'].evout  = '+...
-          'calloc(block_'+rdnom+'['+string(kf-1)+'].nevout,sizeof(double)))== NULL) return 0;'];
-
-    //***************************** input port *****************************//
-    //** alloc insz/inptr **//
-    Code=[Code;
-          '    if ((block_'+rdnom+'['+string(kf-1)+'].insz   = '+...
-          'malloc(3*sizeof(int)*block_'+rdnom+'['+string(kf-1)+'].nin))== NULL) return 0;';
-          '    if ((block_'+rdnom+'['+string(kf-1)+'].inptr  = '+...
-          'malloc(sizeof(void *)*block_'+rdnom+'['+string(kf-1)+'].nin))== NULL) return 0;'];
-
-    //** inptr **//
-    for k=1:nin
-       lprt=inplnk(inpptr(kf)-1+k);
-       Code=[Code
-             '    block_'+rdnom+'['+string(kf-1)+'].inptr['+string(k-1)+']  = '+...
-             rdnom+'_block_outtbptr['+string(lprt-1)+'];']
-    end
-
-    //** 1st dim **//
-    for k=1:nin
-       lprt=inplnk(inpptr(kf)-1+k);
-       Code=[Code
-             '    block_'+rdnom+'['+string(kf-1)+'].insz['+string((k-1))+']   = '+...
-              string(size(outtb(lprt),1))+';']
-    end
-
-    //** 2dn dim **//
-    for k=1:nin
-       lprt=inplnk(inpptr(kf)-1+k);
-       Code=[Code
-             '    block_'+rdnom+'['+string(kf-1)+'].insz['+string((k-1)+nin)+']   = '+...
-              string(size(outtb(lprt),2))+';']
-    end
-
-    //** typ **//
-    for k=1:nin
-       lprt=inplnk(inpptr(kf)-1+k);
-       Code=[Code
-             '    block_'+rdnom+'['+string(kf-1)+'].insz['+string((k-1)+2*nin)+']   = '+...
-              mat2scs_c_typ(outtb(lprt))+';'];
-    end
-    //**********************************************************************//
-
-    //***************************** output port *****************************//
-    //** alloc outsz/outptr **//
-    Code=[Code
-          '    if ((block_'+rdnom+'['+string(kf-1)+'].outsz  = '+...
-           'malloc(3*sizeof(int)*block_'+rdnom+'['+string(kf-1)+'].nout))== NULL) return 0;';
-          '    if ((block_'+rdnom+'['+string(kf-1)+'].outptr = '+...
-           'malloc(sizeof(void*)*block_'+rdnom+'['+string(kf-1)+'].nout))== NULL) return 0;'];
-
-    //** outptr **//
-    for k=1:nout
-       lprt=outlnk(outptr(kf)-1+k);
-       Code=[Code
-             '    block_'+rdnom+'['+string(kf-1)+'].outptr['+string(k-1)+'] = '+...
-              rdnom+'_block_outtbptr['+string(lprt-1)+'];']
-    end
-
-    //** 1st dim **//
-    for k=1:nout
-       lprt=outlnk(outptr(kf)-1+k);
-       Code=[Code
-             '    block_'+rdnom+'['+string(kf-1)+'].outsz['+string((k-1))+...
-             ']  = '+string(size(outtb(lprt),1))+';']
-    end
-
-    //** 2dn dim **//
-    for k=1:nout
-       lprt=outlnk(outptr(kf)-1+k);
-       Code=[Code
-             '    block_'+rdnom+'['+string(kf-1)+'].outsz['+string((k-1)+nout)+...
-             ']  = '+string(size(outtb(lprt),2))+';']
-    end
-
-    //** typ **//
-    for k=1:nout
-       lprt=outlnk(outptr(kf)-1+k);
-       Code=[Code
-             '    block_'+rdnom+'['+string(kf-1)+'].outsz['+string((k-1)+2*nout)+...
-             ']  = '+mat2scs_c_typ(outtb(lprt))+';'];
-    end
-    //**********************************************************************//
-
-    Code=[Code
-          '    block_'+rdnom+'['+string(kf-1)+'].z         = &(z['+...
-          string(zptr(kf)-1)+']);']
-
-    //***************************** object state *****************************//
-    if (ozptr(kf+1)-ozptr(kf)>0) then
-      noz = ozptr(kf+1)-ozptr(kf);
-      Code=[Code
-            '    if ((block_'+rdnom+'['+string(kf-1)+'].ozptr = '+...
-            'malloc(sizeof(void *)*block_'+rdnom+'['+string(kf-1)+'].noz))== NULL) return 0;';
-            '    if ((block_'+rdnom+'['+string(kf-1)+'].ozsz  = '+...
-            'malloc(2*sizeof(int)*block_'+rdnom+'['+string(kf-1)+'].noz))== NULL) return 0;';
-            '    if ((block_'+rdnom+'['+string(kf-1)+'].oztyp = '+...
-            'malloc(sizeof(int)*block_'+rdnom+'['+string(kf-1)+'].noz))== NULL) return 0;';]
-
-      //** ozptr **//
-      for k=1:noz
-        Code=[Code;
-              '    block_'+rdnom+'['+string(kf-1)+'].ozptr['+string(k-1)+...
-              ']  = ozptr['+string(ozptr(kf)-1+k-1)+'];'];
-      end
-
-      //** 1st dim **//
-      for k=1:noz
-        Code=[Code;
-              '    block_'+rdnom+'['+string(kf-1)+'].ozsz['+string(k-1)+...
-              ']   = '+string(size(oz(ozptr(kf)-1+k),1))+';'];
-      end
-
-      //** 2nd dim **//
-      for k=1:noz
-        Code=[Code;
-              '    block_'+rdnom+'['+string(kf-1)+'].ozsz['+string(k-1)+...
-              ']   = '+string(size(oz(ozptr(kf)-1+k),2))+';'];
-      end
-
-      //** typ **//
-      for k=1:noz
-        Code=[Code;
-              '    block_'+rdnom+'['+string(kf-1)+'].oztyp['+string(k-1)+...
-              ']  = '+mat2scs_c_typ(oz(ozptr(kf)-1+k))+';'];
-      end
-    end
-    //************************************************************************//
-
-    if (part(funs(kf),1:7) ~= 'capteur' &...
-        part(funs(kf),1:10) ~= 'actionneur' &...
-        funs(kf) ~= 'bidon' &...
-        funs(kf) ~= 'bidon2') then
-      if (rpptr(kf+1)-rpptr(kf)>0) then
-        Code=[Code;
-              '    block_'+rdnom+'['+string(kf-1)+...
-              '].rpar      = &(rpar['+string(rpptr(kf)-1)+']);']
-      end
-      if (ipptr(kf+1)-ipptr(kf)>0) then
-        Code=[Code;
-              '    block_'+rdnom+'['+string(kf-1)+...
-              '].ipar      = &(ipar['+string(ipptr(kf)-1)+']);'] 
-      end
-      //** opar
-      if (opptr(kf+1)-opptr(kf)>0) then
-        Code=[Code;
-              '    if ((block_'+rdnom+'['+string(kf-1)+'].oparptr = '+...
-               'malloc(sizeof(void *)*block_'+rdnom+'['+string(kf-1)+'].nopar))== NULL) return 0;';
-              '    if ((block_'+rdnom+'['+string(kf-1)+'].oparsz  = '+...
-               'malloc(2*sizeof(int)*block_'+rdnom+'['+string(kf-1)+'].nopar))== NULL) return 0;';
-              '    if ((block_'+rdnom+'['+string(kf-1)+'].opartyp = '+...
-               'malloc(sizeof(int)*block_'+rdnom+'['+string(kf-1)+'].nopar))== NULL) return 0;';
-              ]
-        nopar = opptr(kf+1)-opptr(kf);
-        //** oparptr **//
-        for k=1:nopar
-          Code=[Code;
-                '    block_'+rdnom+'['+string(kf-1)+'].oparptr['+string(k-1)+...
-                 ']  = oparptr['+string(opptr(kf)-1+k-1)+'];'];
-        end
-        //** 1st dim **//
-        for k=1:nopar
-          Code=[Code;
-                '    block_'+rdnom+'['+string(kf-1)+'].oparsz['+string(k-1)+...
-                 ']   = '+string(size(opar(opptr(kf)-1+k),1))+';'];
-        end
-        //** 2dn dim **//
-        for k=1:nopar
-          Code=[Code;
-                '    block_'+rdnom+'['+string(kf-1)+'].oparsz['+string(nopar+(k-1))+...
-                 ']   = '+string(size(opar(opptr(kf)-1+k),2))+';'];
-        end
-        //** typ **//
-        for k=1:nopar
-          Code=[Code;
-                '    block_'+rdnom+'['+string(kf-1)+'].opartyp['+string(k-1)+...
-                 ']  = '+mat2scs_c_typ(opar(opptr(kf)-1+k))+';'];
-        end
-      end
-    end
-
-    Code=[Code;
-          '    block_'+rdnom+'['+string(kf-1)+...
-           '].work      = (void **)(((double *)work)+'+string(kf-1)+');'
-          '    block_'+rdnom+'['+string(kf-1)+...
-           '].nevprt    = nevprt;']
-
-  end //for kf=1:nblk
-
-  //** init
-  for kf=1:nblk
-//     if or(kf==act) | or(kf==cap) then
-//       if stalone then
-//         txt = call_block42(kf,0,4);
-//         if txt <> [] then
-//           Code=[Code;
-//                 '';
-//                 '    '+txt];
-//         end
-//       end
-//     else
-      txt = call_block42(kf,0,4);
-      if txt <> [] then
-        Code=[Code;
-              '';
-              '    '+txt];
-      end
-//     end
-  end
-
-  //** cst blocks and it's dep
-  txt=write_code_idoit()
-
-  if txt<>[] then
-    Code=[Code;
-          ''
-          '    /* initial blocks must be called with flag 1 */'
-          txt];
-  end
-
-  Code=[Code;
-        '  }'];
-
-  //** flag 5
-  Code=[Code;
-        '  else if (flag == 5) { '+get_comment('flag',list(5))
-        '    block_'+rdnom+'=*block->work;']
-
-  for kf=1:nblk
-     nin=inpptr(kf+1)-inpptr(kf);  //* number of input ports */
-     nout=outptr(kf+1)-outptr(kf); //* number of output ports */
-
-     //** add comment
-     txt=[get_comment('set_blk',list(funs(kf),funtyp(kf),kf));]
-
-     Code=[Code;
-           ''
-           '    '+txt];
-
-     for k=1:nin
-        lprt=inplnk(inpptr(kf)-1+k);
-         Code=[Code;
-               '    block_'+rdnom+'['+string(kf-1)+'].inptr['+string(k-1)+...
-               ']  = '+rdnom+'_block_outtbptr['+string(lprt-1)+'];']
-     end
-     for k=1:nout
-        lprt=outlnk(outptr(kf)-1+k);
-        Code=[Code
-              '    block_'+rdnom+'['+string(kf-1)+'].outptr['+string(k-1)+...
-              '] = '+rdnom+'_block_outtbptr['+string(lprt-1)+'];']
-     end
-     Code=[Code
-           '    block_'+rdnom+'['+string(kf-1)+'].z=&(z['+...
-            string(zptr(kf)-1)+']);']
-     if (part(funs(kf),1:7) ~= 'capteur' &...
-          part(funs(kf),1:10) ~= 'actionneur' &...
-           funs(kf) ~= 'bidon' &...
-            funs(kf) ~= 'bidon2') then
-       //** rpar **//
-       if (rpptr(kf+1)-rpptr(kf)>0) then
-         Code=[Code;
-               '    block_'+rdnom+'['+string(kf-1)+...
-                '].rpar=&(rpar['+string(rpptr(kf)-1)+']);']
-       end
-       //** ipar **//
-       if (ipptr(kf+1)-ipptr(kf)>0) then
-         Code=[Code;
-               '    block_'+rdnom+'['+string(kf-1)+...
-                '].ipar=&(ipar['+string(ipptr(kf)-1)+']);'] 
-       end
-       //** opar **//
-       if (opptr(kf+1)-opptr(kf)>0) then
-         nopar = opptr(kf+1)-opptr(kf);
-         for k=1:nopar
-           Code=[Code;
-                 '    block_'+rdnom+'['+string(kf-1)+'].oparptr['+string(k-1)+...
-                 ']  = oparptr['+string(opptr(kf)-1+k-1)+'];'];
-         end
-       end
-       //** oz **//
-       if (ozptr(kf+1)-ozptr(kf)>0) then
-         noz = ozptr(kf+1)-ozptr(kf);
-         for k=1:noz
-           Code=[Code;
-                 '    block_'+rdnom+'['+string(kf-1)+'].ozptr['+string(k-1)+...
-                ']  = ozptr['+string(ozptr(kf)-1+k-1)+'];'];
-         end
-       end
-     end
-
-     Code=[Code;
-           '    block_'+rdnom+'['+string(kf-1)+...
-            '].work=(void **)(((double *)work)+'+string(kf-1)+');']
-  end
-
-  for kf=1:nblk
-//     if or(kf==act) | or(kf==cap) then
-//       if stalone then
-//         txt = call_block42(kf,0,5);
-//         if txt <> [] then
-//           Code=[Code;
-//                 '';
-//                 '    '+txt];
-//         end
-//       end
-//     else
-      txt = call_block42(kf,0,5);
-      if txt <> [] then
-        Code=[Code;
-              '';
-              '    '+txt];
-      end
-//     end
-  end
-
-  Code=[Code;
-        ''
-        '    for (kf = 0; kf < '+string(nblk)+'; ++kf) {'
-        '      if (block_'+rdnom+'[kf].insz!=NULL) {'
-        '        free(block_'+rdnom+'[kf].insz);'
-        '      }else {'
-        '        break;'
-        '      }'
-        '      if (block_'+rdnom+'[kf].outsz!=NULL){'
-        '        free(block_'+rdnom+'[kf].outsz);'
-        '      }else {'
-        '        break;'
-        '      }'
-        '      if (block_'+rdnom+'[kf].nopar!=0){'
-        '        if (block_'+rdnom+'[kf].oparptr!=NULL){'
-        '          free(block_'+rdnom+'[kf].oparptr);'
-        '        }else {'
-        '          break;'
-        '        }'
-        '        if (block_'+rdnom+'[kf].oparsz!=NULL){'
-        '          free(block_'+rdnom+'[kf].oparsz);'
-        '        }else {'
-        '          break;'
-        '        }'
-        '        if (block_'+rdnom+'[kf].opartyp!=NULL){'
-        '          free(block_'+rdnom+'[kf].opartyp);'
-        '        }else {'
-        '          break;'
-        '        }'
-        '      }'
-        '      if (block_'+rdnom+'[kf].noz!=0){'
-        '        if (block_'+rdnom+'[kf].ozptr!=NULL){'
-        '          free(block_'+rdnom+'[kf].ozptr);'
-        '        }else {'
-        '          break;'
-        '        }'
-        '        if (block_'+rdnom+'[kf].ozsz!=NULL){'
-        '          free(block_'+rdnom+'[kf].ozsz);'
-        '        }else {'
-        '          break;'
-        '        }'
-        '        if (block_'+rdnom+'[kf].oztyp!=NULL){'
-        '          free(block_'+rdnom+'[kf].oztyp);'
-        '        }else {'
-        '          break;'
-        '        }'
-        '      }'
-        '      if (block_'+rdnom+'[kf].evout!=NULL){'
-        '        free(block_'+rdnom+'[kf].evout);'
-        '      }else {'
-        '        break;'
-        '      }'
-        '    }'
-        '    scicos_free(block_'+rdnom+');'
-        '  }'
-        ''];
-
-  for i=1:size(actt,1)
-    ni=actt(i,3)*actt(i,4); // dimension of ith input
-    if actt(i,5)<>11 then
-      Code=[Code;
-            '  memcpy(*(y+'+string(actt(i,6)-1)+'),'+...
-            '*('+rdnom+'_block_outtbptr+'+string(actt(i,2)-1)+'),'+...
-             string(ni)+'*sizeof('+mat2c_typ(actt(i,5))+'));']
-    else //** Cas cmplx
-      Code=[Code;
-            '  memcpy(*(y+'+string(actt(i,6)-1)+'),'+...
-            '*('+rdnom+'_block_outtbptr+'+string(actt(i,2)-1)+'),'+...
-             string(2*ni)+'*sizeof('+mat2c_typ(actt(i,5))+'));']
-    end
-  end
-
-  //**
-  Code=[Code;
-        '  return 0;'
-        ''
-        '} /* '+rdnom+' */']
-
-endfunction
-
-//==========================================================================
-//generates skeleton of external world events handling function
-function Code=make_outevents()
-  z='0'
-  if szclkIN==[] then
-    newszclkIN=0;
-  else
-    newszclkIN=szclkIN;
-  end
-
-  Code=['/*'+part('-',ones(1,40))+'  External events handling function */';
-         'void '+rdnom+'_events(int *nevprt,double *t)';
-         '{'
-         '/*  set next event time and associated events ports'
-         ' *  nevprt has binary expression b1..b'+string(newszclkIN)+' where bi is a bit'
-         ' *  bi is set to 1 if an activation is received by port i. Note that'
-         ' *  more than one activation can be received simultaneously'
-         ' *  Caution: at least one bi should be equal to one */'
-         '']
-
-  if (newszclkIN <> 0) then
-    Code=[Code;
-          '    int i,p,b[]={'+strcat(z(ones(1,newszclkIN)),',')+'};'
-          ''
-          '/* this is an example for the activation of events ports */'
-          '    b[0]=1;']
-
-    if newszclkIN>1 then
-      for bb=2:newszclkIN
-        Code($+1)='    b['+string(bb-1)+']=1;'
-      end
-    end
-
-    Code=[Code;
-          ''
-          '/* definition of the step time  */'
-          '    *t = *t + 0.1;'
-          ''
-          '/* External events handling process */'
-          '    *nevprt=0;p=1;'
-          '    for (i=0;i<'+string(newszclkIN)+';i++) {'
-          '      *nevprt=*nevprt+b[i]*p;'
-          '      p=p*2;'
-          '    }'
-          '}']
-  else
-    Code=[Code;
-          '';
-          '/* definition of the step time  */'
-          '    *t = *t + 0.1;'
-          '}']
-  end
-endfunction
-
-//==========================================================================
-//Generating the routine for sensors interfacing
-//
-//Copyright INRIA
-//
-//Author : R. Djenidi, R. Nikoukhah, A. Layec
-//
-function Code=make_sensor(standalone)
-  Call=['/*'+part('-',ones(1,40))+' Sensor */';
-        'void '+rdnom+'_sensor(flag,nport,nevprt,t,y,ny1,ny2,yt,flag1)']
-
-  comments=['     /*'
-            '      * To be customized for standalone execution';
-            '      * flag  : specifies the action to be done'
-            '      * nport : specifies the  index of the Super Bloc'
-            '      *         regular input (The input ports are numbered'
-            '      *         from the top to the bottom )'
-            '      * nevprt: indicates if an activation had been received'
-            '      *         0 = no activation'
-            '      *         1 = activation'
-            '      * t     : the current time value'
-            '      * y     : the vector outputs value'
-            '      * ny1   : the output size 1'
-            '      * ny2   : the output size 2'
-            '      * yt    : the output type'
-            '      * flag1 : learn mode (0 from terminal,1 from input file'
-            '      */']
-
-  dcl=['     int *flag,*nevprt,*nport;'
-       '     int *ny1,*ny2,*yt,flag1;'
-       ''
-       '     double *t;'
-       '     void *y;'
-       '{'
-       '  int j,k,l;'
-       '  double temps;']
-
-  if standalone then
-
-    a_sensor=['    switch (*flag) {'
-              '    case 1 : /* set the output value */'
-              '      printf(""Require outputs of sensor number %d\n"", *nport);'
-              '      printf(""time is: %f\n"", *t);'
-              '      printf(""sizes of the sensor output is: %d,%d\n"", *ny1,*ny2);'
-              '      switch (*yt) {'
-              '      case 10 :'
-              '        printf(""type of the sensor output is: %d (double) \n"", *yt);'
-              '        puts(""Please set the sensor output values"");'
-              '        for (l=0;l<*ny2;l++) {'
-              '          for (k=0;k<*ny1;k++) {'
-              '            printf(""y(%d,%d) : "",k,l);'
-              '            scanf(""%lf"", (double *) y+(k+l*(*ny1)));'
-              '          }'
-              '        }'
-              '        break;'
-              ''
-              '      case 11 :'
-              '        printf(""type of the sensor output is: %d (complex) \n"", *yt);'
-              '        puts(""Please set the sensor output values"");'
-              '        for (l=0;l<*ny2;l++) {'
-              '          for (k=0;k<*ny1;k++) {'
-              '            printf(""y(%d,%d) real part : "",k,l);'
-              '            scanf(""%lf"", (double *) y+(k+l*(*ny1)));'
-              '            printf(""y(%d,%d) imag part : "",k,l);'
-              '            scanf(""%lf"", (double *) y+((*ny1)*(*ny2)+k+l*(*ny1)));'
-              '          }'
-              '        }'
-              '        break;'
-              ''
-              '      case 81 :'
-              '        printf(""type of the sensor output is: %d (char) \n"", *yt);'
-              '        puts(""Please set the sensor output values"");'
-              '        for (l=0;l<*ny2;l++) {'
-              '          for (k=0;k<*ny1;k++) {'
-              '            printf(""y(%d,%d) : "",k,l);'
-              '            scanf(""%i"", (char *) y+(k+l*(*ny1)));'
-              '          }'
-              '        }'
-              '        break;'
-              ''
-              '      case 82 :'
-              '        printf(""type of the sensor output is: %d (char) \n"", *yt);'
-              '        puts(""Please set the sensor output values"");'
-              '        for (l=0;l<*ny2;l++) {'
-              '          for (k=0;k<*ny1;k++) {'
-              '            printf(""y(%d,%d) : "",k,l);'
-              '            scanf(""%hd"", (short *) y+(k+l*(*ny1)));'
-              '          }'
-              '        }'
-              '        break;'
-              ''
-              '      case 84 :'
-              '        printf(""type of the sensor output is: %d (long) \n"", *yt);'
-              '        puts(""Please set the sensor output values"");'
-              '        for (l=0;l<*ny2;l++) {'
-              '          for (k=0;k<*ny1;k++) {'
-              '            printf(""y(%d,%d) : "",k,l);'
-              '            scanf(""%ld"", (long *) y+(k+l*(*ny1)));'
-              '          }'
-              '        }'
-              '        break;'
-              ''
-              '      case 811 :'
-              '        printf(""type of the sensor output is: %d (unsigned char) \n"", *yt);'
-              '        puts(""Please set the sensor output values"");'
-              '        for (l=0;l<*ny2;l++) {'
-              '          for (k=0;k<*ny1;k++) {'
-              '            printf(""y(%d,%d) : "",k,l);'
-              '            scanf(""%d"", (unsigned char *) y+(k+l*(*ny1)));'
-              '          }'
-              '        }'
-              '        break;'
-              ''
-              '      case 812 :'
-              '        printf(""type of the sensor output is: %d (unsigned short) \n"", *yt);'
-              '        puts(""Please set the sensor output values"");'
-              '        for (l=0;l<*ny2;l++) {'
-              '          for (k=0;k<*ny1;k++) {'
-              '            printf(""y(%d,%d) : "",k,l);'
-              '            scanf(""%hu"", (unsigned short *) y+(k+l*(*ny1)));'
-              '          }'
-              '        }'
-              '        break;'
-              ''
-              '      case 814 :'
-              '        printf(""type of the sensor output is: %d (unsigned long) \n"", *yt);'
-              '        puts(""Please set the sensor output values"");'
-              '        for (l=0;l<*ny2;l++) {'
-              '          for (k=0;k<*ny1;k++) {'
-              '            printf(""y(%d,%d) : "",k,l);'
-              '            scanf(""%lu"", (unsigned long *) y+(k+l*(*ny1)));'
-              '          }'
-              '        }'
-              '        break;'
-              ''
-              '      }'
-              '      break;'
-              '    case 4 : /* sensor initialisation */'
-              '      /* do whatever you want to initialize the sensor */'
-              '      break;'
-              '    case 5 : /* sensor ending */'
-              '      /* do whatever you want to end the sensor */'
-              '      break;'
-              '    }']
-  else
-    a_sensor=[]
-  end
-
-  nc=size(cap,'*')
-
-  // pour fscanf
-  typ=['""%lf ']; //temps
-  for i=1:nc
-    typ($)=typ($)+'"" \'
-    typ=[typ;'""'];
-    for j=1:sum(capt(i,3)*capt(i,4))
-      //typ=typ+'%f ';
-      typ($)=typ($)+scs_c_n2c_fmt(capt(i,5))+' ';
-    end
-  end
-  typ($)=typ($)+'\n"", \'
-  typ=strsubst(typ,'%f','%lf');
-  typ(1)='    fscanf(fprr,'+typ(1);
-  bl    ='                ';
-  if size(typ,1) <> 1 then
-    typ(2:$) = bl+typ(2:$);
-  end
-  //Code1=['      fscanf( fprr, '"'+typ+' \n'",&temps'] 
-  Code1=[typ;bl+'&temps'];
-  for i=1:size(capt,1)
-    ni=capt(i,3)*capt(i,4); // dimension of ith input
-    Code1($)=Code1($)+',';
-    Code1=[Code1;bl];
-    for j=1:ni
-      if capt(i,5)<>11 then
-        Code1($)=Code1($)+...
-                  '('+scs_c_n2c_typ(capt(i,5))+' *)('+...
-                   rdnom+'_block_outtbptr+'+string(capt(i,2)-1)+')'+...
-                   '+'+string(j-1)+'';
-      else //CAS CMPLX
-        Code1($)=Code1($)+...
-                  '('+scs_c_n2c_typ(capt(i,5))+' *)('+...
-                   rdnom+'_block_outtbptr+'+string(capt(i,2)-1)+')'+...
-                   '+'+string((j-1))+', '+...
-                  '('+scs_c_n2c_typ(capt(i,5))+' *)('+...
-                   rdnom+'_block_outtbptr+'+string(capt(i,2)-1)+')'+...
-                   '+'+string(ni+(j-1))+'';
-      end
-      if j<>ni then
-       Code1($)=Code1($)+', ';
-      end
-    end
-  end
-  Code1($)=Code1($)+');'
-
-  Code=[]
-  if nc==1|~standalone then
-    Code=[Code;
-          Call
-          comments
-          dcl
-          '  if (flag1 == 0) {'
-          a_sensor;
-          '  } '
-          '  else if (flag1 == 1) {'
-          '    if (*flag == 4 && *nport == 1) {'
-          '      fprr=fopen(input,'"r'");'
-          '      if( fprr == NULL ) {'
-          '        printf('"Error opening file: %s\n'", input);'
-          '        return;'
-          '      }'
-          '    }'
-          '    else if (*flag == 1) {'
-          Code1
-          '    }'
-          '    else if (*flag == 5 && *nport == 1) {'
-          '      fclose(fprr);'
-          '    }'
-          '  }'
-          '}'];
-
-  elseif nc>1 then
-    S='  switch (*nport) {'
-    for k=1:nc
-      S=[S;
-         '  case '+string(k)+' : /* Port number '+string(k)+' ----------*/'
-         '  '+a_sensor
-         '  break;']
-    end
-    S=[S;'  }']
-
-    Code=[Code
-          Call
-          comments
-          dcl
-          '  if (flag1 == 0) {'
-          S
-          '  }'
-          '  else if (flag1 == 1){'
-          '    if (*flag == 4 && *nport == 1) {'
-          '      fprr=fopen(input,'"r'");'
-          '      if( fprr == NULL ) {'
-          '        printf('"Error opening file: %s\n'", input);'
-          '        return ;'
-          '      }'
-          '    }'
-          '    else if (*flag == 1) {'
-          Code1
-          '    }'
-          '    else if (*flag == 5 && *nport == 1) {'
-          '      fclose(fprr);'
-          '    }'
-          '  }'
-          '}']
+      break;
   end
 endfunction
 
@@ -3218,8 +1202,9 @@ endfunction
 //
 //Copyright INRIA
 //
-// rmq : La fonction zdoit n'est pas utilisée pour le moment
+// rmq : La fonction zdoit n'est pas utilisï¿½e pour le moment
 function Code=make_standalone42()
+
   x=cpr.state.x;
   modptr=cpr.sim.modptr;
   rpptr=cpr.sim.rpptr;
@@ -3260,8 +1245,6 @@ function Code=make_standalone42()
         getversion()+' */'
         '/*     date : '+date(getdate())+' */'
         ''
-        '/* To learn how to use the standalone code, type '"./standalone -h'" */'
-        ''
         '/* ---- Headers ---- */'
         '#include <stdlib.h>'
         '#include <math.h>'
@@ -3270,6 +1253,12 @@ function Code=make_standalone42()
         '#include '"scicos_block4.h'"'
         '#include '"machine.h'"'
         ''
+	'#ifdef linux'
+	'#define __CONST__'
+	'#else'
+	'#define __CONST__ const'
+	'#endif'
+	''
         '/* ---- Internals functions declaration ---- */'
         'int '+rdnom+'_init(void);'
         'int '+rdnom+'_isr(double);'
@@ -3277,62 +1266,15 @@ function Code=make_standalone42()
         Protostalone
         '']
 
-  if MSDOS then
-   Code=[Code;
-         ' '
-         '#define max(a,b) ((a) >= (b) ? (a) : (b))'
-         '#define min(a,b) ((a) <= (b) ? (a) : (b))'
-         ' '
-        ]
-  end
-  
   if x<>[] then
     Code=[Code
           '/* Code prototype for standalone use  */'
           'int C2F('+rdnom+'simblk)(double , double *, double *);'
-          'extern  int C2F(dset)();'
+          'extern  integer C2F(dset)();'
           'int ode1();'
           'int ode2();'
           'int ode4();'
           '']
-  end
-
-  Code=[Code;
-        '/* Table of constant values */'
-        'static int nrd_'+string(0:maxtotal)'+' = '+string(0:maxtotal)'+';']
-
-  if maxtotal<10 then
-    Code=[Code;
-          'static int nrd_10 = 10;']
-  end
-  if maxtotal<11 then
-    Code=[Code;
-          'static int nrd_11 = 11;']
-  end
-
-  if maxtotal<81 then
-    Code=[Code;
-          'static int nrd_81 = 81;']
-  end
-  if maxtotal<82 then
-    Code=[Code;
-          'static int nrd_82 = 82;']
-  end
-  if maxtotal<84 then
-    Code=[Code;
-          'static int nrd_84 = 84;']
-  end
-  if maxtotal<811 then
-    Code=[Code;
-          'static int nrd_811 = 811;']
-  end
-  if maxtotal<812 then
-    Code=[Code;
-          'static int nrd_812 = 812;']
-  end
-  if maxtotal<814 then
-    Code=[Code;
-          'static int nrd_814 = 814;']
   end
 
   Code=[Code;
@@ -3376,11 +1318,9 @@ function Code=make_standalone42()
                                              imag(outtb(i)(:))]),',')+'};',70)]
     end
   end
-  if Code_outtb<>[] then
-    Code=[Code;
-          Code_outtb;
-          '']
-  end
+  Code=[Code;
+        Code_outtb;
+        '']
 
   Code=[Code;
 	 'double get_tsamp()'
@@ -3392,17 +1332,21 @@ function Code=make_standalone42()
 	 '{'
 	 '  return(' + string(Tsamp_delay) + ');'
 	 '}'
-	 ''
-	 '#include ""' + rdnom + '_io.c""'
 	 '']
 
-  Code=[Code
+// Bubu modified
+
+  Code1 = []
+
+  Code2=[''
         '/*'+part('-',ones(1,40))+'  Initialisation function */'
         'int '+rdnom+'_init()'
         '{'
 	'  double t;'
         '  int local_flag;'
-        '  double *args[100];'
+//	'#ifdef linux'
+//        '  double *args[2];'
+//	'#endif'
         '']
 
 
@@ -3424,29 +1368,29 @@ function Code=make_standalone42()
         aaa=OO.gui
         bbb=emptystr(3,1);
         if and(aaa+bbb~=['INPUTPORTEVTS';'OUTPUTPORTEVTS';'EVTGEN_f']) then
-          Code($+1)='';
-          Code($+1)=' /* Routine name of block: '+strcat(string(cpr.sim.funs(i)));
-          Code($+1)='    Gui name of block: '+strcat(string(OO.gui));
-          //Code($+1)='/* Name block: '+strcat(string(cpr.sim.funs(i)));
-          //Code($+1)='Object number in diagram: '+strcat(string(cpr.corinv(i)));
-          Code($+1)='   Compiled structure index: '+strcat(string(i));
+          Code2($+1)='';
+          Code2($+1)=' /* Routine name of block: '+strcat(string(cpr.sim.funs(i)));
+          Code2($+1)='    Gui name of block: '+strcat(string(OO.gui));
+          //Code2($+1)='/* Name block: '+strcat(string(cpr.sim.funs(i)));
+          //Code2($+1)='Object number in diagram: '+strcat(string(cpr.corinv(i)));
+          Code2($+1)='   Compiled structure index: '+strcat(string(i));
           if stripblanks(OO.model.label)~=emptystr() then
-            Code=[Code;
-                  cformatline('   Label: '+strcat(string(OO.model.label)),70)]
+            Code2=[Code2;
+                   cformatline('   Label: '+strcat(string(OO.model.label)),70)]
           end
           if stripblanks(OO.graphics.exprs(1))~=emptystr() then
-            Code=[Code;
-                  cformatline('   Exprs: '+strcat(OO.graphics.exprs(1),","),70)]
+            Code2=[Code2;
+                   cformatline('   Exprs: '+strcat(OO.graphics.exprs(1),","),70)]
           end
           if stripblanks(OO.graphics.id)~=emptystr() then
-            Code=[Code;
-                  cformatline('   Identification: '+..
+            Code2=[Code2;
+                   cformatline('   Identification: '+..
                      strcat(string(OO.graphics.id)),70)]
           end
-          Code=[Code;
-                cformatline('   z={'+...
-                strcat(string(z(zptr(i):zptr(i+1)-1)),",")+'};',70)]
-          Code($+1)=' */';
+          Code2=[Code2;
+                 cformatline('   z={'+...
+                 strcat(string(z(zptr(i):zptr(i+1)-1)),",")+'};',70)]
+          Code2($+1)=' */';
         end
       end
     end
@@ -3470,23 +1414,23 @@ function Code=make_standalone42()
   end
 
   if Code_oz <> [] then
-    Code=[Code;
-          '  /* oz declaration */'
-          Code_oz]
+    Code2=[Code2;
+           '  /* oz declaration */'
+           Code_oz]
   end
 
-  Code=[Code
-        '  /* Get work ptr of blocks */'
-        '  void **work;'
-        '  work = (void **)(z+'+string(size(z,'*')+lstsize(outtb))+');'
-        '']
+  Code2=[Code2
+         '  /* Get work ptr of blocks */'
+         '  void **work;'
+         '  work = (void **)(z+'+string(size(z,'*')+lstsize(outtb))+');'
+         '']
 
 
   if Code_outtb<>[] then
-    Code=[Code
-          '  /* outtbptr declaration */'
-          '  '+rdnom+'_block_outtbptr = (void **)(z+'+string(nztotal)+');'
-          '']
+    Code2=[Code2
+           '  /* outtbptr declaration */'
+           '  '+rdnom+'_block_outtbptr = (void **)(z+'+string(nztotal)+');'
+           '']
   end
 
   Code_outtbptr=[];
@@ -3497,9 +1441,9 @@ function Code=make_standalone42()
   end
 
   if Code_outtbptr<>[] then
-    Code=[Code;
-          Code_outtbptr
-          '']
+    Code2=[Code2;
+           Code_outtbptr
+           '']
   end
 
   for kf=1:nblk
@@ -3510,232 +1454,296 @@ function Code=make_standalone42()
     //** add comment
     txt=[get_comment('set_blk',list(funs(kf),funtyp(kf),kf));]
 
-    Code=[Code;
-          '  '+txt];
+    Code2=[Code2;
+           '  '+txt];
 
-    Code=[Code;
-          '  block_'+rdnom+'['+string(kf-1)+'].type   = '+string(funtyp(kf))+';';
-          '  block_'+rdnom+'['+string(kf-1)+'].ztyp   = '+string(ztyp(kf))+';';
-          '  block_'+rdnom+'['+string(kf-1)+'].ng     = '+string(zcptr(kf+1)-zcptr(kf))+';';
-          '  block_'+rdnom+'['+string(kf-1)+'].nz     = '+string(zptr(kf+1)-zptr(kf))+';';
-          '  block_'+rdnom+'['+string(kf-1)+'].noz    = '+string(ozptr(kf+1)-ozptr(kf))+';';
-          '  block_'+rdnom+'['+string(kf-1)+'].nrpar  = '+string(rpptr(kf+1)-rpptr(kf))+';';
-          '  block_'+rdnom+'['+string(kf-1)+'].nopar  = '+string(opptr(kf+1)-opptr(kf))+';';
-          '  block_'+rdnom+'['+string(kf-1)+'].nipar  = '+string(ipptr(kf+1)-ipptr(kf))+';'
-          '  block_'+rdnom+'['+string(kf-1)+'].nin    = '+string(inpptr(kf+1)-inpptr(kf))+';';
-          '  block_'+rdnom+'['+string(kf-1)+'].nout   = '+string(outptr(kf+1)-outptr(kf))+';';
-          '  block_'+rdnom+'['+string(kf-1)+'].nevout = '+string(clkptr(kf+1)-clkptr(kf))+';';
-          '  block_'+rdnom+'['+string(kf-1)+'].nmode  = '+string(modptr(kf+1)-modptr(kf))+';';]
+    flex_ng     = zcptr(kf+1)-zcptr(kf);
+    flex_nz     = zptr(kf+1)-zptr(kf);
+    flex_noz    = ozptr(kf+1)-ozptr(kf);
+    flex_nin    = inpptr(kf+1)-inpptr(kf);
+    flex_nout   = outptr(kf+1)-outptr(kf);
+    flex_nevout = clkptr(kf+1)-clkptr(kf);
+    flex_nopar  = opptr(kf+1)-opptr(kf);
+
+    Code2=[Code2;
+           '  block_'+rdnom+'['+string(kf-1)+'].type   = '+string(funtyp(kf))+';';
+           '  block_'+rdnom+'['+string(kf-1)+'].ztyp   = '+string(ztyp(kf))+';';
+           '  block_'+rdnom+'['+string(kf-1)+'].ng     = '+string(flex_ng)+';';
+           '  block_'+rdnom+'['+string(kf-1)+'].nz     = '+string(flex_nz)+';';
+           '  block_'+rdnom+'['+string(kf-1)+'].noz    = '+string(flex_noz)+';';
+           '  block_'+rdnom+'['+string(kf-1)+'].nrpar  = '+string(rpptr(kf+1)-rpptr(kf))+';';
+           '  block_'+rdnom+'['+string(kf-1)+'].nopar  = '+string(flex_nopar)+';';
+           '  block_'+rdnom+'['+string(kf-1)+'].nipar  = '+string(ipptr(kf+1)-ipptr(kf))+';'
+           '  block_'+rdnom+'['+string(kf-1)+'].nin    = '+string(flex_nin)+';';
+           '  block_'+rdnom+'['+string(kf-1)+'].nout   = '+string(flex_nout)+';';
+           '  block_'+rdnom+'['+string(kf-1)+'].nevout = '+string(flex_nevout)+';';
+           '  block_'+rdnom+'['+string(kf-1)+'].nmode  = '+string(modptr(kf+1)-modptr(kf))+';';]
 
     if nx <> 0 then
-      Code=[Code;
-            '  block_'+rdnom+'['+string(kf-1)+'].nx = '+string(nx)+';';
-            '  block_'+rdnom+'['+string(kf-1)+'].x  = &(x['+string(xptr(kf)-1)+']);'
-            '  block_'+rdnom+'['+string(kf-1)+'].xd = &(xd['+string(xptr(kf)-1)+']);']
+      Code2=[Code2;
+             '  block_'+rdnom+'['+string(kf-1)+'].nx = '+string(nx)+';';
+             '  block_'+rdnom+'['+string(kf-1)+'].x  = &(x['+string(xptr(kf)-1)+']);'
+             '  block_'+rdnom+'['+string(kf-1)+'].xd = &(xd['+string(xptr(kf)-1)+']);']
     end
 
-    Code=[Code;
-          '  if ((block_'+rdnom+'['+string(kf-1)+'].evout  = '+...
-          'calloc(block_'+rdnom+'['+string(kf-1)+'].nevout,sizeof(double)))== NULL) return 0;'];
+    if flex_nevout <> 0 then
+      flex_str = rdnom +'_'+string(kf-1)+'_evout'
+      Code1=[Code1;
+             'double '+flex_str+'['+string(flex_nevout)+'];'
+            ]
+      Code2=[Code2;
+             '  block_'+rdnom+'['+string(kf-1)+'].evout = '+flex_str+';';
+            ];
+    end
 
     //***************************** input port *****************************//
-    //** alloc insz/inptr **//
-    Code=[Code;
-          '  if ((block_'+rdnom+'['+string(kf-1)+'].inptr  = '+...
-          'malloc(sizeof(double*)*block_'+rdnom+'['+string(kf-1)+'].nin))== NULL) return 0;';
-          '  if ((block_'+rdnom+'['+string(kf-1)+'].insz   = '+...
-          'malloc(3*sizeof(int)*block_'+rdnom+'['+string(kf-1)+'].nin))== NULL) return 0;'];
+    if flex_nin <> 0 then
+      flex_str = rdnom +'_'+string(kf-1)+'_inptr'
+      Code1=[Code1;
+             'double * '+flex_str+'['+string(flex_nin)+'];'
+            ]
+      Code2=[Code2;
+             '  block_'+rdnom+'['+string(kf-1)+'].inptr = '+flex_str+';';
+            ];
+      flex_str = rdnom +'_'+string(kf-1)+'_insz'
 
-    //** inptr **//
-    for k=1:nin
-       lprt=inplnk(inpptr(kf)-1+k);
-       Code=[Code
-             '  block_'+rdnom+'['+string(kf-1)+'].inptr['+string(k-1)+...
-             ']  = '+rdnom+'_block_outtbptr['+string(lprt-1)+'];']
+      Code2=[Code2;
+             '  block_'+rdnom+'['+string(kf-1)+'].insz = '+flex_str+';';
+            ];
+
+      //** inptr **//
+      for k=1:nin
+         lprt=inplnk(inpptr(kf)-1+k);
+         Code2=[Code2
+                '  block_'+rdnom+'['+string(kf-1)+'].inptr['+string(k-1)+...
+                ']  = '+rdnom+'_block_outtbptr['+string(lprt-1)+'];']
+      end
+
+      //** 1st dim **//
+      szCode='const int '+flex_str+'['+string(3*flex_nin)+']={'
+      for k=1:nin
+         lprt=inplnk(inpptr(kf)-1+k);
+         szCode=szCode+string(size(outtb(lprt),1))+','
+      end
+
+      //** 2dn dim **//
+      for k=1:nin
+         lprt=inplnk(inpptr(kf)-1+k);
+         szCode=szCode+string(size(outtb(lprt),2))+','
+      end
+
+      //** typ **//
+      for k=1:nin
+         lprt=inplnk(inpptr(kf)-1+k);
+         szCode=szCode+mat2scs_c_typ(outtb(lprt))+','
+      end
+      szCode=part(szCode,1:length(szCode)-1)+'};'
+      Code1=[Code1;
+	     szCode;
+	    ]
     end
-
-    //** 1st dim **//
-    for k=1:nin
-       lprt=inplnk(inpptr(kf)-1+k);
-       Code=[Code
-             '  block_'+rdnom+'['+string(kf-1)+'].insz['+string((k-1))+...
-             ']   = '+string(size(outtb(lprt),1))+';']
-    end
-
-    //** 2dn dim **//
-    for k=1:nin
-       lprt=inplnk(inpptr(kf)-1+k);
-       Code=[Code
-             '  block_'+rdnom+'['+string(kf-1)+'].insz['+string((k-1)+nin)+...
-             ']   = '+string(size(outtb(lprt),2))+';']
-    end
-
-    //** typ **//
-    for k=1:nin
-       lprt=inplnk(inpptr(kf)-1+k);
-       Code=[Code
-             '  block_'+rdnom+'['+string(kf-1)+'].insz['+string((k-1)+2*nin)+...
-             ']   = '+mat2scs_c_typ(outtb(lprt))+';'];
-    end
-    //**********************************************************************//
-
+    
     //***************************** output port *****************************//
-    //** alloc outsz/outptr **//
-    Code=[Code
-          '  if ((block_'+rdnom+'['+string(kf-1)+'].outsz  = '+...
-          'malloc(3*sizeof(int)*block_'+rdnom+'['+string(kf-1)+'].nout))== NULL) return 0;';
-          '  if ((block_'+rdnom+'['+string(kf-1)+'].outptr = '+...
-          'malloc(sizeof(double*)*block_'+rdnom+'['+string(kf-1)+'].nout))== NULL) return 0;'];
+    if flex_nout <> 0 then
+      flex_str = rdnom +'_'+string(kf-1)+'_outptr'
+      Code1=[Code1;
+             'double * '+flex_str+'['+string(flex_nout)+'];'
+            ]
+      Code2=[Code2;
+             '  block_'+rdnom+'['+string(kf-1)+'].outptr = '+flex_str+';';
+            ];
+      flex_str = rdnom +'_'+string(kf-1)+'_outsz'
+      Code2=[Code2;
+             '  block_'+rdnom+'['+string(kf-1)+'].outsz = '+flex_str+';';
+            ];
 
-    //** outptr **//
-    for k=1:nout
-       lprt=outlnk(outptr(kf)-1+k);
-       Code=[Code
-             '  block_'+rdnom+'['+string(kf-1)+'].outptr['+string(k-1)+...
-             '] = '+rdnom+'_block_outtbptr['+string(lprt-1)+'];']
+      //** outptr **//
+      for k=1:nout
+         lprt=outlnk(outptr(kf)-1+k);
+         Code2=[Code2
+                '  block_'+rdnom+'['+string(kf-1)+'].outptr['+string(k-1)+...
+                '] = '+rdnom+'_block_outtbptr['+string(lprt-1)+'];']
+      end
+
+      //** 1st dim **//
+      szCode='const int '+flex_str+'['+string(3*flex_nout)+']={'
+      for k=1:nout
+         lprt=outlnk(outptr(kf)-1+k);
+         szCode=szCode+string(size(outtb(lprt),1))+','
+      end
+
+      //** 2dn dim **//
+      for k=1:nout
+         lprt=outlnk(outptr(kf)-1+k);
+         szCode=szCode+string(size(outtb(lprt),2))+','
+      end
+
+      //** typ **//
+      for k=1:nout
+         lprt=outlnk(outptr(kf)-1+k);
+         szCode=szCode+mat2scs_c_typ(outtb(lprt))+','
+      end
+      szCode=part(szCode,1:length(szCode)-1)+'};'
+      Code1=[Code1;
+	     szCode;
+	    ]    
     end
 
-    //** 1st dim **//
-    for k=1:nout
-       lprt=outlnk(outptr(kf)-1+k);
-       Code=[Code
-             '  block_'+rdnom+'['+string(kf-1)+'].outsz['+string((k-1))+...
-             ']  = '+string(size(outtb(lprt),1))+';']
-    end
-
-    //** 2dn dim **//
-    for k=1:nout
-       lprt=outlnk(outptr(kf)-1+k);
-       Code=[Code
-             '  block_'+rdnom+'['+string(kf-1)+'].outsz['+string((k-1)+nout)+...
-             ']  = '+string(size(outtb(lprt),2))+';']
-    end
-
-    //** typ **//
-    for k=1:nout
-       lprt=outlnk(outptr(kf)-1+k);
-       Code=[Code
-             '  block_'+rdnom+'['+string(kf-1)+'].outsz['+string((k-1)+2*nout)+...
-             ']  = '+mat2scs_c_typ(outtb(lprt))+';']
-    end
     //**********************************************************************//
-
-    Code=[Code
-          '  block_'+rdnom+'['+string(kf-1)+...
-          '].z = &(z['+string(zptr(kf)-1)+']);']
+    Code2=[Code2
+           '  block_'+rdnom+'['+string(kf-1)+...
+           '].z = &(z['+string(zptr(kf)-1)+']);']
 
     if (part(funs(kf),1:7) ~= 'capteur' &...
         part(funs(kf),1:10) ~= 'actionneur' &...
         funs(kf) ~= 'bidon') then
       //** rpar **//
       if (rpptr(kf+1)-rpptr(kf)>0) then
-        Code=[Code;
-              '  block_'+rdnom+'['+string(kf-1)+...
-              '].rpar=&(RPAR['+string(rpptr(kf)-1)+']);']
+        Code2=[Code2;
+               '  block_'+rdnom+'['+string(kf-1)+...
+               '].rpar=&(RPAR['+string(rpptr(kf)-1)+']);']
       end
       //** ipar **//
       if (ipptr(kf+1)-ipptr(kf)>0) then
-        Code=[Code;
-              '  block_'+rdnom+'['+string(kf-1)+...
-              '].ipar=&(IPAR['+string(ipptr(kf)-1)+']);']
+        Code2=[Code2;
+               '  block_'+rdnom+'['+string(kf-1)+...
+               '].ipar=&(IPAR['+string(ipptr(kf)-1)+']);']
       end
+
+      //**********************************************************************//
       //** opar **//
-      if (opptr(kf+1)-opptr(kf)>0) then
-        Code=[Code;
-              '  if ((block_'+rdnom+'['+string(kf-1)+'].oparptr = '+...
-               'malloc(sizeof(void *)*block_'+rdnom+'['+string(kf-1)+'].nopar))== NULL ) return 0;';
-              '  if ((block_'+rdnom+'['+string(kf-1)+'].oparsz  = '+...
-               'malloc(2*sizeof(int)*block_'+rdnom+'['+string(kf-1)+'].nopar))== NULL ) return 0;';
-              '  if ((block_'+rdnom+'['+string(kf-1)+'].opartyp = '+...
-               'malloc(sizeof(int)*block_'+rdnom+'['+string(kf-1)+'].nopar))== NULL ) return 0;';
-              ]
-        nopar = opptr(kf+1)-opptr(kf);
+
+      if flex_nopar<> 0 then
+        flex_str = rdnom +'_'+string(kf-1)+'_oparptr'
+        Code1=[Code1;
+               'void * '+flex_str+'['+string(flex_nopar)+'];'
+            ]
+        Code2=[Code2;
+               '  block_'+rdnom+'['+string(kf-1)+'].oparptr = '+flex_str+';';
+              ];
+
+        flex_str = rdnom +'_'+string(kf-1)+'_oparsz'
+        Code2=[Code2;
+               '  block_'+rdnom+'['+string(kf-1)+'].oparsz = '+flex_str+';';
+              ];
+
+        flex_str = rdnom +'_'+string(kf-1)+'_opartyp'
+        Code2=[Code2;
+               '  block_'+rdnom+'['+string(kf-1)+'].opartyp = '+flex_str+';';
+              ];
+
+        nopar = flex_nopar;
         //** oparptr **//
         for k=1:nopar
-          Code=[Code;
-                '  block_'+rdnom+'['+string(kf-1)+'].oparptr['+string(k-1)+...
+          Code2=[Code2;
+                 '  block_'+rdnom+'['+string(kf-1)+'].oparptr['+string(k-1)+...
                  ']   = (void *) OPAR_'+string(opptr(kf)-1+k)+';'];
         end
         //** 1st dim **//
+	szCode='const int '+rdnom+'_'+string(kf-1)+'_oparsz['+string(2*flex_nopar)+']={';
         for k=1:nopar
-          Code=[Code;
-                '  block_'+rdnom+'['+string(kf-1)+'].oparsz['+string(k-1)+...
-                 ']    = '+string(size(opar(opptr(kf)-1+k),1))+';'];
+           szCode=szCode+string(size(opar(opptr(kf)-1+k),1))+',';
         end
         //** 2dn dim **//
         for k=1:nopar
-          Code=[Code;
-                '  block_'+rdnom+'['+string(kf-1)+'].oparsz['+string(nopar+(k-1))+...
-                 ']    = '+string(size(opar(opptr(kf)-1+k),2))+';'];
+           szCode=szCode+string(size(opar(opptr(kf)-1+k),2))+',';
         end
+        szCode=part(szCode,1:length(szCode)-1)+'};'
+        Code1=[Code1;
+	       szCode;
+	      ]    
+
         //** typ **//
+	szCode='const int '+rdnom+'_'+string(kf-1)+'_opartyp['+string(flex_nopar)+']={';
         for k=1:nopar
-          Code=[Code;
-                '  block_'+rdnom+'['+string(kf-1)+'].opartyp['+string(k-1)+...
-                ']   = '+mat2scs_c_typ(opar(opptr(kf)-1+k))+';'];
+           szCode=szCode+mat2scs_c_typ(opar(opptr(kf)-1+k))+',';
         end
+        szCode=part(szCode,1:length(szCode)-1)+'};'
+        Code1=[Code1;
+	       szCode;
+	      ]    
       end
+
+      //**********************************************************************//
       //** oz **//
-      if (ozptr(kf+1)-ozptr(kf)>0) then
-        noz = ozptr(kf+1)-ozptr(kf);
-        Code=[Code
-              '  if ((block_'+rdnom+'['+string(kf-1)+'].ozptr = '+...
-               'malloc(sizeof(void *)*block_'+rdnom+'['+string(kf-1)+'].noz))== NULL) return 0;';
-              '  if ((block_'+rdnom+'['+string(kf-1)+'].ozsz  = '+...
-               'malloc(2*sizeof(int)*block_'+rdnom+'['+string(kf-1)+'].noz))== NULL) return 0;';
-              '  if ((block_'+rdnom+'['+string(kf-1)+'].oztyp = '+...
-               'malloc(sizeof(int)*block_'+rdnom+'['+string(kf-1)+'].noz))== NULL) return 0;';]
+      if flex_noz>0 then
+        noz = flex_noz;
+        flex_str = rdnom +'_'+string(kf-1)+'_ozptr'
+        Code1=[Code1;
+               'void * '+flex_str+'['+string(flex_noz)+'];'
+            ]
+        Code2=[Code2;
+               '  block_'+rdnom+'['+string(kf-1)+'].ozptr = '+flex_str+';';
+              ];
+
+        flex_str = rdnom +'_'+string(kf-1)+'_ozsz'
+        Code2=[Code2;
+               '  block_'+rdnom+'['+string(kf-1)+'].ozsz = '+flex_str+';';
+              ];
+
+        flex_str = rdnom +'_'+string(kf-1)+'_oztyp'
+        Code2=[Code2;
+               '  block_'+rdnom+'['+string(kf-1)+'].oztyp = '+flex_str+';';
+              ];
+
         //** ozptr **//
         for k=1:noz
-          Code=[Code;
-                '  block_'+rdnom+'['+string(kf-1)+'].ozptr['+string(k-1)+...
-                 ']  = (void *) oz_'+string(ozptr(kf)-1+k)+';'];
+          Code2=[Code2;
+                 '  block_'+rdnom+'['+string(kf-1)+'].ozptr['+string(k-1)+...
+                 ']   = (void *) oz_'+string(ozptr(kf)-1+k)+';'];
         end
         //** 1st dim **//
+	szCode='const int '+rdnom+'_'+string(kf-1)+'_ozsz['+string(2*flex_noz)+']={';
         for k=1:noz
-          Code=[Code;
-                '  block_'+rdnom+'['+string(kf-1)+'].ozsz['+string(k-1)+...
-                 ']  = '+string(size(oz(ozptr(kf)-1+k),1))+';'];
+           szCode=szCode+string(size(oz(ozptr(kf)-1+k),1))+',';
         end
-        //** 2nd dim **//
+        //** 2dn dim **//
         for k=1:noz
-          Code=[Code;
-                '  block_'+rdnom+'['+string(kf-1)+'].ozsz['+string(noz+(k-1))+...
-                 ']  = '+string(size(oz(ozptr(kf)-1+k),2))+';'];
+           szCode=szCode+string(size(oz(ozptr(kf)-1+k),2))+',';
         end
+        szCode=part(szCode,1:length(szCode)-1)+'};'
+        Code1=[Code1;
+	       szCode;
+	      ]    
+
         //** typ **//
+	szCode='int '+rdnom+'_'+string(kf-1)+'_oztyp['+string(flex_noz)+']={';
         for k=1:noz
-          Code=[Code;
-                '  block_'+rdnom+'['+string(kf-1)+'].oztyp['+string(k-1)+...
-                 ']  = '+mat2scs_c_typ(oz(ozptr(kf)-1+k))+';'];
+           szCode=szCode+mat2scs_c_typ(oz(ozptr(kf)-1+k))+',';
         end
+        szCode=part(szCode,1:length(szCode)-1)+'};'
+        Code1=[Code1;
+	       szCode;
+	      ]    
       end
     end
-    Code=[Code;
-          '  block_'+rdnom+'['+string(kf-1)+'].work = '+...
+    Code2=[Code2;
+           '  block_'+rdnom+'['+string(kf-1)+'].work = '+...
            '(void **)(((double *)work)+'+string(kf-1)+');']
   end
 
   //** init
   Code=[Code;
+        Code1;
+        Code2;
         '   '+get_comment('flag',list(4))]
 
   for kf=1:nblk
-    if or(kf==act) | or(kf==cap) then
-        txt = call_block42(kf,0,4);
-        if txt <> [] then
-          Code=[Code;
-                '';
-                '  '+txt];
-        end
-    else
+//    if or(kf==act) | or(kf==cap) then
+//        txt = call_block42(kf,0,4);
+//        if txt <> [] then
+//          Code=[Code;
+//                '';
+//                '  '+txt];
+//        end
+//    else
       txt = call_block42(kf,0,4);
       if txt <> [] then
         Code=[Code;
               '';
               '  '+txt];
       end
-    end
+//    end
   end
 
   //** cst blocks and it's dep
@@ -3756,10 +1764,13 @@ function Code=make_standalone42()
         '/*'+part('-',ones(1,40))+'  ISR function */'
         'int '+rdnom+'_isr(double t)'
         '{'
-        '  int nevprt=1;'
+//        '  int nevprt=1;'
         '  int local_flag;'
-        '  int i;'
-        '  double *args[100];']
+	'  int i;'
+//	'#ifdef linux'
+//        '  double *args[2];'
+//	'#endif'
+       ]
 
   if (x <> []) then
     Code=[Code
@@ -3811,10 +1822,12 @@ function Code=make_standalone42()
           new_ev=ev-(clkptr(howclk)-1)
           //**
           txt4=[txt4;
-                Indent2+['case '+string(new_ev)+' : '+...
-                get_comment('ev',list(new_ev))
-                   txt2];
-                '    break;';'']
+//                Indent+['case '+string(new_ev)+' : '+...
+//                get_comment('ev',list(new_ev))
+                Indent+[get_comment('ev',list(new_ev))
+                txt2];
+//                '    break;';
+		'']
         end
       end
 
@@ -3822,9 +1835,10 @@ function Code=make_standalone42()
       if txt4 <> [] then
         txt3=[txt3;
               Indent+'/* Discrete activations */'
-              Indent+'switch (nevprt) {'
+//              Indent+'switch (nevprt) {'
               txt4
-              '  }'];
+//              '  }'
+             ];
       end
     end
 
@@ -3873,6 +1887,8 @@ function Code=make_standalone42()
   end
 
   Code=[Code
+	''
+	'  return 0;'
         '}']
 
   //** flag 5
@@ -3883,28 +1899,30 @@ function Code=make_standalone42()
         '{'
 	'  double t;'
         '  int local_flag;'
-        '  double *args[100];'
+//	'#ifdef linux'
+//        '  double *args[2];'
+//	'#endif'
         '']
 
   Code=[Code;
         '  '+get_comment('flag',list(5))]
 
   for kf=1:nblk
-    if or(kf==act) | or(kf==cap) then
-        txt = call_block42(kf,0,5);
-        if txt <> [] then
-          Code=[Code;
-                '';
-                '  '+txt];
-        end
-    else
+//    if or(kf==act) | or(kf==cap) then
+//        txt = call_block42(kf,0,5);
+//        if txt <> [] then
+//          Code=[Code;
+//                '';
+//                '  '+txt];
+//        end
+//    else
       txt = call_block42(kf,0,5);
       if txt <> [] then
         Code=[Code;
               '';
               '  '+txt];
       end
-    end
+//    end
   end
 
   Code=[Code
@@ -3916,10 +1934,7 @@ function Code=make_standalone42()
         '     char *SRNAME;'
         '     int *INFO;'
         '     long int L;'
-        '{'
-        '  printf(""** On entry to %s, parameter number %d""'
-        '         ""  had an illegal value\n"",SRNAME,*INFO);'
-        '}'
+        '{}'
         '']
 
   Code=[Code;
@@ -3974,8 +1989,10 @@ function Code=make_standalone42()
           '  int phase=2;'
           '  int local_flag;'
           '  int nport;'
-          '  int nevprt=1;'
-          '  double *args[100];'
+//          '  int nevprt=1;'
+//	  '#ifdef linux'
+//          '  double *args[2];'
+//	  '#endif'
           '  C2F(dset)(&neq, &c_b14,xd , &c__1);'
           '']
 
@@ -4128,7 +2145,8 @@ endfunction
 //Author : Rachid Djenidi, Alan Layec
 //Copyright INRIA
 function txt=make_static_standalone42()
-  txt=[];
+
+  txt=[''];
 
   //*** Continuous state ***//
   if x <> [] then
@@ -4152,7 +2170,7 @@ function txt=make_static_standalone42()
   if size(rpar,1) <> 0 then
     txt=[txt;
 	 '/* def real parameters */'
-         'double RPAR[ ] = {'];
+         '__CONST__ double RPAR[ ] = {'];
 
     for i=1:(length(rpptr)-1)
       if rpptr(i+1)-rpptr(i)>0  then
@@ -4209,7 +2227,10 @@ function txt=make_static_standalone42()
     txt($+1)='double RPAR[1];';
   end
 
-  txt = [txt;''];
+  txt = [txt;
+         '';
+         '#ifdef linux';
+        ]
   txt($+1) = 'int NRPAR = '+string(nbrpa)+';';
   txt($+1) = 'int NTOTRPAR = '+string(ntot_r)+';';
     
@@ -4225,6 +2246,10 @@ function txt=make_static_standalone42()
      lenRCode = 'int lenRPAR[1] = {0};'
   end
   txt($+1) = lenRCode;
+  txt = [txt;
+         '#endif';
+         '';
+        ]
 
   //***********************//
 
@@ -4232,8 +2257,8 @@ function txt=make_static_standalone42()
   nbipa=0;strICode='';lenICode=[];ntot_i=0;
   if size(ipar,1) <> 0 then
     txt=[txt;
-           '/* def int parameters */'
-           'int IPAR[ ] = {'];
+           '/* def integer parameters */'
+           '__CONST__ int IPAR[ ] = {'];
 
     for i=1:(length(ipptr)-1)
       if ipptr(i+1)-ipptr(i)>0  then
@@ -4290,6 +2315,10 @@ function txt=make_static_standalone42()
     txt($+1)='int IPAR[1];';
   end
 
+  txt = [txt;
+         '';
+         '#ifdef linux';
+        ]
   txt($+1) = 'int NIPAR = '+string(nbipa)+';';
   txt($+1) = 'int NTOTIPAR = '+string(ntot_i)+';';
 
@@ -4305,6 +2334,10 @@ function txt=make_static_standalone42()
      lenICode = 'int lenIPAR[1] = {0};'
   end
   txt($+1) = lenICode;
+  txt = [txt;
+         '#endif';
+         '';
+        ]
 
   //**************************//
 
@@ -4347,7 +2380,7 @@ function txt=make_static_standalone42()
 
         for j=1:opptr(i+1)-opptr(i)
           txt =[txt;
-                cformatline('static '+mat2c_typ(opar(opptr(i)+j-1)) +...
+                cformatline('static __CONST__ '+mat2c_typ(opar(opptr(i)+j-1)) +...
                             ' OPAR_'+string(opptr(i)+j-1) + '[] = {'+...
                             strcat(string(opar(opptr(i)+j-1)),',')+'};',70)]
         end
@@ -4358,163 +2391,6 @@ function txt=make_static_standalone42()
 
   txt=[txt;
        '']
-endfunction
-
-//==========================================================================
-//utilitary fonction used to format long C instruction
-//t : a string containing a C instruction
-//l : max line length allowed
-
-// Copyright INRIA
-//Author : Rachid Djenidi
-function t1=cformatline(t ,l)
-
-  sep=[',','+']
-  l1=l-2
-  t1=[]
-  kw=strindex(t,' ')
-  nw=0
-  if kw<>[] then
-    if kw(1)==1 then // there is leading blanks
-      k1=find(kw(2:$)-kw(1:$-1)<>1)
-      if k1==[] then // there is a single blank
-	nw=1
-      else
-	nw=kw(k1(1))
-      end
-    end
-  end
-  t=part(t,nw+1:length(t));
-  bl=part(' ',ones(1,nw))
-  l1=l-nw;first=%t
-  while %t 
-    if length(t)<=l then t1=[t1;bl+t],return,end
-    k=strindex(t,sep);
-    if k==[] then t1=[t1;bl+t],return,end
-    k($+1)=length(t)+1 // positions of the commas
-    i=find(k(1:$-1)<=l&k(2:$)>l) //nearest left comma (reltively to l)
-    if i==[] then i=1,end
-    t1=[t1;bl+part(t,1:k(i))]
-    t=part(t,k(i)+1:length(t))
-    if first then l1=l1-2;bl=bl+'  ';first=%f;end
-  end
-endfunction
-
-//==========================================================================
-//used in do_compile_superblock
-function vec=codebinaire(v,szclkIN)
-  vec=zeros(1,szclkIN)
-  for i=1:szclkIN
-    w=v/2;
-    vec(i)=v-2*int(w);
-    v=int(w);
-  end
-endfunction
-
-//==========================================================================
-function t=filetype(m)
-  m=int32(m)
-  filetypes=['Directory','Character device','Block device',...
-             'Regular file','FIFO','Symbolic link','Socket']
-  bits=[16384,8192,24576,32768,4096,40960,49152]
-  m=int32(m)&int32(61440)
-  t=filetypes(find(m==int32(bits)))
-endfunction
-
-//==========================================================================
-//get_blank : return blanks with a length
-//            of the given input string
-//
-//input : str : a string
-//
-//output : txt : blanks
-//
-//16/06/07 Author : A.Layec
-//Copyright INRIA
-function [txt] = get_blank(str)
- txt='';
- for i=1:length(str)
-     txt=txt+' ';
- end
-endfunction
-
-//==========================================================================
-// get_comment : return a C comment
-//               for generated code
-//
-//input : typ : a string
-//        param : a list
-//
-//output : a C comment
-//
-//16/06/07 Author : A.Layec
-//Copyright INRIA
-function [txt]=get_comment(typ,param)
-  txt = [];
-  select typ
-    //** main flag
-    case 'flag' then
-        select param(1)
-          case 0 then
-             txt = '/* Continuous state computation */'
-          case 1 then
-             txt = '/* Output computation */'
-          case 2 then
-             txt = '/* Discrete state computation */'
-          case 3 then
-             txt = '/* Output Event computation */'
-          case 4 then
-             txt = '/* Initialization */'
-          case 5 then
-             txt = '/* Ending */'
-          case 9 then
-             txt = '/* Update zero crossing surfaces */'
-        end
-    //** blocks activated on event number
-    case 'ev' then
-       txt = '/* Blocks activated on the event number '+string(param(1))+' */'
-
-    //** blk calling sequence
-    case 'call_blk' then
-        txt = ['/* Call of '''+param(1) + ...
-               ''' (type '+string(param(2))+' - blk nb '+...
-                    string(param(3))];
-        if ztyp(param(3)) then
-          txt=txt+' - with zcross) */';
-        else
-          txt=txt+') */';
-        end
-    //** proto calling sequence
-    case 'proto_blk' then
-        txt = ['/* prototype of '''+param(1) + ...
-               ''' (type '+string(param(2))];
-        if ztyp(param(3)) then
-          txt=txt+' - with zcross) */';
-        else
-          txt=txt+') */';
-        end
-    //** ifthenelse calling sequence
-    case 'ifthenelse_blk' then
-        txt = ['/* Call of ''if-then-else'' blk (blk nb '+...
-                    string(param(1))+') */']
-    //** eventselect calling sequence
-    case 'evtselect_blk' then
-        txt = ['/* Call of ''event-select'' blk (blk nb '+...
-                    string(param(1))+') */']
-    //** set block structure
-    case 'set_blk' then
-        txt = ['/* set blk struc. of '''+param(1) + ...
-               ''' (type '+string(param(2))+' - blk nb '+...
-                    string(param(3))+') */'];
-    //** Update xd vector ptr
-    case 'update_xd' then
-        txt = ['/* Update xd vector ptr */'];
-    //** Update g vector ptr
-    case 'update_g' then
-        txt = ['/* Update g vector ptr */'];
-    else
-      break;
-  end
 endfunction
 
 //==========================================================================
@@ -4557,6 +2433,7 @@ function [txt]=mat2c_typ(outtb)
      break;
  end
 endfunction
+
 
 //==========================================================================
 //mat2scs_c_nb  matrix to scicos C number (sci2sci_n)
@@ -4676,6 +2553,33 @@ function [txt]=mat2scs_c_typ(outtb)
      break;
  end
 endfunction
+
+function rename(folder,newname,ext)
+  oldname=folder+'/Makefile';
+  newname=folder+'/'+newname;
+  T=mgetl(oldname);
+  T=strsubst(T,'.obj','.o');
+  T=strsubst(T,'.o',ext);
+  T=strsubst(T,SCI,WSCI);
+  mputl(T,newname);
+  mdelete(oldname);
+endfunction
+
+//==========================================================================
+
+function Makename=rt_gen_make(name,files,libs)
+
+  Makename=rpat+'/Makefile';
+
+  T=mgetl(TARGETDIR+'/'+makfil);
+  T=strsubst(T,'$$MODEL$$',name);
+  T=strsubst(T,'$$OBJ$$',strcat(files+'.o',' '));
+  T=strsubst(T,'$$SCILAB_DIR$$',SCI);
+  mputl(T,Makename)
+
+endfunction
+
+
 
 //==========================================================================
 //scs_c_n2c_fmt : scicos C number to C format
@@ -4799,15 +2703,6 @@ function [scs_nb]=scs_c_nb2scs_nb(c_nb)
 endfunction
 
 //==========================================================================
-//used in do_compile_superblock
-function XX=update_block(XX)
-  execstr('o='+rdnom+'_c(''define'')')
-  XX.model=o.model
-  XX.gui=rdnom+'_c';
-  XX.graphics.gr_i=o.graphics.gr_i
-endfunction
-
-//==========================================================================
 //write_code_cdoit : generate body of the code for
 //                   for all time dependant blocks
 //
@@ -4818,6 +2713,7 @@ endfunction
 //12/07/07 Alan Layec
 //Copyright INRIA
 function [txt]=write_code_cdoit(flag)
+
   txt=[];
 
   for j=1:ncord
@@ -4825,23 +2721,23 @@ function [txt]=write_code_cdoit(flag)
     pt=cord(j,2);
     //** blk
     if funtyp(bk)>-1 then
-      if or(bk==act) | or(bk==cap) then
-        if stalone then
-          txt2=call_block42(bk,pt,flag);
-          if txt2<>[] then
-            txt=[txt;
-                 '    '+txt2
-                 ''];
-          end
-        end
-      else
+//      if or(bk==act) | or(bk==cap) then
+//        if stalone then
+//          txt2=call_block42(bk,pt,flag);
+//          if txt2<>[] then
+//            txt=[txt;
+//                 '    '+txt2
+//                 ''];
+//          end
+//        end
+//      else
         txt2=call_block42(bk,pt,flag);
         if txt2<>[] then
           txt=[txt;
                '  '+txt2
                ''];
         end
-      end
+//      end
     //** ifthenelse blk
     elseif funtyp(bk)==-1 then
       ix=-1+inplnk(inpptr(bk));
@@ -4889,7 +2785,7 @@ function [txt]=write_code_cdoit(flag)
         //** C **//
         tmp_='*(('+TYPE+' *)'+rdnom+'_block_outtbptr['+string(ix)+'])'
         txt=[txt;
-             '  i=max(min((int) '+...
+             '  i=max(min((integer) '+...
               tmp_+',block_'+rdnom+'['+string(bk-1)+'].evout),1);'
              '  switch(i)'
              '  {']
@@ -4931,6 +2827,7 @@ endfunction
 //
 //12/07/07 Alan Layec
 function [txt]=write_code_doit(ev,flag)
+
   txt=[];
 
   for j=ordptr(ev):ordptr(ev+1)-1
@@ -4938,23 +2835,23 @@ function [txt]=write_code_doit(ev,flag)
     pt=ordclk(j,2);
     //** blk
     if funtyp(bk)>-1 then
-      if or(bk==act) | or(bk==cap) then
-        if stalone then
-          txt2=call_block42(bk,pt,flag);
-          if txt2<>[] then
-            txt=[txt;
-                 '    '+txt2
-                 ''];
-          end
-        end
-      else
+//      if or(bk==act) | or(bk==cap) then
+//        if stalone then
+//          txt2=call_block42(bk,pt,flag);
+//          if txt2<>[] then
+//            txt=[txt;
+//                 '    '+txt2
+//                 ''];
+//          end
+//        end
+//      else
         txt2=call_block42(bk,pt,flag);
         if txt2<>[] then
           txt=[txt;
                '    '+txt2
                ''];
         end
-      end
+//      end
     //** ifthenelse blk
     elseif funtyp(bk)==-1 then
       ix=-1+inplnk(inpptr(bk));
@@ -5002,7 +2899,7 @@ function [txt]=write_code_doit(ev,flag)
         tmp_='*(('+TYPE+' *)'+rdnom+'_block_outtbptr['+string(ix)+'])'
         //** C **//
         txt=[txt;
-             '    i=max(min((int) '+...
+             '    i=max(min((integer) '+...
               tmp_+',block_'+rdnom+'['+string(bk-1)+'].evout),1);'
              '    switch(i)'
              '    {']
@@ -5044,6 +2941,7 @@ endfunction
 //15/07/07 Alan Layec
 //Copyright INRIA
 function [txt]=write_code_idoit()
+
   txt=[];
 
   for j=1:niord
@@ -5051,23 +2949,23 @@ function [txt]=write_code_idoit()
     pt=iord(j,2);
     //** blk
     if funtyp(bk)>-1 then
-      if or(bk==act) then
-        if stalone then
-          txt2=call_block42(bk,pt,1);
-          if txt2<>[] then
-            txt=[txt;
-                 '  '+txt2
-                 ''];
-          end
-        end
-      else
+//      if or(bk==act) then
+//        if stalone then
+//          txt2=call_block42(bk,pt,1);
+//          if txt2<>[] then
+//            txt=[txt;
+//                 '  '+txt2
+//                 ''];
+//          end
+//        end
+//      else
         txt2=call_block42(bk,pt,1);
         if txt2<>[] then
           txt=[txt;
                '  '+txt2
                ''];
         end
-      end
+//      end
     //** ifthenelse blk
     elseif funtyp(bk)==-1 then
       ix=-1+inplnk(inpptr(bk));
@@ -5115,7 +3013,7 @@ function [txt]=write_code_idoit()
         //** C **//
         tmp_='*(('+TYPE+' *)'+rdnom+'_block_outtbptr['+string(ix)+'])'
         txt=[txt;
-             '  i=max(min((int) '+...
+             '  i=max(min((integer) '+...
               tmp_+',block_'+rdnom+'['+string(bk-1)+'].evout),1);']
         txt=[txt;
              '  switch(i)'
@@ -5158,6 +3056,7 @@ endfunction
 //12/07/07 Alan Layec
 //Copyright INRIA
 function [txt]=write_code_odoit(flag)
+
   txt=[];
 
   for j=1:noord
@@ -5230,7 +3129,7 @@ function [txt]=write_code_odoit(flag)
         tmp_='*(('+TYPE+' *)'+rdnom+'_block_outtbptr['+string(ix)+'])'
         txt=[txt;
              '    if (block_'+rdnom+'['+string(bk-1)+'].nmode<0) {';
-             '      i=max(min((int) '+...
+             '      i=max(min((integer) '+...
                 tmp_+',block_'+rdnom+'['+string(bk-1)+'].evout),1);'
              '    }'
              '    else {'
@@ -5265,588 +3164,63 @@ function [txt]=write_code_odoit(flag)
 
 endfunction
 
-//==========================================================================
-//write_code_ozdoit : generate body of the code for both
-//                    flag 0 & flag 9
-//
-//input: ev  : evt number for block's call
-//      flag : flag number for block's call
-//
-//output : txt for flag 0 or flag 9
-//
-//12/07/07 Alan Layec
-//Copyright INRIA
-function [txt]=write_code_ozdoit(ev,flag)
-  txt=[];
+function [files]=write_code(Code,CCode,FCode)
 
-  for j=ordptr(ev):ordptr(ev+1)-1
-    bk=ordclk(j,1);
-    pt=ordclk(j,2);
-    //** blk
-    if funtyp(bk)>-1 then
-      if (or(bk==act) | or(bk==cap)) & (flag==1) then
-        if stalone then
-          txt=[txt;
-               '    '+call_block42(bk,pt,flag)
-               ''];
-        end
-      else
-        txt2=call_block42(bk,pt,flag);
-        if txt2<>[] then
-          txt=[txt;
-               '    '+txt2
-               ''];
-        end
-      end
-    //** ifthenelse blk
-    elseif funtyp(bk)==-1 then
-      ix=-1+inplnk(inpptr(bk));
-      TYPE=mat2c_typ(outtb(ix+1)); //** scilab index start from 1
-      thentxt=write_code_ozdoit(clkptr(bk),flag);
-      elsetxt=write_code_ozdoit(clkptr(bk)+1,flag);
-      if thentxt<>[] | elsetxt<>[] then
-        txt=[txt;
-             '    '+get_comment('ifthenelse_blk',list(bk));]
-        //** C **//
-        tmp_ = '*(('+TYPE+' *)'+rdnom+'_block_outtbptr['+string(ix)+'])'
-        txt=[txt;
-             '    if (((phase==1'+...
-              ' || block_'+rdnom+'['+string(bk-1)+'].nmode==0)'+...
-              ' && '+tmp_+'>0)'+...
-              ' || \'
-             '        ((phase!=1'+...
-              ' && block_'+rdnom+'['+string(bk-1)+'].nmode!=0)'+...
-              ' && block_'+rdnom+'['+string(bk-1)+'].mode[0]==1)) {']
-        //*******//
-        txt=[txt;
-             Indent+thentxt]
-        //** C **//
-        txt=[txt;
-             '    }'];
-        //*******//
-        if elsetxt<>[] then
-           //** C **//
-           txt=[txt;
-                '      else if (((phase==1'+...
-                 ' || block_'+rdnom+'['+string(bk-1)+'].nmode==0)'+...
-                 ' && '+tmp_+'<=0)'+...
-                 ' || \'
-                '               ((phase!=1'+...
-                 ' && block_'+rdnom+'['+string(bk-1)+'].nmode!=0)'+...
-                 ' && block_'+rdnom+'['+string(bk-1)+'].mode[0]==2)) {';]
-          //*******//
-          txt=[txt;
-               Indent+elsetxt]
-          //** C **//
-          txt=[txt;
-                '    }'];
-          //*******//
-        end
-      end
-    //** eventselect blk
-    elseif funtyp(bk)==-2 then
-      Noutport=clkptr(bk+1)-clkptr(bk);
-      ix=-1+inplnk(inpptr(bk));
-      TYPE=mat2c_typ(outtb(ix+1)); //** scilab index start from 1
-      II=[];
-      switchtxt=list()
-      for i=1: Noutport
-        switchtxt(i)=write_code_ozdoit(clkptr(bk)+i-1,flag);
-        if switchtxt(i)<>[] then II=[II i];end
-      end
-      if II<>[] then
-        txt=[txt;
-             '    '+get_comment('evtselect_blk',list(bk));]
-        //** C **//
-        tmp_='*(('+TYPE+' *)'+rdnom+'_block_outtbptr['+string(ix)+'])'
-        txt=[txt;
-             '    if (phase==1 || block_'+rdnom+'['+string(bk-1)+'].nmode==0) {';
-             '      i=max(min((int) '+...
-              tmp_+',block_'+rdnom+'['+string(bk-1)+'].evout),1);'
-             '    }'
-             '    else {'
-             '      i=block_'+rdnom+'['+string(bk-1)+'].mode[0];'
-             '    }']
-        txt=[txt;
-             '    switch(i)'
-             '    {'];
-        //*******//
-        for i=II
-          //** C **//
-          txt=[txt;
-               '     case '+string(i)+' :';]
-          //*******//
-          txt=[txt;
-               BigIndent+write_code_ozdoit(clkptr(bk)+i-1,flag);]
-          //** C **//
-          txt=[txt;
-               BigIndent+'break;']
-          //*******//
-        end
-        //** C **//
-        txt=[txt;
-             '    }'];
-        //*******//
-      end
-    //** Unknown block
-    else
-      error('Unknown block type '+string(bk));
+ ierr=execstr('mputl(Code,rpat+''/''+rdnom+''.c'')','errcatch')
+  if ierr<>0 then
+    message(lasterror())
+    ok=%f
+    return
+  end
+
+  if FCode<>[] then
+    ierr=execstr('mputl(FCode,rpat+''/''+rdnom+''f.f'')','errcatch')
+    if ierr<>0 then
+      message(lasterror())
+      ok=%f
+      return
     end
   end
 
-endfunction
-
-//==========================================================================
-//write_code_zdoit : generate body of the code for
-//                   ordering calls of blocks before
-//                   continuous time zero crossing
-//                   detection
-//
-//input : noting
-//
-//output : txt for flag 9
-//
-//12/07/07 Alan Layec
-//Copyright INRIA
-function [txt]=write_code_zdoit()
-  txt=[];
-
-  //** first pass (flag 1)
-  for j=1:nzord
-    bk=zord(j,1);
-    pt=zord(j,2);
-    //** blk
-    if funtyp(bk)>-1 then
-      if or(bk==act) | or(bk==cap) then
-        if stalone then
-          txt=[txt;
-               '    '+call_block42(bk,pt,1)
-               ''];
-        end
-      else
-        txt2=call_block42(bk,pt,1);
-        if txt2<>[] then
-          txt=[txt;
-               '    '+txt2
-               ''];
-        end
-      end
-    //** ifthenelse blk
-    elseif funtyp(bk)==-1 then
-      ix=-1+inplnk(inpptr(bk));
-      TYPE=mat2c_typ(outtb(ix+1)); //** scilab index start from 1
-      thentxt=write_code_ozdoit(clkptr(bk),1);
-      elsetxt=write_code_ozdoit(clkptr(bk)+1,1);
-      if thentxt<>[] | elsetxt<>[] then
-        txt=[txt;
-             '    '+get_comment('ifthenelse_blk',list(bk));]
-        //** C **//
-        tmp_ = '*(('+TYPE+' *)'+rdnom+'_block_outtbptr['+string(ix)+'])'
-        txt=[txt;
-             '    if (((phase==1'+...
-              ' || block_'+rdnom+'['+string(bk-1)+'].nmode==0)'+...
-              ' && '+tmp_+'>0)'+...
-              ' || \'
-             '        ((phase!=1'+...
-              ' && block_'+rdnom+'['+string(bk-1)+'].nmode!=0)'+...
-              ' && block_'+rdnom+'['+string(bk-1)+'].mode[0]==1)) {']
-        //*******//
-        txt=[txt;
-             Indent+thentxt]
-        //** C **//
-        txt=[txt;
-             '    }'];
-        //*******//
-        if elsetxt<>[] then
-           //** C **//
-           txt=[txt;
-                '      else if (((phase==1'+...
-                 ' || block_'+rdnom+'['+string(bk-1)+'].nmode==0)'+...
-                 ' && '+tmp_+'<=0)'+...
-                 ' || \'
-                '               ((phase!=1'+...
-                 ' && block_'+rdnom+'['+string(bk-1)+'].nmode!=0)'+...
-                 ' && block_'+rdnom+'['+string(bk-1)+'].mode[0]==2)) {';]
-          //*******//
-          txt=[txt;
-               Indent+elsetxt]
-          //** C **//
-          txt=[txt;
-               '    }'];
-          //*******//
-        end
-      end
-    //** eventselect blk
-    elseif funtyp(bk)==-2 then
-      Noutport=clkptr(bk+1)-clkptr(bk);
-      ix=-1+inplnk(inpptr(bk));
-      TYPE=mat2c_typ(outtb(ix+1)); //** scilab index start from 1
-      II=[];
-      switchtxt=list()
-      for i=1: Noutport
-        switchtxt(i)=write_code_ozdoit(clkptr(bk)+i-1,1);
-        if switchtxt(i)<>[] then II=[II i];end
-      end
-      if II<>[] then
-        txt=[txt;
-             '    '+get_comment('evtselect_blk',list(bk));]
-        //** C **//
-        tmp_='*(('+TYPE+' *)'+rdnom+'_block_outtbptr['+string(ix)+'])'
-        txt=[txt;
-             '    if (phase==1 || block_'+rdnom+'['+string(bk-1)+'].nmode==0){';
-             '      i=max(min((int) '+...
-               tmp_+',block_'+rdnom+'['+string(bk-1)+'].evout),1);'
-             '    else {'
-             '      i=block_'+rdnom+'['+string(bk-1)+'].mode[0];'
-             '    }']
-        txt=[txt;
-             '      switch(i)'
-             '      {'];
-        //*******//
-        for i=II
-          //** C **//
-          txt=[txt;
-               '       case '+string(i)+' :';]
-          //*******//
-          txt=[txt;
-               BigIndent+write_code_ozdoit(clkptr(bk)+i-1,1);]
-          //** C **//
-          txt=[txt;
-               BigIndent+'break;']
-          //*******//
-        end
-        //** C **//
-        txt=[txt;
-             '      }'];
-        //*******//
-      end
-    //** Unknown block
-    else
-      error('Unknown block type '+string(bk));
+  if CCode<>[] then
+    CCode = [
+          '#include <math.h>';
+          '#include <stdlib.h>';
+          '#include <scicos/scicos_block4.h>';
+	  '';
+	  CCode];
+    ierr=execstr('mputl(CCode,rpat+''/''+rdnom+''_Cblocks.c'')','errcatch')
+    if ierr<>0 then
+      message(lasterror())
+      ok=%f
+      return
     end
   end
 
-  //** second pass (flag 9)
-  for j=1:nzord
-    bk=zord(j,1);
-    pt=zord(j,2);
-    //** blk
-    if funtyp(bk)>-1 then
-        if or(bk==act) | or(bk==cap) then 
-          if stalone then
-            txt=[txt;
-                 '    '+call_block42(bk,pt,9)
-                 ''];
-          end
-        else
-          txt2=call_block42(bk,pt,9);
-          if txt2<>[] then
-            txt=[txt;
-                 '    '+txt2
-                 ''];
-          end
-        end
+  files=[]
+  [fd,ierr]=mopen(rpat+'/'+rdnom+'f.f','r')
+  if ierr==0 then mclose(fd),files=[files,rdnom+'f'],end
+  [fd,ierr]=mopen(rpat+'/'+rdnom+'_Cblocks.c','r')
+  if ierr==0 then mclose(fd),files=[files,rdnom+'_Cblocks'],end
 
-    //** ifthenelse blk
-    elseif funtyp(bk)==-1 then
-        ix=-1+inplnk(inpptr(bk));
-        TYPE=mat2c_typ(outtb(ix+1)); //** scilab index start from 1
-        //** C **//
-        tmp_='*(('+TYPE+' *)'+rdnom+'_block_outtbptr['+string(ix)+'])'
-        //*******//
-        thentxt=write_code_zzdoit(clkptr(bk),9);
-        elsetxt=write_code_zzdoit(clkptr(bk)+1,9);
-        txt=[txt;
-             '    '+get_comment('ifthenelse_blk',list(bk));]
-        //** C **//
-        txt=[txt;
-              '    g['+string(zcptr(bk)-1)+']=(double)'+tmp_+';']
-        //*******//
-        if thentxt<>[] | elsetxt<>[] then
-           //** C **//
-           txt=[txt;
-                '    if (g['+string(zcptr(bk)-1)+'] > 0.){']
-           //*******//
-           txt=[txt;
-                Indent+thentxt]
-           //** C **//
-           txt=[txt;
-                '      }']
-           //*******//
-           if elsetxt <> [] then
-             //** C **//
-             txt=[txt;
-                  '      else {']
-             //*******//
-             txt=[txt;
-                  Indent+elsetxt]
-             //** C **//
-             txt=[txt;
-                  '      }']
-             //*******//
-           end
-        end
-        //** C **//
-        txt=[txt;
-              '    if(phase==1 && block_'+rdnom+'['+string(bk-1)+'].nmode > 0){'
-              '      if (g['+string(zcptr(bk)-1)+'] > 0.){'
-              '        block_'+rdnom+'['+string(bk-1)+'].mode[0] = 1;'
-              '      }'
-              '      else {'
-              '        block_'+rdnom+'['+string(bk-1)+'].mode[0] = 2;'
-              '      }'
-              '    }']
-        //*******//
-    //** eventselect blk
-    elseif funtyp(bk)==-2 then
-        Noutport=clkptr(bk+1)-clkptr(bk);
-        ix=-1+inplnk(inpptr(bk));
-        TYPE=mat2c_typ(outtb(ix+1));  //** scilab index start from 1
-        //** C **//
-        tmp_='*(('+TYPE+' *)'+rdnom+'_block_outtbptr['+string(ix)+'])'
-        //*******//
-        II=[];
-        switchtxt=list()
-        for i=1:Noutport
-          switchtxt(i)=write_code_zzdoit(clkptr(bk)+i-1,9);
-          if switchtxt(i)<>[] then II=[II i];end
-        end
-        txt=[txt;
-             '    '+get_comment('evtselect_blk',list(bk));]
-        if II<>[] then
-          //** C **//
-          txt=[txt;
-               '    j=max(min((int) '+...
-                tmp_+',block_'+rdnom+'['+string(bk-1)+'].nevout),1);']
-          txt=[txt;
-               '    switch(j)'
-               '    {'];
-          //*******//
-          for i=II
-            //** C **//
-            txt=[txt;
-                 '     case '+string(j)+' :';]
-            //*******//
-            txt=[txt;
-                 BigIndent+write_code_zzdoit(clkptr(bk)+i-1,9);]
-            //** C **//
-            txt=[txt;
-                 BigIndent+'break;']
-            //*******//
-          end
-          //** C **//
-          txt=[txt;
-               '    }'];
-          //*******//
-        end
-        //** C **//
-        txt=[txt;
-             '  for (jj=0;jj<block_'+rdnom+'['+string(fun-1)+'].nevout-1;++jj) {'
-             '    g['+string(zcptr(bk)-1)+'+jj]=(double)'+tmp_+'-(double)(jj+2);'
-             '  }'
-             '  if(phase==1 && block_'+rdnom+'['+string(bk-1)+'].nmode>0){'
-             '    j=max(min((int) '+tmp_+','
-             '              block_'+rdnom+'['+string(bk-1)+'].nevout),1);'
-             '    block_'+rdnom+'['+string(bk-1)+'].mode[0]= j;'
-             '  }']
-        //*******//
-    //** Unknown block
-    else
-      error('Unknown block type '+string(bk));
-    end
+  //** copy source code of machine.h/scicos_block4.h
+  //   in target path
+  txt=mgetl(SCI+'/routines/machine.h');
+  ierr=execstr('mputl(txt,rpat+''/machine.h'')','errcatch')
+  if ierr<>0 then
+    message(lasterror())
+    ok=%f
+    return
+  end
+
+  txt=mgetl(SCI+'/routines/scicos/scicos_block4.h');
+  ierr=execstr('mputl(txt,rpat+''/scicos_block4.h'')','errcatch')
+  if ierr<>0 then
+    message(lasterror())
+    ok=%f
+    return
   end
 
 endfunction
 
 //==========================================================================
-//write_code_zzdoit : generate body of the code for
-//                    flag 9
-//
-//input: ev  : evt number for block's call
-//      flag : flag number for block's call
-//
-//output : txt for flag 9
-//
-//12/07/07 Alan Layec
-//Copyright INRIA
-function [txt]=write_code_zzdoit(ev,flag)
-  txt=[];
-
-  for j=ordptr(ev):ordptr(ev+1)-1
-    bk=ordclk(j,1);
-    pt=ordclk(j,2);
-    //** blk
-    if funtyp(bk)>-1 then
-      if or(bk==act) | or(bk==cap) then
-        if stalone then
-          txt=[txt;
-               '    '+call_block42(bk,pt,flag)
-               ''];
-        end
-      else
-        txt2=call_block42(bk,pt,flag);
-        if txt2<>[] then
-          txt=[txt;
-               '    '+txt2
-               ''];
-        end
-      end
-    //** ifthenelse blk
-    elseif funtyp(bk)==-1 then
-        ix=-1+inplnk(inpptr(bk));
-        TYPE=mat2c_typ(outtb(ix+1)); //** scilab index start from 1
-        //** C **//
-        tmp_='*(('+TYPE+' *)'+rdnom+'_block_outtbptr['+string(ix)+'])'
-        //*******//
-        thentxt=write_code_zzdoit(clkptr(bk),9);
-        elsetxt=write_code_zzdoit(clkptr(bk)+1,9);
-        txt=[txt;
-             '    '+get_comment('ifthenelse_blk',list(bk));]
-        //** C **//
-        txt=[txt;
-              '    g['+string(zcptr(bk)-1)+']=(double)'+tmp_+';']
-        //*******//
-        if thentxt<>[] | elsetxt<>[] then
-           //** C **//
-           txt=[txt;
-                '    if (g['+string(zcptr(bk)-1)+'] > 0.){']
-           //*******//
-           txt=[txt;
-                Indent+thentxt]
-           //** C **//
-           txt=[txt;
-                '      }']
-           //*******//
-           if elsetxt <> [] then
-             //** C **//
-             txt=[txt;
-                  '      else {']
-             //*******//
-             txt=[txt;
-                  Indent+elsetxt]
-             //** C **//
-             txt=[txt;
-                  '      }']
-             //*******//
-           end
-        end
-        //** C **//
-        txt=[txt;
-              '    if(phase==1 && block_'+rdnom+'['+string(bk-1)+'].nmode > 0){'
-              '      if (g['+string(zcptr(bk)-1)+'] > 0.){'
-              '        block_'+rdnom+'['+string(bk-1)+'].mode[0] = 1;'
-              '      }'
-              '      else {'
-              '        block_'+rdnom+'['+string(bk-1)+'].mode[0] = 2;'
-              '      }'
-              '    }']
-        //*******//
-
-    //** eventselect blk
-    elseif funtyp(bk)==-2 then
-        Noutport=clkptr(bk+1)-clkptr(bk);
-        ix=-1+inplnk(inpptr(bk));
-        TYPE=mat2c_typ(outtb(ix+1));  //** scilab index start from 1
-        //** C **//
-        tmp_='*(('+TYPE+' *)'+rdnom+'_block_outtbptr['+string(ix)+'])'
-        //*******//
-        II=[];
-        switchtxt=list()
-        for i=1:Noutport
-          switchtxt(i)=write_code_zzdoit(clkptr(bk)+i-1,9);
-          if switchtxt(i)<>[] then II=[II i];end
-        end
-        txt=[txt;
-             '    '+get_comment('evtselect_blk',list(bk));]
-        if II<>[] then
-          //** C **//
-          txt=[txt;
-               '    j=max(min((int) '+...
-                tmp_+',block_'+rdnom+'['+string(bk-1)+'].nevout),1);']
-          txt=[txt;
-               '    switch(j)'
-               '    {'];
-          //*******//
-          for i=II
-            //** C **//
-            txt=[txt;
-                 '     case '+string(j)+' :';]
-            //*******//
-            txt=[txt;
-                 BigIndent+write_code_zzdoit(clkptr(bk)+i-1,9);]
-            //** C **//
-            txt=[txt;
-                 BigIndent+'break;']
-            //*******//
-          end
-          //** C **//
-          txt=[txt;
-               '    }'];
-          //*******//
-        end
-        //** C **//
-        txt=[txt;
-             '  for (jj=0;jj<block_'+rdnom+'['+string(fun-1)+'].nevout-1;++jj) {'
-             '    g['+string(zcptr(bk)-1)+'+jj]=(double)'+tmp_+'-(double)(jj+2);'
-             '  }'
-             '  if(phase==1 && block_'+rdnom+'['+string(bk-1)+'].nmode>0){'
-             '    j=max(min((int) '+tmp_+','
-             '              block_'+rdnom+'['+string(bk-1)+'].nevout),1);'
-             '    block_'+rdnom+'['+string(bk-1)+'].mode[0]= j;'
-             '  }']
-        //*******//
-
-    //** Unknown block
-    else
-      error('Unknown block type '+string(bk));
-    end
-  end
-
-endfunction
-
-//==========================================================================
-
-function ok = compile_standalone()
-//compile rt standalone executable for standalone
-// 22.01.2004
-//Author : Roberto Bucher (roberto.bucher@die.supsi.ch)
-  xinfo('Compiling standalone');
-  wd = pwd();
-  chdir(rpat);
-
-  if getenv('WIN32','NO')=='OK' then
-     unix_w('nmake -f Makefile.mak');
-  else
-     unix_w('make')
-  end
-  chdir(wd);
-  ok = %t;
-endfunction	
-
-//==========================================================================
-
-function rename(folder,newname,ext)
-  oldname=folder+'/Makefile';
-  newname=folder+'/'+newname;
-  T=mgetl(oldname);
-  T=strsubst(T,'.obj','.o');
-  T=strsubst(T,'.o',ext);
-  T=strsubst(T,SCI,WSCI);
-  mputl(T,newname);
-  mdelete(oldname);
-endfunction
-
-//==========================================================================
-
-function Makename=rt_gen_make(name,files,libs)
-  Makename=rpat+'/Makefile';
-
-  T=mgetl(TARGETDIR+'/'+makfil);
-  T=strsubst(T,'$$MODEL$$',name);
-  T=strsubst(T,'$$OBJ$$',strcat(files+'.o',' '));
-  T=strsubst(T,'$$SCILAB_DIR$$',SCI);
-  mputl(T,Makename)
-
-endfunction
-
-

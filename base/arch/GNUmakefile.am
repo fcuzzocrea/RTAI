@@ -14,9 +14,15 @@ if CONFIG_PPC
 ARCHDIR = ppc
 endif
 
+if CONFIG_M68KNOMMU
+ARCHDIR = m68knommu
+endif
+
 SUBDIRS = $(ARCHDIR)
 
 modext = @RTAI_MODULE_EXT@
 
 rtai_hal$(modext):
 	@(cd $(ARCHDIR)/hal && make rtai_hal$(modext))
+
+EXTRA_DIST = x86/patches

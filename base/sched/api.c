@@ -815,7 +815,15 @@ int rt_task_wait_period(void)
 		rt_schedule();
 		blocked_on = rt_current->blocked_on;
 		rt_global_restore_flags(flags);
+#ifdef CONFIG_M68K
+		//Workaround of a gcc bug
+		if(blocked_on == RTP_OBJREM) {
+			__asm__ __volatile__ ("nop");
+		}
+		return likely(!blocked_on) ? 0L : RTE_UNBLKD;
+#else
 		return likely(!blocked_on) ? 0 : RTE_UNBLKD;
+#endif
 	}
 	rt_global_restore_flags(flags);
 	return RTE_TMROVRN;

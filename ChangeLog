@@ -1,6 +1,6 @@
 2008-11-15 Valentin Pavlyuchenko <TheValik@gmail.com>
 
-	* /base/include/asm-m68knommu/ added m68knommu arch specific include
+	* /base/include/asm-m68knommu: added m68knommu arch specific include
 	  support.
 	* /base/arch/m68knommu: added overall m68knommu arch specific
 	  directory.

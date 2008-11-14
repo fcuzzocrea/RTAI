@@ -25,6 +25,18 @@ AC_ARG_WITH(CC,
 	esac
 	CC="$withval"
     ])
+
+CROSS_COMPILE=
+case "$host" in
+ m68knommu-*)
+	LDFLAGS="-Wl,-elf2flt"
+	enable_shared=no
+	CROSSCOMPILE_TEST="tools/ucfront-gcc "$CROSS_COMPILE"gcc"
+	;;
+esac
+AC_MSG_CHECKING([for CROSS_COMPILE])
+AC_MSG_RESULT([$CROSS_COMPILE])
+
 AC_PROG_CC
 CFLAGS=""
 
@@ -57,6 +69,7 @@ arch_supports_lxrt=
 arch_supports_leds=
 arch_supports_sim=
 arch_supports_rtailab=
+arch_has_mmu=y
 
 case "$host" in
  i*86*-*)
@@ -81,6 +94,11 @@ case "$host" in
 	RTAI_TARGET_ARCH=ppc
 	wanted_kernel_arch=CONFIG_PPC
         ;;
+ m68knommu-*)
+ 	RTAI_TARGET_ARCH=m68knommu
+	wanted_kernel_arch=CONFIG_M68K
+	arch_has_mmu=
+	;;
  *) echo ""
    echo "*******************************************"
    echo "Still unsupported host: $host -- Sorry."
@@ -263,8 +281,10 @@ dnl
 dnl Perform a few sanity checks.
 dnl
 
+AC_MSG_CHECKING([for kernel architecture])
 arch_select=`eval echo \\$$wanted_kernel_arch`
 if test x$arch_select = x; then
+   AC_MSG_RESULT([FAIL])
    echo
    echo "************************************************************"
    echo " The target RTAI architecture ($RTAI_TARGET_ARCH) does not match"
@@ -272,6 +292,27 @@ if test x$arch_select = x; then
    echo " (i.e. $wanted_kernel_arch is undefined)"
    echo "************************************************************"
    exit 1
+fi
+AC_MSG_RESULT([$wanted_kernel_arch])
+
+AC_MSG_CHECKING([for MMU support])
+mmu_select=`eval echo \\$CONFIG_MMU`
+if test x$mmu_select != x$arch_has_mmu; then
+   echo
+   echo "************************************************************"
+   echo " The target RTAI architecture MMU check failed:"
+if test x$mmu_select = x; then
+   echo " MMU is unsupported by Linux architecure."
+else
+   echo " MMU is supported by Linux architecure, but it shouldn\'t."
+fi
+   echo "************************************************************"
+   exit 1
+fi
+if test x$mmu_select != x; then
+AC_MSG_RESULT([yes])
+else
+AC_MSG_RESULT([no])
 fi
 
 if test x${CONFIG_MODULES} = x ; then
@@ -1389,7 +1430,12 @@ test x$CONFIG_RTAI_MAINTAINER = xy && AC_DEFINE(CONFIG_RTAI_MAINTAINER,1,[Kconfi
 test x$CONFIG_RTAI_MAINTAINER_PMA = xy && AC_DEFINE(CONFIG_RTAI_MAINTAINER_PMA,1,[Kconfig])
 test x$CONFIG_RTAI_MAINTAINER_PGM = xy && AC_DEFINE(CONFIG_RTAI_MAINTAINER_PGM,1,[Kconfig])
 
-test x$arch_supports_lxrt = xy && AC_DEFINE(CONFIG_RTAI_INTERNAL_LXRT_SUPPORT,1,[Kconfig])
+if test x$arch_supports_lxrt = xy;  then
+    AC_DEFINE(CONFIG_RTAI_INTERNAL_LXRT_SUPPORT,1,[Kconfig])
+else
+    AC_DEFINE(CONFIG_RTAI_INTERNAL_LXRT_SUPPORT,0,[Kconfig])
+fi
+
 test x$arch_supports_leds = xy && AC_DEFINE(CONFIG_RTAI_INTERNAL_LEDS_SUPPORT,1,[Kconfig])
 AC_DEFINE_UNQUOTED(CONFIG_RTAI_INTERNAL_LXRT_INLINE,$CONFIG_RTAI_LXRT_INLINE,[Kconfig])
 
@@ -1454,6 +1500,9 @@ AM_CONDITIONAL(CONFIG_ARCH_EP9301,[test "$CONFIG_ARCH_EP9301" = y])
 AM_CONDITIONAL(CONFIG_ARCH_PXA,[test "$CONFIG_ARCH_PXA" = y])
 AM_CONDITIONAL(CONFIG_UCLINUX,[test "$CONFIG_UCLINUX" = y])
 AM_CONDITIONAL(CONFIG_SMP,[test "$CONFIG_SMP" = y])
+AM_CONDITIONAL(CONFIG_M68KNOMMU,[test "$CONFIG_M68K" = y -a "x$CONFIG_MMU" != xy])
+AM_CONDITIONAL(CONFIG_M5407,[test "$CONFIG_M5407" = y])
+AM_CONDITIONAL(CONFIG_M5329,[test "$CONFIG_M5329" = y])
 
 AM_CONDITIONAL(CONFIG_RTAI_TRACE,[test -n "$CONFIG_RTAI_TRACE"])
 AM_CONDITIONAL(CONFIG_RTAI_MATH,[test -n "$CONFIG_RTAI_MATH"])
@@ -1649,6 +1698,32 @@ case $RTAI_TARGET_ARCH in
 	   RTAI_FP_CFLAGS="$RTAI_FP_CFLAGS -msoft-float"
 	fi
 	;;
+ m68knommu)
+	if test "$CONFIG_M5407" = y; then
+               RTAI_TARGET_SUBARCH=MCF5407
+               CFLAGS="-m5407 -Wa,-m5407"
+	elif test "$CONFIG_M532x" = y; then
+               RTAI_TARGET_SUBARCH=MCF5329
+               CFLAGS="-m5307 -Wa,-m5307"
+	else
+	   echo
+	   echo "************************************************"
+	   echo "Unsupported M68KNOMMU sub-architecture -- Sorry."
+	   echo "************************************************"
+	   exit 1
+	fi
+	RTAI_KMOD_CFLAGS="$RTAI_KMOD_CFLAGS -I${RTAI_LINUX_DIR}/arch/m68knommu -DCONFIG_UCLINUX"
+	RTAI_KMOD_CXXFLAGS="$RTAI_KMOD_CFLAGS -fno-rtti -fno-exceptions -fno-strength-reduce -pipe"
+	RTAI_USER_CFLAGS="$RTAI_USER_CFLAGS -Wall -Wstrict-prototypes -pipe -DCONFIG_UCLINUX"
+	RTAI_FP_CFLAGS="$RTAI_FP_CFLAGS -DCONFIG_UCLINUX"
+	if test x$CONFIG_RTAI_FPU_SUPPORT = xy; then
+	   RTAI_FP_CFLAGS="$RTAI_FP_CFLAGS -mhard-float"
+	else
+	   RTAI_FP_CFLAGS="$RTAI_FP_CFLAGS -msoft-float"
+	fi
+	;;
+
+
 esac
 
 if test x$CONFIG_RTAI_KMOD_DEBUG = xy; then
@@ -1779,6 +1854,7 @@ AC_SUBST(RTAI_KBUILD_DISTCLEAN)
 AC_SUBST(RTAI_POSIX_WRAP)
 
 AC_SUBST(CONFIG_RTAI_LINUXDIR)
+AC_SUBST(CROSSCOMPILE_TEST)
 
 
 AC_CONFIG_FILES([ \
@@ -1807,6 +1883,9 @@ AC_CONFIG_FILES([ \
         base/arch/ppc/GNUmakefile \
 	base/arch/ppc/hal/GNUmakefile \
 	base/include/asm-ppc/GNUmakefile \
+	base/arch/m68knommu/GNUmakefile \
+	base/arch/m68knommu/hal/GNUmakefile \
+	base/include/asm-m68knommu/GNUmakefile \
    	base/ipc/bits/GNUmakefile \
 	base/ipc/fifos/GNUmakefile \
 	base/ipc/netrpc/GNUmakefile \

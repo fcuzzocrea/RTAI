@@ -32,7 +32,8 @@ PRE_UNINSTALL = :
 POST_UNINSTALL = :
 build_triplet = @build@
 host_triplet = @host@
-@CONFIG_RTAI_DRIVERS_SERIAL_TRUE@am__append_1 = -I$(top_srcdir)/addons/drivers/serial
+@CONFIG_M68KNOMMU_FALSE@am__append_1 = touchall.c
+@CONFIG_RTAI_DRIVERS_SERIAL_TRUE@am__append_2 = -I$(top_srcdir)/addons/drivers/serial
 subdir = base/sched/liblxrt
 DIST_COMMON = README $(srcdir)/GNUmakefile.am $(srcdir)/GNUmakefile.in
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
@@ -55,7 +56,9 @@ am__installdirs = "$(DESTDIR)$(libdir)"
 libLTLIBRARIES_INSTALL = $(INSTALL)
 LTLIBRARIES = $(lib_LTLIBRARIES)
 liblxrt_la_LIBADD =
-am_liblxrt_la_OBJECTS = init.lo services.lo touchall.lo
+am__liblxrt_la_SOURCES_DIST = init.c services.c touchall.c
+@CONFIG_M68KNOMMU_FALSE@am__objects_1 = touchall.lo
+am_liblxrt_la_OBJECTS = init.lo services.lo $(am__objects_1)
 liblxrt_la_OBJECTS = $(am_liblxrt_la_OBJECTS)
 liblxrt_la_LINK = $(LIBTOOL) --tag=CC $(AM_LIBTOOLFLAGS) \
 	$(LIBTOOLFLAGS) --mode=link $(CCLD) $(AM_CFLAGS) $(CFLAGS) \
@@ -73,7 +76,7 @@ LINK = $(LIBTOOL) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) \
 	--mode=link $(CCLD) $(AM_CFLAGS) $(CFLAGS) $(AM_LDFLAGS) \
 	$(LDFLAGS) -o $@
 SOURCES = $(liblxrt_la_SOURCES)
-DIST_SOURCES = $(liblxrt_la_SOURCES)
+DIST_SOURCES = $(am__liblxrt_la_SOURCES_DIST)
 ETAGS = etags
 CTAGS = ctags
 DISTFILES = $(DIST_COMMON) $(DIST_SOURCES) $(TEXINFOS) $(EXTRA_DIST)
@@ -94,6 +97,7 @@ COMEDI_DIR = @COMEDI_DIR@
 CONFIG_RTAI_LINUXDIR = @CONFIG_RTAI_LINUXDIR@
 CPP = @CPP@
 CPPFLAGS = @CPPFLAGS@
+CROSSCOMPILE_TEST = @CROSSCOMPILE_TEST@
 CROSS_COMPILE = @CROSS_COMPILE@
 CXX = @CXX@
 CXXCPP = @CXXCPP@
@@ -241,14 +245,10 @@ target_alias = @target_alias@
 top_builddir = @top_builddir@
 top_srcdir = @top_srcdir@
 lib_LTLIBRARIES = liblxrt.la
-liblxrt_la_SOURCES = \
-		init.c \
-		services.c \
-		touchall.c
-
+liblxrt_la_SOURCES = init.c services.c $(am__append_1)
 liblxrt_la_LDFLAGS = -module -version-info 1:0:0
 INCLUDES = @RTAI_USER_CFLAGS@ -D_GNU_SOURCE -fno-inline \
-	-I$(top_srcdir)/base/include -I../../include $(am__append_1)
+	-I$(top_srcdir)/base/include -I../../include $(am__append_2)
 all: all-am
 
 .SUFFIXES:

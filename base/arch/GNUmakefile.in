@@ -56,7 +56,7 @@ RECURSIVE_CLEAN_TARGETS = mostlyclean-recursive clean-recursive	\
   distclean-recursive maintainer-clean-recursive
 ETAGS = etags
 CTAGS = ctags
-DIST_SUBDIRS = arm ppc x86_64 i386
+DIST_SUBDIRS = arm m68knommu ppc x86_64 i386
 DISTFILES = $(DIST_COMMON) $(DIST_SOURCES) $(TEXINFOS) $(EXTRA_DIST)
 ACLOCAL = @ACLOCAL@
 AMTAR = @AMTAR@
@@ -75,6 +75,7 @@ COMEDI_DIR = @COMEDI_DIR@
 CONFIG_RTAI_LINUXDIR = @CONFIG_RTAI_LINUXDIR@
 CPP = @CPP@
 CPPFLAGS = @CPPFLAGS@
+CROSSCOMPILE_TEST = @CROSSCOMPILE_TEST@
 CROSS_COMPILE = @CROSS_COMPILE@
 CXX = @CXX@
 CXXCPP = @CXXCPP@
@@ -222,11 +223,13 @@ target_alias = @target_alias@
 top_builddir = @top_builddir@
 top_srcdir = @top_srcdir@
 @CONFIG_ARM_TRUE@ARCHDIR = arm
+@CONFIG_M68KNOMMU_TRUE@ARCHDIR = m68knommu
 @CONFIG_PPC_TRUE@ARCHDIR = ppc
 @CONFIG_X86_64_TRUE@ARCHDIR = x86_64
 @CONFIG_X86_TRUE@ARCHDIR = i386
 SUBDIRS = $(ARCHDIR)
 modext = @RTAI_MODULE_EXT@
+EXTRA_DIST = x86/patches
 all: all-recursive
 
 .SUFFIXES:

@@ -246,7 +246,7 @@ static inline RT_TASK* __task_init(unsigned long name, int prio, int stack_size,
 #ifdef PF_EVNOTIFY
 			current->flags |= PF_EVNOTIFY;
 #endif
-#ifdef VM_PINNED
+#if (defined VM_PINNED) && (defined CONFIG_MMU)
 			ipipe_disable_ondemand_mappings(current);
 #endif
 
@@ -487,9 +487,15 @@ static inline long long handle_lxrt_request (unsigned int lxsrq, long *arg, RT_T
 		}
 
 		case NONROOT_HRT: {
+#if LINUX_VERSION_CODE < KERNEL_VERSION(2,6,24)
+			current->cap_effective |= ((1 << CAP_IPC_LOCK)  |
+						   (1 << CAP_SYS_RAWIO) |
+						   (1 << CAP_SYS_NICE));
+#else
 			cap_raise(current->cap_effective, CAP_IPC_LOCK);
 			cap_raise(current->cap_effective, CAP_SYS_RAWIO);
 			cap_raise(current->cap_effective, CAP_SYS_NICE);
+#endif
 			return 0;
 		}
 

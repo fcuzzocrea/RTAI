@@ -574,12 +574,23 @@ void reset_rt_fun_ext_index(struct rt_fun_entry *fun,
 
 struct apic_timer_setup_data;
 
+#ifndef CONFIG_UCLINUX
+
 #define rt_grow_and_lock_stack(incr) \
 	do { \
 		char buf[incr]; \
 		memset(buf, 0, incr); \
 		mlockall(MCL_CURRENT | MCL_FUTURE); \
 	} while (0)
+
+#else
+
+#define rt_grow_and_lock_stack(incr) \
+	do { \
+		rt_printk("RTAI WARNING: rt_grow_and_lock_stack() does nothing for systems without MMU\n"); \
+	} while (0)
+
+#endif
 
 #define BIDX   0 // rt_fun_ext[0]
 #define SIZARG sizeof(arg)

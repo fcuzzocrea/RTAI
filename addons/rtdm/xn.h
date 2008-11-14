@@ -199,8 +199,13 @@ static inline void xnlock_put_irqrestore(xnlock_t *lock, spl_t flags)
 	({ long err = __copy_to_user_inatomic(dstP, srcP, n); err; })
 #endif
 
+#if !defined CONFIG_M68K || defined CONFIG_MMU
 #define __xn_strncpy_from_user(task, dstP, srcP, n) \
 	({ long err = __strncpy_from_user(dstP, srcP, n); err; })
+#else
+#define __xn_strncpy_from_user(task, dstP, srcP, n) \
+	({ long err = strncpy_from_user(dstP, srcP, n); err; })
+#endif /* CONFIG_M68K */
 
 static inline int xnarch_remap_io_page_range(struct vm_area_struct *vma, unsigned long from, unsigned long to, unsigned long size, pgprot_t prot)
 {
@@ -226,6 +231,8 @@ static inline int xnarch_remap_io_page_range(struct vm_area_struct *vma, unsigne
 #include <rtai_shm.h>
 #define __va_to_kva(adr)  UVIRT_TO_KVA(adr)
 
+#ifdef CONFIG_MMU
+
 static inline int xnarch_remap_vm_page(struct vm_area_struct *vma, unsigned long from, unsigned long to)
 {
 #if LINUX_VERSION_CODE < KERNEL_VERSION(2,6,0)
@@ -247,6 +254,8 @@ static inline int xnarch_remap_vm_page(struct vm_area_struct *vma, unsigned long
 
 #endif /* LINUX_VERSION_CODE < KERNEL_VERSION(2,6,0) */
 }
+
+#endif
 
 // interrupt setup/management (adopted_&|_adapted from RTDM pet system)
 

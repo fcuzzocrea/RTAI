@@ -1,3 +1,8 @@
+2008-11-16 Pierangelo Masarati <masarati@aero.polimi.it>
+
+	* *.in, configure: complete the insertion of m68knommu arch with all
+	  the needed build stuff.
+
 2008-11-15 Valentin Pavlyuchenko <TheValik@gmail.com>
 
 	* /base/include/asm-m68knommu: added m68knommu arch specific include

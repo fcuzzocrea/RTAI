@@ -1,10 +1,13 @@
 2008-11-16 Paolo Mantegazza <mantegazza@aero.polimi.it>
 
-	* base/include/rtai_wrappers.h:
-	* base/include/asm/rtai_hal.h:
+	* base/include/rtai_wrappers.h,
+	* base/include/asm/rtai_hal.h,
 	* base/ipc/netrpc/netrpc.c: adapt to 2.6.27.
 	* base/ipc/shm/shm.c: turn USE_UDEV_CLASS off, breaks 2.6.27 
 	  and likely of no use anywhere.
+	* base/arch/i386/hal/hal.immed,
+	* base/include/asm-i386/rtai_hal.h: changes to irq_ack to work 
+	  both with 2.6.27 and previous releases.
 
 2008-11-16 Pierangelo Masarati <masarati@aero.polimi.it>
 

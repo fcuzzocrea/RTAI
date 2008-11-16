@@ -113,7 +113,13 @@ do { \
 #include <linux/device.h>
 #if  LINUX_VERSION_CODE > KERNEL_VERSION(2,6,25)
 typedef struct class class_t;
+
+#if  LINUX_VERSION_CODE > KERNEL_VERSION(2,6,26)
+#define CLASS_DEVICE_CREATE(cls, devt, device, fmt, arg...)  device_create(cls, NULL, devt, NULL, fmt, ##arg)
+#else  /* < 2.6.27 */
 #define CLASS_DEVICE_CREATE(cls, devt, device, fmt, arg...)  device_create(cls, NULL, devt, fmt, ##arg)
+#endif  /* > 2.6.26 */
+
 #define class_device_destroy(a, b)  device_destroy(a, b)
 #else
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,15)
@@ -157,6 +163,17 @@ typedef struct class_simple class_t;
 #define CPUMASK_T(name)  ((cpumask_t){ { name } })
 #define CPUMASK(name)    (name.bits[0])
 #endif /* LINUX_VERSION_CODE <= KERNEL_VERSION(2,6,7) */
+
+#if LINUX_VERSION_CODE > KERNEL_VERSION(2,6,26)
+
+#include <linux/pid.h>
+
+#define find_task_by_pid(nr) \
+	find_task_by_pid_type_ns(PIDTYPE_PID, nr, &init_pid_ns)
+#define kill_proc(pid, sig, priv)       \
+  kill_proc_info(sig, (priv) ? SEND_SIG_PRIV : SEND_SIG_NOINFO, pid)
+
+#endif /* LINUX_VERSION_CODE < 2.6.27 */
 
 #ifndef CONFIG_SYSFS
 typedef void * class_t;

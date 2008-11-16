@@ -219,11 +219,11 @@ static inline unsigned long long rtai_u64div32c(unsigned long long a,
 #include <rtai_trace.h>
 
 struct rtai_realtime_irq_s {
-        int (*handler)(unsigned irq, void *cookie);
-        void *cookie;
-        int retmode;
-        int cpumask;
-        int (*irq_ack)(unsigned int);
+	int (*handler)(unsigned irq, void *cookie);
+	void *cookie;
+	int retmode;
+	int cpumask;
+	int (*irq_ack)(unsigned int);
 };
 
 /* 
@@ -450,6 +450,10 @@ extern struct rt_times rt_smp_times[RTAI_NR_CPUS];
 extern struct calibration_data rtai_tunables;
 
 extern volatile unsigned long rtai_cpu_lock[];
+
+#if LINUX_VERSION_CODE > KERNEL_VERSION(2,6,26)
+#define apic_write_around apic_write
+#endif
 
 //#define RTAI_TASKPRI 0xf0  // simplest usage without changing Linux code base
 #if defined(CONFIG_X86_LOCAL_APIC) && defined(RTAI_TASKPRI)

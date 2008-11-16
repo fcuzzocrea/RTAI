@@ -1602,7 +1602,12 @@ static inline int krecv(int fd, void *ubuf, size_t size, unsigned flags)
 }
 
 #ifndef DECLARE_MUTEX_LOCKED
+#ifndef __DECLARE_SEMAPHORE_GENERIC
+#define DECLARE_MUTEX_LOCKED(name) \
+	struct semaphore name = __SEMAPHORE_INITIALIZER(name, 0)
+#else
 #define DECLARE_MUTEX_LOCKED(name) __DECLARE_SEMAPHORE_GENERIC(name,0)
+#endif
 #endif
 static DECLARE_MUTEX_LOCKED(mtx);
 static unsigned long end_softrtnet;

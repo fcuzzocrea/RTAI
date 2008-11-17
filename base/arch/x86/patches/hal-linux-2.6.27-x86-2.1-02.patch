@@ -2545,7 +2545,7 @@ index 0000000..9153a17
 +	if (!ipipe_root_domain_p &&
 +	    __ipipe_xlate_signo[vector] >= 0 &&
 +	    !kgdb_handle_exception(vector, __ipipe_xlate_signo[vector], error_code, regs)) {
-+		if (!flags)
++		if (!flags & X86_EFLAGS_IF)
 +			__clear_bit(IPIPE_STALL_FLAG,
 +				    &ipipe_root_cpudom_var(status));
 +		return 1;
@@ -2553,7 +2553,7 @@ index 0000000..9153a17
 +#endif /* CONFIG_KGDB */
 +
 +	if (unlikely(ipipe_trap_notify(vector, regs))) {
-+		if (!flags)
++		if (!flags & X86_EFLAGS_IF)
 +			__clear_bit(IPIPE_STALL_FLAG,
 +				    &ipipe_root_cpudom_var(status));
 +		return 1;

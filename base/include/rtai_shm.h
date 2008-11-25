@@ -276,7 +276,10 @@ RTAI_PROTO (void *, _rt_shm_alloc, (void *start, unsigned long name, int size, i
  * This function should not be used in newly developed applications. See
  * rt_shm_alloc fro more details.
  *
- * @returns a valid address on succes, 0 on failure.
+ * @returns a valid address on succes, on failure: 0 if it was unable to 
+ * allocate any memory, MAP_FAILED if it was possible to allocate the
+ * required memory but failed to mmap it to user space, in which case the
+ * allocated memory is freed anyhow.
  *
  */
 
@@ -319,7 +322,10 @@ RTAI_PROTO (void *, _rt_shm_alloc, (void *start, unsigned long name, int size, i
  * @note If the same process calls rtai_malloc_adr and rtai_malloc() twice in
  * the same process it get a zero return value on the second call.
  *
- * @returns a valid address on succes, 0 on failure.
+ * @returns a valid address on succes, on failure: 0 if it was unable to
+ * allocate any memory, MAP_FAILED if it was possible to allocate the
+ * required memory but failed to mmap it to user space, in which case the
+ * allocated memory is freed anyhow.
  *
  */
 

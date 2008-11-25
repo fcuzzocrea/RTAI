@@ -1,3 +1,8 @@
+2008-11-25 Paolo Mantegazza <mantegazza@aero.polimi.it>
+
+	* base/include/rtai_shm.h: fix the comment explaining the returned
+	  value of rtai_malloc and rt_shm_alloc in user space.
+
 2008-11-05 Roberto Bucher <roberto.bucher@supsi.ch>
 
         * rtai-lab/scilab/macros/RTAI/RTAICodeGen_.sci:Completely rewritten

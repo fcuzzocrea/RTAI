@@ -1,3 +1,8 @@
+2008-12-05 Paolo Mantegazza <mantegazza@aero.polimi.it>
+
+	* base/tasklets/tasklets.c: check for non NULL next/prev pointer
+	  at timer and tasklet remove.
+
 2008-11-25 Paolo Mantegazza <mantegazza@aero.polimi.it>
 
 	* base/include/rtai_shm.h: fix the comment explaining the returned

@@ -279,7 +279,7 @@ RTAI_SYSCALL_MODE int rt_insert_tasklet(struct rt_tasklet_struct *tasklet, int p
 
 RTAI_SYSCALL_MODE void rt_remove_tasklet(struct rt_tasklet_struct *tasklet)
 {
-	if (tasklet->next && tasklet->next != tasklet && tasklet->prev && tasklet->prev != tasklet) {
+	if (tasklet->next && tasklet->prev && tasklet->next != tasklet && tasklet->prev != tasklet) {
 		unsigned long flags;
 		flags = rt_spin_lock_irqsave(&tasklets_lock);
 		(tasklet->next)->prev = tasklet->prev;
@@ -533,7 +533,7 @@ RTAI_SYSCALL_MODE int rt_insert_timer(struct rt_tasklet_struct *timer, int prior
 
 RTAI_SYSCALL_MODE void rt_remove_timer(struct rt_tasklet_struct *timer)
 {
-	if (timer->next && timer->next != timer && timer->prev && timer->prev != timer) {
+	if (timer->next && timer->prev && timer->next != timer && timer->prev != timer) {
 		spinlock_t *lock;
 		unsigned long flags;
 		flags = rt_spin_lock_irqsave(lock = &timers_lock[TIMER_CPUID]);

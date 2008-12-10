@@ -251,7 +251,8 @@ DIST_SUBDIRS = \
 	base \
 	testsuite \
 	addons \
-	rtai-lab
+	rtai-lab \
+	rtai-py
 
 EXTRA_DIST = \
 makefile \

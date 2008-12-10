@@ -25035,6 +25035,16 @@ echo "$as_me: error: testsuite package is missing" >&2;}
    { (exit 1); exit 1; }; }
 fi
 
+CONFIG_RTAI_PYTHON=y
+if test -d $srcdir/rtai-py; then
+   ac_config_files="$ac_config_files rtai-py/GNUmakefile"
+
+elif test \! x$CONFIG_RTAI_TESTSUITE = x; then
+     { { echo "$as_me:$LINENO: error: testsuite package is missing" >&5
+echo "$as_me: error: testsuite package is missing" >&2;}
+   { (exit 1); exit 1; }; }
+fi
+
 if test \! x$RTAI_MAYBE_DOCDIR = x; then
       ac_config_files="$ac_config_files doc/GNUmakefile doc/doxygen/GNUmakefile doc/doxygen/Doxyfile doc/docbook/GNUmakefile doc/docbook/catalog doc/docbook/custom-stylesheets/GNUmakefile doc/docbook/custom-stylesheets/xsl/GNUmakefile doc/docbook/custom-stylesheets/xsl/common/GNUmakefile doc/docbook/custom-stylesheets/xsl/fo/GNUmakefile doc/docbook/custom-stylesheets/xsl/html/GNUmakefile doc/docbook/custom-stylesheets/xsl/html/chunk.xsl doc/docbook/docbook-test/GNUmakefile"
 
@@ -26193,6 +26203,7 @@ do
     "testsuite/user/latency/GNUmakefile") CONFIG_FILES="$CONFIG_FILES testsuite/user/latency/GNUmakefile" ;;
     "testsuite/user/preempt/GNUmakefile") CONFIG_FILES="$CONFIG_FILES testsuite/user/preempt/GNUmakefile" ;;
     "testsuite/user/switches/GNUmakefile") CONFIG_FILES="$CONFIG_FILES testsuite/user/switches/GNUmakefile" ;;
+    "rtai-py/GNUmakefile") CONFIG_FILES="$CONFIG_FILES rtai-py/GNUmakefile" ;;
     "doc/GNUmakefile") CONFIG_FILES="$CONFIG_FILES doc/GNUmakefile" ;;
     "doc/doxygen/GNUmakefile") CONFIG_FILES="$CONFIG_FILES doc/doxygen/GNUmakefile" ;;
     "doc/doxygen/Doxyfile") CONFIG_FILES="$CONFIG_FILES doc/doxygen/Doxyfile" ;;

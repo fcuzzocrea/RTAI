@@ -1,3 +1,15 @@
+2008-12-10 Pierangelo Masarati <masarati@aero.polimi.it>
+
+	* rtai-py/, rtai-py/*.py: import python stuff from showroom
+
+2008-12-10 Pierangelo Masarati <masarati@aero.polimi.it>
+
+	* RTAI 3.7 development cycle starts
+
+2008-12-10 Pierangelo Masarati <masarati@aero.polimi.it>
+
+	* RTAI 3.6-cv
+
 2008-12-05 Paolo Mantegazza <mantegazza@aero.polimi.it>
 
 	* base/tasklets/tasklets.c: check for non NULL next/prev pointer 

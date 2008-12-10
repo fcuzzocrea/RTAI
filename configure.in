@@ -1953,6 +1953,16 @@ elif test \! x$CONFIG_RTAI_TESTSUITE = x; then
      AC_MSG_ERROR([testsuite package is missing])
 fi
 
+dnl FIXME: configurable?
+CONFIG_RTAI_PYTHON=y
+if test -d $srcdir/rtai-py; then
+   AC_CONFIG_FILES([ \
+        rtai-py/GNUmakefile \
+        ])
+elif test \! x$CONFIG_RTAI_TESTSUITE = x; then
+     AC_MSG_ERROR([testsuite package is missing])
+fi
+
 if test \! x$RTAI_MAYBE_DOCDIR = x; then
       AC_CONFIG_FILES([ \
 	   doc/GNUmakefile \

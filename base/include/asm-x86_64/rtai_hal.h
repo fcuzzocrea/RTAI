@@ -15,8 +15,8 @@
  *   Copyright &copy 2002 Philippe Gerum.
  *
  *   Porting to x86_64 architecture:
- *   Copyright &copy; 2005 Paolo Mantegazza, \n
- *   Copyright &copy; 2005 Daniele Gasperini \n
+ *   Copyright &copy; 2005-2008 Paolo Mantegazza, \n
+ *   Copyright &copy; 2005      Daniele Gasperini \n
  *
  *   This program is free software; you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -351,9 +351,9 @@ extern struct rt_times rt_smp_times[RTAI_NR_CPUS];
 
 extern struct calibration_data rtai_tunables;
 
-extern volatile unsigned long rtai_cpu_lock;
+extern volatile unsigned long rtai_cpu_lock[];
 
-#if LINUX_VERSION_CODE > KERNEL_VERSION(2,6,18)
+#if LINUX_VERSION_CODE > KERNEL_VERSION(2,6,18) && LINUX_VERSION_CODE < KERNEL_VERSION(2,6,25)
 #define apic_write_around apic_write
 #endif
 
@@ -392,6 +392,7 @@ static inline unsigned long rtai_save_flags_irqbit(void)
 	rtai_save_flags(flags);
 	return flags & (1 << RTAI_IFLAG);
 }
+
 static inline unsigned long rtai_save_flags_irqbit_and_cli(void)
 {
 	unsigned long flags;
@@ -471,35 +472,72 @@ static inline void rt_spin_unlock_irqrestore(unsigned long flags, spinlock_t *lo
 	rtai_restore_flags(flags);
 }
 
+#if RTAI_NR_CPUS > 2
+
+// taken from Linux, see the related code there for an explanation
+
+static inline void rtai_spin_glock(volatile unsigned long *lock)
+{
+ short inc = 0x0100;
+ __asm__ __volatile__ (
+ LOCK_PREFIX "xaddw %w0, %1\n"
+ "1:\t"
+ "cmpb %h0, %b0\n\t"
+ "je 2f\n\t"
+ "rep; nop\n\t"
+ "movb %1, %b0\n\t"
+ "jmp 1b\n"
+ "2:"
+ :"+Q" (inc), "+m" (lock[1])
+ :
+ :"memory", "cc");
+}
+
+static inline void rtai_spin_gunlock(volatile unsigned long *lock)
+{
+ __asm__ __volatile__(
+ LOCK_PREFIX "incb %0"
+ :"+m" (lock[1])
+ :
+ :"memory", "cc");
+}
+
+#else
+
+static inline void rtai_spin_glock(volatile unsigned long *lock)
+{
+	while (test_and_set_bit(31, lock)) {
+		cpu_relax();
+	}
+	barrier();
+}
+
+static inline void rtai_spin_gunlock(volatile unsigned long *lock)
+{
+	test_and_clear_bit(31, lock);
+	cpu_relax();
+}
+
+#endif
+
 static inline void rt_get_global_lock(void)
 {
 	barrier();
 	rtai_cli();
-	if (!test_and_set_bit(hal_processor_id(), &rtai_cpu_lock)) {
-		while (test_and_set_bit(31, &rtai_cpu_lock)) {
-			cpu_relax();
-		}
+	if (!test_and_set_bit(hal_processor_id(), &rtai_cpu_lock[0])) {
+		rtai_spin_glock(&rtai_cpu_lock[0]);
 	}
 	barrier();
 }
 
 static inline void rt_release_global_lock(void)
 {
-#if 0
 	barrier();
 	rtai_cli();
-	atomic_clear_mask((0xFFFF0001 << hal_processor_id()), (atomic_t *)&rtai_cpu_lock);
-	cpu_relax();
-	barrier();
-#else
-	barrier();
-	rtai_cli();
-	if (test_and_clear_bit(hal_processor_id(), &rtai_cpu_lock)) {
-		test_and_clear_bit(31, &rtai_cpu_lock);
-		cpu_relax();
+	if (test_and_clear_bit(hal_processor_id(), &rtai_cpu_lock[0])) {
+		rtai_spin_gunlock(&rtai_cpu_lock[0]);
 	}
 	barrier();
-#endif
 }
 
 /**
@@ -543,10 +581,8 @@ static inline int rt_global_save_flags_and_cli(void)
 
 	barrier();
 	flags = rtai_save_flags_irqbit_and_cli();
-	if (!test_and_set_bit(hal_processor_id(), &rtai_cpu_lock)) {
-		while (test_and_set_bit(31, &rtai_cpu_lock)) {
-			cpu_relax();
-		}
+	if (!test_and_set_bit(hal_processor_id(), &rtai_cpu_lock[0])) {
+		rtai_spin_glock(&rtai_cpu_lock[0]);
 		barrier();
 		return flags | 1;
 	}
@@ -565,7 +601,7 @@ static inline void rt_global_save_flags(unsigned long *flags)
 {
 	unsigned long hflags = rtai_save_flags_irqbit_and_cli();
 
-	*flags = test_bit(hal_processor_id(), &rtai_cpu_lock) ? hflags : hflags | 1;
+	*flags = test_bit(hal_processor_id(), &rtai_cpu_lock[0]) ? hflags : hflags | 1;
 	if (hflags) {
 		rtai_sti();
 	}
@@ -789,19 +825,6 @@ void rt_unmask_irq(unsigned irq);
 void rt_ack_irq(unsigned irq);
 
 /*@}*/
-
-// this is machine dominance and must stay in our hands, long live DOS!
-#define rtai_do_x86int(irq, handler) \
-do { \
-	__asm__ __volatile__ ( "pushfl; push %%cs; call *%1": : "a" (irq), "m" (handler)); \
-} while (0)
-
-struct gate_struct rtai_set_gate_vector (unsigned vector, int type, int dpl, void *handler);
-
-void rtai_reset_gate_vector(unsigned vector, struct gate_struct e);
-// end of machine dominance
-
-void rt_do_irq(unsigned irq);
 
 int rt_request_linux_irq(unsigned irq,
 			 void *handler,

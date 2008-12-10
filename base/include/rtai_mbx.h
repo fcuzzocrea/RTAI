@@ -36,14 +36,16 @@ struct rt_mailbox;
 #ifndef __cplusplus
 
 typedef struct rt_mailbox {
-
-    int magic;
-    SEM sndsem, rcvsem;
-    struct rt_task_struct *waiting_task, *owndby;
-    char *bufadr;
-    int size, fbyte, lbyte, avbs, frbs;
-    spinlock_t lock;
-
+	int magic;
+	SEM sndsem, rcvsem;
+	struct rt_task_struct *waiting_task, *owndby;
+	char *bufadr;
+	int size, fbyte, lbyte, avbs, frbs;
+	spinlock_t lock;
+#ifdef CONFIG_RTAI_RT_POLL
+	struct rt_poll_ql poll_recv;
+	struct rt_poll_ql poll_send;
+#endif
 } MBX;
 
 #else /* __cplusplus */

@@ -118,16 +118,16 @@ static inline unsigned long long rtai_llimd(unsigned long long ull, unsigned lon
 //---------------------------------------------------------------------------//
 
 #if defined(__KERNEL__) && !defined(__cplusplus)
- #include <linux/sched.h>
- #include <linux/interrupt.h>
+#include <linux/sched.h>
+#include <linux/interrupt.h>
 
- #include <asm/system.h>
- #include <asm/io.h>
- #include <asm/time.h>
+#include <asm/system.h>
+#include <asm/io.h>
+#include <asm/time.h>
 
- #include <asm/rtai_atomic.h>
- #include <asm/rtai_fpu.h>
- #include <rtai_trace.h>
+#include <asm/rtai_atomic.h>
+#include <asm/rtai_fpu.h>
+#include <rtai_trace.h>
 
 struct rtai_realtime_irq_s {
         int (*handler)(unsigned irq, void *cookie);
@@ -137,42 +137,37 @@ struct rtai_realtime_irq_s {
         int (*irq_ack)(unsigned int);
 };
 
- #define RTAI_DOMAIN_ID  0x52544149
- #define RTAI_NR_TRAPS   HAL_NR_FAULTS
- #define RTAI_NR_SRQS    32
+#define RTAI_DOMAIN_ID  0x52544149
+#define RTAI_NR_TRAPS   HAL_NR_FAULTS
+#define RTAI_NR_SRQS    32
 
- #define RTAI_TIMER_DECR_IRQ       IPIPE_VIRQ_BASE
- #define RTAI_TIMER_8254_IRQ       RTAI_TIMER_DECR_IRQ
- #define RTAI_FREQ_DECR            (rtai_tunables.cpu_freq)
- #define RTAI_FREQ_8254            (rtai_tunables.cpu_freq)
- #define RTAI_LATENCY_8254         CONFIG_RTAI_SCHED_8254_LATENCY
- #define RTAI_SETUP_TIME_8254      500
+#define RTAI_TIMER_DECR_IRQ       IPIPE_VIRQ_BASE
+#define RTAI_TIMER_8254_IRQ       RTAI_TIMER_DECR_IRQ
+#define RTAI_FREQ_DECR            (rtai_tunables.cpu_freq)
+#define RTAI_FREQ_8254            (rtai_tunables.cpu_freq)
+#define RTAI_LATENCY_8254         CONFIG_RTAI_SCHED_8254_LATENCY
+#define RTAI_SETUP_TIME_8254      500
 
- #define RTAI_TIME_LIMIT           0x7000000000000000LL
+#define RTAI_TIME_LIMIT           0x7000000000000000LL
 
- #define RTAI_IFLAG  15
+#define RTAI_IFLAG  15
 
- #define rtai_cpuid()       hal_processor_id()
- #define rtai_tskext(idx)   hal_tskext[idx]
+#define rtai_cpuid()      hal_processor_id()
+#define rtai_tskext(idx)  hal_tskext[idx]
 
 /* Use these to grant atomic protection when accessing the hardware */
- #define rtai_hw_cli()                  hal_hw_cli()
- #define rtai_hw_sti()                  hal_hw_sti()
- #define rtai_hw_save_flags_and_cli(x)  hal_hw_local_irq_save(x)
- #define rtai_hw_restore_flags(x)       hal_hw_local_irq_restore(x)
- #define rtai_hw_save_flags(x)          hal_hw_local_irq_flags(x)
+#define rtai_hw_cli()                  hal_hw_cli()
+#define rtai_hw_sti()                  hal_hw_sti()
+#define rtai_hw_save_flags_and_cli(x)  hal_hw_local_irq_save(x)
+#define rtai_hw_restore_flags(x)       hal_hw_local_irq_restore(x)
+#define rtai_hw_save_flags(x)          hal_hw_local_irq_flags(x)
 
 /* Use these to grant atomic protection in hard real time code */
- #define rtai_cli()                  hal_hw_cli()
- #define rtai_sti()                  hal_hw_sti()
- #define rtai_save_flags_and_cli(x)  hal_hw_local_irq_save(x)
- #define rtai_restore_flags(x)       hal_hw_local_irq_restore(x)
- #define rtai_save_flags(x)          hal_hw_local_irq_flags(x)
-
-/* The only Linux irq flags manipulation lacking in its system.h */
- #define local_irq_restore_nosync(flags, cpuid)  do { adp_root->cpudata[cpuid].status = flags; } while (0)
-
-extern volatile unsigned long hal_pended;
+#define rtai_cli()                  hal_hw_cli()
+#define rtai_sti()                  hal_hw_sti()
+#define rtai_save_flags_and_cli(x)  hal_hw_local_irq_save(x)
+#define rtai_restore_flags(x)       hal_hw_local_irq_restore(x)
+#define rtai_save_flags(x)          hal_hw_local_irq_flags(x)
 
 static inline struct hal_domain_struct *get_domain_pointer(int n)
 {
@@ -189,15 +184,21 @@ static inline struct hal_domain_struct *get_domain_pointer(int n)
 	return (struct hal_domain_struct *)i;
 }
 
+#define RTAI_LT_KERNEL_VERSION_FOR_NONPERCPU  KERNEL_VERSION(2,6,20)
+
+#if LINUX_VERSION_CODE < RTAI_LT_KERNEL_VERSION_FOR_NONPERCPU
+
+#define ROOT_STATUS_ADR(cpuid)  (ipipe_root_status[cpuid])
+#define ROOT_STATUS_VAL(cpuid)  (*ipipe_root_status[cpuid])
+
 #define hal_pend_domain_uncond(irq, domain, cpuid) \
 do { \
 	hal_irq_hits_pp(irq, domain, cpuid); \
-	__set_bit((irq) & IPIPE_IRQ_IMASK, &domain->cpudata[cpuid].irq_pending_lo[(irq) >> IPIPE_IRQ_ISHIFT]); \
-	__set_bit((irq) >> IPIPE_IRQ_ISHIFT, &domain->cpudata[cpuid].irq_pending_hi); \
-	test_and_set_bit(cpuid, &hal_pended); /* cautious, cautious */ \
+	if (likely(!test_bit(IPIPE_LOCK_FLAG, &(domain)->irqs[irq].control))) { \
+		__set_bit((irq) & IPIPE_IRQ_IMASK, &(domain)->cpudata[cpuid].irq_pending_lo[(irq) >> IPIPE_IRQ_ISHIFT]); \
+		__set_bit((irq) >> IPIPE_IRQ_ISHIFT, &(domain)->cpudata[cpuid].irq_pending_hi); \
+	} \
 } while (0)
-
-#define hal_pend_uncond(irq, cpuid)  hal_pend_domain_uncond(irq, hal_root_domain, cpuid)
 
 #define hal_fast_flush_pipeline(cpuid) \
 do { \
@@ -207,11 +208,39 @@ do { \
 	} \
 } while (0)
 
+#else
+
+#define ROOT_STATUS_ADR(cpuid)  (&ipipe_cpudom_var(hal_root_domain, status))
+#define ROOT_STATUS_VAL(cpuid)  (ipipe_cpudom_var(hal_root_domain, status))
+
+#define hal_pend_domain_uncond(irq, domain, cpuid) \
+do { \
+	if (likely(!test_bit(IPIPE_LOCK_FLAG, &(domain)->irqs[irq].control))) { \
+		__set_bit((irq) & IPIPE_IRQ_IMASK, &ipipe_cpudom_var(domain, irqpend_lomask)[(irq) >> IPIPE_IRQ_ISHIFT]); \
+		__set_bit((irq) >> IPIPE_IRQ_ISHIFT, &ipipe_cpudom_var(domain, irqpend_himask)); \
+	} else { \
+		__set_bit((irq) & IPIPE_IRQ_IMASK, &ipipe_cpudom_var(domain, irqheld_mask)[(irq) >> IPIPE_IRQ_ISHIFT]); \
+	} \
+	ipipe_cpudom_var(domain, irqall)[irq]++; \
+} while (0)
+
+#define hal_fast_flush_pipeline(cpuid) \
+do { \
+	if (ipipe_cpudom_var(hal_root_domain, irqpend_himask) != 0) { \
+		rtai_cli(); \
+		hal_sync_stage(IPIPE_IRQMASK_ANY); \
+	} \
+} while (0)
+
+#endif
+
+#define hal_pend_uncond(irq, cpuid)  hal_pend_domain_uncond(irq, hal_root_domain, cpuid)
+
 extern volatile unsigned long *ipipe_root_status[];
 
 #define hal_test_and_fast_flush_pipeline(cpuid) \
 do { \
-       	if (!test_bit(IPIPE_STALL_FLAG, ipipe_root_status[cpuid])) { \
+	if (!test_bit(IPIPE_STALL_FLAG, ROOT_STATUS_ADR(cpuid))) { \
 		hal_fast_flush_pipeline(cpuid); \
 		rtai_sti(); \
 	} \
@@ -245,7 +274,7 @@ extern struct rt_times rt_times;
 extern struct rt_times rt_smp_times[RTAI_NR_CPUS];
 extern struct calibration_data rtai_tunables;
 extern volatile unsigned long rtai_cpu_realtime;
-extern volatile unsigned long rtai_cpu_lock;
+extern volatile unsigned long rtai_cpu_lock[];
 
 #define SET_TASKPRI(cpuid)
 #define CLR_TASKPRI(cpuid)
@@ -271,17 +300,18 @@ static inline unsigned long rtai_save_flags_irqbit_and_cli(void)
 
 #ifdef CONFIG_SMP
 
- #define SCHED_VECTOR  RTAI_SMP_NOTIFY_VECTOR
- #define SCHED_IPI     RTAI_SMP_NOTIFY_IPI
+#define SCHED_VECTOR  RTAI_SMP_NOTIFY_VECTOR
+#define SCHED_IPI     RTAI_SMP_NOTIFY_IPI
+
+#define _send_sched_ipi(dest)  do { mb(); mpic_send_ipi(0x2, dest); } while (0)
 
 #ifdef CONFIG_PREEMPT
- #define rt_spin_lock(lock)    do { barrier(); _raw_spin_lock(lock); barrier(); } while (0)
- #define rt_spin_unlock(lock)  do { barrier(); _raw_spin_unlock(lock); barrier(); } while (0)
+#define rt_spin_lock(lock)    do { barrier(); _raw_spin_lock(lock); barrier(); } while (0)
+#define rt_spin_unlock(lock)  do { barrier(); _raw_spin_unlock(lock); barrier(); } while (0)
 #else /* !CONFIG_PREEMPT */
- #define rt_spin_lock(lock)    spin_lock(lock)
- #define rt_spin_unlock(lock)  spin_unlock(lock)
+#define rt_spin_lock(lock)    spin_lock(lock)
+#define rt_spin_unlock(lock)  spin_unlock(lock)
 #endif /* CONFIG_PREEMPT */
-
 
 static inline void rt_spin_lock_hw_irq(spinlock_t *lock)
 {
@@ -309,45 +339,94 @@ static inline void rt_spin_unlock_hw_irqrestore(unsigned long flags, spinlock_t 
 	rtai_hw_restore_flags(flags);
 }
 
-static inline void rt_spin_lock_irq(spinlock_t *lock) {
+static inline void rt_spin_lock_irq(spinlock_t *lock)
+{
     rtai_cli();
     rt_spin_lock(lock);
 }
 
-static inline void rt_spin_unlock_irq(spinlock_t *lock) {
+static inline void rt_spin_unlock_irq(spinlock_t *lock)
+{
     rt_spin_unlock(lock);
     rtai_sti();
 }
 
-static inline unsigned long rt_spin_lock_irqsave(spinlock_t *lock) {
+static inline unsigned long rt_spin_lock_irqsave(spinlock_t *lock)
+{
     unsigned long flags;
     rtai_save_flags_and_cli(flags);
     rt_spin_lock(lock);
     return flags;
 }
 
-static inline void rt_spin_unlock_irqrestore(unsigned long flags, spinlock_t *lock) {
+static inline void rt_spin_unlock_irqrestore(unsigned long flags, spinlock_t *lock)
+{
 	rt_spin_unlock(lock);
 	rtai_local_irq_restore(flags);
 }
 
-static inline void rt_get_global_lock(void) {
+#if RTAI_NR_CPUS > 0
+
+static inline void rtai_spin_glock(volatile unsigned long *lock)
+{
+	unsigned long val, owner;
+#if 0
+	do {
+		val = lock[1];
+	} while (cmpxchg(&lock[1], val, (val + 0x10000) & 0x7FFF7FFF) != val);
+#else
+	val = atomic_add_return(0x10000, (atomic_t *)&lock[1]) - 0x10000;
+#endif
+	if ((owner = (val & 0x7FFF0000) >> 16) != (val & 0x7FFF)) {
+		while ((lock[1] & 0x7FFF) != owner) {
+			 cpu_relax();
+		}
+	}
+}
+
+static inline void rtai_spin_gunlock(volatile unsigned long *lock)
+{
+	unsigned long val;
+	do {
+		val = lock[1];
+		cpu_relax();
+	} while (cmpxchg(&lock[1], val, (val + 1) & 0x7FFF7FFF) != val);
+}
+
+#else
+
+static inline void rtai_spin_glock(volatile unsigned long *lock)
+{
+	while (test_and_set_bit(31, lock)) {
+		cpu_relax();
+	}
+	barrier();
+}
+
+static inline void rtai_spin_gunlock(volatile unsigned long *lock)
+{
+	test_and_clear_bit(31, lock);
+	cpu_relax();
+}
+
+#endif
+
+static inline void rt_get_global_lock(void)
+{
         barrier();
         rtai_cli();
-        if (!test_and_set_bit(hal_processor_id(), &rtai_cpu_lock)) {
-                while (test_and_set_bit(31, &rtai_cpu_lock)) {
-                        cpu_relax();
-                }
+        if (!test_and_set_bit(hal_processor_id(), &rtai_cpu_lock[0])) {
+		rtai_spin_glock(&rtai_cpu_lock[0]);
         }
         barrier();
 }
 
-static inline void rt_release_global_lock(void) {
+static inline void rt_release_global_lock(void)
+{
         barrier();
         rtai_cli();
-        if (test_and_clear_bit(hal_processor_id(), &rtai_cpu_lock)) {
-                test_and_clear_bit(31, &rtai_cpu_lock);
-                cpu_relax();
+        if (test_and_clear_bit(hal_processor_id(), &rtai_cpu_lock[0])) {
+		rtai_spin_gunlock(&rtai_cpu_lock[0]);
         }
         barrier();
 }
@@ -389,13 +468,12 @@ static inline void rt_global_sti(void)
  */
 static inline int rt_global_save_flags_and_cli(void)
 {
-        barrier();
-        unsigned long flags = rtai_save_flags_irqbit_and_cli();
+        unsigned long flags;
 
-        if (!test_and_set_bit(hal_processor_id(), &rtai_cpu_lock)) {
-                while (test_and_set_bit(31, &rtai_cpu_lock)) {
-                        cpu_relax();
-                }
+        barrier();
+        flags = rtai_save_flags_irqbit_and_cli();
+        if (!test_and_set_bit(hal_processor_id(), &rtai_cpu_lock[0])) {
+		rtai_spin_glock(&rtai_cpu_lock[0]);
                 barrier();
                 return flags | 1;
         }
@@ -414,7 +492,7 @@ static inline void rt_global_save_flags(unsigned long *flags)
 {
         unsigned long hflags = rtai_save_flags_irqbit_and_cli();
 
-        *flags = test_bit(hal_processor_id(), &rtai_cpu_lock) ? hflags : hflags | 1;
+        *flags = test_bit(hal_processor_id(), &rtai_cpu_lock[0]) ? hflags : hflags | 1;
         if (hflags) {
                 rtai_sti();
         }
@@ -442,6 +520,8 @@ static inline void rt_global_restore_flags(unsigned long flags)
 }
 
 #else /* !CONFIG_SMP */
+
+#define _send_sched_ipi(dest)
 
 #define rt_spin_lock(lock)
 #define rt_spin_unlock(lock)
@@ -484,7 +564,7 @@ extern struct hal_domain_struct rtai_domain;
 
 #define _rt_switch_to_real_time(cpuid) \
 do { \
-	rtai_linux_context[cpuid].lflags = xchg(ipipe_root_status[cpuid], (1 << IPIPE_STALL_FLAG)); \
+	rtai_linux_context[cpuid].lflags = xchg(ROOT_STATUS_ADR(cpuid), (1 << IPIPE_STALL_FLAG)); \
 	rtai_linux_context[cpuid].sflags = 1; \
 	hal_current_domain(cpuid) = &rtai_domain; \
 } while (0)
@@ -493,7 +573,7 @@ do { \
 do { \
 	if (rtai_linux_context[cpuid].sflags) { \
 		hal_current_domain(cpuid) = hal_root_domain; \
-		*ipipe_root_status[cpuid] = rtai_linux_context[cpuid].lflags; \
+		ROOT_STATUS_VAL(cpuid) = rtai_linux_context[cpuid].lflags; \
 		rtai_linux_context[cpuid].sflags = 0; \
 		CLR_TASKPRI(cpuid); \
 	} \
@@ -644,7 +724,7 @@ void rt_end_irq(unsigned irq);
  * Linux related irq function
  */
 
-int rt_request_linux_irq(unsigned irq, int (*handler)(int irq, void *dev_id, struct pt_regs *regs), char *name, void *dev_id);
+int rt_request_linux_irq(unsigned irq, void *handler, char *name, void *dev_id);
 int rt_free_linux_irq(unsigned irq, void *dev_id);
 void rt_pend_linux_irq(unsigned irq);
 RTAI_SYSCALL_MODE void usr_rt_pend_linux_irq(unsigned irq);

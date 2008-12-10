@@ -106,7 +106,7 @@ static inline unsigned long long rtai_ulldiv (unsigned long long ull,
 #else
 
 /* do_div below taken from Linux-2.6.20 */
-
+#ifndef do_div
 #define do_div(n,base) ({ \
         unsigned long __upper, __low, __high, __mod, __base; \
         __base = (base); \
@@ -120,6 +120,7 @@ static inline unsigned long long rtai_ulldiv (unsigned long long ull,
         asm("":"=A" (n):"a" (__low),"d" (__high)); \
         __mod; \
 })
+#endif
 
 static inline unsigned long long rtai_ulldiv (unsigned long long ull, unsigned long uld, unsigned long *r)
 {
@@ -218,11 +219,11 @@ static inline unsigned long long rtai_u64div32c(unsigned long long a,
 #include <rtai_trace.h>
 
 struct rtai_realtime_irq_s {
-        int (*handler)(unsigned irq, void *cookie);
-        void *cookie;
-        int retmode;
-        int cpumask;
-        int (*irq_ack)(unsigned int);
+	int (*handler)(unsigned irq, void *cookie);
+	void *cookie;
+	int retmode;
+	int cpumask;
+	int (*irq_ack)(unsigned int, void *);
 };
 
 /* 
@@ -448,7 +449,11 @@ extern struct rt_times rt_smp_times[RTAI_NR_CPUS];
 
 extern struct calibration_data rtai_tunables;
 
-extern volatile unsigned long rtai_cpu_lock;
+extern volatile unsigned long rtai_cpu_lock[];
+
+#if LINUX_VERSION_CODE > KERNEL_VERSION(2,6,26)
+#define apic_write_around apic_write
+#endif
 
 //#define RTAI_TASKPRI 0xf0  // simplest usage without changing Linux code base
 #if defined(CONFIG_X86_LOCAL_APIC) && defined(RTAI_TASKPRI)
@@ -568,35 +573,78 @@ static inline void rt_spin_unlock_irqrestore(unsigned long flags, spinlock_t *lo
 	rtai_restore_flags(flags);
 }
 
+#if RTAI_NR_CPUS > 2
+
+// taken from Linux, see the related code there for an explanation
+
+static inline void rtai_spin_glock(volatile unsigned long *lock)
+{
+ short inc = 0x0100;
+ __asm__ __volatile__ (
+ LOCK_PREFIX "xaddw %w0, %1\n"
+ "1:\t"
+ "cmpb %h0, %b0\n\t"
+ "je 2f\n\t"
+ "rep; nop\n\t"
+ "movb %1, %b0\n\t"
+ "jmp 1b\n"
+ "2:"
+ :"+Q" (inc), "+m" (lock[1])
+ :
+ :"memory", "cc");
+}
+
+#if defined(CONFIG_X86_OOSTORE) || defined(CONFIG_X86_PPRO_FENCE)
+# define UNLOCK_LOCK_PREFIX LOCK_PREFIX
+#else
+# define UNLOCK_LOCK_PREFIX
+#endif
+
+static inline void rtai_spin_gunlock(volatile unsigned long *lock)
+{
+ __asm__ __volatile__(
+ UNLOCK_LOCK_PREFIX "incb %0"
+ :"+m" (lock[1])
+ :
+ :"memory", "cc");
+}
+
+#else
+
+static inline void rtai_spin_glock(volatile unsigned long *lock)
+{
+	while (test_and_set_bit(31, lock)) {
+		cpu_relax();
+	}
+	barrier();
+}
+
+static inline void rtai_spin_gunlock(volatile unsigned long *lock)
+{
+	test_and_clear_bit(31, lock);
+	cpu_relax(); 
+}
+
+#endif
+
 static inline void rt_get_global_lock(void)
 {
 	barrier();
 	rtai_cli();
-	if (!test_and_set_bit(hal_processor_id(), &rtai_cpu_lock)) {
-		while (test_and_set_bit(31, &rtai_cpu_lock)) {
-			cpu_relax();
-		}
+	if (!test_and_set_bit(hal_processor_id(), &rtai_cpu_lock[0])) {
+		rtai_spin_glock(&rtai_cpu_lock[0]);
 	}
 	barrier();
 }
 
 static inline void rt_release_global_lock(void)
 {
-#if 0
 	barrier();
 	rtai_cli();
-	atomic_clear_mask((0xFFFF0001 << hal_processor_id()), (atomic_t *)&rtai_cpu_lock);
-	cpu_relax();
-	barrier();
-#else
-	barrier();
-	rtai_cli();
-	if (test_and_clear_bit(hal_processor_id(), &rtai_cpu_lock)) {
-		test_and_clear_bit(31, &rtai_cpu_lock);
-		cpu_relax();
+	if (test_and_clear_bit(hal_processor_id(), &rtai_cpu_lock[0])) {
+		rtai_spin_gunlock(&rtai_cpu_lock[0]);
 	}
 	barrier();
-#endif
 }
 
 /**
@@ -640,10 +688,8 @@ static inline int rt_global_save_flags_and_cli(void)
 
 	barrier();
 	flags = rtai_save_flags_irqbit_and_cli();
-	if (!test_and_set_bit(hal_processor_id(), &rtai_cpu_lock)) {
-		while (test_and_set_bit(31, &rtai_cpu_lock)) {
-			cpu_relax();
-		}
+	if (!test_and_set_bit(hal_processor_id(), &rtai_cpu_lock[0])) {
+		rtai_spin_glock(&rtai_cpu_lock[0]);
 		barrier();
 		return flags | 1;
 	}
@@ -662,7 +708,7 @@ static inline void rt_global_save_flags(unsigned long *flags)
 {
 	unsigned long hflags = rtai_save_flags_irqbit_and_cli();
 
-	*flags = test_bit(hal_processor_id(), &rtai_cpu_lock) ? hflags : hflags | 1;
+	*flags = test_bit(hal_processor_id(), &rtai_cpu_lock[0]) ? hflags : hflags | 1;
 	if (hflags) {
 		rtai_sti();
 	}
@@ -879,9 +925,9 @@ int rt_release_irq(unsigned irq);
 
 int ack_8259A_irq(unsigned int irq);
 
-int rt_set_irq_ack(unsigned int irq, int (*irq_ack)(unsigned int));
+int rt_set_irq_ack(unsigned int irq, int (*irq_ack)(unsigned int, void *));
 
-static inline int rt_request_irq_wack(unsigned irq, int (*handler)(unsigned irq, void *cookie), void *cookie, int retmode, int (*irq_ack)(unsigned int))
+static inline int rt_request_irq_wack(unsigned irq, int (*handler)(unsigned irq, void *cookie), void *cookie, int retmode, int (*irq_ack)(unsigned int, void *))
 {
 	int retval;
 	if ((retval = rt_request_irq(irq, handler, cookie, retmode)) < 0) {
@@ -1067,3 +1113,5 @@ do { \
 #endif /* END RTAI_TRIOSS */
 
 #endif /* !_RTAI_HAL_XN_H */
+
+

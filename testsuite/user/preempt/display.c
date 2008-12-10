@@ -1,5 +1,5 @@
 /*
-COPYRIGHT (C) 1999  Paolo Mantegazza (mantegazza@aero.polimi.it)
+COPYRIGHT (C) 1999-2008 Paolo Mantegazza (mantegazza@aero.polimi.it)
 
 This library is free software; you can redistribute it and/or
 modify it under the terms of the GNU Lesser General Public
@@ -52,7 +52,7 @@ int main(int argc,char *argv[])
 	signal(SIGTERM, endme);
 	signal(SIGALRM, endme);
 
-        if (!rt_thread_init(nam2num("DSPLY"), 0, 0, SCHED_FIFO, 1)) {
+        if (!rt_thread_init(nam2num("DSPLY"), 0, 0, SCHED_FIFO, 0xF)) {
                 printf("CANNOT INIT DISPLAY TASK\n");
                 exit(1);
         }

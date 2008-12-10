@@ -14,6 +14,10 @@ if CONFIG_PPC
 ARCHDIR = asm-ppc
 endif
 
+if CONFIG_M68KNOMMU
+ARCHDIR = asm-m68knommu
+endif
+
 nobase_include_HEADERS = \
 		rtai.h \
 		rtai_hal_names.h \

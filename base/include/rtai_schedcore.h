@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 1999-2003 Paolo Mantegazza <mantegazza@aero.polimi.it>
+ * Copyright (C) 1999-2008 Paolo Mantegazza <mantegazza@aero.polimi.it>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License as
@@ -61,14 +61,18 @@
 #define _RTAI_SCHED_XN_H
 
 #if defined(CONFIG_RTAI_IMMEDIATE_LINUX_SYSCALL) && CONFIG_RTAI_IMMEDIATE_LINUX_SYSCALL
+
 #if LINUX_VERSION_CODE < KERNEL_VERSION(2,6,0)
 #define SKIP_IMMEDIATE_LINUX_SYSCALL() \
 	if (regs->LINUX_SYSCALL_NR == __NR_kill || regs->LINUX_SYSCALL_NR == __NR_rt_sigsuspend) { return 0; }
 #else
 #define SKIP_IMMEDIATE_LINUX_SYSCALL()
 #endif
+
 #else
+
 #define SKIP_IMMEDIATE_LINUX_SYSCALL()  do { return 0; } while (0)
+
 #endif
 
 #ifdef RTAI_TRIOSS
@@ -319,7 +323,13 @@ static inline void send_sched_ipi(unsigned long dest)
 
 #define BASE_SOFT_PRIORITY 1000000000
 
+#ifdef TASK_KILLABLE
+#define TASK_HARDREALTIME  TASK_KILLABLE
+#define TASK_RTAISRVSLEEP  TASK_KILLABLE
+#else
 #define TASK_HARDREALTIME  TASK_UNINTERRUPTIBLE
+#define TASK_RTAISRVSLEEP  TASK_UNINTERRUPTIBLE
+#endif
 #define TASK_SOFTREALTIME  TASK_INTERRUPTIBLE
 
 static inline void enq_ready_edf_task(RT_TASK *ready_task)
@@ -388,20 +398,6 @@ static inline int renq_ready_task(RT_TASK *ready_task, int priority)
 			(ready_task->rprev)->rnext = ready_task->rnext;
 			(ready_task->rnext)->rprev = ready_task->rprev;
 			enq_ready_task(ready_task);
-		}
-	}
-	return retval;
-}
-
-static inline int renq_current(RT_TASK *rt_current, int priority)
-{
-	int retval;
-	if ((retval = rt_current->priority != priority)) {
-		rt_current->priority = priority;
-		if (rt_current->state == RT_SCHED_READY) {
-			(rt_current->rprev)->rnext = rt_current->rnext;
-			(rt_current->rnext)->rprev = rt_current->rprev;
-			enq_ready_task(rt_current);
 		}
 	}
 	return retval;
@@ -507,14 +503,14 @@ static inline void wake_up_timed_tasks(int cpuid)
 #endif
 	if (task->resume_time <= rt_time_h) {
 		do {
-        	        if ((task->state &= ~(RT_SCHED_DELAYED | RT_SCHED_SUSPENDED | RT_SCHED_SEMAPHORE | RT_SCHED_RECEIVE | RT_SCHED_SEND | RT_SCHED_RPC | RT_SCHED_RETURN | RT_SCHED_MBXSUSP)) == RT_SCHED_READY) {
+        	        if ((task->state &= ~(RT_SCHED_DELAYED | RT_SCHED_SUSPENDED | RT_SCHED_SEMAPHORE | RT_SCHED_RECEIVE | RT_SCHED_SEND | RT_SCHED_RPC | RT_SCHED_RETURN | RT_SCHED_MBXSUSP | RT_SCHED_POLL)) == RT_SCHED_READY) {
                 	        if (task->policy < 0) {
                         	        enq_ready_edf_task(task);
 	                        } else {
         	                        enq_ready_task(task);
                 	        }
 #if defined(CONFIG_RTAI_BUSY_TIME_ALIGN) && CONFIG_RTAI_BUSY_TIME_ALIGN
-	                        task->busy_time_align = oneshot_timer;
+				task->busy_time_align = oneshot_timer;
 #endif
         	        }
 			rb_erase_task(task, cpuid);
@@ -688,12 +684,12 @@ static inline int rtai_init_features (void)
 #ifdef CONFIG_RTAI_SHM_BUILTIN
     __rtai_shm_init();
 #endif /* CONFIG_RTAI_SHM_BUILTIN */
-#ifdef CONFIG_RTAI_USI_BUILTIN
-    __rtai_usi_init();
-#endif /* CONFIG_RTAI_USI_BUILTIN */
 #ifdef CONFIG_RTAI_MATH_BUILTIN
     __rtai_math_init();
 #endif /* CONFIG_RTAI_MATH_BUILTIN */
+#ifdef CONFIG_RTAI_USI
+        printk(KERN_INFO "RTAI[usi]: enabled.\n");
+#endif /* CONFIG_RTAI_USI */
 
 	return 0;
 }
@@ -703,9 +699,6 @@ static inline void rtai_cleanup_features (void) {
 #ifdef CONFIG_RTAI_MATH_BUILTIN
     __rtai_math_exit();
 #endif /* CONFIG_RTAI_MATH_BUILTIN */
-#ifdef CONFIG_RTAI_USI_BUILTIN
-    __rtai_usi_exit();
-#endif /* CONFIG_RTAI_USI_BUILTIN */
 #ifdef CONFIG_RTAI_SHM_BUILTIN
     __rtai_shm_exit();
 #endif /* CONFIG_RTAI_SHM_BUILTIN */

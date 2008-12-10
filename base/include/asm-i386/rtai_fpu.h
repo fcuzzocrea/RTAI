@@ -32,7 +32,13 @@
 #include <asm/processor.h>
 #endif /* !__cplusplus */
 
+#if LINUX_VERSION_CODE <= KERNEL_VERSION(2,6,25)
 typedef union i387_union FPU_ENV;
+#define TASK_FPENV(tsk)  (&(tsk)->thread.i387)
+#else
+typedef union thread_xstate FPU_ENV;
+#define TASK_FPENV(tsk)  ((tsk)->thread.xstate)
+#endif
    
 #ifdef CONFIG_RTAI_FPU_SUPPORT
 
@@ -63,40 +69,46 @@ typedef union i387_union FPU_ENV;
 } while (0)
 
 // initialise the given fpenv union, without touching the related hard fpu unit
-#define init_fpenv(fpenv)  do { \
+#define __init_fpenv(fpenv)  do { \
 	if (cpu_has_fxsr) { \
-		memset(&(fpenv).fxsave, 0, sizeof(struct i387_fxsave_struct)); \
-		(fpenv).fxsave.cwd = 0x37f; \
+		memset(&(fpenv)->fxsave, 0, sizeof(struct i387_fxsave_struct));\
+		(fpenv)->fxsave.cwd = 0x37f; \
 		if (cpu_has_xmm) { \
-			(fpenv).fxsave.mxcsr = 0x1f80; \
+			(fpenv)->fxsave.mxcsr = 0x1f80; \
 		} \
 	} else { \
-		memset(&(fpenv).fsave, 0, sizeof(struct i387_fsave_struct)); \
-		(fpenv).fsave.cwd = 0xffff037fu; \
-		(fpenv).fsave.swd = 0xffff0000u; \
-		(fpenv).fsave.twd = 0xffffffffu; \
-		(fpenv).fsave.fos = 0xffff0000u; \
+		memset(&(fpenv)->fsave, 0, sizeof(struct i387_fsave_struct)); \
+		(fpenv)->fsave.cwd = 0xffff037fu; \
+		(fpenv)->fsave.swd = 0xffff0000u; \
+		(fpenv)->fsave.twd = 0xffffffffu; \
+		(fpenv)->fsave.fos = 0xffff0000u; \
 	} \
 } while (0)
 
-#define save_fpenv(fpenv)  do { \
+#define __save_fpenv(fpenv)  do { \
 	if (cpu_has_fxsr) { \
-		__asm__ __volatile__ ("fxsave %0; fnclex": "=m" ((fpenv).fxsave)); \
+		__asm__ __volatile__ ("fxsave %0; fnclex": "=m" ((fpenv)->fxsave)); \
 	} else { \
-		__asm__ __volatile__ ("fnsave %0; fwait": "=m" ((fpenv).fsave)); \
+		__asm__ __volatile__ ("fnsave %0; fwait": "=m" ((fpenv)->fsave)); \
 	} \
 } while (0)
 
-#define restore_fpenv(fpenv)  do { \
+#define __restore_fpenv(fpenv)  do { \
 	if (cpu_has_fxsr) { \
-		__asm__ __volatile__ ("fxrstor %0": : "m" ((fpenv).fxsave)); \
+		__asm__ __volatile__ ("fxrstor %0": : "m" ((fpenv)->fxsave)); \
 	} else { \
-		__asm__ __volatile__ ("frstor %0": : "m" ((fpenv).fsave)); \
+		__asm__ __volatile__ ("frstor %0": : "m" ((fpenv)->fsave)); \
 	} \
 } while (0)
 
 // FPU MANAGEMENT DRESSED FOR IN KTHREAD/THREAD/PROCESS FPU USAGE FROM RTAI
 
+// Macros used for RTAI own kernel space tasks, where it uses the FPU env union
+#define init_fpenv(fpenv)  do { __init_fpenv(&(fpenv)); } while (0)
+#define save_fpenv(fpenv)  do { __save_fpenv(&(fpenv)); } while (0)
+#define restore_fpenv(fpenv)  do { __restore_fpenv(&(fpenv)); } while (0)
+
+// Macros used for user space, where Linux might use eother a pointer or the FPU env union
 #define init_hard_fpu(lnxtsk)  do { \
 	init_hard_fpenv(); \
 	set_lnxtsk_uses_fpu(lnxtsk); \
@@ -104,13 +116,13 @@ typedef union i387_union FPU_ENV;
 } while (0)
 
 #define init_fpu(lnxtsk)  do { \
-	init_fpenv((lnxtsk)->thread.i387); \
+	__init_fpenv(TASK_FPENV(lnxtsk)); \
 	set_lnxtsk_uses_fpu(lnxtsk); \
 } while (0)
 
 #define restore_fpu(lnxtsk)  do { \
 	enable_fpu(); \
-	restore_fpenv((lnxtsk)->thread.i387); \
+	__restore_fpenv(TASK_FPENV(lnxtsk)); \
 	set_lnxtsk_using_fpu(lnxtsk); \
 } while (0)
 

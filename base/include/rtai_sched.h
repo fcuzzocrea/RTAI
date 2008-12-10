@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 1999-2003 Paolo Mantegazza <mantegazza@aero.polimi.it>
+ * Copyright (C) 1999-2008 Paolo Mantegazza <mantegazza@aero.polimi.it>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License as
@@ -47,6 +47,7 @@
 #define RT_SCHED_RETURN     128
 #define RT_SCHED_MBXSUSP    256
 #define RT_SCHED_SFTRDY     512
+#define RT_SCHED_POLL      1024
 #define RT_SCHED_SIGSUSP    (1 << 15)
 
 #define RT_RWLINV     (11)  // keep this the highest
@@ -207,7 +208,7 @@ typedef struct rt_task_struct {
 	unsigned long force_soft;
 	volatile int is_hard;
 
-	long long busy_time_align;
+	long busy_time_align;
 	struct linux_syscalls_list *linux_syscall_server; 
 
 	/* For use by watchdog. */

@@ -4,7 +4,7 @@
  *
  * @note Copyright (C) 2005 Jan Kiszka <jan.kiszka@web.de>
  * @note Copyright (C) 2005 Joerg Langenberg <joerg.langenberg@gmx.net>
- * @note Copyright (C) 2005 Paolo Mantegazza <mantegazza@aero.polimi.it>
+ * @note Copyright (C) 2005-2008 Paolo Mantegazza <mantegazza@aero.polimi.it>
  *       for the adaption to RTAI only.
  *
  * RTAI is free software; you can redistribute it and/or modify it
@@ -123,6 +123,20 @@ static RTAI_SYSCALL_MODE int sys_rtdm_sendmsg(long fd, const struct msghdr *msg,
 	return __rt_dev_sendmsg(curr, fd, &krnl_msg, flags);
 }
 
+static RTAI_SYSCALL_MODE int sys_rtdm_select(int nfds, fd_set *rfds, fd_set *wfds, fd_set *efds, nanosecs_rel_t timeout)
+{
+#ifdef CONFIG_RTAI_RTDM_SELECT
+	struct xnselector selector;
+	int ret;
+	xnselector_init(&selector);
+	ret = __rt_dev_select(nfds, rfds, wfds, efds, timeout, &selector, 0);
+	xnselector_destroy(&selector);
+	return ret;
+#else
+	return -ENOSYS;
+#endif
+}
+
 static struct rt_fun_entry rtdm[] = {
 	[__rtdm_fdcount] = { 0, sys_rtdm_fdcount },
 	[__rtdm_open]    = { 0, sys_rtdm_open },
@@ -133,6 +147,7 @@ static struct rt_fun_entry rtdm[] = {
 	[__rtdm_write]   = { 0, sys_rtdm_write },
 	[__rtdm_recvmsg] = { 0, sys_rtdm_recvmsg },
 	[__rtdm_sendmsg] = { 0, sys_rtdm_sendmsg },
+	[__rtdm_select]  = { 0, sys_rtdm_select },
 };
 
 /* This is needed because RTDM interrupt handlers:
@@ -581,6 +596,9 @@ int xnintr_attach(xnintr_t *intr, void *cookie)
 	int err;
 	spl_t s;
 
+
+
+
 	intr->cookie = cookie;
 	memset(&intr->stat, 0, sizeof(intr->stat));
 
@@ -604,6 +622,8 @@ int xnintr_detach(xnintr_t *intr)
 	int err;
 	spl_t s;
 
+
+
 	xnlock_get_irqsave(&intrlock, s);
 
 	err = xnintr_irq_detach(intr);
@@ -618,12 +638,14 @@ int xnintr_detach(xnintr_t *intr)
 
 int xnintr_enable (xnintr_t *intr)
 {
+
         rt_enable_irq(intr->irq);
         return 0;
 }
 
 int xnintr_disable (xnintr_t *intr)
 {
+
         rt_disable_irq(intr->irq);
         return 0;
 }

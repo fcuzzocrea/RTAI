@@ -19,16 +19,11 @@
 #ifndef _RTAI_ASM_X8664_SHM_H
 #define _RTAI_ASM_X8664_SHM_H
 
-#include <asm/pgtable.h>
-#include <asm/io.h>
-#include <asm/rtai_vectors.h>
-#include <rtai_wrappers.h>
-
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,0)
-#define VMALLOC_VMADDR(x) ((unsigned long)(x))
-#endif /* >= 2.6.0 */
+#if 0
 
 #ifndef __KERNEL__
+
+#include <asm/rtai_vectors.h>
 
 static inline long long rtai_shmrq(int srq, unsigned long args)
 {
@@ -38,6 +33,14 @@ static inline long long rtai_shmrq(int srq, unsigned long args)
 }
 
 #endif /* __KERNEL__ */
+
+#include <asm/pgtable.h>
+#include <asm/io.h>
+#include <rtai_wrappers.h>
+
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,0)
+#define VMALLOC_VMADDR(x) ((unsigned long)(x))
+#endif /* >= 2.6.0 */
 
 /* convert virtual user memory address to physical address */
 /* (virt_to_phys only works for kmalloced kernel memory) */
@@ -101,5 +104,7 @@ static inline unsigned long kvirt_to_pa(unsigned long adr)
 
 	return ret;
 }
+
+#endif
 
 #endif  /* !_RTAI_ASM_X8664_SHM_H */

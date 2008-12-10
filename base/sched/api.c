@@ -815,7 +815,15 @@ int rt_task_wait_period(void)
 		rt_schedule();
 		blocked_on = rt_current->blocked_on;
 		rt_global_restore_flags(flags);
+#ifdef CONFIG_M68K
+		//Workaround of a gcc bug
+		if(blocked_on == RTP_OBJREM) {
+			__asm__ __volatile__ ("nop");
+		}
+		return likely(!blocked_on) ? 0L : RTE_UNBLKD;
+#else
 		return likely(!blocked_on) ? 0 : RTE_UNBLKD;
+#endif
 	}
 	rt_global_restore_flags(flags);
 	return RTE_TMROVRN;
@@ -1114,7 +1122,7 @@ void rt_dequeue_blocked(RT_TASK *task)
 
 int rt_renq_current(RT_TASK *rt_current, int priority)
 {
-	return renq_current(rt_current, priority);
+	return renq_ready_task(rt_current, priority);
 }
 
 /* ++++++++++++++++++++++++ NAMED TASK INIT/DELETE ++++++++++++++++++++++++++ */
@@ -1867,6 +1875,8 @@ void krtai_objects_release(void)
 
 /* +++++++++++++++++++++++++ SUPPORT FOR IRQ TASKS ++++++++++++++++++++++++++ */
 
+#ifdef CONFIG_RTAI_USI
+
 #include <rtai_tasklets.h>
 
 extern struct rtai_realtime_irq_s rtai_realtime_irq[];
@@ -1943,6 +1953,8 @@ RTAI_SYSCALL_MODE void usp_request_rtc(int rtc_freq, void *handler)
 		
 }
 
+#endif
+
 /* +++++++++++++++++ SUPPORT FOR THE LINUX SYSCALL SERVER +++++++++++++++++++ */
 
 RTAI_SYSCALL_MODE void rt_set_linux_syscall_mode(long mode, void (*callback_fun)(long, long))
@@ -1953,17 +1965,19 @@ RTAI_SYSCALL_MODE void rt_set_linux_syscall_mode(long mode, void (*callback_fun)
 
 void rt_exec_linux_syscall(RT_TASK *rt_current, struct linux_syscalls_list *syscalls, struct pt_regs *regs)
 {
-	struct { long in, nr, mode; RT_TASK *serv; struct mode_regs *moderegs; } from;
+	struct { long in, nr, mode; RT_TASK *serv; } from;
 
 	rt_copy_from_user(&from, syscalls, sizeof(from));
 	from.serv->priority = rt_current->priority + BASE_SOFT_PRIORITY;
-	rt_put_user(from.mode, &from.moderegs[from.in].mode);
-	rt_copy_to_user(&from.moderegs[from.in].regs, regs, sizeof(struct pt_regs));
+	rt_copy_to_user(&syscalls->moderegs[from.in].regs, regs, sizeof(struct pt_regs));
+	rt_put_user(from.mode, &syscalls->moderegs[from.in].mode);
 	if (++from.in >= from.nr) {
 		from.in = 0;
 	}
 	rt_put_user(from.in, &syscalls->in);
-	rt_task_resume(from.serv);
+	if (from.serv->suspdepth >= -from.nr) {
+		rt_task_resume(from.serv);
+	}
 	if (from.mode == SYNC_LINUX_SYSCALL) {
 		rt_task_suspend(rt_current);
 		rt_get_user(regs->LINUX_SYSCALL_RETREG, &syscalls->retval);

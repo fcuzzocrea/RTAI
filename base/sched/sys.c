@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2001-2006  Paolo Mantegazza <mantegazza@aero.polimi.it>,
+ * Copyright (C) 2001-2008  Paolo Mantegazza <mantegazza@aero.polimi.it>,
  *		            Pierre Cloutier <pcloutier@poseidoncontrols.com>,
  *		            Steve Papacharalambous <stevep@zentropix.com>.
  *
@@ -246,7 +246,7 @@ static inline RT_TASK* __task_init(unsigned long name, int prio, int stack_size,
 #ifdef PF_EVNOTIFY
 			current->flags |= PF_EVNOTIFY;
 #endif
-#ifdef VM_PINNED
+#if (defined VM_PINNED) && (defined CONFIG_MMU)
 			ipipe_disable_ondemand_mappings(current);
 #endif
 
@@ -265,10 +265,17 @@ static inline RT_TASK* __task_init(unsigned long name, int prio, int stack_size,
 static int __task_delete(RT_TASK *rt_task)
 {
 	struct task_struct *process;
+
+	if (current != rt_task->lnxtsk) {
+		return -EPERM;
+	}
+	if ((process = rt_task->lnxtsk)) {
+		process->rtai_tskext(TSKEXT0) = process->rtai_tskext(TSKEXT1) = 0;
+	}
 	if (rt_task->linux_syscall_server) {
 		rt_task_masked_unblock(rt_task->linux_syscall_server->task, ~RT_SCHED_READY);
 	}
-	if (current == rt_task->lnxtsk && rt_task->is_hard > 0) {
+	if (rt_task->is_hard > 0) {
 		give_back_to_linux(rt_task, 0);
 	}
 	if (clr_rtext(rt_task)) {
@@ -277,9 +284,6 @@ static int __task_delete(RT_TASK *rt_task)
 	rt_free(rt_task->msg_buf[0]);
 	rt_free(rt_task->msg_buf[1]);
 	rt_free(rt_task);
-	if ((process = rt_task->lnxtsk)) {
-		process->rtai_tskext(TSKEXT0) = process->rtai_tskext(TSKEXT1) = 0;
-	}
 	return (!rt_drg_on_adr(rt_task)) ? -ENODEV : 0;
 }
 
@@ -289,15 +293,6 @@ static int __task_delete(RT_TASK *rt_task)
 #else
 #define SYSW_DIAG_MSG(x)
 #endif
-
-#define recover_hardrt(chktsk, task) \
-do { \
-	if ((chktsk) && unlikely(((task)->is_hard) < 0)) { \
-		SYSW_DIAG_MSG(rt_printk("GOING BACK TO HARD (SYSLXRT, DIRECT), PID = %d.\n", current->pid);); \
-		steal_from_linux(task); \
-		SYSW_DIAG_MSG(rt_printk("GONE BACK TO HARD (SYSLXRT),  PID = %d.\n", current->pid);); \
-	} \
-} while(0)
 
 static inline long long handle_lxrt_request (unsigned int lxsrq, long *arg, RT_TASK *task)
 {
@@ -320,10 +315,8 @@ static inline long long handle_lxrt_request (unsigned int lxsrq, long *arg, RT_T
 			return -ENOSYS;
 		}
 		if (!(type = funcm[srq].type)) {
-			recover_hardrt(task, task);
 			return ((RTAI_SYSCALL_MODE long long (*)(unsigned long, ...))funcm[srq].fun)(RTAI_FUN_ARGS);
 		}
-		recover_hardrt(1, task);
 		if (unlikely(NEED_TO_RW(type))) {
 			lxrt_fun_call_wbuf(task, funcm[srq].fun, NARG(lxsrq), arg, type);
 		} else {
@@ -494,9 +487,15 @@ static inline long long handle_lxrt_request (unsigned int lxsrq, long *arg, RT_T
 		}
 
 		case NONROOT_HRT: {
+#if LINUX_VERSION_CODE < KERNEL_VERSION(2,6,24)
 			current->cap_effective |= ((1 << CAP_IPC_LOCK)  |
-						   (1 << CAP_SYS_RAWIO) | 
+						   (1 << CAP_SYS_RAWIO) |
 						   (1 << CAP_SYS_NICE));
+#else
+			cap_raise(current->cap_effective, CAP_IPC_LOCK);
+			cap_raise(current->cap_effective, CAP_SYS_RAWIO);
+			cap_raise(current->cap_effective, CAP_SYS_NICE);
+#endif
 			return 0;
 		}
 
@@ -593,105 +592,42 @@ static inline long long handle_lxrt_request (unsigned int lxsrq, long *arg, RT_T
 	return 0;
 }
 
-static inline void force_soft(RT_TASK *task)
+static inline void check_to_soften_harden(RT_TASK *task)
 {
 	if (unlikely(task->force_soft)) {
-		task->force_soft = 0;
-		task->usp_flags &= ~FORCE_SOFT;
-		give_back_to_linux(task, 0);
-	}
-}
-
-#if 1  // restructured 
-
-static inline void rt_do_signal(struct pt_regs *regs, RT_TASK *task)
-{
-	if (unlikely(task->unblocked)) {
 		if (task->is_hard > 0) {
-			give_back_to_linux(task, task->force_soft ? 0 : -1);
+			give_back_to_linux(task, 0);
+		} else {
+			task->is_hard = 0;
 		}
-#ifdef RTAI_DO_LINUX_SIGNAL
-		do {
-			unsigned long saved_eax = regs->LINUX_SYSCALL_RETREG;
-			regs->LINUX_SYSCALL_RETREG = -ERESTARTSYS; // -EINTR;
-			RT_DO_SIGNAL(regs);
-			regs->LINUX_SYSCALL_RETREG = saved_eax;
-			if (task->is_hard < 0) {
-				steal_from_linux(task);
-			}
-		} while (0);
-#endif
 		task->unblocked = task->force_soft = 0;
 		task->usp_flags &= ~FORCE_SOFT;
-		return;
-	}
-	force_soft(task);
-}
-
-long long rtai_lxrt_invoke (unsigned int lxsrq, void *arg, struct pt_regs *regs)
-{
-	RT_TASK *task;
-
-	if (likely((task = current->rtai_tskext(TSKEXT0)) != NULL)) {
-		long long retval;
-		rt_do_signal(regs, task);
-		retval = handle_lxrt_request(lxsrq, arg, task);
-		rt_do_signal(regs, task);
-		return retval;
-	} else {
-		return handle_lxrt_request(lxsrq, arg, task);
-	}
-}
-
-#else  // end restructured, begin old
-
-static inline int rt_do_signal(struct pt_regs *regs, RT_TASK *task)
-{
-	if (unlikely(task->unblocked)) {
-		int retval = task->unblocked < 0;
+	} else if (unlikely(task->is_hard < 0)) {
+		SYSW_DIAG_MSG(rt_printk("GOING BACK TO HARD (SYSLXRT, DIRECT), PID = %d.\n", current->pid););
+		steal_from_linux(task);
+		SYSW_DIAG_MSG(rt_printk("GONE BACK TO HARD (SYSLXRT),  PID = %d.\n", current->pid););
+	} else if (unlikely(task->unblocked)) {
 		if (task->is_hard > 0) {
 			give_back_to_linux(task, -1);
 		}
-#ifdef RTAI_DO_LINUX_SIGNAL
-		if (task->unblocked > 0) {
-			if (likely(regs->LINUX_SYSCALL_NR < RTAI_SYSCALL_NR)) {
-				unsigned long saved_eax = regs->LINUX_SYSCALL_RETREG;
-				regs->LINUX_SYSCALL_RETREG = -EINTR;
-//				regs->LINUX_SYSCALL_RETREG = -ERESTARTSYS;
-				RT_DO_SIGNAL(regs);
-				regs->LINUX_SYSCALL_RETREG = saved_eax;
-				if (task->is_hard < 0) {
-					steal_from_linux(task);
-				}
-			}
-		}
-#endif
 		task->unblocked = 0;
-		return retval;
 	}
-	return 1;
 }
 
-long long rtai_lxrt_invoke (unsigned int lxsrq, void *arg, struct pt_regs *regs)
+long long rtai_lxrt_invoke (unsigned int lxsrq, void *arg)
 {
 	RT_TASK *task;
 
 	if (likely((task = current->rtai_tskext(TSKEXT0)) != NULL)) {
 		long long retval;
-		if (unlikely(rt_do_signal(regs, task))) {
-			force_soft(task);
-		}
+		check_to_soften_harden(task);
 		retval = handle_lxrt_request(lxsrq, arg, task);
-		if (unlikely(rt_do_signal(regs, task))) {
-			force_soft(task);
-		}
+		check_to_soften_harden(task);
 		return retval;
-	} else {
-		return handle_lxrt_request(lxsrq, arg, task);
-	}
-}
+	} 
 
-#endif // end olf part of restructured
+	return handle_lxrt_request(lxsrq, arg, NULL);
+}
 
 int set_rt_fun_ext_index(struct rt_fun_entry *fun, int idx)
 {

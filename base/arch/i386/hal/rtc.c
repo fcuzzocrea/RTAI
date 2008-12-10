@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2005       Paolo Mantegazza  (mantegazza@aero.polimi.it)
+ * Copyright (C) 2005-2008  Paolo Mantegazza  (mantegazza@aero.polimi.it)
  * (RTC specific part with) Giuseppe Quaranta (quaranta@aero.polimi.it)
  *
  * This program is free software; you can redistribute it and/or
@@ -17,9 +17,15 @@
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
  */
 
+
 #ifdef INCLUDED_BY_HAL_C
 
 #include <linux/mc146818rtc.h>
+static inline unsigned char RT_CMOS_READ(unsigned char addr)
+{
+	outb_p(addr, RTC_PORT(0));
+	return inb_p(RTC_PORT(1));
+}
 
 //#define TEST_RTC
 #define MIN_RTC_FREQ  2
@@ -30,29 +36,31 @@ static void rt_broadcast_rtc_interrupt(void)
 {
 #ifdef CONFIG_SMP
 	apic_wait_icr_idle();
-	apic_write_around(APIC_ICR, APIC_DM_FIXED | APIC_DEST_ALLINC | RTAI_APIC_TIMER_VECTOR | APIC_DEST_LOGICAL);
+	apic_write_around(APIC_ICR, APIC_DM_FIXED | APIC_DEST_ALLBUT | RTAI_APIC_TIMER_VECTOR | APIC_DEST_LOGICAL);
+	((void (*)(void))rtai_realtime_irq[RTAI_APIC_TIMER_IPI].handler)();
 #endif
 }
 
 static void (*usr_rtc_handler)(void);
 
-#if CONFIG_RTAI_DONT_DISPATCH_CORE_IRQS // && defined(CONFIG_RTAI_RTC_FREQ) && CONFIG_RTAI_RTC_FREQ
+#if CONFIG_RTAI_DONT_DISPATCH_CORE_IRQS
 
 int _rtai_rtc_timer_handler(void)
 {
 	unsigned long cpuid = rtai_cpuid();
 	unsigned long sflags;
+
 	RTAI_SCHED_ISR_LOCK();
 	HAL_LOCK_LINUX();
 
 	rt_mask_and_ack_irq(RTC_IRQ);
- 	CMOS_READ(RTC_INTR_FLAGS);
+	RT_CMOS_READ(RTC_INTR_FLAGS); // CMOS_READ(RTC_INTR_FLAGS);
 	rt_enable_irq(RTC_IRQ);
 	usr_rtc_handler();
 
 	HAL_UNLOCK_LINUX();
 	RTAI_SCHED_ISR_UNLOCK();
-#if 1 //LINUX_VERSION_CODE < KERNEL_VERSION(2,6,0)
+
 	if (!test_bit(IPIPE_STALL_FLAG, ROOT_STATUS_ADR(cpuid))) {
 		rtai_sti();
 		hal_fast_flush_pipeline(cpuid);
@@ -61,42 +69,12 @@ int _rtai_rtc_timer_handler(void)
 #endif
 		return 1;
 	}
-#endif
+
 	return 0;
 }
 
-void rtai_rtc_timer_handler (void);
-	__asm__ ( \
-        "\n" __ALIGN_STR"\n\t" \
-        SYMBOL_NAME_STR(rtai_rtc_timer_handler) ":\n\t" \
-        "pushl $-1\n\t" \
-	"cld\n\t" \
-        "pushl %es\n\t" \
-        "pushl %ds\n\t" \
-        "pushl %eax\n\t" \
-        "pushl %ebp\n\t" \
-        "pushl %edi\n\t" \
-        "pushl %esi\n\t" \
-        "pushl %edx\n\t" \
-        "pushl %ecx\n\t" \
-        "pushl %ebx\n\t" \
-	__LXRT_GET_DATASEG(ecx) \
-        "movl %ecx, %ds\n\t" \
-        "movl %ecx, %es\n\t" \
-        "call "SYMBOL_NAME_STR(_rtai_rtc_timer_handler)"\n\t" \
-        "testl %eax,%eax\n\t" \
-        "jnz  ret_from_intr\n\t" \
-        "popl %ebx\n\t" \
-        "popl %ecx\n\t" \
-        "popl %edx\n\t" \
-        "popl %esi\n\t" \
-        "popl %edi\n\t" \
-        "popl %ebp\n\t" \
-        "popl %eax\n\t" \
-        "popl %ds\n\t" \
-        "popl %es\n\t" \
-        "addl $4,%esp\n\t" \
-        "iret");
+void rtai_rtc_timer_handler(void);
+DEFINE_VECTORED_ISR(rtai_rtc_timer_handler, _rtai_rtc_timer_handler);
 
 static struct desc_struct rtai_rtc_timer_sysvec;
 
@@ -119,7 +97,7 @@ static void rtc_handler(int irq, int rtc_freq)
 		cnt = 0;
 	}
 #endif
- 	CMOS_READ(RTC_INTR_FLAGS);
+	RT_CMOS_READ(RTC_INTR_FLAGS); // CMOS_READ(RTC_INTR_FLAGS);
 	rt_enable_irq(RTC_IRQ);
 	if (usr_rtc_handler) {
 		usr_rtc_handler();
@@ -211,3 +189,4 @@ EXPORT_SYMBOL(rt_request_rtc);
 EXPORT_SYMBOL(rt_release_rtc);
 
 #endif /* INCLUDED_BY_HAL_C */
+

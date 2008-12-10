@@ -1,5 +1,5 @@
 /*
-COPYRIGHT (C) 2003  Paolo Mantegazza (mantegazza@aero.polimi.it)
+COPYRIGHT (C) 2003-2008 Paolo Mantegazza (mantegazza@aero.polimi.it)
 
 This library is free software; you can redistribute it and/or
 modify it under the terms of the GNU Lesser General Public
@@ -25,9 +25,11 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA.
 #include <rtai_sem.h>
 #include <rtai_mbx.h>
 
-#define NAVRG 4000
+#define CPUMAP 0x1
 
-#define USE_FPU 0
+#define USEDFRAC 25  // in %
+
+#define NAVRG 4000
 
 #define FASTMUL  4
 
@@ -43,38 +45,40 @@ static RT_TASK *Latency_Task;
 static RT_TASK *Slow_Task;
 static RT_TASK *Fast_Task;
 
-static volatile int period, slowjit, fastjit;
-static volatile RTIME expected;
+static volatile	RTIME start;
+static volatile int end, slowjit, fastjit;
 
 static MBX *mbx;
 
 static SEM *barrier;
 
-static volatile int end;
 static void endme (int dummy) { end = 1; }
 
 static void *slow_fun(void *arg)
 {
-        int jit;
-        RTIME svt, t;
+	int jit, period;
+	RTIME expected;
 
-        if (!(Slow_Task = rt_thread_init(nam2num("SLWTSK"), 3, 0, SCHED_FIFO, 1))) {
-                printf("CANNOT INIT SLOW TASK\n");
-                exit(1);
-        }
+	if (!(Slow_Task = rt_thread_init(nam2num("SLWTSK"), 3, 0, SCHED_FIFO, CPUMAP))) {
+		printf("CANNOT INIT SLOW TASK\n");
+		exit(1);
+	}
 
 	mlockall(MCL_CURRENT | MCL_FUTURE);
 	rt_make_hard_real_time();
 	rt_sem_wait_barrier(barrier);
-        svt = rt_get_time() - SLOWMUL*period;
-        while (!end) {  
-                jit = (int) count2nano((t = rt_get_time()) - svt - SLOWMUL*period);
-                svt = t;
-                if (jit) { jit = - jit; }
-                if (jit > slowjit) { slowjit = jit; }
-                rt_busy_sleep(SLOWMUL/2*TICK_TIME);
-                rt_task_wait_period();                                        
-        }
+	period = nano2count(SLOWMUL*TICK_TIME);
+	expected = start + 9*nano2count(TICK_TIME);
+	rt_task_make_periodic(Slow_Task, expected, period);
+	while (!end) {  
+		jit = abs(count2nano(rt_get_time() - expected));
+		if (jit > slowjit) {
+			slowjit = jit;
+		}
+		rt_busy_sleep((SLOWMUL*TICK_TIME*USEDFRAC)/100);
+		expected += period;
+		rt_task_wait_period();                                        
+	}
 	rt_sem_wait_barrier(barrier);
 	rt_make_soft_real_time();
 	rt_thread_delete(Slow_Task);
@@ -83,26 +87,29 @@ static void *slow_fun(void *arg)
 
 static void *fast_fun(void *arg) 
 {                             
-        int jit;
-        RTIME svt, t;
+	int jit, period;
+	RTIME expected;
 
-        if (!(Fast_Task = rt_thread_init(nam2num("FSTSK"), 2, 0, SCHED_FIFO, 1))) {
-                printf("CANNOT INIT FAST TASK\n");
-                exit(1);
-        }
+	if (!(Fast_Task = rt_thread_init(nam2num("FSTSK"), 2, 0, SCHED_FIFO, CPUMAP))) {
+		printf("CANNOT INIT FAST TASK\n");
+		exit(1);
+	}
 
 	mlockall(MCL_CURRENT | MCL_FUTURE);
 	rt_make_hard_real_time();
 	rt_sem_wait_barrier(barrier);
-        svt = rt_get_time() - SLOWMUL*period;
-        while (!end) {  
-                jit = (int) count2nano((t = rt_get_time()) - svt - FASTMUL*period);
-                svt = t;
-                if (jit) { jit = - jit; }
-                if (jit > fastjit) { fastjit = jit; }
-                rt_busy_sleep(FASTMUL/2*TICK_TIME);
-                rt_task_wait_period();                                        
-        }                      
+	period = nano2count(FASTMUL*TICK_TIME);
+	expected = start + 6*nano2count(TICK_TIME);
+	rt_task_make_periodic(Fast_Task, expected, period);
+	while (!end) {  
+		jit = abs(count2nano(rt_get_time() - expected));
+		if (jit > fastjit) {
+			fastjit = jit;
+		}
+		rt_busy_sleep((FASTMUL*TICK_TIME*USEDFRAC)/100);
+		expected += period;
+		rt_task_wait_period();                                        
+	}                      
 	rt_sem_wait_barrier(barrier);
 	rt_make_soft_real_time();
 	rt_thread_delete(Fast_Task);
@@ -117,18 +124,23 @@ static void *latency_fun(void *arg)
 	int average;
 	int min_diff;
 	int max_diff;
+	int period;
+	RTIME expected;
 
 	min_diff = 1000000000;
 	max_diff = -1000000000;
-        if (!(Latency_Task = rt_thread_init(nam2num("LTCTSK"), 1, 0, SCHED_FIFO, 1))) {
-                printf("CANNOT INIT LATENCY TASK\n");
-                exit(1);
-        }
+	if (!(Latency_Task = rt_thread_init(nam2num("LTCTSK"), 1, 0, SCHED_FIFO, CPUMAP))) {
+		printf("CANNOT INIT LATENCY TASK\n");
+		exit(1);
+	}
 
 	mlockall(MCL_CURRENT | MCL_FUTURE);
 	rt_make_hard_real_time();
 	rt_sem_wait_barrier(barrier);
-        while (!end) {  
+	period = nano2count(TICK_TIME);
+	expected = start + 3*period;
+	rt_task_make_periodic(Latency_Task, expected, period);
+	while (!end) {  
 		average = 0;
 		for (skip = 0; skip < NAVRG && !end; skip++) {
 			expected += period;
@@ -167,27 +179,23 @@ int main(void)
 	signal(SIGTERM, endme);
 	signal(SIGALRM, endme);
 
-        if (!(Main_Task = rt_thread_init(nam2num("MNTSK"), 0, 0, SCHED_FIFO, 1))) {
-                printf("CANNOT INIT MAIN TASK\n");
-                exit(1);
-        }
+	if (!(Main_Task = rt_thread_init(nam2num("MNTSK"), 0, 0, SCHED_FIFO, 0xF))) {
+		printf("CANNOT INIT MAIN TASK\n");
+		exit(1);
+	}
 
-        if (!(mbx = rt_mbx_init(nam2num("MBX"), 1000))) {
-                printf("ERROR OPENING MBX\n");
-                exit(1);
-        }
+	if (!(mbx = rt_mbx_init(nam2num("MBX"), 1000))) {
+		printf("ERROR OPENING MBX\n");
+		exit(1);
+	}
 
+	start_rt_timer(0);
 	barrier = rt_sem_init(nam2num("PREMSM"), 4);
 	latency_thread = rt_thread_create(latency_fun, NULL, 0);
 	fast_thread    = rt_thread_create(fast_fun, NULL, 0);
 	slow_thread    = rt_thread_create(slow_fun, NULL, 0);
-	start_rt_timer(0);
-	period = nano2count(TICK_TIME);
+	start = rt_get_time() + nano2count(200000000);
 	rt_sem_wait_barrier(barrier);
-	expected = rt_get_time() + 100*period;
-	rt_task_make_periodic(Latency_Task, expected, period);
-	rt_task_make_periodic(Fast_Task, expected, FASTMUL*period);
-	rt_task_make_periodic(Slow_Task, expected, SLOWMUL*period);
 	pause();
 	end = 1;
 	rt_sem_wait_barrier(barrier);

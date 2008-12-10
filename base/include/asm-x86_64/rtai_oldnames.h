@@ -5,9 +5,9 @@
  *   be included from rtai_hal.h only.
  *
  *   Original RTAI/x86 layer implementation:
- *   Copyright (C) 2000 Paolo Mantegazza,
- *   Copyright (C) 2000 Steve Papacharalambous,
- *   Copyright (C) 2000 Stuart Hughes,
+ *   Copyright (C) 2000-2008 Paolo Mantegazza,
+ *   Copyright (C) 2000      Steve Papacharalambous,
+ *   Copyright (C) 2000      Stuart Hughes,
  *   and others.
  *
  *   RTAI/x86 rewrite over Adeos:
@@ -82,32 +82,7 @@
 #ifndef __cplusplus
 
 #include <linux/irq.h>
-#include <asm/desc.h>
-
-extern struct gate_struct idt_table[];
-
-static inline struct gate_struct rt_set_full_intr_vect (unsigned vector,
-							int type,
-							int dpl,
-							void (*handler)(void)) {
-	struct gate_struct e = idt_table[vector];
-	idt_table[vector].offset_low = PTR_LOW(handler); 
-	idt_table[vector].segment = __KERNEL_CS;
-	idt_table[vector].ist = 0; 
-	idt_table[vector].p = 1;
-	idt_table[vector].dpl = dpl; 
-	idt_table[vector].zero0 = 0;
-	idt_table[vector].zero1 = 0; 
-	idt_table[vector].type = type; 
-	idt_table[vector].offset_middle = PTR_MIDDLE(handler); 
-	idt_table[vector].offset_high = PTR_HIGH(handler); 
-    return e;
-}
-
-static inline void rt_reset_full_intr_vect(unsigned vector,
-					   struct gate_struct e) {
-    idt_table[vector] = e;
-}
+//#include <asm/desc.h>
 
 static inline int rt_request_cpu_own_irq (unsigned irq, void (*handler)(void)) {
 
@@ -117,30 +92,6 @@ static inline int rt_request_cpu_own_irq (unsigned irq, void (*handler)(void)) {
 static inline int rt_free_cpu_own_irq (unsigned irq) {
 
     return rt_release_irq(irq);
-}
-
-static inline void *get_intr_handler (unsigned vector) {
-    return (void *)((unsigned long)idt_table[vector].offset_low + (((unsigned long)idt_table[vector].offset_middle) << 16) + (((unsigned long)idt_table[vector].offset_high) << 32));
-}
-
-static inline void set_intr_vect (unsigned vector,
-				  void (*handler)(void)) {
-	idt_table[vector].offset_low = PTR_LOW(handler); 
-	idt_table[vector].offset_middle = PTR_MIDDLE(handler); 
-	idt_table[vector].offset_high = PTR_HIGH(handler); 
-}
-
-static inline void *rt_set_intr_handler (unsigned vector,
-					 void (*handler)(void)) {
-
-    void (*saved_handler)(void) = get_intr_handler(vector);
-    set_intr_vect(vector, handler);
-    return saved_handler;
-}
-
-static inline void rt_reset_intr_handler (unsigned vector,
-					  void (*handler)(void)) {
-    set_intr_vect(vector, handler);
 }
 
 static inline unsigned long get_cr2 (void) {

@@ -19,16 +19,11 @@
 #ifndef _RTAI_ASM_I386_SHM_H
 #define _RTAI_ASM_I386_SHM_H
 
-#include <asm/pgtable.h>
-#include <asm/io.h>
-#include <asm/rtai_vectors.h>
-#include <rtai_wrappers.h>
-
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,0)
-#define VMALLOC_VMADDR(x) ((unsigned long)(x))
-#endif /* >= 2.6.0 */
+#if 0
 
 #ifndef __KERNEL__
+
+#include <asm/rtai_vectors.h>
 
 static inline long long rtai_shmrq(int srq, unsigned long args)
 {
@@ -39,12 +34,20 @@ static inline long long rtai_shmrq(int srq, unsigned long args)
 
 #endif /* __KERNEL__ */
 
+#include <asm/pgtable.h>
+#include <asm/io.h>
+#include <rtai_wrappers.h>
+
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,0)
+#define VMALLOC_VMADDR(x) ((unsigned long)(x))
+#endif /* >= 2.6.0 */
+
 /* convert virtual user memory address to physical address */
 /* (virt_to_phys only works for kmalloced kernel memory) */
 
 static inline unsigned long uvirt_to_kva(pgd_t *pgd, unsigned long adr)
 {
-	if (!pgd_none(*pgd)) {
+	if (!pgd_none(*pgd) && !pgd_bad(*pgd)) {
 		pmd_t *pmd;
 #if LINUX_VERSION_CODE < KERNEL_VERSION(2,6,11)
 		pmd = pmd_offset(pgd, adr);
@@ -60,11 +63,16 @@ static inline unsigned long uvirt_to_kva(pgd_t *pgd, unsigned long adr)
 #endif /* < 2.6.0 */
 			pte = *ptep;
 			if (pte_present(pte)) {
-				return ((unsigned long)page_address(pte_page(pte)) | (adr & (PAGE_SIZE - 1)));
+				return (((unsigned long)page_address(pte_page(pte))) | (adr & (PAGE_SIZE - 1)));
 			}
 		}
 	}
 	return 0UL;
+}
+
+static inline unsigned long kvirt_to_pa(unsigned long adr)
+{
+	return virt_to_phys((void *)uvirt_to_kva(pgd_offset_k(adr), adr));
 }
 
 static inline unsigned long uvirt_to_bus(unsigned long adr)
@@ -80,12 +88,6 @@ static inline unsigned long kvirt_to_bus(unsigned long adr)
 	return virt_to_bus((void *)uvirt_to_kva(pgd_offset_k(va), va));
 }
 
-static inline unsigned long kvirt_to_pa(unsigned long adr)
-{
-	unsigned long va;
-
-	va = VMALLOC_VMADDR(adr);
-	return __pa(uvirt_to_kva(pgd_offset_k(va), va));
-}
+#endif
 
 #endif  /* !_RTAI_ASM_I386_SHM_H */

@@ -33,17 +33,55 @@
 #define SEM_ERR     (RTE_OBJINV)
 #define SEM_TIMOUT  (RTE_TIMOUT)
 
+struct rt_poll_s { void *what; unsigned long forwhat; };
+
+// do not use 0 for any "forwhat" below
+#define RT_POLL_NOT_TO_USE    0
+#define RT_POLL_MBX_RECV      1
+#define RT_POLL_MBX_SEND      2
+#define RT_POLL_SEM_WAIT_ALL  3
+#define RT_POLL_SEM_WAIT_ONE  4
+
 #if defined(__KERNEL__) && !defined(__cplusplus)
 
+struct rt_poll_ql { QUEUE pollq; spinlock_t pollock; };
+struct rt_poll_enc { unsigned long offset; int (*topoll)(void *); };
+extern struct rt_poll_enc rt_poll_ofstfun[];
+
 typedef struct rt_semaphore {
-    struct rt_queue queue; /* <= Must be first in struct. */
-    int magic;
-    int type, restype;
-    int count;
-    struct rt_task_struct *owndby;
-    int qtype;
-    struct rt_queue resq;
+	struct rt_queue queue; /* <= Must be first in struct. */
+	int magic;
+	int type, restype;
+	int count;
+	struct rt_task_struct *owndby;
+	int qtype;
+	struct rt_queue resq;
+#ifdef CONFIG_RTAI_RT_POLL
+	struct rt_poll_ql poll_wait_all;
+	struct rt_poll_ql poll_wait_one;
+#endif
 } SEM;
+
+#ifdef CONFIG_RTAI_RT_POLL
+
+RTAI_SYSCALL_MODE int _rt_poll(struct rt_poll_s *pdsa, unsigned long nr, RTIME timeout, int space);
+static inline int rt_poll(struct rt_poll_s *pdsa, unsigned long nr, RTIME timeout)
+{
+	return _rt_poll(pdsa, nr, timeout, 1);
+}
+
+void rt_wakeup_pollers(struct rt_poll_ql *ql, int reason);
+
+#else
+
+static inline int rt_poll(struct rt_poll_s *pdsa, unsigned long nr, RTIME timeout)
+{
+	return RTE_OBJINV;
+}
+
+#define rt_wakeup_pollers(ql, reason)
+
+#endif
 
 #else /* !__KERNEL__ || __cplusplus */
 
@@ -370,9 +408,14 @@ RTAI_PROTO(int, rt_cond_wait_timed,(CND *cnd, SEM *mutex, RTIME delay))
 	return rtai_lxrt(BIDX, SIZARG, COND_WAIT_TIMED, &arg).i[LOW];
 }
 
-RTAI_PROTO(int, rt_poll, (void *pdsa, unsigned long nr, RTIME timeout))
+RTAI_PROTO(int, rt_poll, (struct rt_poll_s *pdsa, unsigned long nr, RTIME timeout))
 {
-        return RTE_OBJINV;
+#ifdef CONFIG_RTAI_RT_POLL
+	struct { struct rt_poll_s *pdsa; unsigned long nr; RTIME timeout; long space; } arg = { pdsa, nr, timeout, 0 };
+	return rtai_lxrt(BIDX, SIZARG, SEM_RT_POLL, &arg).i[LOW];
+#else
+	return RTE_OBJINV;
+#endif
 }
 
 #ifdef __cplusplus

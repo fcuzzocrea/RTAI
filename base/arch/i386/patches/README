@@ -1,11 +1,10 @@
 These are RTAI own patches but they can be used also as any of their standard 
 ADEOS counterpart, the opposite being not true.
 
-FOR COMEDI USERS (what follows may be obsolete now, kept just in case):
+FOR COMEDI USERS:
 patches for 2.4.32/2.6.13/2.6.14 do not contain a config parameter that is 
 understood by COMEDI.
-In order to allow using the most recent patches with COMEDI here is a suggestion
-from Roberto Bucher <roberto.bucher@supsi.ch>:
+In order to allow using the most recent patches with COMEDE here is a suggestion from Roberto Bucher <roberto.bucher@supsi.ch>:
 
 "in order to compile the COMEDI drivers for RTAI-3.3, the user must simply add 
 the line:

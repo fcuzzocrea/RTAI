@@ -20,13 +20,13 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA.
 #ifndef _RTAI_ASM_PPC_SHM_H
 #define _RTAI_ASM_PPC_SHM_H
 
-#include <asm/pgtable.h>
-#include <asm/io.h>
-#include <asm/rtai_vectors.h>
+#if 0
 
 #undef __SHM_USE_VECTOR
 
 #ifndef __KERNEL__
+
+#include <asm/rtai_vectors.h>
 
 #ifdef __SHM_USE_VECTOR
 // the following function is adapted from Linux PPC unistd.h 
@@ -58,6 +58,9 @@ static inline long long rtai_shmrq(unsigned long srq, unsigned long whatever)
 #endif /* __SHM_USE_VECTOR */
 
 #endif /* __KERNEL__ */
+
+#include <asm/pgtable.h>
+#include <asm/io.h>
 
 /* convert virtual user memory address to physical address */
 /* (virt_to_phys only works for kmalloced kernel memory) */
@@ -121,5 +124,7 @@ static inline unsigned long kvirt_to_pa(unsigned long adr)
 
 	return ret;
 }
+
+#endif
 
 #endif /* !_RTAI_ASM_PPC_SHM_H */

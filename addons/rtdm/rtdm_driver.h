@@ -2,8 +2,9 @@
  * @file
  * Real-Time Driver Model for RTAI, driver API header
  *
- * @note Copyright (C) 2005 Jan Kiszka <jan.kiszka@web.de>
+ * @note Copyright (C) 2005-2007 Jan Kiszka <jan.kiszka@web.de>
  * @note Copyright (C) 2005 Joerg Langenberg <joerg.langenberg@gmx.net>
+ * @note Copyright (C) 2008 Gilles Chanteperdrix <gilles.chanteperdrix@gmail.com>
  * @note Copyright (C) 2005 Paolo Mantegazza <mantegazza@aero.polimi.it>
  *
  * RTAI is free software; you can redistribute it and/or modify it
@@ -38,10 +39,13 @@
 #include <rtai_sched.h>
 
 #include "xn.h"
+#include "select.h"
 #include <rtdm/rtdm.h>
 
 
 struct rtdm_dev_context;
+typedef struct xnselector rtdm_selector_t;
+enum rtdm_selecttype;
 
 /*!
  * @addtogroup devregister
@@ -91,7 +95,7 @@ struct rtdm_dev_context;
  * @{
  */
 /** Version of struct rtdm_device */
-#define RTDM_DEVICE_STRUCT_VER		4
+#define RTDM_DEVICE_STRUCT_VER		5
 
 /** Version of struct rtdm_dev_context */
 #define RTDM_CONTEXT_STRUCT_VER		3
@@ -112,6 +116,30 @@ struct rtdm_dev_context;
 /** Get patch version number from driver revision code */
 #define RTDM_DRIVER_PATCH_VER(ver)	((ver) & 0xFF)
 /** @} Driver Versioning */
+
+/*!
+ * @addtogroup rtdmsync
+ * @{
+ */
+
+/*!
+ * @anchor RTDM_SELECTTYPE_xxx   @name RTDM_SELECTTYPE_xxx
+ * Event types select can bind to
+ * @{
+ */
+enum rtdm_selecttype {
+	/** Select input data availability events */
+	RTDM_SELECTTYPE_READ = XNSELECT_READ,
+
+	/** Select ouput buffer availability events */
+	RTDM_SELECTTYPE_WRITE = XNSELECT_WRITE,
+
+	/** Select exceptional events */
+	RTDM_SELECTTYPE_EXCEPT = XNSELECT_EXCEPT
+};
+/** @} RTDM_SELECTTYPE_xxx */
+
+/** @} rtdmsync */
 
 /*!
  * @name Operation Handler Prototypes
@@ -178,6 +206,22 @@ typedef int (*rtdm_close_handler_t)(struct rtdm_dev_context *context,
 typedef int (*rtdm_ioctl_handler_t)(struct rtdm_dev_context *context,
 				    rtdm_user_info_t *user_info,
 				    unsigned int request, void __user *arg);
+
+/**
+ * Select binding handler
+ *
+ * @param[in] context Context structure associated with opened device instance
+ * @param[in,out] selector Object that shall be bound to the given event
+ * @param[in] type Event type the selector is interested in
+ * @param[in] fd_index Opaque value, to be passed to rtdm_event_select_bind or
+ * rtdm_sem_select_bind unmodfied
+ *
+ * @return 0 on success, otherwise negative error code
+ */
+typedef int (*rtdm_select_bind_handler_t)(struct rtdm_dev_context *context,
+					  rtdm_selector_t *selector,
+					  enum rtdm_selecttype type,
+					  unsigned fd_index);
 
 /**
  * Read handler
@@ -255,7 +299,6 @@ typedef ssize_t (*rtdm_sendmsg_handler_t)(struct rtdm_dev_context *context,
 
 typedef int (*rtdm_rt_handler_t)(struct rtdm_dev_context *context,
 				 rtdm_user_info_t *user_info, void *arg);
-
 /**
  * Device operations
  */
@@ -271,6 +314,9 @@ struct rtdm_operations {
 	rtdm_ioctl_handler_t ioctl_rt;
 	/** IOCTL from non-real-time context (optional) */
 	rtdm_ioctl_handler_t ioctl_nrt;
+
+	/** Select binding handler for any context (optional) */
+	rtdm_select_bind_handler_t select_bind;
 	/** @} Common Operations */
 
 	/*! @name Stream-Oriented Device Operations
@@ -411,6 +457,8 @@ struct rtdm_device {
 
 	/** Driver definable device ID */
 	int device_id;
+	/** Driver definable device data */
+	void *device_data;
 
 	/** Data stored by RTDM inside a registered device (internal use only) */
 	struct rtdm_dev_reserved reserved;
@@ -473,12 +521,15 @@ static inline nanosecs_abs_t rtdm_clock_read_monotonic(void)
 }
 #endif /* !DOXYGEN_CPP */
 
-/* --- spin lock services --- */
 /*!
  * @addtogroup rtdmsync
  * @{
  */
 
+int rtdm_select_bind(int fd, rtdm_selector_t *selector,
+		     enum rtdm_selecttype type, unsigned fd_index);
+
+/* --- spin lock services --- */
 /*!
  * @name Global Lock across Scheduler Invocation
  * @{
@@ -914,16 +965,27 @@ typedef void (*rtdm_task_proc_t)(void *arg);
 
 /** @} rtdmtask */
 
-int rtdm_task_init(rtdm_task_t *task, const char *name,
-		   rtdm_task_proc_t task_proc, void *arg,
-		   int priority, nanosecs_rel_t period);
+int rtdm_task_init_cpuid(rtdm_task_t *task, const char *name,
+			 rtdm_task_proc_t task_proc, void *arg,
+			 int priority, nanosecs_rel_t period, int cpuid);
+
+extern int get_min_tasks_cpuid(void);
+static inline int rtdm_task_init(rtdm_task_t *task, const char *name,
+				 rtdm_task_proc_t task_proc, void *arg,
+				 int priority, nanosecs_rel_t period)
+{
+	return rtdm_task_init_cpuid(task, name, task_proc, arg, priority, period, get_min_tasks_cpuid());
+}
 
 void rtdm_task_busy_sleep(nanosecs_rel_t delay);
 
 #ifndef DOXYGEN_CPP /* Avoid static inline tags for RTDM in doxygen */
 static inline void rtdm_task_destroy(rtdm_task_t *task)
 {
-	rt_task_delete(task);
+	rt_drg_on_adr(task);
+	if (task->magic == RT_TASK_MAGIC) {
+		rt_task_delete(task);
+	}
 }
 
 void rtdm_task_join_nrt(rtdm_task_t *task, unsigned int poll_delay);
@@ -940,7 +1002,6 @@ static inline int rtdm_task_set_period(rtdm_task_t *task,
 	if (period < 0)
 		period = 0;
 	return rt_task_make_periodic_relative_ns(task, 0, period);
-
 
 
 }
@@ -972,6 +1033,7 @@ static inline int rtdm_task_wait_period(void)
 	return rt_sched_timed ? -ETIMEDOUT : -EIDRM;
 }
 
+//RTA_SYSCALL_MODE int rt_sleep(longlong);
 static inline int rtdm_task_sleep(nanosecs_rel_t delay)
 {
         if (delay < 0) {
@@ -1018,11 +1080,18 @@ void rtdm_toseq_init(rtdm_toseq_t *timeout_seq, nanosecs_rel_t timeout);
 
 typedef struct {
 	struct rt_semaphore synch_base; unsigned long pending;
+	DECLARE_XNSELECT(select_block);
 } rtdm_event_t;
 
 #define RTDM_EVENT_PENDING		XNSYNCH_SPARE1
 
 void rtdm_event_init(rtdm_event_t *event, unsigned long pending);
+#ifdef CONFIG_RTAI_RTDM_SELECT
+int rtdm_event_select_bind(rtdm_event_t *event, rtdm_selector_t *selector,
+			   enum rtdm_selecttype type, unsigned fd_index);
+#else /* !CONFIG_RTAI_RTDM_SELECT */
+#define rtdm_event_select_bind(e, s, t, i) ({ -EBADF; })
+#endif /* !CONFIG_RTAI_RTDM_SELECT */
 int rtdm_event_wait(rtdm_event_t *event);
 int rtdm_event_timedwait(rtdm_event_t *event, nanosecs_rel_t timeout,
 			 rtdm_toseq_t *timeout_seq);
@@ -1035,23 +1104,33 @@ void rtdm_event_clear(rtdm_event_t *event);
 
 static inline void rtdm_event_pulse(rtdm_event_t *event)
 {
+	trace_mark(xn_rtdm_event_pulse, "event %p", event);
 	rt_sem_broadcast(&event->synch_base);
 }
 
 static inline void rtdm_event_destroy(rtdm_event_t *event)
 {
+	trace_mark(xn_rtdm_event_destroy, "event %p", event);
 	rt_sem_delete(&event->synch_base);
+	xnselect_destroy(&event->select_block);
 }
 #endif /* !DOXYGEN_CPP */
 
 /* --- semaphore services --- */
 
-typedef struct rt_semaphore rtdm_sem_t;
-
-
+typedef struct {
+	struct rt_semaphore sem;
+	DECLARE_XNSELECT(select_block);
+} rtdm_sem_t;
 
 
 void rtdm_sem_init(rtdm_sem_t *sem, unsigned long value);
+#ifdef CONFIG_RTAI_RTDM_SELECT
+int rtdm_sem_select_bind(rtdm_sem_t *sem, rtdm_selector_t *selector,
+			 enum rtdm_selecttype type, unsigned fd_index);
+#else /* !CONFIG_RTAI_RTDM_SELECT */
+#define rtdm_sem_select_bind(s, se, t, i) ({ -EBADF; })
+#endif /* !CONFIG_RTAI_RTDM_SELECT */
 int rtdm_sem_down(rtdm_sem_t *sem);
 int rtdm_sem_timeddown(rtdm_sem_t *sem, nanosecs_rel_t timeout,
 		       rtdm_toseq_t *timeout_seq);
@@ -1060,7 +1139,9 @@ void rtdm_sem_up(rtdm_sem_t *sem);
 #ifndef DOXYGEN_CPP /* Avoid static inline tags for RTDM in doxygen */
 static inline void rtdm_sem_destroy(rtdm_sem_t *sem)
 {
-	rt_sem_delete(sem);
+	trace_mark(xn_rtdm_sem_destroy, "sem %p", sem);
+	rt_sem_delete(&sem->sem);
+	xnselect_destroy(&sem->select_block);
 }
 #endif /* !DOXYGEN_CPP */
 
@@ -1080,12 +1161,16 @@ static inline void rtdm_mutex_unlock(rtdm_mutex_t *mutex)
 {
 
 
+	trace_mark(xn_rtdm_mutex_unlock, "mutex %p", mutex);
+
 
 	rt_sem_signal(mutex);
 }
 
 static inline void rtdm_mutex_destroy(rtdm_mutex_t *mutex)
 {
+	trace_mark(xn_rtdm_mutex_destroy, "mutex %p", mutex);
+
 	rt_sem_delete(mutex);
 }
 #endif /* !DOXYGEN_CPP */

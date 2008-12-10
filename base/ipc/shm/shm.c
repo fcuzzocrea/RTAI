@@ -654,7 +654,7 @@ struct rt_native_fun_entry rt_shm_entries[] = {
 extern int set_rt_fun_entries(struct rt_native_fun_entry *entry);
 extern void reset_rt_fun_entries(struct rt_native_fun_entry *entry);
 
-#define USE_UDEV_CLASS 1
+#define USE_UDEV_CLASS 0
 
 #if USE_UDEV_CLASS
 static class_t *shm_class = NULL;

@@ -568,6 +568,31 @@ config RTAI_SEM
 	dynamically at run time.
 	The module will be called rtai_sem.o.
 
+config RTAI_RT_POLL
+	bool "Enable IPCs polling"
+	depends on RTAI_SEM
+	default n
+	help
+	This enable polling support for RTAI services. At the moment only 
+	MBXes and SEMs are supported. The related service is embedded in 
+	the semaphores module.
+
+config RTAI_RT_POLL_ON_STACK
+	bool "Use the stack for rt_poll dynamic arrays"
+	depends on RTAI_RT_POLL
+	default n
+	help
+	This let rt_poll alloc its dynamic data directly on the stack. It is
+	likely the most effective way but it can deplete the stack somewhat,
+	especially on 64 bits architectures, if polling requests are large,
+	say > 40. Notice that even with smaller polling sizes it might be
+	important to limit stack usage also when heavy preemptions, very high
+	task switching rates and interrupts floodings are expected.
+	By disabling this parameter RTAI will use its real time memory
+	allocation; with it the limits are just in the size you set for the
+	RTAI dynamic heap and in a slightly greater overhead. So for reasons
+	of cautiousness the default setting is not to use the stack.
+
 config RTAI_MSG
 	tristate "Message"
 	default m
@@ -843,19 +868,16 @@ config RTAI_TRACE
 	You may refer to http://www.opersys.com/LTT/ for more information.
 
 config RTAI_USI
-	tristate "User-space interrupts"
-	default m
-	depends on RTAI_SEM && RTAI_TASKLETS
-	default y if RTAI_SEM=y || RTAI_TASKLETS=y
-	default m if RTAI_SEM=m || RTAI_TASKLETS=m
+	bool "User-space interrupts"
+	default n
 	help
-	RTAI already contains some examples hinting at managing
-	interrupts in user space, e.g: resumefromintr in lxrt-net_rpc,
-	pressa in lxrt, but all of them require installing a proper
-	handler in kernel space to wake up a hard real-time
-	LXRT/NEWLXRT task.
-	The user space interrupt support does the same but adds something 
-	that permits you to avoid writing anything in kernel space.
+	RTAI examples are available to show managing interrupts in user 
+	space, e.g: resumefromintr in "showroom" CVS (kernel/user/netrpc),
+	"pressa" in "showroom" (user); but all of them require installing
+	a proper handler in kernel space, to wake up a hard real-time user
+	space task.
+	The user space interrupt support does much of the same, but adds 
+	something that permits you to write nothing in kernel space.
 	The module will be called rtai_usi.o.
 	
 
@@ -901,7 +923,7 @@ endmenu
 menu "Add-ons"
 
 config RTAI_COMEDI_LXRT
-	bool "Comedi support over LXRT"
+	bool "Real Time COMEDI support in user space"
 	default n
 	help
 	RTAI offers a unified kcomedilib interface to kernel/user space 
@@ -940,6 +962,17 @@ config RTAI_RTDM_FD_MAX
 	default 128
 	help
 	The maximum number of file descriptors in RTDM.
+
+config RTAI_RTDM_SELECT
+	depends on RTAI_RTDM
+	bool "Enable select multiplexing for RTDM services"
+        default n
+	help
+	By enabling this option, select(2) support can be used to monitor
+	access to multiple RTDM services all in one, as for the standard UNIX
+	support, with the exception of the timeout argument format. Being it
+	RTDM specific nanoseconds are used directly in place of 
+	timeval/timespec.
 
 config RTAI_RTDM_SHIRQ
 	depends on RTAI_RTDM

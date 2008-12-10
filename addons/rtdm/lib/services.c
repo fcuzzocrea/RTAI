@@ -18,6 +18,6 @@
 
 //#define CONFIG_RTAI_LXRT_INLINE 0
 #include <rtdm/rtdm.h>
-//#ifdef CONFIG_RTAI_DRIVERS_16550A
-//#include <rtdm/rtserial.h>
-//#endif /* CONFIG_RTAI_DRIVERS_16550A */
+#ifdef CONFIG_RTAI_DRIVERS_16550A
+#include <rtdm/rtserial.h>
+#endif /* CONFIG_RTAI_DRIVERS_16550A */

@@ -57,7 +57,7 @@ will likely cause missing a possible synchronization. Notice that the remote
 support stub will answer anyhow but the returned values will be discarded. 
 So it should never be used if you want to know the result of your remote call. 
 Nonetheless, as it will be explained later on, a mechanism is provided to allow 
-recovering the results of any asynchonous call left behind.
+recovering the results of any asynchronous call left behind.
 
 In any case it is important to know that any further asynchronous call will 
 not be sent if the previous one has not been answered yet. "Net_rpc" assumes no 
@@ -87,7 +87,9 @@ when the "port" is needed nomore. A task cannot ask for more then one "port",
 multiple "port" requests from a task will always return the same "port". The
 assigned "port" will be an integer >= MAX_STUBS, defined in netrpc.h, it is
 related internally to a socket and port but its value as no reference 
-whatsoever to either of them.
+whatsoever to either of them. A "port" carries a couple of informations in it,
+i.e.: an index in the remote list of port; the type, 32/64 bits, of remote
+machine.
 
 Nonetheless a task can create and access more "port"s by using: 
 	anotherport = rt_request_soft_port_id(node, id);
@@ -109,7 +111,7 @@ everything is marching appropriately. Too many things buffered are doomed to
 be related to missing deadlines.
 
 In requesting a "port" there is also the possibility of providing a mailbox 
-to recover results of asyncrhounous calls. So you can use either:
+to recover results of asyncrhonous calls. So you can use either:
 	myport = rt_request_soft_port_mbx(node, mbx);
 	myport = rt_request_hard_port_mbx(node, mbx);
 or:

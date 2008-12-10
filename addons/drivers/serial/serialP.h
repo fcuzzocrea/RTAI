@@ -1,6 +1,6 @@
 /*
-COPYRIGHT (C) 2002  Paolo Mantegazza (mantegazza@aero.polimi.it)
-                    Giuseppe Renoldi (giuseppe@renoldi.org)
+COPYRIGHT (C) 2002-2008  Paolo Mantegazza (mantegazza@aero.polimi.it)
+                         Giuseppe Renoldi (giuseppe@renoldi.org)
 
 This library is free software; you can redistribute it and/or
 modify it under the terms of the GNU Lesser General Public
@@ -112,6 +112,7 @@ struct rt_spct_t {
 	unsigned long err_callback_fun_usr;
 	volatile unsigned long call_usr;
 	SEM txsem, rxsem;
+	struct rt_spct_t *next;
 };
 
 #endif /* RTAI_SPDRV_HW_H */

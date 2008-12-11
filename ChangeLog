@@ -1,3 +1,11 @@
+2008-12-11 Roberto Bucher <roberto.bucher@supsi.ch>
+
+	* rtai-lab/scilab/macros/RTAI/RTAICodeGen_.sci: Modification for
+	  future multithread code generation
+	* rtai-lab/scilab/macros/RTAI/RT_templates*: New templates fitted
+	  for the new Code generator
+	* rtai-lab/scilab/rt_main.c: Modified to fit the new Code generator
+
 2008-12-10 Pierangelo Masarati <masarati@aero.polimi.it>
 
 	* rtai-py/, rtai-py/*.py: import python stuff from showroom

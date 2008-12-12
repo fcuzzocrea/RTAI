@@ -111,6 +111,22 @@ RTAI_PROTO(void *, rt_scb_init, (unsigned long name, int size, unsigned long sup
 }
 
 /**
+ * Reset a shared memory circular buffer.
+ *
+ * @internal
+ *
+ * rt_scb_reset reinitializes a shared memory circular buffer.
+ *
+ * @param scb is the pointer returned when the buffer was initted.
+ *
+ */
+
+RTAI_PROTO(void, rt_scb_reset, (void *scb))
+{ 
+	LBYTE = FBYTE = 0;
+}
+
+/**
  * Free a shared memory circular buffer.
  *
  * @internal

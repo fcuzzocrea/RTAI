@@ -244,15 +244,14 @@ target_alias = @target_alias@
 top_builddir = @top_builddir@
 top_srcdir = @top_srcdir@
 ACLOCAL_AMFLAGS = -I base/config/autoconf
-OPTDIRS = $(am__append_1) $(am__append_2) $(am__append_3)
+OPTDIRS = $(am__append_1) $(am__append_2) $(am__append_3) rtai-py
 SUBDIRS = base @RTAI_MAYBE_DOCDIR@ $(OPTDIRS)
 DIST_SUBDIRS = \
 	@RTAI_MAYBE_DOCDIR@ \
 	base \
 	testsuite \
 	addons \
-	rtai-lab \
-	rtai-py
+	rtai-lab
 
 EXTRA_DIST = \
 makefile \

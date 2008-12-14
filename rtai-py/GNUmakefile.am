@@ -2,8 +2,8 @@ pythondir = $(prefix)/rtai-py
 
 install-exec-local:
 	$(mkinstalldirs) $(DESTDIR)$(pythondir)
-	@for i in *.py ; do \
-		$(INSTALL_SCRIPT) $$i $(DESTDIR)$(pythondir)/$$i ; \
+	@for i in $(top_srcdir)/rtai-py/*.py ; do \
+		$(INSTALL_SCRIPT) $$i "$(DESTDIR)$(pythondir)/`basename $$i`" ; \
 	done
 
 EXTRA_DIST = *.py

@@ -356,7 +356,7 @@ int xnintr_disable (xnintr_t *intr);
 #define xnarch_end_irq     rt_enable_irq
 
 #define xnarch_hook_irq(irq, handler, iack, intr) \
-	rt_request_irq_wack(irq, (void *)handler, intr, 0, iack);
+	rt_request_irq_wack(irq, (void *)handler, intr, 0, (void *)iack);
 #define xnarch_release_irq(irq) \
 	rt_release_irq(irq);
 

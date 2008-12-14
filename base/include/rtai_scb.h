@@ -159,8 +159,28 @@ RTAI_PROTO(int, rt_scb_delete, (unsigned long name))
  *
  * @internal
  *
- * rt_scb_bytes is used to get the number of bytes avaiable in a shared 
+ * rt_scb_avbs is used to get the number of bytes avaiable in a shared 
  * memory circular buffer.
+ *
+ * @param scb is the pointer handle returned when the buffer was initted.
+ *
+ * @returns the available number of bytes.
+ *
+ */
+
+RTAI_PROTO (int, rt_scb_avbs, (void *scb))
+{ 
+	int size = SIZE, fbyte = FBYTE, lbyte = LBYTE;
+	return (lbyte >= fbyte ? lbyte - fbyte : size + lbyte - fbyte);
+}
+
+/**
+ * Get the number of bytes avaiable in a shared memory circular buffer.
+ *
+ * @internal
+ *
+ * rt_scb_bytes is used to get the number of bytes avaiable in a shared 
+ * memory circular buffer; legacy alias for rt_scb_avbs.
  *
  * @param scb is the pointer handle returned when the buffer was initted.
  *
@@ -170,8 +190,27 @@ RTAI_PROTO(int, rt_scb_delete, (unsigned long name))
 
 RTAI_PROTO (int, rt_scb_bytes, (void *scb))
 { 
+	return rt_scb_avbs(scb);
+}
+
+/**
+ * Get the number of free bytes pace in a shared memory circular buffer.
+ *
+ * @internal
+ *
+ * rt_scb_frbs is used to get the number of free bytes space avaiable in a 
+ * shared memory circular buffer.
+ *
+ * @param scb is the pointer handle returned when the buffer was initted.
+ *
+ * @returns the number of free bytes.
+ *
+ */
+
+RTAI_PROTO (int, rt_scb_frbs, (void *scb))
+{ 
 	int size = SIZE, fbyte = FBYTE, lbyte = LBYTE;
-	return (lbyte >= fbyte ? lbyte - fbyte : size + lbyte - fbyte);
+	return (fbyte <= lbyte ? size + fbyte - lbyte : size - lbyte);
 }
 
 /**

@@ -23,8 +23,6 @@
 
 #include <linux/version.h>
 
-#include <asm/asm-offsets.h>
-
 #include <asm/rtai_vectors.h>
 
 #ifdef CONFIG_RTAI_LXRT_USE_LINUX_SYSCALL
@@ -34,6 +32,7 @@
 #endif
 
 #ifndef NR_syscalls
+#include <asm/asm-offsets.h>
 #define NR_syscalls __NR_syscall_max
 #endif
 

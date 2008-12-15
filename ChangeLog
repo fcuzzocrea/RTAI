@@ -1,10 +1,11 @@
 2008-12-12 Paolo Mantegazza <mantegazza@aero.polimi.it>
 
-	* base/include/rtai_scb.h: added function rt_scb_reset.
+	* base/include/rtai_scb.h: added function rt_scb_reset, rt_scb_avbs,
+	  rt_scb_frbs.
 
 2008-12-10 Pierangelo Masarati <masarati@aero.polimi.it>
 
-	* rtai-py/, rtai-py/*.py: import python stuff from showroom
+	* rtai-py/, rtai-py/*.py: import python stuff from showroom.
 
 2008-12-10 Pierangelo Masarati <masarati@aero.polimi.it>
 

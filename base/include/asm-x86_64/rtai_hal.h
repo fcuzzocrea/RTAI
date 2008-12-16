@@ -353,7 +353,7 @@ extern struct calibration_data rtai_tunables;
 
 extern volatile unsigned long rtai_cpu_lock[];
 
-#if LINUX_VERSION_CODE > KERNEL_VERSION(2,6,18) && LINUX_VERSION_CODE < KERNEL_VERSION(2,6,25)
+#if (LINUX_VERSION_CODE > KERNEL_VERSION(2,6,18) && LINUX_VERSION_CODE < KERNEL_VERSION(2,6,25)) || LINUX_VERSION_CODE > KERNEL_VERSION(2,6,26)
 #define apic_write_around apic_write
 #endif
 

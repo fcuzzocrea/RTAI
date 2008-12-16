@@ -216,7 +216,7 @@ int rt_request_irq (unsigned irq, int (*handler)(unsigned irq, void *cookie), vo
 	rtai_realtime_irq[irq].handler = (void *)handler;
 	rtai_realtime_irq[irq].cookie  = cookie;
 	rtai_realtime_irq[irq].retmode = retmode ? 1 : 0;
-        rtai_realtime_irq[irq].irq_ack = hal_root_domain->irqs[irq].acknowledge;
+        rtai_realtime_irq[irq].irq_ack = (void *)hal_root_domain->irqs[irq].acknowledge;
 	rtai_critical_exit(flags);
 	if (IsolCpusMask && irq < IPIPE_NR_XIRQS) {
 		rtai_realtime_irq[irq].cpumask = rt_assign_irq_to_cpu(irq, IsolCpusMask);
@@ -232,7 +232,7 @@ int rt_release_irq (unsigned irq)
 	}
 	flags = rtai_critical_enter(NULL);
 	rtai_realtime_irq[irq].handler = NULL;
-	rtai_realtime_irq[irq].irq_ack = hal_root_domain->irqs[irq].acknowledge;
+	rtai_realtime_irq[irq].irq_ack = (void *)hal_root_domain->irqs[irq].acknowledge;
 	rtai_critical_exit(flags);
 	if (IsolCpusMask && irq < IPIPE_NR_XIRQS) {
 		rt_assign_irq_to_cpu(irq, rtai_realtime_irq[irq].cpumask);
@@ -245,7 +245,7 @@ int rt_set_irq_ack(unsigned irq, int (*irq_ack)(unsigned int))
         if (irq >= RTAI_NR_IRQS) {
                 return -EINVAL;
         }
-        rtai_realtime_irq[irq].irq_ack = irq_ack ? irq_ack : hal_root_domain->irqs[irq].acknowledge;
+        rtai_realtime_irq[irq].irq_ack = irq_ack ? irq_ack : (void *)hal_root_domain->irqs[irq].acknowledge;
         return 0;
 }
 
@@ -1693,7 +1693,8 @@ int __rtai_hal_init (void)
 	}
 
 #ifdef CONFIG_X86_LOCAL_APIC
-	if (!test_bit(X86_FEATURE_APIC, boot_cpu_data.x86_capability)) {
+//	if (!test_bit(X86_FEATURE_APIC, boot_cpu_data.x86_capability)) {
+	if (!boot_cpu_has(X86_FEATURE_APIC)) {
 		printk("RTAI[hal]: ERROR, LOCAL APIC CONFIGURED BUT NOT AVAILABLE/ENABLED.\n");
 		halinv = 1;
 	}
@@ -1709,7 +1710,7 @@ int __rtai_hal_init (void)
 	}
 
         for (trapnr = 0; trapnr < RTAI_NR_IRQS; trapnr++) {
-                rtai_realtime_irq[trapnr].irq_ack = hal_root_domain->irqs[trapnr].acknowledge;
+                rtai_realtime_irq[trapnr].irq_ack = (void *)hal_root_domain->irqs[trapnr].acknowledge;
         }
 #if LINUX_VERSION_CODE < KERNEL_VERSION(2,6,22)
         for (trapnr = 0; trapnr < num_online_cpus(); trapnr++) {

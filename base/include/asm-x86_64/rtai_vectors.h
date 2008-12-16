@@ -30,7 +30,7 @@
 #ifndef _RTAI_ASM_X8664_VECTORS_H
 #define _RTAI_ASM_X8664_VECTORS_H
 
-#define RTAI_SYS_VECTOR        0xF6
+#define RTAI_SYS_VECTOR        0 // was 0xF6 used no more
 
 #ifdef __KERNEL__
 

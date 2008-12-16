@@ -1,3 +1,8 @@
+2008-12-16 Paolo Mantegazza <mantegazza@aero.polimi.it>
+
+	* base/ipc/fifos/fifos.c: set buf type to "const char *" instead of
+	  "void *" in all mbx_send functions.
+
 2008-12-14 Paolo Mantegazza <mantegazza@aero.polimi.it>
 
 	* base/include/rtai_scb.h: added function rt_scb_reset, rt_scb_avbs,

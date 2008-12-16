@@ -605,7 +605,7 @@ static inline int mbx_delete(F_MBX *mbx)
 	return 0;
 }
 
-static inline int mbx_send(F_MBX *mbx, void *msg, int msg_size, int lnx)
+static inline int mbx_send(F_MBX *mbx, const char *msg, int msg_size, int lnx)
 {
 	if (mbx_sem_wait(&(mbx->sndsem))) {
 		return msg_size;
@@ -622,7 +622,7 @@ static inline int mbx_send(F_MBX *mbx, void *msg, int msg_size, int lnx)
 	return 0;
 }
 
-static inline int mbx_send_wp(F_MBX *mbx, void *msg, int msg_size, int lnx)
+static inline int mbx_send_wp(F_MBX *mbx, const char *msg, int msg_size, int lnx)
 {
 	unsigned long flags;
 
@@ -639,7 +639,7 @@ static inline int mbx_send_wp(F_MBX *mbx, void *msg, int msg_size, int lnx)
 	return msg_size;
 }
 
-static inline int mbx_send_if(F_MBX *mbx, void *msg, int msg_size, int lnx)
+static inline int mbx_send_if(F_MBX *mbx, const char *msg, int msg_size, int lnx)
 {
 	unsigned long flags;
 
@@ -656,7 +656,7 @@ static inline int mbx_send_if(F_MBX *mbx, void *msg, int msg_size, int lnx)
 	return msg_size;
 }
 
-static int mbx_send_timed(F_MBX *mbx, void *msg, int msg_size, int delay, int lnx)
+static int mbx_send_timed(F_MBX *mbx, const char *msg, int msg_size, int delay, int lnx)
 {
 	if (mbx_sem_wait_timed(&(mbx->sndsem), delay)) {
 		return msg_size;

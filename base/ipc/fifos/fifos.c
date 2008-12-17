@@ -1137,6 +1137,18 @@ RTAI_SYSCALL_MODE int rtf_put_if(unsigned int minor, void *buf, int count)
 	return count;
 }
 
+RTAI_SYSCALL_MODE int rtf_get_avbs(unsigned int minor)
+{
+	VALID_FIFO;
+	return fifo[minor].mbx.avbs;
+}
+
+RTAI_SYSCALL_MODE int rtf_get_frbs(unsigned int minor)
+{
+	VALID_FIFO;
+	return fifo[minor].mbx.frbs;
+}
+
 /**
  * @ingroup fifos_ipc
  * Read data from FIFO
@@ -1581,6 +1593,8 @@ static int rtf_ioctl(struct inode *inode, struct file *filp, unsigned int cmd, u
 				info.fifo_number = i;
 				info.size        = fifo[i].mbx.size;
 				info.opncnt      = fifo[i].opncnt;
+				info.avbs        = fifo[i].mbx.avbs;
+				info.frbs        = fifo[i].mbx.frbs;
 				strncpy(info.name, fifo[i].name, RTF_NAMELEN+1);
 				rt_copy_to_user(req.ptr + n, &info, sizeof(info));
 			}
@@ -1682,7 +1696,9 @@ static struct rt_fun_entry rtai_fifos_fun[] = {
 	[_GETBY_NAME]   = { 0, rtf_getfifobyname },
 	[_OVERWRITE]    = { 0, rtf_ovrwr_put },
 	[_PUT_IF]       = { 0, rtf_put_if },
-	[_GET_IF]       = { 0, rtf_get_if }
+	[_GET_IF]       = { 0, rtf_get_if },
+	[_AVBS]         = { 0, rtf_get_avbs },
+	[_FRBS]         = { 0, rtf_get_frbs }
 };
 
 static int register_lxrt_fifos_support(void)
@@ -1926,6 +1942,8 @@ EXPORT_SYMBOL(rtf_getfifobyname);
 EXPORT_SYMBOL(rtf_ovrwr_put);
 EXPORT_SYMBOL(rtf_put);
 EXPORT_SYMBOL(rtf_put_if);
+EXPORT_SYMBOL(rtf_get_avbs);
+EXPORT_SYMBOL(rtf_get_frbs);
 EXPORT_SYMBOL(rtf_reset);
 EXPORT_SYMBOL(rtf_resize);
 EXPORT_SYMBOL(rtf_sem_destroy);

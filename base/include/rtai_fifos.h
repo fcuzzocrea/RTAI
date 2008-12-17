@@ -63,6 +63,7 @@ struct rt_fifo_info_struct{
     	unsigned int fifo_number;
 	unsigned int size;
 	unsigned int opncnt;
+	int avbs, frbs;
 	char name[RTF_NAMELEN+1];
 };
 
@@ -90,6 +91,8 @@ struct rt_fifo_get_info_struct{
 #define _PUT_IF        13
 #define _GET_IF        14
 #define _NAMED_CREATE  15
+#define _AVBS          16
+#define _FRBS          17
 
 #ifdef __KERNEL__
 
@@ -361,6 +364,18 @@ RTAI_PROTO(int, rtf_get_if,(unsigned int fifo, void *buf, int count))
 		memcpy(buf, lbuf, retval);
 	}
 	return retval;
+}
+
+RTAI_PROTO(int, rtf_get_avbs, (unsigned int fifo))
+{
+	struct { unsigned long fifo; } arg = { fifo };
+	return rtai_lxrt(FUN_FIFOS_LXRT_INDX, SIZARG, _AVBS, &arg).i[LOW];
+}
+
+RTAI_PROTO(int, rtf_get_frbs, (unsigned int fifo))
+{
+	struct { unsigned long fifo; } arg = { fifo };
+	return rtai_lxrt(FUN_FIFOS_LXRT_INDX, SIZARG, _FRBS, &arg).i[LOW];
 }
 
 RTAI_PROTO(int, rtf_reset_lxrt,(unsigned int fifo))

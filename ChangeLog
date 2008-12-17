@@ -1,3 +1,10 @@
+2008-12-17 Paolo Mantegazza <mantegazza@aero.polimi.it>
+
+	 * base/include/rtai_fifos.h and base/ipc/fifos/fifos.c: added functions
+	   rtf_get_avbs and rtf_get_frbs to get available and free bytes in fifo
+	   buffer, extended info structure and related IOCTL request to get the
+	   same infos from task not enabled for RTAI.
+
 2008-12-16 Paolo Mantegazza <mantegazza@aero.polimi.it>
 
 	* base/ipc/fifos/fifos.c: set buf type to "const char *" instead of

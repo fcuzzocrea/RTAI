@@ -1,3 +1,7 @@
+2008-12-18 Pierangelo Masarati <masarati@aero.polimi.it>
+
+	* configure.in: check for MMU only meaningful in >2.4
+
 2008-12-17 Paolo Mantegazza <mantegazza@aero.polimi.it>
 
 	 * base/include/rtai_fifos.h and base/ipc/fifos/fifos.c: added functions

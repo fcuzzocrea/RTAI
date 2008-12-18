@@ -295,25 +295,32 @@ if test x$arch_select = x; then
 fi
 AC_MSG_RESULT([$wanted_kernel_arch])
 
-AC_MSG_CHECKING([for MMU support])
-mmu_select=`eval echo \\$CONFIG_MMU`
-if test x$mmu_select != x$arch_has_mmu; then
-   echo
-   echo "************************************************************"
-   echo " The target RTAI architecture MMU check failed:"
-if test x$mmu_select = x; then
-   echo " MMU is unsupported by Linux architecure."
-else
-   echo " MMU is supported by Linux architecure, but it shouldn\'t."
-fi
-   echo "************************************************************"
-   exit 1
-fi
-if test x$mmu_select != x; then
-AC_MSG_RESULT([yes])
-else
-AC_MSG_RESULT([no])
-fi
+case "${RTAI_LINUX_VERSION}" in
+2.4.*)
+	dnl MMU not supported in 2.4
+	;;
+*)
+	AC_MSG_CHECKING([for MMU support])
+	mmu_select=`eval echo \\$CONFIG_MMU`
+	if test x$mmu_select != x$arch_has_mmu; then
+		echo
+		echo "************************************************************"
+		echo " The target RTAI architecture MMU check failed:"
+		if test x$mmu_select = x; then
+			echo " MMU is unsupported by Linux architecure."
+		else
+			echo " MMU is supported by Linux architecure, but it shouldn\'t."
+		fi
+		echo "************************************************************"
+		exit 1
+	fi
+	if test x$mmu_select != x; then
+		AC_MSG_RESULT([yes])
+	else
+		AC_MSG_RESULT([no])
+	fi
+	;;
+esac
 
 if test x${CONFIG_MODULES} = x ; then
   AC_MSG_ERROR([Please set CONFIG_MODULES for $RTAI_LINUX_DIR and rebuild your kernel])

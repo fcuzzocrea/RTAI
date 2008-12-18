@@ -73,6 +73,62 @@ static __inline__ unsigned long ffnz (unsigned long word) {
 }
 #endif
 
+#if LINUX_VERSION_CODE < KERNEL_VERSION(2,6,0)
+
+/*** 2.4.xx missing bitops, lifted from Linux ***/
+
+static inline unsigned long __ffs(unsigned long word)
+{
+        __asm__("bsfl %1,%0"
+                :"=r" (word)
+                :"rm" (word));
+        return word;
+}
+
+static inline unsigned __find_first_bit(const unsigned long *addr, unsigned size)
+{
+        unsigned x = 0;
+
+        while (x < size) {
+                unsigned long val = *addr++;
+                if (val)
+                        return __ffs(val) + x;
+                x += (sizeof(*addr)<<3);
+        }
+        return x;
+}
+
+static inline int find_next_bit(const unsigned long *addr, int size, int offset)
+{
+	const unsigned long *p = addr + (offset >> 5);
+	int set = 0, bit = offset & 31, res;
+
+	if (bit) {
+		/*
+		 * Look for nonzero in the first 32 bits:
+		 */
+		__asm__("bsfl %1,%0\n\t"
+			"jne 1f\n\t"
+			"movl $32, %0\n"
+			"1:"
+			: "=r" (set)
+			: "r" (*p >> bit));
+		if (set < (32 - bit))
+			return set + offset;
+		set = 32 - bit;
+		p++;
+	}
+	/*
+	 * No set bit yet, search remaining full words for a bit
+	 */
+	res = __find_first_bit (p, size - 32 * (p - addr));
+	return (offset + set + res);
+}
+
+#define find_first_bit(addr, size) __find_first_bit((addr), (size))
+
+#endif
+
 #if 0
 static inline unsigned long long rtai_ulldiv (unsigned long long ull,
 					      unsigned long uld,

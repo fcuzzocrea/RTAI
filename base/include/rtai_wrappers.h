@@ -102,6 +102,11 @@ do { \
 
 #define RTAI_LINUX_IRQ_HANDLED	/* i.e. "void" return */
 
+static inline unsigned long hweight_long(unsigned long w)
+{
+        return sizeof(w) == 4 ? hweight32(w) : hweight32(w);
+}
+
 #else /* LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,0) */
 
 #define RTAI_MODULE_PARM_ARRAY(name, type, addr, size) \

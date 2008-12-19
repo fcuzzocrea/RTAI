@@ -1839,7 +1839,6 @@ module_init(__rtai_netrpc_init);
 module_exit(__rtai_netrpc_exit);
 #endif /* !CONFIG_RTAI_NETRPC_BUILTIN */
 
-#ifdef CONFIG_KBUILD
 EXPORT_SYMBOL(set_netrpc_encoding);
 EXPORT_SYMBOL(rt_send_req_rel_port);
 EXPORT_SYMBOL(rt_find_asgn_stub);
@@ -1862,5 +1861,4 @@ EXPORT_SYMBOL(ddn2nl);
 #endif /* SOFT_RTNET */
 
 EXPORT_SYMBOL(rt_net_rpc_fun_hook);
-#endif /* CONFIG_KBUILD */
 

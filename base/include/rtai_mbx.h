@@ -156,7 +156,7 @@ RTAI_SYSCALL_MODE int rt_named_mbx_delete(struct rt_mailbox *mbx);
 extern "C" {
 #endif /* __cplusplus */
 
-RTAI_PROTO(void *, rt_typed_mbx_init, (unsigned long name, int size, int qtype))
+RTAI_PROTO(struct rt_mailbox *, rt_typed_mbx_init, (unsigned long name, int size, int qtype))
 {
 	struct { unsigned long name; long size; long qtype; } arg = { name, size, qtype };
 	return rtai_lxrt(BIDX, SIZARG, LXRT_MBX_INIT, &arg).v[LOW];
@@ -178,19 +178,19 @@ RTAI_PROTO(void *, rt_typed_mbx_init, (unsigned long name, int size, int qtype))
  */
 #define rt_mbx_init(name, size) rt_typed_mbx_init(name, size, FIFO_Q)
 
-RTAI_PROTO(int, rt_mbx_delete,(struct rt_mailbox *mbx))
+RTAI_PROTO(int, rt_mbx_delete, (struct rt_mailbox *mbx))
 {
 	void *arg = mbx;
 	return rtai_lxrt(BIDX, SIZARG, LXRT_MBX_DELETE, &arg).i[LOW];
 }
 
-RTAI_PROTO(struct rt_mailbox *, rt_typed_named_mbx_init,(const char *name, int size, int type))
+RTAI_PROTO(struct rt_mailbox *, rt_typed_named_mbx_init, (const char *name, int size, int type))
 {
 	struct { unsigned long name; long size, type; } arg = { nam2num(name), size, type };
 	return (struct rt_mailbox *)rtai_lxrt(BIDX, SIZARG, NAMED_MBX_INIT, &arg).v[LOW];
 }
 
-RTAI_PROTO(int, rt_named_mbx_delete,(struct rt_mailbox *mbx))
+RTAI_PROTO(int, rt_named_mbx_delete, (struct rt_mailbox *mbx))
 {
 	struct { struct rt_mailbox *mbx; } arg = { mbx };
 	return rtai_lxrt(BIDX, SIZARG, NAMED_MBX_DELETE, &arg).i[LOW];
@@ -199,73 +199,73 @@ RTAI_PROTO(int, rt_named_mbx_delete,(struct rt_mailbox *mbx))
 #define rt_named_mbx_init(mbx_name, size) \
 	rt_typed_named_mbx_init(mbx_name, size, FIFO_Q)
 
-RTAI_PROTO(int, rt_mbx_send,(struct rt_mailbox *mbx, void *msg, int msg_size))
+RTAI_PROTO(int, rt_mbx_send, (struct rt_mailbox *mbx, void *msg, int msg_size))
 {
 	struct { struct rt_mailbox *mbx; char *msg; long msg_size; long space; } arg = { mbx, (char *)msg, msg_size, 0 };
 	return (int)rtai_lxrt(BIDX, SIZARG, MBX_SEND, &arg).i[LOW];
 }
 
-RTAI_PROTO(int, rt_mbx_send_wp,(struct rt_mailbox *mbx, void *msg, int msg_size))
+RTAI_PROTO(int, rt_mbx_send_wp, (struct rt_mailbox *mbx, void *msg, int msg_size))
 {
 	struct { struct rt_mailbox *mbx; char *msg; long msg_size; long space; } arg = { mbx, (char *)msg, msg_size, 0 };
 	return (int)rtai_lxrt(BIDX, SIZARG, MBX_SEND_WP, &arg).i[LOW];
 }
 
-RTAI_PROTO(int, rt_mbx_send_if,(struct rt_mailbox *mbx, void *msg, int msg_size))
+RTAI_PROTO(int, rt_mbx_send_if, (struct rt_mailbox *mbx, void *msg, int msg_size))
 {
 	struct { struct rt_mailbox *mbx; char *msg; long msg_size; long space; } arg = { mbx, (char *)msg, msg_size, 0 };
 	return (int)rtai_lxrt(BIDX, SIZARG, MBX_SEND_IF, &arg).i[LOW];
 }
 
-RTAI_PROTO(int, rt_mbx_send_until,(struct rt_mailbox *mbx, void *msg, int msg_size, RTIME time))
+RTAI_PROTO(int, rt_mbx_send_until, (struct rt_mailbox *mbx, void *msg, int msg_size, RTIME time))
 {
 	struct { struct rt_mailbox *mbx; char *msg; long msg_size; RTIME time; long space; } arg = { mbx, (char *)msg, msg_size, time, 0 };
 	return (int)rtai_lxrt(BIDX, SIZARG, MBX_SEND_UNTIL, &arg).i[LOW];
 }
 
-RTAI_PROTO(int, rt_mbx_send_timed,(struct rt_mailbox *mbx, void *msg, int msg_size, RTIME delay))
+RTAI_PROTO(int, rt_mbx_send_timed, (struct rt_mailbox *mbx, void *msg, int msg_size, RTIME delay))
 {
 	struct { struct rt_mailbox *mbx; char *msg; long msg_size; RTIME delay; long space; } arg = { mbx, (char *)msg, msg_size, delay, 0 };
 	return (int)rtai_lxrt(BIDX, SIZARG, MBX_SEND_TIMED, &arg).i[LOW];
 }
 
-RTAI_PROTO(int, rt_mbx_ovrwr_send,(struct rt_mailbox *mbx, void *msg, int msg_size))
+RTAI_PROTO(int, rt_mbx_ovrwr_send, (struct rt_mailbox *mbx, void *msg, int msg_size))
 {
 	struct { struct rt_mailbox *mbx; char *msg; long msg_size; long space; } arg = { mbx, (char *)msg, msg_size, 0 };
 	return (int)rtai_lxrt(BIDX, SIZARG, MBX_OVRWR_SEND, &arg).i[LOW];
 }
 
-RTAI_PROTO(int, rt_mbx_evdrp,(struct rt_mailbox *mbx, void *msg, int msg_size))
+RTAI_PROTO(int, rt_mbx_evdrp, (struct rt_mailbox *mbx, void *msg, int msg_size))
 {
 	struct { struct rt_mailbox *mbx; char *msg; long msg_size; long space; } arg = { mbx, (char *)msg, msg_size, 0 };
 	return (int)rtai_lxrt(BIDX, SIZARG, MBX_EVDRP, &arg).i[LOW];
 }
 
-RTAI_PROTO(int, rt_mbx_receive,(struct rt_mailbox *mbx, void *msg, int msg_size))
+RTAI_PROTO(int, rt_mbx_receive, (struct rt_mailbox *mbx, void *msg, int msg_size))
 {
 	struct { struct rt_mailbox *mbx; char *msg; long msg_size; long space; } arg = { mbx, (char *)msg, msg_size, 0 };
 	return (int)rtai_lxrt(BIDX, SIZARG, MBX_RECEIVE, &arg).i[LOW];
 }
 
-RTAI_PROTO(int, rt_mbx_receive_wp,(struct rt_mailbox *mbx, void *msg, int msg_size))
+RTAI_PROTO(int, rt_mbx_receive_wp, (struct rt_mailbox *mbx, void *msg, int msg_size))
 {
 	struct { struct rt_mailbox *mbx; char *msg; long msg_size; long space; } arg = { mbx, (char *)msg, msg_size, 0 };
 	return (int)rtai_lxrt(BIDX, SIZARG, MBX_RECEIVE_WP, &arg).i[LOW];
 }
 
-RTAI_PROTO(int, rt_mbx_receive_if,(struct rt_mailbox *mbx, void *msg, int msg_size))
+RTAI_PROTO(int, rt_mbx_receive_if, (struct rt_mailbox *mbx, void *msg, int msg_size))
 {
 	struct { struct rt_mailbox *mbx; char *msg; long msg_size; long space; } arg = { mbx, (char *)msg, msg_size, 0 };
 	return (int)rtai_lxrt(BIDX, SIZARG, MBX_RECEIVE_IF, &arg).i[LOW];
 }
 
-RTAI_PROTO(int, rt_mbx_receive_until,(struct rt_mailbox *mbx, void *msg, int msg_size, RTIME time))
+RTAI_PROTO(int, rt_mbx_receive_until, (struct rt_mailbox *mbx, void *msg, int msg_size, RTIME time))
 {
 	struct { struct rt_mailbox *mbx; void *msg; long msg_size; RTIME time; long space; } arg = { mbx, (char *)msg, msg_size, time, 0 };
 	return (int)rtai_lxrt(BIDX, SIZARG, MBX_RECEIVE_UNTIL, &arg).i[LOW];
 }
 
-RTAI_PROTO(int, rt_mbx_receive_timed,(struct rt_mailbox *mbx, void *msg, int msg_size, RTIME delay))
+RTAI_PROTO(int, rt_mbx_receive_timed, (struct rt_mailbox *mbx, void *msg, int msg_size, RTIME delay))
 {
 	struct { struct rt_mailbox *mbx; char *msg; long msg_size; RTIME delay; long space; } arg = { mbx, (char *)msg, msg_size, delay, 0 };
 	return (int)rtai_lxrt(BIDX, SIZARG, MBX_RECEIVE_TIMED, &arg).i[LOW];

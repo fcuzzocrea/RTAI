@@ -1,3 +1,7 @@
+2008-12-19 Pierangelo Masarati <masarati@aero.polimi.it>
+
+	* configure.in: CONFIG_KBUILD always defined (hack)
+
 2008-12-18 Paolo Mantegazza <mantegazza@aero.polimi.it>
 
 	 * base/include/rtai_wrappers.h and base/include/asm-i386/rtai_hal.h:

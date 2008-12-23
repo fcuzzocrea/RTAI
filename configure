@@ -19970,7 +19970,18 @@ echo "$as_me: error: HAL patch not applied/enabled in $LINUX_KERNELSRC" >&2;}
    { (exit 1); exit 1; }; }
 fi
 
-CONFIG_KBUILD=y
+case "$RTAI_LINUX_VERSION" in
+  2.4.*)
+		unset CONFIG_KBUILD
+    ;;
+  2.6.*)
+			CONFIG_KBUILD=y
+    ;;
+  *)
+    { { echo "$as_me:$LINENO: error: Unsupported kernel version $RTAI_LINUX_VERSION" >&5
+echo "$as_me: error: Unsupported kernel version $RTAI_LINUX_VERSION" >&2;}
+   { (exit 1); exit 1; }; }
+esac
 
 
 { echo "$as_me:$LINENO: checking for kernel architecture" >&5

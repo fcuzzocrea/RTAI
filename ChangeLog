@@ -1,3 +1,7 @@
+2008-12-23 Pierangelo Masarati <masarati@aero.polimi.it>
+
+	* configure.in: revert previous commit
+
 2008-12-19 Pierangelo Masarati <masarati@aero.polimi.it>
 
 	* configure.in: CONFIG_KBUILD always defined (hack)

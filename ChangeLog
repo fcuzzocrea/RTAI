@@ -1,3 +1,7 @@
+2008-12-27 Pierangelo Masarati <masarati@aero.polimi.it>
+
+	* configure.in: only set CROSS_COMPILE when unset
+
 2008-12-23 Pierangelo Masarati <masarati@aero.polimi.it>
 
 	* configure.in: revert previous commit

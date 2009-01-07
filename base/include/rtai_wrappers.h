@@ -178,7 +178,7 @@ typedef struct class_simple class_t;
 #define kill_proc(pid, sig, priv)       \
   kill_proc_info(sig, (priv) ? SEND_SIG_PRIV : SEND_SIG_NOINFO, pid)
 
-#endif /* LINUX_VERSION_CODE < 2.6.27 */
+#endif /* LINUX_VERSION_CODE <= 2.6.26 */
 
 #ifndef CONFIG_SYSFS
 typedef void * class_t;

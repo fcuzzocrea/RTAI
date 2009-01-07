@@ -159,7 +159,7 @@ extern "C" {
 RTAI_PROTO(struct rt_mailbox *, rt_typed_mbx_init, (unsigned long name, int size, int qtype))
 {
 	struct { unsigned long name; long size; long qtype; } arg = { name, size, qtype };
-	return rtai_lxrt(BIDX, SIZARG, LXRT_MBX_INIT, &arg).v[LOW];
+	return (struct rt_mailbox *)rtai_lxrt(BIDX, SIZARG, LXRT_MBX_INIT, &arg).v[LOW];
 }
 
 /**
@@ -181,7 +181,7 @@ RTAI_PROTO(struct rt_mailbox *, rt_typed_mbx_init, (unsigned long name, int size
 RTAI_PROTO(int, rt_mbx_delete, (struct rt_mailbox *mbx))
 {
 	void *arg = mbx;
-	return (struct rt_mailbox *)rtai_lxrt(BIDX, SIZARG, LXRT_MBX_DELETE, &arg).i[LOW];
+	return rtai_lxrt(BIDX, SIZARG, LXRT_MBX_DELETE, &arg).i[LOW];
 }
 
 RTAI_PROTO(struct rt_mailbox *, rt_typed_named_mbx_init, (const char *name, int size, int type))

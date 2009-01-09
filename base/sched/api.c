@@ -381,7 +381,10 @@ RTAI_SYSCALL_MODE int rt_task_suspend_until(RT_TASK *task, RTIME time)
 #ifdef CONFIG_SMP
 			int cpuid = rtai_cpuid();
 #endif
-			if ((task->resume_time = time) > rt_time_h) {
+			task->resume_time = time;
+//rt_printk(">>>>> %lld %lld %lld\n", count2nano(get_time()), count2nano(time), (RTIME)rt_time_h);
+//rt_printk(">>>>> %d\n", (task->resume_time = time) > rt_time_h);
+			if (1 || (task->resume_time = time) > rt_time_h) {
 				if (!task->suspdepth) {
 					task->suspdepth++;
 				}

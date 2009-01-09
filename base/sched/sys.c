@@ -32,6 +32,10 @@ Nov. 2001, Jan Kiszka (Jan.Kiszka@web.de) fix a tiny bug in __task_init.
 #include <linux/mman.h>
 #include <asm/uaccess.h>
 
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,0)
+#include <linux/oom.h>
+#endif
+
 #include <rtai_sched.h>
 #include <rtai_lxrt.h>
 #include <rtai_sem.h>
@@ -249,6 +253,9 @@ static inline RT_TASK* __task_init(unsigned long name, int prio, int stack_size,
 #if (defined VM_PINNED) && (defined CONFIG_MMU)
 			ipipe_disable_ondemand_mappings(current);
 #endif
+#ifdef OOM_DISABLE
+			current->oomkilladj = OOM_DISABLE;
+#endif
 
 			return rt_task;
 		} else {
@@ -311,7 +318,7 @@ static inline long long handle_lxrt_request (unsigned int lxsrq, long *arg, RT_T
  * (giuseppe@renoldi.org).
  */
 		if (unlikely(!(funcm = rt_fun_ext[INDX(lxsrq)]))) {
-			rt_printk("BAD: null rt_fun_ext[%d]\n", INDX(lxsrq));
+			rt_printk("BAD: null rt_fun_ext, no module for extension %d?\n", INDX(lxsrq));
 			return -ENOSYS;
 		}
 		if (!(type = funcm[srq].type)) {

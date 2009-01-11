@@ -53,6 +53,9 @@ extern struct list_head __adeos_pipeline;
 #define hal_root_domain        adp_root 
 #define hal_current_domain(x)  adp_cpu_current[x] 
 
+#define hal_propagate_irq  adeos_propagate_irq
+#define hal_schedule_irq   adeos_schedule_irq
+
 #define hal_critical_enter  adeos_critical_enter
 #define hal_critical_exit   adeos_critical_exit
 
@@ -167,6 +170,9 @@ do { \
 #define hal_current_domain(cpuid)  (ipipe_percpu_domain[cpuid])
 #endif
 
+#define hal_propagate_irq   ipipe_propagate_irq
+#define hal_schedule_irq    ipipe_schedule_irq
+
 #define hal_critical_enter  ipipe_critical_enter
 #define hal_critical_exit   ipipe_critical_exit
 
@@ -250,6 +256,9 @@ do { \
 #define hal_hw_local_irq_save     local_irq_save_hw
 #define hal_hw_local_irq_restore  local_irq_restore_hw
 #define hal_hw_local_irq_flags    local_save_flags_hw
+
+#define hal_set_timer(ns)  ipipe_tune_timer(ns, 0)
+#define hal_reset_timer()  ipipe_tune_timer(0, IPIPE_RESET_TIMER)
 
 #define hal_unstall_pipeline_from  ipipe_unstall_pipeline_from
 

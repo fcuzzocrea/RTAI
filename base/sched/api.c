@@ -689,7 +689,7 @@ void rt_gettimeorig(RTIME time_orig[])
  */
 RTAI_SYSCALL_MODE int rt_task_make_periodic_relative_ns(RT_TASK *task, RTIME start_delay, RTIME period)
 {
-	long flags;
+	unsigned long flags;
 
 	if (!task) {
 		task = RT_CURRENT;
@@ -748,7 +748,7 @@ RTAI_SYSCALL_MODE int rt_task_make_periodic_relative_ns(RT_TASK *task, RTIME sta
  */
 RTAI_SYSCALL_MODE int rt_task_make_periodic(RT_TASK *task, RTIME start_time, RTIME period)
 {
-	long flags;
+	unsigned long flags;
 
 	if (!task) {
 		task = RT_CURRENT;
@@ -793,7 +793,7 @@ RTAI_SYSCALL_MODE int rt_task_make_periodic(RT_TASK *task, RTIME start_time, RTI
 int rt_task_wait_period(void)
 {
 	DECLARE_RT_CURRENT;
-	long flags;
+	unsigned long flags;
 
 	flags = rt_global_save_flags_and_cli();
 	ASSIGN_RT_CURRENT;
@@ -832,7 +832,7 @@ int rt_task_wait_period(void)
 RTAI_SYSCALL_MODE void rt_task_set_resume_end_times(RTIME resume, RTIME end)
 {
 	RT_TASK *rt_current;
-	long flags;
+	unsigned long flags;
 
 	flags = rt_global_save_flags_and_cli();
 	rt_current = RT_CURRENT;
@@ -857,7 +857,7 @@ RTAI_SYSCALL_MODE void rt_task_set_resume_end_times(RTIME resume, RTIME end)
 
 RTAI_SYSCALL_MODE int rt_set_resume_time(RT_TASK *task, RTIME new_resume_time)
 {
-	long flags;
+	unsigned long flags;
 
 	if (task->magic != RT_TASK_MAGIC) {
 		return -EINVAL;
@@ -878,7 +878,7 @@ RTAI_SYSCALL_MODE int rt_set_resume_time(RT_TASK *task, RTIME new_resume_time)
 
 RTAI_SYSCALL_MODE int rt_set_period(RT_TASK *task, RTIME new_period)
 {
-	long flags;
+	unsigned long flags;
 
 	if (task->magic != RT_TASK_MAGIC) {
 		return -EINVAL;

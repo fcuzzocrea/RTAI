@@ -96,6 +96,7 @@ static void fun(long thread) {
 	int max_diff;
 	RTIME svt, t;
 
+	t = 0;
 	min_diff = 1000000000;
 	max_diff = -1000000000;
 	while (1) {

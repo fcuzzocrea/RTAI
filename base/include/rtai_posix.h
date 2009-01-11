@@ -1662,6 +1662,10 @@ RTAI_PROTO(int, __wrap_pthread_condattr_setpshared, (pthread_condattr_t *attr, i
 	return EINVAL;
 }
 
+#ifndef CLOCK_MONOTONIC
+#define CLOCK_MONOTONIC  1
+#endif
+
 RTAI_PROTO(int, __wrap_pthread_condattr_setclock, (pthread_condattr_t *condattr, clockid_t clockid))
 {
 	if (clockid == CLOCK_MONOTONIC || clockid == CLOCK_REALTIME) {

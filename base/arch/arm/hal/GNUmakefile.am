@@ -12,6 +12,12 @@ endif
 if CONFIG_ARCH_PXA
 libhal_a_SOURCES += mach-pxa/pxa-timer.c
 endif
+if CONFIG_ARCH_AT91
+libhal_a_SOURCES += mach-at91/at91-timer.c
+endif
+if CONFIG_ARCH_IMX
+libhal_a_SOURCES += mach-imx/imx-timer.c
+endif
 
 if CONFIG_KBUILD
 

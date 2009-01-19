@@ -100,7 +100,7 @@ int rt_get_inher_prio(RT_TASK *task)
 	if (task->magic != RT_TASK_MAGIC) {
 		return -EINVAL;
 	}
-	return task->base_priority;
+	return task->priority;
 }
 
 

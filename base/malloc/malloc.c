@@ -334,6 +334,7 @@ int rtheap_free(rtheap_t *heap, void *block)
 #define TLSF_SIGNATURE	(0x2A59FA59)
 
 #define	PTR_MASK	(sizeof(void *) - 1)
+#undef BLOCK_SIZE
 #define BLOCK_SIZE	(0xFFFFFFFF - PTR_MASK)
 
 #define GET_NEXT_BLOCK(_addr, _r) ((bhdr_t *) ((char *) (_addr) + (_r)))

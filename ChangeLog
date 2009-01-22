@@ -1,3 +1,8 @@
+2008-01-22 Paolo Mantegazza <mantegazza@aero.polimi.it>
+
+	* base/include/rtai_posix.h: add mode argument in open with O_CREAT,
+	  to avoid compilation error on the most recent GCCs.
+
 2008-01-19 Paolo Mantegazza <mantegazza@aero.polimi.it>
 
 	* base/sched/api.c: fix rt_get_inher_prio, it returned the base

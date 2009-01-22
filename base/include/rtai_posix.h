@@ -1209,7 +1209,7 @@ RTAI_PROTO(sem_t *, __wrap_sem_open, (const char *namein, int oflags, int value,
 				rtai_lxrt(BIDX, SIZARG, NAMED_SEM_INIT, &arg);
 				psem = malloc(sizeof(void *));
 				((void **)psem)[0] = tsem;
-				fd = open(name, O_CREAT | O_WRONLY);
+				fd = open(name, O_CREAT | O_WRONLY, S_IRWXU | S_IRWXG | S_IRWXO);
 				write(fd, &psem, sizeof(psem));
 				close(fd);
 			}

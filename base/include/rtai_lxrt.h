@@ -585,10 +585,7 @@ struct apic_timer_setup_data;
 
 #else
 
-#define rt_grow_and_lock_stack(incr) \
-	do { \
-		rt_printk("RTAI WARNING: rt_grow_and_lock_stack() does nothing for systems without MMU\n"); \
-	} while (0)
+#define rt_grow_and_lock_stack(incr) do { } while (0)
 
 #endif
 

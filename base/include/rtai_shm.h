@@ -117,6 +117,15 @@ static inline int remap_page_range(struct vm_area_struct *vma, unsigned long uva
 
 #include <rtai_malloc.h>
 
+#ifndef CONFIG_MMU
+
+static inline unsigned long uvirt_to_kva(pgd_t *pgd, unsigned long adr)
+{
+	return adr;
+}
+
+#else
+
 static inline unsigned long uvirt_to_kva(pgd_t *pgd, unsigned long adr)
 {
 	if (!pgd_none(*pgd) && !pgd_bad(*pgd)) {
@@ -146,6 +155,8 @@ static inline unsigned long kvirt_to_pa(unsigned long adr)
 {
 	return virt_to_phys((void *)uvirt_to_kva(pgd_offset_k(adr), adr));
 }
+
+#endif
 
 #ifdef __cplusplus
 extern "C" {

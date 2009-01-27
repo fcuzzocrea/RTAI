@@ -574,7 +574,7 @@ void reset_rt_fun_ext_index(struct rt_fun_entry *fun,
 
 struct apic_timer_setup_data;
 
-#ifndef CONFIG_UCLINUX
+#ifdef CONFIG_MMU
 
 #define rt_grow_and_lock_stack(incr) \
 	do { \

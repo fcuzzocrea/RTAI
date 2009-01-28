@@ -127,21 +127,23 @@ static inline long long rtai_llimd(long long ll, long mult, long div) {
 static inline unsigned long long rtai_u64div32c(unsigned long long a,
 						unsigned long b,
 						int *r) {
-    __asm__ __volatile(
-       "\n        movq    %%rax,%%rbx"
-       "\n        movq    %%rdx,%%rax"
-       "\n        xorq    %%rdx,%%rdx"
-       "\n        divq    %%rcx"
-       "\n        xchgq   %%rax,%%rbx"
-       "\n        divq    %%rcx"
-       "\n        movq    %%rdx,%%rcx"
-       "\n        movq    %%rbx,%%rdx"
-       : "=a" (((unsigned long *)((void *)&a))[0]), "=d" (((unsigned long *)((void *)&a))[1])
-       : "a" (((unsigned long *)((void *)&a))[0]), "d" (((unsigned long *)((void *)&a))[1]), "c" (b)
-       : "%rbx"
-       );
 
-    return a;
+	union { unsigned long long ull; unsigned long ul[2]; } u;
+	u.ull = a;
+	__asm__ __volatile(
+	"\n        movq    %%rax,%%rbx"
+	"\n        movq    %%rdx,%%rax"
+	"\n        xorq    %%rdx,%%rdx"
+	"\n        divq    %%rcx"
+	"\n        xchgq   %%rax,%%rbx"
+	"\n        divq    %%rcx"
+	"\n        movq    %%rdx,%%rcx"
+	"\n        movq    %%rbx,%%rdx"
+	: "=a" (u.ul[0]), "=d" (u.ul[1])
+	: "a"  (u.ul[0]), "d"  (u.ul[1]), "c" (b)
+	: "%rbx" );
+
+	return a;
 }
 
 #if defined(__KERNEL__) && !defined(__cplusplus)

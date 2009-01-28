@@ -243,21 +243,23 @@ static inline long long rtai_llimd(long long ll, int mult, int div) {
 static inline unsigned long long rtai_u64div32c(unsigned long long a,
 						unsigned long b,
 						int *r) {
-    __asm__ __volatile(
-       "\n        movl    %%eax,%%ebx"
-       "\n        movl    %%edx,%%eax"
-       "\n        xorl    %%edx,%%edx"
-       "\n        divl    %%ecx"
-       "\n        xchgl   %%eax,%%ebx"
-       "\n        divl    %%ecx"
-       "\n        movl    %%edx,%%ecx"
-       "\n        movl    %%ebx,%%edx"
-       : "=a" (((unsigned long *)((void *)&a))[0]), "=d" (((unsigned long *)((void *)&a))[1])
-       : "a" (((unsigned long *)((void *)&a))[0]), "d" (((unsigned long *)((void *)&a))[1]), "c" (b)
-       : "%ebx"
-       );
 
-    return a;
+	union { unsigned long long ull; unsigned long ul[2]; } u;
+	u.ull = a;
+	__asm__ __volatile(
+	"\n        movl    %%eax,%%ebx"
+	"\n        movl    %%edx,%%eax"
+	"\n        xorl    %%edx,%%edx"
+	"\n        divl    %%ecx"
+	"\n        xchgl   %%eax,%%ebx"
+	"\n        divl    %%ecx"
+	"\n        movl    %%edx,%%ecx"
+	"\n        movl    %%ebx,%%edx"
+	: "=a" (u.ul[0]), "=d" (u.ul[1])
+	: "a"  (u.ul[0]), "d"  (u.ul[1]), "c" (b)
+	: "%ebx" );
+
+	return a;
 }
 
 #if defined(__KERNEL__) && !defined(__cplusplus)

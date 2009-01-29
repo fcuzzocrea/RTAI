@@ -34,6 +34,16 @@
 
 #include <rtai_types.h>
 
+#ifdef __KERNEL__
+
+#define NAM2NUM_PROTO(type, name, arglist)  static inline type name arglist
+
+#else
+
+#define NAM2NUM_PROTO  RTAI_PROTO
+
+#endif
+
 /**
  * Convert a 6 characters string to an unsigned long.
  *
@@ -50,7 +60,7 @@
  *
  * @return the unsigned long associated with @a name.
  */
-RTAI_PROTO(unsigned long, nam2num, (const char *name))
+NAM2NUM_PROTO(unsigned long, nam2num, (const char *name))
 {
         unsigned long retval = 0;
 	int c, i;
@@ -84,7 +94,7 @@ RTAI_PROTO(unsigned long, nam2num, (const char *name))
  * @param name is a pointer to a 6 characters buffer where the identifier will
  * be returned.
  */
-RTAI_PROTO(void, num2nam, (unsigned long num, char *name))
+NAM2NUM_PROTO(void, num2nam, (unsigned long num, char *name))
 {
         int c, i, k, q; 
 	if (num == 0xFFFFFFFF) {

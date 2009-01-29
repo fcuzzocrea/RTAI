@@ -1,3 +1,14 @@
+2009-01-29 Paolo Mantegazza <mantegazza@aero.polimi.it>
+
+	* base/include/asm-i386, asm-x86_64/rtai_hal.h modify inline asm
+	  in rtai_u64div32c to avoid aliasing warnings with ggc > 4.3.
+	* base/arch/i386, x86_64/Kconfig make eager inlines the default to
+	  avoid flood of warnings for static inline within extern inline 
+	  with gcc > 4.3.
+	* base/include/rtai_nam2num.h: force RTAI_PROTO to static inline
+	  in kernel space, otherwise we'll miss nam2num when RTAI_PROTO 
+	  is set to no inline.
+
 2009-01-27 Valentin Pavlyuchenko <TheValik@gmail.com>
 
 	* /base/include/rtai_shm.h: make uvirt_to_kva dependent on CONFUG_MMU.
@@ -6,8 +17,9 @@
 
 2009-01-22 Paolo Mantegazza <mantegazza@aero.polimi.it>
 
-	* base/include/rtai_posix.h: add mode argument in open with O_CREAT,
-	  to avoid compilation error on the most recent GCCs.
+	* base/include/rtai_posix.h: add mode argument in open with O_CREAT
+	  and assign write return, to avoid compilation error/warning
+	  with ggc > 4.3.
 	* base/malloc/malloc.c: undef BLOCK_SIZE in TLSF to avoid a 
           redifinition warning related to Linux headers.
 

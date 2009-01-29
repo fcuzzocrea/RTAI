@@ -172,12 +172,12 @@ choice
 	  programs against the appropriate support library (e.g. liblxrt.a 
 	  for user space RTAI syscall services).
 
-config RTAI_LXRT_EXTERN_INLINE
-	bool "Conditional inlining"
-	help
-
 config RTAI_LXRT_STATIC_INLINE
 	bool "Eager inlining"
+	help
+
+config RTAI_LXRT_EXTERN_INLINE
+	bool "Conditional inlining"
 	help
 
 config RTAI_LXRT_NO_INLINE

@@ -149,7 +149,7 @@ struct calibration_data rtai_tunables;
 
 volatile unsigned long rtai_cpu_realtime;
 
-volatile unsigned long rtai_cpu_lock;
+volatile unsigned long rtai_cpu_lock[2];
 
 unsigned long rtai_critical_enter (void (*synch)(void))
 {
@@ -1168,7 +1168,7 @@ static inline long long rtai_usrq_dispatcher (unsigned long srq, unsigned long l
 }
 
 #include <asm/rtai_usi.h>
-long long (*rtai_lxrt_dispatcher)(unsigned long, unsigned long, void *);
+long long (*rtai_lxrt_dispatcher)(unsigned long, unsigned long);
 
 static int (*sched_intercept_syscall_prologue)(struct pt_regs *);
 
@@ -1177,7 +1177,7 @@ static int intercept_syscall_prologue(unsigned long event, struct pt_regs *regs)
 	if (likely(regs->LINUX_SYSCALL_NR >= RTAI_SYSCALL_NR)) {
 		unsigned long srq  = regs->LINUX_SYSCALL_REG1;
 		IF_IS_A_USI_SRQ_CALL_IT(srq, regs->LINUX_SYSCALL_REG2, (long long *)regs->LINUX_SYSCALL_REG3, regs->LINUX_SYSCALL_FLAGS, 1);
-		*((long long *)regs->LINUX_SYSCALL_REG3) = srq > RTAI_NR_SRQS ? rtai_lxrt_dispatcher(srq, regs->LINUX_SYSCALL_REG2, regs) : rtai_usrq_dispatcher(srq, regs->LINUX_SYSCALL_REG2);
+		*((long long *)regs->LINUX_SYSCALL_REG3) = srq > RTAI_NR_SRQS ? rtai_lxrt_dispatcher(srq, regs->LINUX_SYSCALL_REG2) : rtai_usrq_dispatcher(srq, regs->LINUX_SYSCALL_REG2);
 		if (!in_hrt_mode(srq = rtai_cpuid())) {
 			hal_test_and_fast_flush_pipeline(srq);
 			return 0;
@@ -1202,7 +1202,7 @@ asmlinkage int rtai_syscall_dispatcher (__volatile struct pt_regs pt)
 	//IF_IS_A_USI_SRQ_CALL_IT(pt.d0, pt.d1, (long long*)pt.d2, lsr, 0);
 	if (usi_SRQ_call(pt.d0, pt.d1, &result, pt.sr))
 		return 0;
-	result = pt.d0 > RTAI_NR_SRQS ? rtai_lxrt_dispatcher(pt.d0, pt.d1, (void *)&pt) : rtai_usrq_dispatcher(pt.d0, pt.d1);
+	result = pt.d0 > RTAI_NR_SRQS ? rtai_lxrt_dispatcher(pt.d0, pt.d1) : rtai_usrq_dispatcher(pt.d0, pt.d1);
 	pt.d2 = result & 0xFFFFFFFF;
 	pt.d3 = (result >> 32);
 	if (!in_hrt_mode(cpuid = rtai_cpuid())) {
@@ -1469,7 +1469,7 @@ int __rtai_hal_init (void)
 
 	IsolCpusMask = 0;
 
-	printk(KERN_INFO "RTAI[hal]: mounted (%s, IMMEDIATE (INTERNAL IRQs %s), ISOL_CPUS_MASK: %lx).\n", HAL_TYPE, CONFIG_RTAI_DONT_DISPATCH_CORE_IRQS ? "VECTORED" : "DISPATCHED", IsolCpusMask);
+	printk(KERN_INFO "RTAI[hal]: mounted (%s, IMMEDIATE (INTERNAL IRQs VECTORED)).\n", HAL_TYPE);
 
 	printk("PIPELINE layers:\n");
 	for (trapnr = 1; ; trapnr++) {
@@ -1660,8 +1660,6 @@ EXPORT_SYMBOL(rt_scheduling);
 #if LINUX_VERSION_CODE < RTAI_LT_KERNEL_VERSION_FOR_NONPERCPU
 EXPORT_SYMBOL(ipipe_root_status);
 #endif
-
-EXPORT_SYMBOL(IsolCpusMask);
 
 /*@}*/
 

@@ -313,7 +313,7 @@ extern struct rt_times rt_smp_times[RTAI_NR_CPUS];
 
 extern struct calibration_data rtai_tunables;
 
-extern volatile unsigned long rtai_cpu_lock;
+extern volatile unsigned long rtai_cpu_lock[];
 
 //#define RTAI_TASKPRI 0xf0  // simplest usage without changing Linux code base
 #define SET_TASKPRI(cpuid)

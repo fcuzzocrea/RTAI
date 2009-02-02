@@ -26,7 +26,10 @@ AC_ARG_WITH(CC,
 	CC="$withval"
     ])
 
-CROSS_COMPILE=
+dnl set only if undefined
+if test x"$CROSS_COMPILE" = x ; then
+	CROSS_COMPILE=
+fi
 case "$host" in
  m68knommu-*)
 	LDFLAGS="-Wl,-elf2flt"

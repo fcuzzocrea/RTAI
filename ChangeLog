@@ -1,3 +1,7 @@
+2009-02-02 Pierangelo Masarati <masarati@aero.polimi.it>
+
+	* configure.in: only set CROSS_COMPILE if not defined yet
+
 2009-01-29 Paolo Mantegazza <mantegazza@aero.polimi.it>
 
 	* base/include/asm-i386, asm-x86_64/rtai_hal.h modify inline asm

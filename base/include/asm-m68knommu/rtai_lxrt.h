@@ -36,8 +36,6 @@
 #define RTAI_SYSCALL_ARGS    d1 //From RTAI_DO_TRAP_SYS
 #define RTAI_SYSCALL_RETPNT  d2
 
-#define RTAI_FAKE_LINUX_SYSCALL  20
-
 #define LINUX_SYSCALL_NR      orig_d0
 #define LINUX_SYSCALL_REG1    d1
 #define LINUX_SYSCALL_REG2    d2
@@ -126,34 +124,34 @@ static inline void _lxrt_context_switch (struct task_struct *prev, struct task_s
 
 #include <linux/slab.h>
 
-#define RT_STACK ksp
+#define REG_SP ksp
 #if 1 // optimised (?)
 static inline void kthread_fun_set_jump(struct task_struct *lnxtsk)
 {
-	lnxtsk->rtai_tskext(TSKEXT2) = kmalloc(sizeof(struct thread_struct)/* + sizeof(struct thread_info)*/ + (lnxtsk->thread.RT_STACK & ~(THREAD_SIZE - 1)) + THREAD_SIZE - lnxtsk->thread.RT_STACK, GFP_KERNEL);
+	lnxtsk->rtai_tskext(TSKEXT2) = kmalloc(sizeof(struct thread_struct)/* + sizeof(struct thread_info)*/ + (lnxtsk->thread.REG_SP & ~(THREAD_SIZE - 1)) + THREAD_SIZE - lnxtsk->thread.REG_SP, GFP_KERNEL);
 	*((struct thread_struct *)lnxtsk->rtai_tskext(TSKEXT2)) = lnxtsk->thread;
-//	memcpy(lnxtsk->rtai_tskext(TSKEXT2) + sizeof(struct thread_struct), (void *)(lnxtsk->thread.RT_STACK & ~(THREAD_SIZE - 1)), sizeof(struct thread_info));
-	memcpy(lnxtsk->rtai_tskext(TSKEXT2) + sizeof(struct thread_struct)/* + sizeof(struct thread_info)*/, (void *)(lnxtsk->thread.RT_STACK), (lnxtsk->thread.RT_STACK & ~(THREAD_SIZE - 1)) + THREAD_SIZE - lnxtsk->thread.RT_STACK);
+//	memcpy(lnxtsk->rtai_tskext(TSKEXT2) + sizeof(struct thread_struct), (void *)(lnxtsk->thread.REG_SP & ~(THREAD_SIZE - 1)), sizeof(struct thread_info));
+	memcpy(lnxtsk->rtai_tskext(TSKEXT2) + sizeof(struct thread_struct)/* + sizeof(struct thread_info)*/, (void *)(lnxtsk->thread.REG_SP), (lnxtsk->thread.REG_SP & ~(THREAD_SIZE - 1)) + THREAD_SIZE - lnxtsk->thread.REG_SP);
 }
 
 static inline void kthread_fun_long_jump(struct task_struct *lnxtsk)
 {
 	lnxtsk->thread = *((struct thread_struct *)lnxtsk->rtai_tskext(TSKEXT2));
-//	memcpy((void *)(lnxtsk->thread.RT_STACK & ~(THREAD_SIZE - 1)), lnxtsk->rtai_tskext(TSKEXT2) + sizeof(struct thread_struct), sizeof(struct thread_info));
-	memcpy((void *)lnxtsk->thread.RT_STACK, lnxtsk->rtai_tskext(TSKEXT2) + sizeof(struct thread_struct)/* + sizeof(struct thread_info)*/, (lnxtsk->thread.RT_STACK & ~(THREAD_SIZE - 1)) + THREAD_SIZE - lnxtsk->thread.RT_STACK);
+//	memcpy((void *)(lnxtsk->thread.REG_SP & ~(THREAD_SIZE - 1)), lnxtsk->rtai_tskext(TSKEXT2) + sizeof(struct thread_struct), sizeof(struct thread_info));
+	memcpy((void *)lnxtsk->thread.REG_SP, lnxtsk->rtai_tskext(TSKEXT2) + sizeof(struct thread_struct)/* + sizeof(struct thread_info)*/, (lnxtsk->thread.REG_SP & ~(THREAD_SIZE - 1)) + THREAD_SIZE - lnxtsk->thread.REG_SP);
 }
 #else  // brute force
 static inline void kthread_fun_set_jump(struct task_struct *lnxtsk)
 {
 	lnxtsk->rtai_tskext(TSKEXT2) = kmalloc(sizeof(struct thread_struct) + THREAD_SIZE, GFP_KERNEL);
 	*((struct thread_struct *)lnxtsk->rtai_tskext(TSKEXT2)) = lnxtsk->thread;
-	memcpy(lnxtsk->rtai_tskext(TSKEXT2) + sizeof(struct thread_struct), (void *)(lnxtsk->thread.RT_STACK & ~(THREAD_SIZE - 1)), THREAD_SIZE);
+	memcpy(lnxtsk->rtai_tskext(TSKEXT2) + sizeof(struct thread_struct), (void *)(lnxtsk->thread.REG_SP & ~(THREAD_SIZE - 1)), THREAD_SIZE);
 }
 
 static inline void kthread_fun_long_jump(struct task_struct *lnxtsk)
 {
 	lnxtsk->thread = *((struct thread_struct *)lnxtsk->rtai_tskext(TSKEXT2));
-	memcpy((void *)(lnxtsk->thread.RT_STACK & ~(THREAD_SIZE - 1)), lnxtsk->rtai_tskext(TSKEXT2) + sizeof(struct thread_struct), THREAD_SIZE);
+	memcpy((void *)(lnxtsk->thread.REG_SP & ~(THREAD_SIZE - 1)), lnxtsk->rtai_tskext(TSKEXT2) + sizeof(struct thread_struct), THREAD_SIZE);
 }
 #endif
 

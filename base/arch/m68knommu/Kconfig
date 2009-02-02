@@ -172,12 +172,12 @@ choice
 	  programs against the appropriate support library (e.g. liblxrt.a 
 	  for user space RTAI syscall services).
 
-config RTAI_LXRT_EXTERN_INLINE
-	bool "Conditional inlining"
-	help
-
 config RTAI_LXRT_STATIC_INLINE
 	bool "Eager inlining"
+	help
+
+config RTAI_LXRT_EXTERN_INLINE
+	bool "Conditional inlining"
 	help
 
 config RTAI_LXRT_NO_INLINE
@@ -190,9 +190,9 @@ endmenu
 
 menu "Machine (m68knommu)"
 
-config RTAI_DONT_DISPATCH_CORE_IRQS
-	bool "Direct vectoring of RTAI native interrupts"
-	default y
+#config RTAI_DONT_DISPATCH_CORE_IRQS
+#	bool
+#	default y
 
 config RTAI_FPU_SUPPORT
 	bool
@@ -202,18 +202,18 @@ config RTAI_CPUS
 	string 
 	default 1
 
-config RTAI_DIAG_TSC_SYNC
-	bool
-	default n
-
-config RTAI_MASTER_TSC_CPU
-	string
-	default 0
-
-config RTAI_TUNE_TSC_SYNC
-	bool
-	default n
-
+#config RTAI_DIAG_TSC_SYNC
+#	bool
+#	default n
+#
+#config RTAI_MASTER_TSC_CPU
+#	string
+#	default 0
+#
+#config RTAI_TUNE_TSC_SYNC
+#	bool
+#	default n
+#
 endmenu
 
 menu "Base system"
@@ -338,34 +338,36 @@ config RTAI_BUSY_TIME_ALIGN
 	waist in favour of precise schedule deadlines.
 	Do not set it if a hard periodic timer is to be used.
 
-config RTAI_LXRT_USE_LINUX_SYSCALL
-	bool "Use Linux syscall mechanism for RTAI calls from user space"
-	default n
-	help
-	With this option enabled, RTAI uses the Linux syscall mechanism
-	for its service calls, including RTAI own srqs, as provided by libc 
-	"syscall".  This may improve signal handling (and therefore debugging 
-	of RTAI applications), but has the drawback of a slight overhead. 
-
-	When direct inlining of RTAI syscalls is enabled, see the related
-	configuration options, it is still possible to force the use of 
-	the Linux syscall mechanism, even if this configuration parameter 
-	has not been set. Notice that RTAI own srqs are inlined always.
-	So, since it all depends on the definition of the USE_LINUX_SYSCALL 
-	macro, the only thing to do is to add:
-	#define USE_LINUX_SYSCALL
-	after all of the RTAI headers inclusion in any source file in which 
-	you want to use the Linux syscall mechanism, to be sure that the macro
-	USE_LINUX_SYSCALL will not be redifined afterward. In the same way 
-	when this parameter is set you can selectively revert to RTAI own 
-	syscall mechanism by defining:
-	#undef USE_LINUX_SYSCALL
-	after all of the RTAI headers inclusion in any source file in which 
-	you want to use the LXRT syscall mechanism.
-	RTAI will then operate in mixed mode selectively by using both 
-	its own and Linux syscall mechanisms.
-	
-	If in doubt, say no.
+#config RTAI_LXRT_USE_LINUX_SYSCALL
+#	bool "Use Linux syscall mechanism for RTAI calls from user space"
+#	# to be restored later?
+#	# default n
+#	default y
+#	help
+#	With this option enabled, RTAI uses the Linux syscall mechanism
+#	for its service calls, including RTAI own srqs, as provided by libc 
+#	"syscall".  This may improve signal handling (and therefore debugging 
+#	of RTAI applications), but has the drawback of a slight overhead. 
+#
+#	When direct inlining of RTAI syscalls is enabled, see the related
+#	configuration options, it is still possible to force the use of 
+#	the Linux syscall mechanism, even if this configuration parameter 
+#	has not been set. Notice that RTAI own srqs are inlined always.
+#	So, since it all depends on the definition of the USE_LINUX_SYSCALL 
+#	macro, the only thing to do is to add:
+#	#define USE_LINUX_SYSCALL
+#	after all of the RTAI headers inclusion in any source file in which 
+#	you want to use the Linux syscall mechanism, to be sure that the macro
+#	USE_LINUX_SYSCALL will not be redifined afterward. In the same way 
+#	when this parameter is set you can selectively revert to RTAI own 
+#	syscall mechanism by defining:
+#	#undef USE_LINUX_SYSCALL
+#	after all of the RTAI headers inclusion in any source file in which 
+#	you want to use the LXRT syscall mechanism.
+#	RTAI will then operate in mixed mode selectively by using both 
+#	its own and Linux syscall mechanisms.
+#	
+#	If in doubt, say no.
 
 config RTAI_ALIGN_LINUX_PRIORITY
 	bool "Keep Linux task priority aligned to RTAI"
@@ -394,9 +396,21 @@ config RTAI_CAL_FREQS_FACT
 	default 0
 	help
 	This configuration parameter is meaningful for the oneshot mode only
-	where it has the following effect:
-	
-	In the case of very long timed list it will limit the search 
+	where it has two effects:
+	1 - in oneshot mode using the APIC timer, i.e. always for SMP, a 
+	precise scheduling time depends also on the ratio cpu_freq/apic_freq. 
+	The best results can be achieved by using the RTAI calibration tool. 
+	If no calibration is run one will rely on what Linux makes available 
+	by default, which could be not precise enough, especially for not so 
+	short timed intervals.
+ 	That leads to large and systematic latencies, especially in the case
+	of low frequency schedules. By setting this option to a suitable
+	value one can be sure that a certain firing frequency is granted 
+	even when relatively large idle periods are enconuntered, thus
+	limiting the overall latency with which long sleeping tasks might
+	be awaken in case of unprecise calibrations of the above cited
+	frequencies;
+	2 - in the case of very long timed list it will limit the search 
 	for the next firing time of widely scattered tasks with lowest 
 	priorities, thus avoiding useless scheduling delays. The granted 
 	firing interval will be roughly equal to:
@@ -485,6 +499,32 @@ config RTAI_SEM
 	either in FIFO or priority order and this can be chosen
 	dynamically at run time.
 	The module will be called rtai_sem.o.
+
+config RTAI_RT_POLL
+	bool "Enable IPCs polling"
+	depends on RTAI_SEM
+	default n
+	help
+	This enable polling support for RTAI services. At the moment only
+	MBXes and SEMs are supported. The related service is embedded in
+	the semaphores module.
+	services.
+
+config RTAI_RT_POLL_ON_STACK
+	bool "Use the stack for rt_poll dynamic arrays"
+	depends on RTAI_RT_POLL
+	default n
+	help
+	This let rt_poll alloc its dynamic data directly on the stack. It is
+	likely the most effective way but it can deplete the stack somewhat,
+	especially on 64 bits architectures, if polling requests are large,
+	say > 40. Notice that even with smaller polling sizes it might be
+	important to limit stack usage also when heavy preemptions, very high
+	task switching rates and interrupts floodings are expected.
+	By disabling this parameter RTAI will use its real time memory
+	allocation; with it the limits are just in the size you set for the
+	RTAI dynamic heap and in a slightly greater overhead. So for reasons
+	of cautiousness the default setting is not to use the stack.
 
 config RTAI_MSG
 	tristate "Message"
@@ -631,7 +671,7 @@ config RTAI_USE_NEWERR
 
 config RTAI_IMMEDIATE_LINUX_SYSCALL
 	bool "Immediate Linux syscall in hard real time"
-	default y
+	default n
 	help
 	This parameter allows to control RTAI behaviour when a Linux syscall
 	is made while in hard real time, according to the following two ways:
@@ -655,9 +695,9 @@ config RTAI_IMMEDIATE_LINUX_SYSCALL
 config RTAI_MATH
 	bool "Mathfuns support in kernel"
 	depends on RTAI_FPU_SUPPORT
-	default y
+	default n
 	help
-	This parameter allows buiding a module containing math support 
+	This parameter allows buiding a module containing math support
 	functions for kernel space. It might be useful to avoid fighting
 	for the use of libc within the kernel.
 
@@ -671,11 +711,8 @@ config RTAI_MALLOC
 	default y
 	help
 	RTAI provides a real-time implementation of malloc(). This allows 
-	real-time tasks to allocate and free memory safely while executing
-	in the real-time domain. If it is not enabled kernel's kmalloc will
-	be used. So disabling this option is acceptable if you'll care 
-	to do any allocation while in Linux context only, i.e. at modules
-	initialisation.
+	real-time tasks to allocate and to free memory safely while executing
+	in the real-time domain.
 	The module will be called rtai_malloc.o.
 
 config RTAI_USE_TLSF
@@ -761,21 +798,17 @@ config RTAI_TRACE
 	You may refer to http://www.opersys.com/LTT/ for more information.
 
 config RTAI_USI
-	tristate "User-space interrupts"
-	default m
-	depends on RTAI_SEM && RTAI_TASKLETS
-	default y if RTAI_SEM=y || RTAI_TASKLETS=y
-	default m if RTAI_SEM=m || RTAI_TASKLETS=m
+	bool "User-space interrupts"
+	default n
 	help
-	RTAI already contains some examples hinting at managing
-	interrupts in user space, e.g: resumefromintr in lxrt-net_rpc,
-	pressa in lxrt, but all of them require installing a proper
-	handler in kernel space to wake up a hard real-time
-	LXRT/NEWLXRT task.
-	The user space interrupt support does the same but adds something 
-	that permits you to avoid writing anything in kernel space.
+	RTAI examples are available to show managing interrupts in user 
+	space, e.g: resumefromintr in "showroom" CVS (kernel/user/netrpc),
+	"pressa" in "showroom" (user); but all of them require installing
+	a proper handler in kernel space, to wake up a hard real-time user
+	space task.
+	The user space interrupt support does much of the same, but adds 
+	something that permits you to write nothing in kernel space.
 	The module will be called rtai_usi.o.
-	
 
 config RTAI_WD
 	bool "Watchdog support"
@@ -817,7 +850,7 @@ endmenu
 menu "Add-ons"
 
 config RTAI_COMEDI_LXRT
-	bool "Comedi support over LXRT"
+	bool "Real time COMEDI support in user space"
 	default n
 	help
 	RTAI offers a unified kcomedilib interface to kernel/user space 
@@ -853,6 +886,17 @@ config RTAI_RTDM_FD_MAX
 	help
 	The maximum number of file descriptors in RTDM.
 
+config RTAI_RTDM_SELECT
+	depends on RTAI_RTDM
+	bool "Enable select multiplexing for RTDM services"
+        default n
+	help
+	By enabling this option, select(2) support can be used to monitor
+	access to multiple RTDM services all in one, as for the standard UNIX
+	support, with the exception of the timeout argument format. Being it
+	RTDM specific nanoseconds are used directly in place of 
+	timeval/timespec.
+
 config RTAI_RTDM_SHIRQ
 	depends on RTAI_RTDM
         bool "Shared interrupts"
@@ -869,6 +913,7 @@ config RTAI_DEBUG_RTDM
         Enable some elementary debugging of wrong requests to RTDM, in the 
 	form of messages asserting what's improper and where it's happening.
 
+menu "Drivers"
 
 config RTAI_DRIVERS_SERIAL
 	bool 
@@ -910,6 +955,7 @@ endchoice
 
 endmenu
 
+endmenu
 menu "RTAI Lab"
 
 config RTAI_LAB

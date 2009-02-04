@@ -233,6 +233,7 @@ target_alias = @target_alias@
 top_builddir = @top_builddir@
 top_srcdir = @top_srcdir@
 testdir = $(prefix)/testsuite/kern/switches
+moduledir = @RTAI_MODULE_DIR@
 modext = @RTAI_MODULE_EXT@
 libswitches_rt_a_SOURCES = switches-module.c
 @CONFIG_KBUILD_FALSE@noinst_LIBRARIES = libswitches_rt.a
@@ -527,14 +528,14 @@ uninstall-am:
 all-local: switches_rt$(modext)
 
 install-exec-local: switches_rt$(modext)
-	$(mkinstalldirs) $(DESTDIR)$(testdir)
-	$(INSTALL_DATA) $^ $(DESTDIR)$(testdir)
+	$(mkinstalldirs) $(DESTDIR)$(moduledir)
+	$(INSTALL_DATA) $^ $(DESTDIR)$(moduledir)
 
 install-data-local:
 	$(mkinstalldirs) $(DESTDIR)$(testdir)
 	$(INSTALL_DATA) $(srcdir)/runinfo $(DESTDIR)$(testdir)/.runinfo
 	@echo '#!/bin/sh' > $(DESTDIR)$(testdir)/run
-	@echo "\$${DESTDIR}$(prefix)/bin/rtai-load" >> $(DESTDIR)$(testdir)/run
+	@echo "\$${DESTDIR}$(bindir)/rtai-load" >> $(DESTDIR)$(testdir)/run
 	@chmod +x $(DESTDIR)$(testdir)/run
 
 run: all

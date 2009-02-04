@@ -34,6 +34,8 @@ build_triplet = @build@
 host_triplet = @host@
 @CONFIG_ARCH_EP9301_TRUE@am__append_1 = mach-ep9301/ep9301-timer.c
 @CONFIG_ARCH_PXA_TRUE@am__append_2 = mach-pxa/pxa-timer.c
+@CONFIG_ARCH_AT91_TRUE@am__append_3 = mach-at91/at91-timer.c
+@CONFIG_ARCH_IMX_TRUE@am__append_4 = mach-imx/imx-timer.c
 subdir = base/arch/arm/hal
 DIST_COMMON = $(srcdir)/GNUmakefile.am $(srcdir)/GNUmakefile.in
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
@@ -50,10 +52,14 @@ LIBRARIES = $(noinst_LIBRARIES)
 ARFLAGS = cru
 libhal_a_LIBADD =
 am__libhal_a_SOURCES_DIST = hal.c mach-ep9301/ep9301-timer.c \
-	mach-pxa/pxa-timer.c
+	mach-pxa/pxa-timer.c mach-at91/at91-timer.c \
+	mach-imx/imx-timer.c
 @CONFIG_ARCH_EP9301_TRUE@am__objects_1 = ep9301-timer.$(OBJEXT)
 @CONFIG_ARCH_PXA_TRUE@am__objects_2 = pxa-timer.$(OBJEXT)
-am_libhal_a_OBJECTS = hal.$(OBJEXT) $(am__objects_1) $(am__objects_2)
+@CONFIG_ARCH_AT91_TRUE@am__objects_3 = at91-timer.$(OBJEXT)
+@CONFIG_ARCH_IMX_TRUE@am__objects_4 = imx-timer.$(OBJEXT)
+am_libhal_a_OBJECTS = hal.$(OBJEXT) $(am__objects_1) $(am__objects_2) \
+	$(am__objects_3) $(am__objects_4)
 libhal_a_OBJECTS = $(am_libhal_a_OBJECTS)
 DEFAULT_INCLUDES = -I. -I$(top_builddir)@am__isrc@
 depcomp = $(SHELL) $(top_srcdir)/base/config/autoconf/depcomp
@@ -238,7 +244,8 @@ top_builddir = @top_builddir@
 top_srcdir = @top_srcdir@
 moduledir = @RTAI_MODULE_DIR@
 modext = @RTAI_MODULE_EXT@
-libhal_a_SOURCES = hal.c $(am__append_1) $(am__append_2)
+libhal_a_SOURCES = hal.c $(am__append_1) $(am__append_2) \
+	$(am__append_3) $(am__append_4)
 @CONFIG_KBUILD_FALSE@noinst_LIBRARIES = libhal.a
 @CONFIG_KBUILD_FALSE@libhal_a_AR = $(CROSS_COMPILE)ar cru
 @CONFIG_KBUILD_FALSE@INCLUDES = \
@@ -295,8 +302,10 @@ mostlyclean-compile:
 distclean-compile:
 	-rm -f *.tab.c
 
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/at91-timer.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ep9301-timer.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/hal.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/imx-timer.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/pxa-timer.Po@am__quote@
 
 .c.o:
@@ -347,6 +356,34 @@ pxa-timer.obj: mach-pxa/pxa-timer.c
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	source='mach-pxa/pxa-timer.c' object='pxa-timer.obj' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o pxa-timer.obj `if test -f 'mach-pxa/pxa-timer.c'; then $(CYGPATH_W) 'mach-pxa/pxa-timer.c'; else $(CYGPATH_W) '$(srcdir)/mach-pxa/pxa-timer.c'; fi`
+
+at91-timer.o: mach-at91/at91-timer.c
+@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT at91-timer.o -MD -MP -MF $(DEPDIR)/at91-timer.Tpo -c -o at91-timer.o `test -f 'mach-at91/at91-timer.c' || echo '$(srcdir)/'`mach-at91/at91-timer.c
+@am__fastdepCC_TRUE@	mv -f $(DEPDIR)/at91-timer.Tpo $(DEPDIR)/at91-timer.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='mach-at91/at91-timer.c' object='at91-timer.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o at91-timer.o `test -f 'mach-at91/at91-timer.c' || echo '$(srcdir)/'`mach-at91/at91-timer.c
+
+at91-timer.obj: mach-at91/at91-timer.c
+@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT at91-timer.obj -MD -MP -MF $(DEPDIR)/at91-timer.Tpo -c -o at91-timer.obj `if test -f 'mach-at91/at91-timer.c'; then $(CYGPATH_W) 'mach-at91/at91-timer.c'; else $(CYGPATH_W) '$(srcdir)/mach-at91/at91-timer.c'; fi`
+@am__fastdepCC_TRUE@	mv -f $(DEPDIR)/at91-timer.Tpo $(DEPDIR)/at91-timer.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='mach-at91/at91-timer.c' object='at91-timer.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o at91-timer.obj `if test -f 'mach-at91/at91-timer.c'; then $(CYGPATH_W) 'mach-at91/at91-timer.c'; else $(CYGPATH_W) '$(srcdir)/mach-at91/at91-timer.c'; fi`
+
+imx-timer.o: mach-imx/imx-timer.c
+@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT imx-timer.o -MD -MP -MF $(DEPDIR)/imx-timer.Tpo -c -o imx-timer.o `test -f 'mach-imx/imx-timer.c' || echo '$(srcdir)/'`mach-imx/imx-timer.c
+@am__fastdepCC_TRUE@	mv -f $(DEPDIR)/imx-timer.Tpo $(DEPDIR)/imx-timer.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='mach-imx/imx-timer.c' object='imx-timer.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o imx-timer.o `test -f 'mach-imx/imx-timer.c' || echo '$(srcdir)/'`mach-imx/imx-timer.c
+
+imx-timer.obj: mach-imx/imx-timer.c
+@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT imx-timer.obj -MD -MP -MF $(DEPDIR)/imx-timer.Tpo -c -o imx-timer.obj `if test -f 'mach-imx/imx-timer.c'; then $(CYGPATH_W) 'mach-imx/imx-timer.c'; else $(CYGPATH_W) '$(srcdir)/mach-imx/imx-timer.c'; fi`
+@am__fastdepCC_TRUE@	mv -f $(DEPDIR)/imx-timer.Tpo $(DEPDIR)/imx-timer.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='mach-imx/imx-timer.c' object='imx-timer.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o imx-timer.obj `if test -f 'mach-imx/imx-timer.c'; then $(CYGPATH_W) 'mach-imx/imx-timer.c'; else $(CYGPATH_W) '$(srcdir)/mach-imx/imx-timer.c'; fi`
 
 mostlyclean-libtool:
 	-rm -f *.lo

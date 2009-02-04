@@ -919,6 +919,10 @@ CONFIG_ARCH_EP9301_TRUE
 CONFIG_ARCH_EP9301_FALSE
 CONFIG_ARCH_PXA_TRUE
 CONFIG_ARCH_PXA_FALSE
+CONFIG_ARCH_AT91_TRUE
+CONFIG_ARCH_AT91_FALSE
+CONFIG_ARCH_IMX_TRUE
+CONFIG_ARCH_IMX_FALSE
 CONFIG_UCLINUX_TRUE
 CONFIG_UCLINUX_FALSE
 CONFIG_SMP_TRUE
@@ -5150,7 +5154,7 @@ ia64-*-hpux*)
   ;;
 *-*-irix6*)
   # Find out which ABI we are using.
-  echo '#line 5153 "configure"' > conftest.$ac_ext
+  echo '#line 5157 "configure"' > conftest.$ac_ext
   if { (eval echo "$as_me:$LINENO: \"$ac_compile\"") >&5
   (eval $ac_compile) 2>&5
   ac_status=$?
@@ -7409,11 +7413,11 @@ else
    -e 's:.*FLAGS}\{0,1\} :&$lt_compiler_flag :; t' \
    -e 's: [^ ]*conftest\.: $lt_compiler_flag&:; t' \
    -e 's:$: $lt_compiler_flag:'`
-   (eval echo "\"\$as_me:7412: $lt_compile\"" >&5)
+   (eval echo "\"\$as_me:7416: $lt_compile\"" >&5)
    (eval "$lt_compile" 2>conftest.err)
    ac_status=$?
    cat conftest.err >&5
-   echo "$as_me:7416: \$? = $ac_status" >&5
+   echo "$as_me:7420: \$? = $ac_status" >&5
    if (exit $ac_status) && test -s "$ac_outfile"; then
      # The compiler can only warn and ignore the option if not recognized
      # So say no if there are warnings other than the usual output.
@@ -7677,11 +7681,11 @@ else
    -e 's:.*FLAGS}\{0,1\} :&$lt_compiler_flag :; t' \
    -e 's: [^ ]*conftest\.: $lt_compiler_flag&:; t' \
    -e 's:$: $lt_compiler_flag:'`
-   (eval echo "\"\$as_me:7680: $lt_compile\"" >&5)
+   (eval echo "\"\$as_me:7684: $lt_compile\"" >&5)
    (eval "$lt_compile" 2>conftest.err)
    ac_status=$?
    cat conftest.err >&5
-   echo "$as_me:7684: \$? = $ac_status" >&5
+   echo "$as_me:7688: \$? = $ac_status" >&5
    if (exit $ac_status) && test -s "$ac_outfile"; then
      # The compiler can only warn and ignore the option if not recognized
      # So say no if there are warnings other than the usual output.
@@ -7781,11 +7785,11 @@ else
    -e 's:.*FLAGS}\{0,1\} :&$lt_compiler_flag :; t' \
    -e 's: [^ ]*conftest\.: $lt_compiler_flag&:; t' \
    -e 's:$: $lt_compiler_flag:'`
-   (eval echo "\"\$as_me:7784: $lt_compile\"" >&5)
+   (eval echo "\"\$as_me:7788: $lt_compile\"" >&5)
    (eval "$lt_compile" 2>out/conftest.err)
    ac_status=$?
    cat out/conftest.err >&5
-   echo "$as_me:7788: \$? = $ac_status" >&5
+   echo "$as_me:7792: \$? = $ac_status" >&5
    if (exit $ac_status) && test -s out/conftest2.$ac_objext
    then
      # The compiler can only warn and ignore the option if not recognized
@@ -9246,7 +9250,7 @@ linux*)
   libsuff=
   case "$host_cpu" in
   x86_64*|s390x*|powerpc64*)
-    echo '#line 9249 "configure"' > conftest.$ac_ext
+    echo '#line 9253 "configure"' > conftest.$ac_ext
     if { (eval echo "$as_me:$LINENO: \"$ac_compile\"") >&5
   (eval $ac_compile) 2>&5
   ac_status=$?
@@ -10110,7 +10114,7 @@ else
   lt_dlunknown=0; lt_dlno_uscore=1; lt_dlneed_uscore=2
   lt_status=$lt_dlunknown
   cat > conftest.$ac_ext <<EOF
-#line 10113 "configure"
+#line 10117 "configure"
 #include "confdefs.h"
 
 #if HAVE_DLFCN_H
@@ -10210,7 +10214,7 @@ else
   lt_dlunknown=0; lt_dlno_uscore=1; lt_dlneed_uscore=2
   lt_status=$lt_dlunknown
   cat > conftest.$ac_ext <<EOF
-#line 10213 "configure"
+#line 10217 "configure"
 #include "confdefs.h"
 
 #if HAVE_DLFCN_H
@@ -12549,11 +12553,11 @@ else
    -e 's:.*FLAGS}\{0,1\} :&$lt_compiler_flag :; t' \
    -e 's: [^ ]*conftest\.: $lt_compiler_flag&:; t' \
    -e 's:$: $lt_compiler_flag:'`
-   (eval echo "\"\$as_me:12552: $lt_compile\"" >&5)
+   (eval echo "\"\$as_me:12556: $lt_compile\"" >&5)
    (eval "$lt_compile" 2>conftest.err)
    ac_status=$?
    cat conftest.err >&5
-   echo "$as_me:12556: \$? = $ac_status" >&5
+   echo "$as_me:12560: \$? = $ac_status" >&5
    if (exit $ac_status) && test -s "$ac_outfile"; then
      # The compiler can only warn and ignore the option if not recognized
      # So say no if there are warnings other than the usual output.
@@ -12653,11 +12657,11 @@ else
    -e 's:.*FLAGS}\{0,1\} :&$lt_compiler_flag :; t' \
    -e 's: [^ ]*conftest\.: $lt_compiler_flag&:; t' \
    -e 's:$: $lt_compiler_flag:'`
-   (eval echo "\"\$as_me:12656: $lt_compile\"" >&5)
+   (eval echo "\"\$as_me:12660: $lt_compile\"" >&5)
    (eval "$lt_compile" 2>out/conftest.err)
    ac_status=$?
    cat out/conftest.err >&5
-   echo "$as_me:12660: \$? = $ac_status" >&5
+   echo "$as_me:12664: \$? = $ac_status" >&5
    if (exit $ac_status) && test -s out/conftest2.$ac_objext
    then
      # The compiler can only warn and ignore the option if not recognized
@@ -13189,7 +13193,7 @@ linux*)
   libsuff=
   case "$host_cpu" in
   x86_64*|s390x*|powerpc64*)
-    echo '#line 13192 "configure"' > conftest.$ac_ext
+    echo '#line 13196 "configure"' > conftest.$ac_ext
     if { (eval echo "$as_me:$LINENO: \"$ac_compile\"") >&5
   (eval $ac_compile) 2>&5
   ac_status=$?
@@ -14247,11 +14251,11 @@ else
    -e 's:.*FLAGS}\{0,1\} :&$lt_compiler_flag :; t' \
    -e 's: [^ ]*conftest\.: $lt_compiler_flag&:; t' \
    -e 's:$: $lt_compiler_flag:'`
-   (eval echo "\"\$as_me:14250: $lt_compile\"" >&5)
+   (eval echo "\"\$as_me:14254: $lt_compile\"" >&5)
    (eval "$lt_compile" 2>conftest.err)
    ac_status=$?
    cat conftest.err >&5
-   echo "$as_me:14254: \$? = $ac_status" >&5
+   echo "$as_me:14258: \$? = $ac_status" >&5
    if (exit $ac_status) && test -s "$ac_outfile"; then
      # The compiler can only warn and ignore the option if not recognized
      # So say no if there are warnings other than the usual output.
@@ -14351,11 +14355,11 @@ else
    -e 's:.*FLAGS}\{0,1\} :&$lt_compiler_flag :; t' \
    -e 's: [^ ]*conftest\.: $lt_compiler_flag&:; t' \
    -e 's:$: $lt_compiler_flag:'`
-   (eval echo "\"\$as_me:14354: $lt_compile\"" >&5)
+   (eval echo "\"\$as_me:14358: $lt_compile\"" >&5)
    (eval "$lt_compile" 2>out/conftest.err)
    ac_status=$?
    cat out/conftest.err >&5
-   echo "$as_me:14358: \$? = $ac_status" >&5
+   echo "$as_me:14362: \$? = $ac_status" >&5
    if (exit $ac_status) && test -s out/conftest2.$ac_objext
    then
      # The compiler can only warn and ignore the option if not recognized
@@ -15796,7 +15800,7 @@ linux*)
   libsuff=
   case "$host_cpu" in
   x86_64*|s390x*|powerpc64*)
-    echo '#line 15799 "configure"' > conftest.$ac_ext
+    echo '#line 15803 "configure"' > conftest.$ac_ext
     if { (eval echo "$as_me:$LINENO: \"$ac_compile\"") >&5
   (eval $ac_compile) 2>&5
   ac_status=$?
@@ -16573,11 +16577,11 @@ else
    -e 's:.*FLAGS}\{0,1\} :&$lt_compiler_flag :; t' \
    -e 's: [^ ]*conftest\.: $lt_compiler_flag&:; t' \
    -e 's:$: $lt_compiler_flag:'`
-   (eval echo "\"\$as_me:16576: $lt_compile\"" >&5)
+   (eval echo "\"\$as_me:16580: $lt_compile\"" >&5)
    (eval "$lt_compile" 2>conftest.err)
    ac_status=$?
    cat conftest.err >&5
-   echo "$as_me:16580: \$? = $ac_status" >&5
+   echo "$as_me:16584: \$? = $ac_status" >&5
    if (exit $ac_status) && test -s "$ac_outfile"; then
      # The compiler can only warn and ignore the option if not recognized
      # So say no if there are warnings other than the usual output.
@@ -16841,11 +16845,11 @@ else
    -e 's:.*FLAGS}\{0,1\} :&$lt_compiler_flag :; t' \
    -e 's: [^ ]*conftest\.: $lt_compiler_flag&:; t' \
    -e 's:$: $lt_compiler_flag:'`
-   (eval echo "\"\$as_me:16844: $lt_compile\"" >&5)
+   (eval echo "\"\$as_me:16848: $lt_compile\"" >&5)
    (eval "$lt_compile" 2>conftest.err)
    ac_status=$?
    cat conftest.err >&5
-   echo "$as_me:16848: \$? = $ac_status" >&5
+   echo "$as_me:16852: \$? = $ac_status" >&5
    if (exit $ac_status) && test -s "$ac_outfile"; then
      # The compiler can only warn and ignore the option if not recognized
      # So say no if there are warnings other than the usual output.
@@ -16945,11 +16949,11 @@ else
    -e 's:.*FLAGS}\{0,1\} :&$lt_compiler_flag :; t' \
    -e 's: [^ ]*conftest\.: $lt_compiler_flag&:; t' \
    -e 's:$: $lt_compiler_flag:'`
-   (eval echo "\"\$as_me:16948: $lt_compile\"" >&5)
+   (eval echo "\"\$as_me:16952: $lt_compile\"" >&5)
    (eval "$lt_compile" 2>out/conftest.err)
    ac_status=$?
    cat out/conftest.err >&5
-   echo "$as_me:16952: \$? = $ac_status" >&5
+   echo "$as_me:16956: \$? = $ac_status" >&5
    if (exit $ac_status) && test -s out/conftest2.$ac_objext
    then
      # The compiler can only warn and ignore the option if not recognized
@@ -18410,7 +18414,7 @@ linux*)
   libsuff=
   case "$host_cpu" in
   x86_64*|s390x*|powerpc64*)
-    echo '#line 18413 "configure"' > conftest.$ac_ext
+    echo '#line 18417 "configure"' > conftest.$ac_ext
     if { (eval echo "$as_me:$LINENO: \"$ac_compile\"") >&5
   (eval $ac_compile) 2>&5
   ac_status=$?
@@ -24214,6 +24218,22 @@ else
   CONFIG_ARCH_PXA_FALSE=
 fi
 
+ if test "$CONFIG_ARCH_AT91" = y; then
+  CONFIG_ARCH_AT91_TRUE=
+  CONFIG_ARCH_AT91_FALSE='#'
+else
+  CONFIG_ARCH_AT91_TRUE='#'
+  CONFIG_ARCH_AT91_FALSE=
+fi
+
+ if test "$CONFIG_ARCH_IMX" = y; then
+  CONFIG_ARCH_IMX_TRUE=
+  CONFIG_ARCH_IMX_FALSE='#'
+else
+  CONFIG_ARCH_IMX_TRUE='#'
+  CONFIG_ARCH_IMX_FALSE=
+fi
+
  if test "$CONFIG_UCLINUX" = y; then
   CONFIG_UCLINUX_TRUE=
   CONFIG_UCLINUX_FALSE='#'
@@ -24799,9 +24819,13 @@ case $RTAI_TARGET_ARCH in
 
  arm)
 	if test "$CONFIG_ARCH_EP9301" = y; then
-               RTAI_TARGET_SUBARCH=ep9301
+		RTAI_TARGET_SUBARCH=ep9301
 	elif test "$CONFIG_ARCH_PXA" = y; then
-               RTAI_TARGET_SUBARCH=pxa
+		RTAI_TARGET_SUBARCH=pxa
+	elif test "$CONFIG_ARCH_AT91" = y; then
+		RTAI_TARGET_SUBARCH=at91
+	elif test "$CONFIG_ARCH_IMX" = y; then
+		RTAI_TARGET_SUBARCH=imx
 	else
 	   echo
 	   echo "******************************************"
@@ -25261,6 +25285,20 @@ if test -z "${CONFIG_ARCH_PXA_TRUE}" && test -z "${CONFIG_ARCH_PXA_FALSE}"; then
   { { echo "$as_me:$LINENO: error: conditional \"CONFIG_ARCH_PXA\" was never defined.
 Usually this means the macro was only invoked conditionally." >&5
 echo "$as_me: error: conditional \"CONFIG_ARCH_PXA\" was never defined.
+Usually this means the macro was only invoked conditionally." >&2;}
+   { (exit 1); exit 1; }; }
+fi
+if test -z "${CONFIG_ARCH_AT91_TRUE}" && test -z "${CONFIG_ARCH_AT91_FALSE}"; then
+  { { echo "$as_me:$LINENO: error: conditional \"CONFIG_ARCH_AT91\" was never defined.
+Usually this means the macro was only invoked conditionally." >&5
+echo "$as_me: error: conditional \"CONFIG_ARCH_AT91\" was never defined.
+Usually this means the macro was only invoked conditionally." >&2;}
+   { (exit 1); exit 1; }; }
+fi
+if test -z "${CONFIG_ARCH_IMX_TRUE}" && test -z "${CONFIG_ARCH_IMX_FALSE}"; then
+  { { echo "$as_me:$LINENO: error: conditional \"CONFIG_ARCH_IMX\" was never defined.
+Usually this means the macro was only invoked conditionally." >&5
+echo "$as_me: error: conditional \"CONFIG_ARCH_IMX\" was never defined.
 Usually this means the macro was only invoked conditionally." >&2;}
    { (exit 1); exit 1; }; }
 fi
@@ -26477,6 +26515,10 @@ CONFIG_ARCH_EP9301_TRUE!$CONFIG_ARCH_EP9301_TRUE$ac_delim
 CONFIG_ARCH_EP9301_FALSE!$CONFIG_ARCH_EP9301_FALSE$ac_delim
 CONFIG_ARCH_PXA_TRUE!$CONFIG_ARCH_PXA_TRUE$ac_delim
 CONFIG_ARCH_PXA_FALSE!$CONFIG_ARCH_PXA_FALSE$ac_delim
+CONFIG_ARCH_AT91_TRUE!$CONFIG_ARCH_AT91_TRUE$ac_delim
+CONFIG_ARCH_AT91_FALSE!$CONFIG_ARCH_AT91_FALSE$ac_delim
+CONFIG_ARCH_IMX_TRUE!$CONFIG_ARCH_IMX_TRUE$ac_delim
+CONFIG_ARCH_IMX_FALSE!$CONFIG_ARCH_IMX_FALSE$ac_delim
 CONFIG_UCLINUX_TRUE!$CONFIG_UCLINUX_TRUE$ac_delim
 CONFIG_UCLINUX_FALSE!$CONFIG_UCLINUX_FALSE$ac_delim
 CONFIG_SMP_TRUE!$CONFIG_SMP_TRUE$ac_delim
@@ -26518,10 +26560,6 @@ CONFIG_RTAI_MALLOC_FALSE!$CONFIG_RTAI_MALLOC_FALSE$ac_delim
 CONFIG_RTAI_TASKLETS_TRUE!$CONFIG_RTAI_TASKLETS_TRUE$ac_delim
 CONFIG_RTAI_TASKLETS_FALSE!$CONFIG_RTAI_TASKLETS_FALSE$ac_delim
 CONFIG_RTAI_USI_TRUE!$CONFIG_RTAI_USI_TRUE$ac_delim
-CONFIG_RTAI_USI_FALSE!$CONFIG_RTAI_USI_FALSE$ac_delim
-CONFIG_RTAI_WD_TRUE!$CONFIG_RTAI_WD_TRUE$ac_delim
-CONFIG_RTAI_WD_FALSE!$CONFIG_RTAI_WD_FALSE$ac_delim
-CONFIG_RTAI_LEDS_TRUE!$CONFIG_RTAI_LEDS_TRUE$ac_delim
 _ACEOF
 
   if test `sed -n "s/.*$ac_delim\$/X/p" conf$$subs.sed | grep -c X` = 97; then
@@ -26563,6 +26601,10 @@ _ACEOF
 ac_delim='%!_!# '
 for ac_last_try in false false false false false :; do
   cat >conf$$subs.sed <<_ACEOF
+CONFIG_RTAI_USI_FALSE!$CONFIG_RTAI_USI_FALSE$ac_delim
+CONFIG_RTAI_WD_TRUE!$CONFIG_RTAI_WD_TRUE$ac_delim
+CONFIG_RTAI_WD_FALSE!$CONFIG_RTAI_WD_FALSE$ac_delim
+CONFIG_RTAI_LEDS_TRUE!$CONFIG_RTAI_LEDS_TRUE$ac_delim
 CONFIG_RTAI_LEDS_FALSE!$CONFIG_RTAI_LEDS_FALSE$ac_delim
 CONFIG_RTAI_LXRT_USE_LINUX_SYSCALL_TRUE!$CONFIG_RTAI_LXRT_USE_LINUX_SYSCALL_TRUE$ac_delim
 CONFIG_RTAI_LXRT_USE_LINUX_SYSCALL_FALSE!$CONFIG_RTAI_LXRT_USE_LINUX_SYSCALL_FALSE$ac_delim
@@ -26656,10 +26698,6 @@ RTAI_KBUILD_CMD!$RTAI_KBUILD_CMD$ac_delim
 RTAI_KBUILD_CLEAN!$RTAI_KBUILD_CLEAN$ac_delim
 RTAI_KBUILD_DISTCLEAN!$RTAI_KBUILD_DISTCLEAN$ac_delim
 RTAI_POSIX_WRAP!$RTAI_POSIX_WRAP$ac_delim
-CONFIG_RTAI_LINUXDIR!$CONFIG_RTAI_LINUXDIR$ac_delim
-CROSSCOMPILE_TEST!$CROSSCOMPILE_TEST$ac_delim
-CONFIG_RTAI_ADDONS_TRUE!$CONFIG_RTAI_ADDONS_TRUE$ac_delim
-CONFIG_RTAI_ADDONS_FALSE!$CONFIG_RTAI_ADDONS_FALSE$ac_delim
 _ACEOF
 
   if test `sed -n "s/.*$ac_delim\$/X/p" conf$$subs.sed | grep -c X` = 97; then
@@ -26701,12 +26739,16 @@ _ACEOF
 ac_delim='%!_!# '
 for ac_last_try in false false false false false :; do
   cat >conf$$subs.sed <<_ACEOF
+CONFIG_RTAI_LINUXDIR!$CONFIG_RTAI_LINUXDIR$ac_delim
+CROSSCOMPILE_TEST!$CROSSCOMPILE_TEST$ac_delim
+CONFIG_RTAI_ADDONS_TRUE!$CONFIG_RTAI_ADDONS_TRUE$ac_delim
+CONFIG_RTAI_ADDONS_FALSE!$CONFIG_RTAI_ADDONS_FALSE$ac_delim
 subdirs!$subdirs$ac_delim
 LIBOBJS!$LIBOBJS$ac_delim
 LTLIBOBJS!$LTLIBOBJS$ac_delim
 _ACEOF
 
-  if test `sed -n "s/.*$ac_delim\$/X/p" conf$$subs.sed | grep -c X` = 3; then
+  if test `sed -n "s/.*$ac_delim\$/X/p" conf$$subs.sed | grep -c X` = 7; then
     break
   elif $ac_last_try; then
     { { echo "$as_me:$LINENO: error: could not make $CONFIG_STATUS" >&5

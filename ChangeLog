@@ -1,3 +1,9 @@
+2009-02-04 Pierangelo Masarati <masarati@aero.polimi.it>
+
+	* configure.in: fix arm-related conditionals
+	* */GNUmakefile.am: install modules in moduledir;
+	  consistently use bindir
+
 2009-01-29 Paolo Mantegazza <mantegazza@aero.polimi.it>
 
 	* base/include/asm-i386, asm-x86_64/rtai_hal.h modify inline asm

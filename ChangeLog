@@ -1,7 +1,7 @@
 2009-02-10 Pierangelo Masarati <masarati@aero.polimi.it>
 
-	* base/scripts/rtai-load.in: first look for modules
-	  in the module dir (patch submitted by Paul)
+	* base/scripts/rtai-load.in: first look for modules in the 
+	  module dir (patch submitted by Paul, <paul_c@tuxcnc.org>)
 
 2009-02-04 Pierangelo Masarati <masarati@aero.polimi.it>
 

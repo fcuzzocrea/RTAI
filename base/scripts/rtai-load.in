@@ -187,7 +187,9 @@ while test -n "$target_info" ; do
     push)
 
 	mod=`basename $2 $modext`
-        if test -r $user_moddir/$mod$modext; then
+        if test -r $rtai_moddir/$mod$modext; then
+           modpath="$rtai_moddir/$mod"
+        elif test -r $user_moddir/$mod$modext; then
            modpath="$user_moddir/$mod"
         else
            modpath="$mod"

@@ -1,3 +1,8 @@
+2009-02-10 Pierangelo Masarati <masarati@aero.polimi.it>
+
+	* base/scripts/rtai-load.in: first look for modules
+	  in the module dir (patch submitted by Paul)
+
 2009-02-02 Pierangelo Masarati <masarati@aero.polimi.it>
 
 	* configure.in: only set CROSS_COMPILE if not defined yet

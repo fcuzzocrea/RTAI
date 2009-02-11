@@ -371,7 +371,7 @@ index ff14c32..e30e25e 100644
  
  static struct mtrr_ops cyrix_mtrr_ops = {
 diff --git a/arch/x86/kernel/cpu/mtrr/generic.c b/arch/x86/kernel/cpu/mtrr/generic.c
-index cb7d3b6..58c7082 100644
+index cb7d3b6..9fd9b1e 100644
 --- a/arch/x86/kernel/cpu/mtrr/generic.c
 +++ b/arch/x86/kernel/cpu/mtrr/generic.c
 @@ -557,7 +557,7 @@ static void generic_set_all(void)
@@ -392,15 +392,6 @@ index cb7d3b6..58c7082 100644
  
  	/*  Use the atomic bitops to update the global mask  */
  	for (count = 0; count < sizeof mask * 8; ++count) {
-@@ -575,7 +575,7 @@ static void generic_set_all(void)
- 			set_bit(count, &smp_changes_mask);
- 		mask >>= 1;
- 	}
--	
-+	local_irq_restore_hw(flags);
- }
- 
- static void generic_set_mtrr(unsigned int reg, unsigned long base,
 @@ -588,12 +588,12 @@ static void generic_set_mtrr(unsigned int reg, unsigned long base,
      [RETURNS] Nothing.
  */
@@ -1398,7 +1389,7 @@ index dc92b49..8f8d90e 100644
  
  handle_real_irq:
 diff --git a/arch/x86/kernel/io_apic_32.c b/arch/x86/kernel/io_apic_32.c
-index 09cddb5..dad3722 100644
+index 09cddb5..4bdc700 100644
 --- a/arch/x86/kernel/io_apic_32.c
 +++ b/arch/x86/kernel/io_apic_32.c
 @@ -56,8 +56,12 @@ atomic_t irq_mis_count;
@@ -1457,7 +1448,7 @@ index 09cddb5..dad3722 100644
  }
  #endif /* !CONFIG_SMP */
  
-@@ -1909,6 +1923,7 @@ static unsigned int startup_ioapic_irq(unsigned int irq)
+@@ -1909,15 +1923,33 @@ static unsigned int startup_ioapic_irq(unsigned int irq)
  			was_pending = 1;
  	}
  	__unmask_IO_APIC_irq(irq);
@@ -1465,8 +1456,23 @@ index 09cddb5..dad3722 100644
  	spin_unlock_irqrestore(&ioapic_lock, flags);
  
  	return was_pending;
-@@ -1916,8 +1931,10 @@ static unsigned int startup_ioapic_irq(unsigned int irq)
+ }
  
++#if defined(CONFIG_IPIPE) && defined(CONFIG_SMP)
++static void move_apic_irq(unsigned int irq)
++{
++	struct irq_desc *desc = &irq_desc[irq];
++
++	if (desc->handle_irq == &handle_edge_irq ||
++	    desc->handle_irq == &handle_fasteoi_irq) {
++		spin_lock(&desc->lock);
++		move_native_irq(irq);
++		spin_unlock(&desc->lock);
++	} else
++		WARN_ON_ONCE(1);
++}
++#endif /* CONFIG_IPIPE && CONFIG_SMP */
++
  static void ack_ioapic_irq(unsigned int irq)
  {
 +#ifndef CONFIG_IPIPE
@@ -1477,7 +1483,7 @@ index 09cddb5..dad3722 100644
  }
  
  static void ack_ioapic_quirk_irq(unsigned int irq)
-@@ -1925,6 +1942,30 @@ static void ack_ioapic_quirk_irq(unsigned int irq)
+@@ -1925,6 +1957,30 @@ static void ack_ioapic_quirk_irq(unsigned int irq)
  	unsigned long v;
  	int i;
  
@@ -1508,7 +1514,7 @@ index 09cddb5..dad3722 100644
  	move_native_irq(irq);
  /*
   * It appears there is an erratum which affects at least version 0x11
-@@ -1949,7 +1990,7 @@ static void ack_ioapic_quirk_irq(unsigned int irq)
+@@ -1949,7 +2005,7 @@ static void ack_ioapic_quirk_irq(unsigned int irq)
  
  	v = apic_read(APIC_TMR + ((i & ~0x1f) >> 1));
  
@@ -1517,7 +1523,7 @@ index 09cddb5..dad3722 100644
  
  	if (!(v & (1 << (i & 0x1f)))) {
  		atomic_inc(&irq_mis_count);
-@@ -1958,6 +1999,7 @@ static void ack_ioapic_quirk_irq(unsigned int irq)
+@@ -1958,6 +2014,7 @@ static void ack_ioapic_quirk_irq(unsigned int irq)
  		__unmask_and_level_IO_APIC_irq(irq);
  		spin_unlock(&ioapic_lock);
  	}
@@ -1525,7 +1531,17 @@ index 09cddb5..dad3722 100644
  }
  
  static int ioapic_retrigger_irq(unsigned int irq)
-@@ -2018,23 +2060,29 @@ static inline void init_IO_APIC_traps(void)
+@@ -1976,6 +2033,9 @@ static struct irq_chip ioapic_chip __read_mostly = {
+ 	.eoi 		= ack_ioapic_quirk_irq,
+ #ifdef CONFIG_SMP
+ 	.set_affinity 	= set_ioapic_affinity_irq,
++#ifdef CONFIG_IPIPE
++	.move		= move_apic_irq,
++#endif
+ #endif
+ 	.retrigger	= ioapic_retrigger_irq,
+ };
+@@ -2018,23 +2078,29 @@ static inline void init_IO_APIC_traps(void)
  
  static void ack_lapic_irq(unsigned int irq)
  {
@@ -1558,8 +1574,28 @@ index 09cddb5..dad3722 100644
  }
  
  static struct irq_chip lapic_chip __read_mostly = {
+@@ -2549,6 +2615,9 @@ static struct irq_chip msi_chip = {
+ 	.ack		= ack_ioapic_irq,
+ #ifdef CONFIG_SMP
+ 	.set_affinity	= set_msi_irq_affinity,
++#ifdef CONFIG_IPIPE
++	.move		= move_apic_irq,
++#endif
+ #endif
+ 	.retrigger	= ioapic_retrigger_irq,
+ };
+@@ -2629,6 +2698,9 @@ static struct irq_chip ht_irq_chip = {
+ 	.ack		= ack_ioapic_irq,
+ #ifdef CONFIG_SMP
+ 	.set_affinity	= set_ht_irq_affinity,
++#ifdef CONFIG_IPIPE
++	.move		= move_apic_irq,
++#endif
+ #endif
+ 	.retrigger	= ioapic_retrigger_irq,
+ };
 diff --git a/arch/x86/kernel/io_apic_64.c b/arch/x86/kernel/io_apic_64.c
-index 61a83b7..3e403e5 100644
+index 61a83b7..bd7c225 100644
 --- a/arch/x86/kernel/io_apic_64.c
 +++ b/arch/x86/kernel/io_apic_64.c
 @@ -100,8 +100,8 @@ int timer_through_8259 __initdata;
@@ -1573,23 +1609,7 @@ index 61a83b7..3e403e5 100644
  
  /*
   * # of IRQ routing registers
-@@ -174,6 +174,7 @@ static inline void io_apic_modify(unsigned int apic, unsigned int value)
- 	writel(value, &io_apic->data);
- }
- 
-+#ifndef CONFIG_IPIPE
- static bool io_apic_level_ack_pending(unsigned int irq)
- {
- 	struct irq_pin_list *entry;
-@@ -202,6 +203,7 @@ static bool io_apic_level_ack_pending(unsigned int irq)
- 
- 	return false;
- }
-+#endif /* !CONFIG_IPIPE */
- 
- /*
-  * Synchronize the IO-APIC and the CPU by doing
-@@ -404,6 +406,7 @@ static void mask_IO_APIC_irq (unsigned int irq)
+@@ -404,6 +404,7 @@ static void mask_IO_APIC_irq (unsigned int irq)
  	unsigned long flags;
  
  	spin_lock_irqsave(&ioapic_lock, flags);
@@ -1597,7 +1617,7 @@ index 61a83b7..3e403e5 100644
  	__mask_IO_APIC_irq(irq);
  	spin_unlock_irqrestore(&ioapic_lock, flags);
  }
-@@ -414,6 +417,7 @@ static void unmask_IO_APIC_irq (unsigned int irq)
+@@ -414,6 +415,7 @@ static void unmask_IO_APIC_irq (unsigned int irq)
  
  	spin_lock_irqsave(&ioapic_lock, flags);
  	__unmask_IO_APIC_irq(irq);
@@ -1605,7 +1625,7 @@ index 61a83b7..3e403e5 100644
  	spin_unlock_irqrestore(&ioapic_lock, flags);
  }
  
-@@ -1370,6 +1374,7 @@ static unsigned int startup_ioapic_irq(unsigned int irq)
+@@ -1370,6 +1372,7 @@ static unsigned int startup_ioapic_irq(unsigned int irq)
  			was_pending = 1;
  	}
  	__unmask_IO_APIC_irq(irq);
@@ -1613,24 +1633,34 @@ index 61a83b7..3e403e5 100644
  	spin_unlock_irqrestore(&ioapic_lock, flags);
  
  	return was_pending;
-@@ -1431,6 +1436,7 @@ unlock:
- 	irq_exit();
- }
- 
-+#ifndef CONFIG_IPIPE
- static void irq_complete_move(unsigned int irq)
- {
- 	struct irq_cfg *cfg = irq_cfg + irq;
-@@ -1450,19 +1456,23 @@ static void irq_complete_move(unsigned int irq)
- 		cfg->move_in_progress = 0;
- 	}
- }
--#else
-+#endif
-+#elif !defined(CONFIG_IPIPE)
+@@ -1454,15 +1457,42 @@ static void irq_complete_move(unsigned int irq)
  static inline void irq_complete_move(unsigned int irq) {}
  #endif
  
++#ifdef CONFIG_IPIPE
++static void move_apic_irq(unsigned int irq)
++{
++	struct irq_desc *desc = &irq_desc[irq];
++
++	if (desc->handle_irq == &handle_edge_irq) {
++		spin_lock(&desc->lock);
++		irq_complete_move(irq);
++		move_native_irq(irq);
++		spin_unlock(&desc->lock);
++	} else if (desc->handle_irq == &handle_fasteoi_irq) {
++		spin_lock(&desc->lock);
++		irq_complete_move(irq);
++		if (unlikely(desc->status & IRQ_MOVE_PENDING)) {
++			if (!io_apic_level_ack_pending(irq))
++				move_masked_irq(irq);
++			unmask_IO_APIC_irq(irq);
++		}
++		spin_unlock(&desc->lock);
++	} else
++		WARN_ON_ONCE(1);
++}
++#endif /* CONFIG_IPIPE */
++
  static void ack_apic_edge(unsigned int irq)
  {
 +#ifndef CONFIG_IPIPE
@@ -1647,7 +1677,7 @@ index 61a83b7..3e403e5 100644
  	int do_unmask_irq = 0;
  
  	irq_complete_move(irq);
-@@ -1512,6 +1522,17 @@ static void ack_apic_level(unsigned int irq)
+@@ -1512,6 +1542,17 @@ static void ack_apic_level(unsigned int irq)
  			move_masked_irq(irq);
  		unmask_IO_APIC_irq(irq);
  	}
@@ -1665,7 +1695,17 @@ index 61a83b7..3e403e5 100644
  }
  
  static struct irq_chip ioapic_chip __read_mostly = {
-@@ -1576,7 +1597,7 @@ static void mask_lapic_irq(unsigned int irq)
+@@ -1523,6 +1564,9 @@ static struct irq_chip ioapic_chip __read_mostly = {
+ 	.eoi 		= ack_apic_level,
+ #ifdef CONFIG_SMP
+ 	.set_affinity 	= set_ioapic_affinity_irq,
++#ifdef CONFIG_IPIPE
++	.move		= move_apic_irq,
++#endif
+ #endif
+ 	.retrigger	= ioapic_retrigger_irq,
+ };
+@@ -1576,7 +1620,7 @@ static void mask_lapic_irq(unsigned int irq)
  
  static void ack_lapic_irq (unsigned int irq)
  {
@@ -1674,7 +1714,7 @@ index 61a83b7..3e403e5 100644
  }
  
  static struct irq_chip lapic_chip __read_mostly = {
-@@ -1782,6 +1803,10 @@ static inline void __init check_timer(void)
+@@ -1782,6 +1826,10 @@ static inline void __init check_timer(void)
  		    "...trying to set up timer as Virtual Wire IRQ...\n");
  
  	lapic_register_intr(0);
@@ -1685,7 +1725,37 @@ index 61a83b7..3e403e5 100644
  	apic_write(APIC_LVT0, APIC_DM_FIXED | cfg->vector);	/* Fixed mode */
  	enable_8259A_irq(0);
  
-@@ -2429,3 +2454,10 @@ static int __init ioapic_insert_resources(void)
+@@ -2062,6 +2110,9 @@ static struct irq_chip msi_chip = {
+ 	.ack		= ack_apic_edge,
+ #ifdef CONFIG_SMP
+ 	.set_affinity	= set_msi_irq_affinity,
++#ifdef CONFIG_IPIPE
++	.move		= move_apic_irq,
++#endif
+ #endif
+ 	.retrigger	= ioapic_retrigger_irq,
+ };
+@@ -2131,6 +2182,9 @@ struct irq_chip dmar_msi_type = {
+ 	.ack = ack_apic_edge,
+ #ifdef CONFIG_SMP
+ 	.set_affinity = dmar_msi_set_affinity,
++#ifdef CONFIG_IPIPE
++	.move = move_apic_irq,
++#endif
+ #endif
+ 	.retrigger = ioapic_retrigger_irq,
+ };
+@@ -2200,6 +2254,9 @@ static struct irq_chip ht_irq_chip = {
+ 	.ack		= ack_apic_edge,
+ #ifdef CONFIG_SMP
+ 	.set_affinity	= set_ht_irq_affinity,
++#ifdef CONFIG_IPIPE
++	.move		= move_apic_irq,
++#endif
+ #endif
+ 	.retrigger	= ioapic_retrigger_irq,
+ };
+@@ -2429,3 +2486,10 @@ static int __init ioapic_insert_resources(void)
   * IO APICS that are mapped in on a BAR in PCI space. */
  late_initcall(ioapic_insert_resources);
  
@@ -3800,10 +3870,10 @@ index bb1c09f..28d6d12 100644
  #endif /* __ASM_IPI_H */
 diff --git a/include/asm-x86/ipipe.h b/include/asm-x86/ipipe.h
 new file mode 100644
-index 0000000..3feb467
+index 0000000..f1a4ba1
 --- /dev/null
 +++ b/include/asm-x86/ipipe.h
-@@ -0,0 +1,128 @@
+@@ -0,0 +1,139 @@
 +/*   -*- linux-c -*-
 + *   include/asm-x86/ipipe.h
 + *
@@ -3831,10 +3901,10 @@ index 0000000..3feb467
 +#ifdef CONFIG_IPIPE
 +
 +#ifndef IPIPE_ARCH_STRING
-+#define IPIPE_ARCH_STRING	"2.2-02"
++#define IPIPE_ARCH_STRING	"2.2-03"
 +#define IPIPE_MAJOR_NUMBER	2
 +#define IPIPE_MINOR_NUMBER	2
-+#define IPIPE_PATCH_NUMBER	2
++#define IPIPE_PATCH_NUMBER	3
 +#endif
 +
 +DECLARE_PER_CPU(struct pt_regs, __ipipe_tick_regs);
@@ -3923,6 +3993,17 @@ index 0000000..3feb467
 +	(((p)->flags & PF_EVNOTIFY) || (unsigned long)sc >= NR_syscalls)
 +
 +#define __ipipe_root_tick_p(regs)	((regs)->flags & X86_EFLAGS_IF)
++
++#ifdef CONFIG_SMP
++#define __ipipe_move_root_irq(irq)					\
++	do {								\
++		struct irq_chip *chip = irq_desc[irq].chip;		\
++		if (irq < NR_IRQS && chip->move)			\
++			chip->move(irq);				\
++	} while (0)
++#else /* !CONFIG_SMP */
++#define __ipipe_move_root_irq(irq)	do { } while (0)
++#endif /* !CONFIG_SMP */
 +
 +#else /* !CONFIG_IPIPE */
 +
@@ -4084,10 +4165,10 @@ index 0000000..01dd3a3
 +#endif	/* !__X86_IPIPE_32_H */
 diff --git a/include/asm-x86/ipipe_64.h b/include/asm-x86/ipipe_64.h
 new file mode 100644
-index 0000000..38b5e8f
+index 0000000..d29ca47
 --- /dev/null
 +++ b/include/asm-x86/ipipe_64.h
-@@ -0,0 +1,162 @@
+@@ -0,0 +1,163 @@
 +/*   -*- linux-c -*-
 + *   include/asm-x86/ipipe_64.h
 + *
@@ -4234,10 +4315,11 @@ index 0000000..38b5e8f
 +	do {								\
 +		local_irq_enable_nohead(ipd);				\
 +		if (ipd == ipipe_root_domain) {				\
-+			if (likely(!ipipe_virtual_irq_p(irq)))		\
++			if (likely(!ipipe_virtual_irq_p(irq))) {	\
++				__ipipe_move_root_irq(irq);		\
 +				__ipipe_call_root_xirq_handler(		\
 +					irq, (ipd)->irqs[irq].handler);	\
-+			else						\
++			} else						\
 +				__ipipe_call_root_virq_handler(		\
 +					irq, (ipd)->irqs[irq].handler,	\
 +					(ipd)->irqs[irq].cookie);	\
@@ -4608,7 +4690,7 @@ index 0000000..52a50ac
 +
 +#endif	/* !__X86_IPIPE_BASE_64_H */
 diff --git a/include/asm-x86/irq_vectors.h b/include/asm-x86/irq_vectors.h
-index a48c7f2..6ec20f0 100644
+index a48c7f2..05fa7c2 100644
 --- a/include/asm-x86/irq_vectors.h
 +++ b/include/asm-x86/irq_vectors.h
 @@ -77,13 +77,20 @@
@@ -6019,10 +6101,20 @@ index 0000000..627b354
 +
 +#endif	/* !__LINUX_IPIPE_TRACE_H */
 diff --git a/include/linux/irq.h b/include/linux/irq.h
-index 8ccb462..3c645ea 100644
+index 8ccb462..b85dfba 100644
 --- a/include/linux/irq.h
 +++ b/include/linux/irq.h
-@@ -151,6 +151,12 @@ struct irq_chip {
+@@ -111,6 +111,9 @@ struct irq_chip {
+ 
+ 	void		(*end)(unsigned int irq);
+ 	void		(*set_affinity)(unsigned int irq, cpumask_t dest);
++#ifdef CONFIG_IPIPE
++	void		(*move)(unsigned int irq);
++#endif /* CONFIG_IPIPE */
+ 	int		(*retrigger)(unsigned int irq);
+ 	int		(*set_type)(unsigned int irq, unsigned int flow_type);
+ 	int		(*set_wake)(unsigned int irq, unsigned int on);
+@@ -151,6 +154,12 @@ struct irq_chip {
   * @name:		flow handler name for /proc/interrupts output
   */
  struct irq_desc {
@@ -6769,10 +6861,10 @@ index 0000000..6257dfa
 +obj-$(CONFIG_IPIPE_TRACE) += tracer.o
 diff --git a/kernel/ipipe/core.c b/kernel/ipipe/core.c
 new file mode 100644
-index 0000000..cec1fd5
+index 0000000..97e6aae
 --- /dev/null
 +++ b/kernel/ipipe/core.c
-@@ -0,0 +1,1713 @@
+@@ -0,0 +1,1714 @@
 +/* -*- linux-c -*-
 + * linux/kernel/ipipe/core.c
 + *
@@ -8477,6 +8569,7 @@ index 0000000..cec1fd5
 +EXPORT_SYMBOL(ipipe_set_irq_affinity);
 +EXPORT_SYMBOL(ipipe_send_ipi);
 +EXPORT_SYMBOL(__ipipe_pend_irq);
++EXPORT_SYMBOL(__ipipe_set_irq_pending);
 +#ifdef CONFIG_GENERIC_CLOCKEVENTS
 +EXPORT_SYMBOL(ipipe_request_tickdev);
 +EXPORT_SYMBOL(ipipe_release_tickdev);
@@ -10132,10 +10225,18 @@ index dbda475..739de97 100644
  
  	if (curr->hardirqs_enabled) {
 diff --git a/kernel/panic.c b/kernel/panic.c
-index 12c5a0a..874c006 100644
+index 12c5a0a..d0cc2ca 100644
 --- a/kernel/panic.c
 +++ b/kernel/panic.c
-@@ -267,6 +267,8 @@ int oops_may_print(void)
+@@ -21,6 +21,7 @@
+ #include <linux/debug_locks.h>
+ #include <linux/random.h>
+ #include <linux/kallsyms.h>
++#include <linux/ipipe_trace.h>
+ 
+ int panic_on_oops;
+ int tainted;
+@@ -267,6 +268,8 @@ int oops_may_print(void)
   */
  void oops_enter(void)
  {
@@ -10618,6 +10719,19 @@ index 03bc7f1..ac5c1db 100644
  /*
   * Nr of active tasks - counted in fixed-point numbers
   */
+diff --git a/kernel/trace/Kconfig b/kernel/trace/Kconfig
+index 263e9e6..d67c281 100644
+--- a/kernel/trace/Kconfig
++++ b/kernel/trace/Kconfig
+@@ -17,7 +17,7 @@ config TRACING
+ 
+ config FTRACE
+ 	bool "Kernel Function Tracer"
+-	depends on HAVE_FTRACE
++	depends on HAVE_FTRACE && !IPIPE_TRACE
+ 	select FRAME_POINTER
+ 	select TRACING
+ 	select CONTEXT_SWITCH_TRACER
 diff --git a/lib/Kconfig.debug b/lib/Kconfig.debug
 index 0b50481..2b2d30b 100644
 --- a/lib/Kconfig.debug

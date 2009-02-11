@@ -1511,9 +1511,19 @@ static int rtai_hirq_dispatcher (struct pt_regs regs)
 
 #if LINUX_VERSION_CODE < KERNEL_VERSION(2,6,18)
 	if (rtai_realtime_irq[irq = regs.orig_eax & 0xFF].handler) {
-#else
+#elseif LINUX_VERSION_CODE < KERNEL_VERSION(2,6,28)
 	if (rtai_realtime_irq[irq = ~regs.REG_ORIG_AX].handler) {
+#else
+#ifdef CONFIG_X86_LOCAL_APIC
+	if (~regs.REG_ORIG_AX >= FIRST_SYSTEM_VECTOR) {
+		irq = ipipe_apic_vector_irq(~regs.REG_ORIG_AX);
+	} else
 #endif
+	{
+		irq = __get_cpu_var(vector_irq)[~regs.REG_ORIG_AX];
+	}
+#endif
+	if (rtai_realtime_irq[irq].handler) {
 		unsigned long sflags;
 #ifdef RTAI_SYSCALLS_USE_HIRQ_DISPATCHER
 		if (irq == RTAI_SYS_IRQ) { 

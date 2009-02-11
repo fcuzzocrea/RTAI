@@ -1522,8 +1522,8 @@ static int rtai_hirq_dispatcher (struct pt_regs regs)
 	{
 		irq = __get_cpu_var(vector_irq)[~regs.REG_ORIG_AX];
 	}
-#endif
 	if (rtai_realtime_irq[irq].handler) {
+#endif
 		unsigned long sflags;
 #ifdef RTAI_SYSCALLS_USE_HIRQ_DISPATCHER
 		if (irq == RTAI_SYS_IRQ) { 

@@ -1,3 +1,8 @@
+2009-02-12 Paolo Mantegazza <mantegazza@aero.polimi.it>
+
+	* base/arch/i386/hal/hal.immed: adapt irq definition in
+	  hirq_dispatcher to patches > 2.6.27.
+
 2009-02-10 Pierangelo Masarati <masarati@aero.polimi.it>
 
 	* base/scripts/rtai-load.in: first look for modules in the

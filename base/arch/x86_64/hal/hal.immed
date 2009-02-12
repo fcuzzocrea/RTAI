@@ -1304,12 +1304,13 @@ static int rtai_hirq_dispatcher(struct pt_regs *regs)
 		HAL_TICK_REGS.rbp    = regs->rbp;
 #endif /* CONFIG_SMP && CONFIG_FRAME_POINTER */
 #else
-		__raw_get_cpu_var(__ipipe_tick_regs).REG_IP    = regs->REG_IP;
-		__raw_get_cpu_var(__ipipe_tick_regs).REG_CS    = regs->REG_CS;
-		__raw_get_cpu_var(__ipipe_tick_regs).REG_FLAGS = regs->REG_FLAGS;
-		__raw_get_cpu_var(__ipipe_tick_regs).REG_BP    = regs->REG_BP;
-		__raw_get_cpu_var(__ipipe_tick_regs).REG_SP    = regs->REG_SP;
-		__raw_get_cpu_var(__ipipe_tick_regs).REG_SS    = regs->REG_SS;
+		struct pt_regs *tr = &__raw_get_cpu_var(__ipipe_tick_regs);
+		tr->REG_IP    = regs->REG_IP;
+		tr->REG_CS    = regs->REG_CS;
+		tr->REG_FLAGS = regs->REG_FLAGS;
+		tr->REG_BP    = regs->REG_BP;
+		tr->REG_SP    = regs->REG_SP;
+		tr->REG_SS    = regs->REG_SS;
 #endif
 	}
 	hal_fast_flush_pipeline(cpuid);

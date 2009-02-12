@@ -1,5 +1,11 @@
 2009-02-12 Paolo Mantegazza <mantegazza@aero.polimi.it>
 
+	* base/arch/x86_64/hal/hal.immed,
+	* base/include/asm-x86_646/rtai_hal.h: commit forgotten changes 
+	  to irq_ack to work both with > 2.6.26 and previous releases.
+
+2009-02-12 Paolo Mantegazza <mantegazza@aero.polimi.it>
+
 	* base/arch/i386/hal/hal.immed: adapt irq definition in
 	  hirq_dispatcher to patches > 2.6.27.
 

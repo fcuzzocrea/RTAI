@@ -165,7 +165,7 @@ struct rtai_realtime_irq_s {
         void *cookie;
         int retmode;
         int cpumask;
-        int (*irq_ack)(unsigned int);
+        int (*irq_ack)(unsigned int, void *);
 };
 
 /*
@@ -793,9 +793,9 @@ int rt_request_irq(unsigned irq,
 
 int rt_release_irq(unsigned irq);
 
-int rt_set_irq_ack(unsigned int irq, int (*irq_ack)(unsigned int));
+int rt_set_irq_ack(unsigned int irq, int (*irq_ack)(unsigned int, void *));
 
-static inline int rt_request_irq_wack(unsigned irq, int (*handler)(unsigned irq, void *cookie), void *cookie, int retmode, int (*irq_ack)(unsigned int))
+static inline int rt_request_irq_wack(unsigned irq, int (*handler)(unsigned irq, void *cookie), void *cookie, int retmode, int (*irq_ack)(unsigned int, void *))
 {
         int retval;
         if ((retval = rt_request_irq(irq, handler, cookie, retmode)) < 0) {

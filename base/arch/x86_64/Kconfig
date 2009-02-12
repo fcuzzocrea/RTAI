@@ -161,7 +161,7 @@ endchoice
 
 choice
 	prompt "Inlining mode of user-space services"
-	depends on RTAI_EXTENDED
+#	depends on RTAI_EXTENDED
 	help
 	Allows choosing among:
 	- Conditional inlining: i.e. extern inline, depends on compiler's 

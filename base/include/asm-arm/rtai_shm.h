@@ -57,4 +57,46 @@
 
 #endif  /* __KERNEL__ */
 
+/* convert virtual user memory address to physical address */
+/* (virt_to_phys only works for kmalloced kernel memory) */
+
+static inline unsigned long uvirt_to_kva(pgd_t *pgd, unsigned long adr)
+{
+	unsigned long ret = 0UL;
+	pmd_t *pmd;
+	pte_t *ptep, pte;
+
+	if(!pgd_none(*pgd)) {
+		pmd = pmd_offset(pgd, adr);
+		if (!pmd_none(*pmd)) {
+#if LINUX_VERSION_CODE < KERNEL_VERSION(2,6,0)
+			ptep = pte_offset(pmd, adr);
+#else /* >= 2.6.0 */
+			ptep = pte_offset_kernel(pmd, adr);
+#endif /* < 2.6.0 */
+			pte = *ptep;
+			if(pte_present(pte)){
+				ret = (unsigned long) page_address(pte_page(pte));
+				ret |= (adr&(PAGE_SIZE-1));
+			}
+		}
+	}
+	return ret;
+}
+
+#ifndef VMALLOC_VMADDR
+#define VMALLOC_VMADDR(x) ((unsigned long)(x))
+#endif
+
+static inline unsigned long kvirt_to_pa(unsigned long adr)
+{
+	unsigned long va, kva, ret;
+
+	va = VMALLOC_VMADDR(adr);
+	kva = uvirt_to_kva(pgd_offset_k(va), va);
+	ret = __pa(kva);
+
+	return ret;
+}
+
 #endif  /* _RTAI_ASM_ARM_SHM_H */

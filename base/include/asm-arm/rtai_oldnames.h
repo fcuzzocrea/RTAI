@@ -52,7 +52,7 @@
 #define hard_save_flags_cli(x)		rtai_save_flags_and_cli(x)
 #define hard_restore_flags(x)        	rtai_restore_flags(x)
 #define hard_save_flags(x)           	rtai_save_flags(x)
-#define hard_cpu_id                  	adeos_processor_id
+#define hard_cpu_id                  	hal_processor_id
 #define this_rt_task                 	ptd
 
 #endif /* __KERNEL__ */
@@ -69,6 +69,12 @@
 #define LATENCY_8254   			RTAI_TIMER_LATENCY
 #define SETUP_TIME_8254			RTAI_TIMER_SETUP_TIME
 
+#define FREQ_APIC       		RTAI_TIMER_FREQ
+#define LATENCY_APIC    		RTAI_TIMER_LATENCY
+#define SETUP_TIME_APIC 		RTAI_TIMER_SETUP_TIME		
+#define RTAI_FREQ_APIC			RTAI_TIMER_FREQ
+
+#define CALIBRATED_APIC_FREQ  		RTAI_CALIBRATED_APIC_FREQ
 #define CALIBRATED_CPU_FREQ   		RTAI_CALIBRATED_CPU_FREQ
 
 #ifdef __KERNEL__
@@ -80,13 +86,11 @@
 #define rt_set_rtai_trap_handler  	rt_set_trap_handler
 #define rt_mount_rtai   		rt_mount
 #define rt_umount_rtai  		rt_umount
-#define calibrate_8254  		rtai_calibrate_8254
+#define calibrate_8254  		rtai_calibrate_TC
 
 #define ulldiv(a,b,c)  			rtai_ulldiv(a,b,c)
 #define imuldiv(a,b,c) 			rtai_imuldiv(a,b,c)
 #define llimd(a,b,c)   			rtai_llimd(a,b,c)
-
-#define RTAI_NR_TRAPS         		ADEOS_NR_FAULTS
 
 #define rt_reset_irq_to_sym_mode(irq)
 #define rt_assign_irq_to_cpu(irq, cpu)

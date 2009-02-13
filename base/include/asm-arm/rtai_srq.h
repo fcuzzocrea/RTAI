@@ -41,12 +41,29 @@
 #ifndef _RTAI_ASM_ARM_SRQ_H
 #define _RTAI_ASM_ARM_SRQ_H
 
+#ifdef CONFIG_RTAI_LXRT_USE_LINUX_SYSCALL
+#define USE_LINUX_SYSCALL
+#include <unistd.h>
+#else
+#undef USE_LINUX_SYSCALL
 #include <asm/rtai_vectors.h>
+#endif
 
-#define rtai_srq(srq, whatever)		RTAI_DO_SWI(RTAI_SYS_VECTOR, (srq), (whatever))
+#define RTAI_SRQ_SYSCALL_NR 0x70000000
 
-extern inline int
-rtai_open_srq(unsigned int label)
+static inline long long rtai_srq(long srq, unsigned long args)
+{
+	long long retval;
+#ifdef USE_LINUX_SYSCALL
+        syscall(RTAI_SRQ_SYSCALL_NR, srq, args, &retval);
+#else
+#warning "RTAI_DO_SWI is not working yet. Please configure RTAI with --enable-lxrt-use-linux-syscall."
+	retval = RTAI_DO_SWI(RTAI_SYS_VECTOR, (srq), (args));
+#endif
+	return retval;
+}
+
+static inline int rtai_open_srq(unsigned int label)
 {
     return (int)rtai_srq(0, label);
 }

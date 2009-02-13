@@ -50,26 +50,58 @@
 
 /* All the work is done by the soft-float library or the kernel FPU emulator. */
 
-#define init_fpu(tsk)		do { /* nop */ } while (0)
-#define restore_fpu(tsk)	do { /* nop */ } while (0)
-#define save_cr0_and_clts(x)	do { /* nop */ } while (0)
-#define restore_cr0(x)		do { /* nop */ } while (0)
-#define enable_fpu()		do { /* nop */ } while (0)
-#define load_mxcsr(val)		do { /* nop */ } while (0)
-#define init_xfpu()		do { /* nop */ } while (0)
-#define save_fpenv(x)		do { /* nop */ } while (0)
-#define restore_fpenv(x)	do { /* nop */ } while (0)
-#define restore_task_fpenv(t)	do { /* nop */ } while (0)
-#define restore_fpenv_lxrt(t)	do { /* nop */ } while (0)
+#define enable_fpu()
+#define save_fpcr_and_enable_fpu(fpcr)
+#define restore_fpcr(fpcr)
+#define init_hard_fpenv()
+#define init_fpenv(fpenv)
+#define save_fpenv(fpenv)
+#define restore_fpenv(fpenv)
+#define init_hard_fpu(lnxtsk)
+#define init_fpu(lnxtsk)
+#define restore_fpu(lnxtsk)
 
 typedef struct arm_fpu_env { unsigned long fpu_reg[1]; } FPU_ENV;
 
 #if LINUX_VERSION_CODE < KERNEL_VERSION(2,6,0)
-#define set_tsk_used_fpu(t) \
-    do { (t)->flags |= PF_USEDFPU; } while (0)
-#else /* LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,0) */
-#define set_tsk_used_fpu(t) \
-    do { (t)->flags |= TIF_USED_FPU; } while (0)
+
+#define set_lnxtsk_uses_fpu(lnxtsk) \
+	do { (lnxtsk)->used_math = 1; } while(0)
+#define clear_lnxtsk_uses_fpu(lnxtsk) \
+	do { (lnxtsk)->used_math = 0; } while(0)
+#define lnxtsk_uses_fpu(lnxtsk)  ((lnxtsk)->used_math)
+
+#define set_lnxtsk_using_fpu(lnxtsk) \
+	do { (lnxtsk)->flags |= PF_USEDFPU; } while(0)
+
 #endif /* LINUX_VERSION_CODE < KERNEL_VERSION(2,6,0) */
+
+
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,0) && LINUX_VERSION_CODE < KERNEL_VERSION(2,6,11)
+
+#define set_lnxtsk_uses_fpu(lnxtsk) \
+	do { (lnxtsk)->used_math = 1; } while(0)
+#define clear_lnxtsk_uses_fpu(lnxtsk) \
+	do { (lnxtsk)->used_math = 0; } while(0)
+#define lnxtsk_uses_fpu(lnxtsk)  ((lnxtsk)->used_math)
+
+#define set_lnxtsk_using_fpu(lnxtsk) \
+	do { (lnxtsk)->thread_info->status |= TS_USEDFPU; } while(0)
+
+#endif /* LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,0) && LINUX_VERSION_CODE < KERNEL_VERSION(2,6,11) */
+
+
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,11)
+
+#define set_lnxtsk_uses_fpu(lnxtsk) \
+	do { set_stopped_child_used_math(lnxtsk); } while(0)
+#define clear_lnxtsk_uses_fpu(lnxtsk) \
+	do { clear_stopped_child_used_math(lnxtsk); } while(0)
+#define lnxtsk_uses_fpu(lnxtsk)  (tsk_used_math(lnxtsk))
+
+#define set_lnxtsk_using_fpu(lnxtsk) \
+	do { (lnxtsk)->thread_info->status |= TS_USEDFPU; } while(0)
+
+#endif /* LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,11) */
 
 #endif /* _RTAI_ASM_ARM_FPU_H */

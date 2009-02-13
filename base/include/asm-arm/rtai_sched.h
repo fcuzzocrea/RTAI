@@ -52,6 +52,8 @@
 #	define	I_BIT PSR_I_BIT
 #endif /* LINUX_VERSION_CODE < KERNEL_VERSION(2,6,0) */
 
+#include <rtai_schedcore.h>
+
 /*
  * Registers according to the ARM procedure call standard:
  *   Reg	Description
@@ -142,7 +144,17 @@ current_domain_access_control(void)
 
 #define DEFINE_LINUX_CR0
 #define DEFINE_LINUX_SMP_CR0
-#define init_fp_env(spare_fpu_reg)	do { /* nop */ } while (0)
+
+#ifdef CONFIG_RTAI_FP_SUPPORT
+#define init_fp_env() \
+do { \
+      memset(&task->fpu_reg, 0, sizeof(task->fpu_reg)); \
+}while(0)
+#else
+#define init_fp_env() 
+#endif
+
+#define init_task_fpenv(task)  do { init_fpenv((task)->fpu_reg); } while(0)
 
 extern inline void *
 get_stack_pointer(void)
@@ -155,10 +167,20 @@ get_stack_pointer(void)
 /* acknowledge timer interrupt in scheduler's timer-handler (using the
  * arch-specific rtai_timer_irq_ack()) also allows to bail out of timer irq
  * handler (because of spurious interrupt or whatever) */
+#ifndef CONFIG_ARCH_AT91
 #define DO_TIMER_PROPER_OP()		\
-    do {				\
-	if (rtai_timer_irq_ack() < 0)	\
-	    return;			\
-    } while (0)
+do {					\
+	rtai_timer_irq_ack();		\
+} while (0)
+#else
+/* since we are using extern_timer_isr in __ipipe_grab_irq
+ * we need to update tsc manually in periodic mode*/
+#define DO_TIMER_PROPER_OP()		\
+do {					\
+	if(rt_periodic) {		\
+		rtai_at91_update_tsc();	\
+	}				\
+} while (0)
+#endif
 
 #endif /* _RTAI_ASM_ARM_RTAI_SCHED_H */

@@ -1035,6 +1035,7 @@ int _rtai_apic_timer_handler(struct pt_regs regs)
 	RTAI_SCHED_ISR_UNLOCK();
 	if (!test_bit(IPIPE_STALL_FLAG, ROOT_STATUS_ADR(cpuid))) {
 		rtai_sti();
+		hal_fast_flush_pipeline(cpuid);
 		if (hal_tick_irq == RTAI_APIC_TIMER_IPI) {
 #if LINUX_VERSION_CODE < RTAI_LT_KERNEL_VERSION_FOR_NONPERCPU
 			HAL_TICK_REGS.eflags = regs.eflags;
@@ -1052,7 +1053,6 @@ int _rtai_apic_timer_handler(struct pt_regs regs)
 			tr->flags    &= ~X86_EFLAGS_IF;
 #endif
 		}
-		hal_fast_flush_pipeline(cpuid);
 #if defined(CONFIG_SMP) &&  LINUX_VERSION_CODE >= KERNEL_VERSION(2,4,32)
 		__set_bit(IPIPE_STALL_FLAG, ROOT_STATUS_ADR(rtai_cpuid()));
 #endif
@@ -1080,6 +1080,7 @@ int _rtai_8254_timer_handler(struct pt_regs regs)
 	RTAI_SCHED_ISR_UNLOCK();
 	if (!test_bit(IPIPE_STALL_FLAG, ROOT_STATUS_ADR(cpuid))) {
 		rtai_sti();
+		hal_fast_flush_pipeline(cpuid);
 		if (hal_tick_irq == RTAI_TIMER_8254_IRQ) {
 #if LINUX_VERSION_CODE < RTAI_LT_KERNEL_VERSION_FOR_NONPERCPU
 			HAL_TICK_REGS.eflags = regs.eflags;
@@ -1097,7 +1098,6 @@ int _rtai_8254_timer_handler(struct pt_regs regs)
 			tr->flags    &= ~X86_EFLAGS_IF;
 #endif
 		}
-		hal_fast_flush_pipeline(cpuid);
 #if defined(CONFIG_SMP) && LINUX_VERSION_CODE >= KERNEL_VERSION(2,4,32)
 		__set_bit(IPIPE_STALL_FLAG, ROOT_STATUS_ADR(cpuid));
 #endif
@@ -1582,6 +1582,7 @@ static int rtai_hirq_dispatcher (struct pt_regs regs)
 		}
 	}
 	rtai_sti();
+	hal_fast_flush_pipeline(cpuid);
 	if (irq == hal_tick_irq) {
 #if LINUX_VERSION_CODE < RTAI_LT_KERNEL_VERSION_FOR_NONPERCPU
 		HAL_TICK_REGS.eflags = regs.eflags;
@@ -1599,7 +1600,6 @@ static int rtai_hirq_dispatcher (struct pt_regs regs)
 		tr->flags    &= ~X86_EFLAGS_IF;
 #endif
 	}
-	hal_fast_flush_pipeline(cpuid);
 #if defined(CONFIG_SMP) &&  LINUX_VERSION_CODE >= KERNEL_VERSION(2,4,32)
 	__set_bit(IPIPE_STALL_FLAG, ROOT_STATUS_ADR(rtai_cpuid()));
 #endif

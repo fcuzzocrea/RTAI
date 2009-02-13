@@ -36,6 +36,8 @@
 
 #if LINUX_VERSION_CODE < KERNEL_VERSION(2,6,0)
 
+#define CONFIG_MMU 1
+
 typedef int clockid_t;
 
 #ifndef TIMER_ABSTIME

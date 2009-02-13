@@ -1,3 +1,8 @@
+2009-02-13 Paolo Mantegazza <mantegazza@aero.polimi.it>
+
+	* base/include/rtai_wrappers.h: provide macro CONFIG_MMU missing
+	  in 2.4.xx
+
 2009-02-12 Paolo Mantegazza <mantegazza@aero.polimi.it>
 
 	* base/arch/x86_64/hal/hal.immed,

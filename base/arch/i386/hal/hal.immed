@@ -1050,7 +1050,6 @@ int _rtai_apic_timer_handler(struct pt_regs regs)
 			tr->REG_IP    = regs.REG_IP;
 			tr->REG_CS    = regs.REG_CS;
 			tr->REG_BP    = regs.REG_BP;
-			tr->flags    &= ~X86_EFLAGS_IF;
 #endif
 		}
 #if defined(CONFIG_SMP) &&  LINUX_VERSION_CODE >= KERNEL_VERSION(2,4,32)
@@ -1095,7 +1094,6 @@ int _rtai_8254_timer_handler(struct pt_regs regs)
 			tr->REG_IP    = regs.REG_IP;
 			tr->REG_CS    = regs.REG_CS;
 			tr->REG_BP    = regs.REG_BP;
-			tr->flags    &= ~X86_EFLAGS_IF;
 #endif
 		}
 #if defined(CONFIG_SMP) && LINUX_VERSION_CODE >= KERNEL_VERSION(2,4,32)
@@ -1597,7 +1595,6 @@ static int rtai_hirq_dispatcher (struct pt_regs regs)
 		tr->REG_IP    = regs.REG_IP;
 		tr->REG_CS    = regs.REG_CS;
 		tr->REG_BP    = regs.REG_BP;
-		tr->flags    &= ~X86_EFLAGS_IF;
 #endif
 	}
 #if defined(CONFIG_SMP) &&  LINUX_VERSION_CODE >= KERNEL_VERSION(2,4,32)

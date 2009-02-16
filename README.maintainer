@@ -1,0 +1,4 @@
+- change version in:
+	- configure.in
+	- base/arch/*/defconfig
+	- base/arch/*/Kconfig

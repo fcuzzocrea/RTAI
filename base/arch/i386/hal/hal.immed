@@ -1020,7 +1020,7 @@ void rt_reset_sched_ipi_gate(void)
 }
 #endif
 
-int _rtai_apic_timer_handler(void)
+int _rtai_apic_timer_handler(struct pt_regs regs)
 {
 	unsigned long cpuid;
 	unsigned long sflags;
@@ -1035,6 +1035,22 @@ int _rtai_apic_timer_handler(void)
 	RTAI_SCHED_ISR_UNLOCK();
 	if (!test_bit(IPIPE_STALL_FLAG, ROOT_STATUS_ADR(cpuid))) {
 		rtai_sti();
+		if (hal_tick_irq == RTAI_APIC_TIMER_IPI) {
+#if LINUX_VERSION_CODE < RTAI_LT_KERNEL_VERSION_FOR_NONPERCPU
+			HAL_TICK_REGS.eflags = regs.eflags;
+			HAL_TICK_REGS.eip    = regs.eip;
+			HAL_TICK_REGS.xcs    = regs.xcs;
+#if defined(CONFIG_SMP) && defined(CONFIG_FRAME_POINTER)
+			HAL_TICK_REGS.ebp    = regs.ebp;
+#endif /* CONFIG_SMP && CONFIG_FRAME_POINTER */
+#else
+			struct pt_regs *tr = &__raw_get_cpu_var(__ipipe_tick_regs);
+			tr->REG_FLAGS = regs.REG_FLAGS;
+			tr->REG_IP    = regs.REG_IP;
+			tr->REG_CS    = regs.REG_CS;
+			tr->REG_BP    = regs.REG_BP;
+#endif
+		}
 		hal_fast_flush_pipeline(cpuid);
 #if defined(CONFIG_SMP) &&  LINUX_VERSION_CODE >= KERNEL_VERSION(2,4,32)
 		__set_bit(IPIPE_STALL_FLAG, ROOT_STATUS_ADR(rtai_cpuid()));
@@ -1063,20 +1079,22 @@ int _rtai_8254_timer_handler(struct pt_regs regs)
 	RTAI_SCHED_ISR_UNLOCK();
 	if (!test_bit(IPIPE_STALL_FLAG, ROOT_STATUS_ADR(cpuid))) {
 		rtai_sti();
+		if (hal_tick_irq == RTAI_TIMER_8254_IRQ) {
 #if LINUX_VERSION_CODE < RTAI_LT_KERNEL_VERSION_FOR_NONPERCPU
-/* specific for the Linux tick, do not cre in a generic handler */
-		HAL_TICK_REGS.eflags = regs.eflags;
-		HAL_TICK_REGS.eip    = regs.eip;
-		HAL_TICK_REGS.xcs    = regs.xcs;
+			HAL_TICK_REGS.eflags = regs.eflags;
+			HAL_TICK_REGS.eip    = regs.eip;
+			HAL_TICK_REGS.xcs    = regs.xcs;
 #if defined(CONFIG_SMP) && defined(CONFIG_FRAME_POINTER)
-		HAL_TICK_REGS.ebp    = regs.ebp;
+			HAL_TICK_REGS.ebp    = regs.ebp;
 #endif /* CONFIG_SMP && CONFIG_FRAME_POINTER */
 #else
-		__raw_get_cpu_var(__ipipe_tick_regs).REG_FLAGS = regs.REG_FLAGS;
-		__raw_get_cpu_var(__ipipe_tick_regs).REG_IP    = regs.REG_IP;
-		__raw_get_cpu_var(__ipipe_tick_regs).REG_CS    = regs.REG_CS;
-		__raw_get_cpu_var(__ipipe_tick_regs).REG_BP    = regs.REG_BP;
+			struct pt_regs *tr = &__raw_get_cpu_var(__ipipe_tick_regs);
+			tr->REG_FLAGS = regs.REG_FLAGS;
+			tr->REG_IP    = regs.REG_IP;
+			tr->REG_CS    = regs.REG_CS;
+			tr->REG_BP    = regs.REG_BP;
 #endif
+		}
 		hal_fast_flush_pipeline(cpuid);
 #if defined(CONFIG_SMP) && LINUX_VERSION_CODE >= KERNEL_VERSION(2,4,32)
 		__set_bit(IPIPE_STALL_FLAG, ROOT_STATUS_ADR(cpuid));

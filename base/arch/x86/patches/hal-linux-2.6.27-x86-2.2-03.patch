@@ -1824,7 +1824,7 @@ new file mode 100644
 index 0000000..8fe546e
 --- /dev/null
 +++ b/arch/x86/kernel/ipipe.c
-@@ -0,0 +1,1041 @@
+@@ -0,0 +1,1042 @@
 +/*   -*- linux-c -*-
 + *   linux/arch/x86/kernel/ipipe.c
 + *
@@ -1899,6 +1899,7 @@ index 0000000..8fe546e
 +#ifdef CONFIG_X86_LOCAL_APIC
 +EXPORT_SYMBOL(apic_wait_icr_idle);
 +#endif
++EXPORT_SYMBOL(kill_proc_info);
 +
 +int __ipipe_tick_irq = 0;	/* Legacy timer */
 +

@@ -3947,8 +3947,8 @@ index 0000000..59052d1
 +EXPORT_SYMBOL(i8259A_lock);
 +EXPORT_SYMBOL(__ipipe_sync_stage);
 +#ifdef CONFIG_X86_LOCAL_APIC
-+//EXPORT_SYMBOL(apic_wait_icr_idle);
 +#endif
++EXPORT_SYMBOL(kill_proc_info);
 +
 +EXPORT_SYMBOL(__ipipe_tick_irq);
 +

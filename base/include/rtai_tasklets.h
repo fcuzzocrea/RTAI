@@ -315,7 +315,7 @@ struct rt_tasklet_struct {
 #ifndef __SUPPORT_TASKLET__
 #define __SUPPORT_TASKLET__
 
-struct support_tasklet_s { struct rt_tasklet_struct *tasklet; long thread; volatile int done; };
+struct support_tasklet_s { struct rt_tasklet_struct *tasklet; pthread_t thread; volatile int done; };
 
 static int support_tasklet(struct support_tasklet_s *args)
 {

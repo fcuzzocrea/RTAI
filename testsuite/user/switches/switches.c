@@ -54,7 +54,8 @@ static void *thread_fun(void *arg)
 
 	pthread_setcanceltype(PTHREAD_CANCEL_ASYNCHRONOUS, NULL);
 	mytask_indx = ((int *)arg)[0];
- 	if (!(mytask[mytask_indx] = rt_task_init_schmod(taskname(mytask_indx), 0, 1000, 0, SCHED_FIFO, 0x1))) {
+	if (!(mytask[mytask_indx] = rt_thread_init(taskname(mytask_indx), 0, 0,
+SCHED_FIFO, 0x1))) {
 		printf("CANNOT INIT TASK %u\n", taskname(mytask_indx));
 		exit(1);
 	}
@@ -93,21 +94,10 @@ int main(void)
 	RTIME tsr, tss, tsm;
 	RT_TASK *mainbuddy;
 	int i, k, s;       
-	pthread_attr_t attr;
 	unsigned long msg;
 
 	printf("\n\nWait for it ...\n");
-
-	pthread_attr_init(&attr);	// set default values for all attribute
-	// Set max. stack size of thread to 64 KB (default is 2 MB).
-	// Warning: the *whole* stack is allocated for real when mlockall() is used!
-	if (pthread_attr_setstacksize(&attr, 64 * 1024)) {
-		printf("can't set thread stacksize\n");
-		pthread_attr_destroy(&attr);
-		exit(1);
-	}
-
- 	if (!(mainbuddy = rt_task_init_schmod(nam2num("MASTER"), 1, 1000, 0, SCHED_FIFO, 0x1))) {
+	if (!(mainbuddy = rt_thread_init(nam2num("MASTER"), 1000, 0, SCHED_FIFO, 0x1))) {
 		printf("CANNOT INIT TASK %lu\n", nam2num("MASTER"));
 		exit(1);
 	}
@@ -117,12 +107,11 @@ int main(void)
 	
 	for (i = 0; i < NR_RT_TASKS; i++) {
 		indx[i] = i;
-		if (pthread_create(thread + i, &attr, thread_fun, indx + i)) {
+		if (!(thread[i] = rt_thread_create(thread_fun, indx + i, 0))) {
 			printf("ERROR IN CREATING THREAD %d\n", indx[i]);
 			exit(1);
  		}       
  	} 
-	pthread_attr_destroy(&attr);
 
 	do {
 		msleep(50);
@@ -131,7 +120,6 @@ int main(void)
 			s += hrt[i];
 		}
 	} while (s != NR_RT_TASKS);
-	rt_grow_and_lock_stack(4000);
 	mlockall(MCL_CURRENT | MCL_FUTURE);
 	
 	rt_make_hard_real_time();
@@ -202,7 +190,7 @@ int main(void)
 	rt_sem_delete(sem);
 	rt_task_delete(mainbuddy);
 	for (i = 0; i < NR_RT_TASKS; i++) {
-		pthread_join(thread[i], NULL);
+		rt_thread_join(thread[i]);
 	}
 	
 	return 0;

@@ -47,9 +47,6 @@ CONFIG_HEADER = $(top_builddir)/rtai_config.h
 CONFIG_CLEAN_FILES = Makefile
 LIBRARIES = $(noinst_LIBRARIES)
 ARFLAGS = cru
-libsignal_a_LIBADD =
-am_libsignal_a_OBJECTS = signal.$(OBJEXT)
-libsignal_a_OBJECTS = $(am_libsignal_a_OBJECTS)
 libtasklets_a_LIBADD =
 am_libtasklets_a_OBJECTS = tasklets.$(OBJEXT)
 libtasklets_a_OBJECTS = $(am_libtasklets_a_OBJECTS)
@@ -65,8 +62,8 @@ CCLD = $(CC)
 LINK = $(LIBTOOL) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) \
 	--mode=link $(CCLD) $(AM_CFLAGS) $(CFLAGS) $(AM_LDFLAGS) \
 	$(LDFLAGS) -o $@
-SOURCES = $(libsignal_a_SOURCES) $(libtasklets_a_SOURCES)
-DIST_SOURCES = $(libsignal_a_SOURCES) $(libtasklets_a_SOURCES)
+SOURCES = $(libtasklets_a_SOURCES)
+DIST_SOURCES = $(libtasklets_a_SOURCES)
 ETAGS = etags
 CTAGS = ctags
 DISTFILES = $(DIST_COMMON) $(DIST_SOURCES) $(TEXINFOS) $(EXTRA_DIST)
@@ -237,10 +234,8 @@ top_srcdir = @top_srcdir@
 moduledir = @RTAI_MODULE_DIR@
 modext = @RTAI_MODULE_EXT@
 libtasklets_a_SOURCES = tasklets.c
-libsignal_a_SOURCES = signal.c
-@CONFIG_KBUILD_FALSE@noinst_LIBRARIES = libtasklets.a libsignal.a
+@CONFIG_KBUILD_FALSE@noinst_LIBRARIES = libtasklets.a
 @CONFIG_KBUILD_FALSE@libtasklets_a_AR = $(CROSS_COMPILE)ar cru
-@CONFIG_KBUILD_FALSE@libsignal_a_AR = $(CROSS_COMPILE)ar cru
 @CONFIG_KBUILD_FALSE@INCLUDES = \
 @CONFIG_KBUILD_FALSE@	@RTAI_KMOD_CFLAGS@ \
 @CONFIG_KBUILD_FALSE@	-I$(top_srcdir)/base/include \
@@ -283,10 +278,6 @@ $(ACLOCAL_M4): @MAINTAINER_MODE_TRUE@ $(am__aclocal_m4_deps)
 
 clean-noinstLIBRARIES:
 	-test -z "$(noinst_LIBRARIES)" || rm -f $(noinst_LIBRARIES)
-libsignal.a: $(libsignal_a_OBJECTS) $(libsignal_a_DEPENDENCIES) 
-	-rm -f libsignal.a
-	$(libsignal_a_AR) libsignal.a $(libsignal_a_OBJECTS) $(libsignal_a_LIBADD)
-	$(RANLIB) libsignal.a
 libtasklets.a: $(libtasklets_a_OBJECTS) $(libtasklets_a_DEPENDENCIES) 
 	-rm -f libtasklets.a
 	$(libtasklets_a_AR) libtasklets.a $(libtasklets_a_OBJECTS) $(libtasklets_a_LIBADD)
@@ -298,7 +289,6 @@ mostlyclean-compile:
 distclean-compile:
 	-rm -f *.tab.c
 
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/signal.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/tasklets.Po@am__quote@
 
 .c.o:
@@ -510,16 +500,8 @@ uninstall-am:
 
 
 @CONFIG_KBUILD_TRUE@@CONFIG_RTAI_TASKLETS_BUILTIN_TRUE@rtai_tasklets.ko:
-
-@CONFIG_KBUILD_TRUE@@CONFIG_RTAI_TASKLETS_BUILTIN_TRUE@rtai_signal.ko:
 @CONFIG_KBUILD_TRUE@@CONFIG_RTAI_TASKLETS_BUILTIN_FALSE@rtai_tasklets.ko: @RTAI_KBUILD_ENV@
 @CONFIG_KBUILD_TRUE@@CONFIG_RTAI_TASKLETS_BUILTIN_FALSE@rtai_tasklets.ko: $(libtasklets_a_SOURCES)
-@CONFIG_KBUILD_TRUE@@CONFIG_RTAI_TASKLETS_BUILTIN_FALSE@	@RTAI_KBUILD_TOP@ \
-@CONFIG_KBUILD_TRUE@@CONFIG_RTAI_TASKLETS_BUILTIN_FALSE@	@RTAI_KBUILD_CMD@ \
-@CONFIG_KBUILD_TRUE@@CONFIG_RTAI_TASKLETS_BUILTIN_FALSE@	@RTAI_KBUILD_BOTTOM@
-
-@CONFIG_KBUILD_TRUE@@CONFIG_RTAI_TASKLETS_BUILTIN_FALSE@rtai_signal.ko: @RTAI_KBUILD_ENV@
-@CONFIG_KBUILD_TRUE@@CONFIG_RTAI_TASKLETS_BUILTIN_FALSE@rtai_signal.ko: $(libsignal_a_SOURCES)
 @CONFIG_KBUILD_TRUE@@CONFIG_RTAI_TASKLETS_BUILTIN_FALSE@	@RTAI_KBUILD_TOP@ \
 @CONFIG_KBUILD_TRUE@@CONFIG_RTAI_TASKLETS_BUILTIN_FALSE@	@RTAI_KBUILD_CMD@ \
 @CONFIG_KBUILD_TRUE@@CONFIG_RTAI_TASKLETS_BUILTIN_FALSE@	@RTAI_KBUILD_BOTTOM@
@@ -530,14 +512,11 @@ uninstall-am:
 @CONFIG_KBUILD_FALSE@rtai_tasklets.o: libtasklets.a
 @CONFIG_KBUILD_FALSE@	$(CROSS_COMPILE)$(LD) --whole-archive $< -r -o $@
 
-@CONFIG_KBUILD_FALSE@rtai_signal.o: libsignal.a
-@CONFIG_KBUILD_FALSE@	$(CROSS_COMPILE)$(LD) --whole-archive $< -r -o $@
-
-all-local: rtai_tasklets$(modext) rtai_signal$(modext)
+all-local: rtai_tasklets$(modext)
 @CONFIG_RTAI_OLD_FASHIONED_BUILD_TRUE@@CONFIG_RTAI_TASKLETS_BUILTIN_FALSE@	$(mkinstalldirs) $(top_srcdir)/modules
 @CONFIG_RTAI_OLD_FASHIONED_BUILD_TRUE@@CONFIG_RTAI_TASKLETS_BUILTIN_FALSE@	$(INSTALL_DATA) $^ $(top_srcdir)/modules
 
-@CONFIG_RTAI_TASKLETS_BUILTIN_FALSE@install-exec-local: rtai_tasklets$(modext) rtai_signal$(modext)
+@CONFIG_RTAI_TASKLETS_BUILTIN_FALSE@install-exec-local: rtai_tasklets$(modext)
 @CONFIG_RTAI_TASKLETS_BUILTIN_FALSE@	$(mkinstalldirs) $(DESTDIR)$(moduledir)
 @CONFIG_RTAI_TASKLETS_BUILTIN_FALSE@	$(INSTALL_DATA) $^ $(DESTDIR)$(moduledir)
 # Tell versions [3.59,3.63) of GNU make to not export all variables.

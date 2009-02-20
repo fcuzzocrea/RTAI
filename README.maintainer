@@ -2,3 +2,5 @@
 	- configure.in
 	- base/arch/*/defconfig
 	- base/arch/*/Kconfig
+
+- cvs tag -F RTAI_X_Y

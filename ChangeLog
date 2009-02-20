@@ -1,4 +1,3 @@
-
 2009-02-20 Paolo Mantegazza <mantegazza@aero.polimi.it>
 
 	* base/include/rtai_names.h, rtai_msg.h: remove define of 

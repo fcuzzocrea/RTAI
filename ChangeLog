@@ -8,6 +8,7 @@
 	* base/include/rtai_names.h, rtai_msg.h: remove define of
 	  RTAI_MAX_NAME_LENGTH.
 	* base/include/rtai_sched.h: put define of RTAI_MAX_NAME_LENGTH here.
+	* base/arch/i386-x86_64/Kconfig: no more conditional inlining.
 
 2009-02-16 Pierangelo Masarati <masarati@aero.polimi.it>
 

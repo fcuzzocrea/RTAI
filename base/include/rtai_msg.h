@@ -24,8 +24,6 @@
 
 #define MSG_ERR ((RT_TASK *)RTE_OBJINV)
 
-#define RTAI_MAX_NAME_LENGTH  32
-
 struct rt_task_struct;
 struct QueueBlock;
 struct QueueHook;

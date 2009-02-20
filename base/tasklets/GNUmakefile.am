@@ -5,22 +5,13 @@ modext = @RTAI_MODULE_EXT@
 CROSS_COMPILE = @CROSS_COMPILE@
 
 libtasklets_a_SOURCES = tasklets.c
-libsignal_a_SOURCES = signal.c
 
 if CONFIG_KBUILD
 if CONFIG_RTAI_TASKLETS_BUILTIN
 rtai_tasklets.ko:
-
-rtai_signal.ko:
 else
 rtai_tasklets.ko: @RTAI_KBUILD_ENV@
 rtai_tasklets.ko: $(libtasklets_a_SOURCES)
-	@RTAI_KBUILD_TOP@ \
-	@RTAI_KBUILD_CMD@ \
-	@RTAI_KBUILD_BOTTOM@
-
-rtai_signal.ko: @RTAI_KBUILD_ENV@
-rtai_signal.ko: $(libsignal_a_SOURCES)
 	@RTAI_KBUILD_TOP@ \
 	@RTAI_KBUILD_CMD@ \
 	@RTAI_KBUILD_BOTTOM@
@@ -29,10 +20,9 @@ clean-local:
 	@RTAI_KBUILD_CLEAN@
 endif
 else
-noinst_LIBRARIES = libtasklets.a libsignal.a
+noinst_LIBRARIES = libtasklets.a
 
 libtasklets_a_AR = $(CROSS_COMPILE)ar cru
-libsignal_a_AR = $(CROSS_COMPILE)ar cru
 
 INCLUDES = \
 	@RTAI_KMOD_CFLAGS@ \
@@ -41,19 +31,16 @@ INCLUDES = \
 
 rtai_tasklets.o: libtasklets.a
 	$(CROSS_COMPILE)$(LD) --whole-archive $< -r -o $@
-
-rtai_signal.o: libsignal.a
-	$(CROSS_COMPILE)$(LD) --whole-archive $< -r -o $@
 endif
 
-all-local: rtai_tasklets$(modext) rtai_signal$(modext)
+all-local: rtai_tasklets$(modext)
 if !CONFIG_RTAI_TASKLETS_BUILTIN
 if CONFIG_RTAI_OLD_FASHIONED_BUILD
 	$(mkinstalldirs) $(top_srcdir)/modules
 	$(INSTALL_DATA) $^ $(top_srcdir)/modules
 endif
 
-install-exec-local: rtai_tasklets$(modext) rtai_signal$(modext)
+install-exec-local: rtai_tasklets$(modext)
 	$(mkinstalldirs) $(DESTDIR)$(moduledir)
 	$(INSTALL_DATA) $^ $(DESTDIR)$(moduledir)
 endif

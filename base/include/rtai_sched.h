@@ -156,6 +156,8 @@ typedef struct rt_ExitHandler {
 
 struct rt_heap_t { void *heap, *kadr, *uadr; };
 
+#define RTAI_MAX_NAME_LENGTH  32
+
 typedef struct rt_task_struct {
 	long *stack __attribute__ ((__aligned__ (L1_CACHE_BYTES)));
 	int uses_fpu;
@@ -194,7 +196,7 @@ typedef struct rt_task_struct {
 	long long retval;
 	char *msg_buf[2];
 	long max_msg_size[2];
-	char task_name[16];
+	char task_name[RTAI_MAX_NAME_LENGTH];
 	void *system_data_ptr;
 	struct rt_task_struct *nextp, *prevp;
 

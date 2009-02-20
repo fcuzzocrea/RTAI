@@ -1,4 +1,11 @@
-2008-12-16 Pierangelo Masarati <masarati@aero.polimi.it>
+
+2009-02-20 Paolo Mantegazza <mantegazza@aero.polimi.it>
+
+	* base/include/rtai_names.h, rtai_msg.h: remove define of 
+	  RTAI_MAX_NAME_LENGTH.
+	* base/include/rtai_sched.h: put define of RTAI_MAX_NAME_LENGTH here.
+
+2009-02-16 Pierangelo Masarati <masarati@aero.polimi.it>
 
 	* RTAI 3.7-test1
 

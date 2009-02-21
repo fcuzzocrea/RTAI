@@ -82,29 +82,6 @@ RTAI_MODULE_PARM(rtai_cpufreq_arg, ulong);
 static unsigned long IsolCpusMask = 0;
 RTAI_MODULE_PARM(IsolCpusMask, ulong);
 
-/* global */
-
-struct rtai_realtime_irq_s rtai_realtime_irq[RTAI_NR_IRQS];
-struct hal_domain_struct rtai_domain;
-struct rt_times		rt_times;
-struct rt_times		rt_smp_times[RTAI_NR_CPUS] = { { 0 } };
-struct rtai_switch_data rtai_linux_context[RTAI_NR_CPUS];
-volatile unsigned long *ipipe_root_status[RTAI_NR_CPUS];
-struct calibration_data rtai_tunables;
-volatile unsigned long	rtai_cpu_realtime;
-volatile unsigned long	rtai_cpu_lock;
-long long		(*rtai_lxrt_invoke_entry)(unsigned long, void *); /* hook for lxrt calls */
-struct { volatile int locked, rqsted; } rt_scheduling[RTAI_NR_CPUS];
-#ifdef CONFIG_PROC_FS
-struct proc_dir_entry	*rtai_proc_root = NULL;
-#endif
-
-#ifdef CONFIG_RTAI_SCHED_ISR_LOCK
-static void (*rtai_isr_hook)(int cpuid);
-#endif 
-
-#define CHECK_KERCTX()
-
 #if (LINUX_VERSION_CODE > KERNEL_VERSION(2,4,31) && LINUX_VERSION_CODE < KERNEL_VERSION(2,6,0)) || LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,9)
 
 #if LINUX_VERSION_CODE < KERNEL_VERSION(2,6,18)
@@ -139,7 +116,30 @@ do { \
 	rtai_restore_flags(flags); \
 } while (0)
 
+#endif /* (LINUX_VERSION_CODE > KERNEL_VERSION(2,4,31) && LINUX_VERSION_ ... */
+
+/* global */
+
+struct rtai_realtime_irq_s rtai_realtime_irq[RTAI_NR_IRQS];
+struct hal_domain_struct rtai_domain;
+struct rt_times		rt_times;
+struct rt_times		rt_smp_times[RTAI_NR_CPUS] = { { 0 } };
+struct rtai_switch_data rtai_linux_context[RTAI_NR_CPUS];
+volatile unsigned long *ipipe_root_status[RTAI_NR_CPUS];
+struct calibration_data rtai_tunables;
+volatile unsigned long	rtai_cpu_realtime;
+volatile unsigned long	rtai_cpu_lock;
+long long		(*rtai_lxrt_invoke_entry)(unsigned long, void *); /* hook for lxrt calls */
+struct { volatile int locked, rqsted; } rt_scheduling[RTAI_NR_CPUS];
+#ifdef CONFIG_PROC_FS
+struct proc_dir_entry	*rtai_proc_root = NULL;
 #endif
+
+#ifdef CONFIG_RTAI_SCHED_ISR_LOCK
+static void (*rtai_isr_hook)(int cpuid);
+#endif 
+
+#define CHECK_KERCTX()
 
 /* local */
 
@@ -230,42 +230,6 @@ rt_set_irq_cookie(unsigned irq, void *cookie)
     if (irq < NR_IRQS)
 	rtai_realtime_irq[irq].cookie = cookie;
 }
-
-#if (LINUX_VERSION_CODE > KERNEL_VERSION(2,4,31) && LINUX_VERSION_CODE < KERNEL_VERSION(2,6,0)) || LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,9)
-
-#if LINUX_VERSION_CODE < KERNEL_VERSION(2,6,18)
-#define rtai_irq_desc(irq) (irq_desc[irq].handler)
-#else
-#define rtai_irq_desc(irq) (irq_desc[irq].chip)
-#endif
-
-#define BEGIN_PIC()
-#define END_PIC()
-#undef hal_lock_irq
-#undef hal_unlock_irq
-#define hal_lock_irq(x, y, z)
-#define hal_unlock_irq(x, y)
-
-#else
-
-extern struct hw_interrupt_type hal_std_irq_dtype[];
-#define rtai_irq_desc(irq) (&hal_std_irq_dtype[irq])
-
-#define BEGIN_PIC() \
-do { \
-        unsigned long flags, pflags, cpuid; \
-	rtai_save_flags_and_cli(flags); \
-	cpuid = rtai_cpuid(); \
-	pflags = xchg(ipipe_root_status[cpuid], 1 << IPIPE_STALL_FLAG); \
-	rtai_save_and_lock_preempt_count()
-
-#define END_PIC() \
-	rtai_restore_preempt_count(); \
-	*ipipe_root_status[cpuid] = pflags; \
-	rtai_restore_flags(flags); \
-} while (0)
-
-#endif /* (LINUX_VERSION_CODE > KERNEL_VERSION(2,4,31) && LINUX_VERSION_CODE < KERNEL_VERSION(2,6,0)) || LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,9) */
 
 /*
  * Upgrade this function for SMP systems

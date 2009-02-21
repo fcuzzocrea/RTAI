@@ -39,12 +39,12 @@
 #ifndef _RTAI_ASM_ARM_LXRT_H
 #define _RTAI_ASM_ARM_LXRT_H
 
-#include <asm/rtai_vectors.h>
-
 /* define registers (pt_regs) that hold syscall related information for
  * lxrt_intercept_syscall_prologue() (see entry-common.S:vector_swi &
  * adeos.c:__adeos_enter_syscall() in linux/arch/arm/kernel) */
-#define RTAI_SYSCALL_NR      ARM_ip		/* syscall number */
+
+#define RTAI_SYSCALL_NR      0x70000000		/* syscall number */
+
 #define RTAI_SYSCALL_ARGS    ARM_r0		/* syscall argument */
 #define SET_LXRT_RETVAL_IN_SYSCALL(retval) 	/* set long long syscall return value */ \
 	(*(long long)&r->r0 = (retval))
@@ -58,22 +58,35 @@
 #define LINUX_SYSCALL_REG6    ARM_r5
 #define LINUX_SYSCALL_RETREG  ARM_r0
 
+#define NR_syscalls 322
+
+#define LXRT_DO_IMMEDIATE_LINUX_SYSCALL(regs) \
+        do { /* NOP */ } while (0)
+
 /* endianess */
 #define LOW  0
 #define HIGH 1
 
 /* for scheduler */
-#define USE_LINUX_TIMER			1
+#define USE_LINUX_TIMER
 #define TIMER_NAME			RTAI_TIMER_NAME
 #define TIMER_FREQ			RTAI_TIMER_FREQ
 #define TIMER_LATENCY			RTAI_TIMER_LATENCY
 #define TIMER_SETUP_TIME		RTAI_TIMER_SETUP_TIME
 #define ONESHOT_SPAN \
     (((long long)RTAI_TIMER_MAXVAL * RTAI_TSC_FREQ) / RTAI_TIMER_FREQ)
-#define update_linux_timer(cpuid)	__adeos_pend_uncond(RTAI_TIMER_IRQ, cpuid)
+
+#define update_linux_timer(cpuid) \
+do { \
+	if (!IS_FUSION_TIMER_RUNNING()) { \
+		hal_pend_uncond(__ipipe_mach_timerint, cpuid); \
+	} \
+} while (0)		
+
 /* Adeos/ARM calls all event handlers with hw-interrupts enabled (both in threaded
  * and unthreaded mode), so there is no need for RTAI to do it again. */
 #define IN_INTERCEPT_IRQ_ENABLE()	do { /* nop */ } while (0)
+#define IN_INTERCEPT_IRQ_DISABLE()	do { /* nop */ } while (0)
 
 union rtai_lxrt_t {
     RTIME rt;
@@ -95,30 +108,54 @@ extern "C" {
 extern inline void
 _lxrt_context_switch(struct task_struct *prev, struct task_struct *next, int cpuid)
 {
-    struct mm_struct *oldmm = prev->active_mm;
-
-    ADEOS_PARANOIA_ASSERT(adeos_hw_irqs_disabled());
-    ADEOS_PARANOIA_ASSERT(next->active_mm);
-#if LINUX_VERSION_CODE < KERNEL_VERSION(2,6,0)
-    switch_mm(oldmm, next->active_mm, next, cpuid);
-    if (!next->mm)
-	enter_lazy_tlb(oldmm, next, cpuid);
-#else /* >= 2.6.0 */
-    switch_mm(oldmm, next->active_mm, next);
-    if (!next->mm)
-        enter_lazy_tlb(oldmm, next);
-#endif /* < 2.6.0 */
-    switch_to(prev, next, prev);
-    ADEOS_PARANOIA_ASSERT(adeos_hw_irqs_disabled());
+	extern void context_switch(void *, void *, void *);
+	context_switch(0, prev, next);
 }
 
+static inline void kthread_fun_set_jump(struct task_struct *lnxtsk)  { }
+static inline void kthread_fun_long_jump(struct task_struct *lnxtsk) { }
+
+#define rt_copy_from_user(a, b, c)  \
+	( { int ret = __copy_from_user_inatomic(a, b, c); ret; } )
+
+#define rt_copy_to_user(a, b, c)  \
+	( { int ret = __copy_to_user_inatomic(a, b, c); ret; } )
+
+#define rt_put_user  __put_user
+#define rt_get_user  __get_user
+
+#define rt_strncpy_from_user(a, b, c)  \
+	( { int ret = strncpy_from_user(a, b, c); ret; } )
+
 #else /* !__KERNEL__ */
+
+#ifdef CONFIG_RTAI_LXRT_USE_LINUX_SYSCALL
+#define USE_LINUX_SYSCALL
+#include <unistd.h>
+#else
+#undef USE_LINUX_SYSCALL
+#include <asm/rtai_vectors.h>
+#endif
+
+#define RTAI_SRQ_SYSCALL_NR 0x70000000
+
+static inline long long _rtai_lxrt(long srq, void *args)
+{
+	long long retval;
+#ifdef USE_LINUX_SYSCALL
+        syscall(RTAI_SRQ_SYSCALL_NR, srq, args, &retval);
+#else
+#warning "RTAI_DO_SWI is not working yet. Please configure RTAI with --enable-lxrt-use-linux-syscall."
+	retval = RTAI_DO_SWI(RTAI_SYS_VECTOR, (srq), (args));
+#endif
+	return retval;
+}
 
 static inline union rtai_lxrt_t
 rtai_lxrt(short int dynx, short int lsize, int srq, void *arg)
 {
     union rtai_lxrt_t retval;
-    retval.rt = RTAI_DO_SWI(RTAI_SYS_VECTOR, ENCODE_LXRT_REQ(dynx, srq, lsize), arg);
+    retval.rt = _rtai_lxrt(ENCODE_LXRT_REQ(dynx, srq, lsize), arg);
     return retval;
 }
 

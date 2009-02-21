@@ -18,11 +18,23 @@ nobase_include_HEADERS += \
 		arch-pxa/rtai_exports.h \
 		arch-pxa/rtai_timer.h
 endif
+if CONFIG_ARCH_IMX
+nobase_include_HEADERS += \
+		arch-imx/rtai_arch.h \
+		arch-imx/rtai_exports.h \
+		arch-imx/rtai_timer.h
+endif
 if CONFIG_ARCH_EP9301
 nobase_include_HEADERS += \
 		arch-ep9301/rtai_arch.h \
 		arch-ep9301/rtai_exports.h \
 		arch-ep9301/rtai_timer.h
+endif
+if CONFIG_ARCH_AT91
+nobase_include_HEADERS += \
+		arch-at91/rtai_arch.h \
+		arch-at91/rtai_exports.h \
+		arch-at91/rtai_timer.h
 endif
 
 install-data-local:

@@ -47,3 +47,18 @@ pxa255_2.6.7-bk6-karo
 
 --
 2005-02-22 Michael Neuhauser <mike@firmix.at>
+
+at91_...
+========
+   Linux Kernel Patches for mach-at91
+
+imx_...
+=======
+   Linux Kernel Patch for mach-imx
+   maintainer (Torsten Koschorrek <devel@koschorrek.com>)
+
+RTAI_...
+========
+   Patches for rtai, as long as they are not merged to rtai-magma
+--
+2008-08-06 Torsten Koschorrek <devel@koschorrek.com>

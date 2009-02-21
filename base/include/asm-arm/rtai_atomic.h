@@ -44,15 +44,14 @@
 #ifndef _RTAI_ASM_ARM_ATOMIC_H
 #define _RTAI_ASM_ARM_ATOMIC_H
 
-#include <linux/version.h>
-#include <linux/bitops.h>
 #include <asm/atomic.h>
-#include <rtai_config.h>
-#include <asm/rtai_hal.h>
 
 #ifdef __KERNEL__
 
+#include <linux/bitops.h>
 #include <asm/system.h>
+
+#if LINUX_VERSION_CODE < KERNEL_VERSION(2,6,11)
 
 #define atomic_xchg(ptr,v)      xchg(ptr,v)
 
@@ -69,12 +68,18 @@
 	rtai_hw_unlock(flags);		\
 	__prev; })
 
+#endif /* version < 2.6.11 */
+
 #else /* !__KERNEL__ */
 
 #if LINUX_VERSION_CODE < KERNEL_VERSION(2,6,0)
 #include <asm/proc/system.h>
 #else
 #include <asm/system.h>
+#endif
+
+#if LINUX_VERSION_CODE < KERNEL_VERSION(2,6,20)
+typedef struct { volatile int counter; } atomic_t;
 #endif
 
 static inline unsigned long
@@ -89,18 +94,76 @@ atomic_xchg(volatile void *ptr, unsigned long x)
     return x;
 }
 
+static inline unsigned long atomic_cmpxchg(volatile void *ptr, unsigned long old, unsigned long new)
+{
+	unsigned long oldval, res;
+
+	do {
+		__asm__ __volatile__("@ atomic_cmpxchg\n"
+		"ldrex	%1, [%2]\n"
+		"teq	%1, %3\n"
+		"strexeq %0, %4, [%2]\n"
+		    : "=&r" (res), "=&r" (oldval)
+		    : "r" (*(unsigned long*)ptr), "r" (old), "r" (new)
+		    : "cc");
+	} while (res);
+
+	return oldval;
+}
+
+/*
 static inline unsigned long
 atomic_cmpxchg(volatile void *ptr, unsigned long o, unsigned long n)
 {
     unsigned long prev;
     unsigned long flags;
-    adeos_hw_local_irq_save(flags);
+    hal_hw_local_irq_save(flags);
     prev = *(unsigned long*)ptr;
     if (prev == o)
 	*(unsigned long*)ptr = n;
-    adeos_hw_local_irq_restore(flags);
+    hal_hw_local_irq_restore(flags);
     return prev;
 }
+*/
+
+static inline int atomic_add_return(int i, atomic_t *v)
+{
+	unsigned long tmp;
+	int result;
+
+	__asm__ __volatile__("@ atomic_add_return\n"
+"1:	ldrex	%0, [%2]\n"
+"	add	%0, %0, %3\n"
+"	strex	%1, %0, [%2]\n"
+"	teq	%1, #0\n"
+"	bne	1b"
+	: "=&r" (result), "=&r" (tmp)
+	: "r" (&v->counter), "Ir" (i)
+	: "cc");
+
+	return result;
+}
+
+static inline int atomic_sub_return(int i, atomic_t *v)
+{
+	unsigned long tmp;
+	int result;
+
+	__asm__ __volatile__("@ atomic_sub_return\n"
+"1:	ldrex	%0, [%2]\n"
+"	sub	%0, %0, %3\n"
+"	strex	%1, %0, [%2]\n"
+"	teq	%1, #0\n"
+"	bne	1b"
+	: "=&r" (result), "=&r" (tmp)
+	: "r" (&v->counter), "Ir" (i)
+	: "cc");
+
+	return result;
+}
+
+#define atomic_inc(v)		(void) atomic_add_return(1, v)
+#define atomic_dec_and_test(v)	(atomic_sub_return(1, v) == 0)
 
 #endif /* __KERNEL__ */
 #endif /* !_RTAI_ASM_ARM_ATOMIC_H */

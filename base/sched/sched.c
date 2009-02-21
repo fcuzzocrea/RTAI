@@ -105,7 +105,7 @@ static int lxrt_notify_reboot(struct notifier_block *nb,
 			      unsigned long event,
 			      void *ptr);
 
-static struct notifier_block lxrt_notifier_reboot = {
+static struct notifier_block lxrt_reboot_notifier = {
 	.notifier_call	= &lxrt_notify_reboot,
 	.next		= NULL,
 	.priority	= 0
@@ -1712,20 +1712,16 @@ static void lxrt_killall (void)
 }
 
 static int lxrt_notify_reboot (struct notifier_block *nb, unsigned long event, void *p)
-
 {
-    switch (event)
-	{
-	case SYS_DOWN:
-	case SYS_HALT:
-	case SYS_POWER_OFF:
-
-	    /* FIXME: this is far too late. */
-	    printk("LXRT: REBOOT NOTIFIED -- KILLING TASKS\n");
-	    lxrt_killall();
+	switch (event) {
+		case SYS_DOWN:
+		case SYS_HALT:
+		case SYS_POWER_OFF:
+		/* FIXME: this is far too late. */
+		printk("LXRT: REBOOT NOTIFIED -- KILLING TASKS\n");
+		lxrt_killall();
 	}
-
-    return NOTIFY_DONE;
+	return NOTIFY_DONE;
 }
 
 /* ++++++++++++++++++++++++++ TIME CONVERSIONS +++++++++++++++++++++++++++++ */
@@ -2999,7 +2995,7 @@ static int __rtai_lxrt_init(void)
 	rt_set_ihook(&rtai_handle_isched_lock);
 #endif /* CONFIG_RTAI_SCHED_ISR_LOCK */
 
-	register_reboot_notifier(&lxrt_notifier_reboot);
+	register_reboot_notifier(&lxrt_reboot_notifier);
 #ifdef CONFIG_SMP
 	printk(KERN_INFO "RTAI[sched]: IMMEDIATE, MP, USER/KERNEL SPACE: <%s RTAI OWN KTASKs>", USE_RTAI_TASKS ? "with" : "without");
 #else
@@ -3052,7 +3048,7 @@ mem_end:
 
 static void __rtai_lxrt_exit(void)
 {
-	unregister_reboot_notifier(&lxrt_notifier_reboot);
+	unregister_reboot_notifier(&lxrt_reboot_notifier);
 
 #if defined(CONFIG_GENERIC_CLOCKEVENTS) && CONFIG_RTAI_RTC_FREQ == 0
 	rt_linux_hrt_set_mode  = NULL;

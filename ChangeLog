@@ -1,3 +1,8 @@
+2009-02-21 Paolo Mantegazza <mantegazza@aero.polimi.it>
+
+	* base/arch/i386/calibration/smi-module.c: changes for far back
+	  2.6.xx compatibilty, added reboot notification support.
+
 2009-02-20 Pierangelo Masarati <masarati@aero.polimi.it>
 
 	* base/tasklets/signal.c: removed

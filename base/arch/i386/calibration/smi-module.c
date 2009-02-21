@@ -27,16 +27,12 @@
 #include <linux/module.h>
 #include <linux/pci.h>
 #include <linux/pci_ids.h>
+#include <linux/reboot.h>
 
 #include <rtai_wrappers.h>
 
 int smiReset = 0;
 RTAI_MODULE_PARM(smiReset, int);
-
-#if LINUX_VERSION_CODE < KERNEL_VERSION(2,6,0)
-#define pci_get_device(a, b, c)  pci_find_device(a, b, c)
-#define pci_dev_put(a)           do { /*nothing*/ } while(0)
-#endif
 
 /* set these as you need */
 #define CONFIG_RTAI_HW_SMI_ALL		1
@@ -49,12 +45,14 @@ RTAI_MODULE_PARM(smiReset, int);
 #define CONFIG_RTAI_HW_SMI_LEGACY_USB	0
 #define CONFIG_RTAI_HW_SMI_BIOS		0
 
-#if LINUX_VERSION_CODE < KERNEL_VERSION(2,6,11)
 #ifndef PCI_DEVICE_ID_INTEL_ICH7_0
 #define PCI_DEVICE_ID_INTEL_ICH7_0  0x27b8
-#define PCI_DEVICE_ID_INTEL_ICH7_1  0x27b9
-#define PCI_DEVICE_ID_INTEL_ICH8_4 0x2815
 #endif
+#ifndef PCI_DEVICE_ID_INTEL_ICH7_1
+#define PCI_DEVICE_ID_INTEL_ICH7_1  0x27b9
+#endif
+#ifndef PCI_DEVICE_ID_INTEL_ICH8_4
+#define PCI_DEVICE_ID_INTEL_ICH8_4 0x2815
 #endif
 
 
@@ -88,6 +86,11 @@ pci.ids database, ICH5-M ?)
 
 #define DEVFN        0xf8 /* device 31, function 0 */
     
+#if LINUX_VERSION_CODE < KERNEL_VERSION(2,6,0)
+#define pci_get_device(a, b, c)  pci_find_device(a, b, c)
+#define pci_dev_put(a)           do { /*nothing*/ } while(0)
+#endif
+
 #define PMBASE_B0    0x40
 #define PMBASE_B1    0x41
 
@@ -148,11 +151,31 @@ static struct pci_dev *smi_dev;
 #define mask_bits(v, p)  outl(inl(p) & ~(v), (p))
 #define  set_bits(v, p)  outl(inl(p) |  (v), (p))
 
+static int rtai_smi_notify_reboot(struct notifier_block *nb, unsigned long event, void *p)
+{
+	switch (event) {
+		case SYS_DOWN:
+		case SYS_HALT:
+		case SYS_POWER_OFF:
+		if (hal_smi_en_addr) {
+			set_bits(hal_smi_saved_bits, hal_smi_en_addr);
+		}
+	}
+	return NOTIFY_DONE;
+}
+
+static struct notifier_block rtai_smi_reboot_notifier = {
+        .notifier_call  = &rtai_smi_notify_reboot,
+        .next           = NULL,
+        .priority       = 0
+};
+
 void hal_smi_restore(void)
 {
 	if (hal_smi_en_addr) {
 		set_bits(hal_smi_saved_bits, hal_smi_en_addr);
 		pci_dev_put(smi_dev);
+		unregister_reboot_notifier(&rtai_smi_reboot_notifier);
 	}
 }
 
@@ -161,6 +184,7 @@ void hal_smi_disable(void)
  	if (hal_smi_en_addr) {
 		hal_smi_saved_bits = inl(hal_smi_en_addr) & hal_smi_masked_bits;
 		mask_bits(hal_smi_masked_bits, hal_smi_en_addr);
+		register_reboot_notifier(&rtai_smi_reboot_notifier);
 	}
 }
 

@@ -249,7 +249,7 @@ static struct file_operations rtai_shm_fops = {
 };
 
 static struct miscdevice rtai_shm_dev = 
-	{ RTAI_SHM_MISC_MINOR, "RTAI_SHM", &rtai_shm_fops };
+	{ RTAI_SHM_MISC_MINOR, "rtai_shm", &rtai_shm_fops };
 
 #ifdef CONFIG_RTAI_MALLOC
 

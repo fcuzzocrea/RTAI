@@ -37,10 +37,20 @@ host_triplet = @host@
 @CONFIG_ARCH_PXA_TRUE@		arch-pxa/rtai_exports.h \
 @CONFIG_ARCH_PXA_TRUE@		arch-pxa/rtai_timer.h
 
-@CONFIG_ARCH_EP9301_TRUE@am__append_2 = \
+@CONFIG_ARCH_IMX_TRUE@am__append_2 = \
+@CONFIG_ARCH_IMX_TRUE@		arch-imx/rtai_arch.h \
+@CONFIG_ARCH_IMX_TRUE@		arch-imx/rtai_exports.h \
+@CONFIG_ARCH_IMX_TRUE@		arch-imx/rtai_timer.h
+
+@CONFIG_ARCH_EP9301_TRUE@am__append_3 = \
 @CONFIG_ARCH_EP9301_TRUE@		arch-ep9301/rtai_arch.h \
 @CONFIG_ARCH_EP9301_TRUE@		arch-ep9301/rtai_exports.h \
 @CONFIG_ARCH_EP9301_TRUE@		arch-ep9301/rtai_timer.h
+
+@CONFIG_ARCH_AT91_TRUE@am__append_4 = \
+@CONFIG_ARCH_AT91_TRUE@		arch-at91/rtai_arch.h \
+@CONFIG_ARCH_AT91_TRUE@		arch-at91/rtai_exports.h \
+@CONFIG_ARCH_AT91_TRUE@		arch-at91/rtai_timer.h
 
 subdir = base/include/asm-arm
 DIST_COMMON = $(am__nobase_include_HEADERS_DIST) \
@@ -61,8 +71,11 @@ am__nobase_include_HEADERS_DIST = rtai_atomic.h rtai_fpu.h rtai.h \
 	rtai_hal.h rtai_lxrt.h rtai_oldnames.h rtai_sched.h rtai_shm.h \
 	rtai_srq.h rtai_usi.h rtai_vectors.h arch-pxa/rtai_arch.h \
 	arch-pxa/rtai_exports.h arch-pxa/rtai_timer.h \
-	arch-ep9301/rtai_arch.h arch-ep9301/rtai_exports.h \
-	arch-ep9301/rtai_timer.h
+	arch-imx/rtai_arch.h arch-imx/rtai_exports.h \
+	arch-imx/rtai_timer.h arch-ep9301/rtai_arch.h \
+	arch-ep9301/rtai_exports.h arch-ep9301/rtai_timer.h \
+	arch-at91/rtai_arch.h arch-at91/rtai_exports.h \
+	arch-at91/rtai_timer.h
 am__vpath_adj_setup = srcdirstrip=`echo "$(srcdir)" | sed 's|.|.|g'`;
 am__vpath_adj = case $$p in \
     $(srcdir)/*) f=`echo "$$p" | sed "s|^$$srcdirstrip/||"`;; \
@@ -241,7 +254,8 @@ top_builddir = @top_builddir@
 top_srcdir = @top_srcdir@
 nobase_include_HEADERS = rtai_atomic.h rtai_fpu.h rtai.h rtai_hal.h \
 	rtai_lxrt.h rtai_oldnames.h rtai_sched.h rtai_shm.h rtai_srq.h \
-	rtai_usi.h rtai_vectors.h $(am__append_1) $(am__append_2)
+	rtai_usi.h rtai_vectors.h $(am__append_1) $(am__append_2) \
+	$(am__append_3) $(am__append_4)
 EXTRA_DIST = rtai_hal.immed rtai_hal.piped
 all: all-am
 

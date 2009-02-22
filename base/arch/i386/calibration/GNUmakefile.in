@@ -691,7 +691,7 @@ install-data-local:
 	$(mkinstalldirs) $(DESTDIR)$(calibrationdir) $(DESTDIR)$(bindir)
 	$(INSTALL_DATA) $(srcdir)/runinfo $(DESTDIR)$(calibrationdir)/.runinfo
 	@echo '#!/bin/sh' > $(DESTDIR)$(calibrationdir)/run
-	@echo "\$${DESTDIR}$(prefix)/bin/rtai-load \$$*" >> $(DESTDIR)$(calibrationdir)/run
+	@echo "\$${DESTDIR}$(bindir)/rtai-load \$$*" >> $(DESTDIR)$(calibrationdir)/run
 	@chmod +x $(DESTDIR)$(calibrationdir)/run
 	$(INSTALL_SCRIPT) -m 755 setsmi $(DESTDIR)$(bindir)
 	@$(LN_S) -f $(bindir)/setsmi $(DESTDIR)$(bindir)/rstsmi

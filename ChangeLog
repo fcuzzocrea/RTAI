@@ -1,3 +1,9 @@
+2009-02-27 Torsten Koschorrek <devel@koschorrek.com>
+
+	* base/sched/sched.c: move declaration of lnxtsk in rt_signal_wake_up
+	  within the following ifdef to avoid warnings.
+	* base/sched/sys.c: include oom.h only for Linux versions who have it.
+
 2009-02-22 Paolo Mantegazza <mantegazza@aero.polimi.it>
 
 	* base/ipc/shm/shm.c: use "rtai_shm" in place of "RTAI_SHM" in 

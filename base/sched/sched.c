@@ -2338,8 +2338,8 @@ static int lxrt_handle_trap(int vec, int signo, struct pt_regs *regs, void *dumm
 static inline void rt_signal_wake_up(RT_TASK *task)
 {
 	if (task->state && task->state != RT_SCHED_READY) {
-		struct task_struct *lnxtsk;
 #ifdef TASK_NOWAKEUP
+		struct task_struct *lnxtsk;
 		if ((lnxtsk = task->lnxtsk)->state & TASK_HARDREALTIME) {
 			set_task_state(lnxtsk, lnxtsk->state | TASK_NOWAKEUP);
 		}

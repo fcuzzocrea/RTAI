@@ -1,3 +1,9 @@
+2009-02-27 Paolo Mantegazza <mantegazza@aero.polimi.it>
+
+	* base/include/rtai_signal.h: use RTAI_PROTO in place of static
+	  inlines to allow its inclusion in libs.
+	* base/sched/liblxrt/services.c: include rtai_signal.h in the lib.
+
 2009-02-27 Torsten Koschorrek <devel@koschorrek.com>
 
 	* base/sched/sched.c: move declaration of lnxtsk in rt_signal_wake_up

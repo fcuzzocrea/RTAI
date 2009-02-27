@@ -87,7 +87,7 @@ static void signal_suprt_fun(struct sigsuprt_t *funarg)
 
 #endif /* __SIGNAL_SUPPORT_FUN__ */
 
-static inline int rt_request_signal(long signal, void (*sighdl)(long, RT_TASK *))
+RTAI_PROTO(int, rt_request_signal, (long signal, void (*sighdl)(long, RT_TASK *)))
 {
 	if (signal >= 0 && sighdl) {
 		struct sigsuprt_t arg = { NULL, rt_buddy(), signal, sighdl };
@@ -99,25 +99,25 @@ static inline int rt_request_signal(long signal, void (*sighdl)(long, RT_TASK *)
 	return -EINVAL;
 }
 
-static inline int rt_release_signal(long signal, RT_TASK *task)
+RTAI_PROTO(int, rt_release_signal, (long signal, RT_TASK *task))
 {
 	struct { long signal; RT_TASK *task; } arg = { signal, task };
 	return rtai_lxrt(RTAI_SIGNALS_IDX, SIZARG, RT_SIGNAL_RELEASE, &arg).i[LOW];
 }
 
-static inline void rt_enable_signal(long signal, RT_TASK *task)
+RTAI_PROTO(void, rt_enable_signal, (long signal, RT_TASK *task))
 {
 	struct { long signal; RT_TASK *task; } arg = { signal, task };
 	rtai_lxrt(RTAI_SIGNALS_IDX, SIZARG, RT_SIGNAL_ENABLE, &arg);
 }
 
-static inline void rt_disable_signal(long signal, RT_TASK *task)
+RTAI_PROTO(void, rt_disable_signal, (long signal, RT_TASK *task))
 {
 	struct { long signal; RT_TASK *task; } arg = { signal, task };
 	rtai_lxrt(RTAI_SIGNALS_IDX, SIZARG, RT_SIGNAL_DISABLE, &arg);
 }
 
-static inline void rt_trigger_signal(long signal, RT_TASK *task)
+RTAI_PROTO(void, rt_trigger_signal, (long signal, RT_TASK *task))
 {
 	struct { long signal; RT_TASK *task; } arg = { signal, task };
 	rtai_lxrt(RTAI_SIGNALS_IDX, SIZARG, RT_SIGNAL_TRIGGER, &arg);

@@ -25,6 +25,7 @@
 #define CONFIG_RTAI_LXRT_INLINE 0
 #include <malloc.h>
 #include <rtai_lxrt.h>
+#include <rtai_signal.h>
 #include <rtai_schedcore.h>
 #include <rtai_posix.h>
 #ifdef CONFIG_RTAI_DRIVERS_SERIAL

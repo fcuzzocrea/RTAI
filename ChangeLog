@@ -1,3 +1,7 @@
+2009-03-04 Paolo Mantegazza <mantegazza@aero.polimi.it>
+
+	* base/sched/sched.c: disable OOM for all of the RTAI kernel threads.
+
 2009-03-03 Valentin Pavlyuchenko <TheValik@gmail.com>
            Paolo Mantegazza <mantegazza@aero.polimi.it>
 

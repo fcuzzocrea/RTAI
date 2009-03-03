@@ -42,7 +42,7 @@
 #include <rtai_mbx.h>
 #include <rtai_fifos.h>
 
-#define RTAILAB_VERSION         "3.6.2"
+#define RTAILAB_VERSION         "3.6.3"
 #define MAX_ADR_SRCH      500
 #define MAX_NAME_SIZE     256
 #define MAX_SCOPES        100
@@ -231,9 +231,9 @@ static unsigned long TimingEventArg;
 
 int NAME(MODEL,_init)(void);
 int NAME(MODEL,_isr)(double);
-int NAME(MODEL,_end )(void);
-double get_tsamp(void);
-double get_tsamp_delay(void);
+int NAME(MODEL,_end)(void);
+double NAME(MODEL,_get_tsamp)(void);
+double NAME(MODEL,_get_tsamp_delay)(void);
 
 extern int NTOTRPAR;
 extern int NTOTIPAR;
@@ -404,7 +404,7 @@ static void *rt_HostInterface(void *args)
 	    rt_receivex(task, &Idx, sizeof(int), &len);
 	    rt_returnx(task, rtaiScope[Idx].name, MAX_NAME_SIZE);
 	    rt_receivex(task, &Idx, sizeof(int), &len);
-	    samplingTime = get_tsamp();
+	    samplingTime = NAME(MODEL,_get_tsamp)();
 	    rt_returnx(task, &samplingTime, sizeof(float));
 	  }
 	}
@@ -420,7 +420,7 @@ static void *rt_HostInterface(void *args)
 	    rt_receivex(task, &Idx, sizeof(int), &len);
 	    rt_returnx(task, rtaiLogData[Idx].name, MAX_NAME_SIZE);
 	    rt_receivex(task, &Idx, sizeof(int), &len);
-	    samplingTime = get_tsamp();
+	    samplingTime = NAME(MODEL,_get_tsamp)();
 	    rt_returnx(task, &samplingTime, sizeof(float));
 	  }
 	}
@@ -436,7 +436,7 @@ static void *rt_HostInterface(void *args)
 	    rt_receivex(task, &Idx, sizeof(int), &len);
 	    rt_returnx(task, rtaiALogData[Idx].name, MAX_NAME_SIZE);
 	    rt_receivex(task, &Idx, sizeof(int), &len);
-	    samplingTime = get_tsamp();
+	    samplingTime = NAME(MODEL,_get_tsamp)();
 	    rt_returnx(task, &samplingTime, sizeof(float));
 	  }
 	}
@@ -450,7 +450,7 @@ static void *rt_HostInterface(void *args)
 	    rt_receivex(task, &Idx, sizeof(int), &len);
 	    rt_returnx(task, rtaiLed[Idx].name, MAX_NAME_SIZE);
 	    rt_receivex(task, &Idx, sizeof(int), &len);
-	    samplingTime = get_tsamp();
+	    samplingTime = NAME(MODEL,_get_tsamp)();
 	    rt_returnx(task, &samplingTime, sizeof(float));
 	  }
 	}
@@ -462,7 +462,7 @@ static void *rt_HostInterface(void *args)
 	  } else {
 	    rt_returnx(task, rtaiMeter[Idx].name, MAX_NAME_SIZE);
 	    rt_receivex(task, &Idx, sizeof(int), &len);
-	    samplingTime = get_tsamp();
+	    samplingTime = NAME(MODEL,_get_tsamp)();
 	    rt_returnx(task, &samplingTime, sizeof(float));
 	  }
 	}
@@ -474,7 +474,7 @@ static void *rt_HostInterface(void *args)
 	  } else {
 	    rt_returnx(task, "", MAX_NAME_SIZE);
 	    rt_receivex(task, &Idx, sizeof(int), &len);
-	    samplingTime = get_tsamp();
+	    samplingTime = NAME(MODEL,_get_tsamp)();
 	    rt_returnx(task, &samplingTime, sizeof(float));
 	  }
 	}
@@ -627,7 +627,7 @@ static int rt_Main(int priority)
     goto finish;
   }
 
-  rt_BaseTaskPeriod = (RTIME) (1e9*get_tsamp());
+  rt_BaseTaskPeriod = (RTIME) (1e9*(NAME(MODEL,_get_tsamp)()));
   if (InternTimer) {
     WaitTimingEvent = (void *)rt_task_wait_period;
     if (!(hard_timers_cnt = rt_get_adr(nam2num("HTMRCN")))) {
@@ -655,7 +655,7 @@ static int rt_Main(int priority)
   if (verbose) {
     printf("Model : %s .\n", STR(MODEL));
     printf("Executes on CPU map : %x.\n", CpuMap);
-    printf("Sampling time : %e (s).\n", get_tsamp());
+    printf("Sampling time : %e (s).\n", NAME(MODEL,_get_tsamp)());
   }
   {
     int msg;

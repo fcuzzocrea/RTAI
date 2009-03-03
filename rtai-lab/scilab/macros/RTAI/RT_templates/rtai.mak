@@ -14,7 +14,7 @@ CC = gcc
 CC_OPTIONS = -O -DNDEBUG -Dlinux -DNARROWPROTO -D_GNU_SOURCE
 
 MODEL = $$MODEL$$
-OBJSSTAN = rtmain.o $$MODEL$$.o $$OBJ$$
+OBJSSTAN = rtmain.o common.o $$MODEL$$.o $$OBJ$$
 
 SCILIBS = $(SCIDIR)/libs/scicos.a $(SCIDIR)/libs/poly.a $(SCIDIR)/libs/calelm.a $(SCIDIR)/libs/blas.a $(SCIDIR)/libs/lapack.a $(SCIDIR)/libs/os_specific.a
 OTHERLIBS = 

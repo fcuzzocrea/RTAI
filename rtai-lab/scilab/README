@@ -10,7 +10,6 @@ After installing RTAI and RTAI-Lab simply go in the folder "macros" and run:
 1) make install (as superuser)
 2) the each scilab user must run "make user" to install the startup script.
 
-Old RTAI Scicos block diagrams are no more supported with the new approach implemented in this new release. I'm sorry for this (little) problem. Old RTAI-Lib blocks must simply be substituted with the new ones!
+roberto.bucher@supsi.ch, 26.02.2008
 
-The user can now implement his own "template makefile" under "<scilab_dir>/macros/RTAI/RT_templates. The new scicos menu "Set Target"  allows to link a template makefile to a scicos block diagram. The name of the "target" is the same as the template makefile (rtai.mak -> rtai).
 

@@ -1,3 +1,18 @@
+2009-03-03 Roberto Bucher <roberto.bucher@supsi.ch>
+
+	* rtai-lab/README_X64: Patches for efltk 64 bit. Thanks to Laurent
+	  Boudou.
+	* rtai-lab/GNUmakefile.am: Addes scilab5 folder
+	* rtai-lab/xrtailab.cpp: Some patches. Thanks to Marco Morandini.
+	* rtai-lab/scilab5/*: Added support for Scilab-5.x
+	* rtai-lab/scilab/*: Changed some files to increase the name size.
+	* rtai-lab/scilab/rtmain.c: Support for multithreading code 
+	  generation.
+	* rtai-lab/scilab/macros/RTAI/RTAICodeGen_.sci: Multithread code
+	  generation.
+	* rtai-lab/scilab/macros/RTAI/RT_templates/*: Multithread code
+	  generation.
+
 2009-02-27 Paolo Mantegazza <mantegazza@aero.polimi.it>
 
 	* base/include/rtai_signal.h: use RTAI_PROTO in place of static

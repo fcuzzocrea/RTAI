@@ -1,3 +1,9 @@
+2009-03-02 Valentin Pavlyuchenko <TheValik@gmail.com>
+           Paolo Mantegazza <mantegazza@aero.polimi.it>
+
+	* base/sched/sched.c and base/include/rtai_schedcore.h: fix annying
+	  warnings when softlock debugging is configured in Linux.
+
 2009-03-03 Roberto Bucher <roberto.bucher@supsi.ch>
 
 	* rtai-lab/README_X64: Patches for efltk 64 bit. Thanks to Laurent

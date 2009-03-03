@@ -2084,10 +2084,19 @@ static void kthread_fun(int cpuid)
 #define WAKE_UP_TASKs(klist) \
 do { \
 	struct klist_t *p = &klist[cpuid]; \
+	struct task_struct *task; \
 	while (p->out != p->in) { \
-		wake_up_process(p->task[p->out++ & (MAX_WAKEUP_SRQ - 1)]); \
+		task = p->task[p->out++ & (MAX_WAKEUP_SRQ - 1)]; \
+		set_task_state(task, TASK_UNINTERRUPTIBLE); \
+		wake_up_process(task); \
 	} \
 } while (0)
+
+#define WAKE_UP_THREADM(thread) \
+	do { \
+		set_task_state(thread, TASK_UNINTERRUPTIBLE); \
+		wake_up_process(thread); \
+	} while (0)
 
 static void kthread_m(int cpuid)
 {
@@ -2301,7 +2310,7 @@ static void wake_up_srq_handler(unsigned srq)
 #if !defined(CONFIG_SMP) || LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,0)
 	WAKE_UP_TASKs(wake_up_hts);
 #else
-	wake_up_process(kthreadm[cpuid]);
+	WAKE_UP_THREADM(kthreadm[cpuid]);
 #endif
 	WAKE_UP_TASKs(wake_up_srq);
 	set_need_resched();
@@ -2813,7 +2822,7 @@ static int lxrt_init(void)
 		kernel_thread((void *)kthread_m, (void *)(long)cpuid, 0);
 		down(&resem[cpuid]);
 		klistm[cpuid].in = (2*Reservoir) & (MAX_WAKEUP_SRQ - 1);
-		wake_up_process(kthreadm[cpuid]);
+		WAKE_UP_THREADM(kthreadm[cpuid]);
 	}
 
 	for (cpuid = 0; cpuid < MAX_LXRT_FUN; cpuid++) {
@@ -2870,7 +2879,7 @@ static void lxrt_exit(void)
 
 	endkthread = 1;
 	for (cpuid = 0; cpuid < num_online_cpus(); cpuid++) {
-		wake_up_process(kthreadm[cpuid]);
+		WAKE_UP_THREADM(kthreadm[cpuid]);
 		while (kthreadm[cpuid]) {
 			current->state = TASK_INTERRUPTIBLE;
 			schedule_timeout(2);

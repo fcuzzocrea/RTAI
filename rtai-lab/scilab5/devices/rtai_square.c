@@ -18,63 +18,40 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA.
 
 #include <machine.h>
 #include <scicos_block4.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <rtai_netrpc.h>
-#include <rtai_msg.h>
-#include <rtai_mbx.h>
-#include <string.h>
-#include "rtmain.h"
-
-#define MAX_RTAI_METERS               1000
-#define MBX_RTAI_METER_SIZE           5000
-
-extern char *TargetMeterMbxID;
 
 void par_getstr(char * str, int par[], int init, int len);
 
 static void init(scicos_block *block)
 {
-  int * ipar = GetIparPtrs(block);
-
-  char meterName[20];
-  char name[7];
-  MBX *mbx;
-
-  par_getstr(meterName,ipar,1,ipar[0]);
-  rtRegisterMeter(meterName,1);
-  get_a_name(TargetMeterMbxID,name);
-
-  mbx = (MBX *) RT_typed_named_mbx_init(0,0,name,MBX_RTAI_METER_SIZE/sizeof(float)*sizeof(float),FIFO_Q);
-  if(mbx == NULL) {
-    fprintf(stderr, "Cannot init mailbox\n");
-    exit_on_error();
-  }
-
-  *block->work = mbx;
+  double *y = GetRealOutPortPtrs(block,1);
+ 
+  y[0] = 0.0;
 }
 
 static void inout(scicos_block *block)
 {
-  double *u = block->inptr[0];
-  MBX * mbx = *(block->work);
-  float data;
-  data = (float) u[0];
-  RT_mbx_send_if(0, 0, mbx, &data, sizeof(data));
+  double v;
+  double * rpar =  GetRparPtrs(block);
+  double t = get_scicos_time();
+  double *y = GetRealOutPortPtrs(block,1);
+
+  if (t<rpar[4]) y[0]=0.0;
+  else {
+    v=(t-rpar[4])/rpar[1];
+    v=(v - (int) v) * rpar[1];
+    if(v < rpar[2]) y[0] = rpar[3]+rpar[0];
+    else            y[0] = rpar[3];
+  }
 }
 
 static void end(scicos_block *block)
 {
-  char meterName[10];
-  int * ipar = GetIparPtrs(block);
-  MBX * mbx = (MBX *) (*block->work);
+  double *y = GetRealOutPortPtrs(block,1);
 
-  RT_named_mbx_delete(0, 0, mbx);
-  par_getstr(meterName,ipar,1,ipar[0]);
-  printf("Meter %s closed\n",meterName);
+  y[0] = 0.0;
 }
 
-void rtmeter(scicos_block *block,int flag)
+void rtsquare(scicos_block *block,int flag)
 {
   if (flag==1){          /* set output */
     inout(block);

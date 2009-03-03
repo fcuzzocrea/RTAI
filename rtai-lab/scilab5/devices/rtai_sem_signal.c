@@ -26,87 +26,68 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA.
 #include <arpa/inet.h>
 
 #include <rtai_netrpc.h>
-#include <rtai_mbx.h>
+#include <rtai_sem.h>
 
-struct MbxRif{
-  char mbxName[20];
-  MBX * mbx;
+struct Sems{
+  char semName[20];
+  SEM * sem;
   long tNode;
   long tPort;
-  double * oldVal;
 };
 
 static void init(scicos_block *block)
 {
   char str[20];
-  struct MbxRif * mbx = (struct MbxRif *) malloc(sizeof(struct MbxRif));
-  int nch=block->nout;
+  struct Sems * sem = (struct Sems *) malloc(sizeof(struct Sems));
+
   par_getstr(str,block->ipar,2,block->ipar[0]);
-  strcpy(mbx->mbxName,str);
+  strcpy(sem->semName,str);
   par_getstr(str,block->ipar,2+block->ipar[0],block->ipar[1]);
 
   struct sockaddr_in addr;
 
   if(!strcmp(str,"0")) {
-    mbx->tNode = 0;
-    mbx->tPort = 0;
+    sem->tNode = 0;
+    sem->tPort = 0;
   }
   else {
     inet_aton(str, &addr.sin_addr);
-    mbx->tNode = addr.sin_addr.s_addr;
-    while ((mbx->tPort = rt_request_port(mbx->tNode)) <= 0
-           && mbx->tPort != -EINVAL);
+    sem->tNode = addr.sin_addr.s_addr;
+    while ((sem->tPort = rt_request_port(sem->tNode)) <= 0
+           && sem->tPort != -EINVAL);
   }
 
-  mbx->mbx = (MBX *) RT_typed_named_mbx_init(mbx->tNode,mbx->tPort,mbx->mbxName,nch*sizeof(double),FIFO_Q);
-
-  if(mbx->mbx == NULL) {
-    fprintf(stderr, "Error in getting %s mailbox address\n", mbx->mbxName);
+  sem->sem = RT_typed_named_sem_init(sem->tNode,sem->tPort,sem->semName, 0, CNT_SEM);
+  if(sem->sem == NULL) {
+    fprintf(stderr, "Error in getting %s semaphore address\n", sem->semName);
     exit_on_error();
   }
-  mbx->oldVal = calloc(nch,sizeof(double));
 
-  *block->work=(void *) mbx;
+  *block->work=(void *) sem;
 }
 
 static void inout(scicos_block *block)
 {
-  struct MbxRif * mbx = (struct MbxRif *) (*block->work);
-  int ntraces = block->nout;
-  double *y;
-
-  struct{
-    double u[ntraces];
-  } data;
-  int i;
-
-  if(!RT_mbx_receive_if(mbx->tNode, mbx->tPort, mbx->mbx, &data, sizeof(data))) {
-    for(i=0;i<ntraces;i++){
-      mbx->oldVal[i] = data.u[i];
-    }
-  }
-  for(i=0;i<ntraces;i++) {
-    y = block->outptr[i];
-    y[0] = mbx->oldVal[i];
-  }
+  double *u = block->inptr[0];
+  struct Sems * sem = (struct Sems *) (*block->work);
+  int ret;
+  if(u[0] > 0.0) ret = RT_sem_signal(sem->tNode, sem->tPort,sem->sem);
 }
 
 static void end(scicos_block *block)
 {
-  struct MbxRif * mbx = (struct MbxRif *) (*block->work);
-
-  RT_named_mbx_delete(mbx->tNode, mbx->tPort,mbx->mbx);
-  printf("MBX %s closed\n",mbx->mbxName);
-  if(mbx->tNode){
-    rt_release_port(mbx->tNode,mbx->tPort);
+  struct Sems * sem = (struct Sems *) (*block->work);
+  RT_named_sem_delete(sem->tNode, sem->tPort,sem->sem);
+  if(sem->tNode){
+    rt_release_port(sem->tNode, sem->tPort);
   }
-  free(mbx->oldVal);
-  free(mbx);
+  printf("SEM %s closed\n",sem->semName);
+  free(sem);
 }
 
-void rtai_mbx_rcv_if(scicos_block *block,int flag)
+void rtai_sem_signal(scicos_block *block,int flag)
 {
-  if (flag==1){          /* set output */
+  if (flag==1){          /* get input */
     inout(block);
   }
   else if (flag==5){     /* termination */ 

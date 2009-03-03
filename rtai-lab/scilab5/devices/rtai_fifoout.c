@@ -19,78 +19,43 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA.
 #include <machine.h>
 #include <scicos_block4.h>
 #include <stdio.h>
-#include <stdlib.h>
-#include <rtai_netrpc.h>
-#include <rtai_msg.h>
-#include <rtai_mbx.h>
-#include <string.h>
-#include "rtmain.h"
-
-#define MAX_RTAI_SCOPES               1000
-#define MBX_RTAI_SCOPE_SIZE           5000
-
-extern char *TargetMbxID;
-
-void par_getstr(char * str, int par[], int init, int len);
+#include <rtai_fifos.h>
 
 static void init(scicos_block *block)
 {
-  char scopeName[20];
-  char name[7];
-  int nch = GetNin(block);
-  int * ipar = GetIparPtrs(block);
-  int nt = nch+1;
-  MBX *mbx;
-
-  int i;
-
-  par_getstr(scopeName,ipar,1,ipar[0]);
-  rtRegisterScope(scopeName,nch);
-  get_a_name(TargetMbxID,name);
-
-  mbx = (MBX *) RT_typed_named_mbx_init(0,0,name,(MBX_RTAI_SCOPE_SIZE/(nt*sizeof(float)))*(nt*sizeof(float)),FIFO_Q);
-  if(mbx == NULL) {
-    fprintf(stderr, "Cannot init mailbox\n");
-    exit_on_error();
-  }
-
-  *(block->work) = mbx;
+  rtf_create(block->ipar[0],block->ipar[1]);
+  rtf_reset(block->ipar[0]);
 }
 
 static void inout(scicos_block *block)
 {
   double *u;
-
-  MBX * mbx = *(block->work);
-  int ntraces=GetNin(block);
+  int ntraces=block->nin;
   struct {
     float t;
     float u[ntraces];
   } data;
   int i;
 
-  double t=get_scicos_time();
-  data.t=(float) t;
+  data.t=(float) get_scicos_time();
   for (i = 0; i < ntraces; i++) {
-    u = block->inptr[i];
+    u=block->inptr[i];
     data.u[i] = (float) u[0];
   }
-  RT_mbx_send_if(0, 0, mbx, &data, sizeof(data));
+  rtf_put(block->ipar[0],&data, sizeof(data));
 }
 
 static void end(scicos_block *block)
 {
-  char scopeName[10];
-  int * ipar = GetIparPtrs(block);
-  MBX * mbx = *(block->work);
-  RT_named_mbx_delete(0, 0, mbx);
-  par_getstr(scopeName,ipar,1,ipar[0]);
-  printf("Scope %s closed\n",scopeName);
+  rtf_destroy(block->ipar[0]);
+  printf("FIFO %d closed\n",block->ipar[0]);
 }
 
-void rtscope(scicos_block *block,int flag)
+
+
+void rt_fifoout(scicos_block *block,int flag)
 {
-  if (flag==1){          
+  if (flag==1){          /* set output */
     inout(block);
   }
   else if (flag==5){     /* termination */ 

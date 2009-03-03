@@ -795,7 +795,7 @@ function  [ok,XX,alreadyran,flgcdgen,szclkINTemp,freof] = do_compile_superblock4
   archname=''; 
   Tsamp = sci2exp(eval(sTsamp));
   
-  template = 'board_flex'; //** default values for this version 
+  template = ''; //** default values for this version 
   
   if XX.model.rpar.props.void3 == [] then
 	target = 'rtai'; //** default compilation chain 
@@ -1250,8 +1250,8 @@ function [Code,Code_common]=make_standalone42()
         '#include <math.h>'
         '#include <string.h>'
         '#include <memory.h>'
-        '#include '"scicos_block4.h'"'
-        '#include '"machine.h'"'
+        '#include <scicos_block4.h>'
+        '#include <machine.h>'
         ''
 	'#ifdef linux'
 	'#define __CONST__'
@@ -1281,7 +1281,7 @@ function [Code,Code_common]=make_standalone42()
     Code=[Code
           '/* Code prototype for standalone use  */'
           'int C2F('+rdnom+'simblk)(double , double *, double *);'
-          'extern  integer C2F(dset)();'
+          'extern  int C2F(dset)();'
           'static int ode1();'
           'static int ode2();'
           'static int ode4();'
@@ -1937,13 +1937,6 @@ function [Code,Code_common]=make_standalone42()
                '/* ---- Headers ---- */'
                '#include <memory.h>'
                '#include '"machine.h'"'
-               ''
-               '/*'+part('-',ones(1,40))+'  Lapack messag function */';
-               'void C2F(xerbla)(SRNAME,INFO,L)'
-               '     char *SRNAME;'
-               '     int *INFO;'
-               '     long int L;'
-               '{}'
                ''
                'void set_block_error(int err)'
                '{'
@@ -2792,7 +2785,7 @@ function [txt]=write_code_cdoit(flag)
         //** C **//
         tmp_='*(('+TYPE+' *)'+rdnom+'_block_outtbptr['+string(ix)+'])'
         txt=[txt;
-             '  i=max(min((integer) '+...
+             '  i=max(min((int) '+...
               tmp_+',block_'+rdnom+'['+string(bk-1)+'].evout),1);'
              '  switch(i)'
              '  {']
@@ -2906,7 +2899,7 @@ function [txt]=write_code_doit(ev,flag)
         tmp_='*(('+TYPE+' *)'+rdnom+'_block_outtbptr['+string(ix)+'])'
         //** C **//
         txt=[txt;
-             '    i=max(min((integer) '+...
+             '    i=max(min((int) '+...
               tmp_+',block_'+rdnom+'['+string(bk-1)+'].evout),1);'
              '    switch(i)'
              '    {']
@@ -3020,7 +3013,7 @@ function [txt]=write_code_idoit()
         //** C **//
         tmp_='*(('+TYPE+' *)'+rdnom+'_block_outtbptr['+string(ix)+'])'
         txt=[txt;
-             '  i=max(min((integer) '+...
+             '  i=max(min((int) '+...
               tmp_+',block_'+rdnom+'['+string(bk-1)+'].evout),1);']
         txt=[txt;
              '  switch(i)'
@@ -3136,7 +3129,7 @@ function [txt]=write_code_odoit(flag)
         tmp_='*(('+TYPE+' *)'+rdnom+'_block_outtbptr['+string(ix)+'])'
         txt=[txt;
              '    if (block_'+rdnom+'['+string(bk-1)+'].nmode<0) {';
-             '      i=max(min((integer) '+...
+             '      i=max(min((int) '+...
                 tmp_+',block_'+rdnom+'['+string(bk-1)+'].evout),1);'
              '    }'
              '    else {'
@@ -3200,7 +3193,7 @@ function [files]=write_code(Code,CCode,FCode,Code_common)
     CCode = [
           '#include <math.h>';
           '#include <stdlib.h>';
-          '#include <scicos/scicos_block4.h>';
+          '#include <scicos_block4.h>';
 	  '';
 	  CCode];
     ierr=execstr('mputl(CCode,rpat+''/''+rdnom+''_Cblocks.c'')','errcatch')
@@ -3216,24 +3209,6 @@ function [files]=write_code(Code,CCode,FCode,Code_common)
   if ierr==0 then mclose(fd),files=[files,rdnom+'f'],end
   [fd,ierr]=mopen(rpat+'/'+rdnom+'_Cblocks.c','r')
   if ierr==0 then mclose(fd),files=[files,rdnom+'_Cblocks'],end
-
-  //** copy source code of machine.h/scicos_block4.h
-  //   in target path
-  txt=mgetl(SCI+'/routines/machine.h');
-  ierr=execstr('mputl(txt,rpat+''/machine.h'')','errcatch')
-  if ierr<>0 then
-    message(lasterror())
-    ok=%f
-    return
-  end
-
-  txt=mgetl(SCI+'/routines/scicos/scicos_block4.h');
-  ierr=execstr('mputl(txt,rpat+''/scicos_block4.h'')','errcatch')
-  if ierr<>0 then
-    message(lasterror())
-    ok=%f
-    return
-  end
 
 endfunction
 

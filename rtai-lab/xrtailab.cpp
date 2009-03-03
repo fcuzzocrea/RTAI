@@ -2011,6 +2011,13 @@ static void rlg_update_after_connect(void)
 	Fl::unlock();
 }
 
+
+static Commands abort_connection(long Target_Port) {
+	RLG_Connect_Button->deactivate();
+	rt_release_port(Target_Node, Target_Port);
+	exit(1);
+}
+
 static void *rt_target_interface(void *args)
 {
 	unsigned int code, U_Request;
@@ -2087,6 +2094,13 @@ static void *rt_target_interface(void *args)
 						printf("Scope: %s\n", Scopes[n].name);
 						printf(" Number of traces...%d\n", Scopes[n].ntraces);
 						printf(" Sampling time...%f\n", Scopes[n].dt);
+						if (Scopes[n].dt <= 0.) {
+							printf("Fatal Error, Scope %s samplig time is equal to %f,\n", Scopes[n].name, Scopes[n].dt);
+							printf("while Rtai-lab needs a finite, positive sampling time\n");
+							printf("This error often occurs when the sampling time is inherited\n");
+							printf("from so-called time-continous simulink blocks\n");
+							abort_connection(Target_Port);
+						}
 					}
 				}
 				Num_Logs = get_log_blocks_info(Target_Port, If_Task, Preferences.Target_Log_Mbx_ID);
@@ -2097,6 +2111,13 @@ static void *rt_target_interface(void *args)
 						printf(" Number of rows...%d\n", Logs[n].nrow);
 						printf(" Number of cols...%d\n", Logs[n].ncol);
 						printf(" Sampling time...%f\n", Logs[n].dt);
+						if (Scopes[n].dt <= 0.) {
+							printf("Fatal Error, Scope %s samplig time is equal to %f,\n", Scopes[n].name, Scopes[n].dt);
+							printf("while Rtai-lab needs a finite, positive sampling time\n");
+							printf("This error often occurs when the sampling time is inherited\n");
+							printf("from so-called time-continous simulink blocks\n");
+							abort_connection(Target_Port);
+						}
 					}
 				}
 				Num_ALogs = get_alog_blocks_info(Target_Port, If_Task, Preferences.Target_ALog_Mbx_ID);
@@ -2107,6 +2128,13 @@ static void *rt_target_interface(void *args)
 						printf(" Number of rows...%d\n", ALogs[n].nrow);
 						printf(" Number of cols...%d\n", ALogs[n].ncol);
 						printf(" Sampling time...%f\n", ALogs[n].dt);
+						if (ALogs[n].dt <= 0.) {
+							printf("Fatal Error, Log %s samplig time is equal to %f,\n", ALogs[n].name, ALogs[n].dt);
+							printf("while Rtai-lab needs a finite, positive sampling time\n");
+							printf("This error often occurs when the sampling time is inherited\n");
+							printf("from so-called time-continous simulink blocks\n");
+							abort_connection(Target_Port);
+						}
 					}
 				}
 				Num_Leds = get_led_blocks_info(Target_Port, If_Task, Preferences.Target_Led_Mbx_ID);
@@ -2116,6 +2144,13 @@ static void *rt_target_interface(void *args)
 						printf("Led: %s\n", Leds[n].name);
 						printf(" Number of leds...%d\n", Leds[n].n_leds);
 						printf(" Sampling time...%f\n", Leds[n].dt);
+						if (Leds[n].dt <= 0.) {
+							printf("Fatal Error, Led %s samplig time is equal to %f,\n", Leds[n].name, Leds[n].dt);
+							printf("while Rtai-lab needs a finite, positive sampling time\n");
+							printf("This error often occurs when the sampling time is inherited\n");
+							printf("from so-called time-continous simulink blocks\n");
+							abort_connection(Target_Port);
+						}
 					}
 				}
 				Num_Meters = get_meter_blocks_info(Target_Port, If_Task, Preferences.Target_Meter_Mbx_ID);
@@ -2124,6 +2159,13 @@ static void *rt_target_interface(void *args)
 					for (int n = 0; n < Num_Meters; n++) {
 						printf("Meter: %s\n", Meters[n].name);
 						printf(" Sampling time...%f\n", Meters[n].dt);
+						if (Meters[n].dt <= 0.) {
+							printf("Fatal Error, Meter %s samplig time is equal to %f,\n", Meters[n].name, Meters[n].dt);
+							printf("while Rtai-lab needs a finite, positive sampling time\n");
+							printf("This error often occurs when the sampling time is inherited\n");
+							printf("from so-called time-continous simulink blocks\n");
+							abort_connection(Target_Port);
+						}
 					}
 				}
 				Num_Synchs = get_synch_blocks_info(Target_Port, If_Task, Preferences.Target_Synch_Mbx_ID);
@@ -2132,6 +2174,13 @@ static void *rt_target_interface(void *args)
 					for (int n = 0; n < Num_Synchs; n++) {
 						printf("Synchronoscope: %s\n", Synchs[n].name);
 						printf(" Sampling time...%f\n", Synchs[n].dt);
+						if (Synchs[n].dt <= 0.) {
+							printf("Fatal Error, Synchronoscope %s samplig time is equal to %f,\n", Synchs[n].name, Synchs[n].dt);
+							printf("while Rtai-lab needs a finite, positive sampling time\n");
+							printf("This error often occurs when the sampling time is inherited\n");
+							printf("from so-called time-continous simulink blocks\n");
+							abort_connection(Target_Port);
+						}
 					}
 				}
 				Is_Target_Connected = 1;

@@ -35,7 +35,7 @@ void par_getstr(char * str, int par[], int init, int len);
 
 static void init(scicos_block *block)
 {
-  char scopeName[10];
+  char scopeName[20];
   char name[7];
   int nch = GetNin(block);
   int * ipar = GetIparPtrs(block);

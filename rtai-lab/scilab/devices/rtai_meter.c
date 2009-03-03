@@ -37,7 +37,7 @@ static void init(scicos_block *block)
 {
   int * ipar = GetIparPtrs(block);
 
-  char meterName[10];
+  char meterName[20];
   char name[7];
   MBX *mbx;
 

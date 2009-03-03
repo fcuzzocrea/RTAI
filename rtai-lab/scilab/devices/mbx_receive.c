@@ -29,7 +29,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA.
 #include <rtai_mbx.h>
 
 struct MbxR{
-  char mbxName[10];
+  char mbxName[20];
   MBX * mbx;
   long tNode;
   long tPort;

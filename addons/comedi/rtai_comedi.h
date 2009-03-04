@@ -89,7 +89,7 @@
 #ifdef __KERNEL__ /* For kernel module build. */
 
 #include <linux/comedilib.h>
-#include <linux/comedidev.h>
+//#include <linux/comedidev.h>
 
 #ifdef __cplusplus
 extern "C" {

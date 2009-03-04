@@ -1,5 +1,11 @@
 2009-03-04 Paolo Mantegazza <mantegazza@aero.polimi.it>
 
+	* addons/comedi/kcomedi-module.c, rtai_comedi.h and README: upgraded
+	  to include async operations from user space, working but to be 
+	  refined.
+
+2009-03-04 Paolo Mantegazza <mantegazza@aero.polimi.it>
+
 	* base/sched/sched.c: disable OOM for all of the RTAI kernel threads.
 
 2009-03-03 Valentin Pavlyuchenko <TheValik@gmail.com>

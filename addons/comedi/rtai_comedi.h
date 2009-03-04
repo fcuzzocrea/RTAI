@@ -2,7 +2,7 @@
  * Copyright (C) 2002 Thomas Leibner (leibner@t-online.de) (first complete writeup)
  *               2002 David Schleef (ds@schleef.org) (COMEDI master)
  *               2002 Lorenzo Dozio (dozio@aero.polimi.it) (made it all work)
- *               2002 Paolo Mantegazza (mantegazza@aero.polimi.it) (hints/support)
+ *               2002-2008 Paolo Mantegazza (mantegazza@aero.polimi.it) (hints/support)
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -84,6 +84,8 @@
 #define _KCOMEDI_ALLOC_CMD  		41
 #define _KCOMEDI_FREE_CMD  		42
 
+#define _KCOMEDI_COMMAND_DATA_READ      43
+
 #ifdef __KERNEL__ /* For kernel module build. */
 
 #include <linux/comedilib.h>
@@ -92,19 +94,21 @@
 extern "C" {
 #endif /* __cplusplus */
 
-RTAI_SYSCALL_MODE int rt_comedi_register_callback(void *dev, unsigned int subdev, unsigned int mask, SEM *sem);
+RTAI_SYSCALL_MODE unsigned long rt_comedi_wait(void);
 
-RTAI_SYSCALL_MODE unsigned int rt_comedi_wait(SEM *sem, int *semcnt);
+RTAI_SYSCALL_MODE unsigned long rt_comedi_wait_if(void);
 
-RTAI_SYSCALL_MODE unsigned int rt_comedi_wait_if(SEM *sem, int *semcnt);
+RTAI_SYSCALL_MODE unsigned long rt_comedi_wait_until(RTIME until);
 
-RTAI_SYSCALL_MODE unsigned int rt_comedi_wait_until(SEM *sem, RTIME until, int *semcnt);
-
-RTAI_SYSCALL_MODE unsigned int rt_comedi_wait_timed(SEM *sem, RTIME delay, int *semcnt);
+RTAI_SYSCALL_MODE unsigned long rt_comedi_wait_timed(RTIME delay);
 
 RTAI_SYSCALL_MODE char *rt_comedi_get_driver_name(void *dev, char *name);
 
 RTAI_SYSCALL_MODE char *rt_comedi_get_board_name(void *dev, char *name);
+
+RTAI_SYSCALL_MODE int rt_comedi_register_callback(void *dev, unsigned int subdev, unsigned int mask, int (*callback)(unsigned int, void *), void *arg);
+
+RTAI_SYSCALL_MODE int rt_comedi_command_data_read (void *dev, unsigned int subdev, long nsampl, lsampl_t *data);
 
 #ifdef __cplusplus
 }
@@ -113,9 +117,13 @@ RTAI_SYSCALL_MODE char *rt_comedi_get_board_name(void *dev, char *name);
 #else  /* __KERNEL__ not defined */
 
 #include <string.h>
-#include <asm/rtai_lxrt.h>
-#include <rtai_shm.h>
 #include <linux/comedi.h>
+
+#include <asm/rtai_lxrt.h>
+#include <rtai_msg.h>
+#include <rtai_shm.h>
+
+typedef void comedi_t;
 
 #define COMEDI_LXRT_SIZARG sizeof(arg)
 
@@ -151,77 +159,83 @@ RTAI_PROTO(int, comedi_cancel,(void *dev, unsigned int subdev))
         return rtai_lxrt(FUN_COMEDI_LXRT_INDX, COMEDI_LXRT_SIZARG, _KCOMEDI_CANCEL, &arg).i[LOW];
 }
 
-RTAI_PROTO(int, rt_comedi_register_callback,(void *dev, unsigned int subdev, unsigned int mask, SEM *sem))
+RTAI_PROTO(int, rt_comedi_register_callback, (void *dev, unsigned int subdevice, unsigned int mask, int (*cb) (unsigned int, void *), void *task))
 {
-        struct { void *dev; unsigned long subdev; unsigned long mask; SEM *sem; } arg = { dev, subdev, mask, sem };
+        struct { void *dev; unsigned long subdevice; unsigned long mask; void *cb; void *task; } arg = { dev, subdevice, mask, NULL, task };
         return rtai_lxrt(FUN_COMEDI_LXRT_INDX, COMEDI_LXRT_SIZARG, _KCOMEDI_REGISTER_CALLBACK, &arg).i[LOW];
 }
 
-#define comedi_register_callback(dev, subdev, mask, cb, arg)  rt_comedi_register_callback(dev, subdev, mask, arg)
+#define comedi_register_callback(dev, subdev, mask, cb, arg)  rt_comedi_register_callback(dev, subdev, mask, NULL, arg)
 
-RTAI_PROTO(unsigned int, rt_comedi_wait,(SEM *sem, int *semcnt))
+RTAI_PROTO(unsigned int, rt_comedi_wait, (void))
 {
-	int lsemcnt;
-	unsigned int retval;
-        struct { SEM *sem; int *semcnt; long size; } arg = { sem, &lsemcnt, sizeof(int *) };
-        retval = rtai_lxrt(FUN_COMEDI_LXRT_INDX, COMEDI_LXRT_SIZARG, _KCOMEDI_WAIT, &arg).i[LOW];
-	if (semcnt) {
-		*semcnt = lsemcnt;
+        struct { long dummy; } arg = { 0 };
+        return rtai_lxrt(FUN_COMEDI_LXRT_INDX, COMEDI_LXRT_SIZARG, _KCOMEDI_WAIT, &arg).i[LOW];
+}
+
+RTAI_PROTO(unsigned int, rt_comedi_wait_if, (void))
+{
+        struct { long dummy; } arg = { 0 };
+        return rtai_lxrt(FUN_COMEDI_LXRT_INDX, COMEDI_LXRT_SIZARG, _KCOMEDI_WAIT_IF, &arg).i[LOW];
+}
+
+RTAI_PROTO(unsigned int, rt_comedi_wait_until, (RTIME until))
+{
+        struct { RTIME until; } arg = { until };
+        return rtai_lxrt(FUN_COMEDI_LXRT_INDX, COMEDI_LXRT_SIZARG, _KCOMEDI_WAIT_UNTIL, &arg).i[LOW];
+}
+
+RTAI_PROTO(unsigned int, rt_comedi_wait_timed, (RTIME delay))
+{
+        struct { RTIME delay; } arg = { delay };
+        return rtai_lxrt(FUN_COMEDI_LXRT_INDX, COMEDI_LXRT_SIZARG, _KCOMEDI_WAIT_TIMED, &arg).i[LOW];
+}
+
+RTAI_PROTO(int, comedi_command, (void *dev, comedi_cmd *cmd))
+{
+	comedi_cmd lcmd;
+	int retval;
+        struct { void *dev; comedi_cmd *cmd; } arg = { dev, &lcmd };
+	if (cmd) {
+		memcpy(&lcmd, cmd, sizeof(comedi_cmd));
+        	retval = rtai_lxrt(FUN_COMEDI_LXRT_INDX, COMEDI_LXRT_SIZARG, _KCOMEDI_COMMAND, &arg).i[LOW];
+		if (!retval) {
+			memcpy(cmd, &lcmd, sizeof(comedi_cmd));
+		}
+        	return retval;
 	}
-        return retval;
+	return -1;
 }
 
-RTAI_PROTO(unsigned int, rt_comedi_wait_if,(SEM *sem, int *semcnt))
+RTAI_PROTO(int, comedi_command_test, (void *dev, comedi_cmd *cmd))
 {
-	int lsemcnt;
-	unsigned int retval;
-        struct { SEM *sem; int *semcnt; long size; } arg = { sem, &lsemcnt, sizeof(int *) };
-        retval = rtai_lxrt(FUN_COMEDI_LXRT_INDX, COMEDI_LXRT_SIZARG, _KCOMEDI_WAIT_IF, &arg).i[LOW];
-	if (semcnt) {
-		*semcnt = lsemcnt;
+	comedi_cmd lcmd;
+	int retval;
+        struct { void *dev; comedi_cmd *cmd; } arg = { dev, &lcmd };
+	if (cmd) {
+		memcpy(&lcmd, cmd, sizeof(comedi_cmd));
+	        retval = rtai_lxrt(FUN_COMEDI_LXRT_INDX, COMEDI_LXRT_SIZARG, _KCOMEDI_COMMAND_TEST, &arg).i[LOW];
+		if (!retval) {
+			memcpy(cmd, &lcmd, sizeof(comedi_cmd));
+		}
+        	return retval;
 	}
-        return retval;
+	return -1;
 }
 
-RTAI_PROTO(unsigned int, rt_comedi_wait_until,(SEM *sem, RTIME until, int *semcnt))
-{
-	int lsemcnt;
-	unsigned int retval;
-        struct { SEM *sem; RTIME until; int *semcnt; long size; } arg = { sem, until, &lsemcnt, sizeof(int *) };
-        retval = rtai_lxrt(FUN_COMEDI_LXRT_INDX, COMEDI_LXRT_SIZARG, _KCOMEDI_WAIT_UNTIL, &arg).i[LOW];
-	if (semcnt) {
-		*semcnt = lsemcnt;
-	}
-        return retval;
-}
-
-RTAI_PROTO(unsigned int, rt_comedi_wait_timed,(SEM *sem, RTIME delay, int *semcnt))
-{
-	int lsemcnt;
-	unsigned int retval;
-        struct { SEM *sem; RTIME delay; int *semcnt; long size; } arg = { sem, delay, &lsemcnt, sizeof(int *) };
-        retval = rtai_lxrt(FUN_COMEDI_LXRT_INDX, COMEDI_LXRT_SIZARG, _KCOMEDI_WAIT_TIMED, &arg).i[LOW];
-	if (semcnt) {
-		*semcnt = lsemcnt;
-	}
-        return retval;
-}
-
-RTAI_PROTO(int, comedi_command,(void *dev, comedi_cmd *cmd))
-{
-        struct { void *dev; comedi_cmd *cmd; } arg = { dev, cmd };
-        return rtai_lxrt(FUN_COMEDI_LXRT_INDX, COMEDI_LXRT_SIZARG, _KCOMEDI_COMMAND, &arg).i[LOW];
-}
-
-RTAI_PROTO(int, comedi_command_test,(void *dev, comedi_cmd *cmd))
-{
-        struct { void *dev; comedi_cmd *cmd; } arg = { dev, cmd };
-        return rtai_lxrt(FUN_COMEDI_LXRT_INDX, COMEDI_LXRT_SIZARG, _KCOMEDI_COMMAND_TEST, &arg).i[LOW];
-}
-
-RTAI_PROTO(int, comedi_trigger,(void *dev, unsigned int subdev, comedi_trig *it))
+RTAI_PROTO(int, comedi_trigger, (void *dev, unsigned int subdev, comedi_trig *it))
 {
 	return -1;
+}
+
+RTAI_PROTO(int, rt_comedi_command_data_read, (void *dev, unsigned int subdev, long nsampl, lsampl_t *data))
+{
+	int retval;
+	lsampl_t ldata[nsampl];
+	struct { void *dev; unsigned long subdev; long nsampl; lsampl_t *data; } arg = { dev, subdev, nsampl, ldata };
+	retval = rtai_lxrt(FUN_COMEDI_LXRT_INDX, COMEDI_LXRT_SIZARG, _KCOMEDI_COMMAND_DATA_READ, &arg).i[LOW];
+	memcpy(data, &ldata, nsampl*sizeof(lsampl_t));
+	return retval;
 }
 
 RTAI_PROTO(int, comedi_data_write,(void *dev, unsigned int subdev, unsigned int chan, unsigned int range, unsigned int aref, lsampl_t data))
@@ -305,24 +319,22 @@ RTAI_PROTO(int, comedi_get_version_code,(void *dev))
         return rtai_lxrt(FUN_COMEDI_LXRT_INDX, COMEDI_LXRT_SIZARG, _KCOMEDI_GET_VERSION_CODE, &arg).i[LOW];
 }
 
-RTAI_PROTO(char *, rt_comedi_get_driver_name,(void *dev, char *name))
+RTAI_PROTO(char *, rt_comedi_get_driver_name, (void *dev, char *name))
 {
-	void *p;
         char lname[COMEDI_NAMELEN];
         struct { void *dev; char *name; } arg = { dev, lname };
-	if ((p = rtai_lxrt(FUN_COMEDI_LXRT_INDX, COMEDI_LXRT_SIZARG, _KCOMEDI_GET_DRIVER_NAME, &arg).v[LOW])) {
+	if ((char *)rtai_lxrt(FUN_COMEDI_LXRT_INDX, COMEDI_LXRT_SIZARG, _KCOMEDI_GET_DRIVER_NAME, &arg).v[LOW] == lname) {
 		strncpy(name, lname, COMEDI_NAMELEN);
 		return name;
 	}
 	return 0;
 }
 
-RTAI_PROTO(char *, rt_comedi_get_board_name,(void *dev, char *name))
+RTAI_PROTO(char *, rt_comedi_get_board_name, (void *dev, char *name))
 {
-	void *p;
         char lname[COMEDI_NAMELEN];
         struct { void *dev; char *name; } arg = { dev, lname };
-	if ((p = rtai_lxrt(FUN_COMEDI_LXRT_INDX, COMEDI_LXRT_SIZARG, _KCOMEDI_GET_BOARD_NAME, &arg).v[LOW])) {
+	if ((char *)rtai_lxrt(FUN_COMEDI_LXRT_INDX, COMEDI_LXRT_SIZARG, _KCOMEDI_GET_BOARD_NAME, &arg).v[LOW] == lname) {
 		strncpy(name, lname, COMEDI_NAMELEN);
 		return name;
 	}
@@ -383,28 +395,6 @@ RTAI_PROTO(int, comedi_get_krange,(void *dev, unsigned int subdev, unsigned int 
 	retval = rtai_lxrt(FUN_COMEDI_LXRT_INDX, COMEDI_LXRT_SIZARG, _KCOMEDI_GET_KRANGE, &arg).i[LOW];
 	memcpy(krange, &lkrange, sizeof(comedi_krange));
 	return retval;
-}
-
-RTAI_PROTO(comedi_cmd *, rt_comedi_alloc_cmd,(unsigned int **chanlist, unsigned int chanlist_len, sampl_t **data,  unsigned int data_len))
-{
-	unsigned long ofst[2], name;
-	comedi_cmd *cmd;
-	comedi_cmd *p;
-
-	struct { unsigned long chanlist_len, data_len; unsigned long *ofst; } arg = { chanlist_len, data_len, ofst };
-	name = rtai_lxrt(FUN_COMEDI_LXRT_INDX, COMEDI_LXRT_SIZARG, _KCOMEDI_ALLOC_CMD, &arg).i[LOW];
-	cmd = p = (comedi_cmd *)rtai_malloc(name, 1);
-        *chanlist = cmd->chanlist = (unsigned int *)((char *)p + ofst[0]);
-        *data = cmd->data = (sampl_t *)((char *)p + ofst[1]);
-	return cmd;
-}
-
-RTAI_PROTO(void, rt_comedi_free_cmd,(void *cmd))
-{
-	unsigned long name;
-        struct { void *cmd; } arg = { cmd };
-        name = rtai_lxrt(FUN_COMEDI_LXRT_INDX, COMEDI_LXRT_SIZARG, _KCOMEDI_FREE_CMD, &arg).i[LOW];
-	rtai_free(name, cmd);
 }
 
 #endif /* #ifdef __KERNEL__ */

@@ -1,142 +1,107 @@
-			<*> RTAI_KCOMEDI_LXRT <*>
+		      <*> RTAI_KCOMEDI IN USER SPACE <*>
 
-This porting of COMEDI to LXRT/NEWLXRT is done using the standard extension 
-feature of LXRT/NEWLXRT and makes COMEDI simmetrically usable in kernel and 
-user space within RTAI, in soft/hard real time. To use COMEDI with LXRT/NEWLXRT 
-you have just to know how to use COMEDI in kernel space, whatever space you are 
+This porting of KCOMEDI to user space is done using the standard extension 
+feature of LXRT and makes COMEDI simmetrically usable in kernel and user 
+space within RTAI, in soft/hard real time. To use KCOMEDI in user space you 
+have just to know how to use it in kernel space, whatever space you are 
 going to work in.
 
-There are however some problems that forbid the above statements to be 
-absolutely true.
+There are however some problems forbidding the above statements to be true
+unconditionally.
 
 One is related to the couple of name returning functions: 
 "comedi_get_driver_name" and "comedi_get_board_name".
+
 In kernel space the requested name is simply got by returning a pointer to 
 a directly addressable global namestring, which is useless in user space. 
 So there is the need of copying the namestring available in kernel space to 
-user space and the calling convention must be changed. Then the following 
+user space, thus the calling convention must be changed. So the following 
 two aliases, usable both in kernel and user space, have been made available:
 void *rt_comedi_get_driver_name(unsigned int dev, char *name);
 void *rt_comedi_get_board_name(unsigned int dev, char *name);
-On success both of them return "name", otherwise 0.
+On success both of them return "name", NULL otherwise.
 
 The solution of the above problem is simple and, almost, compulsory. In fact 
-the only real problem to be solved has been the use of a callback function in 
-user space. There were two possible choices: 
-1 - make it available directly, using a memory switch, as it was in the very
-first version of tasklets (disappeared) and still is in Pierre's LXRT/QBLK;
-2 - devise a fairly general but frozen usage scheme.
+the only real problem to be solved for a symmetric approach to KCOMEDI in 
+kernel and user space has been the use of a callback function in user space,
+for which a fairly general, but frozen, usage scheme has been devised.
 
-The choice has fallen on #2 because it is: simpler, general enough for most
-(all?) applications, likely as effective as #1 or even more. Tasklets usage,
-as available in USI, could have been another possibility. At the moment it is
-not implemented yet. 
-
-Thus the callback method made available is based on using a built in callback 
-function that triggers an rt_sem_signal and allows returning back to the 
-user an important unsigned integer mask, made available by the standard COMEDI 
+The callback method made available is based on using a built in callback 
+function that triggers an rt_send_if and allows returning back to the user
+an important unsigned long mask, made available by the standard COMEDI 
 callback support as its first argument.
 
-The related support comes from using the following function, available in kernel
-space also (if you like it):
-int rt_comedi_register_callback(unsigned int minor, unsigned int subdev, unsigned int mask, SEM *sem);
-- the first 3 arguments are the same as in "comedi_register_callback", while 
-  "sem" is the pointer to a counting semaphore made available by the user.
-  Note that "rt_comedi_register_callback" forces such a semaphore to be a 
-  counting one always, the related reason is explained below.
+The related support comes from using the following functions, available in 
+kernel space also (if you'll like it):
+int rt_comedi_register_callback(void *dev, unsigned int subdev, unsigned int mask, int (*callback)(unsigned int, void *), void *task);
+- the first 3 arguments are the same as in "comedi_register_callback", 
+  "callback" is discarded while "task" is the pointer to an RTAI task that
+  waits for asynchronous events to happen.
 
 The standard COMEDI: int comedi_register_callback(unsigned int minor, unsigned
 int subdev, unsigned int mask, int (*cb)(unsigned int, void * ), void *arg), 
-is also available, in user space, for compatibility reasons, in the form of a 
-macro that redirects it to "rt_comedi_register_callback", discarding "cb" while 
-"arg" MUST be assigned the pointer to the semaphore to be used. There is clearly
-no need for anything similar in kernel space as the original COMEDI function is
-available directly.
+is also available in user space, for compatibility reasons, in the form of a 
+macro that redirects it to "rt_comedi_register_callback", setting "cb" to NULL
+while "arg" MUST be assigned the pointer to the task to be used. There is 
+clearly no need for anything similar in kernel space as the original COMEDI 
+function is available directly, but the user space approach might prove viable
+in kernel space also.
 
 After the COMEDI callback has been initialised a user could synchronise its
 application with COMEDI asynchronous events by using any of the available 
-sem_wait functions. Unfortunately such a solution will miss the mask value 
-made available by COMEDI callbacks, just hinted above. So the following 
+rt_receive functions, receiving the mask value made available by COMEDI 
+callbacks in the received unsigned long msg. For an easier the following 
 functions, usable in kernel space also, have been added:
 
-unsigned int rt_comedi_wait(SEM *sem, int *semcnt);
-- where "sem" is the pointer to the semaphore made available to COMEDI by 
-  "rt_comedi_register_callback" and "semcnt" is a pointer to an integer that 
-  will receive the semaphore count. If the pointer is NULL no values is passed 
-  back to the user. A valid pointer can be useful to check possible overruns,
-  and it is for such a reason that a counting semaphore usage is forced anyhow.
-  The returned value is the important unsigned integer mask made available by 
-  the standard COMEDI callback as its first argument, for its use see the 
-  COMEDI manual and code.
+unsigned long rt_comedi_wait(void);
 
-unsigned int rt_comedi_wait_if(SEM *sem, int *semcnt);
+unsigned long rt_comedi_wait_if(void);
 - this function is equivalent to "rt_comedi_wait" but returns immediately 
-  if no COMEDI event has ben signalled. Useful for polling COMEDI events, 
+  if no COMEDI event has ben signalled yet. Useful for polling COMEDI events, 
   through the returned unsigned integer mask, without blocking.
 
-unsigned int rt_comedi_wait_until(SEM *sem, RTIME until, int *semcnt);
+unsigned long rt_comedi_wait_until(RTIME until);
 - this function is equivalent to "rt_comedi_wait" but features an absolute 
   timeout, given by "until".
 
-unsigned int rt_comedi_wait_timed(SEM *sem, RTIME delay, int *semcnt);
+unsigned long rt_comedi_wait_timed(RTIME delay);
 - this function is equivalent to "rt_comedi_wait" but features a relative 
   timeout, given by "delay".
 
+- The returned value is always the unsigned integer mask made available by 
+  the standard COMEDI callback as its first argument, for its use see the 
+  COMEDI manual and code.
+
 Once more we emphasize that "rt_comedi_wait", "rt_comedi_wait_if", 
 "rt_comedi_wait_until" and "rt_comedi_wait_timed" are nothing but disguised 
-versions of "rt_sem_wait", "rt_sem_wait_if", "rt_sem_wait_until" and 
-"rt_sem_wait_timed" returning the needed COMEDI callback mask parameter without 
-loosing the semaphore count value, as said useful for overruns checking. 
-So it should now be clear how the implemented callback mechanism works and 
-clarify why the used semaphore is forced to be a counting one. Notice also 
-that the semaphore must be initialised with a zero count.
+versions of "rt_receive", "rt_receive_if", "rt_receive_until" and 
+"rt_receive_timed" returning the needed COMEDI callback mask parameter.
+
 It is likely that the illustrated callback scheme and synchronisation is better 
 exploited by using a thread acting as an asynchronous COMEDI events manager in 
 hard real time. However it is by no means the only way as the above wait 
-functions can be used anywhere and rt_comedy_wait_if makes it possible an easy 
+functions can be used anywhere and rt_comedi_wait_if makes it possible an easy 
 implementation of a polling scheme.
 
-Finally it must be remarked that to use COMEDI commands, i.e. the functions:
-- comedi_command
-- comedi_command_test
-the user must allocate the related: comedi_cmd structure, channel_list and
-device data by using: 
-comedi_cmd *rt_comedi_alloc_cmd(unsigned int **chanlist, unsigned int chanlist_len, sampl_t **data, unsigned int data_len);
-freeing it with:
-void rt_comedi_free_cmd(void *cmd);
-when is needed no more. 
-The user must be aware that within RTAI the above "cmd", "chanlist" and "data" 
-are tightly bound togheter in a single object and the pointers related to 
-"chanlist" and "data", in comedi_cmd structure pointed by "cmd", cannot be set 
-to nothing but "chanlist" and "data" returned by rt_comedi_alloc_cmd. 
-In practice you could even avoid their assignements altoghether as they are 
-already in place. This should cause no concern, in fact it could even be seen 
-as an help, you get all what is needed for using COMEDI commands dynamically 
-and with a single call. Feeding/consuming command data must be done by the user
-directly on the command "data" array and using the mask returned by
-rt_comedi_wait functions to understand what to do. Notice that you should
-discard any mask bit marking an end of buffer and check just overruns, direct
-use of the command data array does not update the pointers used by COMEDI to 
-manage it. So once you have no overrun and at each callback you feed/consume 
-what you know has been commanded no problem should arise. There is no need to
-make available a similar support in kernel space. At the moment the above APIs
-have been checked just for consistencies in parameter passing and it is 
-possible that a support to get/put data into the command "data" should be 
-provided eventually. Any help in testing them is welcomed. 
+Once woken up from wait one can call:
+int rt_comedi_command_data_read (void *dev, unsigned int subdev, long nsampl, lsampl_t *data);
+to get "nsampl" samples in "data". Notice that data are reads only if nsampl
+element are available, nothing being done otherwise. Such a condition can
+be checked through the returned value, along with -EINVAL for the case in which
+the related device is not correct. 
 
-As with LXRT/NEWLXRT and its extensions it is possible to use rtai_kcomedi_lxrt 
-both using static inlines (by adding "#define KEEP_STATIC_INLINES" before 
-including rtai_comedi_lxrt.h) and using libkcomedi.a found in directory 
-comedi_lxrt/lib.
+A typical code sample could be:
 
-There are two examples:
-- tests, for synchronous functions (works reasonably);
-- testa, for asynchronous (comedi commands) functions (still uncertain).
+	comedi_register_callback(dev, subdev, COMEDI_CB_EOS, NULL, task);
+.
+	val = rt_comedi_wait_timed(nano2count(TIMEOUT));
+	if (val & COMEDI_CB_EOS) {
+		if (rt_comedi_command_data_read(dev, subdev, NCHAN, data) != NCHAN) {
+			printf("%d channels data not available yet, nothing read\n", NCHAN);
+		}
+.
+	}
 
-RTAI modules required to use rtai_comedi_lxrt:
-- rtai.o
-- rtai_shm.o
-- any suitable scheduler
-- rtai_lxrt.o
+There is an example in RTAI "showroom" CVS, "user/comedi".
 
 "The Comedi Players"

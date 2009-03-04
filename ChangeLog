@@ -1,3 +1,11 @@
+2009-03-04 Pierangelo Masarati <masarati@aero.polimi.it>
+
+	* RTAI 3.7-test2
+
+2009-03-04 Pierangelo Masarati <masarati@aero.polimi.it>
+
+	* rtai-lab/GNUMakefile.*: only distribute scilab5 stuff by now
+
 2009-03-04 Paolo Mantegazza <mantegazza@aero.polimi.it>
 	   Edoardo Vigoni   <vigoni@aero.polimi.it>
 

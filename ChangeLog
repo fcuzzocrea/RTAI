@@ -1,5 +1,5 @@
-2009-03-04 Paolo Mantegazza <mantegazza@aero.polimi.it>
-           Edoardo Vigoni   <vigoni@aero.polimi.it>
+2009-03-04 Edoardo Vigoni   <vigoni@aero.polimi.it>
+	   Paolo Mantegazza <mantegazza@aero.polimi.it>
 
 	* addons/comedi/kcomedi-module.c, rtai_comedi.h and README: upgraded
 	  to include async operations from user space, working but to be

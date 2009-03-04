@@ -89,23 +89,46 @@ static RTAI_SYSCALL_MODE int _comedi_command_test(void *dev, comedi_cmd *cmd)
 
 RTAI_SYSCALL_MODE int rt_comedi_command_data_read(void *dev, unsigned int subdev, long nsampl, lsampl_t *data)
 {
-	void *buf;
-	int i, avbs, ofst, size;
-
-	if (comedi_map(dev, subdev, &buf)) {
+	void *aqbuf;
+	int i, ofsti, ofstf, size;
+#if 1
+	if (comedi_map(dev, subdev, &aqbuf)) {
 		return -EINVAL;
 	}
-	avbs = comedi_get_buffer_contents(dev, subdev);
-	if (avbs < nsampl) {
-		return avbs;
+	if ((i = comedi_get_buffer_contents(dev, subdev)) < nsampl) {
+		return i;
 	}
-	ofst = comedi_get_buffer_offset(dev, subdev);
 	size = comedi_get_buffer_size(dev, subdev);
+	ofstf = ofsti = comedi_get_buffer_offset(dev, subdev);
 	for (i = 0; i < nsampl; i++) {
-		data[i] = *(sampl_t *)(buf + ofst%size);
-		ofst += sizeof(sampl_t);
+		data[i] = *(sampl_t *)(aqbuf + ofstf % size);
+		ofstf += sizeof(sampl_t);
 	}
-	comedi_mark_buffer_read(dev, subdev, nsampl*sizeof(sampl_t));
+	comedi_mark_buffer_read(dev, subdev, ofstf - ofsti);
+#else
+        comedi_device *cdev = (comedi_device *)dev;
+	comedi_async *async;
+
+        if (subdev >= cdev->n_subdevices) {
+                return -EINVAL;
+        }
+        if ((async = (cdev->subdevices + cdev->n_subdevices)->async) == NULL) {
+                return -EINVAL;
+	}
+	aqbuf = (sampl_t *)async->prealloc_buf;
+	if ((i = comedi_buf_read_n_available(async)) < nsampl) {
+		return i;
+	}
+	ofstf = ofsti = async->buf_read_ptr;
+	size = async->prealloc_bufsz;
+	for (i = 0; i < nsampl; i++) {
+		data[i] = *(sampl_t *)(aqbuf + ofstf % size);
+		ofstf += sizeof(sampl_t);
+	}
+	comedi_buf_read_alloc(async, ofstf - ofsti);
+	comedi_buf_read_free(async, ofstf - ofsti);
+#endif
+
 	return nsampl;
 }
 

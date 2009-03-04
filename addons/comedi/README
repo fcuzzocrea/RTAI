@@ -83,6 +83,25 @@ hard real time. However it is by no means the only way as the above wait
 functions can be used anywhere and rt_comedi_wait_if makes it possible an easy 
 implementation of a polling scheme.
 
+Once woken up from wait one can call:
+int rt_comedi_command_data_read (void *dev, unsigned int subdev, long nsampl, lsampl_t *data);
+to get "nsampl" samples in "data". Notice that data are reads only if nsampl
+element are available, nothing being done otherwise. Such a condition can
+be checked through the returned value, along with -EINVAL for the case in which
+the related device is not correct. 
+
+A typical code sample could be:
+
+	comedi_register_callback(dev, subdev, COMEDI_CB_EOS, NULL, task);
+.
+	val = rt_comedi_wait_timed(nano2count(TIMEOUT));
+	if (val & COMEDI_CB_EOS) {
+		if (rt_comedi_command_data_read(dev, subdev, NCHAN, data) != NCHAN) {
+			printf("%d channels data not available yet, nothing read\n", NCHAN);
+		}
+.
+	}
+
 There is an example in RTAI "showroom" CVS, "user/comedi".
 
 "The Comedi Players"

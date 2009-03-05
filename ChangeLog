@@ -1,3 +1,8 @@
+2009-03-05 Paolo Mantegazza <mantegazza@aero.polimi.it>
+
+	* base/include/rtai_lxrt.h: fix macro rt_task_wakeup_sleeping
+	  inconsistency, mask argument not needed.
+
 2009-03-04 Pierangelo Masarati <masarati@aero.polimi.it>
 
 	* RTAI 3.7-test2

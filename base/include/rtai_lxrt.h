@@ -1377,7 +1377,7 @@ RTAI_PROTO(int, rt_task_masked_unblock,(RT_TASK *task, unsigned long mask))
 	return rtai_lxrt(BIDX, SIZARG, WAKEUP_SLEEPING, &arg).i[LOW];
 }
 
-#define rt_task_wakeup_sleeping(task, mask)  rt_task_masked_unblock(task, RT_SCHED_DELAYED)
+#define rt_task_wakeup_sleeping(task)  rt_task_masked_unblock(task, RT_SCHED_DELAYED)
 
 RTAI_PROTO(void, rt_get_exectime, (RT_TASK *task, RTIME *exectime))
 {

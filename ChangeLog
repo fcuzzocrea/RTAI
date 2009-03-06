@@ -1,3 +1,11 @@
+2009-03-06 Edoardo Vigoni   <vigoni@aero.polimi.it>
+	   Paolo Mantegazza <mantegazza@aero.polimi.it>
+
+	* addons/comedi/kcomedi-module.c, rtai_comedi.h and README: newly 
+	  reworked using rt_task_suspend/resumes to allow checking for
+	  overruns; new comedi command read functions embedding callbacks
+	  waits and data reading in a single call; updated README.
+
 2009-03-05 Paolo Mantegazza <mantegazza@aero.polimi.it>
 
 	* base/include/rtai_lxrt.h: fix macro rt_task_wakeup_sleeping

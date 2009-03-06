@@ -1,15 +1,15 @@
 		      <*> RTAI_KCOMEDI IN USER SPACE <*>
 
 This porting of KCOMEDI to user space is done using the standard extension 
-feature of LXRT and makes COMEDI simmetrically usable in kernel and user 
-space within RTAI, in soft/hard real time. To use KCOMEDI in user space you 
-have just to know how to use it in kernel space, whatever space you are 
-going to work in.
+feature of LXRT and makes COMEDI symmetrically usable in kernel and user 
+space within RTAI in soft/hard real time. To use KCOMEDI in user space you 
+have just to know how to use it in kernel space. So whatever space you are 
+going to work in it will be the same.
 
-There are however some problems forbidding the above statements to be true
-unconditionally.
+There are nonetheless a few points forbidding the above statements to be 
+true unconditionally.
 
-One is related to the couple of name returning functions: 
+One is related to a couple of name returning functions: 
 "comedi_get_driver_name" and "comedi_get_board_name".
 
 In kernel space the requested name is simply got by returning a pointer to 
@@ -21,87 +21,116 @@ void *rt_comedi_get_driver_name(unsigned int dev, char *name);
 void *rt_comedi_get_board_name(unsigned int dev, char *name);
 On success both of them return "name", NULL otherwise.
 
-The solution of the above problem is simple and, almost, compulsory. In fact 
-the only real problem to be solved for a symmetric approach to KCOMEDI in 
-kernel and user space has been the use of a callback function in user space,
-for which a fairly general, but frozen, usage scheme has been devised.
+The solution of the above problem is simple and, almost, compulsory. 
+In fact the only real problem to be solved for a symmetric approach to 
+KCOMEDI in kernel and user space has been the use of a callback function 
+in user space for which a fairly general, but frozen, usage scheme has 
+been devised.
 
 The callback method made available is based on using a built in callback 
-function that triggers an rt_send_if and allows returning back to the user
-an important unsigned long mask, made available by the standard COMEDI 
+function that triggers an rt_task_resume and allows returning back to the 
+user the important unsigned long mask, made available by the standard COMEDI 
 callback support as its first argument.
 
-The related support comes from using the following functions, available in 
-kernel space also (if you'll like it):
-int rt_comedi_register_callback(void *dev, unsigned int subdev, unsigned int mask, int (*callback)(unsigned int, void *), void *task);
-- the first 3 arguments are the same as in "comedi_register_callback", 
-  "callback" is discarded while "task" is the pointer to an RTAI task that
-  waits for asynchronous events to happen.
+The related support comes from using the following functions, not needed but 
+available in kernel space also (if you'll like it):
+int rt_comedi_register_callback(void *dev, unsigned int subdev, unsigned int 
+mask, int (*callback)(unsigned int, void *), void *task);
+- the first 3 arguments are the same as in "comedi_register_callback" while
+  "callback" is discarded and "task" is the pointer to an RTAI task that
+  waits for asynchronous events to happen. NULL can be used in place of 
+  "task", if it is the current one, in which case RTAI will care of setting 
+  it appropriately.
 
-The standard COMEDI: int comedi_register_callback(unsigned int minor, unsigned
-int subdev, unsigned int mask, int (*cb)(unsigned int, void * ), void *arg), 
-is also available in user space, for compatibility reasons, in the form of a 
-macro that redirects it to "rt_comedi_register_callback", setting "cb" to NULL
-while "arg" MUST be assigned the pointer to the task to be used. There is 
-clearly no need for anything similar in kernel space as the original COMEDI 
-function is available directly, but the user space approach might prove viable
-in kernel space also.
+For compatibility reasons the standard COMEDI: 
+int comedi_register_callback(unsigned int minor, unsigned int subdev, 
+unsigned int mask, int (*cb)(unsigned int, void *), void *arg); 
+is also available in user space in the form of a macro that redirects it to 
+"rt_comedi_register_callback", setting "cb" to NULL while "arg" should have 
+assigned either the pointer to the task to be used or NULL. 
+As said there is clearly no need for anything similar in kernel space as the 
+original COMEDI function is available directly, but the user space approach 
+might prove viable and easier to use in kernel space also.
 
-After the COMEDI callback has been initialised a user could synchronise its
-application with COMEDI asynchronous events by using any of the available 
-rt_receive functions, receiving the mask value made available by COMEDI 
-callbacks in the received unsigned long msg. For an easier the following 
-functions, usable in kernel space also, have been added:
+After the COMEDI callback has been initialized a user could synchronize its
+application with COMEDI asynchronous events by using any of the following 
+functions, usable in kernel space also naturally:
 
-unsigned long rt_comedi_wait(void);
+long rt_comedi_wait(long *cbmask);
+- this function waits for the callback unconditionally; cbmask is a compulsory
+  non NULL pointer to a variable that will receive the callback mask of the
+  events that triggered it.
 
-unsigned long rt_comedi_wait_if(void);
+long rt_comedi_wait_if(long *cbmask);
 - this function is equivalent to "rt_comedi_wait" but returns immediately 
-  if no COMEDI event has ben signalled yet. Useful for polling COMEDI events, 
-  through the returned unsigned integer mask, without blocking.
+  if no COMEDI event has been signaled yet. Useful for polling COMEDI events, 
+  through the returned long mask, without blocking.
 
-unsigned long rt_comedi_wait_until(RTIME until);
+long rt_comedi_wait_until(RTIME until, long *cbmask);
 - this function is equivalent to "rt_comedi_wait" but features an absolute 
   timeout, given by "until".
 
-unsigned long rt_comedi_wait_timed(RTIME delay);
+unsigned long rt_comedi_wait_timed(RTIME delay, long *cbmask);
 - this function is equivalent to "rt_comedi_wait" but features a relative 
   timeout, given by "delay".
 
-- The returned value is always the unsigned integer mask made available by 
-  the standard COMEDI callback as its first argument, for its use see the 
-  COMEDI manual and code.
+- The returned value can be:
+- 0 if the callback succeeded,
+- a negative number, in which case its absolute value indicates wait overruns;
+- an RTAI error if >= RTE_BASE.
 
-Once more we emphasize that "rt_comedi_wait", "rt_comedi_wait_if", 
-"rt_comedi_wait_until" and "rt_comedi_wait_timed" are nothing but disguised 
-versions of "rt_receive", "rt_receive_if", "rt_receive_until" and 
-"rt_receive_timed" returning the needed COMEDI callback mask parameter.
-
-It is likely that the illustrated callback scheme and synchronisation is better 
-exploited by using a thread acting as an asynchronous COMEDI events manager in 
-hard real time. However it is by no means the only way as the above wait 
-functions can be used anywhere and rt_comedi_wait_if makes it possible an easy 
-implementation of a polling scheme.
+It is likely that the illustrated callback scheme and synchronization is 
+better exploited by using a thread acting as an asynchronous COMEDI events 
+manager in hard real time. However it is by no means the only way as the 
+above wait functions can be used anywhere and rt_comedi_wait_if makes it 
+possible an easy implementation of a polling scheme.
 
 Once woken up from wait one can call:
-int rt_comedi_command_data_read (void *dev, unsigned int subdev, long nsampl, lsampl_t *data);
-to get "nsampl" samples in "data". Notice that data are reads only if nsampl
-element are available, nothing being done otherwise. Such a condition can
-be checked through the returned value, along with -EINVAL for the case in which
-the related device is not correct. 
+long rt_comedi_command_data_read (void *dev, unsigned int subdev, long nsampl, 
+lsampl_t *data);
+to get "nsampl" samples in "data". Notice that data are read only if nsampl
+elements are available, nothing being done otherwise. Such a condition can
+be checked through the returned value which will be the number of available
+sampled data, so that a return value less than than nsampl will mean nothing 
+read. The return value can be RTE_OBJINV also, in the case of dev/subdev being 
+wrong.
 
 A typical code sample could be:
 
+	long mask, avbs;
+.
 	comedi_register_callback(dev, subdev, COMEDI_CB_EOS, NULL, task);
 .
-	val = rt_comedi_wait_timed(nano2count(TIMEOUT));
-	if (val & COMEDI_CB_EOS) {
-		if (rt_comedi_command_data_read(dev, subdev, NCHAN, data) != NCHAN) {
-			printf("%d channels data not available yet, nothing read\n", NCHAN);
+	if (rt_comedi_wait_timed(nano2count(TIMEOUT), &mask) != 0) {
+		printf("waiting for async data failed\n");
+	}
+.
+	if (mask & COMEDI_CB_EOS) {
+		if ((avbs = rt_comedi_command_data_read(dev, subdev, NCHAN, data)) != NCHAN) {
+			printf("only %ld channels data available in place of %d, nothing read\n", avbs, NCHAN);
 		}
 .
 	}
 
-There is an example in RTAI "showroom" CVS, "user/comedi".
+Calling an rt_comedi_wait followed by rt_comedi_command_data_read is OK and
+let the user do whatver check (s)he needs. Nonetheless it has the disadvantage
+of taking two trips to kernel space. Since what is mostly required is a
+succesful rt_comedi_wait with a mask containing the appropriate user expected
+callback mask the two calls can be unified. Such a scheme is mostly useful in 
+a digital controller where a single call paces its action in such a way that 
+at each sampling time one is ready to apply her/his control low on the 
+available samples immediatly.
+
+To that end RTAI makes available the following:
+long rt_comedi_command_data_wread(void *dev, unsigned int subdev, long nsampl, lsampl_t *data, long *mask);
+long rt_comedi_command_data_wread_if(void *dev, unsigned int subdev, long nsampl, lsampl_t *data, long *mask);
+long rt_comedi_command_data_wread_until (void *dev, unsigned int subdev, long nsampl, lsampl_t *data, RTIME until, long *mask);
+long rt_comedi_command_data_wread_timed(void *dev, unsigned int subdev, long nsampl, lsampl_t *data, RTIME delay, long *mask);
+whose arguments are the union of the previous calls, with mask containing
+the event markers that must be found set in the callback mask returned by the 
+COMEDI callback.
+
+There is an example in RTAI "showroom" CVS, "user/comedi" that should help
+in depicting the use of the above explained extensions.
 
 "The Comedi Players"

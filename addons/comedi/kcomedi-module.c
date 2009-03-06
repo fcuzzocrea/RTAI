@@ -29,6 +29,7 @@
 #include <linux/version.h>
 #include <asm/uaccess.h>
 
+#include <rtai_schedcore.h>
 #include <rtai_sched.h>
 #include <rtai_lxrt.h>
 #include <rtai_shm.h>
@@ -40,10 +41,15 @@ MODULE_DESCRIPTION("RTAI LXRT binding for COMEDI kcomedilib");
 MODULE_AUTHOR("Thomas Leibner <tl@leibner-it.de>");
 MODULE_LICENSE("GPL");
 
-static int rtai_comedi_callback(unsigned int, void *) __attribute__ ((__unused__));
-static int rtai_comedi_callback(unsigned int val, void *task)
+#define space(adr)  ((unsigned long)adr > PAGE_OFFSET)
+
+static int rtai_comedi_callback(unsigned int, RT_TASK *) __attribute__ ((__unused__));
+static int rtai_comedi_callback(unsigned int val, RT_TASK *task)
 {
-	rt_send_if((RT_TASK *)task, (unsigned long)val);
+        if (task->magic == RT_TASK_MAGIC) {
+		task->retval = val;
+		rt_task_resume(task);
+	}
 	return 0;
 }
 
@@ -74,7 +80,7 @@ static RTAI_SYSCALL_MODE int _comedi_cancel(void *dev, unsigned int subdev)
 
 RTAI_SYSCALL_MODE int rt_comedi_register_callback(void *dev, unsigned int subdev, unsigned int mask, int (*callback)(unsigned int, void *), void *task)
 {
-	return comedi_register_callback(dev, subdev, mask, rtai_comedi_callback, task ? task : (void *)rt_whoami());
+	return comedi_register_callback(dev, subdev, mask, (void *)rtai_comedi_callback, task ? task : rt_whoami());
 }
 
 static RTAI_SYSCALL_MODE int _comedi_command(void *dev, comedi_cmd *cmd)
@@ -87,13 +93,13 @@ static RTAI_SYSCALL_MODE int _comedi_command_test(void *dev, comedi_cmd *cmd)
 	return comedi_command_test(dev, (void *)cmd);
 }
 
-RTAI_SYSCALL_MODE int rt_comedi_command_data_read(void *dev, unsigned int subdev, long nsampl, lsampl_t *data)
+RTAI_SYSCALL_MODE long rt_comedi_command_data_read(void *dev, unsigned int subdev, long nsampl, lsampl_t *data)
 {
 	void *aqbuf;
 	int i, ofsti, ofstf, size;
 #if 1
 	if (comedi_map(dev, subdev, &aqbuf)) {
-		return -EINVAL;
+		return RTE_OBJINV;
 	}
 	if ((i = comedi_get_buffer_contents(dev, subdev)) < nsampl) {
 		return i;
@@ -110,10 +116,10 @@ RTAI_SYSCALL_MODE int rt_comedi_command_data_read(void *dev, unsigned int subdev
 	comedi_async *async;
 
         if (subdev >= cdev->n_subdevices) {
-                return -EINVAL;
+		return RTE_OBJINV;
         }
         if ((async = (cdev->subdevices + cdev->n_subdevices)->async) == NULL) {
-                return -EINVAL;
+                return RTE_OBJINV;
 	}
 	aqbuf = (sampl_t *)async->prealloc_buf;
 	if ((i = comedi_buf_read_n_available(async)) < nsampl) {
@@ -128,11 +134,129 @@ RTAI_SYSCALL_MODE int rt_comedi_command_data_read(void *dev, unsigned int subdev
 	comedi_buf_read_alloc(async, ofstf - ofsti);
 	comedi_buf_read_free(async, ofstf - ofsti);
 #endif
-
 	return nsampl;
 }
 
-static RTAI_SYSCALL_MODE  int _comedi_data_write(void *dev, unsigned int subdev, unsigned int chan, unsigned int range, unsigned int aref, lsampl_t data)
+#define USEINLINED  1
+
+#define WAIT       0
+#define WAITIF     1
+#define WAITUNTIL  2
+
+static inline long _rt_comedi_command_data_wread(void *dev, unsigned int subdev, long nsampl, lsampl_t *data, RTIME until, long *maskarg, int waitmode)
+{
+	long cbmask, retval, space, mask;
+	space = space(maskarg);
+	if (space) {
+		mask = maskarg[0];
+	} else {
+		rt_get_user(mask, maskarg);
+	}
+	switch(waitmode) {
+		case WAIT: 
+			retval = rt_comedi_wait(&cbmask);
+			break;
+		case WAITIF: 
+			retval = rt_comedi_wait_if(&cbmask);
+			break;
+		case WAITUNTIL: 
+			retval = rt_comedi_wait_until(until, &cbmask);
+			break;
+		default: // useless, just to avoid compiler warnings
+			return RTE_PERM;
+	}
+	if (!retval && (mask & cbmask)) {
+		if (space) {
+			maskarg[0] = cbmask;
+		} else {
+			rt_put_user(cbmask, maskarg);
+		}
+		return rt_comedi_command_data_read(dev, subdev, nsampl, data);
+	}
+	return retval;
+}
+
+RTAI_SYSCALL_MODE long rt_comedi_command_data_wread(void *dev, unsigned int subdev, long nsampl, lsampl_t *data, long *maskarg)
+{
+#if USEINLINED
+	return _rt_comedi_command_data_wread(dev, subdev, nsampl, data, (RTIME)0, maskarg, WAIT);
+#else
+	long cbmask, retval, space, mask;
+	space = space(maskarg);
+	if (space) {
+		mask = maskarg[0];
+	} else {
+		rt_get_user(mask, maskarg);
+	}
+	retval = rt_comedi_wait(&cbmask);
+	if (!retval && (mask & cbmask)) {
+		if (space) {
+			maskarg[0] = cbmask;
+		} else {
+			rt_put_user(cbmask, maskarg);
+		}
+		return rt_comedi_command_data_read(dev, subdev, nsampl, data);
+	}
+	return retval;
+#endif
+}
+
+RTAI_SYSCALL_MODE long rt_comedi_command_data_wread_if(void *dev, unsigned int subdev, long nsampl, lsampl_t *data, long *maskarg)
+{
+#if USEINLINED
+	return _rt_comedi_command_data_wread(dev, subdev, nsampl, data, (RTIME)0, maskarg, WAITIF);
+#else
+	long cbmask, retval, space, mask;
+	space = space(maskarg);
+	if (space) {
+		mask = maskarg[0];
+	} else {
+		rt_get_user(mask, maskarg);
+	}
+	retval = rt_comedi_wait_if(&cbmask);
+	if (!retval && (mask & cbmask)) {
+		if (space) {
+			maskarg[0] = cbmask;
+		} else {
+			rt_put_user(cbmask, maskarg);
+		}
+		return rt_comedi_command_data_read(dev, subdev, nsampl, data);
+	}
+	return retval;
+#endif
+}
+
+RTAI_SYSCALL_MODE long rt_comedi_command_data_wread_until(void *dev, unsigned int subdev, long nsampl, lsampl_t *data, RTIME until, long *maskarg)
+{
+#if USEINLINED
+	return _rt_comedi_command_data_wread(dev, subdev, nsampl, data, until, maskarg, WAITUNTIL);
+#else
+	long cbmask, retval, space, mask;
+	space = space(maskarg);
+	if (space) {
+		mask = maskarg[0];
+	} else {
+		rt_get_user(mask, maskarg);
+	}
+	retval = rt_comedi_wait_until(until, &cbmask);
+	if (!retval && (mask & cbmask)) {
+		if (space) {
+			maskarg[0] = cbmask;
+		} else {
+			rt_put_user(cbmask, maskarg);
+		}
+		return rt_comedi_command_data_read(dev, subdev, nsampl, data);
+	}
+	return retval;
+#endif
+}
+
+RTAI_SYSCALL_MODE long rt_comedi_command_data_wread_timed(void *dev, unsigned int subdev, long nsampl, lsampl_t *data, RTIME delay, long *cbmask)
+{
+	return rt_comedi_command_data_wread_until(dev, subdev, nsampl, data, rt_get_time() + delay, cbmask);
+}
+
+static RTAI_SYSCALL_MODE int _comedi_data_write(void *dev, unsigned int subdev, unsigned int chan, unsigned int range, unsigned int aref, lsampl_t data)
 {
 	return comedi_data_write(dev, subdev, chan, range, aref, data);
 }
@@ -274,84 +398,155 @@ static RTAI_SYSCALL_MODE int _comedi_unmap(comedi_t *dev, unsigned int subdev)
 	return comedi_unmap(dev, subdev);
 }
 
-RTAI_SYSCALL_MODE unsigned long rt_comedi_wait(void)
+static inline long _rt_comedi_wait(RTIME until, long *cbmask, int waitmode)
 { 
-	unsigned long val = 0;
-	rt_receive(NULL, &val);
-	return val;
+	if (cbmask) {
+		long retval;
+		RT_TASK *task = _rt_whoami();
+		task->retval = 0;
+		switch(waitmode) {
+			case WAIT: 
+				retval = rt_task_suspend(task);
+				break;
+			case WAITIF: 
+				retval = rt_task_suspend_if(task);
+				break;
+			case WAITUNTIL: 
+				retval = rt_task_suspend_until(task, until);
+				break;
+			default: // useless, just to avoid compiler warnings
+				return RTE_PERM;
+		}
+		if (space(cbmask)) {
+			cbmask[0] = task->retval;
+		} else {
+			rt_put_user((long)task->retval, cbmask);
+		}
+		return retval;
+	}
+	return RTE_PERM;
 }
 
-RTAI_SYSCALL_MODE unsigned long rt_comedi_wait_if(void)
+RTAI_SYSCALL_MODE long rt_comedi_wait(long *cbmask)
 { 
-	unsigned long val = 0;
-	rt_receive_if(NULL, &val);
-	return val;
+#if USEINLINED
+	return _rt_comedi_wait((RTIME)0, cbmask, WAIT);
+#else
+	if (cbmask) {
+		long retval;
+		RT_TASK *task = _rt_whoami();
+		task->retval = 0;
+		retval = rt_task_suspend(task);
+		if (space(cbmask)) {
+			cbmask[0] = task->retval;
+		} else {
+			rt_put_user((long)task->retval, cbmask);
+		}
+		return retval;
+	}
+	return RTE_PERM;
+#endif
 }
 
-RTAI_SYSCALL_MODE unsigned long rt_comedi_wait_until(RTIME until)
-{
-	unsigned long val = 0;
-	rt_receive_until(NULL, &val, until);
-	return val;
+RTAI_SYSCALL_MODE long rt_comedi_wait_if(long *cbmask)
+{ 
+#if USEINLINED
+	return _rt_comedi_wait((RTIME)0, cbmask, WAITIF);
+#else
+	if (cbmask) {
+		long retval;
+		RT_TASK *task = _rt_whoami();
+		task->retval = 0;
+		retval = rt_task_suspend_if(task);
+		if (space(cbmask)) {
+			cbmask[0] = task->retval;
+		} else {
+			rt_put_user((long)task->retval, cbmask);
+		}
+		return retval;
+	}
+	return RTE_PERM;
+#endif
 }
 
-RTAI_SYSCALL_MODE unsigned long rt_comedi_wait_timed(RTIME delay)
+RTAI_SYSCALL_MODE long rt_comedi_wait_until(RTIME until, long *cbmask)
 {
-	unsigned long val = 0;
-	rt_receive_timed(NULL, &val, delay);
-	return val;
+#if USEINLINED
+	return _rt_comedi_wait(until, cbmask, WAITUNTIL);
+#else
+	if (cbmask) {
+		long retval;
+		RT_TASK *task = _rt_whoami();
+		task->retval = 0;
+		retval = rt_task_suspend(task);
+		if (space(cbmask)) {
+			cbmask[0] = task->retval;
+		} else {
+			rt_put_user((long)task->retval, cbmask);
+		}
+		return retval;
+	}
+	return RTE_PERM;
+#endif
+}
+
+RTAI_SYSCALL_MODE long rt_comedi_wait_timed(RTIME delay, long *cbmask)
+{
+	return rt_comedi_wait_until(rt_get_time() + delay, cbmask);
 }
 
 static struct rt_fun_entry rtai_comedi_fun[] = {
-   [_KCOMEDI_OPEN]                = { 0, _comedi_open }
-  ,[_KCOMEDI_CLOSE]               = { 0, _comedi_close }
-  ,[_KCOMEDI_LOCK]                = { 0, _comedi_lock }
-  ,[_KCOMEDI_UNLOCK]              = { 0, _comedi_unlock }
-  ,[_KCOMEDI_CANCEL]              = { 0, _comedi_cancel }
-  ,[_KCOMEDI_REGISTER_CALLBACK]   = { 0, rt_comedi_register_callback }
-  ,[_KCOMEDI_COMMAND]             = { 0, _comedi_command }
-  ,[_KCOMEDI_COMMAND_TEST]        = { 0, _comedi_command_test }
-  /* DEPRECATED
-     ,[_KCOMEDI_TRIGGER    ]         = { 0, _comedi_trigger }
-  */
-  ,[_KCOMEDI_DATA_WRITE]          = { 0, _comedi_data_write}
-  ,[_KCOMEDI_DATA_READ]           = { 0, _comedi_data_read }
-  ,[_KCOMEDI_DATA_READ_DELAYED]   = { 0, _comedi_data_read_delayed }       
-  ,[_KCOMEDI_DATA_READ_HINT]      = { 0, _comedi_data_read_hint }          
-  ,[_KCOMEDI_DIO_CONFIG]          = { 0, _comedi_dio_config }
-  ,[_KCOMEDI_DIO_READ]            = { 0, _comedi_dio_read }
-  ,[_KCOMEDI_DIO_WRITE]           = { 0, _comedi_dio_write }
-  ,[_KCOMEDI_DIO_BITFIELD]        = { 0, _comedi_dio_bitfield }
-  ,[_KCOMEDI_GET_N_SUBDEVICES]    = { 0, _comedi_get_n_subdevices }
-  ,[_KCOMEDI_GET_VERSION_CODE]    = { 0, _comedi_get_version_code }
-  ,[_KCOMEDI_GET_DRIVER_NAME]     = { 0, rt_comedi_get_driver_name }
-  ,[_KCOMEDI_GET_BOARD_NAME]      = { 0, rt_comedi_get_board_name }
-  ,[_KCOMEDI_GET_SUBDEVICE_TYPE]  = { 0, _comedi_get_subdevice_type }
-  ,[_KCOMEDI_FIND_SUBDEVICE_TYPE] = { 0, _comedi_find_subdevice_by_type }
-  ,[_KCOMEDI_GET_N_CHANNELS]      = { 0, _comedi_get_n_channels }
-  ,[_KCOMEDI_GET_MAXDATA]         = { 0, _comedi_get_maxdata }
-  ,[_KCOMEDI_GET_N_RANGES]        = { 0, _comedi_get_n_ranges }
-  ,[_KCOMEDI_DO_INSN]             = { 0, _comedi_do_insn }
-  /* NOT YET IMPLEMENTED
-     ,[_KCOMEDI_DO_INSN_LIST]        = { 0, _comedi_di_insn_list }
-  */
-  ,[_KCOMEDI_POLL]                = { 0, _comedi_poll }
-  /*
-
-  ,[_KCOMEDI_GET_RANGETYPE]       = { 0, _comedi_get_rangetype }
-
-  */
-  ,[_KCOMEDI_GET_SUBDEVICE_FLAGS] = { 0, _comedi_get_subdevice_flags }
-  ,[_KCOMEDI_GET_KRANGE]          = { 0, _comedi_get_krange }
-  ,[_KCOMEDI_GET_BUF_HEAD_POS]    = { 0, _comedi_get_buf_head_pos }
-  ,[_KCOMEDI_SET_USER_INT_COUNT]  = { 0, _comedi_set_user_int_count }
-  ,[_KCOMEDI_MAP]                 = { 0, _comedi_map }
-  ,[_KCOMEDI_UNMAP]               = { 0, _comedi_unmap }
-  ,[_KCOMEDI_WAIT]                = { UW1(2, 3), rt_comedi_wait }
-  ,[_KCOMEDI_WAIT_IF]             = { UW1(2, 3), rt_comedi_wait_if }
-  ,[_KCOMEDI_WAIT_UNTIL]          = { UW1(4, 5), rt_comedi_wait_until }
-  ,[_KCOMEDI_WAIT_TIMED]          = { UW1(4, 5), rt_comedi_wait_timed }
-  ,[_KCOMEDI_COMMAND_DATA_READ]   = { 0, rt_comedi_command_data_read }
+  [_KCOMEDI_OPEN]                  = { 0, _comedi_open }
+ ,[_KCOMEDI_CLOSE]                 = { 0, _comedi_close }
+ ,[_KCOMEDI_LOCK]                  = { 0, _comedi_lock }
+ ,[_KCOMEDI_UNLOCK]                = { 0, _comedi_unlock }
+ ,[_KCOMEDI_CANCEL]                = { 0, _comedi_cancel }
+ ,[_KCOMEDI_REGISTER_CALLBACK]     = { 0, rt_comedi_register_callback }
+ ,[_KCOMEDI_COMMAND]               = { 0, _comedi_command }
+ ,[_KCOMEDI_COMMAND_TEST]          = { 0, _comedi_command_test }
+/* DEPRECATED
+ ,[_KCOMEDI_TRIGGER    ]           = { 0, _comedi_trigger }
+*/
+ ,[_KCOMEDI_DATA_WRITE]            = { 0, _comedi_data_write}
+ ,[_KCOMEDI_DATA_READ]             = { 0, _comedi_data_read }
+ ,[_KCOMEDI_DATA_READ_DELAYED]     = { 0, _comedi_data_read_delayed }       
+ ,[_KCOMEDI_DATA_READ_HINT]        = { 0, _comedi_data_read_hint }          
+ ,[_KCOMEDI_DIO_CONFIG]            = { 0, _comedi_dio_config }
+ ,[_KCOMEDI_DIO_READ]              = { 0, _comedi_dio_read }
+ ,[_KCOMEDI_DIO_WRITE]             = { 0, _comedi_dio_write }
+ ,[_KCOMEDI_DIO_BITFIELD]          = { 0, _comedi_dio_bitfield }
+ ,[_KCOMEDI_GET_N_SUBDEVICES]      = { 0, _comedi_get_n_subdevices }
+ ,[_KCOMEDI_GET_VERSION_CODE]      = { 0, _comedi_get_version_code }
+ ,[_KCOMEDI_GET_DRIVER_NAME]       = { 0, rt_comedi_get_driver_name }
+ ,[_KCOMEDI_GET_BOARD_NAME]        = { 0, rt_comedi_get_board_name }
+ ,[_KCOMEDI_GET_SUBDEVICE_TYPE]    = { 0, _comedi_get_subdevice_type }
+ ,[_KCOMEDI_FIND_SUBDEVICE_TYPE]   = { 0, _comedi_find_subdevice_by_type }
+ ,[_KCOMEDI_GET_N_CHANNELS]        = { 0, _comedi_get_n_channels }
+ ,[_KCOMEDI_GET_MAXDATA]           = { 0, _comedi_get_maxdata }
+ ,[_KCOMEDI_GET_N_RANGES]          = { 0, _comedi_get_n_ranges }
+ ,[_KCOMEDI_DO_INSN]               = { 0, _comedi_do_insn }
+/* NOT YET IMPLEMENTED
+ ,[_KCOMEDI_DO_INSN_LIST]          = { 0, _comedi_di_insn_list }
+*/
+ ,[_KCOMEDI_POLL]                  = { 0, _comedi_poll }
+/*
+ ,[_KCOMEDI_GET_RANGETYPE]         = { 0, _comedi_get_rangetype }
+*/
+ ,[_KCOMEDI_GET_SUBDEVICE_FLAGS]   = { 0, _comedi_get_subdevice_flags }
+ ,[_KCOMEDI_GET_KRANGE]            = { 0, _comedi_get_krange }
+ ,[_KCOMEDI_GET_BUF_HEAD_POS]      = { 0, _comedi_get_buf_head_pos }
+ ,[_KCOMEDI_SET_USER_INT_COUNT]    = { 0, _comedi_set_user_int_count }
+ ,[_KCOMEDI_MAP]                   = { 0, _comedi_map }
+ ,[_KCOMEDI_UNMAP]                 = { 0, _comedi_unmap }
+ ,[_KCOMEDI_WAIT]                  = { UW1(2, 3), rt_comedi_wait }
+ ,[_KCOMEDI_WAIT_IF]               = { UW1(2, 3), rt_comedi_wait_if }
+ ,[_KCOMEDI_WAIT_UNTIL]            = { UW1(4, 5), rt_comedi_wait_until }
+ ,[_KCOMEDI_WAIT_TIMED]            = { UW1(4, 5), rt_comedi_wait_timed }
+ ,[_KCOMEDI_COMD_DATA_READ]        = { 0, rt_comedi_command_data_read }
+ ,[_KCOMEDI_COMD_DATA_WREAD]       = { 0, rt_comedi_command_data_wread }
+ ,[_KCOMEDI_COMD_DATA_WREAD_IF]    = { 0, rt_comedi_command_data_wread_if }
+ ,[_KCOMEDI_COMD_DATA_WREAD_UNTIL] = { 0, rt_comedi_command_data_wread_until }
+ ,[_KCOMEDI_COMD_DATA_WREAD_TIMED] = { 0, rt_comedi_command_data_wread_timed }
 };
 
 int __rtai_comedi_init(void)

@@ -2,9 +2,9 @@
 
 This porting of KCOMEDI to user space is done using the standard extension 
 feature of LXRT and makes COMEDI symmetrically usable in kernel and user 
-space within RTAI in soft/hard real time. To use KCOMEDI in user space you 
+space within RTAI, in soft/hard real time. To use KCOMEDI in user space you 
 have just to know how to use it in kernel space. So whatever space you are 
-going to work in it will be the same.
+going to work in it will be the same mostly.
 
 There are nonetheless a few points forbidding the above statements to be 
 true unconditionally.
@@ -19,7 +19,7 @@ user space, thus the calling convention must be changed. So the following
 two aliases, usable both in kernel and user space, have been made available:
 void *rt_comedi_get_driver_name(unsigned int dev, char *name);
 void *rt_comedi_get_board_name(unsigned int dev, char *name);
-On success both of them return "name", NULL otherwise.
+On success both of them return the requested name in "name", NULL otherwise.
 
 The solution of the above problem is simple and, almost, compulsory. 
 In fact the only real problem to be solved for a symmetric approach to 
@@ -32,7 +32,7 @@ function that triggers an rt_task_resume and allows returning back to the
 user the important unsigned long mask, made available by the standard COMEDI 
 callback support as its first argument.
 
-The related support comes from using the following functions, not needed but 
+The related support comes from using the following function, not needed but 
 available in kernel space also (if you'll like it):
 int rt_comedi_register_callback(void *dev, unsigned int subdev, unsigned int 
 mask, int (*callback)(unsigned int, void *), void *task);
@@ -91,9 +91,9 @@ lsampl_t *data);
 to get "nsampl" samples in "data". Notice that data are read only if nsampl
 elements are available, nothing being done otherwise. Such a condition can
 be checked through the returned value which will be the number of available
-sampled data, so that a return value less than than nsampl will mean nothing 
-read. The return value can be RTE_OBJINV also, in the case of dev/subdev being 
-wrong.
+sampled data, so that a return value less than than "nsampl" will mean nothing 
+has been read. The return value can be RTE_OBJINV also, in the case of 
+dev/subdev being wrong.
 
 A typical code sample could be:
 
@@ -111,11 +111,12 @@ A typical code sample could be:
 		}
 .
 	}
+.
 
 Calling an rt_comedi_wait followed by rt_comedi_command_data_read is OK and
 let the user do whatver check (s)he needs. Nonetheless it has the disadvantage
 of taking two trips to kernel space. Since what is mostly required is a
-succesful rt_comedi_wait with a mask containing the appropriate user expected
+succesfull rt_comedi_wait with a mask containing the appropriate user expected
 callback mask the two calls can be unified. Such a scheme is mostly useful in 
 a digital controller where a single call paces its action in such a way that 
 at each sampling time one is ready to apply her/his control low on the 
@@ -129,6 +130,18 @@ long rt_comedi_command_data_wread_timed(void *dev, unsigned int subdev, long nsa
 whose arguments are the union of the previous calls, with mask containing
 the event markers that must be found set in the callback mask returned by the 
 COMEDI callback.
+
+The previous code snippet would become:
+
+	long mask, avbs;
+.
+	comedi_register_callback(dev, subdev, COMEDI_CB_EOS, NULL, task);
+.
+	mask = COMEDI_CB_EOS);
+	if ((avbs = rt_comedi_command_data_wread_timed(dev, subdev, NCHAN, data, nano2count(TIMEOUT), &mask)) != NCHAN) {
+		printf("only %ld channels data available in place of %d, or an error occured, nothing read\n", avbs, NCHAN);
+	}
+.
 
 There is an example in RTAI "showroom" CVS, "user/comedi" that should help
 in depicting the use of the above explained extensions.

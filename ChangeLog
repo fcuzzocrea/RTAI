@@ -1,3 +1,7 @@
+2009-03-07 Andy Hirsh" <andhirsh@gmail.com>
+
+	* base/include/rtai_fifos.h: add missing declaration of rtf_get_frbs.
+
 2009-03-05 Paolo Mantegazza <mantegazza@aero.polimi.it>
 
 	* base/include/rtai_lxrt.h: fix macro rt_task_wakeup_sleeping 

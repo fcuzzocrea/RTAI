@@ -288,6 +288,13 @@ RTAI_SYSCALL_MODE int rtf_sem_destroy(unsigned int fifo	/* RT-FIFO */);
 
 #define rtf_sem_delete rtf_sem_destroy
 
+
+/* Get an RT-FIFO free bytes in buffer.
+ *
+ */
+
+RTAI_SYSCALL_MODE int rtf_get_frbs(unsigned int fifo /* RT-FIFO */);
+
 /* Just for compatibility with earlier rtai_fifos releases. No more bh and user
 buffers. Fifos are now awakened immediately and buffers > 128K are vmalloced */
 

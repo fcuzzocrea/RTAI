@@ -46,7 +46,7 @@ MODULE_LICENSE("GPL");
 static int rtai_comedi_callback(unsigned int, RT_TASK *) __attribute__ ((__unused__));
 static int rtai_comedi_callback(unsigned int val, RT_TASK *task)
 {
-        if (task->magic == RT_TASK_MAGIC) {
+        if (task && task->magic == RT_TASK_MAGIC) {
 		task->retval = val;
 		rt_task_resume(task);
 	}
@@ -152,7 +152,7 @@ static inline long _rt_comedi_command_data_wread(void *dev, unsigned int subdev,
 	} else {
 		rt_get_user(mask, maskarg);
 	}
-	switch(waitmode) {
+	switch (waitmode) {
 		case WAIT: 
 			retval = rt_comedi_wait(&cbmask);
 			break;
@@ -404,7 +404,7 @@ static inline long _rt_comedi_wait(RTIME until, long *cbmask, int waitmode)
 		long retval;
 		RT_TASK *task = _rt_whoami();
 		task->retval = 0;
-		switch(waitmode) {
+		switch (waitmode) {
 			case WAIT: 
 				retval = rt_task_suspend(task);
 				break;

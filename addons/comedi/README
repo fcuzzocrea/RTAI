@@ -164,6 +164,9 @@ being activated. That's because it adds some, albeit neglegible on nowadays
 machines, overhaed and because in control system it is rare to have possible
 conficting functionalities shared among more tasks. If a locked execution is
 needed nonetheless then the user must explicitly configure this extensio for
-that, in which case it will be applied to all services.
+that, in which case it will be applied to all services. Being "comedi_lock"
+and "comedi_unlock" available esplicitely to the user (s)he is free to
+apply them explicitly whenevr (s)he has decided to not configure them by 
+default.
 
 "The Comedi Players"

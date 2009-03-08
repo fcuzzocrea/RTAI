@@ -44,6 +44,21 @@ MODULE_LICENSE("GPL");
 
 #define space(adr)  ((unsigned long)adr > PAGE_OFFSET)
 
+#ifdef RTAI_COMEDI_USER_LOCK
+
+#define COMEDI_LOCK(dev, subdev) \
+	do { comedi_lock(dev, subdev); } while (0)
+#define COMEDI_UNLOCK(dev, subdev) \
+	do { comedi_unlock(dev, subdev); } while (0)
+
+#else
+
+#define COMEDI_LOCK(dev, subdev)    do { } while (0)
+#define COMEDI_UNLOCK(dev, subdev)  do { } while (0)
+
+#endif
+
+#define space(adr)  ((unsigned long)adr > PAGE_OFFSET)
 static int rtai_comedi_callback(unsigned int, RT_TASK *) __attribute__ ((__unused__));
 static int rtai_comedi_callback(unsigned int val, RT_TASK *task)
 {

@@ -123,6 +123,8 @@ RTAI_SYSCALL_MODE long rt_comedi_command_data_wread_until(void *dev, unsigned in
 
 RTAI_SYSCALL_MODE long rt_comedi_command_data_wread_timed(void *dev, unsigned int subdev, long nsampl, lsampl_t *data, RTIME delay, long *cbmask);
 
+RTAI_SYSCALL_MODE int rt_comedi_do_insnlist(void *dev, comedi_insnlist *ilist);
+
 #ifdef __cplusplus
 }
 #endif /* __cplusplus */

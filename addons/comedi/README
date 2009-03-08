@@ -1,7 +1,7 @@
 		      <*> RTAI_KCOMEDI IN USER SPACE <*>
 
 This porting of KCOMEDI to user space is done using the standard extension 
-feature of LXRT and makes COMEDI symmetrically usable in kernel and user 
+feature of LXRT and makes KCOMEDI symmetrically usable in kernel and user 
 space within RTAI, in soft/hard real time. To use KCOMEDI in user space you 
 have just to know how to use it in kernel space. So whatever space you are 
 going to work in it will be the same mostly.
@@ -145,5 +145,25 @@ The previous code snippet would become:
 
 There is an example in RTAI "showroom" CVS, "user/comedi" that should help
 in depicting the use of the above explained extensions.
+
+Finally the function:
+int rt_comedi_do_insnlist(void *dev, comedi_insnlist *ilist);
+has been added, symmetrically in kernel/user space as usual.
+It is an exact image of its parent:
+int comedi_do_insnlist(void *dev, comedi_insnlist *list);
+which is not available in KCOMEDI; that's why we prefixed it with an "rt_".
+The simple reason of its missing in kernel space is because it will add just 
+the overhead of a call more to obtain something that a user can have directly
+by executing repeated "comedi_do_insn" in her/his own way. From user space 
+instead the overhead of calling "comedi_do_insn" many times could be much more
+significant so it is might help in having the possibility of executing a whole
+instruction list in a single shot only.
+
+A final warning: all KCOMEDI functions are executed without the comedi_lock
+being activated. That's because it adds some, albeit neglegible on nowadays 
+machines, overhaed and because in control system it is rare to have possible
+conficting functionalities shared among more tasks. If a locked execution is
+needed nonetheless then the user must explicitly configure this extensio for
+that, in which case it will be applied to all services.
 
 "The Comedi Players"

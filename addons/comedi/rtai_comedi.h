@@ -384,15 +384,53 @@ RTAI_PROTO(int, comedi_get_n_ranges,(void *dev, unsigned int subdev, unsigned in
         return rtai_lxrt(FUN_COMEDI_LXRT_INDX, COMEDI_LXRT_SIZARG, _KCOMEDI_GET_N_RANGES, &arg).i[LOW];
 }
 
-RTAI_PROTO(int, comedi_do_insn,(void *dev, comedi_insn *insn))
+RTAI_PROTO(int, comedi_do_insn, (void *dev, comedi_insn *insn))
 {
-	int retval;
-	comedi_insn linsn = *insn;
-	struct { void *dev; comedi_insn *insn; } arg = { dev, &linsn };
-	retval = rtai_lxrt(FUN_COMEDI_LXRT_INDX, COMEDI_LXRT_SIZARG, _KCOMEDI_DO_INSN, &arg).i[LOW];
-	memcpy(insn, &linsn, sizeof(comedi_insn));
-	return retval;
+	return -1;
 }
+#if 0
+	if (insn) {
+		comedi_insn linsn = *insn;
+		lsamp_t ldata[insn->n];
+	        struct { void *dev; comedi_insn *insn; } arg = { dev, &linsn };
+		int retval;
+		linsn.data = ldata;
+		memcpy(ldata, insn->data, linsn.n*sizeof(lsamp_t));
+		if (!(retval = rtai_lxrt(FUN_COMEDI_LXRT_INDX, COMEDI_LXRT_SIZARG, _KCOMEDI_DO_INSN, &arg).i[LOW])) {
+			memcpy(insn->data, ldata, linsn.n*sizeof(lsamp_t));
+		}
+        	return retval;
+	}
+	return -1;
+}
+
+RTAI_PROTO(int, rt_comedi_do_insnlist, (void *dev, comedi_insnlist *ilist))
+{
+	if (ilist) {
+		comedi_insnlist lilist = *ilist;
+		int i, retval, maxdata;
+		comedi_insn linsn[lilist.n_insns];
+	        struct { void *dev; comedi_insnlist *ilist; } arg = { dev, &lilist };
+		maxdata = 0;
+		for (i = 0; i < lilist.n_insns; i++) { 
+			if (ilist[i].n > retval) {
+				retval = ilist[i].n;
+			}
+		} {
+		lsamp_t ldata[linsn.n_insns][maxdata];
+		for (i = 0; i < lilist.n_insns; i++) { 
+			memcpy(ldata[i], ilist[i].data, ilist[i].n*sizeof(lsamp_t));
+		}
+		lilist.insns = linsn;
+		if (!(retval = rtai_lxrt(FUN_COMEDI_LXRT_INDX, COMEDI_LXRT_SIZARG, _KCOMEDI_DO_INSN, &arg).i[LOW])) {
+		for (i = 0; i < retval; i++) { 
+			memcpy(ilist[i].data, ldata[i], ilist[i].data*sizeof(lsamp_t));
+		} }
+        	return retval;
+	}
+	return -1;
+}
+#endif
 
 RTAI_PROTO(int, comedi_poll,(void *dev, unsigned int subdev))
 {

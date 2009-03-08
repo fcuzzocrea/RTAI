@@ -25,6 +25,7 @@
  * It will be compiled to a rtai_comedi.o kernel module.
  */
 
+
 #include <linux/module.h>
 #include <linux/version.h>
 #include <asm/uaccess.h>
@@ -38,7 +39,7 @@
 
 #define MODULE_NAME "rtai_comedi.o"
 MODULE_DESCRIPTION("RTAI LXRT binding for COMEDI kcomedilib");
-MODULE_AUTHOR("Thomas Leibner <tl@leibner-it.de>");
+MODULE_AUTHOR("The Comedi Players");
 MODULE_LICENSE("GPL");
 
 #define space(adr)  ((unsigned long)adr > PAGE_OFFSET)
@@ -356,6 +357,18 @@ static RTAI_SYSCALL_MODE int _comedi_do_insn(void *dev, comedi_insn *insn)
 	return comedi_do_insn(dev, insn);
 }
 
+static RTAI_SYSCALL_MODE int rt_comedi_do_insnlist(void *dev, comedi_insnlist *ilist)
+{
+	int i, retval;
+	for (i = 0; i < ilist->n_insns; i ++) {
+		if ((retval = comedi_do_insn(dev, &ilist->insns[i])) < 0) {
+			break;
+		}
+		ilist->insns[i].n = retval;
+	}
+	return i;
+}
+
 static RTAI_SYSCALL_MODE int _comedi_poll(void *dev, unsigned int subdev)
 {
 	return comedi_poll(dev, subdev);
@@ -547,6 +560,7 @@ static struct rt_fun_entry rtai_comedi_fun[] = {
  ,[_KCOMEDI_COMD_DATA_WREAD_IF]    = { 0, rt_comedi_command_data_wread_if }
  ,[_KCOMEDI_COMD_DATA_WREAD_UNTIL] = { 0, rt_comedi_command_data_wread_until }
  ,[_KCOMEDI_COMD_DATA_WREAD_TIMED] = { 0, rt_comedi_command_data_wread_timed }
+ ,[_KCOMEDI_DO_INSN_LIST]          = { 0, rt_comedi_do_insnlist }
 };
 
 int __rtai_comedi_init(void)
@@ -565,3 +579,16 @@ void __rtai_comedi_exit(void)
 
 module_init(__rtai_comedi_init);
 module_exit(__rtai_comedi_exit);
+
+EXPORT_SYMBOL(rt_comedi_wait);
+EXPORT_SYMBOL(rt_comedi_wait_if);
+EXPORT_SYMBOL(rt_comedi_wait_until);
+EXPORT_SYMBOL(rt_comedi_wait_timed);
+EXPORT_SYMBOL(rt_comedi_get_driver_name);
+EXPORT_SYMBOL(rt_comedi_get_board_name);
+EXPORT_SYMBOL(rt_comedi_register_callback);
+EXPORT_SYMBOL(rt_comedi_command_data_read);
+EXPORT_SYMBOL(rt_comedi_command_data_wread);
+EXPORT_SYMBOL(rt_comedi_command_data_wread_if);
+EXPORT_SYMBOL(rt_comedi_command_data_wread_until);
+EXPORT_SYMBOL(rt_comedi_command_data_wread_timed);

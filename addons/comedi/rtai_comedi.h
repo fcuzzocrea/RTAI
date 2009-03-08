@@ -58,7 +58,7 @@
 #define _KCOMEDI_GET_MAXDATA 		24
 #define _KCOMEDI_GET_N_RANGES 		25
 #define _KCOMEDI_DO_INSN 		26
-#define _KCOMEDI_DO_INSN_LIST		27  // not yet in kcomedilib... (tl) 
+#define _KCOMEDI_DO_INSN_LIST		27
 #define _KCOMEDI_POLL 			28
 
 /* DEPRECATED function
@@ -140,7 +140,7 @@ typedef void comedi_t;
 
 #define COMEDI_LXRT_SIZARG sizeof(arg)
 
-RTAI_PROTO(void *, comedi_open,(const char *filename))
+RTAI_PROTO(void *, comedi_open, (const char *filename))
 {
 	char lfilename[COMEDI_NAMELEN];
         struct { char *minor; } arg = { lfilename };
@@ -148,25 +148,25 @@ RTAI_PROTO(void *, comedi_open,(const char *filename))
         return rtai_lxrt(FUN_COMEDI_LXRT_INDX, COMEDI_LXRT_SIZARG, _KCOMEDI_OPEN, &arg).v[LOW];
 }
 
-RTAI_PROTO(int, comedi_close,(void *dev))
+RTAI_PROTO(int, comedi_close, (void *dev))
 {
         struct { void *dev; } arg = { dev };
         return rtai_lxrt(FUN_COMEDI_LXRT_INDX, COMEDI_LXRT_SIZARG, _KCOMEDI_CLOSE, &arg).i[LOW];
 }
 
-RTAI_PROTO(int, comedi_lock,(void *dev, unsigned int subdev))
+RTAI_PROTO(int, comedi_lock, (void *dev, unsigned int subdev))
 {
         struct { void *dev; unsigned long subdev; } arg = { dev, subdev };
         return rtai_lxrt(FUN_COMEDI_LXRT_INDX, COMEDI_LXRT_SIZARG, _KCOMEDI_LOCK, &arg).i[LOW];
 }
 
-RTAI_PROTO(int, comedi_unlock,(void *dev, unsigned int subdev))
+RTAI_PROTO(int, comedi_unlock, (void *dev, unsigned int subdev))
 {
         struct { void *dev; unsigned long subdev; } arg = { dev, subdev };
         return rtai_lxrt(FUN_COMEDI_LXRT_INDX, COMEDI_LXRT_SIZARG, _KCOMEDI_UNLOCK, &arg).i[LOW];
 }
 
-RTAI_PROTO(int, comedi_cancel,(void *dev, unsigned int subdev))
+RTAI_PROTO(int, comedi_cancel, (void *dev, unsigned int subdev))
 {
         struct { void *dev; unsigned long subdev; } arg = { dev, subdev };
         return rtai_lxrt(FUN_COMEDI_LXRT_INDX, COMEDI_LXRT_SIZARG, _KCOMEDI_CANCEL, &arg).i[LOW];
@@ -177,8 +177,6 @@ RTAI_PROTO(int, rt_comedi_register_callback, (void *dev, unsigned int subdevice,
         struct { void *dev; unsigned long subdevice; unsigned long mask; void *cb; void *task; } arg = { dev, subdevice, mask, NULL, task };
         return rtai_lxrt(FUN_COMEDI_LXRT_INDX, COMEDI_LXRT_SIZARG, _KCOMEDI_REGISTER_CALLBACK, &arg).i[LOW];
 }
-
-#define comedi_register_callback(dev, subdev, mask, cb, arg)  rt_comedi_register_callback(dev, subdev, mask, NULL, arg)
 
 RTAI_PROTO(long, rt_comedi_wait, (long *cbmask))
 {
@@ -251,82 +249,78 @@ RTAI_PROTO(long, rt_comedi_command_data_read, (void *dev, unsigned int subdev, l
 	return retval;
 }
 
-RTAI_PROTO(int, comedi_data_write,(void *dev, unsigned int subdev, unsigned int chan, unsigned int range, unsigned int aref, lsampl_t data))
+RTAI_PROTO(int, comedi_data_write, (void *dev, unsigned int subdev, unsigned int chan, unsigned int range, unsigned int aref, lsampl_t data))
 {
 	struct { void *dev; unsigned long subdev; unsigned long chan; unsigned long range; unsigned long aref; long data; } arg = { dev, subdev, chan, range, aref, data };
 	return rtai_lxrt(FUN_COMEDI_LXRT_INDX, COMEDI_LXRT_SIZARG, _KCOMEDI_DATA_WRITE, &arg).i[LOW];
 }
 
-RTAI_PROTO(int, comedi_data_read,(void *dev, unsigned int subdev, unsigned int chan, unsigned int range, unsigned int aref, lsampl_t *data))
+RTAI_PROTO(int, comedi_data_read, (void *dev, unsigned int subdev, unsigned int chan, unsigned int range, unsigned int aref, lsampl_t *data))
 {
 	int retval;
 	lsampl_t ldata;
 	struct { void *dev; unsigned long subdev; unsigned long chan; unsigned long range; unsigned long aref; lsampl_t *data; } arg = { dev, subdev, chan, range, aref, &ldata };
 	retval = rtai_lxrt(FUN_COMEDI_LXRT_INDX, COMEDI_LXRT_SIZARG, _KCOMEDI_DATA_READ, &arg).i[LOW];
-	memcpy(data, &ldata, sizeof(lsampl_t));
+	data[0] = ldata;
 	return retval;
 }
 
-RTAI_PROTO(int, comedi_data_read_delayed,(void *dev, unsigned int subdev, unsigned int chan, unsigned int range, unsigned int aref, lsampl_t *data, unsigned int nanosec))
+RTAI_PROTO(int, comedi_data_read_delayed, (void *dev, unsigned int subdev, unsigned int chan, unsigned int range, unsigned int aref, lsampl_t *data, unsigned int nanosec))
 {
 	int retval;
 	lsampl_t ldata;
 	struct { void *dev; unsigned long subdev; unsigned long chan; unsigned long range; unsigned long aref; lsampl_t *data; unsigned long nanosec;} arg = { dev, subdev, chan, range, aref, &ldata, nanosec };
 	retval = rtai_lxrt(FUN_COMEDI_LXRT_INDX, COMEDI_LXRT_SIZARG, _KCOMEDI_DATA_READ_DELAYED, &arg).i[LOW];
-	memcpy(data, &ldata, sizeof(lsampl_t));
+	data[0] = ldata;
 	return retval;
 }
 
-RTAI_PROTO(int, comedi_data_read_hint,(void *dev, unsigned int subdev, unsigned int chan, unsigned int range, unsigned int aref))
+RTAI_PROTO(int, comedi_data_read_hint, (void *dev, unsigned int subdev, unsigned int chan, unsigned int range, unsigned int aref))
 {
-	int retval;
-	//lsampl_t ldata;
 	struct { void *dev; unsigned long subdev; unsigned long chan; unsigned long range; unsigned long aref;} arg = { dev, subdev, chan, range, aref};
-	retval = rtai_lxrt(FUN_COMEDI_LXRT_INDX, COMEDI_LXRT_SIZARG, _KCOMEDI_DATA_READ_HINT, &arg).i[LOW];
-	//memcpy(data, &ldata, sizeof(lsampl_t));
-	return retval;
+	return rtai_lxrt(FUN_COMEDI_LXRT_INDX, COMEDI_LXRT_SIZARG, _KCOMEDI_DATA_READ_HINT, &arg).i[LOW];
 }
 
-RTAI_PROTO(int, comedi_dio_config,(void *dev, unsigned int subdev, unsigned int chan, unsigned int io))
+RTAI_PROTO(int, comedi_dio_config, (void *dev, unsigned int subdev, unsigned int chan, unsigned int io))
 {
 	struct { void *dev; unsigned long subdev; unsigned long chan; unsigned long io; } arg = { dev, subdev, chan, io };
         return rtai_lxrt(FUN_COMEDI_LXRT_INDX, COMEDI_LXRT_SIZARG, _KCOMEDI_DIO_CONFIG, &arg).i[LOW];
 }
 
-RTAI_PROTO(int, comedi_dio_read,(void *dev, unsigned int subdev, unsigned int chan, unsigned int *val))
+RTAI_PROTO(int, comedi_dio_read, (void *dev, unsigned int subdev, unsigned int chan, unsigned int *val))
 {
         int retval;
 	unsigned int lval;
         struct { void *dev; unsigned long subdev; unsigned long chan; unsigned int *val; } arg = { dev, subdev, chan, &lval };
 	retval = rtai_lxrt(FUN_COMEDI_LXRT_INDX, COMEDI_LXRT_SIZARG, _KCOMEDI_DIO_READ, &arg).i[LOW];
-	*val = lval;
+	val[0] = lval;
 	return retval;
 }
 
-RTAI_PROTO(int, comedi_dio_write,(void *dev, unsigned int subdev, unsigned int chan, unsigned int val))
+RTAI_PROTO(int, comedi_dio_write, (void *dev, unsigned int subdev, unsigned int chan, unsigned int val))
 {
         struct { void *dev; unsigned long subdev; unsigned long chan; unsigned long val; } arg = { dev, subdev, chan, val };
 	return rtai_lxrt(FUN_COMEDI_LXRT_INDX, COMEDI_LXRT_SIZARG, _KCOMEDI_DIO_WRITE, &arg).i[LOW];
 }
 
-RTAI_PROTO(int, comedi_dio_bitfield,(void *dev, unsigned int subdev, unsigned int mask, unsigned int *bits))
+RTAI_PROTO(int, comedi_dio_bitfield, (void *dev, unsigned int subdev, unsigned int mask, unsigned int *bits))
 {
         int retval;
-	unsigned int lbits;
+	unsigned int lbits = bits[0];
 	lbits = *bits;
         struct { void *dev; unsigned long subdev; unsigned long mask; unsigned int *bits; } arg = { dev, subdev, mask, &lbits };
 	retval = rtai_lxrt(FUN_COMEDI_LXRT_INDX, COMEDI_LXRT_SIZARG, _KCOMEDI_DIO_BITFIELD, &arg).i[LOW];
-	*bits = lbits;
+	bits[0] = lbits;
 	return retval;
 }
 
-RTAI_PROTO(int, comedi_get_n_subdevices,(void *dev))
+RTAI_PROTO(int, comedi_get_n_subdevices, (void *dev))
 {
-	struct { void *dev;} arg = { dev };
+	struct { void *dev; } arg = { dev };
         return rtai_lxrt(FUN_COMEDI_LXRT_INDX, COMEDI_LXRT_SIZARG, _KCOMEDI_GET_N_SUBDEVICES, &arg).i[LOW];
 }
 
-RTAI_PROTO(int, comedi_get_version_code,(void *dev))
+RTAI_PROTO(int, comedi_get_version_code, (void *dev))
 {
 	struct { void *dev;} arg = { dev };
         return rtai_lxrt(FUN_COMEDI_LXRT_INDX, COMEDI_LXRT_SIZARG, _KCOMEDI_GET_VERSION_CODE, &arg).i[LOW];
@@ -354,7 +348,7 @@ RTAI_PROTO(char *, rt_comedi_get_board_name, (void *dev, char *name))
 	return 0;
 }
 
-RTAI_PROTO(int, comedi_get_subdevice_type,(void *dev, unsigned int subdev))
+RTAI_PROTO(int, comedi_get_subdevice_type, (void *dev, unsigned int subdev))
 {
         struct { void *dev; unsigned long subdev; } arg = { dev, subdev };
         return rtai_lxrt(FUN_COMEDI_LXRT_INDX, COMEDI_LXRT_SIZARG, _KCOMEDI_GET_SUBDEVICE_TYPE, &arg).i[LOW];
@@ -386,18 +380,15 @@ RTAI_PROTO(int, comedi_get_n_ranges,(void *dev, unsigned int subdev, unsigned in
 
 RTAI_PROTO(int, comedi_do_insn, (void *dev, comedi_insn *insn))
 {
-	return -1;
-}
-#if 0
 	if (insn) {
 		comedi_insn linsn = *insn;
-		lsamp_t ldata[insn->n];
+		lsampl_t ldata[linsn.n];
 	        struct { void *dev; comedi_insn *insn; } arg = { dev, &linsn };
 		int retval;
+		memcpy(ldata, linsn.data, linsn.n*sizeof(lsampl_t));
 		linsn.data = ldata;
-		memcpy(ldata, insn->data, linsn.n*sizeof(lsamp_t));
 		if (!(retval = rtai_lxrt(FUN_COMEDI_LXRT_INDX, COMEDI_LXRT_SIZARG, _KCOMEDI_DO_INSN, &arg).i[LOW])) {
-			memcpy(insn->data, ldata, linsn.n*sizeof(lsamp_t));
+			memcpy(insn[0].data, ldata, linsn.n*sizeof(lsampl_t));
 		}
         	return retval;
 	}
@@ -408,29 +399,31 @@ RTAI_PROTO(int, rt_comedi_do_insnlist, (void *dev, comedi_insnlist *ilist))
 {
 	if (ilist) {
 		comedi_insnlist lilist = *ilist;
-		int i, retval, maxdata;
-		comedi_insn linsn[lilist.n_insns];
+		comedi_insn insns[lilist.n_insns];
 	        struct { void *dev; comedi_insnlist *ilist; } arg = { dev, &lilist };
+		int i, retval, maxdata;
+
 		maxdata = 0;
 		for (i = 0; i < lilist.n_insns; i++) { 
-			if (ilist[i].n > retval) {
-				retval = ilist[i].n;
+			if (lilist.insns[i].n > maxdata) {
+				maxdata = lilist.insns[i].n;
 			}
 		} {
-		lsamp_t ldata[linsn.n_insns][maxdata];
+		lsampl_t ldata[lilist.n_insns][maxdata];
 		for (i = 0; i < lilist.n_insns; i++) { 
-			memcpy(ldata[i], ilist[i].data, ilist[i].n*sizeof(lsamp_t));
+			memcpy(ldata[i], lilist.insns[i].data, lilist.insns[i].n*sizeof(lsampl_t));
+			insns[i] = lilist.insns[i];
 		}
-		lilist.insns = linsn;
-		if (!(retval = rtai_lxrt(FUN_COMEDI_LXRT_INDX, COMEDI_LXRT_SIZARG, _KCOMEDI_DO_INSN, &arg).i[LOW])) {
-		for (i = 0; i < retval; i++) { 
-			memcpy(ilist[i].data, ldata[i], ilist[i].data*sizeof(lsamp_t));
+		lilist.insns = insns;
+		if (!(retval = rtai_lxrt(FUN_COMEDI_LXRT_INDX, COMEDI_LXRT_SIZARG, _KCOMEDI_DO_INSN_LIST, &arg).i[LOW])) {
+			for (i = 0; i < retval; i++) { 
+				memcpy(ilist->insns[i].data, ldata[i], insns[i].n*sizeof(lsampl_t));
+			} 
 		} }
         	return retval;
 	}
 	return -1;
 }
-#endif
 
 RTAI_PROTO(int, comedi_poll,(void *dev, unsigned int subdev))
 {
@@ -473,5 +466,7 @@ RTAI_PROTO(long, rt_comedi_command_data_wread_timed, (void *dev, unsigned int su
 }
 
 #endif /* #ifdef __KERNEL__ */
+
+#define comedi_register_callback(dev, subdev, mask, cb, arg)  rt_comedi_register_callback(dev, subdev, mask, NULL, arg)
 
 #endif /* #ifndef _RTAI_COMEDI_H_ */

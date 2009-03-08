@@ -1,3 +1,10 @@
+2009-03-09 Paolo Mantegazza <mantegazza@aero.polimi.it>
+
+	* addons/comedi/kcomedi-module.c: added rt_comedi_do_insnlist and all 
+	  forgotten EXPORT_SYMBOLs.
+	* addons/comedi/rtai_comedi.h: restyled a few lines, fixed 
+	  comedi_do_insn and added rt_comedi_do_insnlist.
+
 2009-03-07 Andy Hirsh" <andhirsh@gmail.com>
 
 	* base/include/rtai_fifos.h: add missing declaration of rtf_get_frbs.

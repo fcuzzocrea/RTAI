@@ -46,7 +46,7 @@ MODULE_LICENSE("GPL");
 static int rtai_comedi_callback(unsigned int, RT_TASK *) __attribute__ ((__unused__));
 static int rtai_comedi_callback(unsigned int val, RT_TASK *task)
 {
-        if (task && task->magic == RT_TASK_MAGIC) {
+        if (task->magic == RT_TASK_MAGIC) {
 		task->retval = val;
 		rt_task_resume(task);
 	}

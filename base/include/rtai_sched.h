@@ -232,6 +232,7 @@ typedef struct rt_task_struct {
 	rb_node_t rbn;
 #endif
 	struct rt_queue resq;
+	unsigned long resumsg;
 } RT_TASK __attribute__ ((__aligned__ (L1_CACHE_BYTES)));
 
 #else /* __cplusplus */

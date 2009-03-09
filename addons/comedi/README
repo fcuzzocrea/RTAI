@@ -7,7 +7,8 @@ have just to know how to use it in kernel space. So whatever space you are
 going to work in it will be the same mostly.
 
 There are nonetheless a few points forbidding the above statements to be 
-true unconditionally.
+true unconditionally. The related clashes are resolved with functions
+prefixed with "rt_".
 
 One is related to a couple of name returning functions: 
 "comedi_get_driver_name" and "comedi_get_board_name".
@@ -84,6 +85,10 @@ better exploited by using a thread acting as an asynchronous COMEDI events
 manager in hard real time. However it is by no means the only way as the 
 above wait functions can be used anywhere and rt_comedi_wait_if makes it 
 possible an easy implementation of a polling scheme.
+Notice that rt_comedi_wait_if is provided to comply with the standard RTAI
+synchronizing functions scheme: unconditional, if, until, timed. 
+An alternative way is provide through the standard KCOMEDI async data polling,
+i.e.: comedi_poll.
 
 Once woken up from wait one can call:
 long rt_comedi_command_data_read (void *dev, unsigned int subdev, long nsampl, 

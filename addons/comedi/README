@@ -99,6 +99,12 @@ be checked through the returned value which will be the number of available
 sampled data, so that a return value less than than "nsampl" will mean nothing 
 has been read. The return value can be RTE_OBJINV also, in the case of 
 dev/subdev being wrong.
+It is believed that imposing that either "nsampl" data or nothing is available 
+is the most appropriate real time mechanism as it is better to let the user
+decide what to do in place of waiting on a rescheduling by default. In fact
+after an appropriate wait missing data might be a error to care of. It it
+is not so then, by exploting the available wait functions, the user has plenty 
+of opportunities to implement her/his own best policy.
 
 A typical code sample could be:
 

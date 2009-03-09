@@ -1214,7 +1214,7 @@ RTAI_PROTO(sem_t *, __wrap_sem_open, (const char *namein, int oflags, int value,
 				wrtn = write(fd, &psem, sizeof(psem));
 				close(fd);
 			}
-			return psem;
+			return (sem_t *)psem;
 		}
 		errno = ENOSPC;
 		return SEM_FAILED;
@@ -1254,7 +1254,7 @@ RTAI_PROTO(int, __wrap_sem_unlink, (const char *namein))
 	}
 	str2upr(namein, name);
 	if ((fd = open(name, O_RDONLY)) > 0 && read(fd, &psem, sizeof(psem)) == sizeof(psem)) {
-		return __wrap_sem_close(psem);
+		return __wrap_sem_close((sem_t *)psem);
 	}
 	errno = ENOENT;
 	return -1;
@@ -2352,7 +2352,7 @@ static int support_posix_timer(void *data)
 
 RTAI_PROTO (int, __wrap_timer_create, (clockid_t clockid, struct sigevent *evp, timer_t *timerid))
 {
-	void (*handler)(unsigned long) = ((void *) 1);
+	void (*handler)(unsigned long) = ((void (*)(unsigned long))1);
 	int pid = -1;
 	unsigned long data = 0;
 	struct { struct rt_tasklet_struct *tasklet; long signum; } data_supfun;

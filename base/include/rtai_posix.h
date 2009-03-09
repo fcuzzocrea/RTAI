@@ -2310,7 +2310,7 @@ static int support_posix_timer(void *data)
 	struct rt_tasklet_struct usptasklet;
 	struct data_stru { struct rt_tasklet_struct *tasklet; long signum; } data_struct;
 	
-	data_struct=*(struct data_stru *)data;
+	data_struct = *(struct data_stru *)data;
 
 	if (!(task = rt_thread_init((unsigned long)data_struct.tasklet, 98, 0, SCHED_FIFO, 0xF))) {
 		printf("CANNOT INIT POSIX TIMER SUPPORT TASKLET\n");
@@ -2336,7 +2336,7 @@ static int support_posix_timer(void *data)
 		while (1) {	
 			rt_task_suspend(task);
 			if (usptasklet.handler) {
-			((void (*)(sigval_t))usptasklet.handler)((sigval_t)(int)usptasklet.data);
+				usptasklet.handler(usptasklet.data);
 			} else {
 				break;
 			}

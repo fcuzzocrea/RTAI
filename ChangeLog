@@ -1,7 +1,8 @@
 2009-03-10 Paolo Mantegazza <mantegazza@aero.polimi.it>
 
 	* base/include/rtai_posix.h and rtai_signal.h: force a few strict 
-	  casts to avoid problems with C++.
+	  casts to avoid problems with C++; remove a useless casting 
+	  conflicting with C++ when calling a tasklet handler.
 
 2009-03-09 Paolo Mantegazza <mantegazza@aero.polimi.it>
 

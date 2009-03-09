@@ -63,7 +63,7 @@ static int rtai_comedi_callback(unsigned int, RT_TASK *) __attribute__ ((__unuse
 static int rtai_comedi_callback(unsigned int val, RT_TASK *task)
 {
         if (task->magic == RT_TASK_MAGIC) {
-		task->retval = val;
+		task->resumsg = val;
 		rt_task_resume(task);
 	}
 	return 0;
@@ -447,7 +447,6 @@ static inline long _rt_comedi_wait(RTIME until, long *cbmask, int waitmode)
 	if (cbmask) {
 		long retval;
 		RT_TASK *task = _rt_whoami();
-		task->retval = 0;
 		switch (waitmode) {
 			case WAIT: 
 				retval = rt_task_suspend(task);
@@ -462,10 +461,11 @@ static inline long _rt_comedi_wait(RTIME until, long *cbmask, int waitmode)
 				return RTE_PERM;
 		}
 		if (space(cbmask)) {
-			cbmask[0] = task->retval;
+			cbmask[0] = task->resumsg;
 		} else {
-			rt_put_user((long)task->retval, cbmask);
+			rt_put_user(task->resumsg, cbmask);
 		}
+		task->resumsg = 0;
 		return retval;
 	}
 	return RTE_PERM;

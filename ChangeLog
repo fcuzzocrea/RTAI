@@ -1,3 +1,8 @@
+2009-03-09 Paolo Mantegazza <mantegazza@aero.polimi.it>
+
+	* base/include/rtai_sched.h: added field resumsg to the task structure,
+	  to allow exchanging resume specific flags.
+
 2009-03-07 Andy Hirsh" <andhirsh@gmail.com>
 
 	* base/include/rtai_fifos.h: add missing declaration of rtf_get_frbs.

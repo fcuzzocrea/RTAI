@@ -1,3 +1,8 @@
+2009-03-10 Paolo Mantegazza <mantegazza@aero.polimi.it>
+
+	* base/include/rtai_posix.h and rtai_signal.h: force a few strict 
+	  casts to avoid problems with C++.
+
 2009-03-09 Paolo Mantegazza <mantegazza@aero.polimi.it>
 
 	* addons/comedi/kcomedi-module.c: added rt_comedi_do_insnlist and all 

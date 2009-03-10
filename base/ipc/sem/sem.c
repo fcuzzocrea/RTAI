@@ -63,6 +63,9 @@ extern struct epoch_struct boot_epoch;
 
 #endif
 
+#define CHECK_SEM_MAGIC(sem) \
+do { if (!sem || sem->magic != RT_SEM_MAGIC) return RTE_OBJINV; } while (0)
+
 /* +++++++++++++++++++++ ALL SEMAPHORES TYPES SUPPORT +++++++++++++++++++++++ */
 
 /**
@@ -220,9 +223,7 @@ RTAI_SYSCALL_MODE int rt_sem_delete(SEM *sem)
 	unsigned long schedmap, sched;
 	QUEUE *q;
 
-	if (sem->magic != RT_SEM_MAGIC) {
-		return RTE_OBJINV;
-	}
+	CHECK_SEM_MAGIC(sem);
 
 	rt_wakeup_pollers(&sem->poll_wait_all, RTE_OBJREM);
 	rt_wakeup_pollers(&sem->poll_wait_one, RTE_OBJREM);
@@ -300,9 +301,7 @@ RTAI_SYSCALL_MODE int rt_sem_signal(SEM *sem)
 	RT_TASK *task;
 	int tosched;
 
-	if (sem->magic != RT_SEM_MAGIC) {
-		return RTE_OBJINV;
-	}
+	CHECK_SEM_MAGIC(sem);
 
 	flags = rt_global_save_flags_and_cli();
 	if (sem->type) {
@@ -390,9 +389,8 @@ RTAI_SYSCALL_MODE int rt_sem_broadcast(SEM *sem)
 	RT_TASK *task;
 	QUEUE *q;
 
-	if (sem->magic != RT_SEM_MAGIC) {
-		return RTE_OBJINV;
-	}
+	CHECK_SEM_MAGIC(sem);
+
 	schedmap = 0;
 	q = &(sem->queue);
 	flags = rt_global_save_flags_and_cli();
@@ -470,9 +468,7 @@ RTAI_SYSCALL_MODE int rt_sem_wait(SEM *sem)
 	unsigned long flags;
 	int count;
 
-	if (sem->magic != RT_SEM_MAGIC) {
-		return RTE_OBJINV;
-	}
+	CHECK_SEM_MAGIC(sem);
 
 	flags = rt_global_save_flags_and_cli();
 	rt_current = RT_CURRENT;
@@ -555,9 +551,7 @@ RTAI_SYSCALL_MODE int rt_sem_wait_if(SEM *sem)
 	int count;
 	unsigned long flags;
 
-	if (sem->magic != RT_SEM_MAGIC) {
-		return RTE_OBJINV;
-	}
+	CHECK_SEM_MAGIC(sem);
 
 	flags = rt_global_save_flags_and_cli();
 	if ((count = sem->count) <= 0) {
@@ -621,9 +615,7 @@ RTAI_SYSCALL_MODE int rt_sem_wait_until(SEM *sem, RTIME time)
 	int count;
 	unsigned long flags;
 
-	if (sem->magic != RT_SEM_MAGIC) {
-		return RTE_OBJINV;
-	}
+	CHECK_SEM_MAGIC(sem);
 
 	REALTIME2COUNT(time);
 
@@ -743,9 +735,7 @@ RTAI_SYSCALL_MODE int rt_sem_wait_barrier(SEM *sem)
 {
 	unsigned long flags;
 
-	if (sem->magic != RT_SEM_MAGIC) {
-		return RTE_OBJINV;
-	}
+	CHECK_SEM_MAGIC(sem);
 
 	flags = rt_global_save_flags_and_cli();
 	if (!sem->owndby) {
@@ -784,9 +774,8 @@ RTAI_SYSCALL_MODE int rt_cond_signal(CND *cnd)
 	unsigned long flags;
 	RT_TASK *task;
 
-	if (cnd->magic != RT_SEM_MAGIC) {
-		return RTE_OBJINV;
-	}
+	CHECK_SEM_MAGIC(cnd);
+
 	flags = rt_global_save_flags_and_cli();
 	if ((task = (cnd->queue.next)->task)) {
 		dequeue_blocked(task);
@@ -855,9 +844,9 @@ RTAI_SYSCALL_MODE int rt_cond_wait(CND *cnd, SEM *mtx)
 	void *retp;
 	int retval, type;
 
-	if (cnd->magic != RT_SEM_MAGIC || mtx->magic != RT_SEM_MAGIC) {
-		return RTE_OBJINV;
-	}
+	CHECK_SEM_MAGIC(cnd);
+	CHECK_SEM_MAGIC(mtx);
+
 	flags = rt_global_save_flags_and_cli();
 	rt_current = RT_CURRENT;
 	if (mtx->owndby != rt_current) {
@@ -916,9 +905,8 @@ RTAI_SYSCALL_MODE int rt_cond_wait_until(CND *cnd, SEM *mtx, RTIME time)
 	void *retp;
 	int retval, type;
 
-	if (cnd->magic != RT_SEM_MAGIC && mtx->magic != RT_SEM_MAGIC) {
-		return RTE_OBJINV;
-	}
+	CHECK_SEM_MAGIC(cnd);
+	CHECK_SEM_MAGIC(mtx);
 
 	REALTIME2COUNT(time);
 

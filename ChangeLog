@@ -1,5 +1,10 @@
-2009-03-11 Edoardo Vigoni   <vigoni@aero.polimi.it>
-	   Paolo Mantegazza <mantegazza@aero.polimi.it>
+2009-03-11 Paolo Mantegazza <mantegazza@aero.polimi.it>
+
+	* base/ipc/msg.c: define and use a macro to check tasks magic.
+	* base/ipc/sem.c: define and use a macro to check sems magic.
+	* base/ipc/bits.c: define and use a macro to check bits magic.
+
+2009-03-11 Paolo Mantegazza <mantegazza@aero.polimi.it>
 
 	* addons/comedi/kcomedi-module.c, rtai_comedi.h and README: added
 	  rt_comedi_trigger and rt_comedi_command_data_write.

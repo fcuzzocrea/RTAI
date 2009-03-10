@@ -64,7 +64,7 @@ extern struct epoch_struct boot_epoch;
 #endif
 
 #define CHECK_SEM_MAGIC(sem) \
-do { if (!sem || sem->magic != RT_SEM_MAGIC) return RTE_OBJINV; } while (0)
+do { if (sem->magic != RT_SEM_MAGIC) return RTE_OBJINV; } while (0)
 
 /* +++++++++++++++++++++ ALL SEMAPHORES TYPES SUPPORT +++++++++++++++++++++++ */
 

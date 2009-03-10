@@ -147,6 +147,9 @@ static void (*exec_fun[])(BITS *, unsigned long) = {
 	nop_fun
 };
 
+#define CHECK_BITS_MAGIC(bits) \
+	do { if (bits->magic != RT_BITS_MAGIC) return RTE_OBJINV; } while (0)
+
 void rt_bits_init(BITS *bits, unsigned long mask)
 {
 	bits->magic      = RT_BITS_MAGIC;
@@ -162,9 +165,7 @@ int rt_bits_delete(BITS *bits)
 	RT_TASK *task;
 	QUEUE *q;
 
-	if (bits->magic != RT_BITS_MAGIC) {
-		return RTE_OBJINV;
-	}
+	CHECK_BITS_MAGIC(bits);
 
 	schedmap = 0;
 	q = &bits->queue;
@@ -200,9 +201,7 @@ RTAI_SYSCALL_MODE unsigned long rt_bits_reset(BITS *bits, unsigned long mask)
 	RT_TASK *task;
 	QUEUE *q;
 
-	if (bits->magic != RT_BITS_MAGIC) {
-		return RTE_OBJINV;
-	}
+	CHECK_BITS_MAGIC(bits);
 
 	schedmap = 0;
 	q = &bits->queue;
@@ -231,9 +230,7 @@ RTAI_SYSCALL_MODE unsigned long rt_bits_signal(BITS *bits, int setfun, unsigned 
 	RT_TASK *task;
 	QUEUE *q;
 
-	if (bits->magic != RT_BITS_MAGIC) {
-		return RTE_OBJINV;
-	}
+	CHECK_BITS_MAGIC(bits);
 
 	schedmap = 0;
 	q = &bits->queue;
@@ -264,9 +261,7 @@ RTAI_SYSCALL_MODE int _rt_bits_wait(BITS *bits, int testfun, unsigned long testm
 	unsigned long flags, mask;
 	int retval;
 
-	if (bits->magic != RT_BITS_MAGIC) {
-		return RTE_OBJINV;
-	}
+	CHECK_BITS_MAGIC(bits);
 
 	flags = rt_global_save_flags_and_cli();
 	if (!test_fun[testfun](bits, testmasks)) {
@@ -311,9 +306,7 @@ RTAI_SYSCALL_MODE int _rt_bits_wait_if(BITS *bits, int testfun, unsigned long te
 	unsigned long flags, mask;
 	int retval;
 
-	if (bits->magic != RT_BITS_MAGIC) {
-		return RTE_OBJINV;
-	}
+	CHECK_BITS_MAGIC(bits);
 
 	flags = rt_global_save_flags_and_cli();
 	mask = bits->mask;
@@ -340,9 +333,7 @@ RTAI_SYSCALL_MODE int _rt_bits_wait_until(BITS *bits, int testfun, unsigned long
 	unsigned long flags, mask;
 	int retval;
 
-	if (bits->magic != RT_BITS_MAGIC) {
-		return RTE_OBJINV;
-	}
+	CHECK_BITS_MAGIC(bits);
 
 	flags = rt_global_save_flags_and_cli();
 	if (!test_fun[testfun](bits, testmasks)) {

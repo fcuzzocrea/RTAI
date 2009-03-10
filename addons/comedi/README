@@ -157,6 +157,14 @@ The previous code snippet would become:
 There is an example in RTAI "showroom" CVS, "user/comedi" that should help
 in depicting the use of the above explained extensions.
 
+The async rite mate of async data reading is the following:
+long rt_comedi_command_data_write(void *dev, unsigned int subdev, long nsampl, lsampl_t *data);
+arguments and return values being the same of rt_comedi_command_data_read.
+
+Another useful service is:
+int rt_comedi_trigger(void *dev, unsigned int subdev, unsigned int trignum);
+it is an easy to use wrapper of using a correspendingly set comedi_do_insn,
+
 Finally the function:
 int rt_comedi_do_insnlist(void *dev, comedi_insnlist *ilist);
 has been added, symmetrically in kernel/user space as usual.

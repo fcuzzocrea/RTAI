@@ -1,8 +1,21 @@
+2009-03-11 Edoardo Vigoni   <vigoni@aero.polimi.it>
+	   Paolo Mantegazza <mantegazza@aero.polimi.it>
+
+	* addons/comedi/kcomedi-module.c, rtai_comedi.h and README: added
+	  rt_comedi_trigger and rt_comedi_command_data_write.
+
 2009-03-10 Paolo Mantegazza <mantegazza@aero.polimi.it>
 
 	* base/include/rtai_posix.h and rtai_signal.h: force a few strict 
 	  casts to avoid problems with C++; remove a useless casting 
 	  conflicting with C++ when calling a tasklet handler.
+
+2009-03-09 Paolo Mantegazza <mantegazza@aero.polimi.it>
+
+	* base/include/rtai_sched.h: added field resumsg to the task structure,
+	  to allow exchanging resume specific flags.
+	* addons/comedi/kcomedi-module.c: use the above field to pass callbacks
+	  specific values.
 
 2009-03-09 Paolo Mantegazza <mantegazza@aero.polimi.it>
 

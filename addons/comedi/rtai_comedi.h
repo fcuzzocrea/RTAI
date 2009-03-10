@@ -36,10 +36,7 @@
 #define _KCOMEDI_REGISTER_CALLBACK 	 5
 #define _KCOMEDI_COMMAND 		 6
 #define _KCOMEDI_COMMAND_TEST 		 7
-
-/* DEPRECATED function */
 #define _KCOMEDI_TRIGGER 		 8
-
 #define _KCOMEDI_DATA_WRITE 		 9
 #define _KCOMEDI_DATA_READ 		10
 #define _KCOMEDI_DATA_READ_DELAYED	11
@@ -89,6 +86,7 @@
 #define _KCOMEDI_COMD_DATA_WREAD_IF     45
 #define _KCOMEDI_COMD_DATA_WREAD_UNTIL  46
 #define _KCOMEDI_COMD_DATA_WREAD_TIMED  47
+#define _KCOMEDI_COMD_DATA_WRITE        48
 
 #ifdef __KERNEL__ /* For kernel module build. */
 
@@ -124,6 +122,10 @@ RTAI_SYSCALL_MODE long rt_comedi_command_data_wread_until(void *dev, unsigned in
 RTAI_SYSCALL_MODE long rt_comedi_command_data_wread_timed(void *dev, unsigned int subdev, long nsampl, lsampl_t *data, RTIME delay, long *cbmask);
 
 RTAI_SYSCALL_MODE int rt_comedi_do_insnlist(void *dev, comedi_insnlist *ilist);
+
+static RTAI_SYSCALL_MODE int rt_comedi_trigger(void *dev, unsigned int subdev, unsigned int trignum);
+
+RTAI_SYSCALL_MODE long rt_comedi_command_data_write(void *dev, unsigned int subdev, long nsampl, lsampl_t *data);
 
 #ifdef __cplusplus
 }
@@ -249,6 +251,14 @@ RTAI_PROTO(long, rt_comedi_command_data_read, (void *dev, unsigned int subdev, l
 	retval = rtai_lxrt(FUN_COMEDI_LXRT_INDX, COMEDI_LXRT_SIZARG, _KCOMEDI_COMD_DATA_READ, &arg).i[LOW];
 	memcpy(data, &ldata, nsampl*sizeof(lsampl_t));
 	return retval;
+}
+
+RTAI_PROTO(long, rt_comedi_command_data_write, (void *dev, unsigned int subdev, long nsampl, lsampl_t *data))
+{
+	lsampl_t ldata[nsampl];
+	struct { void *dev; unsigned long subdev; long nsampl; lsampl_t *data; } arg = { dev, subdev, nsampl, ldata };
+	memcpy(ldata, data, nsampl*sizeof(lsampl_t));
+	return rtai_lxrt(FUN_COMEDI_LXRT_INDX, COMEDI_LXRT_SIZARG, _KCOMEDI_COMD_DATA_WRITE, &arg).i[LOW];
 }
 
 RTAI_PROTO(int, comedi_data_write, (void *dev, unsigned int subdev, unsigned int chan, unsigned int range, unsigned int aref, lsampl_t data))
@@ -425,6 +435,18 @@ RTAI_PROTO(int, rt_comedi_do_insnlist, (void *dev, comedi_insnlist *ilist))
         	return retval;
 	}
 	return -1;
+}
+
+RTAI_PROTO(int, rt_comedi_trigger, (void *dev, unsigned int subdev, unsigned int trignum))
+{
+        comedi_insn insn;
+	struct { void *dev; comedi_insn *insn; } arg = { dev, &insn };
+        lsampl_t data = trignum;
+        insn.insn   = INSN_INTTRIG;
+        insn.subdev = subdev;
+        insn.n      = 1;
+        insn.data   = &data;
+	return rtai_lxrt(FUN_COMEDI_LXRT_INDX, COMEDI_LXRT_SIZARG, _KCOMEDI_DO_INSN, &arg).i[LOW];
 }
 
 RTAI_PROTO(int, comedi_poll,(void *dev, unsigned int subdev))

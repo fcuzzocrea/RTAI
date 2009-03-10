@@ -127,10 +127,10 @@ static RTAI_SYSCALL_MODE int _comedi_command_test(void *dev, comedi_cmd *cmd)
 
 RTAI_SYSCALL_MODE long rt_comedi_command_data_read(void *dev, unsigned int subdev, long nsampl, lsampl_t *data)
 {
-	void *aqbuf;
+	void *aibuf;
 	int i, ofsti, ofstf, size;
 #if 1
-	if (comedi_map(dev, subdev, &aqbuf)) {
+	if (comedi_map(dev, subdev, &aibuf)) {
 		return RTE_OBJINV;
 	}
 	if ((i = comedi_get_buffer_contents(dev, subdev)) < nsampl) {
@@ -140,7 +140,7 @@ RTAI_SYSCALL_MODE long rt_comedi_command_data_read(void *dev, unsigned int subde
 	RTAI_COMEDI_LOCK(dev, subdev);
 	ofstf = ofsti = comedi_get_buffer_offset(dev, subdev);
 	for (i = 0; i < nsampl; i++) {
-		data[i] = *(sampl_t *)(aqbuf + ofstf % size);
+		data[i] = *(sampl_t *)(aibuf + ofstf % size);
 		ofstf += sizeof(sampl_t);
 	}
 	comedi_mark_buffer_read(dev, subdev, ofstf - ofsti);
@@ -156,42 +156,20 @@ RTAI_SYSCALL_MODE long rt_comedi_command_data_read(void *dev, unsigned int subde
         if ((async = (cdev->subdevices + cdev->n_subdevices)->async) == NULL) {
                 return RTE_OBJINV;
 	}
-	aqbuf = (sampl_t *)async->prealloc_buf;
+	aibuf = (sampl_t *)async->prealloc_buf;
 	if ((i = comedi_buf_read_n_available(async)) < nsampl) {
 		return i;
 	}
 	ofstf = ofsti = async->buf_read_ptr;
 	size = async->prealloc_bufsz;
 	for (i = 0; i < nsampl; i++) {
-		data[i] = *(sampl_t *)(aqbuf + ofstf % size);
+		data[i] = *(sampl_t *)(aibuf + ofstf % size);
 		ofstf += sizeof(sampl_t);
 	}
 	comedi_buf_read_alloc(async, ofstf - ofsti);
 	comedi_buf_read_free(async, ofstf - ofsti);
 	RTAI_COMEDI_UNLOCK(dev, subdev);
 #endif
-	return nsampl;
-}
-
-RTAI_SYSCALL_MODE long rt_comedi_command_data_write(void *dev, unsigned int subdev, long nsampl, lsampl_t *data)
-{
-	void *aqbuf;
-	int i, ofsti, ofstf, size;
-	if (comedi_map(dev, subdev, &aqbuf)) {
-		return RTE_OBJINV;
-	}
-	if ((i = comedi_get_buffer_contents(dev, subdev)) < nsampl) {
-		return i;
-	}
-	size = comedi_get_buffer_size(dev, subdev);
-	RTAI_COMEDI_LOCK(dev, subdev);
-	ofstf = ofsti = comedi_get_buffer_offset(dev, subdev);
-	for (i = 0; i < nsampl; i++) {
-		data[i] = *(sampl_t *)(aqbuf + ofstf % size);
-		ofstf += sizeof(sampl_t);
-	}
-	comedi_mark_buffer_read(dev, subdev, ofstf - ofsti);
-	RTAI_COMEDI_UNLOCK(dev, subdev);
 	return nsampl;
 }
 
@@ -400,6 +378,17 @@ RTAI_SYSCALL_MODE int rt_comedi_do_insnlist(void *dev, comedi_insnlist *ilist)
 	return i;
 }
 
+static RTAI_SYSCALL_MODE int rt_comedi_trigger(void *dev, unsigned int subdev, unsigned int trignum)
+{
+        comedi_insn insn;
+        lsampl_t data = trignum;
+        insn.insn   = INSN_INTTRIG;
+        insn.subdev = subdev;
+        insn.n      = 1;
+        insn.data   = &data;
+        return _comedi_do_insn(dev, &insn);
+}
+
 static RTAI_SYSCALL_MODE int _comedi_poll(void *dev, unsigned int subdev)
 {
 	int retval;
@@ -515,6 +504,41 @@ RTAI_SYSCALL_MODE long rt_comedi_wait_timed(RTIME delay, long *cbmask)
 	return rt_comedi_wait_until(rt_get_time() + delay, cbmask);
 }
 
+RTAI_SYSCALL_MODE long rt_comedi_command_data_write(void *dev, unsigned int subdev, long nsampl, lsampl_t *data)
+{
+	void *aobuf;
+	int i, ofsti, ofstf, size, avbs;
+	if (comedi_map(dev, subdev, &aobuf)) {
+		return RTE_OBJINV;
+	}
+	size = comedi_get_buffer_size(dev, subdev);
+	avbs = comedi_get_buffer_contents(dev, subdev);
+	if ((size - avbs) < nsampl) {
+		return (size - avbs);
+	}
+	RTAI_COMEDI_LOCK(dev, subdev);
+	ofstf = ofsti = (comedi_get_buffer_offset(dev, subdev) + avbs) % size;
+	for (i = 0; i < nsampl; i++) {
+		*(sampl_t *)(aobuf + ofstf % size) = data[i];
+		ofstf += sizeof(sampl_t);
+	}
+	comedi_mark_buffer_written(dev, subdev, ofstf - ofsti);
+	if (!avbs) {
+		int retval;
+        	comedi_insn insn;
+	        lsampl_t data = 0;
+	      	insn.insn   = INSN_INTTRIG;
+        	insn.subdev = subdev;
+		insn.n      = 1;
+		insn.data   = &data;
+		if ((retval = comedi_do_insn(dev, &insn)) < 0) {
+			return retval;
+		}
+	}
+	RTAI_COMEDI_UNLOCK(dev, subdev);
+	return nsampl;
+}
+
 static struct rt_fun_entry rtai_comedi_fun[] = {
   [_KCOMEDI_OPEN]                  = { 0, _comedi_open }
  ,[_KCOMEDI_CLOSE]                 = { 0, _comedi_close }
@@ -524,9 +548,7 @@ static struct rt_fun_entry rtai_comedi_fun[] = {
  ,[_KCOMEDI_REGISTER_CALLBACK]     = { 0, rt_comedi_register_callback }
  ,[_KCOMEDI_COMMAND]               = { 0, _comedi_command }
  ,[_KCOMEDI_COMMAND_TEST]          = { 0, _comedi_command_test }
-/* DEPRECATED
- ,[_KCOMEDI_TRIGGER    ]           = { 0, _comedi_trigger }
-*/
+ ,[_KCOMEDI_TRIGGER    ]           = { 0, rt_comedi_trigger }
  ,[_KCOMEDI_DATA_WRITE]            = { 0, _comedi_data_write}
  ,[_KCOMEDI_DATA_READ]             = { 0, _comedi_data_read }
  ,[_KCOMEDI_DATA_READ_DELAYED]     = { 0, _comedi_data_read_delayed }       
@@ -565,6 +587,7 @@ static struct rt_fun_entry rtai_comedi_fun[] = {
  ,[_KCOMEDI_COMD_DATA_WREAD_IF]    = { 0, rt_comedi_command_data_wread_if }
  ,[_KCOMEDI_COMD_DATA_WREAD_UNTIL] = { 0, rt_comedi_command_data_wread_until }
  ,[_KCOMEDI_COMD_DATA_WREAD_TIMED] = { 0, rt_comedi_command_data_wread_timed }
+ ,[_KCOMEDI_COMD_DATA_WRITE]       = { 0, rt_comedi_command_data_write }
 };
 
 int __rtai_comedi_init(void)
@@ -597,3 +620,5 @@ EXPORT_SYMBOL(rt_comedi_command_data_wread_if);
 EXPORT_SYMBOL(rt_comedi_command_data_wread_until);
 EXPORT_SYMBOL(rt_comedi_command_data_wread_timed);
 EXPORT_SYMBOL(rt_comedi_do_insnlist);
+EXPORT_SYMBOL(rt_comedi_trigger);
+EXPORT_SYMBOL(rt_comedi_command_data_write);

@@ -44,7 +44,7 @@ MODULE_LICENSE("GPL");
 
 #define space(adr)  ((unsigned long)adr > PAGE_OFFSET)
 
-#define RTAI_COMEDI_USE_LOCK
+//#define RTAI_COMEDI_USE_LOCK
 
 #ifdef RTAI_COMEDI_USE_LOCK
 

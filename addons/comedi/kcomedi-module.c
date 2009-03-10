@@ -44,6 +44,7 @@ MODULE_LICENSE("GPL");
 
 #define space(adr)  ((unsigned long)adr > PAGE_OFFSET)
 
+#define RTAI_COMEDI_USE_LOCK
 #ifdef RTAI_COMEDI_USE_LOCK
 
 #define RTAI_COMEDI_LOCK(dev, subdev) \
@@ -168,6 +169,28 @@ RTAI_SYSCALL_MODE long rt_comedi_command_data_read(void *dev, unsigned int subde
 	comedi_buf_read_free(async, ofstf - ofsti);
 	RTAI_COMEDI_UNLOCK(dev, subdev);
 #endif
+	return nsampl;
+}
+
+RTAI_SYSCALL_MODE long rt_comedi_command_data_write(void *dev, unsigned int subdev, long nsampl, lsampl_t *data)
+{
+	void *aqbuf;
+	int i, ofsti, ofstf, size;
+	if (comedi_map(dev, subdev, &aqbuf)) {
+		return RTE_OBJINV;
+	}
+	if ((i = comedi_get_buffer_contents(dev, subdev)) < nsampl) {
+		return i;
+	}
+	size = comedi_get_buffer_size(dev, subdev);
+	RTAI_COMEDI_LOCK(dev, subdev);
+	ofstf = ofsti = comedi_get_buffer_offset(dev, subdev);
+	for (i = 0; i < nsampl; i++) {
+		data[i] = *(sampl_t *)(aqbuf + ofstf % size);
+		ofstf += sizeof(sampl_t);
+	}
+	comedi_mark_buffer_read(dev, subdev, ofstf - ofsti);
+	RTAI_COMEDI_UNLOCK(dev, subdev);
 	return nsampl;
 }
 
@@ -360,7 +383,7 @@ static RTAI_SYSCALL_MODE int _comedi_do_insn(void *dev, comedi_insn *insn)
 	int retval;
 	RTAI_COMEDI_LOCK(dev, insn->subdev);
 	retval = comedi_do_insn(dev, insn);
-	RTAI_COMEDI_UNLOCK(dev, subdev);
+	RTAI_COMEDI_UNLOCK(dev, insn->subdev);
 	return retval;
 }
 
@@ -392,11 +415,11 @@ static RTAI_SYSCALL_MODE int _comedi_get_rangetype(unsigned int minor, unsigned 
 }
 */
 
-static RTAI_SYSCALL_MODE unsigned int _comedi_get_subdevice_flags(comedi_t *dev,unsigned int subdevice)
+static RTAI_SYSCALL_MODE unsigned int _comedi_get_subdevice_flags(comedi_t *dev,unsigned int subdev)
 {
 	int retval;
-	RTAI_COMEDI_LOCK(dev, insn->subdev);
-	retval = comedi_get_subdevice_flags(dev, subdevice);
+	RTAI_COMEDI_LOCK(dev, subdev);
+	retval = comedi_get_subdevice_flags(dev, subdev);
 	RTAI_COMEDI_UNLOCK(dev, subdev);
 	return retval;
 }
@@ -409,17 +432,17 @@ static RTAI_SYSCALL_MODE int _comedi_get_krange(void *dev, unsigned int subdev, 
 static RTAI_SYSCALL_MODE int _comedi_get_buf_head_pos(void * dev, unsigned int subdev)
 {
 	int retval;
-	RTAI_COMEDI_LOCK(dev, insn->subdev);
-	retval = comedi_get_buf_head_pos(dev,subdev);
+	RTAI_COMEDI_LOCK(dev, subdev);
+	retval = comedi_get_buf_head_pos(dev, subdev);
 	RTAI_COMEDI_UNLOCK(dev, subdev);
 	return retval;
 }
 
-static RTAI_SYSCALL_MODE int _comedi_set_user_int_count(comedi_t *dev, unsigned int subdevice, unsigned int buf_user_count)
+static RTAI_SYSCALL_MODE int _comedi_set_user_int_count(comedi_t *dev, unsigned int subdev, unsigned int buf_user_count)
 {
 	int retval;
-	RTAI_COMEDI_LOCK(dev, insn->subdev);
-	retval = comedi_set_user_int_count(dev, subdevice, buf_user_count);
+	RTAI_COMEDI_LOCK(dev, subdev);
+	retval = comedi_set_user_int_count(dev, subdev, buf_user_count);
 	RTAI_COMEDI_UNLOCK(dev, subdev);
 	return retval;
 }
@@ -427,7 +450,7 @@ static RTAI_SYSCALL_MODE int _comedi_set_user_int_count(comedi_t *dev, unsigned 
 static RTAI_SYSCALL_MODE int _comedi_map(comedi_t *dev, unsigned int subdev, void *ptr)
 {
 	int retval;
-	RTAI_COMEDI_LOCK(dev, insn->subdev);
+	RTAI_COMEDI_LOCK(dev, subdev);
 	retval = comedi_map(dev, subdev, ptr);
 	RTAI_COMEDI_UNLOCK(dev, subdev);
 	return retval;
@@ -436,7 +459,7 @@ static RTAI_SYSCALL_MODE int _comedi_map(comedi_t *dev, unsigned int subdev, voi
 static RTAI_SYSCALL_MODE int _comedi_unmap(comedi_t *dev, unsigned int subdev)
 {
 	int retval;
-	RTAI_COMEDI_LOCK(dev, insn->subdev);
+	RTAI_COMEDI_LOCK(dev, subdev);
 	retval = comedi_unmap(dev, subdev);
 	RTAI_COMEDI_UNLOCK(dev, subdev);
 	return retval;

@@ -69,6 +69,14 @@ do { \
 	task = (void *)(long)(CONFIG_RTAI_USE_NEWERR ? (((void *)rt_current->blocked_on != RTP_UNBLKD) ? RTE_TIMOUT : RTE_UNBLKD) : 0); \
 } while (0)
 
+/* ++++++++++++++++++++++++++ TASK POINTERS CHECKS +++++++++++++++++++++++++ */
+
+#define CHECK_SENDER_MAGIC(task) \
+do { if (task->magic != RT_TASK_MAGIC) return TASK_INVAL; } while (0)
+
+#define CHECK_RECEIVER_MAGIC(task) \
+do { if (task && task->magic != RT_TASK_MAGIC) return TASK_INVAL; } while (0)
+
 /* +++++++++++++++++++++++++++++ ASYNC SENDS ++++++++++++++++++++++++++++++++ */
 
 /**
@@ -106,9 +114,7 @@ RTAI_SYSCALL_MODE RT_TASK *rt_send(RT_TASK *task, unsigned long msg)
 	DECLARE_RT_CURRENT;
 	unsigned long flags;
 
-	if (task->magic != RT_TASK_MAGIC) {
-		return TASK_INVAL;
-	}
+	CHECK_SENDER_MAGIC(task);
 
 	flags = rt_global_save_flags_and_cli();
 	ASSIGN_RT_CURRENT;
@@ -172,9 +178,7 @@ RTAI_SYSCALL_MODE RT_TASK *rt_send_if(RT_TASK *task, unsigned long msg)
 	DECLARE_RT_CURRENT;
 	unsigned long flags;
 
-	if (task->magic != RT_TASK_MAGIC) {
-		return TASK_INVAL;
-	}
+	CHECK_SENDER_MAGIC(task);
 
 	flags = rt_global_save_flags_and_cli();
 	ASSIGN_RT_CURRENT;
@@ -244,9 +248,7 @@ RTAI_SYSCALL_MODE RT_TASK *rt_send_until(RT_TASK *task, unsigned long msg, RTIME
 	DECLARE_RT_CURRENT;
 	unsigned long flags;
 
-	if (task->magic != RT_TASK_MAGIC) {
-		return TASK_INVAL;
-	}
+	CHECK_SENDER_MAGIC(task);
 
 	flags = rt_global_save_flags_and_cli();
 	ASSIGN_RT_CURRENT;
@@ -383,9 +385,7 @@ RTAI_SYSCALL_MODE RT_TASK *rt_rpc(RT_TASK *task, unsigned long to_do, void *resu
 	DECLARE_RT_CURRENT;
 	unsigned long flags;
 
-	if (task->magic != RT_TASK_MAGIC) {
-		return TASK_INVAL;
-	}
+	CHECK_SENDER_MAGIC(task);
 
 	flags = rt_global_save_flags_and_cli();
 	ASSIGN_RT_CURRENT;
@@ -464,9 +464,8 @@ RTAI_SYSCALL_MODE RT_TASK *rt_rpc_if(RT_TASK *task, unsigned long to_do, void *r
 	DECLARE_RT_CURRENT;
 	unsigned long flags;
 
-	if (task->magic != RT_TASK_MAGIC) {
-		return TASK_INVAL;
-	}
+	CHECK_SENDER_MAGIC(task);
+
 	flags = rt_global_save_flags_and_cli();
 	ASSIGN_RT_CURRENT;
 	if ((task->state & RT_SCHED_RECEIVE) &&
@@ -541,9 +540,7 @@ RTAI_SYSCALL_MODE RT_TASK *rt_rpc_until(RT_TASK *task, unsigned long to_do, void
 	DECLARE_RT_CURRENT;
 	unsigned long flags;
 
-	if (task->magic != RT_TASK_MAGIC) {
-		return TASK_INVAL;
-	}
+	CHECK_SENDER_MAGIC(task);
 
 	flags = rt_global_save_flags_and_cli();
 	ASSIGN_RT_CURRENT;
@@ -698,9 +695,7 @@ RTAI_SYSCALL_MODE RT_TASK *rt_return(RT_TASK *task, unsigned long result)
 	DECLARE_RT_CURRENT;
 	unsigned long flags;
 
-	if (task->magic != RT_TASK_MAGIC) {
-		return TASK_INVAL;
-	}
+	CHECK_SENDER_MAGIC(task);
 
 	flags = rt_global_save_flags_and_cli();
 	ASSIGN_RT_CURRENT;
@@ -762,9 +757,7 @@ RTAI_SYSCALL_MODE RT_TASK *rt_evdrp(RT_TASK *task, void *msg)
 {
 	DECLARE_RT_CURRENT;
 
-	if (task && task->magic != RT_TASK_MAGIC) {
-		return TASK_INVAL;
-	}
+	CHECK_RECEIVER_MAGIC(task);
 
 	ASSIGN_RT_CURRENT;
 	if (!task) task = (rt_current->msg_queue.next)->task;
@@ -817,9 +810,7 @@ RTAI_SYSCALL_MODE RT_TASK *rt_receive(RT_TASK *task, void *msg)
 	DECLARE_RT_CURRENT;
 	unsigned long flags;
 
-	if (task && task->magic != RT_TASK_MAGIC) {
-		return TASK_INVAL;
-	}
+	CHECK_RECEIVER_MAGIC(task);
 
 	flags = rt_global_save_flags_and_cli();
 	ASSIGN_RT_CURRENT;
@@ -905,9 +896,7 @@ RTAI_SYSCALL_MODE RT_TASK *rt_receive_if(RT_TASK *task, void *msg)
 	DECLARE_RT_CURRENT;
 	unsigned long flags;
 
-	if (task && task->magic != RT_TASK_MAGIC) {
-		return TASK_INVAL;
-	}
+	CHECK_RECEIVER_MAGIC(task);
 
 	flags = rt_global_save_flags_and_cli();
 	ASSIGN_RT_CURRENT;
@@ -999,9 +988,7 @@ RTAI_SYSCALL_MODE RT_TASK *rt_receive_until(RT_TASK *task, void *msg, RTIME time
 	DECLARE_RT_CURRENT;
 	unsigned long flags;
 
-	if (task && task->magic != RT_TASK_MAGIC) {
-		return TASK_INVAL;
-	}
+	CHECK_RECEIVER_MAGIC(task);
 
 	flags = rt_global_save_flags_and_cli();
 	ASSIGN_RT_CURRENT;

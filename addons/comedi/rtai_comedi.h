@@ -182,6 +182,8 @@ RTAI_PROTO(int, rt_comedi_register_callback, (void *dev, unsigned int subdevice,
         return rtai_lxrt(FUN_COMEDI_LXRT_INDX, COMEDI_LXRT_SIZARG, _KCOMEDI_REGISTER_CALLBACK, &arg).i[LOW];
 }
 
+#define comedi_register_callback(dev, subdev, mask, cb, arg)  rt_comedi_register_callback(dev, subdev, mask, NULL, arg)
+
 RTAI_PROTO(long, rt_comedi_wait, (long *cbmask))
 {
        	struct { long *cbmask; } arg = { cbmask };
@@ -485,7 +487,5 @@ RTAI_PROTO(long, rt_comedi_command_data_wread_timed, (void *dev, unsigned int su
 }
 
 #endif /* #ifdef __KERNEL__ */
-
-#define comedi_register_callback(dev, subdev, mask, cb, arg)  rt_comedi_register_callback(dev, subdev, mask, NULL, arg)
 
 #endif /* #ifndef _RTAI_COMEDI_H_ */

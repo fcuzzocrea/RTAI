@@ -272,8 +272,8 @@ RTAI_SYSCALL_MODE int _rt_mbx_evdrp(MBX *mbx, void *msg, int msg_size, int space
 }
 
 
-#define CHK_MBX_MAGIC { if (mbx->magic != RT_MBX_MAGIC) \
-	{ return CONFIG_RTAI_USE_NEWERR ? RTE_OBJINV : -EINVAL; } }
+#define CHK_MBX_MAGIC \
+do { if (!mbx || mbx->magic != RT_MBX_MAGIC) return (CONFIG_RTAI_USE_NEWERR ? RTE_OBJINV : -EINVAL); } while (0)
 
 #define MBX_RET(msg_size, retval) \
 	(CONFIG_RTAI_USE_NEWERR ? retval : msg_size)

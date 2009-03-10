@@ -238,11 +238,6 @@ RTAI_PROTO(int, comedi_command_test, (void *dev, comedi_cmd *cmd))
 	return -1;
 }
 
-RTAI_PROTO(int, comedi_trigger, (void *dev, unsigned int subdev, comedi_trig *it))
-{
-	return -1;
-}
-
 RTAI_PROTO(long, rt_comedi_command_data_read, (void *dev, unsigned int subdev, long nsampl, lsampl_t *data))
 {
 	int retval;

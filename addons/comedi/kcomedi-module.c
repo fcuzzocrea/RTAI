@@ -44,7 +44,7 @@ MODULE_LICENSE("GPL");
 
 #define space(adr)  ((unsigned long)adr > PAGE_OFFSET)
 
-//#define RTAI_COMEDI_USE_LOCK
+#define RTAI_COMEDI_USE_LOCK
 
 #ifdef RTAI_COMEDI_USE_LOCK
 
@@ -389,7 +389,7 @@ static inline int _rt_comedi_trigger(void *dev, unsigned int subdev, unsigned in
         return _comedi_do_insn(dev, &insn);
 }
 
-static RTAI_SYSCALL_MODE int rt_comedi_trigger(void *dev, unsigned int subdev, unsigned int trignum)
+RTAI_SYSCALL_MODE int rt_comedi_trigger(void *dev, unsigned int subdev, unsigned int trignum)
 {
         return _rt_comedi_trigger(dev, subdev, trignum);
 }

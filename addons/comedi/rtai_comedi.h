@@ -214,10 +214,10 @@ RTAI_PROTO(int, comedi_command, (void *dev, comedi_cmd *cmd))
 	int retval;
         struct { void *dev; comedi_cmd *cmd; } arg = { dev, &lcmd };
 	if (cmd) {
-		memcpy(&lcmd, cmd, sizeof(comedi_cmd));
+		lcmd = cmd[0];
         	retval = rtai_lxrt(FUN_COMEDI_LXRT_INDX, COMEDI_LXRT_SIZARG, _KCOMEDI_COMMAND, &arg).i[LOW];
 		if (!retval) {
-			memcpy(cmd, &lcmd, sizeof(comedi_cmd));
+			cmd[0] = lcmd;
 		}
         	return retval;
 	}
@@ -230,10 +230,10 @@ RTAI_PROTO(int, comedi_command_test, (void *dev, comedi_cmd *cmd))
 	int retval;
         struct { void *dev; comedi_cmd *cmd; } arg = { dev, &lcmd };
 	if (cmd) {
-		memcpy(&lcmd, cmd, sizeof(comedi_cmd));
+		lcmd = cmd[0];
 	        retval = rtai_lxrt(FUN_COMEDI_LXRT_INDX, COMEDI_LXRT_SIZARG, _KCOMEDI_COMMAND_TEST, &arg).i[LOW];
 		if (!retval) {
-			memcpy(cmd, &lcmd, sizeof(comedi_cmd));
+			cmd[0] = lcmd;
 		}
         	return retval;
 	}
@@ -390,7 +390,7 @@ RTAI_PROTO(int, comedi_get_n_ranges,(void *dev, unsigned int subdev, unsigned in
 RTAI_PROTO(int, comedi_do_insn, (void *dev, comedi_insn *insn))
 {
 	if (insn) {
-		comedi_insn linsn = *insn;
+		comedi_insn linsn = insn[0];
 		lsampl_t ldata[linsn.n];
 	        struct { void *dev; comedi_insn *insn; } arg = { dev, &linsn };
 		int retval;
@@ -407,7 +407,7 @@ RTAI_PROTO(int, comedi_do_insn, (void *dev, comedi_insn *insn))
 RTAI_PROTO(int, rt_comedi_do_insnlist, (void *dev, comedi_insnlist *ilist))
 {
 	if (ilist) {
-		comedi_insnlist lilist = *ilist;
+		comedi_insnlist lilist = ilist[0];
 		comedi_insn insns[lilist.n_insns];
 	        struct { void *dev; comedi_insnlist *ilist; } arg = { dev, &lilist };
 		int i, retval, maxdata;
@@ -458,7 +458,7 @@ RTAI_PROTO(int, comedi_get_krange,(void *dev, unsigned int subdev, unsigned int 
 	comedi_krange lkrange;
 	struct { void *dev; unsigned long subdev; unsigned long chan; unsigned long range; comedi_krange *krange; } arg = { dev, subdev, chan, range, &lkrange };
 	retval = rtai_lxrt(FUN_COMEDI_LXRT_INDX, COMEDI_LXRT_SIZARG, _KCOMEDI_GET_KRANGE, &arg).i[LOW];
-	memcpy(krange, &lkrange, sizeof(comedi_krange));
+	krange[0] = lkrange;
 	return retval;
 }
 

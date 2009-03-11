@@ -42,7 +42,7 @@
 #include <rtai_mbx.h>
 #include <rtai_fifos.h>
 
-#define RTAILAB_VERSION         "3.6.3"
+#define RTAILAB_VERSION         "3.6.4"
 #define MAX_ADR_SRCH      500
 #define MAX_NAME_SIZE     256
 #define MAX_SCOPES        100
@@ -537,7 +537,7 @@ static void *rt_HostInterface(void *args)
 	  for(j=0;j<lenIPAR[i];j++) {
 	    rt_receivex(task, &Request, 1, &len);
 	    sprintf(rtParam.paramName, "Value[%d]",j);
-	    rtParam.dataValue[j] = IPAR[Idx+j];
+	    rtParam.dataValue[0] = IPAR[Idx+j];
 	    rt_returnx(task, &rtParam, sizeof(rtParam));
 	  } 
 	}

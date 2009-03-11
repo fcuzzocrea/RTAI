@@ -377,10 +377,10 @@ RTAI_SYSCALL_MODE int rt_comedi_do_insnlist(void *dev, comedi_insnlist *ilist)
 	return i;
 }
 
-static inline int _rt_comedi_trigger(void *dev, unsigned int subdev, unsigned int trignum)
+static inline int _rt_comedi_trigger(void *dev, unsigned int subdev)
 {
         comedi_insn insn;
-        lsampl_t data = trignum;
+        lsampl_t data = 0;
         insn.insn   = INSN_INTTRIG;
         insn.subdev = subdev;
         insn.n      = 1;
@@ -390,7 +390,7 @@ static inline int _rt_comedi_trigger(void *dev, unsigned int subdev, unsigned in
 
 RTAI_SYSCALL_MODE int rt_comedi_trigger(void *dev, unsigned int subdev, unsigned int trignum)
 {
-        return _rt_comedi_trigger(dev, subdev, trignum);
+        return _rt_comedi_trigger(dev, subdev);
 }
 
 static RTAI_SYSCALL_MODE int _comedi_poll(void *dev, unsigned int subdev)
@@ -529,7 +529,7 @@ RTAI_SYSCALL_MODE long rt_comedi_command_data_write(void *dev, unsigned int subd
 	comedi_mark_buffer_written(dev, subdev, ofstf - ofsti);
 	if (!avbs) {
 		int retval;
-		if ((retval = _rt_comedi_trigger(dev, subdev, 0)) < 0) {
+		if ((retval = _rt_comedi_trigger(dev, subdev)) < 0) {
 			return retval;
 		}
 	}

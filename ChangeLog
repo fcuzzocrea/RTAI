@@ -1,3 +1,8 @@
+2009-03-11 Roberto Bucher <roberto.bucher@supsi.ch>
+
+	* rtai-lab/scilab*/rtmain.c: Bug with rtParam corrected. Thanks
+	  to Henrik Slotholt.
+
 2009-03-12 Paolo Mantegazza <mantegazza@aero.polimi.it>
 
 	* addons/comedi/kcomedi-module.c: fix rt_comedi_wait insertions in 

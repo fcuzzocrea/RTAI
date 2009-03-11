@@ -388,7 +388,7 @@ static inline int _rt_comedi_trigger(void *dev, unsigned int subdev)
         return _comedi_do_insn(dev, &insn);
 }
 
-RTAI_SYSCALL_MODE int rt_comedi_trigger(void *dev, unsigned int subdev, unsigned int trignum)
+RTAI_SYSCALL_MODE int rt_comedi_trigger(void *dev, unsigned int subdev)
 {
         return _rt_comedi_trigger(dev, subdev);
 }

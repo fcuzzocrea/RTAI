@@ -123,7 +123,7 @@ RTAI_SYSCALL_MODE long rt_comedi_command_data_wread_timed(void *dev, unsigned in
 
 RTAI_SYSCALL_MODE int rt_comedi_do_insnlist(void *dev, comedi_insnlist *ilist);
 
-RTAI_SYSCALL_MODE int rt_comedi_trigger(void *dev, unsigned int subdev, unsigned int trignum);
+RTAI_SYSCALL_MODE int rt_comedi_trigger(void *dev, unsigned int subdev);
 
 RTAI_SYSCALL_MODE long rt_comedi_command_data_write(void *dev, unsigned int subdev, long nchans, lsampl_t *data);
 
@@ -434,11 +434,11 @@ RTAI_PROTO(int, rt_comedi_do_insnlist, (void *dev, comedi_insnlist *ilist))
 	return -1;
 }
 
-RTAI_PROTO(int, rt_comedi_trigger, (void *dev, unsigned int subdev, unsigned int trignum))
+RTAI_PROTO(int, rt_comedi_trigger, (void *dev, unsigned int subdev))
 {
         comedi_insn insn;
 	struct { void *dev; comedi_insn *insn; } arg = { dev, &insn };
-        lsampl_t data = trignum;
+        lsampl_t data = 0;
         insn.insn   = INSN_INTTRIG;
         insn.subdev = subdev;
         insn.n      = 1;

@@ -42,8 +42,6 @@ MODULE_DESCRIPTION("RTAI LXRT binding for COMEDI kcomedilib");
 MODULE_AUTHOR("The Comedi Players");
 MODULE_LICENSE("GPL");
 
-#define space(adr)  ((unsigned long)adr > PAGE_OFFSET)
-
 //#define RTAI_COMEDI_USE_LOCK
 
 #ifdef RTAI_COMEDI_USE_LOCK
@@ -61,6 +59,7 @@ MODULE_LICENSE("GPL");
 #endif
 
 #define space(adr)  ((unsigned long)adr > PAGE_OFFSET)
+
 static int rtai_comedi_callback(unsigned int, RT_TASK *) __attribute__ ((__unused__));
 static int rtai_comedi_callback(unsigned int val, RT_TASK *task)
 {

@@ -246,7 +246,7 @@ RTAI_PROTO(long, rt_comedi_command_data_read, (void *dev, unsigned int subdev, l
 	lsampl_t ldata[nchans];
 	struct { void *dev; unsigned long subdev; long nchans; lsampl_t *data; } arg = { dev, subdev, nchans, ldata };
 	retval = rtai_lxrt(FUN_COMEDI_LXRT_INDX, COMEDI_LXRT_SIZARG, _KCOMEDI_COMD_DATA_READ, &arg).i[LOW];
-	memcpy(data, &ldata, nchans*sizeof(lsampl_t));
+	memcpy(data, &ldata, sizeof(ldata));
 	return retval;
 }
 
@@ -254,7 +254,7 @@ RTAI_PROTO(long, rt_comedi_command_data_write, (void *dev, unsigned int subdev, 
 {
 	lsampl_t ldata[nchans];
 	struct { void *dev; unsigned long subdev; long nchans; lsampl_t *data; } arg = { dev, subdev, nchans, ldata };
-	memcpy(ldata, data, nchans*sizeof(lsampl_t));
+	memcpy(ldata, data, sizeof(ldata));
 	return rtai_lxrt(FUN_COMEDI_LXRT_INDX, COMEDI_LXRT_SIZARG, _KCOMEDI_COMD_DATA_WRITE, &arg).i[LOW];
 }
 
@@ -394,10 +394,10 @@ RTAI_PROTO(int, comedi_do_insn, (void *dev, comedi_insn *insn))
 		lsampl_t ldata[linsn.n];
 	        struct { void *dev; comedi_insn *insn; } arg = { dev, &linsn };
 		int retval;
-		memcpy(ldata, linsn.data, linsn.n*sizeof(lsampl_t));
+		memcpy(ldata, linsn.data, sizeof(ldata));
 		linsn.data = ldata;
 		if (!(retval = rtai_lxrt(FUN_COMEDI_LXRT_INDX, COMEDI_LXRT_SIZARG, _KCOMEDI_DO_INSN, &arg).i[LOW])) {
-			memcpy(insn[0].data, ldata, linsn.n*sizeof(lsampl_t));
+			memcpy(insn[0].data, ldata, sizeof(ldata));
 		}
         	return retval;
 	}

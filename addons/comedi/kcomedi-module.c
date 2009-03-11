@@ -125,7 +125,7 @@ static RTAI_SYSCALL_MODE int _comedi_command_test(void *dev, comedi_cmd *cmd)
 	return retval;
 }
 
-RTAI_SYSCALL_MODE long rt_comedi_command_data_read(void *dev, unsigned int subdev, long nsampl, lsampl_t *data)
+RTAI_SYSCALL_MODE long rt_comedi_command_data_read(void *dev, unsigned int subdev, long nchans, lsampl_t *data)
 {
 	void *aibuf;
 	int i, ofsti, ofstf, size;
@@ -133,13 +133,13 @@ RTAI_SYSCALL_MODE long rt_comedi_command_data_read(void *dev, unsigned int subde
 	if (comedi_map(dev, subdev, &aibuf)) {
 		return RTE_OBJINV;
 	}
-	if ((i = comedi_get_buffer_contents(dev, subdev)) < nsampl) {
+	if ((i = comedi_get_buffer_contents(dev, subdev)) < nchans) {
 		return i;
 	}
 	size = comedi_get_buffer_size(dev, subdev);
 	RTAI_COMEDI_LOCK(dev, subdev);
 	ofstf = ofsti = comedi_get_buffer_offset(dev, subdev);
-	for (i = 0; i < nsampl; i++) {
+	for (i = 0; i < nchans; i++) {
 		data[i] = *(sampl_t *)(aibuf + ofstf % size);
 		ofstf += sizeof(sampl_t);
 	}
@@ -157,12 +157,12 @@ RTAI_SYSCALL_MODE long rt_comedi_command_data_read(void *dev, unsigned int subde
                 return RTE_OBJINV;
 	}
 	aibuf = (sampl_t *)async->prealloc_buf;
-	if ((i = comedi_buf_read_n_available(async)) < nsampl) {
+	if ((i = comedi_buf_read_n_available(async)) < nchans) {
 		return i;
 	}
 	ofstf = ofsti = async->buf_read_ptr;
 	size = async->prealloc_bufsz;
-	for (i = 0; i < nsampl; i++) {
+	for (i = 0; i < nchans; i++) {
 		data[i] = *(sampl_t *)(aibuf + ofstf % size);
 		ofstf += sizeof(sampl_t);
 	}
@@ -170,14 +170,14 @@ RTAI_SYSCALL_MODE long rt_comedi_command_data_read(void *dev, unsigned int subde
 	comedi_buf_read_free(async, ofstf - ofsti);
 	RTAI_COMEDI_UNLOCK(dev, subdev);
 #endif
-	return nsampl;
+	return nchans;
 }
 
 #define WAIT       0
 #define WAITIF     1
 #define WAITUNTIL  2
 
-static inline long _rt_comedi_command_data_wread(void *dev, unsigned int subdev, long nsampl, lsampl_t *data, RTIME until, long *maskarg, int waitmode)
+static inline long _rt_comedi_command_data_wread(void *dev, unsigned int subdev, long nchans, lsampl_t *data, RTIME until, long *maskarg, int waitmode)
 {
 	long cbmask, retval, space, mask;
 	space = space(maskarg);
@@ -205,29 +205,29 @@ static inline long _rt_comedi_command_data_wread(void *dev, unsigned int subdev,
 		} else {
 			rt_put_user(cbmask, maskarg);
 		}
-		return rt_comedi_command_data_read(dev, subdev, nsampl, data);
+		return rt_comedi_command_data_read(dev, subdev, nchans, data);
 	}
 	return retval;
 }
 
-RTAI_SYSCALL_MODE long rt_comedi_command_data_wread(void *dev, unsigned int subdev, long nsampl, lsampl_t *data, long *maskarg)
+RTAI_SYSCALL_MODE long rt_comedi_command_data_wread(void *dev, unsigned int subdev, long nchans, lsampl_t *data, long *maskarg)
 {
-	return _rt_comedi_command_data_wread(dev, subdev, nsampl, data, (RTIME)0, maskarg, WAIT);
+	return _rt_comedi_command_data_wread(dev, subdev, nchans, data, (RTIME)0, maskarg, WAIT);
 }
 
-RTAI_SYSCALL_MODE long rt_comedi_command_data_wread_if(void *dev, unsigned int subdev, long nsampl, lsampl_t *data, long *maskarg)
+RTAI_SYSCALL_MODE long rt_comedi_command_data_wread_if(void *dev, unsigned int subdev, long nchans, lsampl_t *data, long *maskarg)
 {
-	return _rt_comedi_command_data_wread(dev, subdev, nsampl, data, (RTIME)0, maskarg, WAITIF);
+	return _rt_comedi_command_data_wread(dev, subdev, nchans, data, (RTIME)0, maskarg, WAITIF);
 }
 
-RTAI_SYSCALL_MODE long rt_comedi_command_data_wread_until(void *dev, unsigned int subdev, long nsampl, lsampl_t *data, RTIME until, long *maskarg)
+RTAI_SYSCALL_MODE long rt_comedi_command_data_wread_until(void *dev, unsigned int subdev, long nchans, lsampl_t *data, RTIME until, long *maskarg)
 {
-	return _rt_comedi_command_data_wread(dev, subdev, nsampl, data, until, maskarg, WAITUNTIL);
+	return _rt_comedi_command_data_wread(dev, subdev, nchans, data, until, maskarg, WAITUNTIL);
 }
 
-RTAI_SYSCALL_MODE long rt_comedi_command_data_wread_timed(void *dev, unsigned int subdev, long nsampl, lsampl_t *data, RTIME delay, long *cbmask)
+RTAI_SYSCALL_MODE long rt_comedi_command_data_wread_timed(void *dev, unsigned int subdev, long nchans, lsampl_t *data, RTIME delay, long *cbmask)
 {
-	return rt_comedi_command_data_wread_until(dev, subdev, nsampl, data, rt_get_time() + delay, cbmask);
+	return rt_comedi_command_data_wread_until(dev, subdev, nchans, data, rt_get_time() + delay, cbmask);
 }
 
 static RTAI_SYSCALL_MODE int _comedi_data_write(void *dev, unsigned int subdev, unsigned int chan, unsigned int range, unsigned int aref, lsampl_t data)
@@ -509,7 +509,7 @@ RTAI_SYSCALL_MODE long rt_comedi_wait_timed(RTIME delay, long *cbmask)
 	return rt_comedi_wait_until(rt_get_time() + delay, cbmask);
 }
 
-RTAI_SYSCALL_MODE long rt_comedi_command_data_write(void *dev, unsigned int subdev, long nsampl, lsampl_t *data)
+RTAI_SYSCALL_MODE long rt_comedi_command_data_write(void *dev, unsigned int subdev, long nchans, lsampl_t *data)
 {
 	void *aobuf;
 	int i, ofsti, ofstf, size, avbs;
@@ -518,12 +518,12 @@ RTAI_SYSCALL_MODE long rt_comedi_command_data_write(void *dev, unsigned int subd
 	}
 	size = comedi_get_buffer_size(dev, subdev);
 	avbs = comedi_get_buffer_contents(dev, subdev);
-	if ((size - avbs) < nsampl) {
+	if ((size - avbs) < nchans) {
 		return (size - avbs);
 	}
 	RTAI_COMEDI_LOCK(dev, subdev);
 	ofstf = ofsti = (comedi_get_buffer_offset(dev, subdev) + avbs) % size;
-	for (i = 0; i < nsampl; i++) {
+	for (i = 0; i < nchans; i++) {
 		*(sampl_t *)(aobuf + ofstf % size) = data[i];
 		ofstf += sizeof(sampl_t);
 	}
@@ -535,7 +535,7 @@ RTAI_SYSCALL_MODE long rt_comedi_command_data_write(void *dev, unsigned int subd
 		}
 	}
 	RTAI_COMEDI_UNLOCK(dev, subdev);
-	return nsampl;
+	return nchans;
 }
 
 static struct rt_fun_entry rtai_comedi_fun[] = {

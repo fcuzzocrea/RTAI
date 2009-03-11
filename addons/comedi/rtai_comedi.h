@@ -111,21 +111,21 @@ RTAI_SYSCALL_MODE char *rt_comedi_get_board_name(void *dev, char *name);
 
 RTAI_SYSCALL_MODE int rt_comedi_register_callback(void *dev, unsigned int subdev, unsigned int mask, int (*callback)(unsigned int, void *), void *arg);
 
-RTAI_SYSCALL_MODE long rt_comedi_command_data_read (void *dev, unsigned int subdev, long nsampl, lsampl_t *data);
+RTAI_SYSCALL_MODE long rt_comedi_command_data_read (void *dev, unsigned int subdev, long nchans, lsampl_t *data);
 
-RTAI_SYSCALL_MODE long rt_comedi_command_data_wread(void *dev, unsigned int subdev, long nsampl, lsampl_t *data, long *mask);
+RTAI_SYSCALL_MODE long rt_comedi_command_data_wread(void *dev, unsigned int subdev, long nchans, lsampl_t *data, long *mask);
 
-RTAI_SYSCALL_MODE long rt_comedi_command_data_wread_if(void *dev, unsigned int subdev, long nsampl, lsampl_t *data, long *mask);
+RTAI_SYSCALL_MODE long rt_comedi_command_data_wread_if(void *dev, unsigned int subdev, long nchans, lsampl_t *data, long *mask);
 
-RTAI_SYSCALL_MODE long rt_comedi_command_data_wread_until(void *dev, unsigned int subdev, long nsampl, lsampl_t *data, RTIME until, long *mask);
+RTAI_SYSCALL_MODE long rt_comedi_command_data_wread_until(void *dev, unsigned int subdev, long nchans, lsampl_t *data, RTIME until, long *mask);
 
-RTAI_SYSCALL_MODE long rt_comedi_command_data_wread_timed(void *dev, unsigned int subdev, long nsampl, lsampl_t *data, RTIME delay, long *cbmask);
+RTAI_SYSCALL_MODE long rt_comedi_command_data_wread_timed(void *dev, unsigned int subdev, long nchans, lsampl_t *data, RTIME delay, long *cbmask);
 
 RTAI_SYSCALL_MODE int rt_comedi_do_insnlist(void *dev, comedi_insnlist *ilist);
 
 RTAI_SYSCALL_MODE int rt_comedi_trigger(void *dev, unsigned int subdev, unsigned int trignum);
 
-RTAI_SYSCALL_MODE long rt_comedi_command_data_write(void *dev, unsigned int subdev, long nsampl, lsampl_t *data);
+RTAI_SYSCALL_MODE long rt_comedi_command_data_write(void *dev, unsigned int subdev, long nchans, lsampl_t *data);
 
 #ifdef __cplusplus
 }
@@ -240,21 +240,21 @@ RTAI_PROTO(int, comedi_command_test, (void *dev, comedi_cmd *cmd))
 	return -1;
 }
 
-RTAI_PROTO(long, rt_comedi_command_data_read, (void *dev, unsigned int subdev, long nsampl, lsampl_t *data))
+RTAI_PROTO(long, rt_comedi_command_data_read, (void *dev, unsigned int subdev, long nchans, lsampl_t *data))
 {
 	int retval;
-	lsampl_t ldata[nsampl];
-	struct { void *dev; unsigned long subdev; long nsampl; lsampl_t *data; } arg = { dev, subdev, nsampl, ldata };
+	lsampl_t ldata[nchans];
+	struct { void *dev; unsigned long subdev; long nchans; lsampl_t *data; } arg = { dev, subdev, nchans, ldata };
 	retval = rtai_lxrt(FUN_COMEDI_LXRT_INDX, COMEDI_LXRT_SIZARG, _KCOMEDI_COMD_DATA_READ, &arg).i[LOW];
-	memcpy(data, &ldata, nsampl*sizeof(lsampl_t));
+	memcpy(data, &ldata, nchans*sizeof(lsampl_t));
 	return retval;
 }
 
-RTAI_PROTO(long, rt_comedi_command_data_write, (void *dev, unsigned int subdev, long nsampl, lsampl_t *data))
+RTAI_PROTO(long, rt_comedi_command_data_write, (void *dev, unsigned int subdev, long nchans, lsampl_t *data))
 {
-	lsampl_t ldata[nsampl];
-	struct { void *dev; unsigned long subdev; long nsampl; lsampl_t *data; } arg = { dev, subdev, nsampl, ldata };
-	memcpy(ldata, data, nsampl*sizeof(lsampl_t));
+	lsampl_t ldata[nchans];
+	struct { void *dev; unsigned long subdev; long nchans; lsampl_t *data; } arg = { dev, subdev, nchans, ldata };
+	memcpy(ldata, data, nchans*sizeof(lsampl_t));
 	return rtai_lxrt(FUN_COMEDI_LXRT_INDX, COMEDI_LXRT_SIZARG, _KCOMEDI_COMD_DATA_WRITE, &arg).i[LOW];
 }
 
@@ -462,27 +462,27 @@ RTAI_PROTO(int, comedi_get_krange,(void *dev, unsigned int subdev, unsigned int 
 	return retval;
 }
 
-RTAI_PROTO(long, rt_comedi_command_data_wread, (void *dev, unsigned int subdev, long nsampl, lsampl_t *data, long *mask))
+RTAI_PROTO(long, rt_comedi_command_data_wread, (void *dev, unsigned int subdev, long nchans, lsampl_t *data, long *mask))
 {
-	struct { void *dev; unsigned long subdev; long nsampl; lsampl_t *data; long *mask; } arg = { dev, subdev, nsampl, data, mask };
+	struct { void *dev; unsigned long subdev; long nchans; lsampl_t *data; long *mask; } arg = { dev, subdev, nchans, data, mask };
 	return rtai_lxrt(FUN_COMEDI_LXRT_INDX, COMEDI_LXRT_SIZARG, _KCOMEDI_COMD_DATA_WREAD, &arg).i[LOW];
 }
 
-RTAI_PROTO(long, rt_comedi_command_data_wread_if, (void *dev, unsigned int subdev, long nsampl, lsampl_t *data, long *mask))
+RTAI_PROTO(long, rt_comedi_command_data_wread_if, (void *dev, unsigned int subdev, long nchans, lsampl_t *data, long *mask))
 {
-	struct { void *dev; unsigned long subdev; long nsampl; lsampl_t *data; long *mask; } arg = { dev, subdev, nsampl, data, mask };
+	struct { void *dev; unsigned long subdev; long nchans; lsampl_t *data; long *mask; } arg = { dev, subdev, nchans, data, mask };
 	return rtai_lxrt(FUN_COMEDI_LXRT_INDX, COMEDI_LXRT_SIZARG, _KCOMEDI_COMD_DATA_WREAD_IF, &arg).i[LOW];
 }
 
-RTAI_PROTO(long, rt_comedi_command_data_wread_until, (void *dev, unsigned int subdev, long nsampl, lsampl_t *data, RTIME until, long *mask))
+RTAI_PROTO(long, rt_comedi_command_data_wread_until, (void *dev, unsigned int subdev, long nchans, lsampl_t *data, RTIME until, long *mask))
 {
-	struct { void *dev; unsigned long subdev; long nsampl; lsampl_t *data; RTIME until; long *mask; } arg = { dev, subdev, nsampl, data, until, mask };
+	struct { void *dev; unsigned long subdev; long nchans; lsampl_t *data; RTIME until; long *mask; } arg = { dev, subdev, nchans, data, until, mask };
 	return rtai_lxrt(FUN_COMEDI_LXRT_INDX, COMEDI_LXRT_SIZARG, _KCOMEDI_COMD_DATA_WREAD_UNTIL, &arg).i[LOW];
 }
 
-RTAI_PROTO(long, rt_comedi_command_data_wread_timed, (void *dev, unsigned int subdev, long nsampl, lsampl_t *data, RTIME delay, long *mask))
+RTAI_PROTO(long, rt_comedi_command_data_wread_timed, (void *dev, unsigned int subdev, long nchans, lsampl_t *data, RTIME delay, long *mask))
 {
-	struct { void *dev; unsigned long subdev; long nsampl; lsampl_t *data; RTIME delay; long *mask; } arg = { dev, subdev, nsampl, data, delay, mask };
+	struct { void *dev; unsigned long subdev; long nchans; lsampl_t *data; RTIME delay; long *mask; } arg = { dev, subdev, nchans, data, delay, mask };
 	return rtai_lxrt(FUN_COMEDI_LXRT_INDX, COMEDI_LXRT_SIZARG, _KCOMEDI_COMD_DATA_WREAD_TIMED, &arg).i[LOW];
 }
 

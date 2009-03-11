@@ -4,10 +4,10 @@ This porting of KCOMEDI to user space is done using the standard extension
 feature of LXRT and makes KCOMEDI symmetrically usable in kernel and user 
 space within RTAI, in soft/hard real time. To use KCOMEDI in user space you 
 have just to know how to use it in kernel space. So whatever space you are 
-going to work in it will be the same mostly.
+going to work in it will be mostly the same.
 
 There are nonetheless a few points forbidding the above statements to be 
-true unconditionally. The related clashes are resolved with functions
+unconditionally true. The related clashes are resolved with functions
 prefixed with "rt_".
 
 One is related to a couple of name returning functions: 
@@ -16,11 +16,12 @@ One is related to a couple of name returning functions:
 In kernel space the requested name is simply got by returning a pointer to 
 a directly addressable global namestring, which is useless in user space. 
 So there is the need of copying the namestring available in kernel space to 
-user space, thus the calling convention must be changed. So the following 
-two aliases, usable both in kernel and user space, have been made available:
+user space, so the calling convention must be changed. So the following two 
+aliases, usable both in kernel and user space, have been made available:
 void *rt_comedi_get_driver_name(unsigned int dev, char *name);
 void *rt_comedi_get_board_name(unsigned int dev, char *name);
-On success both of them return the requested name in "name", NULL otherwise.
+On success both of them return the address "name", at which the actual name 
+is copied, NULL otherwise.
 
 The solution of the above problem is simple and, almost, compulsory. 
 In fact the only real problem to be solved for a symmetric approach to 
@@ -30,8 +31,8 @@ been devised.
 
 The callback method made available is based on using a built in callback 
 function that triggers an rt_task_resume and allows returning back to the 
-user the important unsigned long mask, made available by the standard COMEDI 
-callback support as its first argument.
+user the important unsigned long mask, made available by the standard KCOMEDI 
+callback service as its first argument.
 
 The related support comes from using the following function, not needed but 
 available in kernel space also (if you'll like it):
@@ -76,7 +77,7 @@ unsigned long rt_comedi_wait_timed(RTIME delay, long *cbmask);
   timeout, given by "delay".
 
 - The returned value can be:
-- 0 if the callback succeeded,
+- 0 if waiting for a callback succeeded,
 - a negative number, in which case its absolute value indicates wait overruns;
 - an RTAI error if >= RTE_BASE.
 
@@ -87,24 +88,24 @@ above wait functions can be used anywhere and rt_comedi_wait_if makes it
 possible an easy implementation of a polling scheme.
 Notice that rt_comedi_wait_if is provided to comply with the standard RTAI
 synchronizing functions scheme: unconditional, if, until, timed. 
-An alternative way is provide through the standard KCOMEDI async data polling,
+An alternative way is provides through the standard KCOMEDI async data polling,
 i.e.: comedi_poll.
 
 Once woken up from wait one can call:
-long rt_comedi_command_data_read (void *dev, unsigned int subdev, long nsampl, 
+long rt_comedi_command_data_read (void *dev, unsigned int subdev, long nchans, 
 lsampl_t *data);
-to get "nsampl" samples in "data". Notice that data are read only if nsampl
+to get "nchans" channels in "data". Notice that data are read only if "nchans"
 elements are available, nothing being done otherwise. Such a condition can
-be checked through the returned value which will be the number of available
-sampled data, so that a return value less than than "nsampl" will mean nothing 
-has been read. The return value can be RTE_OBJINV also, in the case of 
-dev/subdev being wrong.
-It is believed that imposing that either "nsampl" data or nothing is available 
-is the most appropriate real time mechanism as it is better to let the user
-decide what to do in place of waiting on a rescheduling by default. In fact
-after an appropriate wait missing data might be a error to care of. It it
-is not so then, by exploting the available wait functions, the user has plenty 
-of opportunities to implement her/his own best policy.
+be checked through the returned value, which will be the number of available
+channels data. So a return value less than "nchans" will mean nothing has been
+read. The return value can be RTE_OBJINV also, in the case of dev/subdev being 
+wrong.
+It is believed that imposing that either "nchans" data or nothing is available 
+is the most appropriate real time mechanism, as it is better to let the user
+decide what to do in place of waiting on a rescheduling by default. In fact,
+after an appropriate wait function is called, missing data might be a error 
+to care of. If it is not so then, by exploting the available wait functions, 
+the user has plenty of opportunities to implement her/his own best policy.
 
 A typical code sample could be:
 
@@ -131,16 +132,16 @@ succesfull rt_comedi_wait with a mask containing the appropriate user expected
 callback mask the two calls can be unified. Such a scheme is mostly useful in 
 a digital controller where a single call paces its action in such a way that 
 at each sampling time one is ready to apply her/his control low on the 
-available samples immediatly.
+available channels samples immediatly.
 
 To that end RTAI makes available the following:
-long rt_comedi_command_data_wread(void *dev, unsigned int subdev, long nsampl, lsampl_t *data, long *mask);
-long rt_comedi_command_data_wread_if(void *dev, unsigned int subdev, long nsampl, lsampl_t *data, long *mask);
-long rt_comedi_command_data_wread_until (void *dev, unsigned int subdev, long nsampl, lsampl_t *data, RTIME until, long *mask);
-long rt_comedi_command_data_wread_timed(void *dev, unsigned int subdev, long nsampl, lsampl_t *data, RTIME delay, long *mask);
-whose arguments are the union of the previous calls, with mask containing
-the event markers that must be found set in the callback mask returned by the 
-COMEDI callback.
+long rt_comedi_command_data_wread(void *dev, unsigned int subdev, long nchans, lsampl_t *data, long *mask);
+long rt_comedi_command_data_wread_if(void *dev, unsigned int subdev, long nchans, lsampl_t *data, long *mask);
+long rt_comedi_command_data_wread_until (void *dev, unsigned int subdev, long nchans, lsampl_t *data, RTIME until, long *mask);
+long rt_comedi_command_data_wread_timed(void *dev, unsigned int subdev, long nchans, lsampl_t *data, RTIME delay, long *mask);
+whose arguments are the union of the previous calls, with "mask" containing
+the event flags that must be found set in the callback mask returned by COMEDI
+callbacks.
 
 The previous code snippet would become:
 
@@ -148,7 +149,7 @@ The previous code snippet would become:
 .
 	comedi_register_callback(dev, subdev, COMEDI_CB_EOS, NULL, task);
 .
-	mask = COMEDI_CB_EOS);
+	mask = COMEDI_CB_EOS;
 	if ((avbs = rt_comedi_command_data_wread_timed(dev, subdev, NCHAN, data, nano2count(TIMEOUT), &mask)) != NCHAN) {
 		printf("only %ld channels data available in place of %d, or an error occured, nothing read\n", avbs, NCHAN);
 	}
@@ -157,13 +158,14 @@ The previous code snippet would become:
 There is an example in RTAI "showroom" CVS, "user/comedi" that should help
 in depicting the use of the above explained extensions.
 
-The async rite mate of async data reading is the following:
-long rt_comedi_command_data_write(void *dev, unsigned int subdev, long nsampl, lsampl_t *data);
+The async write mate of async data reading is the following:
+long rt_comedi_command_data_write(void *dev, unsigned int subdev, long nchans, lsampl_t *data);
 arguments and return values being the same of rt_comedi_command_data_read.
 
 Another useful service is:
-int rt_comedi_trigger(void *dev, unsigned int subdev, unsigned int trignum);
-it is an easy to use wrapper of using a correspendingly set comedi_do_insn,
+int rt_comedi_trigger(void *dev, unsigned int subdev);
+it is an easy to set up a wrapper using the appropriate comedi_do_insn for an
+actual trigger,
 
 Finally the function:
 int rt_comedi_do_insnlist(void *dev, comedi_insnlist *ilist);
@@ -171,21 +173,21 @@ has been added, symmetrically in kernel/user space as usual.
 It is an exact image of its parent:
 int comedi_do_insnlist(void *dev, comedi_insnlist *list);
 which is not available in KCOMEDI; that's why we prefixed it with an "rt_".
-The simple reason of its missing in kernel space is because it will add just 
-the overhead of a call more to obtain something that a user can have directly
-by executing repeated "comedi_do_insn" in her/his own way. From user space 
-instead the overhead of calling "comedi_do_insn" many times could be much more
-significant so it is might help in having the possibility of executing a whole
-instruction list in a single shot only.
+The simple reason of it being missed in kernel space is because it will add 
+just the overhead of one call more to obtain something that a user can have 
+directly by executing repeated "comedi_do_insn" in her/his own way. From the
+user space instead the overhead of calling "comedi_do_insn" many times could 
+be much more significant so it might help in having the possibility of 
+executing a whole set of instructions in a single shot only.
 
 A final warning: all KCOMEDI functions are executed without the comedi_lock
 being activated. That's because it adds some, albeit neglegible on nowadays 
 machines, overhaed and because in control system it is rare to have possible
-conficting functionalities shared among more tasks. If a locked execution is
-needed nonetheless then the user must explicitly configure this extensio for
-that, in which case it will be applied to all services. Being "comedi_lock"
-and "comedi_unlock" available esplicitely to the user (s)he is free to
-apply them explicitly whenevr (s)he has decided to not configure them by 
-default.
+conficting acquisitions shared among more tasks. If a locked execution is
+needed nonetheless then the user must explicitly configure a possible 
+extensioin for that, in which case it will be applied to all services. Being
+"comedi_lock" and "comedi_unlock" available esplicitely to the user (s)he is
+free to apply them explicitly whenever (s)he has decided to not configure them
+by default.
 
 "The Comedi Players"

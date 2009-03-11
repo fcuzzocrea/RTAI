@@ -1,3 +1,9 @@
+2009-03-12 Paolo Mantegazza <mantegazza@aero.polimi.it>
+
+	* addons/comedi/kcomedi-module.c: fix rt_comedi_wait insertions in 
+          the user space call table as data passing is supported internally
+	  and not with the use of the general messaging framework.
+
 2009-03-11 Paolo Mantegazza <mantegazza@aero.polimi.it>
 
 	* base/ipc/msg.c: define and use a macro to check tasks magic.

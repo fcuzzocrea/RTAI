@@ -396,7 +396,7 @@ RTAI_PROTO(int, comedi_do_insn, (void *dev, comedi_insn *insn))
 		int retval;
 		memcpy(ldata, linsn.data, sizeof(ldata));
 		linsn.data = ldata;
-		if (!(retval = rtai_lxrt(FUN_COMEDI_LXRT_INDX, COMEDI_LXRT_SIZARG, _KCOMEDI_DO_INSN, &arg).i[LOW])) {
+		if ((retval = rtai_lxrt(FUN_COMEDI_LXRT_INDX, COMEDI_LXRT_SIZARG, _KCOMEDI_DO_INSN, &arg).i[LOW]) >= 0) {
 			memcpy(insn[0].data, ldata, sizeof(ldata));
 		}
         	return retval;

@@ -1,3 +1,7 @@
+2009-03-14 Paolo Mantegazza <mantegazza@aero.polimi.it>
+
+	* base/arch/i386/hal/hal.immed: check to avoid insmoding a 486 MP.
+
 2009-03-13 Paolo Mantegazza <mantegazza@aero.polimi.it>
 
 	* addons/comedi/rtai_comedi.h: add macros to help setting insn up for

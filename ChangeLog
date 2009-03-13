@@ -1,3 +1,7 @@
+2009-03-14 Paolo Mantegazza <mantegazza@aero.polimi.it>
+
+	* base/arch/i386/hal/hal.immed: check to avoid insmoding a 486 MP.
+
 2009-03-11 Roberto Bucher <roberto.bucher@supsi.ch>
 
 	* rtai-lab/scilab*/rtmain.c: Bug with rtParam corrected. Thanks

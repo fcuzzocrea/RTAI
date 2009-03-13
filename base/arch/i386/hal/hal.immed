@@ -2116,6 +2116,13 @@ int __rtai_hal_init (void)
 		halinv = 1;
 	}
 
+#ifndef CONFIG_X86_TSC
+	if (num_online_cpus() > 1) {
+		printk("RTAI[hal]: MULTI PROCESSOR SEEN AS A 486, WONT WORK; CONFIGURE LINUX APPROPRIATELY. %d \n", rtai_cpufreq_arg);
+		halinv = 1;
+	}
+#endif
+
 #ifdef CONFIG_X86_LOCAL_APIC
 //	if (!test_bit(X86_FEATURE_APIC, boot_cpu_data.x86_capability)) {
 	if (!boot_cpu_has(X86_FEATURE_APIC)) {

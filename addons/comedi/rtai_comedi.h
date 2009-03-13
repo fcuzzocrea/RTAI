@@ -504,4 +504,24 @@ RTAI_PROTO(long, rt_comedi_command_data_wread_timed, (void *dev, unsigned int su
 
 #endif /* #ifdef __KERNEL__ */
 
+/* help macros, for the case one does not (want to) remember insn fields */
+
+#define _BUILD_INSN(icode, instr, subdevice, datap, nd, chan, arange, aref) \
+	do { \
+		(instr).insn     = icode; \
+		(instr).subdev   = subdevice; \
+		(instr).n        = nd; \
+		(instr).data     = datap; \
+		(instr).chanspec = CR_PACK((chan), (arange), (aref)); \
+	} while (0)
+
+#define BUILD_AREAD_INSN(insn, subdev, data, nd, chan, arange, aref) \
+	_BUILD_INSN(INSN_READ, (insn), subdev, &(data), nd, chan, arange, aref)
+
+#define BUILD_AWRITE_INSN(insn, subdev, data, nd, chan, arange, aref) \
+	_BUILD_INSN(INSN_WRITE, (insn), subdev, &(data), nd, chan, arange, aref)
+
+#define BUILD_DIO_INSN(insn, subdev, data, nd) \
+	_BUILD_INSN(INSN_BITS, (insn), subdev, &(data), nd, 0, 0, 0)
+
 #endif /* #ifndef _RTAI_COMEDI_H_ */

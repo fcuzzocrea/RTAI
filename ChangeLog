@@ -1,13 +1,18 @@
-2009-03-11 Roberto Bucher <roberto.bucher@supsi.ch>
+2009-03-13 Paolo Mantegazza <mantegazza@aero.polimi.it>
 
-	* rtai-lab/scilab*/rtmain.c: Bug with rtParam corrected. Thanks
-	  to Henrik Slotholt.
+	* addons/comedi/rtai_comedi.h: add macros to help setting insn up for
+	  AI/AO/DIO.
 
 2009-03-12 Paolo Mantegazza <mantegazza@aero.polimi.it>
 
 	* addons/comedi/kcomedi-module.c: fix rt_comedi_wait insertions in 
           the user space call table as data passing is supported internally
 	  and not with the use of the general messaging framework.
+
+2009-03-11 Roberto Bucher <roberto.bucher@supsi.ch>
+
+	* rtai-lab/scilab*/rtmain.c: Bug with rtParam corrected. Thanks
+	  to Henrik Slotholt.
 
 2009-03-11 Paolo Mantegazza <mantegazza@aero.polimi.it>
 

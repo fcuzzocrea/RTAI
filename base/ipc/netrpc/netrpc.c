@@ -191,7 +191,7 @@ static void timer_fun(unsigned long none)
 {
 	if (timer_sem.count < 0) {
 		rt_sem_signal(&timer_sem);
-		timer.expires = jiffies + (HZ + NETRPC_TIMER_FREQ/2 - 1)/NETRPC_TIMER_FREQ;
+		timer.expires = jiffies + HZ/NETRPC_TIMER_FREQ;
 		add_timer(&timer);
 	}
 }
@@ -337,6 +337,7 @@ static void thread_fun(RT_TASK *task)
 		rtai_set_linux_task_priority(current, SCHED_FIFO, MIN_LINUX_RTPRIO);
 		soft_rt_fun_call(task, rt_task_suspend, task);
 		((void (*)(long))task->fun_args[1])(task->fun_args[2]);
+		task->fun_args[1] = 0;
 	}
 }
 
@@ -349,7 +350,7 @@ static int soft_kthread_init(RT_TASK *task, long fun, long arg, int priority)
 	if (kernel_thread((void *)thread_fun, task, 0) > 0) {
 		while (task->state != (RT_SCHED_READY | RT_SCHED_SUSPENDED)) {
 			current->state = TASK_INTERRUPTIBLE;
-			schedule_timeout((HZ + NETRPC_TIMER_FREQ/2 - 1)/NETRPC_TIMER_FREQ);
+			schedule_timeout(HZ/NETRPC_TIMER_FREQ);
 		}
 		return 0;
 	}
@@ -358,15 +359,11 @@ static int soft_kthread_init(RT_TASK *task, long fun, long arg, int priority)
 
 static int soft_kthread_delete(RT_TASK *task)
 {
-	if (clr_rtext(task)) {
-		return -EFAULT;
-	} else {
-		struct task_struct *lnxtsk = task->lnxtsk;
-//		lnxtsk->rtai_tskext(TSKEXT0) = lnxtsk->rtai_tskext(TSKEXT1) = 0;
-		sigemptyset(&lnxtsk->blocked);
-		lnxtsk->state = TASK_INTERRUPTIBLE;
-		kill_proc(lnxtsk->pid, SIGTERM, 0);
+	while (task->fun_args[1]) {
+		rt_task_masked_unblock(task, ~RT_SCHED_READY);					current->state = TASK_INTERRUPTIBLE;
+		schedule_timeout(HZ/NETRPC_TIMER_FREQ);
 	}
+        clr_rtext(task);
 	return 0;
 }
 
@@ -1222,7 +1219,7 @@ static void cleanup_softrtnet(void);
 
 void do_mod_timer(void)
 {
-	mod_timer(&timer, jiffies + (HZ + NETRPC_TIMER_FREQ/2 - 1)/NETRPC_TIMER_FREQ);
+	mod_timer(&timer, jiffies + HZ/NETRPC_TIMER_FREQ);
 }
 
 static struct sock_t *socks;

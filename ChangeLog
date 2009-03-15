@@ -1,3 +1,8 @@
+2009-03-16 Kenneth Jacker   <khj@cs.appstate.edu>
+           Paolo Mantegazza <mantegazza@aero.polimi.it>
+
+	* base/wd/wd.c: cleaned legacy stuff being of interest nomore.
+
 2009-03-14 Paolo Mantegazza <mantegazza@aero.polimi.it>
 
 	* base/arch/i386/hal/hal.immed: check to avoid insmoding a 486 MP.

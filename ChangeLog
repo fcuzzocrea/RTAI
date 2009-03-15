@@ -1,3 +1,8 @@
+2009-03-15 Paolo Mantegazza <mantegazza@aero.polimi.it>
+
+	* base/addons/comedi/rtai_comedi.h: fixed user space trigger,
+	  added helper macro for trigger instruction.
+
 2009-03-14 Paolo Mantegazza <mantegazza@aero.polimi.it>
 
 	* base/arch/i386/hal/hal.immed: check to avoid insmoding a 486 MP.

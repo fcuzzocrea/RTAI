@@ -330,12 +330,14 @@ static inline long long soft_rt_genfun_call(RT_TASK *task, void *fun, void *args
 	return task->retval;
 }
 
+extern void rt_daemonize(void);
 static void thread_fun(RT_TASK *task)
 {
 	if (!set_rtext(task, task->fun_args[3], 0, 0, get_min_tasks_cpuid(), 0)) {
 		sigfillset(&current->blocked);
 		rtai_set_linux_task_priority(current, SCHED_FIFO, MIN_LINUX_RTPRIO);
 		soft_rt_fun_call(task, rt_task_suspend, task);
+		rt_daemonize();
 		((void (*)(long))task->fun_args[1])(task->fun_args[2]);
 		task->fun_args[1] = 0;
 	}
@@ -1790,6 +1792,7 @@ int __rtai_netrpc_init(void)
 	}
 	SPRT_ADDR.sin_port = htons(BASEPORT);
 	portslotsp = MaxStubs;
+	portslot[0].hard = 0;
 	portslot[0].name = PRTSRVNAME;
 	portslot[0].owner = OWNER(this_node[1], (unsigned long)port_server);
 	port_server = kmalloc(sizeof(RT_TASK) + 3*sizeof(struct fun_args), GFP_KERNEL);
@@ -1808,8 +1811,6 @@ void __rtai_netrpc_exit(void)
 
 	reset_rt_fun_entries(rt_netrpc_entries);
 	del_timer(&timer);
-	soft_kthread_delete(port_server);
-	kfree(port_server);
 	rt_sem_delete(&timer_sem);
 	for (i = 0; i < MaxStubs; i++) {
 		if (portslot[i].task) {
@@ -1817,6 +1818,7 @@ void __rtai_netrpc_exit(void)
 				rt_task_delete((RT_TASK *)portslot[i].task);
 			} else {
 				soft_kthread_delete((RT_TASK *)portslot[i].task);
+				kfree((RT_TASK *)portslot[i].task);
 			}
 		}
 	}

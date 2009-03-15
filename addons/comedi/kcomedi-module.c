@@ -100,8 +100,12 @@ static RTAI_SYSCALL_MODE int _comedi_cancel(void *dev, unsigned int subdev)
 RTAI_SYSCALL_MODE int rt_comedi_register_callback(void *dev, unsigned int subdev, unsigned int mask, int (*callback)(unsigned int, void *), void *task)
 {
 	int retval;
+	if (task == NULL) {
+		task = rt_whoami();
+	}
+	((RT_TASK *)task)->resumsg = 0;
 	RTAI_COMEDI_LOCK(dev, subdev);
-	retval = comedi_register_callback(dev, subdev, mask, (void *)rtai_comedi_callback, task ? task : rt_whoami());
+	retval = comedi_register_callback(dev, subdev, mask, (void *)rtai_comedi_callback, task);
 	RTAI_COMEDI_UNLOCK(dev, subdev);
 	return retval;
 }

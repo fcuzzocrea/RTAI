@@ -4,6 +4,9 @@
  *
  * Copyright (©) 2001 Ian Soanes <ians@lineo.com>, All rights reserved
  *
+ * Rechecked and updated 2009: Kenneth Jacker   <khj@cs.appstate.edu>
+ *                             Paolo Mantegazza <mantegazza@aero.polimi.it>
+ *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License as
  * published by the Free Software Foundation; either version 2 of the
@@ -89,7 +92,7 @@
  * 5. Keeps a record of bad tasks (apart from those that have been killed) that 
  *    can be examined via a /proc interface. (/proc/rtai/watchdog)
  * 
- * ID: @(#)$Id: wd.c,v 1.10 2008/07/08 07:02:24 mante Exp $
+ * ID: @(#)$Id: wd.c,v 1.11 2009/03/15 23:11:54 mante Exp $
  *
  *******************************************************************************/
 
@@ -109,7 +112,6 @@ static int    wdog_read_proc(char *page, char **start, off_t off, int count,
                              int *eof, void *data);
 #endif
 
-#include <asm/rtai.h>
 #include <rtai_sched.h>
 #include <rtai_wd.h>
 
@@ -128,18 +130,18 @@ static int    wdog_read_proc(char *page, char **start, off_t off, int count,
 #ifdef CONFIG_RTAI_MALLOC
 #include <rtai_malloc.h>
 #else
-#define MY_ALLOC			// Not configured so we must use our own
+#define MY_ALLOC		// Not configured so we must use our own
 #endif
 #endif
 #ifdef MY_ALLOC
-#define BAD_TASK_MAX 100		// Feel free to change this
+#define BAD_TASK_MAX 100	// Feel free to change this
 
 static spinlock_t alloc_lock = SPIN_LOCK_UNLOCKED;
 static BAD_RT_TASK bad_task_pool[BAD_TASK_MAX];
 #endif
 
 // The current version number
-static char version[] = "$Revision: 1.10 $";
+static char version[] = "$Revision: 1.11 $";
 static char ver[10];
 
 // User friendly policy names
@@ -148,11 +150,9 @@ static char *policy_name[] =
 
 // Private data
 static int	    num_wdogs;		// Number of watchdogs (and task lists)
-static RT_TASK 	    wdog[NR_RT_CPUS];	// Watchdog tasks (1 per RT task list)
+static RT_TASK 	    wdog[NR_RT_CPUS];	// Watchdog tasks (1 per CPU)
 static RT_TASK 	   *tlists[NR_RT_CPUS];	// Scheduler's RT task lists
-static RT_TASK	  **smp_current;	// SMP scheduler's rt_smp_current array
 static BAD_RT_TASK *bad_tl[NR_RT_CPUS]; // Bad task lists (1 per watchdog)
-static int          sched;		// Scheduler type (UP, SMP or MUP)
 
 // -------------------------- CONFIGURABLE PARAMETERS --------------------------
 // Module parameters
@@ -319,35 +319,20 @@ static BAD_RT_TASK *find_bad_task(BAD_RT_TASK *list, RT_TASK *t)
 }
 
 // ------------------------- WHICH CPU IS A TASK ON? ---------------------------
-static int which_cpu(RT_TASK *t)	// Only reliable if task suspended
+static inline int which_cpu(RT_TASK *t)
 {
-    int cpuid;
-
-    switch (sched) {
-	case RT_SCHED_UP:  		// There is only one possibility
-	    return 0;
-	case RT_SCHED_MUP: 		// Same as calling watchdog task
-	    return hard_cpu_id();
-	case RT_SCHED_SMP:			// Deduce from position in list
-	    for (cpuid = 0; cpuid < num_online_cpus(); cpuid++) {
-		if (t == smp_current[cpuid]) {
-		    return cpuid;
-		}
-	    }
-	    return hard_cpu_id();	// Assume same as calling watchdog
-    }
-    return -1;
+	return t->runnable_on_cpus;
 }
 
-// ----------------------- SMP PROOF SUSPEND AND DELETE ------------------------
+// ------------------------ MP PROOF SUSPEND AND DELETE ------------------------
 static void smpproof_task_suspend(RT_TASK *t)
 {
     int cpuid;
 
     rt_task_suspend(t);
-    if ((cpuid = which_cpu(t)) >= num_wdogs) { 		// Not really suspended
+    if ((cpuid = which_cpu(t)) != rtai_cpuid()) {	// Not really suspended
 	DBUG("Resuming dummy watchdog %d\n", cpuid);
-	rt_task_resume(&wdog[cpuid]);			// ...until we do this!!
+	rt_task_resume(&wdog[cpuid]);			// ...until we do this!
     }
 }
 
@@ -356,9 +341,9 @@ static void smpproof_task_delete(RT_TASK *t)
     int cpuid;
 
     rt_task_delete(t);
-    if ((cpuid = which_cpu(t)) >= num_wdogs) {		// Not really stopped
+    if ((cpuid = which_cpu(t)) != rtai_cpuid()) {	// Not really suspended
 	DBUG("Resuming dummy watchdog %d\n", cpuid);
-	rt_task_resume(&wdog[cpuid]);			// ...until we do this!!
+	rt_task_resume(&wdog[cpuid]);			// ...until we do this!
     }
 }
 
@@ -561,7 +546,7 @@ static void watchdog(long wd)
 // -------------------------- DUMMY WATCHDOG TASK ------------------------------
 static void dummy(long wd)
 {
-    // Go straight back to sleep - see SMP proof suspend and delete
+    // Go straight back to sleep - old legacy SMP proof suspend and delete
     while (1) {
 	rt_task_suspend(&wdog[wd]);
     }
@@ -619,13 +604,13 @@ static int wdog_read_proc(char *page, char **start, off_t off, int count,
 	       "Priority State Count "
 	       "Original period Adjusted period "
 	       "Action\n",
-	       (sched == RT_SCHED_SMP) ? "s" : "");
+	       "");
     PROC_PRINT("---------- -- "
 	       "---%s "
 	       "-------- ----- ----- "
 	       "--------------- --------------- "
 	       "---------\n",
-	       (sched == RT_SCHED_SMP) ? "-" : "");
+	       "");
     for (tl = 0; tl < num_wdogs; tl++) {
 	task = tlists[tl];
 	while ((task = task->next)) {
@@ -635,7 +620,7 @@ static int wdog_read_proc(char *page, char **start, off_t off, int count,
 		} else {
 		    strcpy(action, policy_name[bt->policy]);
 		}
-		cpuid = (sched == RT_SCHED_MUP) ? task->runnable_on_cpus : 0;
+		cpuid = task->runnable_on_cpus;
 		osec  = ulldiv( count2nano_cpuid(bt->orig_period, cpuid),
 			        NSECS_PER_SEC, 
 			        &onsec);
@@ -648,10 +633,9 @@ static int wdog_read_proc(char *page, char **start, off_t off, int count,
 			    "%02ds %09dns %02ds %09dns "
 			    "%s\n",
 			    (long)task, id, 
-			    (sched == RT_SCHED_SMP) ?  "0x" : "",
-			    (sched == RT_SCHED_UP)  ?
-			        0 : (int)task->runnable_on_cpus,
-			    (sched == RT_SCHED_SMP) ?  ""   : " ",
+			    "",
+			    (int)task->runnable_on_cpus,
+			    " ",
 			    task->priority, task->state, bt->count,
 			    (int)osec, (int)onsec, (int)asec, (int)ansec, 
 			    action);
@@ -685,7 +669,6 @@ int __rtai_wd_init(void)
     RTIME 	 period;
     int		 dog;
     RT_TASK	*lnx0;
-    struct apic_timer_setup_data apic_data[NR_RT_CPUS];
     char	*c;
 
     if(set_rt_fun_ext_index(rt_watchdog_fun, WD_INDX)) {
@@ -702,50 +685,35 @@ int __rtai_wd_init(void)
     // Fill array of pointers to scheduler's task lists
     lnx0 = rt_get_base_linux_task(tlists);
 
-    // Register watchdogs with scheduler (SMP returns pointer to rt_smp_current)
+    // Register watchdogs with scheduler
     for (dog = 0; dog < num_online_cpus(); dog++) {
-	if ((smp_current = rt_register_watchdog(&wdog[dog], dog)) < 0) {
+	if (rt_register_watchdog(&wdog[dog], dog) < 0) {
 	    WDLOG("Failed to register watchdog %d with RTAI scheduler\n", dog);
 	    for (dog--; dog >= 0; dog--) rt_deregister_watchdog(&wdog[dog], dog);
 	    return -EBUSY;
 	}
     }
 
-    // Set up chosen timer mode - MUP lets you have different modes per CPU, 
-    // but you'll have to edit the code below a bit if that's what you want.
-    if (sched == RT_SCHED_MUP) {
-	for (dog = 0; dog < num_wdogs; dog++) {
-	    apic_data[dog].mode  = !wd_OneShot;	 // <--- This bit...
-	    apic_data[dog].count = TickPeriod;
-	    if (wd_OneShot) {
-//		rt_preempt_always_cpuid(1, dog); // <--- ...and this!
-	    }
-	}
-	start_rt_apic_timers(apic_data, 0);
+    // Set up chosen timer mode and hard timing
+    if (wd_OneShot) {
+	start_rt_timer(0);
     } else {
-	if (wd_OneShot) {
-	    rt_set_oneshot_mode();
-//	    rt_preempt_always(1);
-	} else {
-	    rt_set_periodic_mode();
-	}
+	rt_set_periodic_mode();
 	start_rt_timer((int)nano2count(TickPeriod));
     }
 
     // Set up and start watchdog tasks (on separate CPUs if MP). We run as 
-    // many real watchdogs as there are task lists. However we must protect 
-    // the remaining CPUs with dummy watchdogs to prevent them being hogged 
-    // by overrunning tasks (only relevant on SMP not MUP).
+    // many real watchdogs as there are CPUs.
     for (dog = 0; dog < num_online_cpus(); dog++) {
-	rt_task_init_cpuid( 	&wdog[dog], 
-			    	(dog < num_wdogs) ? watchdog : dummy, 
-			    	dog, 2000, RT_SCHED_HIGHEST_PRIORITY, 0, 0, dog);
+	rt_task_init_cpuid(&wdog[dog], 
+			   (dog < num_wdogs) ? watchdog : dummy, 
+			    dog, 2000, RT_SCHED_HIGHEST_PRIORITY, 0, 0, dog);
     }
     for (dog = 0; dog < num_wdogs; dog++) {
 	period = nano2count_cpuid(TickPeriod, dog);
-	rt_task_make_periodic( 	&wdog[dog], 
-			       	rt_get_time_cpuid(dog) + period, 
-			       	period);
+	rt_task_make_periodic(&wdog[dog], 
+			       rt_get_time_cpuid(dog) + period, 
+			       period);
     }
 
     // Tidy up version number

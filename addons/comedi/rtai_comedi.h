@@ -436,14 +436,8 @@ RTAI_PROTO(int, rt_comedi_do_insnlist, (void *dev, comedi_insnlist *ilist))
 
 RTAI_PROTO(int, rt_comedi_trigger, (void *dev, unsigned int subdev))
 {
-        comedi_insn insn;
-	struct { void *dev; comedi_insn *insn; } arg = { dev, &insn };
-        lsampl_t data = 0;
-        insn.insn   = INSN_INTTRIG;
-        insn.subdev = subdev;
-        insn.n      = 1;
-        insn.data   = &data;
-	return rtai_lxrt(FUN_COMEDI_LXRT_INDX, COMEDI_LXRT_SIZARG, _KCOMEDI_DO_INSN, &arg).i[LOW];
+	struct { void *dev; unsigned long subdev; } arg = { dev, subdev };
+	return rtai_lxrt(FUN_COMEDI_LXRT_INDX, COMEDI_LXRT_SIZARG, _KCOMEDI_TRIGGER, &arg).i[LOW];
 }
 
 RTAI_PROTO(int, comedi_poll,(void *dev, unsigned int subdev))
@@ -521,7 +515,10 @@ RTAI_PROTO(long, rt_comedi_command_data_wread_timed, (void *dev, unsigned int su
 #define BUILD_AWRITE_INSN(insn, subdev, data, nd, chan, arange, aref) \
 	_BUILD_INSN(INSN_WRITE, (insn), subdev, &(data), nd, chan, arange, aref)
 
-#define BUILD_DIO_INSN(insn, subdev, data, nd) \
-	_BUILD_INSN(INSN_BITS, (insn), subdev, &(data), nd, 0, 0, 0)
+#define BUILD_DIO_INSN(insn, subdev, data) \
+	_BUILD_INSN(INSN_BITS, (insn), subdev, &(data), 2, 0, 0, 0)
+
+#define BUILD_TRIG_INSN(insn, subdev) \
+	_BUILD_INSN(INSN_INTTRIG, (insn), subdev, &(data), 1, 0, 0, 0)
 
 #endif /* #ifndef _RTAI_COMEDI_H_ */

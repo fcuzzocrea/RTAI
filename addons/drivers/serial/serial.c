@@ -968,8 +968,9 @@ RTAI_SYSCALL_MODE int rt_spclose(unsigned int tty)
 	outb(spct[tty].mcr = MCR_OUT1 | MCR_OUT2, base_adr + RT_SP_MCR);
 	spct[tty].opened = 0;
 	if (spct[tty].callback_task) {
-		rt_task_resume(spct[tty].callback_task);
+		RT_TASK *task = spct[tty].callback_task;
 		spct[tty].callback_task = 0;
+		rt_task_resume(task);
 	}
 	return 0;
 }

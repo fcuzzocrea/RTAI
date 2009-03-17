@@ -335,10 +335,11 @@ Known Bugs and Issues
 Ian Soanes
 ians@lineo.com
 
-The updated version cleans up old legacy part of the code of no use anymore.
-Moreover it monitors any looper holding the machine for more than LooperLimit 
-seconds by suspending it when such a limit is exceeded. LooperLimit is set to 
-1 s by default but is a parameter that can be changed as needed at insmoding.
+The updated version cleans up also old legacy part of the code of no use 
+anymore. Moreover it monitors any looper holding the machine for more than 
+LooperTimeLimit ms by suspending it when such a limit is exceeded. 
+LooperTimeLimit is set to 100 ms by default, it is a parameter that can be 
+changed as needed at insmoding.
 
 Updated to the latest RTAI state, including loopers monitoring, March 2009
 Paolo Mantegazza

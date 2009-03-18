@@ -92,7 +92,7 @@
  * 5. Keeps a record of bad tasks (apart from those that have been killed) that 
  *    can be examined via a /proc interface. (/proc/rtai/watchdog)
  * 
- * ID: @(#)$Id: wd.c,v 1.11 2009/03/15 23:11:54 mante Exp $
+ * ID: @(#)$Id: wd.c,v 1.12 2009/03/18 21:51:00 mante Exp $
  *
  *******************************************************************************/
 
@@ -141,7 +141,7 @@ static BAD_RT_TASK bad_task_pool[BAD_TASK_MAX];
 #endif
 
 // The current version number
-static char version[] = "$Revision: 1.11 $";
+static char version[] = "$Revision: 1.12 $";
 static char ver[10];
 
 // User friendly policy names
@@ -178,10 +178,14 @@ static int Stretch = 10;		// %ge to increase period by
 RTAI_MODULE_PARM(Stretch, int);		// (can be over 100%, 100% is doubling)
 
 static int Slip = 10;			// %ge of period to slip a task
-RTAI_MODULE_PARM(Slip, int);			// (can be over 100%)
+RTAI_MODULE_PARM(Slip, int);		// (can be over 100%)
 
 static int Limit = 100;			// Maximum number of offences
 RTAI_MODULE_PARM(Limit, int);		// (-ve means disabled ie. no limit)
+
+static int LooperTimeLimit = 1;		// Maximum looper time
+RTAI_MODULE_PARM(LooperTimeLimit, int);	// (care it combines with wd period)
+static int LooperLimit;
 
 // Parameter configuring API
 RTAI_SYSCALL_MODE int rt_wdset_grace(int new) // How much a task can be overdue
@@ -403,6 +407,17 @@ static void handle_badtask(int wd, RT_TASK *t, BAD_RT_TASK *bt, RTIME overrun)
     (bt->count)++;
     bt->policy = Policy;
 
+    // Pure loopers must be suspend always
+    if (!overrun) {
+	bt->count = - LooperTimeLimit;
+	bt->forced = 1;
+        bt->policy = WD_SUSPEND;
+	bt->orig_period = 0;
+	WDLOG("Suspending task %p\n", t);
+	smpproof_task_suspend(t);  
+	return;
+    }
+
     // In severe cases we must suspend regardless of current policy
     if ((overrun >= (Safety * bt->orig_period)) && (Safety >= 0)) {
 	WDLOG("Forcing suspension of severely overrun task %p\n", t);
@@ -455,6 +470,24 @@ static void handle_badtask(int wd, RT_TASK *t, BAD_RT_TASK *bt, RTIME overrun)
 	    WDLOG("Invalid policy (%d)\n", Policy);
 	    break;
     }
+}
+
+static void watch_looper(int cpuid, void *self, BAD_RT_TASK *bt)
+{
+	extern RT_TASK rt_smp_linux_task[];
+	extern RT_TASK *lxrt_prev_task[];
+	static RT_TASK *prev_task[NR_RT_CPUS];     // task we preempted
+	static int     prev_task_cnt[NR_RT_CPUS];  // count the same preempted
+	RT_TASK *prev = lxrt_prev_task[cpuid];
+	if (prev == prev_task[cpuid] && prev != &rt_smp_linux_task[cpuid] && prev != self && !prev->resync_frame && !prev->period) {
+		if (++prev_task_cnt[cpuid] == LooperLimit) {
+			WDLOG("Found looper task %p (list %d)\n", prev, cpuid);
+			handle_badtask(cpuid, prev, bt, 0);
+		}
+	} else {
+		prev_task[cpuid] = prev;
+		prev_task_cnt[cpuid] = 0;
+	}
 }
 
 // -------------------------- THE MAIN WATCHDOG TASK ---------------------------
@@ -529,6 +562,8 @@ static void watchdog(long wd)
 	    }
 	}
 
+	watch_looper(wd, self, bt);
+
 	// Clean up any bad tasks still marked invalid (their RT task has gone)
 	for (bt = bad_tl[wd]; bt;) {
 	    if (!(bt->valid)) {
@@ -588,6 +623,7 @@ static int wdog_read_proc(char *page, char **start, off_t off, int count,
     } else {
 	PROC_PRINT("%d period%s\n", Safety, Safety > 1 ? "s" : "");
     }
+    PROC_PRINT("Loopers limit  : %d s\n", LooperTimeLimit);
     PROC_PRINT("Slip factor    : %d%%\n", Slip);
     PROC_PRINT("Stretch factor : %d%%\n", Stretch);
     PROC_PRINT("Offense limit  : ");
@@ -678,6 +714,7 @@ int __rtai_wd_init(void)
     // Some parameters have to be forced
     if (Policy <= WD_STRETCH) Grace  = GraceDiv = 1;
     if (Policy == WD_DEBUG)   Safety = Limit = -1;
+    LooperLimit = llimd(LooperTimeLimit, 1000000000, TickPeriod);
 
     // Deduce number of watchdogs needed from scheduler type
     num_wdogs = num_online_cpus();
@@ -746,6 +783,7 @@ int __rtai_wd_init(void)
     } else {
 	rt_printk("%d period%s\n", Safety, Safety > 1 ? "s" : " ");
     }
+    WDLOG( "Loopers limit  : %d s\n", LooperTimeLimit);
     WDLOG( "Slip factor    : %d%%\n", Slip);
     WDLOG( "Stretch factor : %d%%\n", Stretch);
     WDLOG( "Offense limit  : ");

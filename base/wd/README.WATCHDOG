@@ -20,14 +20,14 @@ Compatibility with other RT Modules
 -----------------------------------
 
 The important thing to remember is that in order to fully protect your system
-the watchdog needs to be running faster and at a higher priority than any other
-RT task. The RTAI schedulers have been modified to take care of the priority 
-(while the watchdog is mounted the highest RT priority is reserved for the
-watchdog, and if the watchdog detects an existing RT task running at the highest
-priority when it tries to mount then it will fail), but you will need to worry 
-about what speed is used yourself. A module parameter (TickPeriod) is provided 
-for you to specify an appropriate setting when you mount the module. Or you can 
-of course edit the source.
+the watchdog needs to be running at a higher priority than any other RT task. 
+The RTAI schedulers have been modified to take care of the priority (while 
+the watchdog is mounted the highest RT priority is reserved for the watchdog,
+and if the watchdog detects an existing RT task running at the highest priority
+when it tries to mount then it will fail), but you will need to worry about 
+what speed is used yourself. A module parameter (TickPeriod) is provided for 
+you to specify an appropriate setting when you mount the module. Or you can of 
+course edit the source.
 
 The issue of timers also needs a special mention. Firstly you need to ensure 
 that you configure the watchdog to use the same timer mode (ie. oneshot or 
@@ -41,7 +41,7 @@ protect your system. Nowadays it is suggested to use the oneshot mode, the
 default if you do not say anything. It is the more viable solution since it
 imposes no timing constraints onto any task. So the watchdog can run relatively
 slowly, to create the least overhead, while applications are using more higly
-stringent timings. Nonetheless the periodic mode might still be usefule but 
+stringent timings. Nonetheless the periodic mode might still be useful but 
 you should use it only at very high frequencies, say in the range of 10s of KHz.
 
 
@@ -59,11 +59,11 @@ should consider the likely fault scenarios.
 In general task overruns fall into 2 categories, infinite loops or periods too
 short for the task to get its work done before it is due to be scheduled again. 
 The former locks out the entire system to everything except higher priority 
-tasks. As Linux is running at the lowest RT priority, Linux effectively dies and
-you cannot issue any more commands. The second category is a bit more subtle. If
-a task repeatedly overruns then the RTAI scheduler will be constantly trying to 
-catch up with its missed deadlines. The end result can be either a locked system
-or a system crash when the stack overflows.
+tasks. As Linux is running at the lowest RT priority, Linux effectively dies 
+and you cannot issue any more commands. The second category is a bit more 
+subtle. If a task repeatedly overruns then the RTAI scheduler will be 
+constantly trying to catch up with its missed deadlines. The end result can be 
+either a locked system or a system crash when the stack overflows.
 
 Which watchdog policy to select largely depends on what type of task overrun you
 wish to catch. If you are not sure then leave the policy as default (suspend).
@@ -335,7 +335,7 @@ Known Bugs and Issues
 Ian Soanes
 ians@lineo.com
 
-The updated version cleans up also old legacy part of the code of no use 
+The updated version cleans up also old legacy part of the code, of no use 
 anymore. Moreover it monitors any looper holding the machine for more than 
 LooperTimeLimit ms by suspending it when such a limit is exceeded. 
 LooperTimeLimit is set to 100 ms by default, it is a parameter that can be 

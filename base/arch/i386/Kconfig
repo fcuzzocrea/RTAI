@@ -402,7 +402,7 @@ config RTAI_BUSY_TIME_ALIGN
 
 config RTAI_LXRT_USE_LINUX_SYSCALL
 	bool "Use Linux syscall mechanism for RTAI calls from user space"
-	default n
+	default y
 	help
 	With this option enabled, RTAI uses the Linux syscall mechanism
 	for its service calls, including RTAI own srqs, as provided by libc 

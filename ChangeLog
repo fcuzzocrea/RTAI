@@ -5,7 +5,7 @@
 
 2009-03-17 Paolo Mantegazza <mantegazza@aero.polimi.it>
 
-	* base/wd/README.WATCHDOG: recovere original Ian Soenes doc.
+	* base/wd/README.WATCHDOG: recovered original Ian Soenes doc.
 	* base/wd/wd.c: added watchdog for non periodic loopers.
 	* base/sched/sched.c: remember previous RTAI tasks in context switches
 	  if wd is configured.

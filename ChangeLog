@@ -1,6 +1,18 @@
+2009-03-18 Paolo Mantegazza <mantegazza@aero.polimi.it>
+
+	* base/arch/i386/Kconfig: RTAI_LXRT_USE_LINUX_SYSCALL yessed by
+	  default.
+
+2009-03-17 Paolo Mantegazza <mantegazza@aero.polimi.it>
+
+	* base/wd/README.WATCHDOG: recovered original Ian Soenes doc.
+	* base/wd/wd.c: added watchdog for non periodic loopers.
+	* base/sched/sched.c: remember previous RTAI tasks in context switches
+	  if wd is configured.
+
 2009-03-16 Paolo Mantegazza <mantegazza@aero.polimi.it>
 
-	* base/addons/drivers/serisl/serial.c: save and null callback task
+	* base/addons/drivers/serial/serial.c: save and null callback task
 	  prior to awakening it up in spclose.
 
 2009-03-16 Kenneth Jacker   <khj@cs.appstate.edu>

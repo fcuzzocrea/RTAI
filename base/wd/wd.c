@@ -92,7 +92,7 @@
  * 5. Keeps a record of bad tasks (apart from those that have been killed) that 
  *    can be examined via a /proc interface. (/proc/rtai/watchdog)
  * 
- * ID: @(#)$Id: wd.c,v 1.13 2009/03/17 07:33:37 mante Exp $
+ * ID: @(#)$Id: wd.c,v 1.14 2009/03/18 23:15:48 mante Exp $
  *
  *******************************************************************************/
 
@@ -141,7 +141,7 @@ static BAD_RT_TASK bad_task_pool[BAD_TASK_MAX];
 #endif
 
 // The current version number
-static char version[] = "$Revision: 1.13 $";
+static char version[] = "$Revision: 1.14 $";
 static char ver[10];
 
 // User friendly policy names
@@ -183,7 +183,7 @@ RTAI_MODULE_PARM(Slip, int);		// (can be over 100%)
 static int Limit = 100;			// Maximum number of offences
 RTAI_MODULE_PARM(Limit, int);		// (-ve means disabled ie. no limit)
 
-static int LooperTimeLimit = 100;	// Maximum looper time
+static int LooperTimeLimit = 100;	// Maximum looper time ms
 RTAI_MODULE_PARM(LooperTimeLimit, int);	// (care it combines with wd period)
 static int LooperLimit;
 
@@ -623,7 +623,6 @@ static int wdog_read_proc(char *page, char **start, off_t off, int count,
     } else {
 	PROC_PRINT("%d period%s\n", Safety, Safety > 1 ? "s" : "");
     }
-    PROC_PRINT("Loopers limit  : %d ms\n", LooperTimeLimit);
     PROC_PRINT("Slip factor    : %d%%\n", Slip);
     PROC_PRINT("Stretch factor : %d%%\n", Stretch);
     PROC_PRINT("Offense limit  : ");
@@ -632,6 +631,7 @@ static int wdog_read_proc(char *page, char **start, off_t off, int count,
     } else {
 	PROC_PRINT("%d\n", Limit);
     }
+    PROC_PRINT("Loopers limit  : %d ms\n", LooperTimeLimit);
 
     // List criminal records
     PROC_PRINT("\nBad tasks...\n\n");
@@ -783,7 +783,6 @@ int __rtai_wd_init(void)
     } else {
 	rt_printk("%d period%s\n", Safety, Safety > 1 ? "s" : " ");
     }
-    WDLOG( "Loopers limit  : %d ms\n", LooperTimeLimit);
     WDLOG( "Slip factor    : %d%%\n", Slip);
     WDLOG( "Stretch factor : %d%%\n", Stretch);
     WDLOG( "Offense limit  : ");
@@ -792,6 +791,7 @@ int __rtai_wd_init(void)
     } else {
 	rt_printk("%d\n", Limit);
     }
+    WDLOG( "Loopers limit  : %d ms\n", LooperTimeLimit);
 
 #ifdef CONFIG_PROC_FS
     // Register /proc interface

@@ -104,6 +104,8 @@ static struct rt_times *linux_times;
 
 static RT_TASK *lxrt_wdog_task[NR_RT_CPUS];
 
+RT_TASK *lxrt_prev_task[NR_RT_CPUS];
+
 static int lxrt_notify_reboot(struct notifier_block *nb,
 			      unsigned long event,
 			      void *ptr);
@@ -638,6 +640,12 @@ RTIME switch_time[NR_RT_CPUS];
 
 #endif
 
+#ifdef CONFIG_RTAI_WD
+#define SAVE_PREV_TASK()  \
+	do { lxrt_prev_task[cpuid] = rt_current; } while (0)
+#else
+#define SAVE_PREV_TASK()  do { } while (0)
+#endif
 
 void rt_do_force_soft(RT_TASK *rt_task)
 {
@@ -716,6 +724,7 @@ static RT_TASK *switch_rtai_tasks(RT_TASK *rt_current, RT_TASK *new_task, int cp
 			restore_fpenv(fpu_task->fpu_reg);
 		}
 		RST_EXEC_TIME();
+		SAVE_PREV_TASK();
 		rt_exchange_tasks(rt_smp_current[cpuid], new_task);
 		restore_fpcr(linux_cr0);
 		RESTORE_UNLOCK_LINUX(cpuid);
@@ -740,6 +749,7 @@ static RT_TASK *switch_rtai_tasks(RT_TASK *rt_current, RT_TASK *new_task, int cp
 			restore_fpenv(fpu_task->fpu_reg);
 		}
 		SET_EXEC_TIME();
+		SAVE_PREV_TASK();
 		rt_exchange_tasks(rt_smp_current[cpuid], new_task);
 	}
 	RTAI_TASK_SWITCH_SIGNAL();
@@ -748,6 +758,7 @@ static RT_TASK *switch_rtai_tasks(RT_TASK *rt_current, RT_TASK *new_task, int cp
 
 #define lxrt_context_switch(prev, next, cpuid) \
 	do { \
+		SAVE_PREV_TASK(); \
 		_lxrt_context_switch(prev, next, cpuid); barrier(); \
 		RTAI_TASK_SWITCH_SIGNAL(); \
 	} while (0)
@@ -3133,6 +3144,7 @@ EXPORT_SYMBOL(rtai_handle_isched_lock);
 #if CONFIG_RTAI_MONITOR_EXECTIME
 EXPORT_SYMBOL(switch_time);
 #endif
+EXPORT_SYMBOL(lxrt_prev_task);
 
 #endif /* CONFIG_KBUILD */
 

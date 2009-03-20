@@ -57,6 +57,10 @@ endfunction
 //
 //16/06/07 Author : A.Layec
 //Copyright INRIA
+
+// Modified for RT purposes by Roberto Bucher - RTAI Team
+// roberto.bucher@supsi.ch
+
 function [txt]=BlockProto(bk)
 
   nin=inpptr(bk+1)-inpptr(bk);  //* number of input ports */
@@ -188,6 +192,10 @@ endfunction
 //
 //16/06/07 Authors : Alan Layec
 //Copyright INRIA
+
+// Modified for RT purposes by Roberto Bucher - RTAI Team
+// roberto.bucher@supsi.ch
+
 function txt=call_block42(bk,pt,flag)
 
   txt=[]
@@ -502,6 +510,9 @@ endfunction
 
 //==========================================================================
 
+// Modified for RT purposes by Roberto Bucher - RTAI Team
+// roberto.bucher@supsi.ch
+
 function ok = compile_standalone()
 //compile rt standalone executable for standalone
 // 22.01.2004
@@ -525,6 +536,11 @@ endfunction
 // Transforms a given Scicos discrete and continuous SuperBlock into a C defined Block
 // Copyright INRIA
 //
+
+// Original file from Project Metalau - INRIA
+// Modified for RT purposes by Roberto Bucher - RTAI Team
+// roberto.bucher@supsi.ch
+
 function  [ok,XX,alreadyran,flgcdgen,szclkINTemp,freof] = do_compile_superblock42(XX,all_scs_m,numk,alreadyran)
 
   scs_m = XX.model.rpar ; //** isolate the super block scs_m data structure 
@@ -1014,6 +1030,11 @@ endfunction
 
 //==========================================================================
 //Generates Code for dynamically linked Fortran and C Blocks
+
+// Original file from Project Metalau - INRIA
+// Modified for RT purposes by Roberto Bucher - RTAI Team
+// roberto.bucher@supsi.ch
+
 function [CCode,FCode]=gen_blocks()
 
   CCode=[]
@@ -1203,6 +1224,11 @@ endfunction
 //Copyright INRIA
 //
 // rmq : La fonction zdoit n'est pas utilis�e pour le moment
+
+// Original file from Project Metalau - INRIA
+// Modified for RT purposes by Roberto Bucher - RTAI Team
+// roberto.bucher@supsi.ch
+
 function [Code,Code_common]=make_standalone42()
 
   x=cpr.state.x;
@@ -1938,6 +1964,12 @@ function [Code,Code_common]=make_standalone42()
                '#include <memory.h>'
                '#include '"machine.h'"'
                ''
+               '/*'+part('-',ones(1,40))+'  Lapack messag function */';
+               'void C2F(xerbla)(SRNAME,INFO,L)'
+               '     char *SRNAME;'
+               '     int *INFO;'
+               '     long int L;'
+               '{}'
                'void set_block_error(int err)'
                '{'
                '  return;'
@@ -2144,6 +2176,10 @@ endfunction
 //
 //Author : Rachid Djenidi, Alan Layec
 //Copyright INRIA
+
+// Modified for RT purposes by Roberto Bucher - RTAI Team
+// roberto.bucher@supsi.ch
+
 function txt=make_static_standalone42()
 
   txt=[''];
@@ -2554,6 +2590,9 @@ function [txt]=mat2scs_c_typ(outtb)
  end
 endfunction
 
+// Modified for RT purposes by Roberto Bucher - RTAI Team
+// roberto.bucher@supsi.ch
+
 function rename(folder,newname,ext)
   oldname=folder+'/Makefile';
   newname=folder+'/'+newname;
@@ -2566,6 +2605,9 @@ function rename(folder,newname,ext)
 endfunction
 
 //==========================================================================
+
+// Modified for RT purposes by Roberto Bucher - RTAI Team
+// roberto.bucher@supsi.ch
 
 function Makename=rt_gen_make(name,files,libs)
 
@@ -2712,6 +2754,10 @@ endfunction
 //
 //12/07/07 Alan Layec
 //Copyright INRIA
+
+// Modified for RT purposes by Roberto Bucher - RTAI Team
+// roberto.bucher@supsi.ch
+
 function [txt]=write_code_cdoit(flag)
 
   txt=[];
@@ -2826,6 +2872,10 @@ endfunction
 //output : txt for flag 1 or 2, or flag 3
 //
 //12/07/07 Alan Layec
+
+// Modified for RT purposes by Roberto Bucher - RTAI Team
+// roberto.bucher@supsi.ch
+
 function [txt]=write_code_doit(ev,flag)
 
   txt=[];
@@ -2940,6 +2990,10 @@ endfunction
 //
 //15/07/07 Alan Layec
 //Copyright INRIA
+
+// Modified for RT purposes by Roberto Bucher - RTAI Team
+// roberto.bucher@supsi.ch
+
 function [txt]=write_code_idoit()
 
   txt=[];
@@ -3055,8 +3109,13 @@ endfunction
 //
 //12/07/07 Alan Layec
 //Copyright INRIA
-function [txt]=write_code_odoit(flag)
 
+// Modified for RT purposes by Roberto Bucher - RTAI Team
+// roberto.bucher@supsi.ch
+
+
+function [txt]=write_code_odoit(flag)
+ 
   txt=[];
 
   for j=1:noord
@@ -3165,6 +3224,10 @@ function [txt]=write_code_odoit(flag)
 endfunction
 
 function [files]=write_code(Code,CCode,FCode,Code_common)
+
+// Original file from Project Metalau - INRIA
+// Modified for RT purposes by Roberto Bucher - RTAI Team
+// roberto.bucher@supsi.ch
 
  ierr=execstr('mputl(Code,rpat+''/''+rdnom+''.c'')','errcatch')
   if ierr<>0 then

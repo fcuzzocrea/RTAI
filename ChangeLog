@@ -1,3 +1,10 @@
+2009-03-20 Roberto Bucher <roberto.bucher@supsi.ch>
+
+	* rtai-lab/scilab*/RTAICodeGen_.sci: Modifications for
+	  compatibility scilab-4.1.2 and scicoslab-4.3.
+	* rtai-lab/scilab/macros/RTAI/RT_templates/rtai.mak: 
+	  Modifications for compatibility scilab-4.1.2 and scicoslab-4.3.
+
 2009-03-18 Paolo Mantegazza <mantegazza@aero.polimi.it>
 
 	* base/arch/i386/Kconfig: RTAI_LXRT_USE_LINUX_SYSCALL yessed by

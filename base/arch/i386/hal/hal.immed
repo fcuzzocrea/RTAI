@@ -1844,7 +1844,9 @@ void rtai_reset_gate_vector (unsigned vector, struct desc_struct e)
 	idt_table[vector] = e;
 }
 
+#ifdef CONFIG_X86_LOCAL_APIC
 static void hal_request_apic_freq(unsigned long *apic_freq);
+#endif
 
 static void rtai_install_archdep (void)
 {
@@ -2453,6 +2455,8 @@ static void rtai_release_tickdev(void)
 	}
 }
 
+#ifdef CONFIG_X86_LOCAL_APIC
+
 static void hal_request_apic_freq(unsigned long *apic_freq)
 {
 	unsigned long cpuid, avrg_freq, freq;
@@ -2468,6 +2472,8 @@ static void hal_request_apic_freq(unsigned long *apic_freq)
 		*apic_freq = avrg_freq;
 	}
 }
+
+#endif
 
 #else /* !CONFIG_GENERIC_CLOCKEVENTS */
 

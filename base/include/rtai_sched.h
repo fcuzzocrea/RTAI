@@ -116,6 +116,10 @@
 
 struct rt_task_struct;
 
+typedef struct rt_task_info { 
+	RTIME period; long base_priority, priority; 
+} RT_TASK_INFO;
+
 #ifdef __KERNEL__
 
 #include <linux/time.h>
@@ -347,6 +351,8 @@ RTIME rt_get_real_time_ns(void);
 int rt_get_prio(struct rt_task_struct *task);
 
 int rt_get_inher_prio(struct rt_task_struct *task);
+
+RTAI_SYSCALL_MODE int rt_task_get_info(RT_TASK *task, RT_TASK_INFO *task_info);
 
 RTAI_SYSCALL_MODE int rt_get_priorities(struct rt_task_struct *task, int *priority, int *base_priority);
 

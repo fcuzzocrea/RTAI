@@ -1,10 +1,14 @@
 2009-03-21 Paolo Mantegazza <mantegazza@aero.polimi.it>
 
-	* base/include/rtai_lxrt.h: added rt_task_get_info and based 
-	  rt_get_priorities onto it.
 	* base/include/rtai_sched.h: define type RT_TASK_INFO and added 
 	  declaration of rt_task_get_info.
+	* base/include/rtai_lxrt.h: added rt_task_get_info and based 
+	  rt_get_priorities onto it.
 	* base/sched/api.c: added rt_task_get_info.
+	* base/sched/sched.c: reuse rt_get_priorities syscall slot for 
+	  rt_task_get_info, add int oneshot_span and initialize it at module
+	  init, add macro ONESHOT_DELAY to avoid having the same code twice
+	  in the following #if conditioned FIRE_NEXT_TIMER_SHOT macros.
 
 2009-03-20 Roberto Bucher <roberto.bucher@supsi.ch>
 

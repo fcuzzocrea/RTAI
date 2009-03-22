@@ -87,7 +87,7 @@
 #define SET_ONESHOT_MODE		14
 #define SIGNAL_HANDLER	 		15
 #define TASK_USE_FPU			16
-#define GET_PRIORITIES			17  // was LINUX_USE_FPU
+#define GET_TASK_INFO			17  // was LINUX_USE_FPU
 #define HARD_TIMER_COUNT		18
 #define GET_TIME_NS			19
 #define GET_CPU_TIME_NS			20
@@ -1096,14 +1096,27 @@ RTAI_PROTO(int,rt_linux_use_fpu,(int use_fpu_flag))
 	return rtai_lxrt(BIDX, SIZARG, LINUX_USE_FPU, &arg).i[LOW];
 }
 */
+
+RTAI_PROTO(int, rt_task_get_info, (RT_TASK *task, RT_TASK_INFO *task_info))
+{
+	RT_TASK_INFO ltask_info;
+	struct { RT_TASK *task; RT_TASK_INFO *taskinfo; } arg = { task, &ltask_info };
+	if (task_info && !rtai_lxrt(BIDX, SIZARG, GET_TASK_INFO, &arg).i[LOW]) {
+		*task_info = ltask_info;
+		return 0;
+	}
+	return -EINVAL;
+}
+
 RTAI_PROTO(int, rt_get_priorities, (RT_TASK *task, int *priority, int *base_priority))
 {
-	int lpriority, lbase_priority, retval;
-	struct { RT_TASK *task; int *priority, *base_priority; } arg = { task, &lpriority, &lbase_priority };
-	retval = rtai_lxrt(BIDX, SIZARG, GET_PRIORITIES, &arg).i[LOW];
-	*priority = lpriority;
-	*base_priority = lbase_priority;
-	return retval;
+	RT_TASK_INFO task_info;
+	if (priority && base_priority && !rt_task_get_info(task, &task_info)) {
+		*priority      = task_info.priority;
+		*base_priority = task_info.base_priority;
+		return 0;
+	}
+	return -EINVAL;
 }
 
 RTAI_PROTO(int, rt_hard_timer_tick, (void))

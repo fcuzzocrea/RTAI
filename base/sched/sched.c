@@ -824,15 +824,33 @@ do { \
 	} \
 } while (0)
 
+static int oneshot_span;
+static int satdlay;
+
+#define ONESHOT_DELAY(CHECK_SPAN) \
+do { \
+	if (CHECK_SPAN) { \
+		RTIME span; \
+		if (unlikely((span = rt_times.intr_time - rt_time_h) > oneshot_span)) { \
+			rt_times.intr_time = rt_time_h + oneshot_span; \
+			delay = satdlay; \
+		} else { \
+			delay = (int)span - tuned.latency; \
+		} \
+	} else { \
+		delay = (int)(rt_times.intr_time - rt_time_h) - tuned.latency; \
+	} \
+} while (0)
+
 #if 1
 
 static void rt_timer_handler(void);
 
-#define FIRE_NEXT_TIMER_SHOT() \
+#define FIRE_NEXT_TIMER_SHOT(CHECK_SPAN) \
 do { \
 if (fire_shot) { \
 	int delay; \
-	delay = (int)(rt_times.intr_time - rt_time_h) - tuned.latency; \
+	ONESHOT_DELAY(CHECK_SPAN); \
 	if (delay > tuned.setup_time_TIMER_CPUNIT) { \
 		rt_set_timer_delay(imuldiv(delay, TIMER_FREQ, tuned.cpu_freq));\
 		timer_shot_fired = 1; \
@@ -858,11 +876,11 @@ do { \
 
 #else
 
-#define FIRE_NEXT_TIMER_SHOT() \
+#define FIRE_NEXT_TIMER_SHOT(CHECK_SPAN) \
 do { \
 if (fire_shot) { \
 	int delay; \
-	delay = (int)(rt_times.intr_time - rt_time_h) - tuned.latency; \
+	ONESHOT_DELAY(CHECK_SPAN); \
 	if (delay > tuned.setup_time_TIMER_CPUNIT) { \
 		rt_set_timer_delay(imuldiv(delay, TIMER_FREQ, tuned.cpu_freq));\
 	} else { \
@@ -899,7 +917,7 @@ static void rt_schedule_on_schedule_ipi(void)
 		SET_NEXT_TIMER_SHOT(fire_shot);
 		sched_release_global_lock(cpuid);
 		IF_GOING_TO_LINUX_CHECK_TIMER_SHOT(fire_shot);
-		FIRE_NEXT_TIMER_SHOT();
+		FIRE_NEXT_TIMER_SHOT(0);
 	} else {
 		TASK_TO_SCHEDULE();
 		sched_release_global_lock(cpuid);
@@ -965,7 +983,7 @@ void rt_schedule(void)
 		SET_NEXT_TIMER_SHOT(fire_shot);
 		sched_release_global_lock(cpuid);
 		IF_GOING_TO_LINUX_CHECK_TIMER_SHOT(fire_shot);
-		FIRE_NEXT_TIMER_SHOT();
+		FIRE_NEXT_TIMER_SHOT(0);
 	} else {
 		TASK_TO_SCHEDULE();
 		sched_release_global_lock(cpuid);
@@ -1251,12 +1269,12 @@ redo_timer_handler:
 		int prio, fire_shot;
 
 		timer_shot_fired = 0;
-		rt_times.intr_time = rt_times.tick_time + ONESHOT_SPAN;
+		rt_times.intr_time = RT_TIME_END;
 
 		SET_NEXT_TIMER_SHOT(fire_shot);
 		sched_release_global_lock(cpuid);
 		IF_GOING_TO_LINUX_CHECK_TIMER_SHOT(fire_shot);
-		FIRE_NEXT_TIMER_SHOT();
+		FIRE_NEXT_TIMER_SHOT(1);
 	} else {
 		sched_release_global_lock(cpuid);
 		rt_times.intr_time += rt_times.periodic_tick;
@@ -2761,7 +2779,7 @@ static struct rt_native_fun_entry rt_sched_entries[] = {
 	{ { 0, rt_get_time_ns },		    GET_TIME_NS },
 	{ { 0, rt_get_time_ns_cpuid },		    GET_TIME_NS_CPUID },
 	{ { 0, rt_get_cpu_time_ns },		    GET_CPU_TIME_NS },
-	{ { 0, rt_get_priorities },		    GET_PRIORITIES },
+	{ { 0, rt_task_get_info },		    GET_TASK_INFO },
 	{ { 0, rt_spv_RMS },			    SPV_RMS },
 	{ { 1, rt_change_prio },		    CHANGE_TASK_PRIO },
 	{ { 0, rt_sched_lock },			    SCHED_LOCK },
@@ -2999,6 +3017,8 @@ static int __rtai_lxrt_init(void)
 						 TIMER_FREQ, 
 						 1000000000);
 	tuned.timers_tol[0] = 0;
+	oneshot_span = ONESHOT_SPAN;
+	satdlay = oneshot_span - tuned.latency;
 #ifdef CONFIG_PROC_FS
 	if (rtai_proc_sched_register()) {
 		retval = 1;

@@ -1,6 +1,6 @@
 KCONFIG_DIR=./base/config/kconfig
-CC := gcc
-#CC := gcc -Wall -pedantic
+CC ?= gcc
+#CC ?= gcc -Wall -pedantic
 
 ifneq ($(MAKECMDGOALS),help)
 ifeq ($(srctree),)

@@ -24698,7 +24698,7 @@ else
                     \$(MAKE) -C $RTAI_LINUX_DIR CROSS_COMPILE=\$(CROSS_COMPILE) CC=$CC ARCH=$RTAI_TARGET_ARCH \
 		    SUBDIRS=\$\$PWD M=\$\$PWD rtai_srctree=\`cd \$(top_srcdir) && pwd\` rtai_srcdir=\`cd \$(srcdir) && pwd\` V=\$(V) modules \
 		    rtai_objs='\$(call src2obj,c,\$^) \$(call src2obj,S,\$^) \$(call src2obj,cc,\$^) \$(call src2obj,cpp,\$^)' rtai_target=\$(basename \$@)"
-   RTAI_KBUILD_CLEAN='rm -f *.ko *.mod.c .*.cmd *.o Module.symvers && rm -Rf .tmp_versions'
+   RTAI_KBUILD_CLEAN='rm -f *.ko *.mod.c .*.cmd *.o Module.symvers Module.markers modules.order && rm -Rf .tmp_versions'
    RTAI_KBUILD_DISTCLEAN=""
 fi
 
@@ -24814,7 +24814,10 @@ case $RTAI_TARGET_ARCH in
         else
            RTAI_FP_CFLAGS="$RTAI_FP_CFLAGS -ffast-math -msoft-float"
         fi
-	RTAI_TARGET_ARCH_OPTS="$RTAI_TARGET_ARCH_OPTS -msse -msse2"
+	# 2009-03-23
+	# `-msse2' temporarily removed by Pierangelo Masarati
+	# as suggested by Paul <paul_c AT tuxcnc DOT org>
+	RTAI_TARGET_ARCH_OPTS="$RTAI_TARGET_ARCH_OPTS -msse"
         ;;
 
  arm)

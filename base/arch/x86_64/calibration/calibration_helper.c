@@ -27,7 +27,7 @@
 
 int main(int argc, char *argv[])
 {
-	int fifo, period, skip, average = 0;
+	int fifo, period, skip, average = 0, rv;
 	char nm[RTF_NAMELEN+1];
 	RT_TASK *task;
 	RTIME expected;
@@ -55,7 +55,7 @@ int main(int argc, char *argv[])
 	rt_make_soft_real_time();
 	stop_rt_timer();	
 	rt_task_delete(task);
-	write(fifo, &average, sizeof(average));
+	rv = write(fifo, &average, sizeof(average));
 	close(fifo);
 	exit(0);
 }

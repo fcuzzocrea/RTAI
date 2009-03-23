@@ -827,9 +827,9 @@ do { \
 static int oneshot_span;
 static int satdlay;
 
-#define ONESHOT_DELAY(CHECK_SPAN) \
+#define ONESHOT_DELAY(SHOT_FIRED) \
 do { \
-	if (CHECK_SPAN) { \
+	if (!(SHOT_FIRED)) { \
 		RTIME span; \
 		if (unlikely((span = rt_times.intr_time - rt_time_h) > oneshot_span)) { \
 			rt_times.intr_time = rt_time_h + oneshot_span; \
@@ -846,11 +846,11 @@ do { \
 
 static void rt_timer_handler(void);
 
-#define FIRE_NEXT_TIMER_SHOT(CHECK_SPAN) \
+#define FIRE_NEXT_TIMER_SHOT(SHOT_FIRED) \
 do { \
 if (fire_shot) { \
 	int delay; \
-	ONESHOT_DELAY(CHECK_SPAN); \
+	ONESHOT_DELAY(SHOT_FIRED); \
 	if (delay > tuned.setup_time_TIMER_CPUNIT) { \
 		rt_set_timer_delay(imuldiv(delay, TIMER_FREQ, tuned.cpu_freq));\
 		timer_shot_fired = 1; \
@@ -917,7 +917,7 @@ static void rt_schedule_on_schedule_ipi(void)
 		SET_NEXT_TIMER_SHOT(fire_shot);
 		sched_release_global_lock(cpuid);
 		IF_GOING_TO_LINUX_CHECK_TIMER_SHOT(fire_shot);
-		FIRE_NEXT_TIMER_SHOT(0);
+		FIRE_NEXT_TIMER_SHOT(timer_shot_fired);
 	} else {
 		TASK_TO_SCHEDULE();
 		sched_release_global_lock(cpuid);
@@ -983,7 +983,7 @@ void rt_schedule(void)
 		SET_NEXT_TIMER_SHOT(fire_shot);
 		sched_release_global_lock(cpuid);
 		IF_GOING_TO_LINUX_CHECK_TIMER_SHOT(fire_shot);
-		FIRE_NEXT_TIMER_SHOT(0);
+		FIRE_NEXT_TIMER_SHOT(timer_shot_fired);
 	} else {
 		TASK_TO_SCHEDULE();
 		sched_release_global_lock(cpuid);
@@ -1274,7 +1274,7 @@ redo_timer_handler:
 		SET_NEXT_TIMER_SHOT(fire_shot);
 		sched_release_global_lock(cpuid);
 		IF_GOING_TO_LINUX_CHECK_TIMER_SHOT(fire_shot);
-		FIRE_NEXT_TIMER_SHOT(1);
+		FIRE_NEXT_TIMER_SHOT(0);
 	} else {
 		sched_release_global_lock(cpuid);
 		rt_times.intr_time += rt_times.periodic_tick;

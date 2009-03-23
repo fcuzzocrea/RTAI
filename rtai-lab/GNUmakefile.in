@@ -314,7 +314,7 @@ xrtailab_LDFLAGS = \
 	$(efltk_ldflags) \
 	@GL_LIBS@
 
-SUBDIRS = matlab matrixx scilab
+SUBDIRS = matlab matrixx scilab scilab5
 EXTRA_DIST = icons INSTALL
 all: all-recursive
 

@@ -2034,6 +2034,7 @@ static struct task_struct *__get_kthread(int cpuid)
    session, process-group, tty. */ 
 
 #if LINUX_VERSION_CODE < KERNEL_VERSION(2,6,24)
+
 void rt_daemonize(void)
 {
 #if LINUX_VERSION_CODE < KERNEL_VERSION(2,6,0)
@@ -2065,8 +2066,13 @@ void rt_daemonize(void)
 	spin_unlock_irq(&(current->sighand)->siglock);
 #endif
 }
+
+EXPORT_SYMBOL(rt_daemonize);
+
 #else
+
 extern void rt_daemonize(void);
+
 #endif
 
 #define HARD_KTHREAD_IN_USE ((char)220)
@@ -3165,9 +3171,6 @@ EXPORT_SYMBOL(rtai_handle_isched_lock);
 EXPORT_SYMBOL(switch_time);
 #endif
 EXPORT_SYMBOL(lxrt_prev_task);
-#if LINUX_VERSION_CODE < KERNEL_VERSION(2,6,24)
-EXPORT_SYMBOL(rt_daemonize);
-#endif
 
 #endif /* CONFIG_KBUILD */
 

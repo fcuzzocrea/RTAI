@@ -96,15 +96,16 @@ static void endme(int dummy) { }
 static void unload_kernel_helper (void)
 
 {
+    int rv;
     char modunload[1024];
 
     snprintf(modunload,sizeof(modunload),"/sbin/rmmod %s >/dev/null 2>&1",KERNEL_HELPER_PATH);
-    system(modunload);
+    rv = system(modunload);
 }
 
 int main(int argc, char *argv[])
 {
-	int srq, fifo, command, commands[20], ncommands, c, option_index, i;
+	int srq, fifo, command, commands[20], ncommands, c, option_index, i, rv;
 	struct params_t params;
 	char str[80], nm[RTF_NAMELEN+1], modload[1024];
 	unsigned long period = 100, duration = 5, parport = 'y';
@@ -153,7 +154,7 @@ int main(int argc, char *argv[])
 	atexit(&unload_kernel_helper);
 
 	snprintf(modload,sizeof(modload),"/sbin/insmod %s >/dev/null 2>&1",KERNEL_HELPER_PATH);
-	system(modload);
+	rv = system(modload);
 
 	signal(SIGINT, endme);
 
@@ -166,7 +167,7 @@ int main(int argc, char *argv[])
 
 	args[0] = GET_PARAMS;
 	rtai_srq(srq, (unsigned long)args);
-	read(fifo, &params, sizeof(params));
+	rv = read(fifo, &params, sizeof(params));
 	printf("\n*** NUMBER OF REQUESTS: %d. ***\n", ncommands);
 
 	for (i = 0; i < ncommands; i++) {
@@ -187,7 +188,7 @@ int main(int argc, char *argv[])
 				args[2] = (1000000*args[2])/args[1];
 				args[1] *= 1000;
 				rtai_srq(srq, (unsigned long)args);
-				read(fifo, &average, sizeof(average));
+				rv = read(fifo, &average, sizeof(average));
 				average /= (int)args[2];
 			        if (params.mp) {
 			        	printf("\n*** '#define LATENCY_APIC %d' (IN USE %lu)\n\n", (int)params.latency_apic + average, params.latency_apic);
@@ -213,7 +214,7 @@ int main(int argc, char *argv[])
 					execl(USER_HELPER_PATH, USER_HELPER_PATH, str, str + sizeof(str)/2, NULL);
 					_exit(1);
 				}
-				read(fifo, &average, sizeof(average));
+				rv = read(fifo, &average, sizeof(average));
 				waitpid(pid, 0, 0);
 				if (kill(pid,0) < 0)
 				    {
@@ -257,7 +258,7 @@ int main(int argc, char *argv[])
 						}
 						break;
 					}
-					read(fifo, &times, sizeof(times));
+					rv = read(fifo, &times, sizeof(times));
 					if (command == 'c' || command == 'b') {
 						cpu_freq = (((double)times.cpu_time)*params.clock_tick_rate)/(((double)times.intrs)*params.latch) + 0.49999999999999999;
 						printf("\n->>> MEASURED CPU_FREQ: %lu (Hz) [%lu (s)], IN USE %lu (Hz) <<<-\n", cpu_freq, time, params.cpu_freq);
@@ -290,7 +291,7 @@ int main(int argc, char *argv[])
 							rtai_srq(srq, (unsigned long)args);
 							break;
 						}
-						read(fifo, &maxj, sizeof(maxj));
+						rv = read(fifo, &maxj, sizeof(maxj));
 						time(&timestamp);
 						tm_timestamp = localtime(&timestamp);
 						printf("%04d/%02d/%0d-%02d:%02d:%02d -> ", tm_timestamp->tm_year+1900, tm_timestamp->tm_mon+1, tm_timestamp->tm_mday, tm_timestamp->tm_hour, tm_timestamp->tm_min, tm_timestamp->tm_sec);

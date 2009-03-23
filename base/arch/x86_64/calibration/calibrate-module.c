@@ -127,9 +127,10 @@ static int rt_timer_tick_ext(int irq, unsigned long data)
 static long long user_srq(unsigned long whatever)
 {
 	extern int calibrate_8254(void);
+	int rv;
 	unsigned long args[MAXARGS];
 
-	copy_from_user(args, (unsigned long *)whatever, MAXARGS*sizeof(unsigned long));
+	rv = copy_from_user(args, (unsigned long *)whatever, MAXARGS*sizeof(unsigned long));
 	switch (args[0]) {
 		case CAL_8254: {
 			return calibrate_8254();

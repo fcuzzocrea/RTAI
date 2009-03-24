@@ -89,7 +89,7 @@ static void (*rtai_isr_hook)(int cpuid);
 #ifdef CONFIG_RTAI_SCHED_ISR_LOCK
 #define RTAI_SCHED_ISR_LOCK() \
 	do { \
-		if (!rt_scheduling[cpuid = rtai_cpuid()].locked++) { \
+		if (!rt_scheduling[cpuid].locked++) { \
 			rt_scheduling[cpuid].rqsted = 0; \
 		} \
 	} while (0)
@@ -115,7 +115,7 @@ static void (*rtai_isr_hook)(int cpuid);
 #endif /* (LINUX_VERSION_CODE > KERNEL_VERSION(2,4,31) && LINUX_VERSION_CODE < KERNEL_VERSION(2,6,0)) || LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,9) */
 
 #ifdef LOCKED_LINUX_IN_IRQ_HANDLER
-#define HAL_LOCK_LINUX()  do { sflags = rt_save_switch_to_real_time(cpuid); } while (0)
+#define HAL_LOCK_LINUX()  do { sflags = rt_save_switch_to_real_time(cpuid = rtai_cpuid()); } while (0)
 #define HAL_UNLOCK_LINUX()  do { rtai_cli(); rt_restore_switch_to_linux(sflags, cpuid); } while (0)
 #else
 #define HAL_LOCK_LINUX()  do { sflags = xchg(ROOT_STATUS_ADR(cpuid), (1 << IPIPE_STALL_FLAG)); } while (0)
@@ -584,11 +584,11 @@ int rtai_decr_timer_handler(struct pt_regs *regs)
 	unsigned long cpuid;
 	unsigned long sflags;
 
-	RTAI_SCHED_ISR_LOCK();
 	HAL_LOCK_LINUX();
+	RTAI_SCHED_ISR_LOCK();
 	decr_timer_handler();
-	HAL_UNLOCK_LINUX();
 	RTAI_SCHED_ISR_UNLOCK();
+	HAL_UNLOCK_LINUX();
 	if (!test_bit(IPIPE_STALL_FLAG, ROOT_STATUS_ADR(cpuid))) {
 		rtai_sti();
 		hal_fast_flush_pipeline(cpuid);
@@ -715,12 +715,12 @@ static int rtai_hirq_dispatcher(struct pt_regs *regs)
 	if (rtai_realtime_irq[irq].handler) {
 		unsigned long sflags;
 
-		RTAI_SCHED_ISR_LOCK();
 		HAL_LOCK_LINUX();
 		rtai_realtime_irq[irq].irq_ack(irq); mb();
+		RTAI_SCHED_ISR_LOCK();
 		rtai_realtime_irq[irq].handler(irq, rtai_realtime_irq[irq].cookie);
-		HAL_UNLOCK_LINUX();
 		RTAI_SCHED_ISR_UNLOCK();
+		HAL_UNLOCK_LINUX();
 
 		if (rtai_realtime_irq[irq].retmode || test_bit(IPIPE_STALL_FLAG, ROOT_STATUS_ADR(cpuid))) {
 			return 0;

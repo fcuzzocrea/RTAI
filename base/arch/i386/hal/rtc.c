@@ -50,16 +50,16 @@ int _rtai_rtc_timer_handler(void)
 	unsigned long cpuid = rtai_cpuid();
 	unsigned long sflags;
 
-	RTAI_SCHED_ISR_LOCK();
 	HAL_LOCK_LINUX();
-
 	rt_mask_and_ack_irq(RTC_IRQ);
+	RTAI_SCHED_ISR_LOCK();
+
 	RT_CMOS_READ(RTC_INTR_FLAGS); // CMOS_READ(RTC_INTR_FLAGS);
 	rt_enable_irq(RTC_IRQ);
 	usr_rtc_handler();
 
-	HAL_UNLOCK_LINUX();
 	RTAI_SCHED_ISR_UNLOCK();
+	HAL_UNLOCK_LINUX();
 
 	if (!test_bit(IPIPE_STALL_FLAG, ROOT_STATUS_ADR(cpuid))) {
 		rtai_sti();

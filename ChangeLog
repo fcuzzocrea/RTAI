@@ -1,3 +1,10 @@
+2009-03-25 Paolo Mantegazza <mantegazza@aero.polimi.it>
+
+	* base/arch/i386/hal/hal.immed and rtc.c,
+	* base/arch/x86_64/hal/hal.immed,
+	* base/arch/ppc/hal/hal.c:
+	  nest RTAI_SCHED_ISR_LOCK/UNLOCK within HAL_LOCK/UNLOCK_LINUX.
+
 2009-03-23 Pierangelo Masarati <masarati@aero.polimi.it>
 
 	* configure.in: x86_64 does not like -sse2 in kernel space apps

@@ -20,7 +20,7 @@ SCILIBS = $(SCIDIR)/libs/scicos.a $(SCIDIR)/libs/poly.a $(SCIDIR)/libs/calelm.a 
 OTHERLIBS = 
 ULIBRARY = $(RTAIDIR)/lib/libsciblk.a $(RTAIDIR)/lib/liblxrt.a
 
-CFLAGS = $(CC_OPTIONS) -O2 -I$(SCIDIR)/routines $(C_FLAGS) -DMODEL=$(MODEL) -DMODELN=$(MODEL).c
+CFLAGS = $(CC_OPTIONS) -O2 -I$(SCIDIR)/routines -I$(SCIDIR)/routines/scicos $(C_FLAGS) -DMODEL=$(MODEL) -DMODELN=$(MODEL).c
 
 rtmain.c: $(RTAIDIR)/share/rtai/scicos/rtmain.c $(MODEL).c
 	cp $< .

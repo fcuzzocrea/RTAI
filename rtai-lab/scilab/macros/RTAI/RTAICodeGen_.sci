@@ -57,6 +57,10 @@ endfunction
 //
 //16/06/07 Author : A.Layec
 //Copyright INRIA
+
+// Modified for RT purposes by Roberto Bucher - RTAI Team
+// roberto.bucher@supsi.ch
+
 function [txt]=BlockProto(bk)
 
   nin=inpptr(bk+1)-inpptr(bk);  //* number of input ports */
@@ -188,6 +192,10 @@ endfunction
 //
 //16/06/07 Authors : Alan Layec
 //Copyright INRIA
+
+// Modified for RT purposes by Roberto Bucher - RTAI Team
+// roberto.bucher@supsi.ch
+
 function txt=call_block42(bk,pt,flag)
 
   txt=[]
@@ -502,6 +510,9 @@ endfunction
 
 //==========================================================================
 
+// Modified for RT purposes by Roberto Bucher - RTAI Team
+// roberto.bucher@supsi.ch
+
 function ok = compile_standalone()
 //compile rt standalone executable for standalone
 // 22.01.2004
@@ -525,6 +536,11 @@ endfunction
 // Transforms a given Scicos discrete and continuous SuperBlock into a C defined Block
 // Copyright INRIA
 //
+
+// Original file from Project Metalau - INRIA
+// Modified for RT purposes by Roberto Bucher - RTAI Team
+// roberto.bucher@supsi.ch
+
 function  [ok,XX,alreadyran,flgcdgen,szclkINTemp,freof] = do_compile_superblock42(XX,all_scs_m,numk,alreadyran)
 
   scs_m = XX.model.rpar ; //** isolate the super block scs_m data structure 
@@ -795,7 +811,7 @@ function  [ok,XX,alreadyran,flgcdgen,szclkINTemp,freof] = do_compile_superblock4
   archname=''; 
   Tsamp = sci2exp(eval(sTsamp));
   
-  template = 'board_flex'; //** default values for this version 
+  template = ''; //** default values for this version 
   
   if XX.model.rpar.props.void3 == [] then
 	target = 'rtai'; //** default compilation chain 
@@ -1014,6 +1030,11 @@ endfunction
 
 //==========================================================================
 //Generates Code for dynamically linked Fortran and C Blocks
+
+// Original file from Project Metalau - INRIA
+// Modified for RT purposes by Roberto Bucher - RTAI Team
+// roberto.bucher@supsi.ch
+
 function [CCode,FCode]=gen_blocks()
 
   CCode=[]
@@ -1203,6 +1224,11 @@ endfunction
 //Copyright INRIA
 //
 // rmq : La fonction zdoit n'est pas utilis�e pour le moment
+
+// Original file from Project Metalau - INRIA
+// Modified for RT purposes by Roberto Bucher - RTAI Team
+// roberto.bucher@supsi.ch
+
 function [Code,Code_common]=make_standalone42()
 
   x=cpr.state.x;
@@ -1250,8 +1276,8 @@ function [Code,Code_common]=make_standalone42()
         '#include <math.h>'
         '#include <string.h>'
         '#include <memory.h>'
-        '#include '"scicos_block4.h'"'
-        '#include '"machine.h'"'
+        '#include <scicos_block4.h>'
+        '#include <machine.h>'
         ''
 	'#ifdef linux'
 	'#define __CONST__'
@@ -1281,7 +1307,7 @@ function [Code,Code_common]=make_standalone42()
     Code=[Code
           '/* Code prototype for standalone use  */'
           'int C2F('+rdnom+'simblk)(double , double *, double *);'
-          'extern  integer C2F(dset)();'
+          'extern  int C2F(dset)();'
           'static int ode1();'
           'static int ode2();'
           'static int ode4();'
@@ -1944,7 +1970,6 @@ function [Code,Code_common]=make_standalone42()
                '     int *INFO;'
                '     long int L;'
                '{}'
-               ''
                'void set_block_error(int err)'
                '{'
                '  return;'
@@ -2151,6 +2176,10 @@ endfunction
 //
 //Author : Rachid Djenidi, Alan Layec
 //Copyright INRIA
+
+// Modified for RT purposes by Roberto Bucher - RTAI Team
+// roberto.bucher@supsi.ch
+
 function txt=make_static_standalone42()
 
   txt=[''];
@@ -2561,6 +2590,9 @@ function [txt]=mat2scs_c_typ(outtb)
  end
 endfunction
 
+// Modified for RT purposes by Roberto Bucher - RTAI Team
+// roberto.bucher@supsi.ch
+
 function rename(folder,newname,ext)
   oldname=folder+'/Makefile';
   newname=folder+'/'+newname;
@@ -2573,6 +2605,9 @@ function rename(folder,newname,ext)
 endfunction
 
 //==========================================================================
+
+// Modified for RT purposes by Roberto Bucher - RTAI Team
+// roberto.bucher@supsi.ch
 
 function Makename=rt_gen_make(name,files,libs)
 
@@ -2719,6 +2754,10 @@ endfunction
 //
 //12/07/07 Alan Layec
 //Copyright INRIA
+
+// Modified for RT purposes by Roberto Bucher - RTAI Team
+// roberto.bucher@supsi.ch
+
 function [txt]=write_code_cdoit(flag)
 
   txt=[];
@@ -2792,7 +2831,7 @@ function [txt]=write_code_cdoit(flag)
         //** C **//
         tmp_='*(('+TYPE+' *)'+rdnom+'_block_outtbptr['+string(ix)+'])'
         txt=[txt;
-             '  i=max(min((integer) '+...
+             '  i=max(min((int) '+...
               tmp_+',block_'+rdnom+'['+string(bk-1)+'].evout),1);'
              '  switch(i)'
              '  {']
@@ -2833,6 +2872,10 @@ endfunction
 //output : txt for flag 1 or 2, or flag 3
 //
 //12/07/07 Alan Layec
+
+// Modified for RT purposes by Roberto Bucher - RTAI Team
+// roberto.bucher@supsi.ch
+
 function [txt]=write_code_doit(ev,flag)
 
   txt=[];
@@ -2906,7 +2949,7 @@ function [txt]=write_code_doit(ev,flag)
         tmp_='*(('+TYPE+' *)'+rdnom+'_block_outtbptr['+string(ix)+'])'
         //** C **//
         txt=[txt;
-             '    i=max(min((integer) '+...
+             '    i=max(min((int) '+...
               tmp_+',block_'+rdnom+'['+string(bk-1)+'].evout),1);'
              '    switch(i)'
              '    {']
@@ -2947,6 +2990,10 @@ endfunction
 //
 //15/07/07 Alan Layec
 //Copyright INRIA
+
+// Modified for RT purposes by Roberto Bucher - RTAI Team
+// roberto.bucher@supsi.ch
+
 function [txt]=write_code_idoit()
 
   txt=[];
@@ -3020,7 +3067,7 @@ function [txt]=write_code_idoit()
         //** C **//
         tmp_='*(('+TYPE+' *)'+rdnom+'_block_outtbptr['+string(ix)+'])'
         txt=[txt;
-             '  i=max(min((integer) '+...
+             '  i=max(min((int) '+...
               tmp_+',block_'+rdnom+'['+string(bk-1)+'].evout),1);']
         txt=[txt;
              '  switch(i)'
@@ -3062,8 +3109,13 @@ endfunction
 //
 //12/07/07 Alan Layec
 //Copyright INRIA
-function [txt]=write_code_odoit(flag)
 
+// Modified for RT purposes by Roberto Bucher - RTAI Team
+// roberto.bucher@supsi.ch
+
+
+function [txt]=write_code_odoit(flag)
+ 
   txt=[];
 
   for j=1:noord
@@ -3136,7 +3188,7 @@ function [txt]=write_code_odoit(flag)
         tmp_='*(('+TYPE+' *)'+rdnom+'_block_outtbptr['+string(ix)+'])'
         txt=[txt;
              '    if (block_'+rdnom+'['+string(bk-1)+'].nmode<0) {';
-             '      i=max(min((integer) '+...
+             '      i=max(min((int) '+...
                 tmp_+',block_'+rdnom+'['+string(bk-1)+'].evout),1);'
              '    }'
              '    else {'
@@ -3173,6 +3225,10 @@ endfunction
 
 function [files]=write_code(Code,CCode,FCode,Code_common)
 
+// Original file from Project Metalau - INRIA
+// Modified for RT purposes by Roberto Bucher - RTAI Team
+// roberto.bucher@supsi.ch
+
  ierr=execstr('mputl(Code,rpat+''/''+rdnom+''.c'')','errcatch')
   if ierr<>0 then
     message(lasterror())
@@ -3200,7 +3256,7 @@ function [files]=write_code(Code,CCode,FCode,Code_common)
     CCode = [
           '#include <math.h>';
           '#include <stdlib.h>';
-          '#include <scicos/scicos_block4.h>';
+          '#include <scicos_block4.h>';
 	  '';
 	  CCode];
     ierr=execstr('mputl(CCode,rpat+''/''+rdnom+''_Cblocks.c'')','errcatch')
@@ -3216,24 +3272,6 @@ function [files]=write_code(Code,CCode,FCode,Code_common)
   if ierr==0 then mclose(fd),files=[files,rdnom+'f'],end
   [fd,ierr]=mopen(rpat+'/'+rdnom+'_Cblocks.c','r')
   if ierr==0 then mclose(fd),files=[files,rdnom+'_Cblocks'],end
-
-  //** copy source code of machine.h/scicos_block4.h
-  //   in target path
-  txt=mgetl(SCI+'/routines/machine.h');
-  ierr=execstr('mputl(txt,rpat+''/machine.h'')','errcatch')
-  if ierr<>0 then
-    message(lasterror())
-    ok=%f
-    return
-  end
-
-  txt=mgetl(SCI+'/routines/scicos/scicos_block4.h');
-  ierr=execstr('mputl(txt,rpat+''/scicos_block4.h'')','errcatch')
-  if ierr<>0 then
-    message(lasterror())
-    ok=%f
-    return
-  end
 
 endfunction
 

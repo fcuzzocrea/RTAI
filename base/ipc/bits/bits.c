@@ -258,7 +258,7 @@ RTAI_SYSCALL_MODE unsigned long rt_bits_signal(BITS *bits, int setfun, unsigned 
 RTAI_SYSCALL_MODE int _rt_bits_wait(BITS *bits, int testfun, unsigned long testmasks, int exitfun, unsigned long exitmasks, unsigned long *resulting_mask, int space)
 {
 	RT_TASK *rt_current;
-	unsigned long flags, mask;
+	unsigned long flags, mask = 0;
 	int retval;
 
 	CHECK_BITS_MAGIC(bits);
@@ -330,7 +330,7 @@ RTAI_SYSCALL_MODE int _rt_bits_wait_if(BITS *bits, int testfun, unsigned long te
 RTAI_SYSCALL_MODE int _rt_bits_wait_until(BITS *bits, int testfun, unsigned long testmasks, int exitfun, unsigned long exitmasks, RTIME time, unsigned long *resulting_mask, int space)
 {
 	RT_TASK *rt_current;
-	unsigned long flags, mask;
+	unsigned long flags, mask = 0;
 	int retval;
 
 	CHECK_BITS_MAGIC(bits);

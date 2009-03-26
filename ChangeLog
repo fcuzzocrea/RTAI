@@ -1,3 +1,9 @@
+2009-03-27 Paolo Mantegazza <mantegazza@aero.polimi.it>
+
+	* base/innclude/rtai_scb.h: force RTAI_PROTO to a static inline in
+	  kernel space, otherwise we'll miss scb when RTAI_PROTO is set to
+	  no inline.
+
 2009-03-25 Roberto Bucher <roberto.bucher@supsi.ch>
 
 	* rtai-lab/scilab*/RTAICodeGen_.sci: Modifications for

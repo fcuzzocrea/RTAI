@@ -4,6 +4,9 @@
 	* base/innclude/asm-i386/rtai_lxrt.h: change REG definition macros 
 	  to avoid annoying compiler warnings, conflicting with Linux
 	  headers.
+	* base/innclude/rtai_scb.h: force RTAI_PROTO to a static inline in 
+	  kernel space, otherwise we'll miss scb when RTAI_PROTO is set to 
+	  no inline.
 
 2009-03-25 Paolo Mantegazza <mantegazza@aero.polimi.it>
 

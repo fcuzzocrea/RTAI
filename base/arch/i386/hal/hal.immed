@@ -1045,10 +1045,10 @@ int _rtai_apic_timer_handler(struct pt_regs regs)
 #endif /* CONFIG_SMP && CONFIG_FRAME_POINTER */
 #else
 			struct pt_regs *tr = &__raw_get_cpu_var(__ipipe_tick_regs);
-			tr->REG_FLAGS = regs.REG_FLAGS;
-			tr->REG_IP    = regs.REG_IP;
-			tr->REG_CS    = regs.REG_CS;
-			tr->REG_BP    = regs.REG_BP;
+			tr->RT_REG_FLAGS = regs.RT_REG_FLAGS;
+			tr->RT_REG_IP    = regs.RT_REG_IP;
+			tr->RT_REG_CS    = regs.RT_REG_CS;
+			tr->RT_REG_BP    = regs.RT_REG_BP;
 #endif
 		}
 		hal_fast_flush_pipeline(cpuid);
@@ -1089,10 +1089,10 @@ int _rtai_8254_timer_handler(struct pt_regs regs)
 #endif /* CONFIG_SMP && CONFIG_FRAME_POINTER */
 #else
 			struct pt_regs *tr = &__raw_get_cpu_var(__ipipe_tick_regs);
-			tr->REG_FLAGS = regs.REG_FLAGS;
-			tr->REG_IP    = regs.REG_IP;
-			tr->REG_CS    = regs.REG_CS;
-			tr->REG_BP    = regs.REG_BP;
+			tr->RT_REG_FLAGS = regs.RT_REG_FLAGS;
+			tr->RT_REG_IP    = regs.RT_REG_IP;
+			tr->RT_REG_CS    = regs.RT_REG_CS;
+			tr->RT_REG_BP    = regs.RT_REG_BP;
 #endif
 		}
 		hal_fast_flush_pipeline(cpuid);
@@ -1531,15 +1531,15 @@ static int rtai_hirq_dispatcher (struct pt_regs regs)
 	if (rtai_realtime_irq[irq = regs.orig_eax & 0xFF].handler) {
 #else
 #if LINUX_VERSION_CODE < KERNEL_VERSION(2,6,28)
-	if (rtai_realtime_irq[irq = ~regs.REG_ORIG_AX].handler) {
+	if (rtai_realtime_irq[irq = ~regs.RT_REG_ORIG_AX].handler) {
 #else
 #ifdef CONFIG_X86_LOCAL_APIC
-	if (~regs.REG_ORIG_AX >= FIRST_SYSTEM_VECTOR) {
-		irq = ipipe_apic_vector_irq(~regs.REG_ORIG_AX);
+	if (~regs.RT_REG_ORIG_AX >= FIRST_SYSTEM_VECTOR) {
+		irq = ipipe_apic_vector_irq(~regs.RT_REG_ORIG_AX);
 	} else
 #endif
 	{
-		irq = __get_cpu_var(vector_irq)[~regs.REG_ORIG_AX];
+		irq = __get_cpu_var(vector_irq)[~regs.RT_REG_ORIG_AX];
 	}
 	if (rtai_realtime_irq[irq].handler) {
 #endif
@@ -1590,10 +1590,10 @@ static int rtai_hirq_dispatcher (struct pt_regs regs)
 #endif /* CONFIG_SMP && CONFIG_FRAME_POINTER */
 #else
 		struct pt_regs *tr = &__raw_get_cpu_var(__ipipe_tick_regs);
-		tr->REG_FLAGS = regs.REG_FLAGS;
-		tr->REG_IP    = regs.REG_IP;
-		tr->REG_CS    = regs.REG_CS;
-		tr->REG_BP    = regs.REG_BP;
+		tr->RT_REG_FLAGS = regs.RT_REG_FLAGS;
+		tr->RT_REG_IP    = regs.RT_REG_IP;
+		tr->RT_REG_CS    = regs.RT_REG_CS;
+		tr->RT_REG_BP    = regs.RT_REG_BP;
 #endif
 	}
 	hal_fast_flush_pipeline(cpuid);

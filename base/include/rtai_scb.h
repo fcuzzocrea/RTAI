@@ -51,6 +51,16 @@
 
 struct task_struct;
 
+#ifdef __KERNEL__
+
+#define RTAI_SCB_PROTO(type, name, arglist)  static inline type name arglist
+
+#else
+
+#define RTAI_SCB_PROTO  RTAI_PROTO
+
+#endif
+
 /**
  * Allocate and initialize a shared memory circular buffer.
  *
@@ -92,7 +102,7 @@ struct task_struct;
  *
  */
 
-RTAI_PROTO(void *, rt_scb_init, (unsigned long name, int size, unsigned long suprt))
+RTAI_SCB_PROTO(void *, rt_scb_init, (unsigned long name, int size, unsigned long suprt))
 {	
 	void *scb;
 	if (suprt > 1000) {
@@ -121,7 +131,7 @@ RTAI_PROTO(void *, rt_scb_init, (unsigned long name, int size, unsigned long sup
  *
  */
 
-RTAI_PROTO(void, rt_scb_reset, (void *scb))
+RTAI_SCB_PROTO(void, rt_scb_reset, (void *scb))
 { 
 	LBYTE = FBYTE = 0;
 }
@@ -149,7 +159,7 @@ RTAI_PROTO(void, rt_scb_reset, (void *scb))
  *
  */
 
-RTAI_PROTO(int, rt_scb_delete, (unsigned long name))
+RTAI_SCB_PROTO(int, rt_scb_delete, (unsigned long name))
 { 
 	return rt_shm_free(name);
 }
@@ -168,7 +178,7 @@ RTAI_PROTO(int, rt_scb_delete, (unsigned long name))
  *
  */
 
-RTAI_PROTO (int, rt_scb_avbs, (void *scb))
+RTAI_SCB_PROTO (int, rt_scb_avbs, (void *scb))
 { 
 	int size = SIZE, fbyte = FBYTE, lbyte = LBYTE;
 	return (lbyte >= fbyte ? lbyte - fbyte : size + lbyte - fbyte);
@@ -188,7 +198,7 @@ RTAI_PROTO (int, rt_scb_avbs, (void *scb))
  *
  */
 
-RTAI_PROTO (int, rt_scb_bytes, (void *scb))
+RTAI_SCB_PROTO (int, rt_scb_bytes, (void *scb))
 { 
 	return rt_scb_avbs(scb);
 }
@@ -207,7 +217,7 @@ RTAI_PROTO (int, rt_scb_bytes, (void *scb))
  *
  */
 
-RTAI_PROTO (int, rt_scb_frbs, (void *scb))
+RTAI_SCB_PROTO (int, rt_scb_frbs, (void *scb))
 { 
 	int size = SIZE, fbyte = FBYTE, lbyte = LBYTE;
 	return (fbyte <= lbyte ? size + fbyte - lbyte : size - lbyte);
@@ -225,7 +235,7 @@ RTAI_PROTO (int, rt_scb_frbs, (void *scb))
  *
  */
 
-RTAI_PROTO(int, rt_scb_get, (void *scb, void *msg, int msg_size))
+RTAI_SCB_PROTO(int, rt_scb_get, (void *scb, void *msg, int msg_size))
 { 
 	int size = SIZE, fbyte = FBYTE, lbyte = LBYTE;
 	if (msg_size > 0 && ((lbyte -= fbyte) >= 0 ? lbyte : size + lbyte) >= msg_size) {
@@ -255,7 +265,7 @@ RTAI_PROTO(int, rt_scb_get, (void *scb, void *msg, int msg_size))
  *
  */
 
-RTAI_PROTO(int, rt_scb_evdrp, (void *scb, void *msg, int msg_size))
+RTAI_SCB_PROTO(int, rt_scb_evdrp, (void *scb, void *msg, int msg_size))
 { 
 	int size = SIZE, fbyte = FBYTE, lbyte = LBYTE;
 	if (msg_size > 0 && ((lbyte -= fbyte) >= 0 ? lbyte : size + lbyte) >= msg_size) {
@@ -283,7 +293,7 @@ RTAI_PROTO(int, rt_scb_evdrp, (void *scb, void *msg, int msg_size))
  *
  */
 
-RTAI_PROTO(int, rt_scb_put, (void *scb, void *msg, int msg_size))
+RTAI_SCB_PROTO(int, rt_scb_put, (void *scb, void *msg, int msg_size))
 { 
 	int size = SIZE, fbyte = FBYTE, lbyte = LBYTE;
 	if (msg_size > 0 && ((fbyte -= lbyte) <= 0 ? size + fbyte : fbyte) > msg_size) {
@@ -301,7 +311,7 @@ RTAI_PROTO(int, rt_scb_put, (void *scb, void *msg, int msg_size))
 	return msg_size;
 }
 
-RTAI_PROTO(int, rt_scb_ovrwr, (void *scb, void *msg, int msg_size))
+RTAI_SCB_PROTO(int, rt_scb_ovrwr, (void *scb, void *msg, int msg_size))
 { 
 	int size = SIZE, lbyte = LBYTE;
 	if (msg_size > 0 && msg_size < size) {

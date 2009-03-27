@@ -531,12 +531,14 @@ RTAI_SYSCALL_MODE long rt_comedi_command_data_write(void *dev, unsigned int subd
 		ofstf += sizeof(sampl_t);
 	}
 	comedi_mark_buffer_written(dev, subdev, ofstf - ofsti);
+#if 0
 	if (!avbs) {
 		int retval;
 		if ((retval = _rt_comedi_trigger(dev, subdev)) < 0) {
 			return retval;
 		}
 	}
+#endif
 	RTAI_COMEDI_UNLOCK(dev, subdev);
 	return nchans;
 }

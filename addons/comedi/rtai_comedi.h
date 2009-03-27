@@ -518,7 +518,7 @@ RTAI_PROTO(long, rt_comedi_command_data_wread_timed, (void *dev, unsigned int su
 #define BUILD_DIO_INSN(insn, subdev, data) \
 	_BUILD_INSN(INSN_BITS, (insn), subdev, &(data), 2, 0, 0, 0)
 
-#define BUILD_TRIG_INSN(insn, subdev) \
+#define BUILD_TRIG_INSN(insn, subdev, data) \
 	_BUILD_INSN(INSN_INTTRIG, (insn), subdev, &(data), 1, 0, 0, 0)
 
 #endif /* #ifndef _RTAI_COMEDI_H_ */

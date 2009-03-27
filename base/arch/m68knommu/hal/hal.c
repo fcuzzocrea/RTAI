@@ -426,7 +426,7 @@ void rt_disable_irq (unsigned irq)
 #if LINUX_VERSION_CODE >= RTAI_LT_KERNEL_VERSION_FOR_IRQDESC
 	BEGIN_PIC();
 	rtai_irq_desc(irq)->disable(irq);
-	hal_lock_irq(hal_root_domain, cpuid, irq);
+	hal_lock_irq(hal_root_domain, 0, irq);
 	END_PIC();
 #endif
 }
@@ -756,21 +756,21 @@ irqreturn_t rtai_broadcast_to_local_timers (int irq, void *dev_id, struct pt_reg
 #ifdef CONFIG_RTAI_SCHED_ISR_LOCK
 #define RTAI_SCHED_ISR_LOCK() \
 	do { \
-		if (!rt_scheduling[cpuid = rtai_cpuid()].locked++) { \
-			rt_scheduling[cpuid].rqsted = 0; \
+		if (!rt_scheduling[0].locked++) { \
+			rt_scheduling[0].rqsted = 0; \
 		} \
 	} while (0)
 #define RTAI_SCHED_ISR_UNLOCK() \
 	do { \
-		if (rt_scheduling[cpuid].locked && !(--rt_scheduling[cpuid].locked)) { \
-			if (rt_scheduling[cpuid].rqsted > 0 && rtai_isr_hook) { \
-				rtai_isr_hook(cpuid); \
+		if (rt_scheduling[0].locked && !(--rt_scheduling[0].locked)) { \
+			if (rt_scheduling[0].rqsted > 0 && rtai_isr_hook) { \
+				rtai_isr_hook(0); \
         		} \
 		} \
 	} while (0)
 #else  /* !CONFIG_RTAI_SCHED_ISR_LOCK */
 #define RTAI_SCHED_ISR_LOCK() \
-	do { cpuid = rtai_cpuid(); } while (0)
+	do { cpuid = 0; } while (0)
 #define RTAI_SCHED_ISR_UNLOCK() \
 	do {                       } while (0)
 #endif /* CONFIG_RTAI_SCHED_ISR_LOCK */
@@ -958,39 +958,42 @@ static int rtai_hirq_dispatcher (unsigned irq, struct pt_regs *regs)
 		unsigned long sflags;
 		if (irq == RT_TIMER_IRQ)
 		{
-                       unsigned long sflags = 0;
-                       RTAI_SCHED_ISR_LOCK();
-						HAL_LOCK_LINUX();
-                       rtai_realtime_irq[RT_TIMER_IRQ].irq_ack(RT_TIMER_IRQ);
-                       ((void (*)(void))rtai_realtime_irq[RT_TIMER_IRQ].handler)();
-                       HAL_UNLOCK_LINUX();
-                       RTAI_SCHED_ISR_UNLOCK();
-                       if (!test_bit(IPIPE_STALL_FLAG, ROOT_STATUS_ADR(cpuid)))  {
-                               rtai_sti();
+			unsigned long sflags = 0;
+			HAL_LOCK_LINUX();
+			RTAI_SCHED_ISR_LOCK();
+			if (rtai_realtime_irq[RT_TIMER_IRQ].irq_ack)
+				rtai_realtime_irq[RT_TIMER_IRQ].irq_ack(RT_TIMER_IRQ);
+			((void (*)(void))rtai_realtime_irq[RT_TIMER_IRQ].handler)();
+			RTAI_SCHED_ISR_UNLOCK();
+			HAL_UNLOCK_LINUX();
+			if (!test_bit(IPIPE_STALL_FLAG, ROOT_STATUS_ADR(cpuid)))  {
+				rtai_sti();
 #if LINUX_VERSION_CODE < RTAI_LT_KERNEL_VERSION_FOR_NONPERCPU
-                               HAL_TICK_REGS.sr = regs->sr;
-                               HAL_TICK_REGS.pc = regs->pc;
+				HAL_TICK_REGS.sr = regs->sr;
+				HAL_TICK_REGS.pc = regs->pc;
 #else
 				__raw_get_cpu_var(__ipipe_tick_regs).sr = regs->sr;
 				__raw_get_cpu_var(__ipipe_tick_regs).pc = regs->pc;
 #endif
-                               hal_fast_flush_pipeline(cpuid);
-                               return 1;
-                       }
-                       return 0;
+				hal_fast_flush_pipeline(cpuid);
+				return 1;
+			}
+			return 0;
 		}
 
-		RTAI_SCHED_ISR_LOCK();
 		HAL_LOCK_LINUX();
-		rtai_realtime_irq[irq].irq_ack(irq); mb();
+		if (rtai_realtime_irq[irq].irq_ack)
+			rtai_realtime_irq[irq].irq_ack(irq); 
+		mb();
+		RTAI_SCHED_ISR_LOCK();
 		if (rtai_realtime_irq[irq].retmode && rtai_realtime_irq[irq].handler(irq, rtai_realtime_irq[irq].cookie)) {
-			HAL_UNLOCK_LINUX();
 			RTAI_SCHED_ISR_UNLOCK();
+			HAL_UNLOCK_LINUX();
 			return 0;
-                } else {
+		} else {
 			rtai_realtime_irq[irq].handler(irq, rtai_realtime_irq[irq].cookie);
-			HAL_UNLOCK_LINUX();
 			RTAI_SCHED_ISR_UNLOCK();
+			HAL_UNLOCK_LINUX();
 			if (test_bit(IPIPE_STALL_FLAG, ROOT_STATUS_ADR(cpuid))) {
 				return 0;
 			}
@@ -1001,7 +1004,9 @@ static int rtai_hirq_dispatcher (unsigned irq, struct pt_regs *regs)
 //		lflags = xchg(ROOT_STATUS_ADR(cpuid), (1 << IPIPE_STALL_FLAG));
 		lflags = ROOT_STATUS_VAL(cpuid);
 		ROOT_STATUS_VAL(cpuid) = (1 << IPIPE_STALL_FLAG);
-		rtai_realtime_irq[irq].irq_ack(irq); mb();
+		if (rtai_realtime_irq[irq].irq_ack)
+			rtai_realtime_irq[irq].irq_ack(irq); 
+		mb();
 		hal_pend_uncond(irq, cpuid);
 		ROOT_STATUS_VAL(cpuid) = lflags;
 

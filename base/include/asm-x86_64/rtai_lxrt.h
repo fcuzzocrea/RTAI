@@ -40,21 +40,21 @@
 
 #if defined(__KERNEL__) && LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,25)
 
-#define REG_ORIG_AX           orig_ax
-#define REG_SP                sp
-#define REG_SS                ss
-#define REG_FLAGS             flags
-#define REG_IP                ip
-#define REG_CS                cs
-#define REG_BP                bp
-#define REG_BX                bx
-#define REG_CX                cx
+#define RT_REG_ORIG_AX           orig_ax
+#define RT_REG_SP                sp
+#define RT_REG_SS                ss
+#define RT_REG_FLAGS             flags
+#define RT_REG_IP                ip
+#define RT_REG_CS                cs
+#define RT_REG_BP                bp
+#define RT_REG_BX                bx
+#define RT_REG_CX                cx
 
 #define RTAI_SYSCALL_CODE     di
 #define RTAI_SYSCALL_ARGS     si
 #define RTAI_SYSCALL_RETPNT   dx
 
-#define LINUX_SYSCALL_NR      REG_ORIG_AX
+#define LINUX_SYSCALL_NR      RT_REG_ORIG_AX
 #define LINUX_SYSCALL_REG1    di
 #define LINUX_SYSCALL_REG2    si
 #define LINUX_SYSCALL_REG3    dx
@@ -62,26 +62,26 @@
 #define LINUX_SYSCALL_REG5    r8
 #define LINUX_SYSCALL_REG6    r9
 #define LINUX_SYSCALL_RETREG  ax
-#define LINUX_SYSCALL_FLAGS   REG_FLAGS
+#define LINUX_SYSCALL_FLAGS   RT_REG_FLAGS
 
 #else
 
-#define REG_ORIG_AX           orig_rax
-#define REG_SP                rsp
-#define REG_SS                ss
-#define REG_FLAGS             eflags
-#define REG_IP                rip
-#define REG_CS                cs
-#define REG_BP                rbp
-#define REG_BX                rbx
-#define REG_CX                rcx
+#define RT_REG_ORIG_AX           orig_rax
+#define RT_REG_SP                rsp
+#define RT_REG_SS                ss
+#define RT_REG_FLAGS             eflags
+#define RT_REG_IP                rip
+#define RT_REG_CS                cs
+#define RT_REG_BP                rbp
+#define RT_REG_BX                rbx
+#define RT_REG_CX                rcx
 
 #define RTAI_SYSCALL_CODE     rdi
 #define RTAI_SYSCALL_ARGS     rsi
 #define RTAI_SYSCALL_RETPNT   rdx
 
 
-#define LINUX_SYSCALL_NR      REG_ORIG_AX
+#define LINUX_SYSCALL_NR      RT_REG_ORIG_AX
 #define LINUX_SYSCALL_REG1    rdi
 #define LINUX_SYSCALL_REG2    rsi
 #define LINUX_SYSCALL_REG3    rdx
@@ -89,14 +89,14 @@
 #define LINUX_SYSCALL_REG5    r8
 #define LINUX_SYSCALL_REG6    r9
 #define LINUX_SYSCALL_RETREG  rax
-#define LINUX_SYSCALL_FLAGS   REG_FLAGS
+#define LINUX_SYSCALL_FLAGS   RT_REG_FLAGS
 
 #endif
 
 #define LXRT_DO_IMMEDIATE_LINUX_SYSCALL(regs) \
 	do { \
-		regs->REG_CX = regs->r10; \
-		regs->LINUX_SYSCALL_RETREG = ((asmlinkage int (*)(long, ...))sys_call_table[regs->LINUX_SYSCALL_RETREG])(regs->LINUX_SYSCALL_REG1, regs->LINUX_SYSCALL_REG2, regs->LINUX_SYSCALL_REG3, regs->REG_CX, regs->LINUX_SYSCALL_RETREG, regs->r8, regs->r9, regs->r10, regs->r11, regs->REG_BX, regs->REG_BP, regs->r12, regs->r13, regs->r14, regs->r15); \
+		regs->RT_REG_CX = regs->r10; \
+		regs->LINUX_SYSCALL_RETREG = ((asmlinkage int (*)(long, ...))sys_call_table[regs->LINUX_SYSCALL_RETREG])(regs->LINUX_SYSCALL_REG1, regs->LINUX_SYSCALL_REG2, regs->LINUX_SYSCALL_REG3, regs->RT_REG_CX, regs->LINUX_SYSCALL_RETREG, regs->r8, regs->r9, regs->r10, regs->r11, regs->RT_REG_BX, regs->RT_REG_BP, regs->r12, regs->r13, regs->r14, regs->r15); \
 	} while (0)
 
 #define SET_LXRT_RETVAL_IN_SYSCALL(regs, retval) \
@@ -192,30 +192,30 @@ static inline void _lxrt_context_switch (struct task_struct *prev, struct task_s
 #if 0 // optimised (?)
 static inline void kthread_fun_set_jump(struct task_struct *lnxtsk)
 {
-	lnxtsk->rtai_tskext(TSKEXT2) = kmalloc(sizeof(struct thread_struct)/* + sizeof(struct thread_info)*/ + (lnxtsk->thread.REG_SP & ~(THREAD_SIZE - 1)) + THREAD_SIZE - lnxtsk->thread.REG_SP, GFP_KERNEL);
+	lnxtsk->rtai_tskext(TSKEXT2) = kmalloc(sizeof(struct thread_struct)/* + sizeof(struct thread_info)*/ + (lnxtsk->thread.RT_REG_SP & ~(THREAD_SIZE - 1)) + THREAD_SIZE - lnxtsk->thread.RT_REG_SP, GFP_KERNEL);
 	*((struct thread_struct *)lnxtsk->rtai_tskext(TSKEXT2)) = lnxtsk->thread;
-//	memcpy(lnxtsk->rtai_tskext(TSKEXT2) + sizeof(struct thread_struct), (void *)(lnxtsk->thread.REG_SP & ~(THREAD_SIZE - 1)), sizeof(struct thread_info));
-	memcpy(lnxtsk->rtai_tskext(TSKEXT2) + sizeof(struct thread_struct)/* + sizeof(struct thread_info)*/, (void *)(lnxtsk->thread.REG_SP), (lnxtsk->thread.REG_SP & ~(THREAD_SIZE - 1)) + THREAD_SIZE - lnxtsk->thread.REG_SP);
+//	memcpy(lnxtsk->rtai_tskext(TSKEXT2) + sizeof(struct thread_struct), (void *)(lnxtsk->thread.RT_REG_SP & ~(THREAD_SIZE - 1)), sizeof(struct thread_info));
+	memcpy(lnxtsk->rtai_tskext(TSKEXT2) + sizeof(struct thread_struct)/* + sizeof(struct thread_info)*/, (void *)(lnxtsk->thread.RT_REG_SP), (lnxtsk->thread.RT_REG_SP & ~(THREAD_SIZE - 1)) + THREAD_SIZE - lnxtsk->thread.RT_REG_SP);
 }
 
 static inline void kthread_fun_long_jump(struct task_struct *lnxtsk)
 {
 	lnxtsk->thread = *((struct thread_struct *)lnxtsk->rtai_tskext(TSKEXT2));
-//	memcpy((void *)(lnxtsk->thread.REG_SP & ~(THREAD_SIZE - 1)), lnxtsk->rtai_tskext(TSKEXT2) + sizeof(struct thread_struct), sizeof(struct thread_info));
-	memcpy((void *)lnxtsk->thread.REG_SP, lnxtsk->rtai_tskext(TSKEXT2) + sizeof(struct thread_struct)/* + sizeof(struct thread_info)*/, (lnxtsk->thread.REG_SP & ~(THREAD_SIZE - 1)) + THREAD_SIZE - lnxtsk->thread.REG_SP);
+//	memcpy((void *)(lnxtsk->thread.RT_REG_SP & ~(THREAD_SIZE - 1)), lnxtsk->rtai_tskext(TSKEXT2) + sizeof(struct thread_struct), sizeof(struct thread_info));
+	memcpy((void *)lnxtsk->thread.RT_REG_SP, lnxtsk->rtai_tskext(TSKEXT2) + sizeof(struct thread_struct)/* + sizeof(struct thread_info)*/, (lnxtsk->thread.RT_REG_SP & ~(THREAD_SIZE - 1)) + THREAD_SIZE - lnxtsk->thread.RT_REG_SP);
 }
 #else  // brute force
 static inline void kthread_fun_set_jump(struct task_struct *lnxtsk)
 {
 	lnxtsk->rtai_tskext(TSKEXT2) = kmalloc(sizeof(struct thread_struct) + THREAD_SIZE, GFP_KERNEL);
 	*((struct thread_struct *)lnxtsk->rtai_tskext(TSKEXT2)) = lnxtsk->thread;
-	memcpy(lnxtsk->rtai_tskext(TSKEXT2) + sizeof(struct thread_struct), (void *)(lnxtsk->thread.REG_SP & ~(THREAD_SIZE - 1)), THREAD_SIZE);
+	memcpy(lnxtsk->rtai_tskext(TSKEXT2) + sizeof(struct thread_struct), (void *)(lnxtsk->thread.RT_REG_SP & ~(THREAD_SIZE - 1)), THREAD_SIZE);
 }
 
 static inline void kthread_fun_long_jump(struct task_struct *lnxtsk)
 {
 	lnxtsk->thread = *((struct thread_struct *)lnxtsk->rtai_tskext(TSKEXT2));
-	memcpy((void *)(lnxtsk->thread.REG_SP & ~(THREAD_SIZE - 1)), lnxtsk->rtai_tskext(TSKEXT2) + sizeof(struct thread_struct), THREAD_SIZE);
+	memcpy((void *)(lnxtsk->thread.RT_REG_SP & ~(THREAD_SIZE - 1)), lnxtsk->rtai_tskext(TSKEXT2) + sizeof(struct thread_struct), THREAD_SIZE);
 }
 #endif
 

@@ -1261,7 +1261,7 @@ static int rtai_hirq_dispatcher(struct pt_regs *regs)
 #if LINUX_VERSION_CODE < KERNEL_VERSION(2,6,19)
         if (rtai_realtime_irq[irq = regs->orig_rax & 0xFF].handler) {
 #else
-        unsigned long vector = ~regs->REG_ORIG_AX;
+        unsigned long vector = ~regs->RT_REG_ORIG_AX;
         if (rtai_realtime_irq[irq = vector >= FIRST_SYSTEM_VECTOR ? ipipe_apic_vector_irq(vector) : __get_cpu_var(vector_irq)[vector]].handler) {
 #endif
                 unsigned long sflags;
@@ -1305,12 +1305,12 @@ static int rtai_hirq_dispatcher(struct pt_regs *regs)
 #endif /* CONFIG_SMP && CONFIG_FRAME_POINTER */
 #else
 		struct pt_regs *tr = &__raw_get_cpu_var(__ipipe_tick_regs);
-		tr->REG_IP    = regs->REG_IP;
-		tr->REG_CS    = regs->REG_CS;
-		tr->REG_FLAGS = regs->REG_FLAGS;
-		tr->REG_BP    = regs->REG_BP;
-		tr->REG_SP    = regs->REG_SP;
-		tr->REG_SS    = regs->REG_SS;
+		tr->RT_REG_IP    = regs->RT_REG_IP;
+		tr->RT_REG_CS    = regs->RT_REG_CS;
+		tr->RT_REG_FLAGS = regs->RT_REG_FLAGS;
+		tr->RT_REG_BP    = regs->RT_REG_BP;
+		tr->RT_REG_SP    = regs->RT_REG_SP;
+		tr->RT_REG_SS    = regs->RT_REG_SS;
 #endif
 	}
 	hal_fast_flush_pipeline(cpuid);

@@ -338,36 +338,34 @@ config RTAI_BUSY_TIME_ALIGN
 	waist in favour of precise schedule deadlines.
 	Do not set it if a hard periodic timer is to be used.
 
-#config RTAI_LXRT_USE_LINUX_SYSCALL
-#	bool "Use Linux syscall mechanism for RTAI calls from user space"
-#	# to be restored later?
-#	# default n
-#	default y
-#	help
-#	With this option enabled, RTAI uses the Linux syscall mechanism
-#	for its service calls, including RTAI own srqs, as provided by libc 
-#	"syscall".  This may improve signal handling (and therefore debugging 
-#	of RTAI applications), but has the drawback of a slight overhead. 
-#
-#	When direct inlining of RTAI syscalls is enabled, see the related
-#	configuration options, it is still possible to force the use of 
-#	the Linux syscall mechanism, even if this configuration parameter 
-#	has not been set. Notice that RTAI own srqs are inlined always.
-#	So, since it all depends on the definition of the USE_LINUX_SYSCALL 
-#	macro, the only thing to do is to add:
-#	#define USE_LINUX_SYSCALL
-#	after all of the RTAI headers inclusion in any source file in which 
-#	you want to use the Linux syscall mechanism, to be sure that the macro
-#	USE_LINUX_SYSCALL will not be redifined afterward. In the same way 
-#	when this parameter is set you can selectively revert to RTAI own 
-#	syscall mechanism by defining:
-#	#undef USE_LINUX_SYSCALL
-#	after all of the RTAI headers inclusion in any source file in which 
-#	you want to use the LXRT syscall mechanism.
-#	RTAI will then operate in mixed mode selectively by using both 
-#	its own and Linux syscall mechanisms.
-#	
-#	If in doubt, say no.
+config RTAI_LXRT_USE_LINUX_SYSCALL
+	bool "Use Linux syscall mechanism for RTAI calls from user space"
+	default y
+	help
+	With this option enabled, RTAI uses the Linux syscall mechanism
+	for its service calls, including RTAI own srqs, as provided by libc 
+	"syscall".  This may improve signal handling (and therefore debugging 
+	of RTAI applications), but has the drawback of a slight overhead. 
+
+	When direct inlining of RTAI syscalls is enabled, see the related
+	configuration options, it is still possible to force the use of 
+	the Linux syscall mechanism, even if this configuration parameter 
+	has not been set. Notice that RTAI own srqs are inlined always.
+	So, since it all depends on the definition of the USE_LINUX_SYSCALL 
+	macro, the only thing to do is to add:
+	#define USE_LINUX_SYSCALL
+	after all of the RTAI headers inclusion in any source file in which 
+	you want to use the Linux syscall mechanism, to be sure that the macro
+	USE_LINUX_SYSCALL will not be redifined afterward. In the same way 
+	when this parameter is set you can selectively revert to RTAI own 
+	syscall mechanism by defining:
+	#undef USE_LINUX_SYSCALL
+	after all of the RTAI headers inclusion in any source file in which 
+	you want to use the LXRT syscall mechanism.
+	RTAI will then operate in mixed mode selectively by using both 
+	its own and Linux syscall mechanisms.
+	
+	If in doubt, say no.
 
 config RTAI_ALIGN_LINUX_PRIORITY
 	bool "Keep Linux task priority aligned to RTAI"

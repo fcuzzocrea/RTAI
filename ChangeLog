@@ -1,7 +1,8 @@
 2009-03-27 Paolo Mantegazza <mantegazza@aero.polimi.it>
 
-	* base/arch/i386/hal/hal.immed,
-	* base/innclude/asm-i386/rtai_lxrt.h: change REG definition macros 
+	* base/arch/i386/hal/hal.immed and base/arch/x86_64/hal/hal.immed,
+	* base/innclude/asm-i386/rtai_lxrt.hm and 
+	* base/innclude/asm-x86_64/rtai_lxrt.hm: change REG definition macros 
 	  to avoid annoying compiler warnings, conflicting with Linux
 	  headers.
 	* base/innclude/rtai_scb.h: force RTAI_PROTO to a static inline in 

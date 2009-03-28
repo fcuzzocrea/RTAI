@@ -75,6 +75,6 @@
 #define __rtai_do_trap0(_t_)   __rtai_stringize(int $ _t_)
 #define __rtai_do_trap(_t_)    __rtai_do_trap0(__rtai_trap_call(_t_))
 
-#define RTAI_DO_TRAP(v, r, a1, a2)  do { __asm__ __volatile__ ( __rtai_do_trap(v): : "a" (a1), "c" (a2), "d" (&r)); } while (0)
+#define RTAI_DO_TRAP(v, r, a1, a2)  do { __asm__ __volatile__ ( __rtai_do_trap(v): : "a" (a1), "c" (a2), "d" (&r): "memory"); } while (0)
 
 #endif /* !_RTAI_ASM_I386_VECTORS_H */

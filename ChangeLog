@@ -1,3 +1,9 @@
+2009-03-28 Paolo Mantegazza <mantegazza@aero.polimi.it>
+
+	* base/include/asm-i386/rtai_vectors.h: add "memory" gcc-4.3 will 
+	  mess it up otherwise.
+
+
 2009-03-27 Paolo Mantegazza <mantegazza@aero.polimi.it>
 
 	* base/innclude/rtai_scb.h: force RTAI_PROTO to a static inline in

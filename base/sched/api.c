@@ -1061,11 +1061,12 @@ RTAI_SYSCALL_MODE int rt_task_masked_unblock(RT_TASK *task, unsigned long mask)
 			rem_timed_task(task);
 		}
 		if (task->state != RT_SCHED_READY && (task->state &= ~mask) == RT_SCHED_READY) {
+			task->blocked_on = RTP_UNBLKD;
 			enq_ready_task(task);
 			RT_SCHEDULE(task, rtai_cpuid());
 		}
 		rt_global_restore_flags(flags);
-		return (int)((unsigned long)(task->blocked_on = RTP_UNBLKD));
+		return RTE_UNBLKD;
 	}
 	return 0;
 }

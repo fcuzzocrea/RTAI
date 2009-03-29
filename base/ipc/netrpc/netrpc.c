@@ -316,10 +316,12 @@ void rt_schedule_soft(RT_TASK *);
 
 static inline int soft_rt_fun_call(RT_TASK *task, void *fun, void *arg)
 {
+	union { long long retval; long l; } retval;
 	task->fun_args[0] = (long)arg;
 	((struct fun_args *)task->fun_args)->fun = fun;
 	rt_schedule_soft(task);
-	return (int)task->retval;
+	retval.retval = task->retval;
+	return (int)retval.l;
 }
 
 static inline long long soft_rt_genfun_call(RT_TASK *task, void *fun, void *args, int argsize)
@@ -1794,7 +1796,7 @@ int __rtai_netrpc_init(void)
 	portslotsp = MaxStubs;
 	portslot[0].hard = 0;
 	portslot[0].name = PRTSRVNAME;
-	portslot[0].owner = OWNER(this_node[1], (unsigned long)port_server);
+	portslot[0].owner = OWNER(this_node[0], (unsigned long)port_server);
 	port_server = kmalloc(sizeof(RT_TASK) + 3*sizeof(struct fun_args), GFP_KERNEL);
 	soft_kthread_init(port_server, (long)port_server_fun, (long)port_server, RT_SCHED_LOWEST_PRIORITY);
 	portslot[0].task = (long)port_server;
@@ -1860,4 +1862,3 @@ EXPORT_SYMBOL(ddn2nl);
 #endif /* SOFT_RTNET */
 
 EXPORT_SYMBOL(rt_net_rpc_fun_hook);
-

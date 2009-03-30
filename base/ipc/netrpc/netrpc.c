@@ -336,10 +336,10 @@ extern void rt_daemonize(void);
 static void thread_fun(RT_TASK *task)
 {
 	if (!set_rtext(task, task->fun_args[3], 0, 0, get_min_tasks_cpuid(), 0)) {
+		rt_daemonize();
 		sigfillset(&current->blocked);
 		rtai_set_linux_task_priority(current, SCHED_FIFO, MIN_LINUX_RTPRIO);
 		soft_rt_fun_call(task, rt_task_suspend, task);
-		rt_daemonize();
 		((void (*)(long))task->fun_args[1])(task->fun_args[2]);
 		task->fun_args[1] = 0;
 	}
@@ -363,8 +363,10 @@ static int soft_kthread_init(RT_TASK *task, long fun, long arg, int priority)
 
 static int soft_kthread_delete(RT_TASK *task)
 {
+	task->fun_args[1] = 1;
 	while (task->fun_args[1]) {
-		rt_task_masked_unblock(task, ~RT_SCHED_READY);					current->state = TASK_INTERRUPTIBLE;
+		rt_task_masked_unblock(task, ~RT_SCHED_READY);
+		current->state = TASK_INTERRUPTIBLE;
 		schedule_timeout(HZ/NETRPC_TIMER_FREQ);
 	}
         clr_rtext(task);

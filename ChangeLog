@@ -1,3 +1,7 @@
+2009-04-02 Paolo Mantegazza <mantegazza@aero.polimi.it>
+
+	* base/arch/ppc/hal/hal.c: rework rt_printk and rt_sync_printk.
+
 2009-03-28 Paolo Mantegazza <mantegazza@aero.polimi.it>
 
 	* base/include/asm-i386/rtai_vectors.h: add "memory" gcc-4.3 will 

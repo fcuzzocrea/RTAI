@@ -1,3 +1,8 @@
+2009-04-01 Pierangelo Masarati <masarati@aero.polimi.it>
+
+	* configure.in: import from magma support for arm stuff
+	  (thanks to Torsten Koschorrek)
+
 2009-03-29 Paolo Mantegazza <mantegazza@aero.polimi.it>
 
 	* base/sched/api.c: anticipate marking a task unblocked before putting

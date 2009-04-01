@@ -1687,9 +1687,13 @@ case $RTAI_TARGET_ARCH in
 
  arm)
 	if test "$CONFIG_ARCH_EP9301" = y; then
-               RTAI_TARGET_SUBARCH=ep9301
+		RTAI_TARGET_SUBARCH=ep9301
 	elif test "$CONFIG_ARCH_PXA" = y; then
-               RTAI_TARGET_SUBARCH=pxa
+		RTAI_TARGET_SUBARCH=pxa
+	elif test "$CONFIG_ARCH_AT91" = y; then
+		RTAI_TARGET_SUBARCH=at91
+	elif test "$CONFIG_ARCH_IMX" = y; then
+		RTAI_TARGET_SUBARCH=imx
 	else
 	   echo
 	   echo "******************************************"

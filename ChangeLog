@@ -31,6 +31,10 @@
 
 2009-03-23 Pierangelo Masarati <masarati@aero.polimi.it>
 
+	* RTAI 3.7-test3
+
+2009-03-23 Pierangelo Masarati <masarati@aero.polimi.it>
+
 	* configure.in: x86_64 does not like -sse2 in kernel space apps
 	  (patch by Paul)
 	* configure.in: remove more temp files (patch by Paul)

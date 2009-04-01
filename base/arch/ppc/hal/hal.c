@@ -1246,14 +1246,18 @@ module_exit(__rtai_hal_exit);
  * rt_printk
  */
 
+#define LINE_LENGTH 200
+
 asmlinkage int rt_printk(const char *fmt, ...)
 {
+	char line[LINE_LENGTH];
 	va_list args;
 	int r;
 
 	va_start(args, fmt);
-		r = vprintk(fmt, args);
+	r = vsnprintf(line, LINE_LENGTH, fmt, args);
 	va_end(args);
+	printk("%s", line);
 
 	return r;
 }
@@ -1265,14 +1269,16 @@ asmlinkage int rt_printk(const char *fmt, ...)
 
 asmlinkage int rt_sync_printk(const char *fmt, ...)
 {
+	char line[LINE_LENGTH];
 	va_list args;
 	int r;
 
 	va_start(args, fmt);
-		hal_set_printk_sync(&rtai_domain);
-			r = vprintk(fmt, args);
-		hal_set_printk_async(&rtai_domain);
+	r = vsnprintf(line, LINE_LENGTH, fmt, args);
 	va_end(args);
+	hal_set_printk_sync(&rtai_domain);
+	printk("%s", line);
+	hal_set_printk_async(&rtai_domain);
 
 	return r;
 }
@@ -1394,4 +1400,3 @@ EXPORT_SYMBOL(__restore_fpenv);
 #endif
 
 EXPORT_SYMBOL(IsolCpusMask);
-

@@ -513,11 +513,13 @@ int set_rt_fun_entries(struct rt_native_fun_entry *entry);
 extern "C" {
 #endif /* __cplusplus */
 
-#if CONFIG_RTAI_INTERNAL_LXRT_SUPPORT
+#if 1 // needs CONFIG_RTAI_INTERNAL_LXRT_SUPPORT no more
  
 static inline struct rt_task_struct *pid2rttask(long pid)
 {
-        return ((unsigned long)pid) > PID_MAX_LIMIT ? (struct rt_task_struct *)pid : find_task_by_pid(pid)->rtai_tskext(TSKEXT0);
+	struct task_struct *lnxtsk = find_task_by_pid(pid);
+        return lnxtsk ? lnxtsk->rtai_tskext(TSKEXT0) : NULL;
+	return ((unsigned long)pid) > PID_MAX_LIMIT ? (struct rt_task_struct *)pid : find_task_by_pid(pid)->rtai_tskext(TSKEXT0);
 }
 
 static inline long rttask2pid(struct rt_task_struct * task)

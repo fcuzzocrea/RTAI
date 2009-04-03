@@ -1,7 +1,7 @@
 2009-04-03 Paolo Mantegazza <mantegazza@aero.polimi.it>
 
 	* base/base/include/rtai_lxrt.h: CONFIG_RTAI_INTERNAL_LXRT_SUPPORT
-	  has be useless always, get rid of it, some cleaning more later on.
+	  has benn useless always, get rid of it, some cleaning more later on.
 
 2009-04-02 Paolo Mantegazza <mantegazza@aero.polimi.it>
 

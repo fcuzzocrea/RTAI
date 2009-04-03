@@ -65,7 +65,7 @@ static void *support_fun(struct thread_args *args)
         	rt_task_use_fpu(args->task, 1);
 	}
 	rt_set_usp_flags_mask(FORCE_SOFT);
-       	rt_grow_and_lock_stack(args->stksiz);
+	rt_grow_and_lock_stack(args->stksiz - 10000);
 	rt_make_hard_real_time();
 	semGive(args->sem);
 	args->fun(args->a1, args->a2, args->a3, args->a4, args->a5, args->a6, args->a7, args->a8, args->a9, args->a10);
@@ -80,7 +80,7 @@ static void *support_fun(struct thread_args *args)
 #define PTHREAD_STACK_MIN  (64*1024)
 #endif
 
-static inline long taskSpawn(char *name, long priority, long options, long stackSize, FUNCPTR *entryPt, long arg1, long arg2, long arg3, long arg4, long arg5, long arg6, long arg7, long arg8, long arg9, long arg10)
+static inline long taskSpawn(char *name, long priority, long options, long stackSize, FUNCPTR entryPt, long arg1, long arg2, long arg3, long arg4, long arg5, long arg6, long arg7, long arg8, long arg9, long arg10)
 {
 	struct thread_args *args;
         pthread_attr_t attr;

@@ -316,11 +316,11 @@ void rt_schedule_soft(RT_TASK *);
 
 static inline int soft_rt_fun_call(RT_TASK *task, void *fun, void *arg)
 {
-	union { long long retval; long l; } retval;
+	union { long long ll; long l; } retval;
 	task->fun_args[0] = (long)arg;
 	((struct fun_args *)task->fun_args)->fun = fun;
 	rt_schedule_soft(task);
-	retval.retval = task->retval;
+	retval.ll = task->retval;
 	return (int)retval.l;
 }
 
@@ -962,7 +962,12 @@ static void mbx_send_if(MBX *mbx, void *msg, int msg_size)
 
 #endif
 
-#define RETURN_ERR(err)  do { return (long long)err; } while (0)
+#define RETURN_ERR(err) \
+	do { \
+		union { long long ll; long l; } retval; \
+		retval.l = err; \
+		return retval.ll; \
+	} while (0)
 
 RTAI_SYSCALL_MODE long long _rt_net_rpc(long fun_ext_timed, long type, void *args, int argsize, int space, unsigned long partypes)
 {

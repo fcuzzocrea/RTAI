@@ -826,7 +826,7 @@ config RTAI_MALLOC_VMALLOC
 config RTAI_MALLOC_HEAPSZ
 	string "Size of the global heap (Kbytes)"
 	depends on RTAI_MALLOC
-	default 128
+	default 2048
 	help
 	RTAI pre-allocates a global heap as part of its initialization
 	chores. This parameter allows to define its size (in

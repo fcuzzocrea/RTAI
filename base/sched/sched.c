@@ -2654,7 +2654,7 @@ static int rtai_read_sched(char *page, char **start, off_t off, int count,
 	RT_TASK *task;
 
 	PROC_PRINT("\nRTAI LXRT Real Time Task Scheduler.\n\n");
-	PROC_PRINT("    Calibrated CPU Frequency: %lu Hz\n", tuned.cpu_freq);
+	PROC_PRINT("    Calibrated Time Base Frequency: %lu Hz\n", tuned.cpu_freq);
 	PROC_PRINT("    Calibrated interrupt to scheduler latency: %d ns\n", (int)imuldiv(tuned.latency - tuned.setup_time_TIMER_CPUNIT, 1000000000, tuned.cpu_freq));
 	PROC_PRINT("    Calibrated oneshot timer setup_to_firing time: %d ns\n\n",
                   (int)imuldiv(tuned.setup_time_TIMER_CPUNIT, 1000000000, tuned.cpu_freq));
@@ -3069,7 +3069,7 @@ static int __rtai_lxrt_init(void)
 #else
 	printk("linear timed lists.\n");
 #endif
-	printk(KERN_INFO "RTAI[sched]: Linux timer freq = %d (Hz), CPU freq = %lu hz.\n", HZ, (unsigned long)tuned.cpu_freq);
+	printk(KERN_INFO "RTAI[sched]: Linux timer freq = %d (Hz), TimeBase freq = %lu hz.\n", HZ, (unsigned long)tuned.cpu_freq);
 	printk(KERN_INFO "RTAI[sched]: timer setup = %d ns, resched latency = %d ns.\n", (int)imuldiv(tuned.setup_time_TIMER_CPUNIT, 1000000000, tuned.cpu_freq), (int)imuldiv(tuned.latency - tuned.setup_time_TIMER_CPUNIT, 1000000000, tuned.cpu_freq));
 
 #ifdef DECLR_8254_TSC_EMULATION

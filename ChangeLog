@@ -1,17 +1,29 @@
+2009-04-04 Paolo Mantegazza <mantegazza@aero.polimi.it>
+
+	* base/ipc/netrpc/netrpc.c: rework macro RETURN_ERR to work with
+	  any endianess.
+
 2009-04-03 Paolo Mantegazza <mantegazza@aero.polimi.it>
 
-	* base/base/include/rtai_lxrt.h: CONFIG_RTAI_INTERNAL_LXRT_SUPPORT
+	* base/include/rtai_lxrt.h: CONFIG_RTAI_INTERNAL_LXRT_SUPPORT
 	  has benn useless always, get rid of it, some cleaning more later on.
 
 2009-04-02 Paolo Mantegazza <mantegazza@aero.polimi.it>
 
 	* base/arch/ppc/hal/hal.c: rework rt_printk and rt_sync_printk.
 
+2009-03-29 Paolo Mantegazza <mantegazza@aero.polimi.it>
+
+	* base/sched/api.c: anticipate marking a task unblocked before putting
+	  it onto the ready.
+	* base/ipc/netrpc/netrpc.c: set the return value of soft_rt_fun_call
+	  following lxrt mode fullyr; it wont work on CPUs whose endianness
+	  differs from x86 otherwise.
+
 2009-03-28 Paolo Mantegazza <mantegazza@aero.polimi.it>
 
 	* base/include/asm-i386/rtai_vectors.h: add "memory" gcc-4.3 will 
 	  mess it up otherwise.
-
 
 2009-03-27 Paolo Mantegazza <mantegazza@aero.polimi.it>
 

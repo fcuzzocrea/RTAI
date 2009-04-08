@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 1999-2008 Paolo Mantegazza <mantegazza@aero.polimi.it>
+ * Copyright (C) 1999-2009 Paolo Mantegazza <mantegazza@aero.polimi.it>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License as
@@ -191,7 +191,7 @@ static void timer_fun(unsigned long none)
 {
 	if (timer_sem.count < 0) {
 		rt_sem_signal(&timer_sem);
-		timer.expires = jiffies + (HZ + NETRPC_TIMER_FREQ/2 - 1)/NETRPC_TIMER_FREQ;
+		timer.expires = jiffies + HZ/NETRPC_TIMER_FREQ;
 		add_timer(&timer);
 	}
 }
@@ -316,10 +316,12 @@ void rt_schedule_soft(RT_TASK *);
 
 static inline int soft_rt_fun_call(RT_TASK *task, void *fun, void *arg)
 {
+	union { long long ll; long l; } retval;
 	task->fun_args[0] = (long)arg;
 	((struct fun_args *)task->fun_args)->fun = fun;
 	rt_schedule_soft(task);
-	return (int)task->retval;
+	retval.ll = task->retval;
+	return (int)retval.l;
 }
 
 static inline long long soft_rt_genfun_call(RT_TASK *task, void *fun, void *args, int argsize)
@@ -330,13 +332,16 @@ static inline long long soft_rt_genfun_call(RT_TASK *task, void *fun, void *args
 	return task->retval;
 }
 
+extern void rt_daemonize(void);
 static void thread_fun(RT_TASK *task)
 {
 	if (!set_rtext(task, task->fun_args[3], 0, 0, get_min_tasks_cpuid(), 0)) {
+		rt_daemonize();
 		sigfillset(&current->blocked);
 		rtai_set_linux_task_priority(current, SCHED_FIFO, MIN_LINUX_RTPRIO);
 		soft_rt_fun_call(task, rt_task_suspend, task);
 		((void (*)(long))task->fun_args[1])(task->fun_args[2]);
+		task->fun_args[1] = 0;
 	}
 }
 
@@ -349,7 +354,7 @@ static int soft_kthread_init(RT_TASK *task, long fun, long arg, int priority)
 	if (kernel_thread((void *)thread_fun, task, 0) > 0) {
 		while (task->state != (RT_SCHED_READY | RT_SCHED_SUSPENDED)) {
 			current->state = TASK_INTERRUPTIBLE;
-			schedule_timeout((HZ + NETRPC_TIMER_FREQ/2 - 1)/NETRPC_TIMER_FREQ);
+			schedule_timeout(HZ/NETRPC_TIMER_FREQ);
 		}
 		return 0;
 	}
@@ -358,15 +363,13 @@ static int soft_kthread_init(RT_TASK *task, long fun, long arg, int priority)
 
 static int soft_kthread_delete(RT_TASK *task)
 {
-	if (clr_rtext(task)) {
-		return -EFAULT;
-	} else {
-		struct task_struct *lnxtsk = task->lnxtsk;
-//		lnxtsk->rtai_tskext(TSKEXT0) = lnxtsk->rtai_tskext(TSKEXT1) = 0;
-		sigemptyset(&lnxtsk->blocked);
-		lnxtsk->state = TASK_INTERRUPTIBLE;
-		kill_proc(lnxtsk->pid, SIGTERM, 0);
+	task->fun_args[1] = 1;
+	while (task->fun_args[1]) {
+		rt_task_masked_unblock(task, ~RT_SCHED_READY);
+		current->state = TASK_INTERRUPTIBLE;
+		schedule_timeout(HZ/NETRPC_TIMER_FREQ);
 	}
+        clr_rtext(task);
 	return 0;
 }
 
@@ -959,7 +962,12 @@ static void mbx_send_if(MBX *mbx, void *msg, int msg_size)
 
 #endif
 
-#define RETURN_ERR(err)  do { return (long long)err; } while (0)
+#define RETURN_ERR(err) \
+	do { \
+		union { long long ll; long l; } retval; \
+		retval.l = err; \
+		return retval.ll; \
+	} while (0)
 
 RTAI_SYSCALL_MODE long long _rt_net_rpc(long fun_ext_timed, long type, void *args, int argsize, int space, unsigned long partypes)
 {
@@ -1222,7 +1230,7 @@ static void cleanup_softrtnet(void);
 
 void do_mod_timer(void)
 {
-	mod_timer(&timer, jiffies + (HZ + NETRPC_TIMER_FREQ/2 - 1)/NETRPC_TIMER_FREQ);
+	mod_timer(&timer, jiffies + HZ/NETRPC_TIMER_FREQ);
 }
 
 static struct sock_t *socks;
@@ -1793,8 +1801,9 @@ int __rtai_netrpc_init(void)
 	}
 	SPRT_ADDR.sin_port = htons(BASEPORT);
 	portslotsp = MaxStubs;
+	portslot[0].hard = 0;
 	portslot[0].name = PRTSRVNAME;
-	portslot[0].owner = OWNER(this_node[1], (unsigned long)port_server);
+	portslot[0].owner = OWNER(this_node[0], (unsigned long)port_server);
 	port_server = kmalloc(sizeof(RT_TASK) + 3*sizeof(struct fun_args), GFP_KERNEL);
 	soft_kthread_init(port_server, (long)port_server_fun, (long)port_server, RT_SCHED_LOWEST_PRIORITY);
 	portslot[0].task = (long)port_server;
@@ -1811,8 +1820,6 @@ void __rtai_netrpc_exit(void)
 
 	reset_rt_fun_entries(rt_netrpc_entries);
 	del_timer(&timer);
-	soft_kthread_delete(port_server);
-	kfree(port_server);
 	rt_sem_delete(&timer_sem);
 	for (i = 0; i < MaxStubs; i++) {
 		if (portslot[i].task) {
@@ -1820,6 +1827,7 @@ void __rtai_netrpc_exit(void)
 				rt_task_delete((RT_TASK *)portslot[i].task);
 			} else {
 				soft_kthread_delete((RT_TASK *)portslot[i].task);
+				kfree((RT_TASK *)portslot[i].task);
 			}
 		}
 	}
@@ -1861,4 +1869,3 @@ EXPORT_SYMBOL(ddn2nl);
 #endif /* SOFT_RTNET */
 
 EXPORT_SYMBOL(rt_net_rpc_fun_hook);
-

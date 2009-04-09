@@ -36,7 +36,7 @@ ACKNOWLEDGMENTS:
 #include <linux/irq.h>
 #include <linux/reboot.h>
 #include <linux/sys.h>
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,8)
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,18)
 #include <linux/oom.h>
 #endif
 
@@ -824,15 +824,33 @@ do { \
 	} \
 } while (0)
 
+static int oneshot_span;
+static int satdlay;
+
+#define ONESHOT_DELAY(SHOT_FIRED) \
+do { \
+	if (!(SHOT_FIRED)) { \
+		RTIME span; \
+		if (unlikely((span = rt_times.intr_time - rt_time_h) > oneshot_span)) { \
+			rt_times.intr_time = rt_time_h + oneshot_span; \
+			delay = satdlay; \
+		} else { \
+			delay = (int)span - tuned.latency; \
+		} \
+	} else { \
+		delay = (int)(rt_times.intr_time - rt_time_h) - tuned.latency; \
+	} \
+} while (0)
+
 #if 1
 
 static void rt_timer_handler(void);
 
-#define FIRE_NEXT_TIMER_SHOT() \
+#define FIRE_NEXT_TIMER_SHOT(SHOT_FIRED) \
 do { \
 if (fire_shot) { \
 	int delay; \
-	delay = (int)(rt_times.intr_time - rt_time_h) - tuned.latency; \
+	ONESHOT_DELAY(SHOT_FIRED); \
 	if (delay > tuned.setup_time_TIMER_CPUNIT) { \
 		rt_set_timer_delay(imuldiv(delay, TIMER_FREQ, tuned.cpu_freq));\
 		timer_shot_fired = 1; \
@@ -858,11 +876,11 @@ do { \
 
 #else
 
-#define FIRE_NEXT_TIMER_SHOT() \
+#define FIRE_NEXT_TIMER_SHOT(CHECK_SPAN) \
 do { \
 if (fire_shot) { \
 	int delay; \
-	delay = (int)(rt_times.intr_time - rt_time_h) - tuned.latency; \
+	ONESHOT_DELAY(CHECK_SPAN); \
 	if (delay > tuned.setup_time_TIMER_CPUNIT) { \
 		rt_set_timer_delay(imuldiv(delay, TIMER_FREQ, tuned.cpu_freq));\
 	} else { \
@@ -899,7 +917,7 @@ static void rt_schedule_on_schedule_ipi(void)
 		SET_NEXT_TIMER_SHOT(fire_shot);
 		sched_release_global_lock(cpuid);
 		IF_GOING_TO_LINUX_CHECK_TIMER_SHOT(fire_shot);
-		FIRE_NEXT_TIMER_SHOT();
+		FIRE_NEXT_TIMER_SHOT(timer_shot_fired);
 	} else {
 		TASK_TO_SCHEDULE();
 		sched_release_global_lock(cpuid);
@@ -965,7 +983,7 @@ void rt_schedule(void)
 		SET_NEXT_TIMER_SHOT(fire_shot);
 		sched_release_global_lock(cpuid);
 		IF_GOING_TO_LINUX_CHECK_TIMER_SHOT(fire_shot);
-		FIRE_NEXT_TIMER_SHOT();
+		FIRE_NEXT_TIMER_SHOT(timer_shot_fired);
 	} else {
 		TASK_TO_SCHEDULE();
 		sched_release_global_lock(cpuid);
@@ -1251,12 +1269,12 @@ redo_timer_handler:
 		int prio, fire_shot;
 
 		timer_shot_fired = 0;
-		rt_times.intr_time = rt_times.tick_time + ONESHOT_SPAN;
+		rt_times.intr_time = RT_TIME_END;
 
 		SET_NEXT_TIMER_SHOT(fire_shot);
 		sched_release_global_lock(cpuid);
 		IF_GOING_TO_LINUX_CHECK_TIMER_SHOT(fire_shot);
-		FIRE_NEXT_TIMER_SHOT();
+		FIRE_NEXT_TIMER_SHOT(0);
 	} else {
 		sched_release_global_lock(cpuid);
 		rt_times.intr_time += rt_times.periodic_tick;
@@ -2016,7 +2034,8 @@ static struct task_struct *__get_kthread(int cpuid)
    session, process-group, tty. */ 
 
 #if LINUX_VERSION_CODE < KERNEL_VERSION(2,6,24)
-static void rt_daemonize(void)
+
+void rt_daemonize(void)
 {
 #if LINUX_VERSION_CODE < KERNEL_VERSION(2,6,0)
 	current->session = 1;
@@ -2047,8 +2066,13 @@ static void rt_daemonize(void)
 	spin_unlock_irq(&(current->sighand)->siglock);
 #endif
 }
+
+EXPORT_SYMBOL(rt_daemonize);
+
 #else
+
 extern void rt_daemonize(void);
+
 #endif
 
 #define HARD_KTHREAD_IN_USE ((char)220)
@@ -2630,7 +2654,7 @@ static int rtai_read_sched(char *page, char **start, off_t off, int count,
 	RT_TASK *task;
 
 	PROC_PRINT("\nRTAI LXRT Real Time Task Scheduler.\n\n");
-	PROC_PRINT("    Calibrated CPU Frequency: %lu Hz\n", tuned.cpu_freq);
+	PROC_PRINT("    Calibrated Time Base Frequency: %lu Hz\n", tuned.cpu_freq);
 	PROC_PRINT("    Calibrated interrupt to scheduler latency: %d ns\n", (int)imuldiv(tuned.latency - tuned.setup_time_TIMER_CPUNIT, 1000000000, tuned.cpu_freq));
 	PROC_PRINT("    Calibrated oneshot timer setup_to_firing time: %d ns\n\n",
                   (int)imuldiv(tuned.setup_time_TIMER_CPUNIT, 1000000000, tuned.cpu_freq));
@@ -2761,7 +2785,7 @@ static struct rt_native_fun_entry rt_sched_entries[] = {
 	{ { 0, rt_get_time_ns },		    GET_TIME_NS },
 	{ { 0, rt_get_time_ns_cpuid },		    GET_TIME_NS_CPUID },
 	{ { 0, rt_get_cpu_time_ns },		    GET_CPU_TIME_NS },
-	{ { 0, rt_get_priorities },		    GET_PRIORITIES },
+	{ { 0, rt_task_get_info },		    GET_TASK_INFO },
 	{ { 0, rt_spv_RMS },			    SPV_RMS },
 	{ { 1, rt_change_prio },		    CHANGE_TASK_PRIO },
 	{ { 0, rt_sched_lock },			    SCHED_LOCK },
@@ -2999,6 +3023,8 @@ static int __rtai_lxrt_init(void)
 						 TIMER_FREQ, 
 						 1000000000);
 	tuned.timers_tol[0] = 0;
+	oneshot_span = ONESHOT_SPAN;
+	satdlay = oneshot_span - tuned.latency;
 #ifdef CONFIG_PROC_FS
 	if (rtai_proc_sched_register()) {
 		retval = 1;
@@ -3043,7 +3069,7 @@ static int __rtai_lxrt_init(void)
 #else
 	printk("linear timed lists.\n");
 #endif
-	printk(KERN_INFO "RTAI[sched]: Linux timer freq = %d (Hz), CPU freq = %lu hz.\n", HZ, (unsigned long)tuned.cpu_freq);
+	printk(KERN_INFO "RTAI[sched]: Linux timer freq = %d (Hz), TimeBase freq = %lu hz.\n", HZ, (unsigned long)tuned.cpu_freq);
 	printk(KERN_INFO "RTAI[sched]: timer setup = %d ns, resched latency = %d ns.\n", (int)imuldiv(tuned.setup_time_TIMER_CPUNIT, 1000000000, tuned.cpu_freq), (int)imuldiv(tuned.latency - tuned.setup_time_TIMER_CPUNIT, 1000000000, tuned.cpu_freq));
 
 #ifdef DECLR_8254_TSC_EMULATION

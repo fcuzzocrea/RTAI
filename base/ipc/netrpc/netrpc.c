@@ -1628,7 +1628,7 @@ static void send_thread(void)
 	rtai_set_linux_task_priority(current,SCHED_FIFO,MAX_LINUX_RTPRIO);
 	sigfillset(&current->blocked);
 	while (!end_softrtnet) {
-		down(&mtx);
+		i = down_interruptible(&mtx);
 		while (sysrq.out != sysrq.in) {
 			i = sysrq.sockindx[sysrq.out];
 			ksendto(socks[i].sock, socks[i].msg, socks[i].tosend, MSG_DONTWAIT, &socks[i].addr, ADRSZ);

@@ -1,3 +1,10 @@
+2009-04-09 Valentin Pavlyuchenko <TheValik@gmail.com>
+           Paolo Mantegazza <mantegazza@aero.polimi.it>
+
+        * base/ipc/netrpc/netrpc.c: use down_interruptible in send server
+	  thread to fix annoying warnings when softlock debugging is 
+	  configured in Linux.
+
 2009-04-04 Paolo Mantegazza <mantegazza@aero.polimi.it>
 
 	* base/ipc/netrpc/netrpc.c: rework macro RETURN_ERR to work with 
@@ -6,7 +13,7 @@
 2009-04-03 Paolo Mantegazza <mantegazza@aero.polimi.it>
 
 	* base/include/rtai_lxrt.h: CONFIG_RTAI_INTERNAL_LXRT_SUPPORT
-	  has been useless always, get rid of it, some cleaning more later on.
+	  has benn useless always, get rid of it, some cleaning more later on.
 
 2009-04-02 Paolo Mantegazza <mantegazza@aero.polimi.it>
 
@@ -63,7 +70,7 @@
 
 	* base/ipc/netrpc/netrpc.c: do the final cleanup of soft servers by
 	  letting them die autonomously on unblock returns.
-	* base/sched/sched.c: export rt_daemonize for Linux < 2.6.24, used by
+	* base/sched/sche.c: export rt_daemonize for Linux < 2.6.24, used by
 	  netrpc.c.
 
 2009-03-21 Paolo Mantegazza <mantegazza@aero.polimi.it>
@@ -204,8 +211,10 @@
 2009-03-03 Valentin Pavlyuchenko <TheValik@gmail.com>
            Paolo Mantegazza <mantegazza@aero.polimi.it>
 
-        * base/sched/sched.c and base/include/rtai_schedcore.h: fix annying
-          warnings when softlock debugging is configured in Linux.
+        * base/sched/sched.c and base/include/rtai_schedcore.h: fix annoying
+          warnings when softlock debugging is configured in Linux, using
+	  (TASK_INTERRUPTIBLE | TASK_NOWAKEUP) instead of TASK_INTERRUPTIBLE
+	  only.
 
 2009-03-03 Roberto Bucher <roberto.bucher@supsi.ch>
 

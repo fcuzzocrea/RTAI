@@ -108,7 +108,7 @@ int rt_get_inher_prio(RT_TASK *task)
  * @anchor rt_get_priorities
  * @brief Check inheredited and base priority.
  * 
- * rt_task_get_priorities returns the base and inherited priorities of a task.
+ * rt_get_priorities returns the base and inherited priorities of a task.
  *
  * Recall that a task has a base native priority, assigned at its
  * birth or by @ref rt_change_prio(), and an actual, inherited,
@@ -120,10 +120,11 @@ int rt_get_inher_prio(RT_TASK *task)
  *
  * @param base_priority the base priority.
  *
- * @return rt_task_get_priority returns 0 if non NULL priority addresses
+ * @return rt_get_priority returns 0 if non NULL priority addresses
  * are given, EINVAL if addresses are NULL or task is not a valid object.
  *
  */
+
 RTAI_SYSCALL_MODE int rt_get_priorities(RT_TASK *task, int *priority, int *base_priority)
 {
 	if (!task) {
@@ -132,13 +133,35 @@ RTAI_SYSCALL_MODE int rt_get_priorities(RT_TASK *task, int *priority, int *base_
 	if (task->magic != RT_TASK_MAGIC || !priority || !base_priority) {
 		return -EINVAL;
 	}
-	if ((unsigned long)priority < PAGE_OFFSET) {
-		rt_put_user(task->priority, priority);
-		rt_put_user(task->base_priority, base_priority);
-	} else {
-		*priority      = task->priority;
-		*base_priority = task->base_priority;
+	*priority      = task->priority;
+	*base_priority = task->base_priority;
+	return 0;
+}
+
+/**
+ * @anchor rt_task_get_info
+ * @brief Get task task data listed in RT_TASK_INFO type.
+ * 
+ * rt_task_get_info returns task data listed in RT_TASK_INFO type.
+ *
+ * @param task is the task of interest, NULL can be used for the current task.
+ * @param task_info a pointer to RT_TASK_INFO.
+ *
+ * @return -EINVAL if task is not valid or task_info is NULL, 0 if OK.
+ *
+ */
+
+RTAI_SYSCALL_MODE int rt_task_get_info(RT_TASK *task, RT_TASK_INFO *task_info)
+{
+	if (!task) {
+		task = RT_CURRENT;
+	} 
+	if (task->magic != RT_TASK_MAGIC || task_info == NULL) {
+		return -EINVAL;
 	}
+	task_info->period        = task->period;
+	task_info->base_priority = task->base_priority;
+	task_info->priority      = task->priority;
 	return 0;
 }
 
@@ -1038,11 +1061,12 @@ RTAI_SYSCALL_MODE int rt_task_masked_unblock(RT_TASK *task, unsigned long mask)
 			rem_timed_task(task);
 		}
 		if (task->state != RT_SCHED_READY && (task->state &= ~mask) == RT_SCHED_READY) {
+			task->blocked_on = RTP_UNBLKD;
 			enq_ready_task(task);
 			RT_SCHEDULE(task, rtai_cpuid());
 		}
 		rt_global_restore_flags(flags);
-		return (int)((unsigned long)(task->blocked_on = RTP_UNBLKD));
+		return RTE_UNBLKD;
 	}
 	return 0;
 }

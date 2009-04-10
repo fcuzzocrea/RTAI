@@ -1,3 +1,14 @@
+2009-04-09 Pierangelo Masarati <masarati@aero.polimi.it>
+
+        * RTAI 3.7
+
+2009-04-09 Valentin Pavlyuchenko <TheValik@gmail.com>
+	   Paolo Mantegazza <mantegazza@aero.polimi.it>
+
+	* base/ipc/netrpc/netrpc.c: use down_interruptible in send server
+	  thread to fix annoying warnings when softlock debugging is
+	  configured in Linux.
+
 2009-04-04 Paolo Mantegazza <mantegazza@aero.polimi.it>
 
 	* base/ipc/netrpc/netrpc.c: rework macro RETURN_ERR to work with
@@ -17,7 +28,7 @@
 	* base/sched/api.c: anticipate marking a task unblocked before putting
 	  it onto the ready.
 	* base/ipc/netrpc/netrpc.c: set the return value of soft_rt_fun_call
-	  following lxrt mode fullyr; it wont work on CPUs whose endianness
+	  following lxrt mode fully; it wont work on CPUs whose endianness
 	  differs from x86 otherwise.
 
 2009-03-28 Paolo Mantegazza <mantegazza@aero.polimi.it>
@@ -27,7 +38,12 @@
 
 2009-03-27 Paolo Mantegazza <mantegazza@aero.polimi.it>
 
-	* base/innclude/rtai_scb.h: force RTAI_PROTO to a static inline in
+	* base/arch/i386/hal/hal.immed and base/arch/x86_64/hal/hal.immed,
+	* base/include/asm-i386/rtai_lxrt.h and
+	* base/include/asm-x86_64/rtai_lxrt.h: change REG definition macros
+	  to avoid annoying compiler warnings, conflicting with Linux 
+	  headers.
+	* base/include/rtai_scb.h: force RTAI_PROTO to a static inline in
 	  kernel space, otherwise we'll miss scb when RTAI_PROTO is set to
 	  no inline.
 
@@ -47,10 +63,33 @@
 
 2009-03-23 Pierangelo Masarati <masarati@aero.polimi.it>
 
+        * RTAI 3.7-test3
+
+2009-03-23 Pierangelo Masarati <masarati@aero.polimi.it>
+
 	* configure.in: x86_64 does not like -sse2 in kernel space apps
 	  (patch by Paul)
 	* configure.in: remove more temp files (patch by Paul)
 	* makefile: do not override CC var from env (patch by Paul)
+
+2009-03-22 Paolo Mantegazza <mantegazza@aero.polimi.it>
+
+        * base/ipc/netrpc/netrpc.c: do the final cleanup of soft servers by
+	  letting them die autonomously on unblock returns.
+	* base/sched/sched.c: export rt_daemonize for Linux < 2.6.24, used by
+	  netrpc.c.
+
+2009-03-21 Paolo Mantegazza <mantegazza@aero.polimi.it>
+
+	* base/include/rtai_sched.h: define type RT_TASK_INFO and added
+	  declaration of rt_task_get_info.
+	* base/include/rtai_lxrt.h: added rt_task_get_info and based
+	  rt_get_priorities onto it.
+	* base/sched/api.c: added rt_task_get_info.
+	* base/sched/sched.c: reuse rt_get_priorities syscall slot for
+	  rt_task_get_info, add int oneshot_span and initialize it at module
+	  init, add macro ONESHOT_DELAY to avoid having the same code twice
+	  in the following #if conditioned FIRE_NEXT_TIMER_SHOT macros.
 
 2009-03-18 Paolo Mantegazza <mantegazza@aero.polimi.it>
 
@@ -74,9 +113,25 @@
 
 	* base/wd/wd.c: cleaned legacy stuff being of interest nomore.
 
+2009-03-15 Paolo Mantegazza <mantegazza@aero.polimi.it>
+
+        * base/addons/comedi/rtai_comedi.h: fixed user space trigger,
+	  added helper macro for trigger instruction.
+
 2009-03-14 Paolo Mantegazza <mantegazza@aero.polimi.it>
 
 	* base/arch/i386/hal/hal.immed: check to avoid insmoding a 486 MP.
+
+2009-03-13 Paolo Mantegazza <mantegazza@aero.polimi.it>
+
+	* addons/comedi/rtai_comedi.h: add macros to help setting insn up for
+	  AI/AO/DIO.  
+
+2009-03-12 Paolo Mantegazza <mantegazza@aero.polimi.it>
+
+	* addons/comedi/kcomedi-module.c: fix rt_comedi_wait insertions in
+	  the user space call table as data passing is supported internally
+	  and not with the use of the general messaging framework.
 
 2009-03-11 Roberto Bucher <roberto.bucher@supsi.ch>
 
@@ -89,6 +144,11 @@
 	* base/ipc/sem.c: define and use a macro to check sems magic.
 	* base/ipc/bits.c: define and use a macro to check bits magic.
 
+2009-03-11 Paolo Mantegazza <mantegazza@aero.polimi.it>
+
+	* addons/comedi/kcomedi-module.c, rtai_comedi.h and README: added
+	  rt_comedi_trigger and rt_comedi_command_data_write.
+
 2009-03-10 Paolo Mantegazza <mantegazza@aero.polimi.it>
 
 	* base/include/rtai_posix.h and rtai_signal.h: force a few strict
@@ -99,10 +159,29 @@
 
 	* base/include/rtai_sched.h: added field resumsg to the task structure,
 	  to allow exchanging resume specific flags.
+	* addons/comedi/kcomedi-module.c: use the above field to pass callbacks
+	  specific values.
+
+2009-03-09 Paolo Mantegazza <mantegazza@aero.polimi.it>
+
+        * addons/comedi/kcomedi-module.c: added rt_comedi_do_insnlist and all
+          forgotten EXPORT_SYMBOLs; added configurable use of comedi_lock-
+          comedi_unlock for functions that might need it.
+        * addons/comedi/rtai_comedi.h: restyled a few lines, fixed
+          comedi_do_insn and added rt_comedi_do_insnlist.
+	* addons/comedi/README: added explanation for what added above.
 
 2009-03-07 Andy Hirsh" <andhirsh@gmail.com>
 
 	* base/include/rtai_fifos.h: add missing declaration of rtf_get_frbs.
+
+2009-03-06 Edoardo Vigoni   <vigoni@aero.polimi.it>
+           Paolo Mantegazza <mantegazza@aero.polimi.it>
+
+	* addons/comedi/kcomedi-module.c, rtai_comedi.h and README: newly
+	  reworked using rt_task_suspend/resumes to allow checking for
+	  overruns; new comedi command read functions embedding callbacks
+	  waits and data reading in a single call; updated README.
 
 2009-03-05 Paolo Mantegazza <mantegazza@aero.polimi.it>
 
@@ -127,8 +206,10 @@
 2009-03-03 Valentin Pavlyuchenko <TheValik@gmail.com>
            Paolo Mantegazza <mantegazza@aero.polimi.it>
 
-	* base/sched/sched.c and base/include/rtai_schedcore.h: fix annying
-	  warnings when softlock debugging is configured in Linux.
+	* base/sched/sched.c and base/include/rtai_schedcore.h: fix annoying
+	  warnings when softlock debugging is configured in Linux. using
+	  (TASK_INTERRUPTIBLE | TASK_NOWAKEUP) instead of TASK_INTERRUPTIBLE
+	  only.
 
 2009-03-03 Roberto Bucher <roberto.bucher@supsi.ch>
 

@@ -307,7 +307,7 @@ static int __task_delete(RT_TASK *rt_task)
 static inline void set_lxrt_perm(int perm)
 {
 	struct cred *cred;
-	if ((cred = prepare_creds()) == NULL) {
+	if ((cred = prepare_creds())) {
 		cap_raise(cred->cap_effective, perm);
 		commit_creds(cred);
 	}

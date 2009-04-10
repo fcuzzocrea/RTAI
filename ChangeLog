@@ -33,7 +33,7 @@
 	* base/sched/api.c: anticipate marking a task unblocked before putting
 	  it onto the ready.
 	* base/ipc/netrpc/netrpc.c: set the return value of soft_rt_fun_call
-	  following lxrt mode fullyr; it wont work on CPUs whose endianness
+	  following lxrt mode fully; it wont work on CPUs whose endianness
 	  differs from x86 otherwise.
 
 2009-03-28 Paolo Mantegazza <mantegazza@aero.polimi.it>

@@ -1,3 +1,8 @@
+2009-04-10 Paolo Mantegazza <mantegazza@aero.polimi.it>
+
+	* base/sched/sys.c: rework NONROOT_HRT to align with new way of
+	  setting user space permission in Linux > 2.6.28.
+
 2009-04-09 Pierangelo Masarati <masarati@aero.polimi.it>
 
         * RTAI 3.7

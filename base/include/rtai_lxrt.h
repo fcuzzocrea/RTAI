@@ -428,7 +428,8 @@
 
 #include <asm/ptrace.h>
 
-struct mode_regs { struct pt_regs regs; long mode; };
+#define MPX_SYSCALL_ARGS  6
+struct mode_regs { struct pt_regs regs; long mode; long args[MPX_SYSCALL_ARGS]; };
 struct linux_syscalls_list { long in, nr, mode; void *serv; struct mode_regs *moderegs; RT_TASK *task; void (*callback_fun)(long, long); long out, retval; };
 
 #ifdef __KERNEL__

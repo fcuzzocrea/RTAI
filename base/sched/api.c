@@ -1991,6 +1991,14 @@ void rt_exec_linux_syscall(RT_TASK *rt_current, struct linux_syscalls_list *sysc
 {
 	struct { long in, nr, mode; RT_TASK *serv; } from;
 
+#ifdef __ARCH_WANT_SYS_SOCKETCALL
+	if (regs->LINUX_SYSCALL_NR == __NR_socketcall) {
+		void *p = (void *)regs->LINUX_SYSCALL_REG2;
+		regs->LINUX_SYSCALL_REG2 = (long)(&syscalls->moderegs[from.in].args);
+		rt_copy_to_user(&syscalls->moderegs[from.in].args, p, MPX_SYSCALL_ARGS*sizeof(long));
+	}
+#endif
+
 	rt_copy_from_user(&from, syscalls, sizeof(from));
 	from.serv->priority = rt_current->priority + BASE_SOFT_PRIORITY;
 	rt_copy_to_user(&syscalls->moderegs[from.in].regs, regs, sizeof(struct pt_regs));

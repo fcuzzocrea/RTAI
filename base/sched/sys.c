@@ -325,6 +325,7 @@ static inline void set_lxrt_perm(int perm)
 }
 
 #endif /* LINUX_VERSION_CODE > 2.6.28 */
+
 static inline long long handle_lxrt_request (unsigned int lxsrq, long *arg, RT_TASK *task)
 {
 #define larg ((struct arg *)arg)

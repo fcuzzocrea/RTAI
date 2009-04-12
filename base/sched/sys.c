@@ -301,6 +301,31 @@ static int __task_delete(RT_TASK *rt_task)
 #define SYSW_DIAG_MSG(x)
 #endif
 
+#if LINUX_VERSION_CODE > KERNEL_VERSION(2,6,28)
+
+#include <linux/cred.h>
+static inline void set_lxrt_perm(int perm)
+{
+	struct cred *cred;
+	if ((cred = prepare_creds())) {
+		cap_raise(cred->cap_effective, perm);
+		commit_creds(cred);
+	}
+}
+
+#else /* LINUX_VERSION_CODE <= 2.6.28 */
+
+static inline void set_lxrt_perm(int perm)
+{
+#ifdef current_cap
+	cap_raise(current_cap(), perm);
+#else
+	cap_raise(current->cap_effective, perm);
+#endif
+}
+
+#endif /* LINUX_VERSION_CODE > 2.6.28 */
+
 static inline long long handle_lxrt_request (unsigned int lxsrq, long *arg, RT_TASK *task)
 {
 #define larg ((struct arg *)arg)
@@ -499,9 +524,9 @@ static inline long long handle_lxrt_request (unsigned int lxsrq, long *arg, RT_T
 						   (1 << CAP_SYS_RAWIO) |
 						   (1 << CAP_SYS_NICE));
 #else
-			cap_raise(current->cap_effective, CAP_IPC_LOCK);
-			cap_raise(current->cap_effective, CAP_SYS_RAWIO);
-			cap_raise(current->cap_effective, CAP_SYS_NICE);
+			set_lxrt_perm(CAP_IPC_LOCK);
+			set_lxrt_perm(CAP_SYS_RAWIO);
+			set_lxrt_perm(CAP_SYS_NICE);
 #endif
 			return 0;
 		}
@@ -721,3 +746,4 @@ void init_fun_ext (void)
 {
 	rt_fun_ext[0] = rt_fun_lxrt;
 }
+

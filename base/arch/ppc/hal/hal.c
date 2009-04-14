@@ -1407,7 +1407,7 @@ EXPORT_SYMBOL(__restore_fpenv);
 
 EXPORT_SYMBOL(IsolCpusMask);
 
-#if defined(CONFIG_GENERIC_CLOCKEVENTS) && CONFIG_RTAI_RTC_FREQ == 0
+#ifdef CONFIG_GENERIC_CLOCKEVENTS
 
 #include <linux/clockchips.h>
 #include <linux/ipipe_tickdev.h>

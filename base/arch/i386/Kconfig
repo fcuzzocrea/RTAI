@@ -6,7 +6,7 @@ config MODULES
 
 config RTAI_VERSION
 	string
-	default "3.6 (vulcano)"
+	default "3.7 (vulcano)"
 
 menu "General"
 
@@ -407,7 +407,9 @@ config RTAI_LXRT_USE_LINUX_SYSCALL
 	With this option enabled, RTAI uses the Linux syscall mechanism
 	for its service calls, including RTAI own srqs, as provided by libc 
 	"syscall".  This may improve signal handling (and therefore debugging 
-	of RTAI applications), but has the drawback of a slight overhead. 
+	of RTAI applications), but has the drawback of a slight overhead,
+	which might be more than compensated on cpus having the SysEnter Present
+	(SEP) flag, see "cat /proc/cpuinfo".
 
 	When direct inlining of RTAI syscalls is enabled, see the related
 	configuration options, it is still possible to force the use of 

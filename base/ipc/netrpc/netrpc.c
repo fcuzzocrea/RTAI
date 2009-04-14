@@ -1319,7 +1319,8 @@ int errno;
 #define SYSCALL_END() \
 	set_fs(svdfs); return retval; } while (0)
 
-#ifdef __NR_socketcall
+//#ifdef __NR_socketcall
+#ifdef __ARCH_WANT_SYS_SOCKETCALL
 
 extern void *sys_call_table[];
 

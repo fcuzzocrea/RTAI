@@ -50,8 +50,9 @@ other IO asynchronously, e.g.: dumping data directly to disk, Linux ipcs and
 POSIX mq, fifos, pipes, serial communications etc. etc. In many applications
 one often requires RTAI specific IO drives just to avoid loosing real time
 for communicatons with non real time support/interface process and task. 
-The async server should be of much help in such cases by lettingyou use standard
-Linux.
+The async server should be of much help in such cases by letting you use 
+standard Linux, with the ensuing advantage of needing not any special hard
+real time driver.
 
 How it works
 ------------

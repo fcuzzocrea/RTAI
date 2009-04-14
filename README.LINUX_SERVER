@@ -40,10 +40,10 @@ registers structure. That is not the case for a few Linux syscalls that are
 multiplexed within a single framework, wheres libc can end in building a 
 hidden object on the stack so that it is not assured it will be available at 
 the time the server uses it. On some archs a notable example of that is the 
-socketcall, but RTAI should already care of it appropriately already. There 
-remain nonetheless the chance of other instances to be cared as well. So 
-beware that some async calls might not work with a few Linux services yet, in 
-which case you should let us know about it, for a possible fix.
+socketcall, but RTAI should already care of it appropriately. There remain 
+nonetheless the chance of other instances to be cared as well. So beware that 
+some async calls might not work with a few Linux services yet, in which case 
+you should let us know about it, for a possible fix.
 
 Provided the socketcall has been intercepted well you should be able to do many
 IO operations asynchronously, e.g.: dumping data directly to disk, Linux ipcs 

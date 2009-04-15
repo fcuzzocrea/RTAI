@@ -650,6 +650,14 @@ static inline void rt_set_timer_delay (int delay)
 #endif /* CONFIG_40x */
 }
 
+static inline void rtai_disarm_decr(int cpuid, int mode)
+{
+#if LINUX_VERSION_CODE < KERNEL_VERSION(2,6,24)
+	disarm_decr[cpuid] = mode;
+#else
+	per_cpu(disarm_decr, cpuid) = mode;
+#endif
+}
 
 //---------------------------------------------------------------------------//
 //                     Private interface -- internal use only                //
@@ -795,4 +803,3 @@ int rt_sync_printk(const char *format, ...);
 #define NON_RTAI_SCHEDULE(cpuid)  do { schedule(); } while (0)
 
 #endif /* !_RTAI_HAL_XN_H */
-

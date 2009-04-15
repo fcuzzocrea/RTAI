@@ -50,7 +50,6 @@
 #include <asm/machdep.h>
 
 #define __RTAI_HAL__
-#include <rtai_wrappers.h>
 #include <asm/rtai_hal.h>
 #include <asm/rtai_lxrt.h>
 
@@ -1411,7 +1410,6 @@ EXPORT_SYMBOL(IsolCpusMask);
 
 #ifdef CONFIG_GENERIC_CLOCKEVENTS
 
-#include <asm-ppc/rtai_hal.h>
 #include <linux/clockchips.h>
 #include <linux/ipipe_tickdev.h>
 

@@ -652,10 +652,10 @@ static inline void rt_set_timer_delay (int delay)
 
 static inline void rtai_disarm_decr(int cpuid, int mode)
 {
-#if LINUX_VERSION_CODE < KERNEL_VERSION(2,6,24)
-	disarm_decr[cpuid] = mode;
-#else
+#if LINUX_VERSION_CODE > KERNEL_VERSION(2,6,23)
 	per_cpu(disarm_decr, cpuid) = mode;
+#else
+	disarm_decr[cpuid] = mode;
 #endif
 }
 

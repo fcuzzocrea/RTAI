@@ -134,7 +134,7 @@ struct rtai_realtime_irq_s {
         void *cookie;
         int retmode;
         int cpumask;
-        int (*irq_ack)(unsigned int);
+        int (*irq_ack)(unsigned int, void *);
 };
 
 #define RTAI_DOMAIN_ID  0x52544149

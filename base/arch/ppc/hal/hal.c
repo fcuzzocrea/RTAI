@@ -122,6 +122,22 @@ static void (*rtai_isr_hook)(int cpuid);
 #define HAL_UNLOCK_LINUX()  do { rtai_cli(); ROOT_STATUS_VAL(cpuid) = sflags; } while (0)
 #endif /* LOCKED_LINUX_IN_IRQ_HANDLER */
 
+#if LINUX_VERSION_CODE > KERNEL_VERSION(2,6,26)
+
+#define RTAI_IRQ_ACK(irq) \
+	do { \
+		rtai_realtime_irq[irq].irq_ack(irq, irq_desc + irq); \
+	} while (0)
+
+#else
+
+#define RTAI_IRQ_ACK(irq) \
+	do { \
+		((void (*)(unsigned int))rtai_realtime_irq[irq].irq_ack)(irq); \
+	} while (0)
+
+#endif
+
 #define CHECK_KERCTX()
 
 #if LINUX_VERSION_CODE > KERNEL_VERSION(2,6,11)
@@ -723,7 +739,8 @@ static int rtai_hirq_dispatcher(struct pt_regs *regs)
 		unsigned long sflags;
 
 		HAL_LOCK_LINUX();
-		rtai_realtime_irq[irq].irq_ack(irq); mb();
+		RTAI_IRQ_ACK(irq);
+//		rtai_realtime_irq[irq].irq_ack(irq); mb();
 		RTAI_SCHED_ISR_LOCK();
 		rtai_realtime_irq[irq].handler(irq, rtai_realtime_irq[irq].cookie);
 		RTAI_SCHED_ISR_UNLOCK();
@@ -735,7 +752,8 @@ static int rtai_hirq_dispatcher(struct pt_regs *regs)
 	} else {
 		unsigned long lflags;
 		lflags = xchg(ROOT_STATUS_ADR(cpuid = rtai_cpuid()), (1 << IPIPE_STALL_FLAG));
-		rtai_realtime_irq[irq].irq_ack(irq); mb();
+		RTAI_IRQ_ACK(irq);
+//		rtai_realtime_irq[irq].irq_ack(irq); mb();
 		hal_pend_uncond(irq, cpuid);
 		ROOT_STATUS_VAL(cpuid) = lflags;
 		if (test_bit(IPIPE_STALL_FLAG, &lflags)) {

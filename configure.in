@@ -1708,10 +1708,18 @@ case $RTAI_TARGET_ARCH in
         ;;
  ppc)
 	RTAI_TARGET_SUBARCH=
-	dnl note: since Linux 2.6.2X, arch/ppc is replaced by arch/powerpc;
-	dnl this sequence should use arch/ppc when available, and arch/powerpc
-	dnl otherwise
-	RTAI_KMOD_CFLAGS="$RTAI_KMOD_CFLAGS -I${RTAI_LINUX_DIR}/arch/ppc -I${RTAI_LINUX_DIR}/arch/powerpc"
+	dnl $linux_VERSION.$linux_PATCHLEVEL.$linux_SUBLEVEL
+	if test "$linux_VERSION" -gt 2 ; then
+		ARCH_SUBDIR=powerpc
+	elif test "$linux_VERSION" = 2 -a "$linux_SUBLEVEL" -lt 6 ; then
+		ARCH_SUBDIR=ppc
+	elif test "$linux_VERSION.$linux_PATCHLEVEL" = "2.6"
+			-a "$linux_SUBLEVEL" -gt "28" ; then
+		ARCH_SUBDIR=powerpc
+	else
+		ARCH_SUBDIR=ppc
+	fi
+	RTAI_KMOD_CFLAGS="$RTAI_KMOD_CFLAGS -I${RTAI_LINUX_DIR}/arch/$ARCH_SUBDIR"
 	RTAI_KMOD_CXXFLAGS="$RTAI_KMOD_CFLAGS -fno-rtti -fno-exceptions -fno-strength-reduce -pipe"
 	RTAI_USER_CFLAGS="$RTAI_USER_CFLAGS -Wall -Wstrict-prototypes -pipe"
 	if test x$CONFIG_RTAI_FPU_SUPPORT = xy; then

@@ -24846,7 +24846,7 @@ case $RTAI_TARGET_ARCH in
 	RTAI_TARGET_SUBARCH=
 		if test "$linux_VERSION" -gt 2 ; then
 		ARCH_SUBDIR=powerpc
-	elif test "$linux_VERSION" = 2 -a "$linux_SUBLEVEL" -lt 6 ; then
+	elif test "$linux_VERSION" = 2 -a "$linux_PATCHLEVEL" -lt 6 ; then
 		ARCH_SUBDIR=ppc
 	elif test "$linux_VERSION.$linux_PATCHLEVEL" = "2.6"
 			-a "$linux_SUBLEVEL" -gt "28" ; then

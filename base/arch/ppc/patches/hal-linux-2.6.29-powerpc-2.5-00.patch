@@ -3231,6 +3231,15 @@ index 9da1b2c..8ec0813 100644
  	set_irq_regs(old_regs);
  }
  
+@@ -616,6 +631,8 @@ void wakeup_decrementer(void)
+ 	set_dec(ticks);
+ }
+ 
++EXPORT_PER_CPU_SYMBOL(disarm_decr);
++
+ #ifdef CONFIG_SUSPEND
+ void generic_suspend_disable_irqs(void)
+ {
 diff --git a/arch/powerpc/kernel/traps.c b/arch/powerpc/kernel/traps.c
 index 5457e95..80e86b5 100644
 --- a/arch/powerpc/kernel/traps.c

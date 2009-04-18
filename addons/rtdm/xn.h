@@ -273,7 +273,7 @@ static inline int xnarch_remap_vm_page(struct vm_area_struct *vma, unsigned long
 
 #define XN_ISR_ATTACHED   0x10000
 
-#if !defined(CONGIG_PPC) && (LINUX_VERSION_CODE < KERNEL_VERSION(2,4,32) || (LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,0) && LINUX_VERSION_CODE < KERNEL_VERSION(2,6,14)))
+#if !defined(CONFIG_PPC) && (LINUX_VERSION_CODE < KERNEL_VERSION(2,4,32) || (LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,0) && LINUX_VERSION_CODE < KERNEL_VERSION(2,6,14)))
 
 #define rthal_virtualize_irq(dom, irq, isr, cookie, ackfn, mode) \
 	ipipe_virtualize_irq(dom, irq, isr, ackfn, mode)

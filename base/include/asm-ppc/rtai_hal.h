@@ -564,7 +564,7 @@ extern struct hal_domain_struct rtai_domain;
 
 #define _rt_switch_to_real_time(cpuid) \
 do { \
-	rtai_linux_context[cpuid].lflags = xchg(ROOT_STATUS_ADR(cpuid), (1 << IPIPE_STALL_FLAG)); \
+	rtai_linux_context[cpuid].lflags = xchg((unsigned long *)ROOT_STATUS_ADR(cpuid), (1 << IPIPE_STALL_FLAG)); \
 	rtai_linux_context[cpuid].sflags = 1; \
 	hal_current_domain(cpuid) = &rtai_domain; \
 } while (0)

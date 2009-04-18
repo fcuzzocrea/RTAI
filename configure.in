@@ -110,26 +110,6 @@ case "$host" in
    exit 1;;
 esac
 
-case $RTAI_TARGET_ARCH in
-ppc|powerpc)
-	dnl $linux_VERSION.$linux_PATCHLEVEL.$linux_SUBLEVEL
-	if test $linux_VERSION -gt 2 ; then
-		ARCH_SUBDIR=powerpc
-	elif test $linux_VERSION -eq 2 -a $linux_PATCHLEVEL -lt 6 ; then
-		ARCH_SUBDIR=ppc
-	elif test "$linux_VERSION.$linux_PATCHLEVEL" = "2.6" \
-			-a $linux_SUBLEVEL -gt 28 ; then
-		ARCH_SUBDIR=powerpc
-	else
-		ARCH_SUBDIR=ppc
-	fi
-	RTAI_TARGET_ARCH_NAME=$ARCH_SUBDIR
-	;;
-*)
-	RTAI_TARGET_ARCH_NAME=$RTAI_TARGET_ARCH
-	;;
-esac
-
 dnl
 dnl Load the RTAI configuration.
 dnl
@@ -261,6 +241,29 @@ AC_MSG_RESULT([$RTAI_LINUX_DIR (kernel ${RTAI_LINUX_VERSION}${CONFIG_SMP:+-SMP})
 if test x${CONFIG_RTAI_LINUXDIR} = x; then
    CONFIG_RTAI_LINUXDIR=$RTAI_LINUX_DIR
 fi
+
+dnl
+dnl define the name of the target arch (only matters for powerpc so far)
+dnl
+case $RTAI_TARGET_ARCH in
+ppc|powerpc)
+	dnl $linux_VERSION.$linux_PATCHLEVEL.$linux_SUBLEVEL
+	if test $linux_VERSION -gt 2 ; then
+		ARCH_SUBDIR=powerpc
+	elif test $linux_VERSION -eq 2 -a $linux_PATCHLEVEL -lt 6 ; then
+		ARCH_SUBDIR=ppc
+	elif test "$linux_VERSION.$linux_PATCHLEVEL" = "2.6" \
+			-a $linux_SUBLEVEL -gt 28 ; then
+		ARCH_SUBDIR=powerpc
+	else
+		ARCH_SUBDIR=ppc
+	fi
+	RTAI_TARGET_ARCH_NAME=$ARCH_SUBDIR
+	;;
+*)
+	RTAI_TARGET_ARCH_NAME=$RTAI_TARGET_ARCH
+	;;
+esac
 
 dnl
 dnl Identify the base technology used.

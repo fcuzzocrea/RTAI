@@ -95,6 +95,7 @@ extern "C" {
 
 #ifdef __KERNEL__
 
+#include <linux/slab.h>
 #include <asm/mmu_context.h>
 
 static inline void _lxrt_context_switch (struct task_struct *prev, struct task_struct *next, int cpuid)

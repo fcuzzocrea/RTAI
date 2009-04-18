@@ -43,6 +43,7 @@
  */
 
 #include <linux/module.h>
+#include <linux/types.h>
 
 #include <rtdm/rtdm.h>
 #include <rtdm/internal.h>

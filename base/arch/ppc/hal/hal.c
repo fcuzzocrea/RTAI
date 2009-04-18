@@ -118,7 +118,7 @@ static void (*rtai_isr_hook)(int cpuid);
 #define HAL_LOCK_LINUX()  do { sflags = rt_save_switch_to_real_time(cpuid = rtai_cpuid()); } while (0)
 #define HAL_UNLOCK_LINUX()  do { rtai_cli(); rt_restore_switch_to_linux(sflags, cpuid); } while (0)
 #else
-#define HAL_LOCK_LINUX()  do { sflags = xchg(ROOT_STATUS_ADR(cpuid), (1 << IPIPE_STALL_FLAG)); } while (0)
+#define HAL_LOCK_LINUX()  do { sflags = xchg((unsigned long *)ROOT_STATUS_ADR(cpuid), (1 << IPIPE_STALL_FLAG)); } while (0)
 #define HAL_UNLOCK_LINUX()  do { rtai_cli(); ROOT_STATUS_VAL(cpuid) = sflags; } while (0)
 #endif /* LOCKED_LINUX_IN_IRQ_HANDLER */
 
@@ -165,7 +165,7 @@ do { \
         unsigned long flags, pflags, cpuid; \
 	rtai_save_flags_and_cli(flags); \
 	cpuid = rtai_cpuid(); \
-	pflags = xchg(ROOT_STATUS_ADR(cpuid), 1 << IPIPE_STALL_FLAG); \
+	pflags = xchg((unsigned long *)ROOT_STATUS_ADR(cpuid), 1 << IPIPE_STALL_FLAG); \
 	rtai_save_and_lock_preempt_count()
 
 #define END_PIC() \
@@ -751,7 +751,7 @@ static int rtai_hirq_dispatcher(struct pt_regs *regs)
 		}
 	} else {
 		unsigned long lflags;
-		lflags = xchg(ROOT_STATUS_ADR(cpuid = rtai_cpuid()), (1 << IPIPE_STALL_FLAG));
+		lflags = xchg((unsigned long *)ROOT_STATUS_ADR(cpuid = rtai_cpuid()), (1 << IPIPE_STALL_FLAG));
 		RTAI_IRQ_ACK(irq);
 //		rtai_realtime_irq[irq].irq_ack(irq); mb();
 		hal_pend_uncond(irq, cpuid);
@@ -1009,12 +1009,9 @@ void (*rt_set_ihook (void (*hookfn)(int)))(int)
 
 void rtai_set_linux_task_priority (struct task_struct *task, int policy, int prio)
 {
-	int rc;
-
-	struct sched_param param = { prio };
-	rc = sched_setscheduler(task, policy, &param);
-	if (rc) {
-		printk("RTAI[hal]: sched_setscheduler(policy=%d,prio=%d) failed, code %d (%s -- pid=%d)\n", policy, prio, rc, task->comm, task->pid);
+	hal_set_linux_task_priority(task, policy, prio);
+	if (task->rt_priority != prio || task->policy != policy) {
+		printk("RTAI[hal]: sched_setscheduler(policy = %d, prio = %d) failed, (%s -- pid = %d)\n", policy, prio, task->comm, task->pid);
 	}
 }
 

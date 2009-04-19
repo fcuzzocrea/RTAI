@@ -61,7 +61,7 @@ extern void __restore_fpenv(void *fpenv);
 #define init_fpu(tsk) \
         do { restore_fpu(tsk); } while(0)
 
-#define lnxtsk_uses_fpu(lnxtsk)  (1)
+//#define lnxtsk_uses_fpu(lnxtsk)  (1)
 
 #else
 
@@ -74,14 +74,25 @@ extern void __restore_fpenv(void *fpenv);
 #define restore_fpenv_lxrt(t)
 #define restore_fpu(tsk)
 #define init_fpu(tsk)
-#define lnxtsk_uses_fpu(lnxtsk)  (0)
+//#define lnxtsk_uses_fpu(lnxtsk)  (0)
 
 #endif
 
-#define set_tsk_used_fpu(t)  do {  } while(0)
+#if LINUX_VERSION_CODE < KERNEL_VERSION(2,6,0)
+
+#define clear_lnxtsk_uses_fpu(lnxtsk) \
+        do { (lnxtsk)->used_math = 0; } while(0)
+#define lnxtsk_uses_fpu(lnxtsk)  ((lnxtsk)->used_math)
+
+#else /* LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,0) */
 
 #define clear_lnxtsk_uses_fpu(lnxtsk) \
         do { clear_stopped_child_used_math(lnxtsk); } while(0)
+#define lnxtsk_uses_fpu(lnxtsk)  (tsk_used_math(lnxtsk))
+
+#endif /* LINUX_VERSION_CODE < KERNEL_VERSION(2,6,0) */
+
+#define set_tsk_used_fpu(t)  do {  } while(0)
 
 #define init_hard_fpu(lnxtsk)  restore_fpu(lnxtsk)
 

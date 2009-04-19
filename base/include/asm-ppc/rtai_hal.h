@@ -838,7 +838,7 @@ int rt_sync_printk(const char *format, ...);
 	__rem;							\
  })
 
-#elif BITS_PER_LONG == 32
+#else BITS_PER_LONG == 32
 
 extern uint32_t __div64_32(uint64_t *dividend, uint32_t divisor);
 
@@ -862,4 +862,3 @@ extern uint32_t __div64_32(uint64_t *dividend, uint32_t divisor);
 #endif /* _ASM_GENERIC_DIV64_H */
 
 #endif
-

@@ -133,17 +133,29 @@ static inline void kthread_fun_long_jump(struct task_struct *lnxtsk)
         memcpy((void *)lnxtsk->thread.ksp, lnxtsk->rtai_tskext(TSKEXT2) + sizeof(struct thread_struct)/* + sizeof(struct thread_info)*/, (lnxtsk->thread.ksp & ~(THREAD_SIZE - 1)) + THREAD_SIZE - lnxtsk->thread.ksp);
 }
 
+#if LINUX_VERSION_CODE < KERNEL_VERSION(2,6,0)
+
+#define rt_copy_from_user     __copy_from_user
+
+#define rt_copy_to_user       __copy_to_user
+
+#define rt_strncpy_from_user  strncpy_from_user
+
+#else
+
 #define rt_copy_from_user(a, b, c)  \
 	( { int ret = __copy_from_user_inatomic(a, b, c); ret; } )
 
 #define rt_copy_to_user(a, b, c)  \
 	( { int ret = __copy_to_user_inatomic(a, b, c); ret; } )
 
-#define rt_put_user  __put_user
-#define rt_get_user  __get_user
-
 #define rt_strncpy_from_user(a, b, c)  \
 	( { int ret = strncpy_from_user(a, b, c); ret; } )
+
+#endif
+
+#define rt_put_user  __put_user
+#define rt_get_user  __get_user
 
 //#define RTAI_DO_LINUX_SIGNAL
 //extern int FASTCALL(do_signal(sigset_t *oldset, struct pt_regs *regs));

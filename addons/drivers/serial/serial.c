@@ -22,6 +22,7 @@
 /* Apr. 2008, Renato Castello <zx81@gmx.net>, support for shared interrupts  */
 
 #include <linux/module.h>
+#include <linux/init.h>
 #include <linux/kernel.h>
 #include <linux/errno.h>
 #include <linux/ioport.h>

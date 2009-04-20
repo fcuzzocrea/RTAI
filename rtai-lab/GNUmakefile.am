@@ -48,6 +48,6 @@ xrtailab_LDFLAGS = \
 	$(efltk_ldflags) \
 	@GL_LIBS@
 
-SUBDIRS = matlab matrixx scilab scilab5
+SUBDIRS = matlab matrixx scilab
 
-EXTRA_DIST = icons INSTALL
+EXTRA_DIST = icons INSTALL scilab5

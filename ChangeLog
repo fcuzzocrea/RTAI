@@ -1,5 +1,10 @@
 2009-04-20 Roberto Bucher <roberto.bucher@supsi.ch>
 
+	* rtai-lab/GNUmakefile.am: Added scilab5 into
+        EXTRA_DIST.
+
+2009-04-20 Roberto Bucher <roberto.bucher@supsi.ch>
+
 	* rtai-lab/xrtailab.c, rtai-lab/xrtailab.h: Added some 
           lock/unlock commands (many tanks to Robert Dye).
 

@@ -1991,7 +1991,7 @@ void rt_exec_linux_syscall(RT_TASK *rt_current, struct linux_syscalls_list *sysc
 {
 	struct { long in, nr, mode; RT_TASK *serv; } from;
 
-#if defined( __NR_socketcall) || defined(__ARCH_WANT_SYS_SOCKETCALL)
+#if defined( __NR_socketcall)
 	if (regs->LINUX_SYSCALL_NR == __NR_socketcall) {
 		void *p = (void *)regs->LINUX_SYSCALL_REG2;
 		regs->LINUX_SYSCALL_REG2 = (long)(&syscalls->moderegs[from.in].args);

@@ -1,6 +1,6 @@
-all: install
+all: 
 
-SCILAB_VERSION = 5.1
+SCILAB_VERSION = 5.1.1
 SCILAB_DIR = /usr/local/scilab-$(SCILAB_VERSION)/share/scilab
 
 RTAIDIR = $(shell rtai-config --prefix)
@@ -11,12 +11,23 @@ LIBDIR     =  $(SCILAB_DIR)/
 RTAISRC  = builder.sce loader.sce
 RTAISUBDIR = etc macros RT_templates src
 
-install:
+install: install_static
+
+install_static:
 	mkdir -p $(CONTRIBDIR)
 	cd RTAI; cp $(RTAISRC) $(CONTRIBDIR)
 	cd RTAI; cp -dpR $(RTAISUBDIR) $(CONTRIBDIR)
+	cd $(CONTRIBDIR)/RT_templates; rm rtai_sh.mak;
 	cd $(CONTRIBDIR); scilab -nw -f builder.sce; exit
 	cp -dpR libs $(SCILAB_DIR)
+	cd devices; make; make install
+
+install_shared:
+	mkdir -p $(CONTRIBDIR)
+	cd RTAI; cp $(RTAISRC) $(CONTRIBDIR)
+	cd RTAI; cp -dpR $(RTAISUBDIR) $(CONTRIBDIR)
+	cd $(CONTRIBDIR)/RT_templates; rm rtai.mak; mv rtai_sh.mak rtai.mak;
+	cd $(CONTRIBDIR); scilab -nw -f builder.sce; exit
 	cd devices; make; make install
 
 user:

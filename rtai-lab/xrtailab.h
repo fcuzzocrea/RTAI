@@ -22,7 +22,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA.
 #ifndef _XRTAILAB_H_
 #define _XRTAILAB_H_
 
-#define XRTAILAB_VERSION	"3.4.4"
+#define XRTAILAB_VERSION	"3.5.1"
 
 #define MAX_NHOSTS		100
 #define MAX_NAMES_SIZE		256

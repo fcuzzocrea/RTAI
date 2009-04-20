@@ -27,7 +27,7 @@
 #define TSKEXT2  (HAL_ROOT_NPTDKEYS - 2)
 #define TSKEXT3  (HAL_ROOT_NPTDKEYS - 1)
 
-#if LINUX_VERSION_CODE < KERNEL_VERSION(2,4,32) || (LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,0) && LINUX_VERSION_CODE < KERNEL_VERSION(2,6,13))
+#if !defined(CONFIG_PPC) && (LINUX_VERSION_CODE < KERNEL_VERSION(2,4,32) || (LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,0) && LINUX_VERSION_CODE < KERNEL_VERSION(2,6,13)))
 
 #define HAL_VERSION_STRING   ADEOS_VERSION_STRING
 
@@ -211,7 +211,7 @@ do { \
 #define hal_alloc_irq       ipipe_alloc_virq
 #define hal_free_irq        ipipe_free_virq
 
-#if LINUX_VERSION_CODE < KERNEL_VERSION(2,4,32) || (LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,0) && LINUX_VERSION_CODE < KERNEL_VERSION(2,6,14))
+#if !defined(CONFIG_PPC) && (LINUX_VERSION_CODE < KERNEL_VERSION(2,4,32) || (LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,0) && LINUX_VERSION_CODE < KERNEL_VERSION(2,6,14)))
 #define hal_virtualize_irq  ipipe_virtualize_irq
 #define hal_irq_hits_pp(irq, domain, cpuid) \
 do { \

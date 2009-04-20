@@ -1,3 +1,15 @@
+2009-04-20 Roberto Bucher <roberto.bucher@supsi.ch>
+
+	* rtai-lab/xrtailab.c, rtai-lab/xrtailab.h: Added some 
+          lock/unlock commands (many tanks to Robert Dye).
+
+2009-04-20 Roberto Bucher <roberto.bucher@supsi.ch>
+
+	* rtai-lab/scilab5/Makefile, 
+          rtai-lab/scilab5/RTAI/RT_templates/rtai_sh.mak: Choice between
+          generated code with static (default) or shared libraries (thanks to
+          Holger Nahrstaedt).
+
 2009-04-11 Paolo Mantegazza <mantegazza@aero.polimi.it>
 
 	* base/include/rtai_lxrt.h: add args array to struct mode_regs for

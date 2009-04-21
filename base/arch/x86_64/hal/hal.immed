@@ -1293,7 +1293,7 @@ static int rtai_hirq_dispatcher(struct pt_regs *regs)
 			return 0;
 		}
 	}
-//	rtai_sti();
+	rtai_sti();
 	if (irq == hal_tick_irq) {
 #if LINUX_VERSION_CODE < KERNEL_VERSION(2,6,22)
 		HAL_TICK_REGS.eflags = regs->eflags;
@@ -1312,6 +1312,9 @@ static int rtai_hirq_dispatcher(struct pt_regs *regs)
 		tr->RT_REG_SP    = regs->RT_REG_SP;
 		tr->RT_REG_SS    = regs->RT_REG_SS;
 #endif
+		if (hal_current_domain(cpuid) == hal_root_domain) {
+			tr->flags &= ~RTAI_IFLAG;
+		}
 	}
 	hal_fast_flush_pipeline(cpuid);
 	return 1;

@@ -1,21 +1,37 @@
 2009-04-21 Roberto Bucher <roberto.bucher@supsi.ch>
 
+	* rtai-lab/README.scilab: Install procedures for scilab-4.1.2,
+	  scicoslab and scilab-5.1.1
+	* rtai-lab/scilab5/*: Removed some duplicated files already installed
+	  from folder scilab.
+	* rtai-lab/scilab/macros/RTAI/RTAICodegen_.sci:
+	* rtai-lab/scilab5/RTAI/macros/RTAICodegen_.sci:
+	* rtai-lab/scilab5/RTAI/RT_templates/rtai.mak:
+	* rtai-lab/scilab5/RTAI/RT_templates/rtai_sh.mak: Compatibility between
+	  different scilab/scicoslab versions.
+
+2009-04-21 Roberto Bucher <roberto.bucher@supsi.ch>
+
+	* rtai-lab/scicoslab/*: Initial files for scicoslab.
+
+2009-04-21 Roberto Bucher <roberto.bucher@supsi.ch>
+
 	* rtai-lab/scilab5/Makefile: Modified for installing static libraries.
-        * rtai-lab/scilab5/libs/scicoslibs.tgz: tarball with static libraries.
-        * rtai-lab/scilab5/RTAI/RT_templates/rtai_sh.mak: Additional shared
-          library for Scilab-5.1.1 (thanks to Holger Nahrstaedt).
+	* rtai-lab/scilab5/libs/scicoslibs.tgz: tarball with static libraries.
+	* rtai-lab/scilab5/RTAI/RT_templates/rtai_sh.mak: Additional shared
+	  library for Scilab-5.1.1 (thanks to Holger Nahrstaedt).
 
 2009-04-20 Roberto Bucher <roberto.bucher@supsi.ch>
 
 	* rtai-lab/xrtailab.c, rtai-lab/xrtailab.h: Added some 
-          lock/unlock commands (many tanks to Robert Dye).
+	  lock/unlock commands (many tanks to Robert Dye).
 
 2009-04-20 Roberto Bucher <roberto.bucher@supsi.ch>
 
 	* rtai-lab/scilab5/Makefile, 
-          rtai-lab/scilab5/RTAI/RT_templates/rtai_sh.mak: Choice between
-          generated code with static (default) or shared libraries (thanks to
-          Holger Nahrstaedt).
+	  rtai-lab/scilab5/RTAI/RT_templates/rtai_sh.mak: Choice between
+	  generated code with static (default) or shared libraries (thanks to
+	  Holger Nahrstaedt).
 
 2009-04-11 Paolo Mantegazza <mantegazza@aero.polimi.it>
 

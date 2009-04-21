@@ -1,3 +1,10 @@
+2009-04-21 Roberto Bucher <roberto.bucher@supsi.ch>
+
+	* rtai-lab/scilab5/Makefile: Modified for installing static libraries.
+        * rtai-lab/scilab5/libs/scicoslibs.tgz: tarball with static libraries.
+        * rtai-lab/scilab5/RTAI/RT_templates/rtai_sh.mak: Additional shared
+          library for Scilab-5.1.1 (thanks to Holger Nahrstaedt).
+
 2009-04-20 Roberto Bucher <roberto.bucher@supsi.ch>
 
 	* rtai-lab/xrtailab.c, rtai-lab/xrtailab.h: Added some 

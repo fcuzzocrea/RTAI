@@ -76,7 +76,8 @@ SCILIBS =\
         -lscihashtable\
         -lscitclsci\
         -lscidoublylinkedlist\
-        -lscidifferential_equations
+        -lscidifferential_equations\
+	-lscicall_scilab
 
 JAVALIBS =  -ljava -lverify  -ljvm  -lhpi
 ifeq ($(strip $(COMEDIDIR)),)

@@ -19,7 +19,8 @@ install_static:
 	cd RTAI; cp -dpR $(RTAISUBDIR) $(CONTRIBDIR)
 	cd $(CONTRIBDIR)/RT_templates; rm rtai_sh.mak;
 	cd $(CONTRIBDIR); scilab -nw -f builder.sce; exit
-	cp -dpR libs $(SCILAB_DIR)
+	cd libs; tar xvfz scicoslibs.tgz;
+	mkdir -p $(SCILAB_DIR)/libs; cp -dpR libs/*.a $(SCILAB_DIR)/libs
 	cd devices; make; make install
 
 install_shared:

@@ -32,13 +32,19 @@
 /* #undef FC_DUMMY_MAIN_EQ_F77 */
 
 /* uses G95 fortran */
-#define G95_FORTRAN 
+#define G95_FORTRAN /**/
 
 /* Define to 1 if you have the `atexit' function. */
 #define HAVE_ATEXIT 1
 
+/* Define to 1 if you have the `bind_textdomain_codeset' function. */
+#define HAVE_BIND_TEXTDOMAIN_CODESET 1
+
 /* Define to 1 if you have the `bzero' function. */
 #define HAVE_BZERO 1
+
+/* Whether clock_gettime is available */
+#define HAVE_CLOCK_GETTIME 1
 
 /* Define to 1 if you have the <dirent.h> header file, and it defines `DIR'.
    */
@@ -295,13 +301,16 @@
 #define HAVE_SYS_WAIT_H 1
 
 /* Have Term Cap */
-#define HAVE_TERMCAP 
+#define HAVE_TERMCAP /**/
 
 /* Define to 1 if you have the <termios.h> header file. */
 #define HAVE_TERMIOS_H 1
 
 /* Define to 1 if you have the <termio.h> header file. */
 #define HAVE_TERMIO_H 1
+
+/* Define to 1 if you have the <time.h> header file. */
+#define HAVE_TIME_H 1
 
 /* Define to 1 if you have the `uname' function. */
 #define HAVE_UNAME 1
@@ -328,10 +337,7 @@
 /* #undef HAVE__NSGETEXECUTABLEPATH */
 
 /* Define to the value of ${prefix}, as a string. */
-#define INSTALLPREFIX "/usr/local"
-
-/* If we are building a 64 bits version */
-/* #undef IS_64_BITS_CPU */
+#define INSTALLPREFIX "/home/scilab/compilation_chain_5.1/sci_binary/scilab-5.1.1"
 
 /* libXML2 flags */
 #define LIBXML_FLAGS "-I/usr/include/libxml2"
@@ -368,10 +374,10 @@
 #define PATH_SEPARATOR ":"
 
 /* PCRE flags */
-#define PCRE_CFLAGS ""
+#define PCRE_CFLAGS "-I/usr/local/pcre-7.6/include"
 
 /* PCRE library */
-#define PCRE_LIBS "-L/usr/lib -lpcreposix -lpcre"
+#define PCRE_LIBS "-L/usr/local/pcre-7.6/lib -lpcreposix -lpcre"
 
 /* PCRE version */
 #define PCRE_VERSION "7.6"
@@ -398,43 +404,46 @@
 /* #undef TM_IN_SYS_TIME */
 
 /* If it is UMFPACK/Suitesparse or UMFPACK standalone */
-/* #undef UMFPACK_SUITESPARSE */
+#define UMFPACK_SUITESPARSE 
+
+/* If we are building a 64 bits version */
+/* #undef USE_DYNAMIC_STACK */
 
 /* Version number of package */
 #define VERSION "5"
 
 /* With the FFTW library */
-/* #undef WITH_FFTW */
+#define WITH_FFTW /**/
 
 /* With the JAVA stuff (GUI, Console, JOGL...) */
-#define WITH_GUI 
+#define WITH_GUI /**/
 
 /* With the MATIO library */
-#define WITH_MATIO 
+#define WITH_MATIO /**/
 
 /* With OCAML */
-#define WITH_OCAML 
+#define WITH_OCAML /**/
 
 /* With PVM */
 /* #undef WITH_PVM */
 
 /* With SCICOS */
-#define WITH_SCICOS 
+#define WITH_SCICOS /**/
 
 /* With TK */
-#define WITH_TK 
+#define WITH_TK /**/
 
 /* With the UMFPACK library */
-/* #undef WITH_UMFPACK */
+#define WITH_UMFPACK /**/
 
 /* If leading underscores */
 /* #undef WLU */
 
 /* If trailing underscores */
-#define WTU 
+#define WTU /**/
 
 /* Define to 1 if the X Window System is missing or not being used. */
-/* #undef X_DISPLAY_MISSING */
+#define X_DISPLAY_MISSING 1
 
 /* Number of bits in a file offset, on hosts where this is settable. */
 #define _FILE_OFFSET_BITS 64
@@ -457,6 +466,9 @@
 /* #undef inline */
 #endif
 
+/* Provide a macro to do isinf */
+/* #undef isinf */
+
 /* Provide a macro to do exp10 */
 /* #undef log_10_ */
 
@@ -466,11 +478,6 @@
 /* 	   #undef DIR_SEPARATOR */
 #endif
 #define DIR_SEPARATOR "/"
-
-/* Force usage of dynamically located stack on 64 bits */
-#ifdef IS_64_BITS_CPU
-#define USE_DYNAMIC_STACK
-#endif
 
 #endif /* MACHINE_H  */
 

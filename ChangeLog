@@ -1,3 +1,8 @@
+2009-04-24 Paolo Mantegazza <mantegazza@aero.polimi.it>
+
+	* base/sched/api.c: reschedule immediatly if the caller of 
+	  rt_task_yield if not at the highest priority.
+
 2009-04-21 Roberto Bucher <roberto.bucher@supsi.ch>
 
 	* rtai-lab/README.scilab: Install procedures for scilab-4.1.2,

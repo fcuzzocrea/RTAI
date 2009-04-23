@@ -270,7 +270,6 @@ RT_TASK *rt_whoami(void)
 }
 
 
-
 /**
  * @anchor rt_task_yield
  * Yield the current task.
@@ -278,6 +277,8 @@ RT_TASK *rt_whoami(void)
  * @ref rt_task_yield() stops the current task and takes it at the end
  * of the list of ready tasks having its same priority. The scheduler
  * makes the next ready task of the same priority active.
+ * If the current task has the highest priority no more then it results
+ * in an immediate rescheduling.
  *
  * Recall that RTAI schedulers allow only higher priority tasks to
  * preempt the execution of lower priority ones. So equal priority
@@ -294,15 +295,20 @@ void rt_task_yield(void)
 	unsigned long flags;
 
 	flags = rt_global_save_flags_and_cli();
-	task = (rt_current = RT_CURRENT)->rnext;
-	while (rt_current->priority == task->priority) {
-		task = task->rnext;
-	}
-	if (task != rt_current->rnext) {
-		(rt_current->rprev)->rnext = rt_current->rnext;
-		(rt_current->rnext)->rprev = rt_current->rprev;
-		task->rprev = (rt_current->rprev = task->rprev)->rnext = rt_current;
-		rt_current->rnext = task;
+	rt_current = RT_CURRENT;
+	if (rt_smp_linux_task[rt_current->runnable_on_cpus].rnext == rt_current) {
+		task = rt_current->rnext;
+		while (rt_current->priority == task->priority) {
+			task = task->rnext;
+		}
+		if (task != rt_current->rnext) {
+			(rt_current->rprev)->rnext = rt_current->rnext;
+			(rt_current->rnext)->rprev = rt_current->rprev;
+			task->rprev = (rt_current->rprev = task->rprev)->rnext = rt_current;
+			rt_current->rnext = task;
+			rt_schedule();
+		}
+	} else {
 		rt_schedule();
 	}
 	rt_global_restore_flags(flags);

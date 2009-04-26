@@ -134,7 +134,7 @@ struct rtai_realtime_irq_s {
         void *cookie;
         int retmode;
         int cpumask;
-        int (*irq_ack)(unsigned int);
+        int (*irq_ack)(unsigned int, void *);
 };
 
 #define RTAI_DOMAIN_ID  0x52544149
@@ -564,7 +564,7 @@ extern struct hal_domain_struct rtai_domain;
 
 #define _rt_switch_to_real_time(cpuid) \
 do { \
-	rtai_linux_context[cpuid].lflags = xchg(ROOT_STATUS_ADR(cpuid), (1 << IPIPE_STALL_FLAG)); \
+	rtai_linux_context[cpuid].lflags = xchg((unsigned long *)ROOT_STATUS_ADR(cpuid), (1 << IPIPE_STALL_FLAG)); \
 	rtai_linux_context[cpuid].sflags = 1; \
 	hal_current_domain(cpuid) = &rtai_domain; \
 } while (0)
@@ -650,6 +650,14 @@ static inline void rt_set_timer_delay (int delay)
 #endif /* CONFIG_40x */
 }
 
+static inline void rtai_disarm_decr(int cpuid, int mode)
+{
+#if LINUX_VERSION_CODE > KERNEL_VERSION(2,6,23)
+	per_cpu(disarm_decr, cpuid) = mode;
+#else
+	disarm_decr[cpuid] = mode;
+#endif
+}
 
 //---------------------------------------------------------------------------//
 //                     Private interface -- internal use only                //
@@ -796,3 +804,61 @@ int rt_sync_printk(const char *format, ...);
 
 #endif /* !_RTAI_HAL_XN_H */
 
+#if LINUX_VERSION_CODE < KERNEL_VERSION(2,6,0)
+
+#ifndef _ASM_GENERIC_DIV64_H
+#define _ASM_GENERIC_DIV64_H
+/*
+ * Copyright (C) 2003 Bernardo Innocenti <bernie@develer.com>
+ * Based on former asm-ppc/div64.h and asm-m68knommu/div64.h
+ *
+ * The semantics of do_div() are:
+ *
+ * uint32_t do_div(uint64_t *n, uint32_t base)
+ * {
+ * 	uint32_t remainder = *n % base;
+ * 	*n = *n / base;
+ * 	return remainder;
+ * }
+ *
+ * NOTE: macro parameter n is evaluated multiple times,
+ *       beware of side effects!
+ */
+
+//#include <linux/types.h>
+//#include <linux/compiler.h>
+
+#if BITS_PER_LONG == 64
+
+# define do_div(n,base) ({					\
+	uint32_t __base = (base);				\
+	uint32_t __rem;						\
+	__rem = ((uint64_t)(n)) % __base;			\
+	(n) = ((uint64_t)(n)) / __base;				\
+	__rem;							\
+ })
+
+#elif BITS_PER_LONG == 32
+
+extern uint32_t __div64_32(uint64_t *dividend, uint32_t divisor);
+
+/* The unnecessary pointer compare is there
+ * to check for type safety (n must be 64bit)
+ */
+# define do_div(n,base) ({				\
+	uint32_t __base = (base);			\
+	uint32_t __rem;					\
+	(void)(((typeof((n)) *)0) == ((uint64_t *)0));	\
+	if (likely(((n) >> 32) == 0)) {			\
+		__rem = (uint32_t)(n) % __base;		\
+		(n) = (uint32_t)(n) / __base;		\
+	} else 						\
+		__rem = __div64_32(&(n), __base);	\
+	__rem;						\
+ })
+
+#endif /* BITS_PER_LONG */
+
+#endif /* _ASM_GENERIC_DIV64_H */
+
+#endif

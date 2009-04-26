@@ -1,3 +1,12 @@
+2009-04-26 Paolo Mantegazza <mantegazza@aero.polimi.it>
+
+	* base/sched/api.c: in rt_change_prio reschedule whenever a self change
+	  removes the task from top of the ready list also, accepting a remark
+	  from Richly Matthias <Matthias.Richly@student.hpi.uni-potsdam.de>.
+	* base/sched/include/rtai_schedcore.h: in pass prio reschedule whenever
+	  the top ready task has changed, now it is done if the task receiving 
+	  a prio goes to the top.
+
 2009-04-24 Paolo Mantegazza <mantegazza@aero.polimi.it>
 
 	* base/sched/api.c: reschedule immediatly if the caller of

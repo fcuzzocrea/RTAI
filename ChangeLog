@@ -1,3 +1,21 @@
+2009-04-27 Paolo Mantegazza <mantegazza@aero.polimi.it>
+
+	* base/include/asm-ppc/rtai_fpu.h, rtai_lxrt, rtai_hal.h: upgraded to
+	  work with linux-2.6.29.
+	* base/arch/ppc/hal/hal.c: upgraded to work with linux-2.6.29.
+	* base/arch/i386/hal/hal.immed and
+	* base/arch/x86_64/hal/hal.immed: ensure task flags register returns
+	  with interrupt bit cleared from a tick irq.
+
+2009-04-26 Paolo Mantegazza <mantegazza@aero.polimi.it>
+
+	* base/sched/api.c: in rt_change_prio reschedule whenever a self change
+	  removes the task from top of the ready list also, accepting a remark
+	  from Richly Matthias <Matthias.Richly@student.hpi.uni-potsdam.de>.
+	* base/sched/include/rtai_schedcore.h: in pass prio reschedule whenever
+	  the top ready task has changed, now it is done if the task receiving 
+	  a prio goes to the top.
+
 2009-04-24 Paolo Mantegazza <mantegazza@aero.polimi.it>
 
 	* base/sched/api.c: reschedule immediatly if the caller of 

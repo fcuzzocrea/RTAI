@@ -1313,7 +1313,7 @@ static int rtai_hirq_dispatcher(struct pt_regs *regs)
 		tr->RT_REG_SS    = regs->RT_REG_SS;
 #endif
 		if (hal_current_domain(cpuid) == hal_root_domain) {
-			tr->flags &= ~RTAI_IFLAG;
+			tr->RT_REG_FLAGS &= ~RTAI_IFLAG;
 		}
 	}
 	hal_fast_flush_pipeline(cpuid);

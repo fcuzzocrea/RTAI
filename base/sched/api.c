@@ -189,6 +189,7 @@ RTAI_SYSCALL_MODE int rt_change_prio(RT_TASK *task, int priority)
 {
 	unsigned long flags;
 	int prio, base_priority;
+	RT_TASK *rhead;
 
 	if (task->magic != RT_TASK_MAGIC || priority < 0) {
 		return -EINVAL;
@@ -208,10 +209,11 @@ RTAI_SYSCALL_MODE int rt_change_prio(RT_TASK *task, int priority)
 			task->priority = priority;
 			if (task->state == RT_SCHED_READY) {
 				if ((task->rprev)->priority > task->priority || (task->rnext)->priority < task->priority) {
+					rhead = rt_smp_linux_task[task->runnable_on_cpus].rnext;
 					(task->rprev)->rnext = task->rnext;
 					(task->rnext)->rprev = task->rprev;
 					enq_ready_task(task);
-					if (task == rt_smp_linux_task[task->runnable_on_cpus].rnext) {
+					if (rhead != rt_smp_linux_task[task->runnable_on_cpus].rnext) {
 #ifdef CONFIG_SMP
 						__set_bit(task->runnable_on_cpus & 0x1F, &schedmap);
 #else

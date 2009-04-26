@@ -562,6 +562,7 @@ static inline unsigned long pass_prio(RT_TASK *to, RT_TASK *from)
 {
         QUEUE *q, *blocked_on;
 #ifdef CONFIG_SMP
+	RT_TASK *rhead;
         unsigned long schedmap;
         schedmap = 0;
 #endif
@@ -570,11 +571,14 @@ static inline unsigned long pass_prio(RT_TASK *to, RT_TASK *from)
                 to->priority = from->priority;
 		if (to->state == RT_SCHED_READY) {
 			if ((to->rprev)->priority > to->priority || (to->rnext)->priority < to->priority) {
+#ifdef CONFIG_SMP
+				rhead = rt_smp_linux_task[to->runnable_on_cpus].rnext;
+#endif
 				(to->rprev)->rnext = to->rnext;
 				(to->rnext)->rprev = to->rprev;
 				enq_ready_task(to);
 #ifdef CONFIG_SMP
-				if (to == rt_smp_linux_task[to->runnable_on_cpus].rnext) {
+				if (rhead != rt_smp_linux_task[to->runnable_on_cpus].rnext)  {
 					__set_bit(to->runnable_on_cpus & 0x1F, &schedmap);
 				}
 #endif

@@ -1595,6 +1595,9 @@ static int rtai_hirq_dispatcher (struct pt_regs regs)
 		tr->RT_REG_CS    = regs.RT_REG_CS;
 		tr->RT_REG_BP    = regs.RT_REG_BP;
 #endif
+		if (hal_current_domain(cpuid) == hal_root_domain) {
+			tr->flags &= ~RTAI_IFLAG;
+		}
 	}
 	hal_fast_flush_pipeline(cpuid);
 #if defined(CONFIG_SMP) &&  LINUX_VERSION_CODE >= KERNEL_VERSION(2,4,32)

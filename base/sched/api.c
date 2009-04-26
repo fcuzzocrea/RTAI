@@ -1989,28 +1989,38 @@ RTAI_SYSCALL_MODE void usp_request_rtc(int rtc_freq, void *handler)
 
 /* +++++++++++++++++ SUPPORT FOR THE LINUX SYSCALL SERVER +++++++++++++++++++ */
 
-RTAI_SYSCALL_MODE void rt_set_linux_syscall_mode(long mode, void (*callback_fun)(long, long))
+RTAI_SYSCALL_MODE void rt_set_linux_syscall_mode(long mode, void (*cbfun)(long, long))
 {
-	rt_put_user(callback_fun, &(RT_CURRENT->linux_syscall_server)->callback_fun);
+	rt_put_user(cbfun, &(RT_CURRENT->linux_syscall_server)->cbfun);
 	rt_put_user(mode, &(RT_CURRENT->linux_syscall_server)->mode);
 }
 
 void rt_exec_linux_syscall(RT_TASK *rt_current, struct linux_syscalls_list *syscalls, struct pt_regs *regs)
 {
-	struct { long in, nr, mode; RT_TASK *serv; } from;
+	int id;
+	long in;
+	struct { long in, nr, mode; void (*cbfun)(long, long); int id; RT_TASK *serv; } from;
 
 #if defined( __NR_socketcall)
 	if (regs->LINUX_SYSCALL_NR == __NR_socketcall) {
 		void *p = (void *)regs->LINUX_SYSCALL_REG2;
-		regs->LINUX_SYSCALL_REG2 = (long)(&syscalls->moderegs[from.in].args);
-		rt_copy_to_user(&syscalls->moderegs[from.in].args, p, MPX_SYSCALL_ARGS*sizeof(long));
+		regs->LINUX_SYSCALL_REG2 = (long)(&syscalls->syscall[from.in].args);
+		rt_copy_to_user(&syscalls->syscall[from.in].args, p, MPX_SYSCALL_ARGS*sizeof(long));
 	}
 #endif
 
 	rt_copy_from_user(&from, syscalls, sizeof(from));
 	from.serv->priority = rt_current->priority + BASE_SOFT_PRIORITY;
-	rt_copy_to_user(&syscalls->moderegs[from.in].regs, regs, sizeof(struct pt_regs));
-	rt_put_user(from.mode, &syscalls->moderegs[from.in].mode);
+	rt_copy_to_user(&syscalls->syscall[from.in].regs, regs, sizeof(struct pt_regs));
+	rt_put_user(from.mode, &syscalls->syscall[from.in].mode);
+	rt_put_user(from.cbfun, &syscalls->syscall[from.in].cbfun);
+	rt_put_user(from.id, &syscalls->syscall[from.in].id);
+	id = from.id;
+	if (++from.id < 0) {
+		from.id = 0;
+	}
+	rt_put_user(from.id, &syscalls->id);
+	in = from.in;
 	if (++from.in >= from.nr) {
 		from.in = 0;
 	}
@@ -2020,9 +2030,9 @@ void rt_exec_linux_syscall(RT_TASK *rt_current, struct linux_syscalls_list *sysc
 	}
 	if (from.mode == SYNC_LINUX_SYSCALL) {
 		rt_task_suspend(rt_current);
-		rt_get_user(regs->LINUX_SYSCALL_RETREG, &syscalls->retval);
+		rt_get_user(regs->LINUX_SYSCALL_RETREG, &syscalls->syscall[in].retval);
 	} else {
-		regs->LINUX_SYSCALL_RETREG = -EINPROGRESS;
+		regs->LINUX_SYSCALL_RETREG = id;
 	}
 }
 

@@ -423,14 +423,17 @@
 #define NARG(x)  ((x) & (GT_NR_SYSCALLS - 1))
 #define INDX(x)  (((x) >> 24) & 0xF)
 
-#define SYNC_LINUX_SYSCALL   1
-#define ASYNC_LINUX_SYSCALL  0
+#define LINUX_SYSCALL_GET_MODE       0
+#define SYNC_LINUX_SYSCALL           1
+#define ASYNC_LINUX_SYSCALL          2
+#define LINUX_SYSCALL_CANCELED       3
+#define LINUX_SYSCALL_GET_CALLBACK   ((void *)4)
 
 #include <asm/ptrace.h>
 
 #define MPX_SYSCALL_ARGS  6
-struct mode_regs { struct pt_regs regs; long mode; long args[MPX_SYSCALL_ARGS]; };
-struct linux_syscalls_list { long in, nr, mode; void *serv; struct mode_regs *moderegs; RT_TASK *task; void (*callback_fun)(long, long); long out, retval; };
+struct linux_syscall { struct pt_regs regs; long mode; void (*cbfun)(long, long); long retval; int id; long args[MPX_SYSCALL_ARGS]; };
+struct linux_syscalls_list { long in, nr, mode; void (*cbfun)(long, long); int id; void *serv; struct linux_syscall *syscall; RT_TASK *task; long out; };
 
 #ifdef __KERNEL__
 
@@ -696,28 +699,32 @@ RTAI_PROTO(int, rt_thread_join, (long thread))
 
 static void linux_syscall_server_fun(struct linux_syscalls_list *list)
 {
-	struct linux_syscalls_list syscalls = *list;
+	struct linux_syscalls_list syscalls;
 
+	syscalls = *list;
 	syscalls.serv = &syscalls;
-	syscalls.in = syscalls.out = 0;
-
 	if ((syscalls.serv = rtai_lxrt(BIDX, sizeof(struct linux_syscalls_list), LINUX_SERVER_INIT, &syscalls).v[LOW])) {
 		struct pt_regs *regs;
-		struct mode_regs moderegs[syscalls.nr];
-		syscalls.moderegs = moderegs;
-		memset(moderegs, syscalls.nr*sizeof(struct mode_regs), 0);
+		struct linux_syscall *todo;
+		struct linux_syscall calldata[syscalls.nr];
+		syscalls.syscall = calldata;
+		memset(calldata, sizeof(calldata), 0);
+		syscalls.in = syscalls.out = 0;
+		syscalls.id = 0;
                 mlockall(MCL_CURRENT | MCL_FUTURE);
+		list->serv = &syscalls;
 		rtai_lxrt(BIDX, sizeof(RT_TASK *), RESUME, &syscalls.task);
-		for (;;) {
-			if (abs(rtai_lxrt(BIDX, sizeof(RT_TASK *), SUSPEND, &syscalls.serv).i[LOW]) == RTE_UNBLKD) {
-				break;
-			}
-			regs = &syscalls.moderegs[syscalls.out].regs;
-			syscalls.retval = syscall(regs->LINUX_SYSCALL_NR, regs->LINUX_SYSCALL_REG1, regs->LINUX_SYSCALL_REG2, regs->LINUX_SYSCALL_REG3, regs->LINUX_SYSCALL_REG4, regs->LINUX_SYSCALL_REG5, regs->LINUX_SYSCALL_REG6);
-			if (syscalls.moderegs[syscalls.out].mode == SYNC_LINUX_SYSCALL) {
-				rtai_lxrt(BIDX, sizeof(RT_TASK *), RESUME, &syscalls.task);
-			} else if (syscalls.callback_fun) {
-				syscalls.callback_fun(regs->LINUX_SYSCALL_NR, syscalls.retval);
+		while (abs(rtai_lxrt(BIDX, sizeof(RT_TASK *), SUSPEND, &syscalls.serv).i[LOW]) < RTE_LOWERR) {
+			if (syscalls.syscall[syscalls.out].mode != LINUX_SYSCALL_CANCELED) {
+				todo = &syscalls.syscall[syscalls.out];
+				regs = &todo->regs;
+				todo->retval = syscall(regs->LINUX_SYSCALL_NR, regs->LINUX_SYSCALL_REG1, regs->LINUX_SYSCALL_REG2, regs->LINUX_SYSCALL_REG3, regs->LINUX_SYSCALL_REG4, regs->LINUX_SYSCALL_REG5, regs->LINUX_SYSCALL_REG6);
+				todo->id = -todo->id;
+				if (todo->mode == SYNC_LINUX_SYSCALL) {
+					rtai_lxrt(BIDX, sizeof(RT_TASK *), RESUME, &syscalls.task);
+				} else if (syscalls.cbfun) {
+					todo->cbfun(regs->LINUX_SYSCALL_NR, todo->retval);
+				}
 			}
 			if (++syscalls.out >= syscalls.nr) {
 				syscalls.out = 0;
@@ -728,26 +735,78 @@ static void linux_syscall_server_fun(struct linux_syscalls_list *list)
 
 #endif /* __SUPPORT_LINUX_SERVER__ */
 
-RTAI_PROTO(void, rt_set_linux_syscall_mode, (int mode, void (*callback_fun)(long, long)))
+RTAI_PROTO(void, rt_set_linux_syscall_mode, (int mode, void (*cbfun)(long, long)))
 {
-	struct { long mode; void (*callback_fun)(long, long); } arg = { mode, callback_fun };
+	struct { long mode; void (*cbfun)(long, long); } arg = { mode, cbfun };
 	rtai_lxrt(BIDX, SIZARG, SET_LINUX_SYSCALL_MODE, &arg);
 }
 
-RTAI_PROTO(int, rt_sync_async_linux_syscall_server_create, (RT_TASK *task, int mode, void (*callback_fun)(long, long), int nr_bufd_async_calls))
+RTAI_PROTO(int, rt_linux_syscall_mode, (struct linux_syscalls_list *syscalls, int mode))
+{
+	int retval; 
+	retval = syscalls->mode; 
+	if (mode == SYNC_LINUX_SYSCALL || mode == ASYNC_LINUX_SYSCALL) { 
+		syscalls->mode = mode; 
+	}
+	return retval;
+}
+
+RTAI_PROTO(void *, rt_linux_syscall_cbfun, (struct linux_syscalls_list *syscalls, void (*cbfun)(long, long)))
+{
+	void *retval; 
+	retval = syscalls->cbfun; 
+	if ((unsigned long)cbfun > (unsigned long)LINUX_SYSCALL_GET_CALLBACK) {
+		syscalls->cbfun = cbfun;
+	}
+	return retval;
+}
+
+RTAI_PROTO(int, rt_linux_syscall_status, (struct linux_syscalls_list *syscalls, int id, int *retval))
+{
+	int slot, slotid;
+	if (id != abs(slotid = syscalls->syscall[slot = id%syscalls->nr].id)) {
+		return ENOENT;
+	}
+	if (syscalls->syscall[slot].mode == LINUX_SYSCALL_CANCELED) {
+		return ECANCELED;
+	}
+	if (slotid > 0) {
+		return EINPROGRESS;
+	}
+	if (retval) {
+		*retval =  syscalls->syscall[slot].retval;
+	}
+	return 0;
+}
+
+RTAI_PROTO(int, rt_linux_syscall_cancel, (struct linux_syscalls_list *syscalls, int id))
+{
+	int slot, slotid;
+	if (id != abs(slotid = syscalls->syscall[slot = id%syscalls->nr].id)) {
+		return ENOENT;
+	}
+	if (slotid < 0) {
+		return slotid;
+	}
+	syscalls->syscall[slot].mode = LINUX_SYSCALL_CANCELED;
+	return 0;
+}
+
+RTAI_PROTO(void *, rt_sync_async_linux_syscall_server_create, (RT_TASK *task, int mode, void (*cbfun)(long, long), int nr_bufd_async_calls))
 {
 	if ((task || (task = (RT_TASK *)rtai_lxrt(BIDX, sizeof(RT_TASK *), RT_BUDDY, &task).v[LOW])) && nr_bufd_async_calls > 0) {
 		struct linux_syscalls_list syscalls;
-		syscalls.task         = task;
-		syscalls.callback_fun = callback_fun;
-		syscalls.mode         = mode;
-		syscalls.nr           = nr_bufd_async_calls;
-		if (rt_thread_create((void *)linux_syscall_server_fun, &syscalls, RT_THREAD_STACK_MIN + syscalls.nr*sizeof(struct mode_regs))) {
+		syscalls.task  = task;
+		syscalls.cbfun = cbfun;
+		syscalls.mode  = mode;
+		syscalls.nr    = nr_bufd_async_calls;
+		syscalls.serv  = NULL;
+		if (rt_thread_create((void *)linux_syscall_server_fun, &syscalls, RT_THREAD_STACK_MIN + syscalls.nr*sizeof(struct linux_syscall))) {
 			rtai_lxrt(BIDX, sizeof(RT_TASK *), SUSPEND, &task);
-			return 0;
+			return syscalls.serv;
 		}
 	}
-	return -1;
+	return NULL;
 }
 
 #define rt_linux_syscall_server_create(task)  rt_sync_async_linux_syscall_server_create(task, SYNC_LINUX_SYSCALL, NULL, 1);

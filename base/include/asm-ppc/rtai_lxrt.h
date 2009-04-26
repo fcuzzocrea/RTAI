@@ -75,8 +75,9 @@
 #define TIMER_LATENCY     RTAI_LATENCY_8254
 #define TIMER_SETUP_TIME  RTAI_SETUP_TIME_8254
 #define ONESHOT_SPAN      ((0x7FFF*(CPU_FREQ/TIMER_FREQ))/(CONFIG_RTAI_CAL_FREQS_FACT + 1)) //(0x7FFF*(CPU_FREQ/TIMER_FREQ))
+
 #define update_linux_timer(cpuid) \
-	do { disarm_decr[cpuid] = 1; hal_pend_uncond(TIMER_8254_IRQ, cpuid); } while (0)
+	do { rtai_disarm_decr(cpuid, 1); hal_pend_uncond(TIMER_8254_IRQ, cpuid); } while (0)
 
 union rtai_lxrt_t {
     RTIME rt;
@@ -94,6 +95,7 @@ extern "C" {
 
 #ifdef __KERNEL__
 
+#include <linux/slab.h>
 #include <asm/mmu_context.h>
 
 static inline void _lxrt_context_switch (struct task_struct *prev, struct task_struct *next, int cpuid)
@@ -131,20 +133,32 @@ static inline void kthread_fun_long_jump(struct task_struct *lnxtsk)
         memcpy((void *)lnxtsk->thread.ksp, lnxtsk->rtai_tskext(TSKEXT2) + sizeof(struct thread_struct)/* + sizeof(struct thread_info)*/, (lnxtsk->thread.ksp & ~(THREAD_SIZE - 1)) + THREAD_SIZE - lnxtsk->thread.ksp);
 }
 
+#if LINUX_VERSION_CODE < KERNEL_VERSION(2,6,0)
+
+#define rt_copy_from_user     __copy_from_user
+
+#define rt_copy_to_user       __copy_to_user
+
+#define rt_strncpy_from_user  strncpy_from_user
+
+#else
+
 #define rt_copy_from_user(a, b, c)  \
 	( { int ret = __copy_from_user_inatomic(a, b, c); ret; } )
 
 #define rt_copy_to_user(a, b, c)  \
 	( { int ret = __copy_to_user_inatomic(a, b, c); ret; } )
 
-#define rt_put_user  __put_user
-#define rt_get_user  __get_user
-
 #define rt_strncpy_from_user(a, b, c)  \
 	( { int ret = strncpy_from_user(a, b, c); ret; } )
 
+#endif
+
+#define rt_put_user  __put_user
+#define rt_get_user  __get_user
+
 //#define RTAI_DO_LINUX_SIGNAL
-extern int FASTCALL(do_signal(sigset_t *oldset, struct pt_regs *regs));
+//extern int FASTCALL(do_signal(sigset_t *oldset, struct pt_regs *regs));
 #define RT_DO_SIGNAL(regs)  do_signal(NULL, regs)
 
 #else /* !__KERNEL__ */

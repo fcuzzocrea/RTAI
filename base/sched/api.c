@@ -25,6 +25,7 @@
 
 #include <linux/module.h>
 #include <asm/uaccess.h>
+#include <asm/unistd.h>
 
 #include <rtai_schedcore.h>
 #include <rtai_prinher.h>

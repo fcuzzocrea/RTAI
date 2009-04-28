@@ -1,3 +1,9 @@
+2009-04-28 Roberto Bucher <roberto.bucher@supsi.ch>
+
+	* rtai-lab/GNUmakefile.am: Added some files in EXTRA_DIST.
+	* rtai-lab/scilab/GNUmakefile.am: Removed README from  EXTRA_DIST.
+	* rtai-lab/scicoslab/GNUmakefile.*: Removed from repository.
+
 2009-04-27 Paolo Mantegazza <mantegazza@aero.polimi.it>
 
 	* base/include/asm-ppc/rtai_fpu.h, rtai_lxrt, rtai_hal.h: upgraded to

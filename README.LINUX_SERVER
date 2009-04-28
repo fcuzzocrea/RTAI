@@ -26,19 +26,20 @@ synchronous server might be the best way to interact with Linux anyhow.
 
 There are however instances in which Linux can be used asynchronously. In 
 such cases RTAI hard real time tasks might use Linux without loosing hard
-real time determinism. Such a capability can be implemented in many ways, the 
-one chosen by RTAI is based on a buffering of async Linux syscalls mated to an 
-optional callback function mechanism to help implementing any user own async 
-call policy. Beware of not reusing read/write data buffers made available to 
-async calls though. If you do not want, or cannot, check async terminations to 
-avoid running the risc of reusing an yet unserved buffer use RTAI dynamic 
-memory or SCB to allocate them in real time, freeing them afterward possibly 
-with the help of the support callback function. 
+real time determinism. Such a capability can be implemented in many ways, 
+the one chosen by RTAI is based on a buffering of async Linux syscalls mated 
+either to an optional callback function or to inquiry mechanisms to help 
+implementing any user own async call policy. Beware of not reusing read/write 
+data buffers made available to async calls though. 
+If you do not want, or cannot, either inquire for or check async terminations, 
+to avoid running the risc of reusing an yet unserved buffer, use RTAI dynamic 
+memory or SCB to allocate them in real time, freeing them afterward, possibly 
+with the help of a support callback function. 
 Async support is a bit tricky but, provided one cares of what said above, it
 should work always when Linux syscalls args are fully contained in the passed
 registers structure. That is not the case for a few Linux syscalls that are
-multiplexed within a single framework, wheres libc can end in building a 
-hidden object on the stack so that it is not assured it will be available at 
+multiplexed within a single framework, whereas libc can end in building a 
+hidden object on the stack, so that it is not assured it will be available at 
 the time the server uses it. On some archs a notable example of that is the 
 socketcall, but RTAI should already care of it appropriately. There remain 
 nonetheless the chance of other instances to be cared as well. So beware that 
@@ -74,7 +75,7 @@ sync mode:
 - calls a callback function, if one has been made available, in async mode.
 
 As said in sync mode real time is lost, but there will be two task switches per
-Linux service request only, while there will be four in no sync server is used.
+Linux service request only, while there will be four if no sync server is used.
 In async mode there is no need of any task switch as the server will execute 
 in soft mode when there will be no RTAI real time activity any more.
 The need of copying data in registers is responsible for most of the penalty 
@@ -96,23 +97,24 @@ The available functions are:
 - void *rt_sync_async_linux_syscall_server_create(RT_TASK *task, int mode, 
   void (*callback_fun)(long, long), int nr_bufd_async_calls);
 general call to create a Linux syscall server; a non NULL return meaning an
-handle allowing yuo to link to the server for any further management request,
+handle allowing you to link to the server for any further management request,
 see functions below, NULL indicates a failure in setting the server up; a NULL 
 task means the current one; a NULL callback_fun is allowed. It will operate 
 according to mode setting, either SYNC_LINUX_SYSCALL or ASYNC_LINUX_SYSCALL. 
 Beware of using an appropriate nr_bufd_async_calls. If async requests overrun 
 the oldest pending ones will be overwritten and never executed.
 
-- int rt_linux_syscall_server_create(RT_TASK *task);
+- void *rt_linux_syscall_server_create(RT_TASK *task);
 short cut to create a synchronous Linux syscall server;
-a zero return meaning success, non zero a failure in setting the server up;
-a NULL task means the current one; it will operate in sync mode always.
+a non NULL return meaning success, NULL indicates a failure in setting the 
+server up; a NULL task means the current one; it will operate in sync mode 
+always.
 
 Notice that in sync mode Linux functions will return their usual values while 
-that is not possible in async mode and what return is an identifier, id, of 
+that is not possible in async mode and what returned is an identifier, id, of 
 that specific async call. It can be used for monitoring async calls execution,
 as explained below.
-a
+
 - void rt_set_linux_syscall_mode(int mode, void (*callback_fun)(long, long);
 to switch between sync and async mode and, possibly, change the call back 
 function, if the related pointer in not NULL.

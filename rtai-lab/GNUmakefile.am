@@ -49,6 +49,5 @@ xrtailab_LDFLAGS = \
 	@GL_LIBS@
 
 SUBDIRS = matlab matrixx scilab
-#SUBDIRS = matlab matrixx scilab scilab5
 
-EXTRA_DIST = icons INSTALL scilab5
+EXTRA_DIST = icons INSTALL scilab5 scicoslab README README.scilab README_X64

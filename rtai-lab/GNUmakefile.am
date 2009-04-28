@@ -50,4 +50,4 @@ xrtailab_LDFLAGS = \
 
 SUBDIRS = matlab matrixx scilab
 
-EXTRA_DIST = icons INSTALL scilab5
+EXTRA_DIST = icons INSTALL scilab5 scicoslab README README.scilab README_X64

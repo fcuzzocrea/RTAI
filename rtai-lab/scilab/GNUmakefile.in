@@ -32,7 +32,7 @@ POST_UNINSTALL = :
 build_triplet = @build@
 host_triplet = @host@
 subdir = rtai-lab/scilab
-DIST_COMMON = README $(srcdir)/GNUmakefile.am $(srcdir)/GNUmakefile.in
+DIST_COMMON = $(srcdir)/GNUmakefile.am $(srcdir)/GNUmakefile.in
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
 am__aclocal_m4_deps = $(top_srcdir)/base/config/autoconf/acinclude.m4 \
 	$(top_srcdir)/base/config/autoconf/docbook.m4 \
@@ -223,7 +223,7 @@ target_alias = @target_alias@
 top_builddir = @top_builddir@
 top_srcdir = @top_srcdir@
 SUBDIRS = utility
-EXTRA_DIST = rtmain.c README examples macros devices
+EXTRA_DIST = rtmain.c examples macros devices
 all: all-recursive
 
 .SUFFIXES:

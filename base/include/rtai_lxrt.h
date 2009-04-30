@@ -426,10 +426,10 @@
 #define SYNC_LINUX_SYSCALL   1
 #define ASYNC_LINUX_SYSCALL  0
 
-#include <asm/ptrace.h>
+#define SRV_NSYSCALL_REGS  7
+#define PAC_NSYSCALL_ARGS  6
 
-#define MPX_SYSCALL_ARGS  6
-struct mode_regs { struct pt_regs regs; long mode; long args[MPX_SYSCALL_ARGS]; };
+struct mode_regs { long regs[SRV_NSYSCALL_REGS], mode, pacargs[PAC_NSYSCALL_ARGS]; };
 struct linux_syscalls_list { long in, nr, mode; void *serv; struct mode_regs *moderegs; RT_TASK *task; void (*callback_fun)(long, long); long out, retval; };
 
 #ifdef __KERNEL__
@@ -702,22 +702,19 @@ static void linux_syscall_server_fun(struct linux_syscalls_list *list)
 	syscalls.in = syscalls.out = 0;
 
 	if ((syscalls.serv = rtai_lxrt(BIDX, sizeof(struct linux_syscalls_list), LINUX_SERVER_INIT, &syscalls).v[LOW])) {
-		struct pt_regs *regs;
+		long *regs;
 		struct mode_regs moderegs[syscalls.nr];
+		memset(moderegs, sizeof(moderegs), 0);
 		syscalls.moderegs = moderegs;
-		memset(moderegs, syscalls.nr*sizeof(struct mode_regs), 0);
                 mlockall(MCL_CURRENT | MCL_FUTURE);
 		rtai_lxrt(BIDX, sizeof(RT_TASK *), RESUME, &syscalls.task);
-		for (;;) {
-			if (abs(rtai_lxrt(BIDX, sizeof(RT_TASK *), SUSPEND, &syscalls.serv).i[LOW]) == RTE_UNBLKD) {
-				break;
-			}
-			regs = &syscalls.moderegs[syscalls.out].regs;
-			syscalls.retval = syscall(regs->LINUX_SYSCALL_NR, regs->LINUX_SYSCALL_REG1, regs->LINUX_SYSCALL_REG2, regs->LINUX_SYSCALL_REG3, regs->LINUX_SYSCALL_REG4, regs->LINUX_SYSCALL_REG5, regs->LINUX_SYSCALL_REG6);
+		while (abs(rtai_lxrt(BIDX, sizeof(RT_TASK *), SUSPEND, &syscalls.serv).i[LOW]) < RTE_LOWERR) {
+			regs = moderegs[syscalls.out].regs;
+			syscalls.retval = syscall(regs[0], regs[1], regs[2], regs[3], regs[4], regs[5], regs[6]);
 			if (syscalls.moderegs[syscalls.out].mode == SYNC_LINUX_SYSCALL) {
 				rtai_lxrt(BIDX, sizeof(RT_TASK *), RESUME, &syscalls.task);
 			} else if (syscalls.callback_fun) {
-				syscalls.callback_fun(regs->LINUX_SYSCALL_NR, syscalls.retval);
+				syscalls.callback_fun(regs[0], syscalls.retval);
 			}
 			if (++syscalls.out >= syscalls.nr) {
 				syscalls.out = 0;

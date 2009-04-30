@@ -1998,24 +1998,33 @@ RTAI_SYSCALL_MODE void rt_set_linux_syscall_mode(long mode, void (*cbfun)(long, 
 
 void rt_exec_linux_syscall(RT_TASK *rt_current, struct linux_syscalls_list *syscalls, struct pt_regs *regs)
 {
-	int id;
 	long in;
+	int sz, id;
+	struct linux_syscall syscall;
 	struct { long in, nr, mode; void (*cbfun)(long, long); int id; RT_TASK *serv; } from;
 
 #if defined( __NR_socketcall)
 	if (regs->LINUX_SYSCALL_NR == __NR_socketcall) {
-		void *p = (void *)regs->LINUX_SYSCALL_REG2;
-		regs->LINUX_SYSCALL_REG2 = (long)(&syscalls->syscall[from.in].args);
-		rt_copy_to_user(&syscalls->syscall[from.in].args, p, MPX_SYSCALL_ARGS*sizeof(long));
-	}
+		memcpy(syscall.pacargs, (void *)regs->LINUX_SYSCALL_REG2, sizeof(syscall.pacargs));
+		syscall.args[2] = (long)(&syscalls->syscall[from.in].pacargs);
+		sz = offsetof(struct linux_syscall, retval);
+	} else
 #endif
-
+	{
+		syscall.args[2] = regs->LINUX_SYSCALL_REG2;
+		sz = offsetof(struct linux_syscall, pacargs);
+	}
 	rt_copy_from_user(&from, syscalls, sizeof(from));
-	from.serv->priority = rt_current->priority + BASE_SOFT_PRIORITY;
-	rt_copy_to_user(&syscalls->syscall[from.in].regs, regs, sizeof(struct pt_regs));
-	rt_put_user(from.mode, &syscalls->syscall[from.in].mode);
-	rt_put_user(from.cbfun, &syscalls->syscall[from.in].cbfun);
-	rt_put_user(from.id, &syscalls->syscall[from.in].id);
+        syscall.args[0] = regs->LINUX_SYSCALL_NR;
+        syscall.args[1] = regs->LINUX_SYSCALL_REG1;
+        syscall.args[3] = regs->LINUX_SYSCALL_REG3;
+        syscall.args[4] = regs->LINUX_SYSCALL_REG4;
+        syscall.args[5] = regs->LINUX_SYSCALL_REG5;
+        syscall.args[6] = regs->LINUX_SYSCALL_REG6;
+        syscall.mode    = from.mode;
+        syscall.cbfun   = from.cbfun;
+        syscall.id      = from.id;
+        rt_copy_to_user(&syscalls->syscall[from.in].args, &syscall, sz);
 	id = from.id;
 	if (++from.id < 0) {
 		from.id = 0;
@@ -2027,6 +2036,7 @@ void rt_exec_linux_syscall(RT_TASK *rt_current, struct linux_syscalls_list *sysc
 	}
 	rt_put_user(from.in, &syscalls->in);
 	if (from.serv->suspdepth >= -from.nr) {
+		from.serv->priority = rt_current->priority + BASE_SOFT_PRIORITY;
 		rt_task_resume(from.serv);
 	}
 	if (from.mode == SYNC_LINUX_SYSCALL) {

@@ -1,3 +1,10 @@
+2009-04-30 Paolo Mantegazza <mantegazza@aero.polimi.it>
+
+	* base/include/rtai_lxrt.h: linux server reworked to need no info 
+	  about registers structure.
+	* base/schede/api.c: linux server reworked to allow server task 
+	  working with no info about registers structure.
+
 2009-04-28 Roberto Bucher <roberto.bucher@supsi.ch>
 
 	* rtai-lab/GNUmakefile.am: Added some files in EXTRA_DIST.

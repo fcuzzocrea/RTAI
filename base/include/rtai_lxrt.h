@@ -712,7 +712,7 @@ static void linux_syscall_server_fun(struct linux_syscalls_list *list)
 		syscalls.in = syscalls.out = 0;
 		syscalls.id = 0;
                 mlockall(MCL_CURRENT | MCL_FUTURE);
-		list->serv = &syscalls;
+		list->serv = syscalls.nr > 0 ? &syscalls : NULL;
 		rtai_lxrt(BIDX, sizeof(RT_TASK *), RESUME, &syscalls.task);
 		while (abs(rtai_lxrt(BIDX, sizeof(RT_TASK *), SUSPEND, &syscalls.serv).i[LOW]) < RTE_LOWERR) {
 			if (syscalls.syscall[syscalls.out].mode != LINUX_SYSCALL_CANCELED) {
@@ -744,8 +744,11 @@ RTAI_PROTO(void, rt_set_linux_syscall_mode, (int mode, void (*cbfun)(long, long)
 RTAI_PROTO(int, rt_linux_syscall_mode, (struct linux_syscalls_list *syscalls, int mode))
 {
 	int retval; 
+	if (syscalls == NULL) {
+		return EINVAL;
+	}
 	retval = syscalls->mode; 
-	if (mode == SYNC_LINUX_SYSCALL || mode == ASYNC_LINUX_SYSCALL) { 
+	if (mode == SYNC_LINUX_SYSCALL || mode == ASYNC_LINUX_SYSCALL) {
 		syscalls->mode = mode; 
 	}
 	return retval;
@@ -754,6 +757,9 @@ RTAI_PROTO(int, rt_linux_syscall_mode, (struct linux_syscalls_list *syscalls, in
 RTAI_PROTO(void *, rt_linux_syscall_cbfun, (struct linux_syscalls_list *syscalls, void (*cbfun)(long, long)))
 {
 	void *retval; 
+	if (syscalls == NULL) {
+		return EINVAL;
+	}
 	retval = syscalls->cbfun; 
 	if ((unsigned long)cbfun > (unsigned long)LINUX_SYSCALL_GET_CALLBACK) {
 		syscalls->cbfun = cbfun;
@@ -764,6 +770,9 @@ RTAI_PROTO(void *, rt_linux_syscall_cbfun, (struct linux_syscalls_list *syscalls
 RTAI_PROTO(int, rt_linux_syscall_status, (struct linux_syscalls_list *syscalls, int id, int *retval))
 {
 	int slot, slotid;
+	if (syscalls == NULL) {
+		return EINVAL;
+	}
 	if (id != abs(slotid = syscalls->syscall[slot = id%syscalls->nr].id)) {
 		return ENOENT;
 	}
@@ -782,6 +791,9 @@ RTAI_PROTO(int, rt_linux_syscall_status, (struct linux_syscalls_list *syscalls, 
 RTAI_PROTO(int, rt_linux_syscall_cancel, (struct linux_syscalls_list *syscalls, int id))
 {
 	int slot, slotid;
+	if (syscalls == NULL) {
+		return EINVAL;
+	}
 	if (id != abs(slotid = syscalls->syscall[slot = id%syscalls->nr].id)) {
 		return ENOENT;
 	}

@@ -429,10 +429,10 @@
 #define LINUX_SYSCALL_CANCELED       3
 #define LINUX_SYSCALL_GET_CALLBACK   ((void *)4)
 
-#include <asm/ptrace.h>
+#define NSYSCALL_ARGS     7
+#define NSYSCALL_PACARGS  6
 
-#define MPX_SYSCALL_ARGS  6
-struct linux_syscall { struct pt_regs regs; long mode; void (*cbfun)(long, long); long retval; int id; long args[MPX_SYSCALL_ARGS]; };
+struct linux_syscall { long args[NSYSCALL_ARGS], mode; void (*cbfun)(long, long); int id; long pacargs[NSYSCALL_PACARGS]; long retval; };
 struct linux_syscalls_list { long in, nr, mode; void (*cbfun)(long, long); int id; void *serv; struct linux_syscall *syscall; RT_TASK *task; long out; };
 
 #ifdef __KERNEL__
@@ -704,7 +704,7 @@ static void linux_syscall_server_fun(struct linux_syscalls_list *list)
 	syscalls = *list;
 	syscalls.serv = &syscalls;
 	if ((syscalls.serv = rtai_lxrt(BIDX, sizeof(struct linux_syscalls_list), LINUX_SERVER_INIT, &syscalls).v[LOW])) {
-		struct pt_regs *regs;
+		long *args;
 		struct linux_syscall *todo;
 		struct linux_syscall calldata[syscalls.nr];
 		syscalls.syscall = calldata;
@@ -717,13 +717,13 @@ static void linux_syscall_server_fun(struct linux_syscalls_list *list)
 		while (abs(rtai_lxrt(BIDX, sizeof(RT_TASK *), SUSPEND, &syscalls.serv).i[LOW]) < RTE_LOWERR) {
 			if (syscalls.syscall[syscalls.out].mode != LINUX_SYSCALL_CANCELED) {
 				todo = &syscalls.syscall[syscalls.out];
-				regs = &todo->regs;
-				todo->retval = syscall(regs->LINUX_SYSCALL_NR, regs->LINUX_SYSCALL_REG1, regs->LINUX_SYSCALL_REG2, regs->LINUX_SYSCALL_REG3, regs->LINUX_SYSCALL_REG4, regs->LINUX_SYSCALL_REG5, regs->LINUX_SYSCALL_REG6);
+				args = todo->args;
+				todo->retval = syscall(args[0], args[1], args[2], args[3], args[4], args[5], args[6]);
 				todo->id = -todo->id;
 				if (todo->mode == SYNC_LINUX_SYSCALL) {
 					rtai_lxrt(BIDX, sizeof(RT_TASK *), RESUME, &syscalls.task);
 				} else if (syscalls.cbfun) {
-					todo->cbfun(regs->LINUX_SYSCALL_NR, todo->retval);
+					todo->cbfun(args[0], todo->retval);
 				}
 			}
 			if (++syscalls.out >= syscalls.nr) {

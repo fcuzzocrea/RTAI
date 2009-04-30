@@ -23,6 +23,7 @@
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
  */
 
+
 #include <linux/module.h>
 #include <asm/uaccess.h>
 #include <asm/unistd.h>
@@ -1998,25 +1999,37 @@ RTAI_SYSCALL_MODE void rt_set_linux_syscall_mode(long mode, void (*callback_fun)
 
 void rt_exec_linux_syscall(RT_TASK *rt_current, struct linux_syscalls_list *syscalls, struct pt_regs *regs)
 {
+	int sz;
+	struct mode_regs moderegs;
 	struct { long in, nr, mode; RT_TASK *serv; } from;
 
 #if defined( __NR_socketcall)
 	if (regs->LINUX_SYSCALL_NR == __NR_socketcall) {
-		void *p = (void *)regs->LINUX_SYSCALL_REG2;
-		regs->LINUX_SYSCALL_REG2 = (long)(&syscalls->moderegs[from.in].args);
-		rt_copy_to_user(&syscalls->moderegs[from.in].args, p, MPX_SYSCALL_ARGS*sizeof(long));
-	}
+		memcpy(moderegs.pacargs, (void *)regs->LINUX_SYSCALL_REG2, sizeof(moderegs.pacargs));
+		moderegs.regs[2] = (long)(&syscalls->moderegs[from.in].pacargs);
+		sz = sizeof(moderegs);
+	} else
 #endif
+	{
+		moderegs.regs[2] = regs->LINUX_SYSCALL_REG2;
+		sz = offsetof(struct mode_regs, pacargs);
+	}
 
 	rt_copy_from_user(&from, syscalls, sizeof(from));
-	from.serv->priority = rt_current->priority + BASE_SOFT_PRIORITY;
-	rt_copy_to_user(&syscalls->moderegs[from.in].regs, regs, sizeof(struct pt_regs));
-	rt_put_user(from.mode, &syscalls->moderegs[from.in].mode);
+	moderegs.regs[0] = regs->LINUX_SYSCALL_NR;
+	moderegs.regs[1] = regs->LINUX_SYSCALL_REG1;
+	moderegs.regs[3] = regs->LINUX_SYSCALL_REG3;
+	moderegs.regs[4] = regs->LINUX_SYSCALL_REG4;
+	moderegs.regs[5] = regs->LINUX_SYSCALL_REG5;
+	moderegs.regs[6] = regs->LINUX_SYSCALL_REG6;
+	moderegs.mode = from.mode;
+	rt_copy_to_user(&syscalls->moderegs[from.in].regs, &moderegs, sz);
 	if (++from.in >= from.nr) {
 		from.in = 0;
 	}
 	rt_put_user(from.in, &syscalls->in);
 	if (from.serv->suspdepth >= -from.nr) {
+		from.serv->priority = rt_current->priority + BASE_SOFT_PRIORITY;
 		rt_task_resume(from.serv);
 	}
 	if (from.mode == SYNC_LINUX_SYSCALL) {

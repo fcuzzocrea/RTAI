@@ -4,7 +4,7 @@ The default RTAI way of dealing with Linux syscalls done while in hard real
 time consists in moving a task wanting to use Linux back to soft mode, 
 recovering it to hard real time again as soon as possible afterward. See the 
 related RTAI configuration helper for an explanation of the different available 
-modes to implement the "as soon as possible" above on various archs.
+modes to implement the "as soon as possible" above on various architectures.
 
 This README documents possible alternative ways to access Linux services from 
 hard real time RTAI applications in user space. Such a support is based on the 
@@ -32,32 +32,36 @@ either to an optional callback function or to inquiry mechanisms to help
 implementing any user own async call policy. Beware of not reusing read/write 
 data buffers made available to async calls though. 
 If you do not want, or cannot, either inquire for or check async terminations, 
-to avoid running the risc of reusing an yet unserved buffer, use RTAI dynamic 
+to avoid running the risk of reusing an yet unserved buffer, use RTAI dynamic 
 memory or SCB to allocate them in real time, freeing them afterward, possibly 
 with the help of a support callback function. 
 Async support is a bit tricky but, provided one cares of what said above, it
-should work always when Linux syscalls args are fully contained in the passed
-registers structure. That is not the case for a few Linux syscalls that are
-multiplexed within a single framework, whereas libc can end in building a 
+should work always when Linux syscalls arguments are fully contained in the 
+passed registers structure. That is not the case for a few Linux syscalls that 
+are multiplexed within a single framework, whereas libc can end in building a 
 hidden object on the stack, so that it is not assured it will be available at 
 the time the server uses it. On some archs a notable example of that is the 
 socketcall, but RTAI should already care of it appropriately. There remain 
 nonetheless the chance of other instances to be cared as well. So beware that 
 some async calls might not work with a few Linux services yet, in which case 
 you should let us know about it for a possible fix.
+Just to mention another typical care to be taken we notice that printf might
+work as it is but it will often crash. So the safe way to printf is as follows:
+- sprintf(buffer, format, args, ....);
+- write(STDOUT_FILENO, buffer, strlen(buffer));
 
 Provided the socketcall has been intercepted well you should be able to do many
 IO operations asynchronously, e.g.: dumping data directly to disk, Linux ipcs 
 and POSIX mq, fifos, pipes, serial and networked communications etc. etc. 
 In many applications one often requires RTAI specific IO drivers just to avoid 
-loosing real time for communicatons with non real time support/interface 
+loosing real time for communications with non real time support/interface 
 processes and tasks. The async server should be of much help in such cases by 
 letting you use standard Linux, with the ensuing advantage of not needing any 
 special hard real time driver.
 
 Clearly what above does not impede you to set up your own async server to whom 
 your hard real time task is connected by using RTAI non blocking communication 
-functions, i.e. those endif with "_if". So the choice of the most viable 
+functions, i.e. those ending with "_if". So the choice of the most viable 
 solution is left to you.
  
 How it works
@@ -103,7 +107,7 @@ task means the current one; a NULL callback_fun is allowed. It will operate
 according to mode setting, either SYNC_LINUX_SYSCALL or ASYNC_LINUX_SYSCALL. 
 Beware of using an appropriate nr_bufd_async_calls. If async requests overrun 
 the oldest pending ones will be overwritten and never executed.
-If a server esists already it is terminated and the new takes it over.
+If a server exists already it is terminated and the new takes it over.
 
 - int rt_linux_syscall_destroy(struct linux_syscalls_list *syscalls);
 destroy a linux_syscall_server. It returns EINVAL if syscalls is invalid, 0
@@ -132,7 +136,7 @@ to switch between sync and async mode.
 Syscalls is the handle returned from rt_sync_async_linux_syscall_server_create;
 mode can be: SYNC_LINUX_SYSCALL, ASYNC_LINUX_SYSCALL, LINUX_SYSCALL_GET_MODE;
 The function returns the previous mode and LINUX_SYSCALL_GET_MODE can be used
-to enquire just for it, in which case mode is discarded. EINVAL is returned if
+to inquire just for it, in which case mode is discarded. EINVAL is returned if
 syscalls is not a valid pointer. 
 
 - void *rt_linux_syscall_cbfun(struct linux_syscalls_list *syscalls, void (*cbfun)(long, long));
@@ -141,11 +145,11 @@ Syscalls is the handle returned from rt_sync_async_linux_syscall_server_create;
 cbfun can be either a NULL, no callback will be used, a pointer to a true 
 callback function, LINUX_SYSCALL_GET_CALLBACK.
 The function returns the pointer to the previous callback function and 
-LINUX_SYSCALL_GET_CALLBACK can be used to enquire just for it. EINVAL is 
+LINUX_SYSCALL_GET_CALLBACK can be used to inquire just for it. EINVAL is 
 returned if syscall is not a valid pointer 
 
 The callback function afford a notification control mechanism for async calls.
-An altertantive way to monitor async calls execution is given by the following
+An alternative way to monitor async calls execution is given by the following
 functions:
 
 - int rt_linux_syscall_status(struct linux_syscalls_list *syscalls, int id, int *retval);
@@ -156,7 +160,7 @@ service.
 It returns:
 - EINVAL if syscalls is not a valid pointer
 - ENOENT if no id is found, meaning the function has been overwritten;
-- ECANCELED when the function has call has been explicitly cancelled by the 
+- ECANCELED when the function has call has been explicitly canceled by the 
   user;
 - EINPROGRESS when the function is pending waiting for execution;
 - 0 when the function has been executed, in such a case retval, if not NULL,
@@ -168,8 +172,8 @@ id is the value returned by the call to Linux.
 It returns:
 - EINVAL if syscalls is not a valid pointer
 - ENOENT if no id is found, meaning the function has been overwritten;
-- -id when the fucntion has been executed already;
-- 0 if the function has been succesfully cancelled.
+- -id when the function has been executed already;
+- 0 if the function has been successfully canceled.
 
 Examples
 -------

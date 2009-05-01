@@ -1493,6 +1493,16 @@ static int _rt_linux_hrt_next_shot(unsigned long deltat, struct ipipe_tick_devic
 		}
 	}
 	rtai_sti();
+#if 0
+{
+	static int cnt[4] = { 0, 0, 0, 0 },  echo[2] = { 0, 0, 0, 0 };
+	if (++cnt[cpuid = rtai_cpuid()] == 100000) {
+		echo[cpuid] += cnt[cpuid];
+		cnt[cpuid] = 0;	
+		printk("LNX TIMESHOTS CPU %d: %d.\n", cpuid, echo[cpuid]);
+	}
+}
+#endif
 	return 0;
 }
 

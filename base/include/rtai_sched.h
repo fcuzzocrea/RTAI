@@ -377,7 +377,7 @@ RTAI_SYSCALL_MODE int rt_task_suspend_timed(struct rt_task_struct *task, RTIME d
 
 RTAI_SYSCALL_MODE int rt_task_resume(struct rt_task_struct *task);
 
-RTAI_SYSCALL_MODE void rt_set_linux_syscall_mode(long sync_async, void (*callback_fun)(long, long));
+RTAI_SYSCALL_MODE int rt_set_linux_syscall_mode(long sync_async, void (*callback_fun)(long, long));
 
 void rt_exec_linux_syscall(RT_TASK *rt_current, struct linux_syscalls_list *syscalls, struct pt_regs *regs);
 

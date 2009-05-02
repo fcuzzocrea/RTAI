@@ -100,18 +100,17 @@ The available functions are:
 
 - void *rt_create_linux_syscall_server(RT_TASK *task, int mode, void 
 (*callback_fun)(long, long), int nr_bufd_async_calls);
-general call to create a Linux syscall server; a non NULL return meaning an
-handle allowing you to link to the server for any further management request,
-see functions below, NULL indicates a failure in setting the server up; a NULL 
-task means the current one; a NULL callback_fun is allowed. It will operate 
+create a Linux syscall server for task, a NULL task means the current one; a 
+non NULL return is the handle allowing you to link to the server for any 
+further management request, see functions below, NULL indicates a failure in 
+setting the server up; a NULL callback_fun is allowed. It will operate 
 according to mode setting, either SYNC_LINUX_SYSCALL or ASYNC_LINUX_SYSCALL. 
 Beware of using an appropriate nr_bufd_async_calls. If async requests overrun 
 the oldest pending ones will be overwritten and never executed.
-If a server exists already it is terminated and the new takes it over.
+If a server exists already it is terminated and a new one replaces it.
 
-- int rt_destroy_linux_syscall(struct linux_syscalls_list *syscalls);
-destroy a linux_syscall_server. It returns EINVAL if syscalls is invalid, 0
-otherwise.
+- void rt_destroy_linux_syscall(RT_TASK *task);
+destroy the linux_syscall_server of task, if NULL use the current task. 
 
 - void *rt_sync_async_linux_syscall_server_create(RT_TASK *task, int mode, 
   void (*callback_fun)(long, long), int nr_bufd_async_calls);

@@ -704,7 +704,7 @@ static void linux_syscall_server_fun(struct linux_syscalls_list *list)
 	if ((syscalls.serv = rtai_lxrt(BIDX, sizeof(struct linux_syscalls_list), LINUX_SERVER_INIT, &syscalls).v[LOW])) {
 		long *regs;
 		struct mode_regs moderegs[syscalls.nr];
-		memset(moderegs, sizeof(moderegs), 0);
+		memset(moderegs, 0, sizeof(moderegs));
 		syscalls.moderegs = moderegs;
                 mlockall(MCL_CURRENT | MCL_FUTURE);
 		rtai_lxrt(BIDX, sizeof(RT_TASK *), RESUME, &syscalls.task);

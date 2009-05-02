@@ -98,8 +98,8 @@ API Functions prototypes
 
 The available functions are:
 
-- void *rt_sync_async_linux_syscall_server_create(RT_TASK *task, int mode, 
-  void (*callback_fun)(long, long), int nr_bufd_async_calls);
+- void *rt_create_linux_syscall_server(RT_TASK *task, int mode, void 
+(*callback_fun)(long, long), int nr_bufd_async_calls);
 general call to create a Linux syscall server; a non NULL return meaning an
 handle allowing you to link to the server for any further management request,
 see functions below, NULL indicates a failure in setting the server up; a NULL 
@@ -109,16 +109,18 @@ Beware of using an appropriate nr_bufd_async_calls. If async requests overrun
 the oldest pending ones will be overwritten and never executed.
 If a server exists already it is terminated and the new takes it over.
 
-- int rt_linux_syscall_destroy(struct linux_syscalls_list *syscalls);
+- int rt_destroy_linux_syscall(struct linux_syscalls_list *syscalls);
 destroy a linux_syscall_server. It returns EINVAL if syscalls is invalid, 0
 otherwise.
 
+- void *rt_sync_async_linux_syscall_server_create(RT_TASK *task, int mode, 
+  void (*callback_fun)(long, long), int nr_bufd_async_calls);
+legacy short cut, the same as: 
+rt_create_linux_syscall_server(task, mode, callback_fun, nr_bufd_async_calls).
+
 - void *rt_linux_syscall_server_create(RT_TASK *task);
-short cut to create a synchronous Linux syscall server; a non NULL return 
-meaning success, NULL indicates a failure in setting the server up; a NULL 
-task means the current one; it will operate with a single buffered syscall 
-and no callback, which require some care one wants to change it to serve in
-async mode successively.
+legacy short cut, the same as:
+rt_create_linux_syscall_server(task, SYNC_LINUX_SYSCALL, NULL, 1).
 
 Notice that in sync mode Linux functions will return their usual values while 
 that is not possible in async mode and what returned is an identifier, id, of 

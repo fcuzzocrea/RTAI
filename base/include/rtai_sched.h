@@ -215,7 +215,7 @@ typedef struct rt_task_struct {
 	volatile int is_hard;
 
 	long busy_time_align;
-	struct linux_syscalls_list *linux_syscall_server; 
+	void *linux_syscall_server;
 
 	/* For use by watchdog. */
 	int resync_frame;
@@ -379,6 +379,7 @@ RTAI_SYSCALL_MODE int rt_task_resume(struct rt_task_struct *task);
 
 RTAI_SYSCALL_MODE int rt_set_linux_syscall_mode(long sync_async, void (*callback_fun)(long, long));
 
+struct linux_syscalls_list;
 void rt_exec_linux_syscall(RT_TASK *rt_current, struct linux_syscalls_list *syscalls, struct pt_regs *regs);
 
 RTAI_SYSCALL_MODE void rt_return_linux_syscall(RT_TASK *task, unsigned long retval);

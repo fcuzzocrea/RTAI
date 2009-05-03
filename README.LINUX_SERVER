@@ -106,7 +106,7 @@ further management request, see functions below, NULL indicates a failure in
 setting the server up; a NULL callback_fun is allowed. It will operate 
 according to mode setting, either SYNC_LINUX_SYSCALL or ASYNC_LINUX_SYSCALL. 
 Beware of using an appropriate nr_bufd_async_calls. If async requests overrun 
-the oldest pending ones will be overwritten and never executed.
+the latest will be discarded till some space is available again.
 If a server exists already it is terminated and a new one replaces it.
 
 - void rt_destroy_linux_syscall(RT_TASK *task);
@@ -114,39 +114,40 @@ destroy the linux_syscall_server of task, if NULL use the current task.
 
 - void *rt_sync_async_linux_syscall_server_create(RT_TASK *task, int mode, 
   void (*callback_fun)(long, long), int nr_bufd_async_calls);
-legacy short cut, the same as: 
+legacy interface, the same as: 
 rt_create_linux_syscall_server(task, mode, callback_fun, nr_bufd_async_calls).
 
 - void *rt_linux_syscall_server_create(RT_TASK *task);
-legacy short cut, the same as:
+legacy call, the same as:
 rt_create_linux_syscall_server(task, SYNC_LINUX_SYSCALL, NULL, 1).
 
 Notice that in sync mode Linux functions will return their usual values while 
 that is not possible in async mode and what returned is an identifier, id, of 
-that specific async call. It can be used for monitoring async calls execution,
-as explained below.
+that specific async calli, a negative id meaning the call was not sotisfied
+because of a buffer overrun. When <= 0 id can be used for monitoring async i
+calls execution, as explained below.
 
 - int rt_set_linux_syscall_mode(int mode, void (*callback_fun)(long, long);
-to switch between sync and async mode and change the call back function.
+to both switch between sync and async mode and change the call back function.
 It returns EINVAL if there is no server or the mode setting is not correct.
 
 Notice that this is a legacy call, you'd better use:
 
 - int rt_linux_syscall_mode(struct linux_syscalls_list *syscalls, int mode);
-to switch between sync and async mode.
-Syscalls is the handle returned from rt_sync_async_linux_syscall_server_create;
-mode can be: SYNC_LINUX_SYSCALL, ASYNC_LINUX_SYSCALL, LINUX_SYSCALL_GET_MODE;
+to switch between sync and async mode; syscalls is the handle returned by
+rt_sync_async_linux_syscall_server_create; mode can be: SYNC_LINUX_SYSCALL, 
+ASYNC_LINUX_SYSCALL, LINUX_SYSCALL_GET_MODE.
 The function returns the previous mode and LINUX_SYSCALL_GET_MODE can be used
-to inquire just for it, in which case mode is discarded. EINVAL is returned if
+to just inquire for it, in which case mode is discarded. EINVAL is returned if
 syscalls is not a valid pointer. 
 
 - void *rt_linux_syscall_cbfun(struct linux_syscalls_list *syscalls, void (*cbfun)(long, long));
-to change the callback function.
-Syscalls is the handle returned from rt_sync_async_linux_syscall_server_create;
-cbfun can be either a NULL, no callback will be used, a pointer to a true 
-callback function, LINUX_SYSCALL_GET_CALLBACK.
+to change the callback function; syscalls is the handle returned by
+rt_sync_async_linux_syscall_server_create; cbfun can be either a NULL, no 
+callback will be used, a pointer to a true callback function, 
+LINUX_SYSCALL_GET_CALLBACK.
 The function returns the pointer to the previous callback function and 
-LINUX_SYSCALL_GET_CALLBACK can be used to inquire just for it. EINVAL is 
+LINUX_SYSCALL_GET_CALLBACK can be used to just inquire for it. EINVAL is 
 returned if syscall is not a valid pointer 
 
 The callback function afford a notification control mechanism for async calls.
@@ -154,12 +155,12 @@ An alternative way to monitor async calls execution is given by the following
 functions:
 
 - int rt_linux_syscall_status(struct linux_syscalls_list *syscalls, int id, int *retval);
-Syscalls is the handle returned from rt_sync_async_linux_syscall_server_create;
+syscalls is the handle returned from rt_sync_async_linux_syscall_server_create;
 id is the value returned by the call to Linux, retval is a pointer to an int
 that will receive the value returned by Linux after executing the related 
 service.
 It returns:
-- EINVAL if syscalls is not a valid pointer
+- EINVAL if syscalls is not a valid pointer or id < 0
 - ENOENT if no id is found, meaning the function has been overwritten;
 - ECANCELED when the function has call has been explicitly canceled by the 
   user;
@@ -171,7 +172,7 @@ It returns:
 Syscalls is the handle returned from rt_sync_async_linux_syscall_server_create;
 id is the value returned by the call to Linux.
 It returns:
-- EINVAL if syscalls is not a valid pointer
+- EINVAL if syscalls is not a valid pointer or id < 0
 - ENOENT if no id is found, meaning the function has been overwritten;
 - -id when the function has been executed already;
 - 0 if the function has been successfully canceled.

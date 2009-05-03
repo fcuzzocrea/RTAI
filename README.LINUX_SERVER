@@ -88,14 +88,14 @@ API Functions prototypes
 
 The available functions are:
 
-- int rt_sync_async_linux_syscall_server_create(RT_TASK *task, int mode, 
+- int rt_create_linux_syscall_server(RT_TASK *task, int mode, 
   void (*callback_fun)(long, long), int nr_bufd_async_calls);
 general call to create a Linux syscall server; a zero return meaning success, 
 non zero a failure in setting the server up; a NULL task means the current one; 
 a NULL callback_fun is allowed. It will operate according to mode setting, 
 either SYNC_LINUX_SYSCALL or ASYNC_LINUX_SYSCALL. Beware of using an 
-appropriate nr_bufd_async_calls. If async requests overrun the oldest pending
-ones will be overwritten and never executed.
+appropriate nr_bufd_async_calls. If async requests overrun the latest will be 
+discarded till some space is available again.
 
 - void rt_set_linux_syscall_mode(int mode, void (*callback_fun)(long, long);
 to switch between sync and async mode and, possibly, change the call back 
@@ -104,10 +104,14 @@ DO NOT USE it to set the async mode for a server created with the simpler
 rt_linux_syscall_server_create, see below, as no buffering will be available 
 in such a case.
 
-- int rt_linux_syscall_server_create(RT_TASK *task);
-short cut to create a synchronous Linux syscall server;
-a zero return meaning success, non zero a failure in setting the server up;
-a NULL task means the current one; it will operate in sync mode always.
+- void *rt_sync_async_linux_syscall_server_create(RT_TASK *task, int mode,
+  void (*callback_fun)(long, long), int nr_bufd_async_calls);
+legacy interface, the same as:
+rt_create_linux_syscall_server(task, mode, callback_fun, nr_bufd_async_calls).
+
+- void *rt_linux_syscall_server_create(RT_TASK *task);
+legacy call, the same as:
+rt_create_linux_syscall_server(task, SYNC_LINUX_SYSCALL, NULL, 1).
 
 Examples
 -------

@@ -694,6 +694,7 @@ RTAI_PROTO(int, rt_thread_join, (long thread))
 #include <unistd.h>
 #include <sys/mman.h>
 
+RTAI_PROTO(int, rt_thread_delete, (RT_TASK *task));
 static void linux_syscall_server_fun(struct linux_syscalls_list *list)
 {
 	struct linux_syscalls_list syscalls = *list;
@@ -721,6 +722,7 @@ static void linux_syscall_server_fun(struct linux_syscalls_list *list)
 			}
 		}
         }
+	rt_thread_delete(syscalls.serv);
 }
 
 #endif /* __SUPPORT_LINUX_SERVER__ */
@@ -835,14 +837,14 @@ RTAI_PROTO(void,rt_make_soft_real_time,(void))
 	rtai_lxrt(BIDX, SIZARG, MAKE_SOFT_RT, &arg);
 }
 
-RTAI_PROTO(int,rt_task_delete,(RT_TASK *task))
+RTAI_PROTO(int, rt_thread_delete, (RT_TASK *task))
 {
 	struct { RT_TASK *task; } arg = { task };
 	rt_make_soft_real_time();
 	return rtai_lxrt(BIDX, SIZARG, LXRT_TASK_DELETE, &arg).i[LOW];
 }
 
-#define rt_thread_delete(task)  rt_task_delete(task)
+#define rt_task_delete(task)  rt_thread_delete(task)
 
 RTAI_PROTO(int,rt_task_yield,(void))
 {

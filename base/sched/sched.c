@@ -2599,7 +2599,7 @@ static int lxrt_intercept_syscall_prologue(struct pt_regs *regs)
 	if (regs->LINUX_SYSCALL_NR < NR_syscalls && (task = current->rtai_tskext(TSKEXT0))) {
 		if (task->is_hard > 0) {
 			if (task->linux_syscall_server) {
-				rt_exec_linux_syscall(task, task->linux_syscall_server, regs);
+				rt_exec_linux_syscall(task, ((RT_TASK *)task->linux_syscall_server)->linux_syscall_server, regs);
 				return 1;
 			}
 			if (!systrans++) {

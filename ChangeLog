@@ -1,3 +1,9 @@
+2009-05-03 Paolo Mantegazza <mantegazza@aero.polimi.it>
+
+	* base/include/rtai_lxrt.h: syscalls list reordered to allow overruns 
+	  checks server call function, renamed server create, lagacy maintained
+	* base/schede/api.c: checks Linux async syscalls overruns.
+
 2009-04-30 Paolo Mantegazza <mantegazza@aero.polimi.it>
 
 	* base/include/rtai_lxrt.h: linux server reworked to need no info 

@@ -279,11 +279,16 @@ static int __task_delete(RT_TASK *rt_task)
 	if ((process = rt_task->lnxtsk)) {
 		process->rtai_tskext(TSKEXT0) = process->rtai_tskext(TSKEXT1) = 0;
 	}
-	if (rt_task->linux_syscall_server) {
-		rt_task_masked_unblock(rt_task->linux_syscall_server->task, ~RT_SCHED_READY);
-	}
 	if (rt_task->is_hard > 0) {
 		give_back_to_linux(rt_task, 0);
+	}
+	if (rt_task->linux_syscall_server) {
+		RT_TASK *serv = rt_task->linux_syscall_server->serv;
+		serv->suspdepth = -RTE_HIGERR;
+		rt_task_masked_unblock(serv, ~RT_SCHED_READY);
+                process->state = TASK_INTERRUPTIBLE;
+                schedule_timeout(HZ/10);
+
 	}
 	if (clr_rtext(rt_task)) {
 		return -EFAULT;

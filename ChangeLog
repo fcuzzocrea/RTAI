@@ -1,3 +1,15 @@
+2009-05-03 Paolo Mantegazza <mantegazza@aero.polimi.it>
+
+	* base/include/rtai_lxrt.h: a few functions for async Linux syscalls
+	  renamed, legacy compatibilty maintained, added a few checks more
+	  and rt_destroy_linux_syscalls_server.
+	* base/include/rtai_sched.h: modified type of the Linux server in 
+	  rt_task structure.
+	* base/sched/api.c: reworked to check for overruns.
+	* base/sched/sched.c: modified call to the Linux async syscalls server
+	* base/sched/sys.c: reworked Linux sycalls server entry, added server
+	  cancellation, modified __task_delete to ensure server cancellation.
+
 2009-05-01 Paolo Mantegazza <mantegazza@aero.polimi.it>
 
 	* base/include/rtai_lxrt.h: linux server reworked to need no info

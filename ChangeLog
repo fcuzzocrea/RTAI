@@ -6,7 +6,8 @@
 	* base/include/rtai_sched.h: modified type of the Linux server in 
 	  rt_task structure.
 	* base/sched/api.c: reworked to check for overruns.
-	* base/sched/sched.c: modified call to the Linux async syscalls server
+	* base/sched/sched.c: modified call to the Linux async syscalls
+ 	  server.
 	* base/sched/sys.c: reworked Linux sycalls server entry, added server
 	  cancellation, modified __task_delete to ensure server cancellation.
 

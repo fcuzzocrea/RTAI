@@ -822,7 +822,7 @@ RTAI_PROTO(void *, rt_create_linux_syscall_server, (RT_TASK *task, int mode, voi
 	return NULL;
 }
 
-#define rt_sync_async_linux_syscall_server_create(task, mode, cbfun, async_buf)  rt_create_linux_syscall_server(task, mode, cbfun, async_buf)
+#define rt_sync_async_linux_syscall_server_create(task, mode, cbfun, nr_calls)  rt_create_linux_syscall_server(task, mode, cbfun, nr_calls)
 
 #define rt_linux_syscall_server_create(task)  rt_sync_async_linux_syscall_server_create(task, SYNC_LINUX_SYSCALL, NULL, 1);
 

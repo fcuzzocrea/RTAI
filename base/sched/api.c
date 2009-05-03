@@ -1999,14 +1999,24 @@ RTAI_SYSCALL_MODE void rt_set_linux_syscall_mode(long mode, void (*callback_fun)
 
 void rt_exec_linux_syscall(RT_TASK *rt_current, struct linux_syscalls_list *syscalls, struct pt_regs *regs)
 {
-	int sz;
+	int in, sz;
 	struct mode_regs moderegs;
-	struct { long in, nr, mode; RT_TASK *serv; } from;
+	struct { int in, out, nr, mode; RT_TASK *serv; } from;
+
+	rt_copy_from_user(&from, syscalls, sizeof(from));
+	in = from.in;
+	if (++from.in >= from.nr) {
+		from.in = 0;
+	}
+	if (from.in == from.out) {
+		regs->LINUX_SYSCALL_RETREG = -1;
+		return;
+	}
 
 #if defined( __NR_socketcall)
 	if (regs->LINUX_SYSCALL_NR == __NR_socketcall) {
 		memcpy(moderegs.pacargs, (void *)regs->LINUX_SYSCALL_REG2, sizeof(moderegs.pacargs));
-		moderegs.regs[2] = (long)(&syscalls->moderegs[from.in].pacargs);
+		moderegs.regs[2] = (long)(&syscalls->moderegs[in].pacargs);
 		sz = sizeof(moderegs);
 	} else
 #endif
@@ -2015,7 +2025,6 @@ void rt_exec_linux_syscall(RT_TASK *rt_current, struct linux_syscalls_list *sysc
 		sz = offsetof(struct mode_regs, pacargs);
 	}
 
-	rt_copy_from_user(&from, syscalls, sizeof(from));
 	moderegs.regs[0] = regs->LINUX_SYSCALL_NR;
 	moderegs.regs[1] = regs->LINUX_SYSCALL_REG1;
 	moderegs.regs[3] = regs->LINUX_SYSCALL_REG3;
@@ -2023,10 +2032,7 @@ void rt_exec_linux_syscall(RT_TASK *rt_current, struct linux_syscalls_list *sysc
 	moderegs.regs[5] = regs->LINUX_SYSCALL_REG5;
 	moderegs.regs[6] = regs->LINUX_SYSCALL_REG6;
 	moderegs.mode = from.mode;
-	rt_copy_to_user(&syscalls->moderegs[from.in].regs, &moderegs, sz);
-	if (++from.in >= from.nr) {
-		from.in = 0;
-	}
+	rt_copy_to_user(&syscalls->moderegs[in].regs, &moderegs, sz);
 	rt_put_user(from.in, &syscalls->in);
 	if (from.serv->suspdepth >= -from.nr) {
 		from.serv->priority = rt_current->priority + BASE_SOFT_PRIORITY;

@@ -1990,50 +1990,61 @@ RTAI_SYSCALL_MODE void usp_request_rtc(int rtc_freq, void *handler)
 
 /* +++++++++++++++++ SUPPORT FOR THE LINUX SYSCALL SERVER +++++++++++++++++++ */
 
-RTAI_SYSCALL_MODE void rt_set_linux_syscall_mode(long mode, void (*cbfun)(long, long))
+RTAI_SYSCALL_MODE int rt_set_linux_syscall_mode(long mode, void (*cbfun)(long, long))
 {
-	rt_put_user(cbfun, &(RT_CURRENT->linux_syscall_server)->cbfun);
-	rt_put_user(mode, &(RT_CURRENT->linux_syscall_server)->mode);
+	RT_TASK *server;
+	struct linux_syscalls_list *syscalls;
+	if ((server = RT_CURRENT->linux_syscall_server) == NULL || mode != SYNC_LINUX_SYSCALL || mode != ASYNC_LINUX_SYSCALL) {
+		return EINVAL;
+	}
+	syscalls = server->linux_syscall_server;
+	rt_put_user(mode, &syscalls->mode);
+	rt_put_user(cbfun, &syscalls->cbfun);
+	return 0;
 }
 
 void rt_exec_linux_syscall(RT_TASK *rt_current, struct linux_syscalls_list *syscalls, struct pt_regs *regs)
 {
-	long in;
-	int sz, id;
+	int in, id;
 	struct linux_syscall syscall;
-	struct { long in, nr, mode; void (*cbfun)(long, long); int id; RT_TASK *serv; } from;
+	struct { int in, out, nr, id, mode; void (*cbfun)(long, long); RT_TASK *serv; } from;
+
+	rt_copy_from_user(&from, syscalls, sizeof(from));
+	in = from.in;
+	if (++from.in >= from.nr) {
+		from.in = 0;
+	}
+	if (from.in == from.out) {
+		regs->LINUX_SYSCALL_RETREG = -1;
+		return;
+	}
 
 #if defined( __NR_socketcall)
 	if (regs->LINUX_SYSCALL_NR == __NR_socketcall) {
 		memcpy(syscall.pacargs, (void *)regs->LINUX_SYSCALL_REG2, sizeof(syscall.pacargs));
-		syscall.args[2] = (long)(&syscalls->syscall[from.in].pacargs);
-		sz = offsetof(struct linux_syscall, retval);
+		syscall.args[2] = (long)(&syscalls->syscall[in].pacargs);
+		id = offsetof(struct linux_syscall, retval);
 	} else
 #endif
 	{
 		syscall.args[2] = regs->LINUX_SYSCALL_REG2;
-		sz = offsetof(struct linux_syscall, pacargs);
+		id = offsetof(struct linux_syscall, pacargs);
 	}
-	rt_copy_from_user(&from, syscalls, sizeof(from));
         syscall.args[0] = regs->LINUX_SYSCALL_NR;
         syscall.args[1] = regs->LINUX_SYSCALL_REG1;
         syscall.args[3] = regs->LINUX_SYSCALL_REG3;
         syscall.args[4] = regs->LINUX_SYSCALL_REG4;
         syscall.args[5] = regs->LINUX_SYSCALL_REG5;
         syscall.args[6] = regs->LINUX_SYSCALL_REG6;
+        syscall.id      = from.id;
         syscall.mode    = from.mode;
         syscall.cbfun   = from.cbfun;
-        syscall.id      = from.id;
-        rt_copy_to_user(&syscalls->syscall[from.in].args, &syscall, sz);
+        rt_copy_to_user(&syscalls->syscall[in].args, &syscall, id);
 	id = from.id;
 	if (++from.id < 0) {
 		from.id = 0;
 	}
 	rt_put_user(from.id, &syscalls->id);
-	in = from.in;
-	if (++from.in >= from.nr) {
-		from.in = 0;
-	}
 	rt_put_user(from.in, &syscalls->in);
 	if (from.serv->suspdepth >= -from.nr) {
 		from.serv->priority = rt_current->priority + BASE_SOFT_PRIORITY;

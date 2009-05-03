@@ -430,7 +430,7 @@
 #define PAC_NSYSCALL_ARGS  6
 
 struct mode_regs { long regs[SRV_NSYSCALL_REGS], mode, pacargs[PAC_NSYSCALL_ARGS]; };
-struct linux_syscalls_list { long in, nr, mode; void *serv; struct mode_regs *moderegs; RT_TASK *task; void (*callback_fun)(long, long); long out, retval; };
+struct linux_syscalls_list { int in, out, nr, mode; void *serv; struct mode_regs *moderegs; RT_TASK *task; void (*callback_fun)(long, long); long retval; };
 
 #ifdef __KERNEL__
 
@@ -731,14 +731,14 @@ RTAI_PROTO(void, rt_set_linux_syscall_mode, (int mode, void (*callback_fun)(long
 	rtai_lxrt(BIDX, SIZARG, SET_LINUX_SYSCALL_MODE, &arg);
 }
 
-RTAI_PROTO(int, rt_sync_async_linux_syscall_server_create, (RT_TASK *task, int mode, void (*callback_fun)(long, long), int nr_bufd_async_calls))
+RTAI_PROTO(int, rt_create_linux_syscall_server, (RT_TASK *task, int mode, void (*callback_fun)(long, long), int nr_bufd_async_calls))
 {
 	if ((task || (task = (RT_TASK *)rtai_lxrt(BIDX, sizeof(RT_TASK *), RT_BUDDY, &task).v[LOW])) && nr_bufd_async_calls > 0) {
 		struct linux_syscalls_list syscalls;
 		syscalls.task         = task;
 		syscalls.callback_fun = callback_fun;
 		syscalls.mode         = mode;
-		syscalls.nr           = nr_bufd_async_calls;
+		syscalls.nr           = nr_bufd_async_calls + 1;
 		if (rt_thread_create((void *)linux_syscall_server_fun, &syscalls, RT_THREAD_STACK_MIN + syscalls.nr*sizeof(struct mode_regs))) {
 			rtai_lxrt(BIDX, sizeof(RT_TASK *), SUSPEND, &task);
 			return 0;
@@ -746,6 +746,8 @@ RTAI_PROTO(int, rt_sync_async_linux_syscall_server_create, (RT_TASK *task, int m
 	}
 	return -1;
 }
+
+#define rt_sync_async_linux_syscall_server_create(task, mode, cbfun, nr_calls)  rt_create_linux_syscall_server(task, mode, cbfun, nr_calls)
 
 #define rt_linux_syscall_server_create(task)  rt_sync_async_linux_syscall_server_create(task, SYNC_LINUX_SYSCALL, NULL, 1);
 

@@ -730,7 +730,7 @@ static void linux_syscall_server_fun(struct linux_syscalls_list *list)
 			}
 		}
         }
-	rt_thread_delete(syscalls.serv);
+	rt_thread_delete((RT_TASK *)syscalls.serv);
 }
 
 #endif /* __SUPPORT_LINUX_SERVER__ */

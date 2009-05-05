@@ -1,3 +1,7 @@
+2009-05-05 Pierangelo Masarati <masarati@aero.polimi.it>
+
+	* base/math/Makefile.kbuild: fix compiler header detection
+
 2009-05-03 Paolo Mantegazza <mantegazza@aero.polimi.it>
 
 	* base/include/rtai_lxrt.h: syscalls list reordered to allow 

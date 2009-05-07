@@ -29,8 +29,13 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA.
 #define FALSE 0
 #endif
 
-#define OK      0
-#define ERROR  -1
+#ifndef  OK
+#define OK      (0)
+#endif
+
+#ifndef ERROR
+#define ERROR  (-1)
+#endif
 
 typedef void (*FUNCPTR)(long, ...);
 typedef long STATUS;

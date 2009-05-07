@@ -1967,7 +1967,7 @@ function [Code,Code_common]=make_standalone42()
 
 	       if(isempty(grep(SCI,'5.1.1'))) then
 	       Code_common=[Code_common
-	       '/*'+part('-',ones(1,40))+'  Lapack messag function */';
+               '/*'+part('-',ones(1,40))+'  Lapack messag function */';
                'void C2F(xerbla)(SRNAME,INFO,L)'
                '     char *SRNAME;'
                '     int *INFO;'
@@ -1977,7 +1977,7 @@ function [Code,Code_common]=make_standalone42()
 	       end
 
                Code_common=[Code_common
-	       'void set_block_error(int err)'
+               'void set_block_error(int err)'
                '{'
                '  return;'
                '}'
@@ -2839,7 +2839,7 @@ function [txt]=write_code_cdoit(flag)
         tmp_='*(('+TYPE+' *)'+rdnom+'_block_outtbptr['+string(ix)+'])'
         txt=[txt;
              '  i=max(min((int) '+...
-              tmp_+',block_'+rdnom+'['+string(bk-1)+'].evout),1);'
+              tmp_+',block_'+rdnom+'['+string(bk-1)+'].nevout),1);'
              '  switch(i)'
              '  {']
         //*******//
@@ -2902,7 +2902,13 @@ function [txt]=write_code_doit(ev,flag)
 //          end
 //        end
 //      else
-        txt2=call_block42(bk,pt,flag);
+
+	if flag==1 | pt>0 then
+          txt2=call_block42(bk,pt,flag);
+        else
+	  txt2=[];
+        end
+
         if txt2<>[] then
           txt=[txt;
                '    '+txt2
@@ -2957,7 +2963,7 @@ function [txt]=write_code_doit(ev,flag)
         //** C **//
         txt=[txt;
              '    i=max(min((int) '+...
-              tmp_+',block_'+rdnom+'['+string(bk-1)+'].evout),1);'
+              tmp_+',block_'+rdnom+'['+string(bk-1)+'].nevout),1);'
              '    switch(i)'
              '    {']
         //*******//
@@ -3075,7 +3081,7 @@ function [txt]=write_code_idoit()
         tmp_='*(('+TYPE+' *)'+rdnom+'_block_outtbptr['+string(ix)+'])'
         txt=[txt;
              '  i=max(min((int) '+...
-              tmp_+',block_'+rdnom+'['+string(bk-1)+'].evout),1);']
+              tmp_+',block_'+rdnom+'['+string(bk-1)+'].nevout),1);']
         txt=[txt;
              '  switch(i)'
              '  {']

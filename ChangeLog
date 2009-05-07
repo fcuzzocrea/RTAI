@@ -1,3 +1,27 @@
+2009-05-07 Roberto Bucher <roberto.bucher@supsi.ch>
+
+	* rtai-lab/scilab/devices/rtai_log.c: New block for RTAI Logs
+	  (thanks to Holger Nahrstaedt).
+	* rtai-lab/scilab/macros/RTAI/rtai_log.c: New block for RTAI Logs
+	  (thanks to Holger Nahrstaedt).
+	* rtai-lab/scilab/macros/RTAI/RTAI-Lib.cosf: New block for RTAI Logs.
+	* rtai-lab/scilab/macros/RTAI/RTAICodeGen_.sci: Some adds from new
+	  Metalau code generator. 
+	* rtai-lab/scicoslab/devices/rtai_log.c: New block for RTAI Logs
+	  (thanks to Holger Nahrstaedt).
+	* rtai-lab/scicoslab/macros/RTAI/rtai_log.c: New block for RTAI Logs
+	  (thanks to Holger Nahrstaedt).
+	* rtai-lab/scicoslab/macros/RTAI/RTAI-Lib.cosf: New block for RTAI Logs.
+	* rtai-lab/scicoslab/macros/RTAI/RTAICodeGen_.sci: Some adds from new
+	  Metalau code generator. 
+	* rtai-lab/scilab5/devices/rtai_log.c: New block for RTAI Logs
+	  (thanks to Holger Nahrstaedt).
+	* rtai-lab/scilab5/RTAI/macros/rtai_log.c: New block for RTAI Logs
+	  (thanks to Holger Nahrstaedt).
+	* rtai-lab/scilab5/RTAI/macros/RTAI-Lib.cosf: New block for RTAI Logs.
+	* rtai-lab/scilab5/RTAI/macros/RTAICodeGen_.sci: Some adds from new
+	  Metalau code generator. 
+
 2009-05-05 Pierangelo Masarati <masarati@aero.polimi.it>
 
 	* base/math/Makefile.kbuild: fix compiler header detection

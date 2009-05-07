@@ -122,11 +122,13 @@ static inline int taskDelete(long tid)
 {
 	struct thread_args *args = (struct thread_args *)tid;
 
-	return OK;
-
-        while(rt_is_hard_real_time(args->task)) {
-		poll(0, 0, 10);
+	if (tid == 0) {
+		return OK;
 	}
+
+//	while(rt_is_hard_real_time(args->task)) {
+		//poll(0, 0, 10);
+//	}
 	rt_task_suspend(args->task);
 	pthread_cancel(args->thread);
 	pthread_join(args->thread, NULL);

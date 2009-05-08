@@ -357,7 +357,7 @@ struct epoch_struct { spinlock_t lock; volatile int touse; volatile RTIME time[2
 #define REALTIME2COUNT(rtime)
 #endif
 
-#define MAX_WAKEUP_SRQ (2 << 6)
+#define MAX_WAKEUP_SRQ (2 << 7)
 
 struct klist_t { int srq; volatile unsigned long in, out; void *task[MAX_WAKEUP_SRQ]; };
 extern struct klist_t wake_up_srq[];

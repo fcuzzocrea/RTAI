@@ -1,4 +1,4 @@
-2009-05-07 Roberto Bucher <roberto.bucher@supsi.ch>
+2009-05-08 Paolo Mantegazza <mantegazza@aero.polimi.it>
 
 	* base/include/rtai_schedcore.h: double MAX_WAKEUP_SRQ, we want to be
 	  pretty sure it is not overrun.

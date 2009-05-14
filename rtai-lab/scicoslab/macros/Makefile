@@ -23,6 +23,7 @@ install:
 	cp $(RTAISRC) $(CONTRIBDIR)
 	cd RTAI; cp $(MACROSRC) $(MACRODIR)
 	cd RTAI/RT_templates; cp $(TEMPLSRC) $(TEMPLDIR)
+	cd RTAI; cp -dpR gif_icons $(MACRODIR)
 	cd ../devices; cp $(DEVSRC) $(DEVICEDIR)
 	cp ../devices/scicos_block4.h $(SCILAB_DIR)/routines/scicos
 	cd $(CONTRIBDIR); scicoslab -nw -f builder.sce

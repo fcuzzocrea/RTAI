@@ -1,5 +1,9 @@
 2009-05-14 Roberto Bucher <roberto.bucher@supsi.ch>
 
+	* rtai-lab/scicoslab/macros/gif_icons/*: Icons for pal tree.
+
+2009-05-14 Roberto Bucher <roberto.bucher@supsi.ch>
+
 	* rtai-lab/scicoslab/loader.sce: 
 	* rtai-lab/scicoslab/macros/RTAI/loadmacros.sce:
 	* rtai-lab/scicoslab/macros/scilab: New approach in including RTAI files

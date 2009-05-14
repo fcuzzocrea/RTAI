@@ -1,4 +1,6 @@
 mode(-1);
+actDIR = pwd();
+
 // specific part
 libname='rtai' // name of scilab function library [CUSTOM]
 DIR = get_absolute_file_path('loader.sce');
@@ -12,6 +14,6 @@ exec('SCI/contrib/RTAI/routines/loader.sce');
 
 chdir('macros');
 exec('loadmacros.sce');
-chdir('..');
+chdir(actDIR);
 
 disp("Scicos-RTAI Ready");

@@ -1,3 +1,10 @@
+2009-05-07 Roberto Bucher <roberto.bucher@supsi.ch>
+
+	* rtai-lab/scicoslab/loader.sce: 
+	* rtai-lab/scicoslab/macros/RTAI/loadmacros.sce:
+	* rtai-lab/scicoslab/macros/scilab: New approach in including RTAI files
+	  in scicoslab.
+
 2009-05-08 Paolo Mantegazza <mantegazza@aero.polimi.it>
 
 	* base/include/rtai_schedcore.h: double MAX_WAKEUP_SRQ, we want to be

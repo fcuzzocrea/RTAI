@@ -919,10 +919,10 @@ CONFIG_ARCH_EP9301_TRUE
 CONFIG_ARCH_EP9301_FALSE
 CONFIG_ARCH_PXA_TRUE
 CONFIG_ARCH_PXA_FALSE
-CONFIG_ARCH_IMX_TRUE
-CONFIG_ARCH_IMX_FALSE
 CONFIG_ARCH_AT91_TRUE
 CONFIG_ARCH_AT91_FALSE
+CONFIG_ARCH_IMX_TRUE
+CONFIG_ARCH_IMX_FALSE
 CONFIG_UCLINUX_TRUE
 CONFIG_UCLINUX_FALSE
 CONFIG_SMP_TRUE
@@ -19944,6 +19944,25 @@ if test x${CONFIG_RTAI_LINUXDIR} = x; then
    CONFIG_RTAI_LINUXDIR=$RTAI_LINUX_DIR
 fi
 
+case $RTAI_TARGET_ARCH in
+ppc|powerpc)
+		if test $linux_VERSION -gt 2 ; then
+		ARCH_SUBDIR=powerpc
+	elif test $linux_VERSION -eq 2 -a $linux_PATCHLEVEL -lt 6 ; then
+		ARCH_SUBDIR=ppc
+	elif test "$linux_VERSION.$linux_PATCHLEVEL" = "2.6" \
+			-a $linux_SUBLEVEL -gt 28 ; then
+		ARCH_SUBDIR=powerpc
+	else
+		ARCH_SUBDIR=ppc
+	fi
+	RTAI_TARGET_ARCH_NAME=$ARCH_SUBDIR
+	;;
+*)
+	RTAI_TARGET_ARCH_NAME=$RTAI_TARGET_ARCH
+	;;
+esac
+
 
 unset CONFIG_RTAI_ADEOS
 unset CONFIG_RTAI_IPIPE
@@ -24218,20 +24237,20 @@ else
   CONFIG_ARCH_PXA_FALSE=
 fi
 
- if test "$CONFIG_ARCH_IMX" = y; then
-  CONFIG_ARCH_IMX_TRUE=
-  CONFIG_ARCH_IMX_FALSE='#'
-else
-  CONFIG_ARCH_IMX_TRUE='#'
-  CONFIG_ARCH_IMX_FALSE=
-fi
-
  if test "$CONFIG_ARCH_AT91" = y; then
   CONFIG_ARCH_AT91_TRUE=
   CONFIG_ARCH_AT91_FALSE='#'
 else
   CONFIG_ARCH_AT91_TRUE='#'
   CONFIG_ARCH_AT91_FALSE=
+fi
+
+ if test "$CONFIG_ARCH_IMX" = y; then
+  CONFIG_ARCH_IMX_TRUE=
+  CONFIG_ARCH_IMX_FALSE='#'
+else
+  CONFIG_ARCH_IMX_TRUE='#'
+  CONFIG_ARCH_IMX_FALSE=
 fi
 
  if test "$CONFIG_UCLINUX" = y; then
@@ -24672,7 +24691,7 @@ fi
 if test x$CONFIG_KBUILD = x; then
                   { echo "$as_me:$LINENO: checking for module compilation flags" >&5
 echo $ECHO_N "checking for module compilation flags... $ECHO_C" >&6; }
-   kmod_cflags=`cd $srcdir/base/config/modules && make -s RTAI_LINUX_DIR=$RTAI_LINUX_DIR ARCH=$RTAI_TARGET_ARCH CC=$CC | grep '^RTAI_KMOD_CFLAGS='`
+   kmod_cflags=`cd $srcdir/base/config/modules && make -s RTAI_LINUX_DIR=$RTAI_LINUX_DIR ARCH=$RTAI_TARGET_ARCH_NAME CC=$CC | grep '^RTAI_KMOD_CFLAGS='`
    eval $kmod_cflags
    if test "$RTAI_KMOD_CFLAGS" = ""; then
       { { echo "$as_me:$LINENO: error: Unable to retrieve compilation flags for kernel modules out of $RTAI_LINUX_DIR/Makefile" >&5
@@ -24695,7 +24714,7 @@ else
    RTAI_KBUILD_BOTTOM=
    RTAI_KBUILD_CMD="for src in \$^; do if test \\! -r \`basename \$\$src\`; then \$(LN_S) \$\$src; fi; done; \
 		    rm -f $RTAI_LINUX_DIR/.tmp_versions/rtai_*.mod $RTAI_LINUX_DIR/.tmp_versions/*_rt.mod; \
-                    \$(MAKE) -C $RTAI_LINUX_DIR CROSS_COMPILE=\$(CROSS_COMPILE) CC=$CC ARCH=$RTAI_TARGET_ARCH \
+                    \$(MAKE) -C $RTAI_LINUX_DIR CROSS_COMPILE=\$(CROSS_COMPILE) CC=$CC ARCH=$RTAI_TARGET_ARCH_NAME \
 		    SUBDIRS=\$\$PWD M=\$\$PWD rtai_srctree=\`cd \$(top_srcdir) && pwd\` rtai_srcdir=\`cd \$(srcdir) && pwd\` V=\$(V) modules \
 		    rtai_objs='\$(call src2obj,c,\$^) \$(call src2obj,S,\$^) \$(call src2obj,cc,\$^) \$(call src2obj,cpp,\$^)' rtai_target=\$(basename \$@)"
    RTAI_KBUILD_CLEAN='rm -f *.ko *.mod.c .*.cmd *.o Module.symvers Module.markers modules.order && rm -Rf .tmp_versions'
@@ -24844,9 +24863,9 @@ case $RTAI_TARGET_ARCH in
         ;;
  ppc)
 	RTAI_TARGET_SUBARCH=
-	RTAI_KMOD_CFLAGS="$RTAI_KMOD_CFLAGS -I${RTAI_LINUX_DIR}/arch/ppc"
+		RTAI_KMOD_CFLAGS="$RTAI_KMOD_CFLAGS -I${RTAI_LINUX_DIR}/arch/$RTAI_TARGET_ARCH_NAME -I${RTAI_LINUX_DIR}/arch/$RTAI_TARGET_ARCH_NAME/include/ -I${RTAI_LINUX_DIR}/arch/$RTAI_TARGET_ARCH_NAME/include/asm"
 	RTAI_KMOD_CXXFLAGS="$RTAI_KMOD_CFLAGS -fno-rtti -fno-exceptions -fno-strength-reduce -pipe"
-	RTAI_USER_CFLAGS="$RTAI_USER_CFLAGS -Wall -Wstrict-prototypes -pipe"
+	RTAI_USER_CFLAGS="$RTAI_USER_CFLAGS -I${RTAI_LINUX_DIR}/arch/$RTAI_TARGET_ARCH_NAME/include/ -I${RTAI_LINUX_DIR}/arch/$RTAI_TARGET_ARCH_NAME/include/asm -Wall -Wstrict-prototypes -pipe"
 	if test x$CONFIG_RTAI_FPU_SUPPORT = xy; then
 	   RTAI_FP_CFLAGS="$RTAI_FP_CFLAGS -mhard-float"
 	else
@@ -25291,17 +25310,17 @@ echo "$as_me: error: conditional \"CONFIG_ARCH_PXA\" was never defined.
 Usually this means the macro was only invoked conditionally." >&2;}
    { (exit 1); exit 1; }; }
 fi
-if test -z "${CONFIG_ARCH_IMX_TRUE}" && test -z "${CONFIG_ARCH_IMX_FALSE}"; then
-  { { echo "$as_me:$LINENO: error: conditional \"CONFIG_ARCH_IMX\" was never defined.
-Usually this means the macro was only invoked conditionally." >&5
-echo "$as_me: error: conditional \"CONFIG_ARCH_IMX\" was never defined.
-Usually this means the macro was only invoked conditionally." >&2;}
-   { (exit 1); exit 1; }; }
-fi
 if test -z "${CONFIG_ARCH_AT91_TRUE}" && test -z "${CONFIG_ARCH_AT91_FALSE}"; then
   { { echo "$as_me:$LINENO: error: conditional \"CONFIG_ARCH_AT91\" was never defined.
 Usually this means the macro was only invoked conditionally." >&5
 echo "$as_me: error: conditional \"CONFIG_ARCH_AT91\" was never defined.
+Usually this means the macro was only invoked conditionally." >&2;}
+   { (exit 1); exit 1; }; }
+fi
+if test -z "${CONFIG_ARCH_IMX_TRUE}" && test -z "${CONFIG_ARCH_IMX_FALSE}"; then
+  { { echo "$as_me:$LINENO: error: conditional \"CONFIG_ARCH_IMX\" was never defined.
+Usually this means the macro was only invoked conditionally." >&5
+echo "$as_me: error: conditional \"CONFIG_ARCH_IMX\" was never defined.
 Usually this means the macro was only invoked conditionally." >&2;}
    { (exit 1); exit 1; }; }
 fi
@@ -26518,10 +26537,10 @@ CONFIG_ARCH_EP9301_TRUE!$CONFIG_ARCH_EP9301_TRUE$ac_delim
 CONFIG_ARCH_EP9301_FALSE!$CONFIG_ARCH_EP9301_FALSE$ac_delim
 CONFIG_ARCH_PXA_TRUE!$CONFIG_ARCH_PXA_TRUE$ac_delim
 CONFIG_ARCH_PXA_FALSE!$CONFIG_ARCH_PXA_FALSE$ac_delim
-CONFIG_ARCH_IMX_TRUE!$CONFIG_ARCH_IMX_TRUE$ac_delim
-CONFIG_ARCH_IMX_FALSE!$CONFIG_ARCH_IMX_FALSE$ac_delim
 CONFIG_ARCH_AT91_TRUE!$CONFIG_ARCH_AT91_TRUE$ac_delim
 CONFIG_ARCH_AT91_FALSE!$CONFIG_ARCH_AT91_FALSE$ac_delim
+CONFIG_ARCH_IMX_TRUE!$CONFIG_ARCH_IMX_TRUE$ac_delim
+CONFIG_ARCH_IMX_FALSE!$CONFIG_ARCH_IMX_FALSE$ac_delim
 CONFIG_UCLINUX_TRUE!$CONFIG_UCLINUX_TRUE$ac_delim
 CONFIG_UCLINUX_FALSE!$CONFIG_UCLINUX_FALSE$ac_delim
 CONFIG_SMP_TRUE!$CONFIG_SMP_TRUE$ac_delim

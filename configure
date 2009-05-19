@@ -24865,7 +24865,7 @@ case $RTAI_TARGET_ARCH in
 	RTAI_TARGET_SUBARCH=
 		RTAI_KMOD_CFLAGS="$RTAI_KMOD_CFLAGS -I${RTAI_LINUX_DIR}/arch/$RTAI_TARGET_ARCH_NAME -I${RTAI_LINUX_DIR}/arch/$RTAI_TARGET_ARCH_NAME/include/ -I${RTAI_LINUX_DIR}/arch/$RTAI_TARGET_ARCH_NAME/include/asm"
 	RTAI_KMOD_CXXFLAGS="$RTAI_KMOD_CFLAGS -fno-rtti -fno-exceptions -fno-strength-reduce -pipe"
-	RTAI_USER_CFLAGS="$RTAI_USER_CFLAGS -Wall -Wstrict-prototypes -pipe"
+	RTAI_USER_CFLAGS="$RTAI_USER_CFLAGS -I${RTAI_LINUX_DIR}/arch/$RTAI_TARGET_ARCH_NAME/include/ -I${RTAI_LINUX_DIR}/arch/$RTAI_TARGET_ARCH_NAME/include/asm -Wall -Wstrict-prototypes -pipe"
 	if test x$CONFIG_RTAI_FPU_SUPPORT = xy; then
 	   RTAI_FP_CFLAGS="$RTAI_FP_CFLAGS -mhard-float"
 	else
@@ -25093,9 +25093,9 @@ CONFIG_RTAI_PYTHON=y
 if test -d $srcdir/rtai-py; then
    ac_config_files="$ac_config_files rtai-py/GNUmakefile"
 
-elif test \! x$CONFIG_RTAI_TESTSUITE = x; then
-     { { echo "$as_me:$LINENO: error: testsuite package is missing" >&5
-echo "$as_me: error: testsuite package is missing" >&2;}
+elif test \! x$CONFIG_RTAI_PYTHON = x; then
+     { { echo "$as_me:$LINENO: error: python package is missing" >&5
+echo "$as_me: error: python package is missing" >&2;}
    { (exit 1); exit 1; }; }
 fi
 

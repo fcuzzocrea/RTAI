@@ -1,3 +1,10 @@
+2009-05-20 Paolo Mantegazza <mantegazza@aero.polimi.it>
+
+	* base/include/rtai_sched.h: declare rt_make_hard/soft_real_time for
+	  use in kernel space also.
+	* base/sched/sys.c: make available rt_make_hard/soft_real_time for
+	  use in kernel space also, for use in Linux hardened kernel threads.
+
 2009-05-14 Roberto Bucher <roberto.bucher@supsi.ch>
 
 	* rtai-lab/scicoslab/macros/gif_icons/*: Icons for pal tree.

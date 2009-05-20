@@ -485,6 +485,10 @@ static inline void nanos2timespec(RTIME rt, struct timespec *t)
         t->tv_sec = rtai_ulldiv(rt, 1000000000, (unsigned long *)&t->tv_nsec);
 }
 
+void rt_make_hard_real_time(RT_TASK *task);
+
+void rt_make_soft_real_time(RT_TASK *task);
+
 #ifdef __cplusplus
 }
 #else /* !__cplusplus */

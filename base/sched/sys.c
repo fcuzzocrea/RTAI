@@ -328,6 +328,24 @@ static inline void set_lxrt_perm(int perm)
 
 #endif /* LINUX_VERSION_CODE > 2.6.28 */
 
+void rt_make_hard_real_time(RT_TASK *task)
+{
+	if (task && task->magic == RT_TASK_MAGIC && !task->is_hard) {
+		steal_from_linux(task);
+	}
+}
+
+void rt_make_soft_real_time(RT_TASK *task)
+{
+	if (task && task->magic == RT_TASK_MAGIC && task->is_hard) {
+		if (task->is_hard > 0) {
+			give_back_to_linux(task, 0);
+		} else {
+			task->is_hard = 0;
+		}
+	}
+}
+
 static inline long long handle_lxrt_request (unsigned int lxsrq, long *arg, RT_TASK *task)
 {
 #define larg ((struct arg *)arg)
@@ -490,6 +508,8 @@ static inline long long handle_lxrt_request (unsigned int lxsrq, long *arg, RT_T
 		}
 
 		case MAKE_HARD_RT: {
+			rt_make_hard_real_time(task);
+			return 0;
 			if (!task || task->is_hard) {
 				 return 0;
 			}
@@ -498,6 +518,8 @@ static inline long long handle_lxrt_request (unsigned int lxsrq, long *arg, RT_T
 		}
 
 		case MAKE_SOFT_RT: {
+			rt_make_soft_real_time(task);
+			return 0;
 			if (!task || !task->is_hard) {
 				return 0;
 			}
@@ -770,3 +792,5 @@ void init_fun_ext (void)
 	rt_fun_ext[0] = rt_fun_lxrt;
 }
 
+EXPORT_SYMBOL(rt_make_hard_real_time);
+EXPORT_SYMBOL(rt_make_soft_real_time);

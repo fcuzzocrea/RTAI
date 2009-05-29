@@ -1,3 +1,8 @@
+2009-05-14 Roberto Bucher <roberto.bucher@supsi.ch>
+
+	* rtai-lab/scicoslab/macros/Makefile: Addesd *.sce to sources to be copied.
+	* rtai-lab/scilab/macros/Makefile: Added *.sce to sources to be copied.
+
 2009-05-20 Paolo Mantegazza <mantegazza@aero.polimi.it>
 
 	* base/include/rtai_sched.h: declare rt_make_hard/soft_real_time for

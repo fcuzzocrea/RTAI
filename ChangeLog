@@ -1,6 +1,20 @@
-2009-05-14 Roberto Bucher <roberto.bucher@supsi.ch>
+2009-05-30 Roberto Bucher <roberto.bucher@supsi.ch>
 
-	* rtai-lab/scicoslab/macros/Makefile: Addesd *.sce to sources to be copied.
+	* rtai-lab/scicoslab/macros/rtai4_comedi_encoder.sci:
+	* rtai-lab/scilab/macros/rtai4_comedi_encoder.sci:
+	* rtai-lab/scilab5/macros/rtai4_comedi_encoder.sci:
+	* rtai-lab/scicoslab/macros/RTAI-Lib.cosf:
+	* rtai-lab/scilab/macros/RTAI-Lib.cosf:
+	* rtai-lab/scilab5/macrosRTAI-Lib.cosf:
+	* rtai-lab/scicoslab/devices/rtai_comedi_encoder.c:
+	* rtai-lab/scilab/devices/rtai_comedi_encoder.c:
+	* rtai-lab/scilab5/devices/rtai_comedi_encoder.c: Added subdevices
+	  to handle more encoders (many thanks to Guillaume Millet).
+
+2009-05-29 Roberto Bucher <roberto.bucher@supsi.ch>
+
+	* rtai-lab/scicoslab/macros/Makefile: Addesd *.sce to sources to be 
+	  copied.
 	* rtai-lab/scilab/macros/Makefile: Added *.sce to sources to be copied.
 
 2009-05-20 Paolo Mantegazza <mantegazza@aero.polimi.it>

@@ -2014,7 +2014,7 @@ void rt_exec_linux_syscall(RT_TASK *rt_current, struct linux_syscalls_list *sysc
 	if (++from.in >= from.nr) {
 		from.in = 0;
 	}
-	if (from.in == from.out) {
+	if (from.mode == ASYNC_LINUX_SYSCALL && from.in == from.out) {
 		regs->LINUX_SYSCALL_RETREG = -1;
 		return;
 	}

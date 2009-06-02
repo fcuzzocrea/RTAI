@@ -1,3 +1,7 @@
+2009-06-02 Guillaume Millet <millet@isir.fr>
+
+	* addons/comedi/rtai_comedi.h: added comedi_get_subdevice_flags.
+
 2009-05-30 Roberto Bucher <roberto.bucher@supsi.ch>
 
 	* rtai-lab/scicoslab/macros/rtai4_comedi_encoder.sci:

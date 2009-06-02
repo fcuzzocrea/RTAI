@@ -50,43 +50,44 @@
 #define _KCOMEDI_GET_DRIVER_NAME 	19
 #define _KCOMEDI_GET_BOARD_NAME 	20
 #define _KCOMEDI_GET_SUBDEVICE_TYPE 	21
-#define _KCOMEDI_FIND_SUBDEVICE_TYPE	22
-#define _KCOMEDI_GET_N_CHANNELS 	23
-#define _KCOMEDI_GET_MAXDATA 		24
-#define _KCOMEDI_GET_N_RANGES 		25
-#define _KCOMEDI_DO_INSN 		26
-#define _KCOMEDI_DO_INSN_LIST		27
-#define _KCOMEDI_POLL 			28
+#define _KCOMEDI_GET_SUBDEVICE_FLAGS 	22
+#define _KCOMEDI_FIND_SUBDEVICE_TYPE	23
+#define _KCOMEDI_GET_N_CHANNELS 	24
+#define _KCOMEDI_GET_MAXDATA		25
+#define _KCOMEDI_GET_N_RANGES 		26
+#define _KCOMEDI_DO_INSN 		27
+#define _KCOMEDI_DO_INSN_LIST		28
+#define _KCOMEDI_POLL 			29
 
 /* DEPRECATED function
-#define _KCOMEDI_GET_RANGETYPE 		29
+#define _KCOMEDI_GET_RANGETYPE 		30
 */
 
 /* ALPHA functions */
-#define _KCOMEDI_GET_SUBDEVICE_FLAGS 	30
-#define _KCOMEDI_GET_LEN_CHANLIST 	31
-#define _KCOMEDI_GET_KRANGE 		32
-#define _KCOMEDI_GET_BUF_HEAD_POS	33
-#define _KCOMEDI_SET_USER_INT_COUNT	34
-#define _KCOMEDI_MAP 			35
-#define _KCOMEDI_UNMAP 			36
+#define _KCOMEDI_GET_SUBDEVICE_FLAGS 	31
+#define _KCOMEDI_GET_LEN_CHANLIST 	32
+#define _KCOMEDI_GET_KRANGE 		33
+#define _KCOMEDI_GET_BUF_HEAD_POS	34
+#define _KCOMEDI_SET_USER_INT_COUNT	35
+#define _KCOMEDI_MAP 			36
+#define _KCOMEDI_UNMAP 			37
 
 /* RTAI specific callbacks from kcomedi to user space */
-#define _KCOMEDI_WAIT        		37
-#define _KCOMEDI_WAIT_IF     		38
-#define _KCOMEDI_WAIT_UNTIL  		39
-#define _KCOMEDI_WAIT_TIMED  		40
+#define _KCOMEDI_WAIT        		38
+#define _KCOMEDI_WAIT_IF     		39
+#define _KCOMEDI_WAIT_UNTIL  		40
+#define _KCOMEDI_WAIT_TIMED  		41
 
 /* RTAI specific functions to allocate/free comedi_cmd */
-#define _KCOMEDI_ALLOC_CMD  		41
-#define _KCOMEDI_FREE_CMD  		42
+#define _KCOMEDI_ALLOC_CMD  		42
+#define _KCOMEDI_FREE_CMD  		43
 
-#define _KCOMEDI_COMD_DATA_READ         43
-#define _KCOMEDI_COMD_DATA_WREAD        44
-#define _KCOMEDI_COMD_DATA_WREAD_IF     45
-#define _KCOMEDI_COMD_DATA_WREAD_UNTIL  46
-#define _KCOMEDI_COMD_DATA_WREAD_TIMED  47
-#define _KCOMEDI_COMD_DATA_WRITE        48
+#define _KCOMEDI_COMD_DATA_READ         44
+#define _KCOMEDI_COMD_DATA_WREAD        45
+#define _KCOMEDI_COMD_DATA_WREAD_IF     46
+#define _KCOMEDI_COMD_DATA_WREAD_UNTIL  47
+#define _KCOMEDI_COMD_DATA_WREAD_TIMED  48
+#define _KCOMEDI_COMD_DATA_WRITE        49
 
 #ifdef __KERNEL__ /* For kernel module build. */
 
@@ -361,6 +362,12 @@ RTAI_PROTO(int, comedi_get_subdevice_type, (void *dev, unsigned int subdev))
 {
         struct { void *dev; unsigned long subdev; } arg = { dev, subdev };
         return rtai_lxrt(FUN_COMEDI_LXRT_INDX, COMEDI_LXRT_SIZARG, _KCOMEDI_GET_SUBDEVICE_TYPE, &arg).i[LOW];
+}
+
+RTAI_PROTO(unsigned int, comedi_get_subdevice_flags, (void *dev, unsigned nt subdev))
+{
+	struct { void *dev; unsigned long subdev; } arg = { dev, subdev };
+	return rtai_lxrt(FUN_COMEDI_LXRT_INDX, COMEDI_LXRT_SIZARG, KCOMEDI_GET_SUBDEVICE_FLAGS, &arg).i[LOW];
 }
 
 RTAI_PROTO(int, comedi_find_subdevice_by_type,(void *dev, int type, unsigned int subd))

@@ -363,10 +363,10 @@ RTAI_PROTO(int, comedi_get_subdevice_type, (void *dev, unsigned int subdev))
         return rtai_lxrt(FUN_COMEDI_LXRT_INDX, COMEDI_LXRT_SIZARG, _KCOMEDI_GET_SUBDEVICE_TYPE, &arg).i[LOW];
 }
 
-RTAI_PROTO(unsigned int, comedi_get_subdevice_flags, (void *dev, unsigned nt subdev))
+RTAI_PROTO(unsigned int, comedi_get_subdevice_flags, (void *dev, unsigned int subdev))
 {
 	struct { void *dev; unsigned long subdev; } arg = { dev, subdev };
-	return rtai_lxrt(FUN_COMEDI_LXRT_INDX, COMEDI_LXRT_SIZARG, KCOMEDI_GET_SUBDEVICE_FLAGS, &arg).i[LOW];
+	return rtai_lxrt(FUN_COMEDI_LXRT_INDX, COMEDI_LXRT_SIZARG, _KCOMEDI_GET_SUBDEVICE_FLAGS, &arg).i[LOW];
 }
 
 RTAI_PROTO(int, comedi_find_subdevice_by_type,(void *dev, int type, unsigned int subd))

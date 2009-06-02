@@ -1,3 +1,7 @@
+2009-06-02 Guillaume Millet <millet@isir.fr>
+
+	* addons/comedi/rtai_comedi.h: added comedi_get_subdevice_flags.
+
 2009-05-20 Paolo Mantegazza <mantegazza@aero.polimi.it>
 
 	* base/include/rtai_sched.h: declare rt_make_hard/soft_real_time for

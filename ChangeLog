@@ -1,3 +1,22 @@
+2009-06-03 Roberto Bucher <roberto.bucher@supsi.ch>
+
+	* rtai-lab/scicoslab/macros/rtai4_comedi_encoder.sci:
+	* rtai-lab/scilab/macros/rtai4_comedi_encoder.sci:
+	* rtai-lab/scilab5/macros/rtai4_comedi_encoder.sci:
+	* rtai-lab/scicoslab/macros/RTAI-Lib.cosf:
+	* rtai-lab/scilab/macros/RTAI-Lib.cosf:
+	* rtai-lab/scilab5/macrosRTAI-Lib.cosf:
+	* rtai-lab/scicoslab/devices/rtai_comedi_encoder.c:
+	* rtai-lab/scilab/devices/rtai_comedi_encoder.c:
+	* rtai-lab/scilab5/devices/rtai_comedi_encoder.c: Added subdevices
+	  to handle more encoders (many thanks to Guillaume Millet).
+
+2009-06-03 Roberto Bucher <roberto.bucher@supsi.ch>
+
+	* rtai-lab/scicoslab/macros/Makefile: Addesd *.sce to sources to be 
+	  copied.
+	* rtai-lab/scilab/macros/Makefile: Added *.sce to sources to be copied.
+
 2009-06-02 Guillaume Millet <millet@isir.fr>
 
 	* addons/comedi/rtai_comedi.h: added comedi_get_subdevice_flags.

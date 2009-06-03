@@ -1,2 +1,2 @@
-Patches for 2.6.14 and 2.6.20 apply against standard Linux releases from
-kernel.org, and related mirrors.  The patch for 2.6.29 needs a kernel-snapshot from: www.denx.de/git/linux-2.6-denx.git.
+NOTICE: patches for kernels > 2.6.20 need milestones/snapshots found at: 
+www.denx.de/git/linux-2.6-denx.git.

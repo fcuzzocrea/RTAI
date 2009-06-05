@@ -22,7 +22,6 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA.
 
 static void init(scicos_block *block)
 {
-  double * rpar = GetRparPtrs(block);
   double *y = GetRealOutPortPtrs(block,1);
   y[0]=0.0;
 }

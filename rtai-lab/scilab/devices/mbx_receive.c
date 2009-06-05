@@ -28,6 +28,9 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA.
 #include <rtai_netrpc.h>
 #include <rtai_mbx.h>
 
+void exit_on_error(void);
+void par_getstr(char * str, int par[], int init, int len);
+
 struct MbxR{
   char mbxName[20];
   MBX * mbx;

@@ -27,13 +27,13 @@ function [x,y,typ] = rtai4_comedi_datain(job,arg1,arg2)
       if ~ok then break,end
       if exists('outport') then out=ones(outport,1), in=[], else out=1, in=[], end
       [model,graphics,ok]=check_io(model,graphics,in,out,1,[])
+      dev=str2code(name)
       if ok then
         graphics.exprs=exprs;
         model.ipar=[ch;
                     comedi_range;
                     aref;
-                    length(name);
-                    ascii(name)'];
+                    dev(length(dev))];
         model.rpar=[];
         model.dstate=[];
         x.graphics=graphics;x.model=model
@@ -53,8 +53,7 @@ function [x,y,typ] = rtai4_comedi_datain(job,arg1,arg2)
     model.ipar=[ch;
                 comedi_range;
                 aref;
-                length(name);
-                ascii(name)']
+                0]
     model.dstate=[];
     model.blocktype='d'
     model.dep_ut=[%t %f]

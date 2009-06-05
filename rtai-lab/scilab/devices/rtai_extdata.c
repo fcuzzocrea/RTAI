@@ -21,6 +21,9 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA.
 #include <stdio.h>
 #include <stdlib.h>
 
+void exit_on_error(void);
+void par_getstr(char * str, int par[], int init, int len);
+
 static void init(scicos_block *block)
 {
   FILE * fp;

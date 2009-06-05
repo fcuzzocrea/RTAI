@@ -21,12 +21,11 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA.
 #include <scicos_block4.h>
 
 #include <rtai_comedi.h>
+#include "rtmain.h"
 
 extern void *ComediDev[];
 extern int ComediDev_InUse[];
 extern int ComediDev_DIOInUse[];
-
-void exit_on_error(void);
 
 struct DOCOMDev{
   void * dev;
@@ -40,6 +39,7 @@ struct DOCOMDev{
 static void init(scicos_block *block)
 {
   struct DOCOMDev * comdev = (struct DOCOMDev *) malloc(sizeof(struct DOCOMDev));
+  *block->work = (void *) comdev;
 
   char devName[15];
   char board[50];
@@ -55,6 +55,7 @@ static void init(scicos_block *block)
     if (!(comdev->dev)) {
       fprintf(stderr, "COMEDI %s open failed\n", devName);
       exit_on_error();
+      return;
     }
     rt_comedi_get_board_name(comdev->dev, board);
     printf("COMEDI %s (%s) opened.\n\n", devName, board);
@@ -67,21 +68,25 @@ static void init(scicos_block *block)
       fprintf(stderr, "Comedi find_subdevice failed (No digital Output or I/O)\n");
       comedi_close(comdev->dev);
       exit_on_error();
+      return;
     } else
       comdev->subdev_type = COMEDI_SUBD_DIO;
   } else
     comdev->subdev_type = COMEDI_SUBD_DO;
+
   if (!ComediDev_DIOInUse[comdev->index] && comedi_lock(comdev->dev, comdev->subdev) < 0) {
-      fprintf(stderr, "Comedi lock failed for subdevice %d\n",comdev-> subdev);
-      comedi_close(comdev->dev);
-      exit_on_error();
-    }
+    fprintf(stderr, "Comedi lock failed for subdevice %d\n",comdev-> subdev);
+    comedi_close(comdev->dev);
+    exit_on_error();
+    return;
+  }
 
   if (comdev->channel >= comedi_get_n_channels(comdev->dev, comdev->subdev)) {
     fprintf(stderr, "Comedi channel not available for subdevice %d\n",comdev-> subdev);
     comedi_unlock(comdev->dev, comdev->subdev);
     comedi_close(comdev->dev);
     exit_on_error();
+    return;
   }
 
   if (comdev->subdev_type == COMEDI_SUBD_DIO && comedi_dio_config(comdev->dev,
@@ -90,14 +95,13 @@ static void init(scicos_block *block)
     comedi_unlock(comdev->dev, comdev->subdev);
     comedi_close(comdev->dev);
     exit_on_error();
+    return;
   }
  
   ComediDev_InUse[comdev->index]++;
   ComediDev_DIOInUse[comdev->index]++;
   comedi_dio_write(comdev->dev, comdev->subdev, comdev->channel, 0);
   printf("%s Channel %d\n\n", (comdev->subdev_type == COMEDI_SUBD_DIO)?"DIO Output":"DO", comdev->channel);
-
-  *block->work = (void *) comdev;
 }
 
 static void inout(scicos_block *block)
@@ -115,22 +119,20 @@ static void inout(scicos_block *block)
 static void end(scicos_block *block)
 {
   struct DOCOMDev * comdev = (struct DOCOMDev *) (*block->work);
-//   int len, index;
 
-//   len=strlen(comdev->devName);
-//   index = comdev->devName[len-1]-'0';
-  int index = comdev->index;
-
-  comedi_dio_write(comdev->dev, comdev->subdev, comdev->channel, 0);
-  ComediDev_InUse[index]--;
-  ComediDev_DIOInUse[index]--;
-  if (!ComediDev_DIOInUse[index]) {
-    comedi_unlock(comdev->dev, comdev->subdev);
-  }
-  if (!ComediDev_InUse[index]) {
-    comedi_close(comdev->dev);
-    printf("\nCOMEDI /dev/comedi%d closed.\n\n", index);
-    ComediDev[index] = NULL;
+  if (comdev->dev) {
+    int index = comdev->index;
+    comedi_dio_write(comdev->dev, comdev->subdev, comdev->channel, 0);
+    ComediDev_InUse[index]--;
+    ComediDev_DIOInUse[index]--;
+    if (!ComediDev_DIOInUse[index]) {
+      comedi_unlock(comdev->dev, comdev->subdev);
+    }
+    if (!ComediDev_InUse[index]) {
+      comedi_close(comdev->dev);
+      printf("\nCOMEDI /dev/comedi%d closed.\n\n", index);
+      ComediDev[index] = NULL;
+    }
   }
   free(comdev);
 }

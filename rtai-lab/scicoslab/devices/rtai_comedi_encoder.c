@@ -21,12 +21,11 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA.
 #include <scicos_block4.h>
 
 #include <rtai_comedi.h>
+#include "rtmain.h"
 
 extern void *ComediDev[];
 extern int ComediDev_InUse[];
 extern int ComediDev_CounterInUse[][0];
-
-void exit_on_error(void);
 
 typedef enum {UP_DOWN, X1, X2, X4=4} Counter_mode;
 
@@ -48,6 +47,7 @@ struct CounterCOMDev
 static void init(scicos_block *block)
 {
   struct CounterCOMDev * comdev = (struct CounterCOMDev *) malloc(sizeof(struct CounterCOMDev));
+  *block->work=(void *)comdev;
 
   char devName[15];
   char board[50];
@@ -70,6 +70,7 @@ static void init(scicos_block *block)
     if (!(comdev->dev)) {
       fprintf(stderr, "COMEDI %s open failed\n", devName);
       exit_on_error();
+      return;
     }
     rt_comedi_get_board_name(comdev->dev, board);
     printf("COMEDI %s (%s) opened.\n\n", devName, board);
@@ -81,12 +82,14 @@ static void init(scicos_block *block)
     fprintf(stderr, "Comedi find_subdevice failed (No Counter)\n");
     comedi_close(comdev->dev);
     exit_on_error();
+    return;
   }
   if (comdev->number > 0 && !comdev->map && (comdev->subdev =
       comedi_find_subdevice_by_type(comdev->dev, COMEDI_SUBD_COUNTER, comdev->subdev+1)) < 0) {
     fprintf(stderr, "Comedi find_subdevice failed (No Counter %d)\n",comdev->number);
     comedi_close(comdev->dev);
     exit_on_error();
+    return;
   }
 
   if (!ComediDev_CounterInUse[comdev->index][comdev->map?0:comdev->number] &&
@@ -94,6 +97,7 @@ static void init(scicos_block *block)
     fprintf(stderr, "Comedi lock failed for subdevice %d\n", comdev->subdev);
     comedi_close(comdev->dev);
     exit_on_error();
+    return;
   }
 
   if (comdev->number > 0 && comdev->map) {
@@ -102,6 +106,7 @@ static void init(scicos_block *block)
       comedi_unlock(comdev->dev, comdev->subdev);
       comedi_close(comdev->dev);
       exit_on_error();
+      return;
     } else
       comdev->channel = comdev->number;
   }
@@ -112,6 +117,7 @@ static void init(scicos_block *block)
     comedi_unlock(comdev->dev, comdev->subdev);
     comedi_close(comdev->dev);
     exit_on_error();
+    return;
   }
 
   comedi_insn insn;
@@ -129,6 +135,7 @@ static void init(scicos_block *block)
     comedi_unlock(comdev->dev, comdev->subdev);
     comedi_close(comdev->dev);
     exit_on_error();
+    return;
   }
 
   comedi_data_write(comdev->dev, comdev->subdev, comdev->channel, 0, 0, comdev->initval);
@@ -184,6 +191,7 @@ static void init(scicos_block *block)
       comedi_unlock(comdev->dev, comdev->subdev);
       comedi_close(comdev->dev);
       exit_on_error();
+      return;
     }
   }
 
@@ -199,8 +207,6 @@ static void init(scicos_block *block)
     printf("X%d - Channel A on PFI%d - Channel B on PFI%d - Channel Z on PFI%d",
            comdev->cmode,comdev->a,comdev->b,comdev->z);
   printf("\n\n");
-
-  *block->work=(void *)comdev;
 }
 
 static void inout(scicos_block *block)
@@ -218,17 +224,18 @@ static void end(scicos_block *block)
 {
   struct CounterCOMDev * comdev = (struct CounterCOMDev *) (*block->work);
 
-  int index = comdev->index;
-
-  ComediDev_InUse[index]--;
-  ComediDev_CounterInUse[index][comdev->map?0:comdev->number]--;
-  if (!ComediDev_CounterInUse[index][comdev->map?0:comdev->number]) {
-    comedi_unlock(comdev->dev, comdev->subdev);
-  }
-  if (!ComediDev_InUse[index]) {
-    comedi_close(comdev->dev);
-    printf("\nCOMEDI /dev/comedi%d closed.\n\n", index);
-    ComediDev[index] = NULL;
+  if (comdev->dev) {
+    int index = comdev->index;
+    ComediDev_InUse[index]--;
+    ComediDev_CounterInUse[index][comdev->map?0:comdev->number]--;
+    if (!ComediDev_CounterInUse[index][comdev->map?0:comdev->number]) {
+      comedi_unlock(comdev->dev, comdev->subdev);
+    }
+    if (!ComediDev_InUse[index]) {
+      comedi_close(comdev->dev);
+      printf("\nCOMEDI /dev/comedi%d closed.\n\n", index);
+      ComediDev[index] = NULL;
+    }
   }
   free(comdev);
 }

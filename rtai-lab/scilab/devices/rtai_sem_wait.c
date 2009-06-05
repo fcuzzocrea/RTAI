@@ -28,6 +28,9 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA.
 #include <rtai_netrpc.h>
 #include <rtai_sem.h>
 
+void exit_on_error(void);
+void par_getstr(char * str, int par[], int init, int len);
+
 struct Semw{
   char semName[20];
   SEM * sem;
@@ -68,7 +71,7 @@ static void init(scicos_block *block)
 
 static void inout(scicos_block *block)
 {
-  double * y;
+  double *y = block->outptr[0];
   struct Semw * sem = (struct Semw *) (*block->work);
   int ret;
   ret = RT_sem_wait(sem->tNode, sem->tPort,sem->sem);

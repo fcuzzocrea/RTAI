@@ -1,6 +1,6 @@
 /*
-COPYRIGHT (C) 2008 Guillaume MILLET (millet@isir.fr)
-                   Julien VITARD    (vitard@isir.fr)
+COPYRIGHT (C) 2008-2009 Guillaume MILLET (millet@isir.fr)
+              2008 Julien VITARD (vitard@isir.fr)
 
 This library is free software; you can redistribute it and/or
 modify it under the terms of the GNU Lesser General Public
@@ -26,14 +26,16 @@ extern void *ComediDev[];
 extern int ComediDev_InUse[];
 extern int ComediDev_CounterInUse[][0];
 
+void exit_on_error(void);
+
 typedef enum {UP_DOWN, X1, X2, X4=4} Counter_mode;
 
 struct CounterCOMDev
 {
   unsigned int index;
-  unsigned int subdev;
+  int subdev;
   unsigned int channel;
-  int number;
+  unsigned int number;
   void * dev;
   int a,b,z;
   unsigned long int initval;
@@ -66,95 +68,41 @@ static void init(scicos_block *block)
   if (!ComediDev[comdev->index]) {
     comdev->dev = comedi_open(devName);
     if (!(comdev->dev)) {
-      fprintf(stderr, "Comedi open failed\n");
+      fprintf(stderr, "COMEDI %s open failed\n", devName);
       exit_on_error();
     }
     rt_comedi_get_board_name(comdev->dev, board);
     printf("COMEDI %s (%s) opened.\n\n", devName, board);
     ComediDev[comdev->index] = comdev->dev;
-    if ((comdev->subdev = comedi_find_subdevice_by_type(comdev->dev, COMEDI_SUBD_COUNTER, 0)) < 0) {
-      fprintf(stderr, "Comedi find_subdevice failed (No Counter)\n");
-      comedi_close(comdev->dev);
-      exit_on_error();
-    }
-    if (comdev->number > 0 && !comdev->map) {
-      unsigned int n_subdevices;
-      if ((n_subdevices = comedi_get_n_subdevices(comdev->dev)) < 0) {
-      fprintf(stderr, "Comedi get_n_subdevices failed for %s\n", devName);
-      comedi_close(comdev->dev);
-      exit_on_error();
-      }
-      unsigned int subd;
-      unsigned int subd_type;
-      i=0;
-      for (subd=comdev->subdev+1;subd<n_subdevices;subd++) {
-        if ((subd_type = comedi_get_subdevice_type(comdev->dev,subd)) < 0) {
-          fprintf(stderr, "Comedi get_subdevice_type failed for subdevice %d\n", subd);
-          comedi_close(comdev->dev);
-          exit_on_error();
-        }
-        if (subd_type == COMEDI_SUBD_COUNTER) {
-          i++;
-          if (i == comdev->number) {
-            comdev->subdev = subd;
-            break;
-          }
-        }
-      }
-      if (subd == n_subdevices) {
-        fprintf(stderr, "Find subdevice failed (No Counter %d)\n",comdev->number);
-        comedi_close(comdev->dev);
-        exit_on_error();
-      }
-    }
-    if ((comedi_lock(comdev->dev, comdev->subdev)) < 0) {
-      fprintf(stderr, "Comedi lock failed for subdevice %d\n", comdev->subdev);
-      comedi_close(comdev->dev);
-      exit_on_error();
-    }
-  } else {
+  } else
     comdev->dev = ComediDev[comdev->index];
-    comdev->subdev = comedi_find_subdevice_by_type(comdev->dev, COMEDI_SUBD_COUNTER, 0);
-    if (comdev->number > 0 && !comdev->map) {
-      unsigned int n_subdevices = comedi_get_n_subdevices(comdev->dev);
-      unsigned int subd;
-      i=0;
-      for (subd=comdev->subdev+1;subd<n_subdevices;subd++) {
-        if (comedi_get_subdevice_type(comdev->dev,subd) == COMEDI_SUBD_COUNTER) {
-          i++;
-          if (i == comdev->number) {
-            comdev->subdev = subd;
-            break;
-          }
-        }
-      }
-      if (subd == n_subdevices) {
-        fprintf(stderr, "Find subdevice failed (No Counter %d)\n",comdev->number);
-        comedi_close(comdev->dev);
-        exit_on_error();
-      }
-    }
-    if ((comedi_lock(comdev->dev, comdev->subdev)) < 0) {
-      fprintf(stderr, "Comedi lock failed for subdevice %d\n", comdev->subdev);
-      comedi_close(comdev->dev);
-      exit_on_error();
-    }
+
+  if ((comdev->subdev = comedi_find_subdevice_by_type(comdev->dev, COMEDI_SUBD_COUNTER, 0)) < 0) {
+    fprintf(stderr, "Comedi find_subdevice failed (No Counter)\n");
+    comedi_close(comdev->dev);
+    exit_on_error();
   }
+  if (comdev->number > 0 && !comdev->map && (comdev->subdev =
+      comedi_find_subdevice_by_type(comdev->dev, COMEDI_SUBD_COUNTER, comdev->subdev+1)) < 0) {
+    fprintf(stderr, "Comedi find_subdevice failed (No Counter %d)\n",comdev->number);
+    comedi_close(comdev->dev);
+    exit_on_error();
+  }
+
+  if (!ComediDev_CounterInUse[comdev->index][comdev->map?0:comdev->number] &&
+      comedi_lock(comdev->dev, comdev->subdev) < 0) {
+    fprintf(stderr, "Comedi lock failed for subdevice %d\n", comdev->subdev);
+    comedi_close(comdev->dev);
+    exit_on_error();
+  }
+
   if (comdev->number > 0 && comdev->map) {
-    unsigned int n_channels;
-    if ((n_channels = comedi_get_n_channels(comdev->dev, comdev->subdev)) < 0) {
-      fprintf(stderr, "Comedi get_n_channels failed for subdevice %d\n", comdev->subdev);
-      comedi_unlock(comdev->dev, comdev->subdev);
-      comedi_close(comdev->dev);
-      exit_on_error();
-    }
-    if (comdev->number >= n_channels) {
+    if (comdev->number >= comedi_get_n_channels(comdev->dev, comdev->subdev)) {
       fprintf(stderr, "Comedi channel not available for subdevice %d\n", comdev->subdev);
       comedi_unlock(comdev->dev, comdev->subdev);
       comedi_close(comdev->dev);
       exit_on_error();
-    }
-    else
+    } else
       comdev->channel = comdev->number;
   }
 
@@ -238,6 +186,7 @@ static void init(scicos_block *block)
       exit_on_error();
     }
   }
+
   ComediDev_InUse[comdev->index]++;
   ComediDev_CounterInUse[comdev->index][comdev->map?0:comdev->number]++;
   printf("Counter %d - MaxData : %u - Initial value : %lu - Index enable : %d\nMode ",
@@ -278,7 +227,7 @@ static void end(scicos_block *block)
   }
   if (!ComediDev_InUse[index]) {
     comedi_close(comdev->dev);
-    printf("\nCOMEDI Counter /dev/comedi%d closed.\n\n", index);
+    printf("\nCOMEDI /dev/comedi%d closed.\n\n", index);
     ComediDev[index] = NULL;
   }
   free(comdev);

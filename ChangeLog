@@ -1,3 +1,20 @@
+2009-06-05 Roberto Bucher <roberto.bucher@supsi.ch>
+
+	* rtai-lab/scilab/macros/RTAI/*: 
+	* rtai-lab/scilab/devices/*: 
+	* rtai-lab/scilab5/devices/*: 
+	* rtai-lab/scicoslab/devices/*: Little modifications to avoid
+	  compilation warnings.
+
+2009-06-05 Guillaume Millet <millet@isir.fr>
+
+	* rtai-lab/scilab/macros/RTAI/rtai4_comedi*: 
+	* rtai-lab/scilab/devices/rtai_comedi*: 
+	* rtai-lab/scilab5/RTAI/macros/rtai4_comedi*: 
+	* rtai-lab/scilab5/devices/rtai_comedi*: 
+	* rtai-lab/scicoslab/macros/RTAI/rtai4_comedi*: 
+	* rtai-lab/scicoslab/devices/rtai_comedi*: Little bugs correction.
+
 2009-06-03 Roberto Bucher <roberto.bucher@supsi.ch>
 
 	* rtai-lab/scicoslab/macros/rtai4_comedi_encoder.sci:

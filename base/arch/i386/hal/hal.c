@@ -107,7 +107,8 @@ static inline long long get_delta(long long *rt, long long *master, unsigned int
 {
 	unsigned long long best_t0 = 0, best_t1 = ~0ULL, best_tm = 0;
 	unsigned long long tcenter = 0, t0, t1, tm, dt;
-	long i, lflags, done;
+	unsigned long lflags;
+	long i, done;
 
 	for (done = i = 0; i < NUM_ITERS; ++i) {
 		t0 = readtsc();
@@ -153,7 +154,11 @@ static void sync_tsc(unsigned int master, unsigned int slave)
 	long long delta, rt = 0, master_time_stamp = 0;
 
 	go[MASTER] = 1;
-	if (smp_call_function(sync_master, (void *)master, 1, 0) < 0) {
+	if (smp_call_function(sync_master, (void *)master,
+#if LINUX_VERSION_CODE < KERNEL_VERSION(2,6,27)
+ 							   1,
+#endif
+							      0) < 0) {
 //		printk(KERN_ERR "sync_tsc: slave CPU %u failed to get attention from master CPU %u!\n", slave, master);
 		return;
 	}

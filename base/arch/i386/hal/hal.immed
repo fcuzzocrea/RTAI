@@ -2044,7 +2044,7 @@ static int rtai_read_proc (char *page, char **start, off_t off, int count, int *
 	}
     	PROC_PRINT("\n\n");
 
-#ifdef CONFIG_RTAI_DIAG_TSC_SYNC
+#if defined(CONFIG_SMP) && defined(CONFIG_RTAI_DIAG_TSC_SYNC)
 	PROC_PRINT("** RTAI TSC OFFSETs (TSC units, 0 ref. CPU): ");
     	for (i = 0; i < num_online_cpus(); i++) {
 		PROC_PRINT("CPU#%d > %ld; ", i, rtai_tsc_ofst[i]);
@@ -2210,7 +2210,7 @@ int __rtai_hal_init (void)
 		printk("%p %x %s %d\n", next_domain, next_domain->domid, next_domain->name, next_domain->priority);
 	}
 
-#ifdef CONFIG_RTAI_DIAG_TSC_SYNC
+#if defined(CONFIG_SMP) && defined(CONFIG_RTAI_DIAG_TSC_SYNC)
 	init_tsc_sync();
 #endif
 
@@ -2238,7 +2238,7 @@ void __rtai_hal_exit (void)
 		}
 	}
 
-#ifdef CONFIG_RTAI_DIAG_TSC_SYNC
+#if defined(CONFIG_SMP) && defined(CONFIG_RTAI_DIAG_TSC_SYNC)
 	cleanup_tsc_sync();
 #endif
 

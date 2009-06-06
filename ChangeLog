@@ -1,6 +1,6 @@
 2009-06-06 Paolo Mantegazza <mantegazza@aero.polimi.it>
 
-	* base/iarch/i386/hal/hal.c: care of Linux version n calling
+	* base/iarch/i386/hal/hal.c: care of Linux version in calling
 	  smp_call_function, pointed at by Rodrigo Amestica
 	  <ramestica@nrao.edu>
 

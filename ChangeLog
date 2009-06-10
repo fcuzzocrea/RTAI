@@ -1,3 +1,10 @@
+2009-06-10 Roberto Bucher <roberto.bucher@supsi.ch>
+
+	* rtai-lab/scilab/macros/RTAI/RT_templates/rtai.mak: 
+	* rtai-lab/scicoslab/macros/RTAI/RT_templates/rtai.mak: 
+	* rtai-lab/scilab5/RTAI_RT_templates/rtai.mak: Template makefile
+	  different for systems with and without COMEDI support.
+
 2009-06-06 Paolo Mantegazza <mantegazza@aero.polimi.it>
 
 	* base/iarch/i386/hal/hal.c: care of Linux version in calling

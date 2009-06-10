@@ -6,6 +6,10 @@ all: ../$$MODEL$$
 RTAIDIR = $(shell rtai-config --prefix)
 C_FLAGS = $(shell rtai-config --lxrt-cflags)
 SCIDIR = $$SCILAB_DIR$$
+COMEDIDIR = $(shell rtai-config --comedi-dir)
+ifneq ($(strip $(COMEDIDIR)),)
+COMEDILIB = -lcomedi
+endif 
 
 RM = rm -f
 FILES_TO_CLEAN = *.o ../$$MODEL$$
@@ -26,7 +30,7 @@ rtmain.c: $(RTAIDIR)/share/rtai/scicos/rtmain.c $(MODEL).c
 	cp $< .
 
 ../$$MODEL$$: $(OBJSSTAN) $(ULIBRARY)
-	gcc -static -o $@  $(OBJSSTAN) $(SCILIBS) $(ULIBRARY) -lpthread -lm
+	gcc -static -o $@  $(OBJSSTAN) $(SCILIBS) $(ULIBRARY) -lpthread -lm $(COMEDILIB)
 	@echo "### Created executable: $(MODEL) ###"
 
 clean::

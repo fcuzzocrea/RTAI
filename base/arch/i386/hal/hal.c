@@ -169,7 +169,7 @@ static void sync_tsc(unsigned int master, unsigned int slave)
 	delta = get_delta(&rt, &master_time_stamp, slave);
 	spin_unlock_irqrestore(&tsc_sync_lock, flags);
 
-	printk(KERN_INFO "# %d - CPU %u: synced its TSC with CPU %u (master time stamp %llu cycles, < - OFFSET %lld cycles - > , max double tsc read span %llu cycles)\n", ++sync_cnt[slave], slave, master, master_time_stamp, delta, rt);
+//	printk(KERN_INFO "# %d - CPU %u: synced its TSC with CPU %u (master time stamp %llu cycles, < - OFFSET %lld cycles - > , max double tsc read span %llu cycles)\n", ++sync_cnt[slave], slave, master, master_time_stamp, delta, rt);
 }
 
 //#define CONFIG_RTAI_MASTER_TSC_CPU  0

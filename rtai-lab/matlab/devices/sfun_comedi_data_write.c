@@ -163,7 +163,7 @@ static void mdlStart(SimStruct *S)
     return;
   }
 
-  if (!ComediDev_AOInUse[comdev->index] && comedi_lock(dev, subdev) < 0) {
+  if (!ComediDev_AOInUse[index] && comedi_lock(dev, subdev) < 0) {
     sprintf(errMsg, "Comedi lock failed for subdevice %d\n", subdev);
     ssSetErrorStatus(S, errMsg);
     printf("%s", errMsg);

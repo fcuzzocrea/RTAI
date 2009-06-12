@@ -30,7 +30,7 @@ rtmain.c: $(RTAIDIR)/share/rtai/scicos/rtmain.c $(MODEL).c
 	cp $< .
 
 ../$$MODEL$$: $(OBJSSTAN) $(ULIBRARY)
-	gcc -static -o $@  $(OBJSSTAN) $(SCILIBS) $(ULIBRARY) -lpthread -lm $(COMEDILIB)
+	gcc -static -o $@  $(OBJSSTAN) $(SCILIBS) $(ULIBRARY) -lpthread $(COMEDILIB) -lm
 	@echo "### Created executable: $(MODEL) ###"
 
 clean::

@@ -148,16 +148,16 @@ static void mdlStart(SimStruct *S)
       comedi_close(dev);
       return;
     }
-    else{
-      subdev_type =COMEDI_SUBD_DIO;
-  }else subdev_type =COMEDI_SUBD_DI; 
+    else subdev_type =COMEDI_SUBD_DIO;
+  }
+  else subdev_type =COMEDI_SUBD_DI; 
 
   if (!ComediDev_DIOInUse[index] && comedi_lock(dev, subdev) < 0) {
-      sprintf(errMsg, "Comedi lock failed for subdevice %d\n");
-      ssSetErrorStatus(S, errMsg);
-      printf("%s", errMsg);
-      comedi_close(dev);
-      return;
+    sprintf(errMsg, "Comedi lock failed for subdevice %d\n",subdev);
+    ssSetErrorStatus(S, errMsg);
+    printf("%s", errMsg);
+    comedi_close(dev);
+    return;
   }
 
   if ((n_channels = comedi_get_n_channels(dev, subdev)) < 0) {
@@ -169,7 +169,7 @@ static void mdlStart(SimStruct *S)
     return;
   }
 
-  if(subdev_type == COMEDI_SUBD_DIO)&& comedi_dio_config(dev,
+  if((subdev_type == COMEDI_SUBD_DIO) && comedi_dio_config(dev,
 		    subdev, channel, COMEDI_INPUT) < 0) {
     sprintf(errMsg, "Comedi DIO config failed for subdevice %d\n", subdev);
     ssSetErrorStatus(S, errMsg);

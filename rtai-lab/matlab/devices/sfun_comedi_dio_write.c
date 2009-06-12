@@ -155,7 +155,7 @@ static void mdlStart(SimStruct *S)
     sprintf(errMsg, "Comedi lock failed for subdevice %d\n",subdev);
     ssSetErrorStatus(S, errMsg);
     printf("%s", errMsg);
-    comedi_close(comdev->dev);
+    comedi_close(dev);
   }
 
   if ((n_channels = comedi_get_n_channels(dev, subdev)) < 0) {

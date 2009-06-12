@@ -19,9 +19,6 @@ DBG = -g
 
 CC_FLAGS = -c $(DBG) -I. -I$(RTAIDIR)/include -O2 -Wall -std=gnu99 -DSOFTCALIB
 
-get_softcal.o: get_softcal.c
-	cc $(CC_FLAGS) -DLOCALSTATEDIR=\"\$(COMEDIDIR)/var\" $<
-
 %.o: %.c
 	cc $(CC_FLAGS) $<
 

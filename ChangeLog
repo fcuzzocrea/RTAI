@@ -1,3 +1,7 @@
+2009-06-15 Pierangelo Masarati <masarati@aero.polimi.it>
+
+	* RTAI 3.7.1
+
 2009-06-10 Roberto Bucher <roberto.bucher@supsi.ch>
 
 	* rtai-lab/scilab/macros/RTAI/RT_templates/rtai.mak: 

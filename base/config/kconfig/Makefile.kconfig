@@ -1,6 +1,14 @@
 # We want these to be the native ones.
+ifeq ($(HOSTCC),)
 override CC := gcc
+else
+override CC := $(HOSTCC)
+endif
+ifeq ($(HOSTCXX),)
 override CXX := g++
+else
+override CXX := $(HOSTCXX)
+endif
 #override CC := gcc -Wall -pedantic
 #override CXX := g++ -Wall -pedantic
 

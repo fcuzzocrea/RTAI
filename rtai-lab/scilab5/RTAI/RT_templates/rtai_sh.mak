@@ -6,6 +6,9 @@ all: ../$$MODEL$$
 RTAIDIR = $(shell rtai-config --prefix)
 C_FLAGS = $(shell rtai-config --lxrt-cflags)
 COMEDIDIR = $(shell rtai-config --comedi-dir)
+ifneq ($(strip $(COMEDIDIR)),)
+COMEDILIB = -lcomedi
+endif 
 
 SCIDIR = $$SCILAB_DIR$$
 RM = rm -f
@@ -93,7 +96,7 @@ rtmain.c: $(RTAIDIR)/share/rtai/scicos/rtmain.c $(MODEL).c
 	cp $< .
 
 $$MODEL$$: $(OBJSSTAN) $(ULIBRARY)
-	gcc  -o $@  $(OBJSSTAN) $(LIBDIRS) $(SCILIBS) $(ULIBRARY) $(JAVALIBS) $(OTHERLIBS) -lpthread -lstdc++ -lrt  -lm
+	gcc  -o $@  $(OBJSSTAN) $(LIBDIRS) $(SCILIBS) $(ULIBRARY) $(JAVALIBS) $(OTHERLIBS) -lpthread -lstdc++ -lrt  $(COMEDILIB) -lm
 	@echo "### Created executable: $(MODEL) ###"
 
 ../$$MODEL$$: $$MODEL$$

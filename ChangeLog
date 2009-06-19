@@ -1,4 +1,4 @@
-2009-06-10 Roberto Bucher <roberto.bucher@supsi.ch>
+2009-06-19 Roberto Bucher <roberto.bucher@supsi.ch>
 
 	* rtai-lab/scilab5/RTAI/RT_templates/rtai.mak: Substitute the
           previous wrong file.

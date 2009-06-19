@@ -20,11 +20,17 @@ CC_OPTIONS = -O -DNDEBUG -Dlinux -DNARROWPROTO -D_GNU_SOURCE
 MODEL = $$MODEL$$
 OBJSSTAN = rtmain.o common.o $$MODEL$$.o $$OBJ$$
 
-SCILIBS = $(SCIDIR)/libs/scicos.a $(SCIDIR)/libs/poly.a $(SCIDIR)/libs/calelm.a $(SCIDIR)/libs/blas.a $(SCIDIR)/libs/lapack.a $(SCIDIR)/libs/os_specific.a
+SCILIBS = \
+          $(SCIDIR)/libs/libsciscicos.a \
+          $(SCIDIR)/libs/libsciscicos_blocks.a \
+          $(SCIDIR)/libs/libscipolynomials.a \
+          $(SCIDIR)/libs/calelm.a \
+          $(SCIDIR)/libs/os_specific.a
+
 OTHERLIBS = 
 ULIBRARY = $(RTAIDIR)/lib/libsciblk.a $(RTAIDIR)/lib/liblxrt.a
 
-CFLAGS = $(CC_OPTIONS) -O2 -I$(SCIDIR)/routines -I$(SCIDIR)/routines/scicos $(C_FLAGS) -DMODEL=$(MODEL) -DMODELN=$(MODEL).c
+CFLAGS = $(CC_OPTIONS) -O2 -I$(SCIDIR)/../../include/scilab/core -I$(SCIDIR)/../../include/scilab/scicos_blocks  $(C_FLAGS) -DMODEL=$(MODEL) -DMODELN=$(MODEL).c
 
 rtmain.c: $(RTAIDIR)/share/rtai/scicos/rtmain.c $(MODEL).c
 	cp $< .

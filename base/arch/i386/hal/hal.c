@@ -82,7 +82,7 @@ static void sync_master(void *arg)
 {
 	unsigned long flags, lflags, i;
 
-	if ((unsigned long)arg != hard_smp_processor_id()) {
+	if ((unsigned long)arg != hal_processor_id()) {
 		return;
 	}
 

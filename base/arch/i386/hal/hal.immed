@@ -931,7 +931,7 @@ irqreturn_t rtai_broadcast_to_local_timers (int irq, void *dev_id, struct pt_reg
 #else   /* CONFIG_X86_32_LAZY_GS */
 #define __PUSH_GS  "pushl %gs\n\t"
 #define __POP_GS   "popl  %gs\n\t"
-#define __SET_KERNEL_GS(reg) "movl $" STR(__KERNEL_STACK_CANARY) ",%" #reg "; movl %" #reg ", %gs \n\t"
+#define __SET_KERNEL_GS(reg) "movl $"STR(__KERNEL_STACK_CANARY)",%"#reg"; movl %"#reg", %gs \n\t"
 #endif  /* CONFIG_X86_32_LAZY_GS */
 
 #else

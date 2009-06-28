@@ -6,7 +6,7 @@
 2009-06-27 Paolo Mantegazza <mantegazza@aero.polimi.it>
 
         * base/iarch/i386/hal/hal.c: use general hal_processor_id in place of 
-	  hard_smp_processor_id to avoid Linuc version dependencies.
+	  hard_smp_processor_id to avoid Linux version dependencies.
         * base/iarch/i386/hal/immed.c: do not set proc entry owner for 
 	  Linux >= 2.6.30
 

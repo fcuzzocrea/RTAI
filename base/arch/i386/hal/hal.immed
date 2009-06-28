@@ -922,6 +922,26 @@ irqreturn_t rtai_broadcast_to_local_timers (int irq, void *dev_id, struct pt_reg
 #define SYMBOL_NAME_STR(X) #X
 #endif
 
+#if LINUX_VERSION_CODE > KERNEL_VERSION(2,6,29)
+
+#ifdef CONFIG_X86_32_LAZY_GS
+#define __PUSH_GS  "pushl $0\n\t"
+#define __POP_GS   "add $4, %esp\n\t"
+#define __SET_KERNEL_GS(reg)
+#else   /* CONFIG_X86_32_LAZY_GS */
+#define __PUSH_GS  "pushl %gs\n\t"
+#define __POP_GS   "popl  %gs\n\t"
+#define __SET_KERNEL_GS(reg) "movl $" STR(__KERNEL_STACK_CANARY) ",%" #reg "; movl %" #reg ", %gs \n\t"
+#endif  /* CONFIG_X86_32_LAZY_GS */
+
+#else
+
+#define __PUSH_GS
+#define __POP_GS
+#define __SET_KERNEL_GS(reg)
+
+#endif
+
 #if LINUX_VERSION_CODE > KERNEL_VERSION(2,6,20)
 #define __PUSH_FGS          "pushl %fs\n\t"
 #define __POP_FGS           "popl  %fs\n\t"
@@ -942,6 +962,7 @@ irqreturn_t rtai_broadcast_to_local_timers (int irq, void *dev_id, struct pt_reg
         SYMBOL_NAME_STR(name) ":\n\t" \
 	"pushl $0\n\t" \
 	"cld\n\t" \
+        __PUSH_GS \
         __PUSH_FGS \
         "pushl %es\n\t" \
         "pushl %ds\n\t" \
@@ -956,6 +977,7 @@ irqreturn_t rtai_broadcast_to_local_timers (int irq, void *dev_id, struct pt_reg
         "movl %edx, %ds\n\t" \
         "movl %edx, %es\n\t" \
         __LOAD_KERNEL_PDA \
+	__SET_KERNEL_GS(edx) \
         "call "SYMBOL_NAME_STR(fun)"\n\t" \
         "testl %eax,%eax\n\t" \
         "jnz  ret_from_intr\n\t" \
@@ -969,6 +991,7 @@ irqreturn_t rtai_broadcast_to_local_timers (int irq, void *dev_id, struct pt_reg
         "popl %ds\n\t" \
         "popl %es\n\t" \
         __POP_FGS \
+        __POP_GS \
 	"addl $4, %esp\n\t" \
         "iret")
 

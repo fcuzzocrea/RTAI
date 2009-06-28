@@ -207,7 +207,7 @@ index 0b72282..6574056 100644
  /*
 diff --git a/arch/x86/include/asm/ipipe.h b/arch/x86/include/asm/ipipe.h
 new file mode 100644
-index 0000000..20f9c52
+index 0000000..5ee7fa4
 --- /dev/null
 +++ b/arch/x86/include/asm/ipipe.h
 @@ -0,0 +1,156 @@
@@ -238,10 +238,10 @@ index 0000000..20f9c52
 +#ifdef CONFIG_IPIPE
 +
 +#ifndef IPIPE_ARCH_STRING
-+#define IPIPE_ARCH_STRING	"2.4-03"
++#define IPIPE_ARCH_STRING	"2.4-04"
 +#define IPIPE_MAJOR_NUMBER	2
 +#define IPIPE_MINOR_NUMBER	4
-+#define IPIPE_PATCH_NUMBER	3
++#define IPIPE_PATCH_NUMBER	4
 +#endif
 +
 +DECLARE_PER_CPU(struct pt_regs, __ipipe_tick_regs);
@@ -6610,10 +6610,10 @@ index 0000000..de5e6a3
 +       default n
 diff --git a/kernel/ipipe/Kconfig.debug b/kernel/ipipe/Kconfig.debug
 new file mode 100644
-index 0000000..fc3e1dd
+index 0000000..6717b51
 --- /dev/null
 +++ b/kernel/ipipe/Kconfig.debug
-@@ -0,0 +1,86 @@
+@@ -0,0 +1,87 @@
 +config IPIPE_DEBUG
 +	bool "I-pipe debugging"
 +	depends on IPIPE
@@ -6658,6 +6658,7 @@ index 0000000..fc3e1dd
 +	select FUNCTION_TRACER
 +	select TRACING
 +	select CONTEXT_SWITCH_TRACER
++ 	select DYNAMIC_FTRACE
 +	---help---
 +	  When enabled, records every kernel function entry in the tracer
 +	  log. While this slows down the system noticeably, it provides
@@ -6711,7 +6712,7 @@ index 0000000..6257dfa
 +obj-$(CONFIG_IPIPE_TRACE) += tracer.o
 diff --git a/kernel/ipipe/core.c b/kernel/ipipe/core.c
 new file mode 100644
-index 0000000..dc79d03
+index 0000000..eeaee66
 --- /dev/null
 +++ b/kernel/ipipe/core.c
 @@ -0,0 +1,1795 @@
@@ -8417,14 +8418,14 @@ index 0000000..dc79d03
 +
 +#if defined(CONFIG_IPIPE_DEBUG) && defined(CONFIG_SMP)
 +
-+int __ipipe_check_percpu_access(void)
++int notrace __ipipe_check_percpu_access(void)
 +{
 +	struct ipipe_percpu_domain_data *p;
 +	struct ipipe_domain *this_domain;
 +	unsigned long flags;
 +	int ret = 0;
 +
-+	local_irq_save_hw(flags);
++	local_irq_save_hw_notrace(flags);
 +
 +	this_domain = __raw_get_cpu_var(ipipe_percpu_domain);
 +
@@ -8456,7 +8457,7 @@ index 0000000..dc79d03
 +	 */
 +	ret = 1;
 +out:
-+	local_irq_restore_hw(flags);
++	local_irq_restore_hw_notrace(flags);
 +
 +	return ret;
 +}
@@ -10781,18 +10782,34 @@ index cffffad..0a3eac6 100644
  /*
   * This function runs timers and the timer-tq in bottom half context.
   */
-diff --git a/kernel/trace/Kconfig b/kernel/trace/Kconfig
-index 417d198..24cd98c 100644
---- a/kernel/trace/Kconfig
-+++ b/kernel/trace/Kconfig
-@@ -360,6 +360,7 @@ config DYNAMIC_FTRACE
- 	bool "enable/disable ftrace tracepoints dynamically"
- 	depends on FUNCTION_TRACER
- 	depends on HAVE_DYNAMIC_FTRACE
-+ 	depends on !IPIPE_TRACE_MCOUNT
- 	default y
- 	help
-          This option will modify all the calls to ftrace dynamically
+diff --git a/kernel/trace/ftrace.c b/kernel/trace/ftrace.c
+index f1ed080..f7c600d 100644
+--- a/kernel/trace/ftrace.c
++++ b/kernel/trace/ftrace.c
+@@ -2189,9 +2189,9 @@ static int ftrace_convert_nops(struct module *mod,
+ 	}
+ 
+ 	/* disable interrupts to prevent kstop machine */
+-	local_irq_save(flags);
++	local_irq_save_hw_notrace(flags);
+ 	ftrace_update_code(mod);
+-	local_irq_restore(flags);
++	local_irq_restore_hw_notrace(flags);
+ 	mutex_unlock(&ftrace_lock);
+ 
+ 	return 0;
+@@ -2216,9 +2216,9 @@ void __init ftrace_init(void)
+ 	/* Keep the ftrace pointer to the stub */
+ 	addr = (unsigned long)ftrace_stub;
+ 
+-	local_irq_save(flags);
++	local_irq_save_hw_notrace(flags);
+ 	ftrace_dyn_arch_init(&addr);
+-	local_irq_restore(flags);
++	local_irq_restore_hw_notrace(flags);
+ 
+ 	/* ftrace_dyn_arch_init places the return code in addr */
+ 	if (addr)
 diff --git a/lib/Kconfig.debug b/lib/Kconfig.debug
 index 6cdcf38..96d98a6 100644
 --- a/lib/Kconfig.debug

@@ -2687,7 +2687,7 @@ index 38946c6..66112f0 100644
 +#ifdef CONFIG_IPIPE
 +	XCPT_FRAME
 +	addq $-0x80,(%rsp)		/* Adjust vector to [-256,-1] range */
-+	interrupt __ipipe_handle_irq
++	interrupt *ipipe_irq_handler
 +	testl %eax, %eax
 +	jnz ret_from_intr
 +	decl PER_CPU_VAR(irq_count)
@@ -2759,7 +2759,7 @@ index 38946c6..66112f0 100644
  	pushq $~(\num)
  	CFI_ADJUST_CFA_OFFSET 8
 +#ifdef CONFIG_IPIPE
-+	interrupt __ipipe_handle_irq
++	interrupt *ipipe_irq_handler
 +	testl %eax, %eax
 +	jnz ret_from_intr
 +	decl PER_CPU_VAR(irq_count)

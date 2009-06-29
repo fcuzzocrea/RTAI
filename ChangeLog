@@ -1,13 +1,13 @@
 2009-06-28 Paolo Mantegazza <mantegazza@aero.polimi.it>
 
-        * base/iarch/i386/hal/immed.c: support CONFIG_X86_32_LAZY_GS for
+        * base/arch/i386/hal/immed.c: support CONFIG_X86_32_LAZY_GS for
 	  direct vectoring with Linux > 2.6.29.
 
 2009-06-27 Paolo Mantegazza <mantegazza@aero.polimi.it>
 
-	* base/iarch/i386/hal/hal.c: use general hal_processor_id in place of
+	* base/arch/i386/hal/hal.c: use general hal_processor_id in place of
 	  hard_smp_processor_id to avoid Linux version dependencies.
-	* base/iarch/i386/hal/immed.c: do not set proc entry
+	* base/arch/i386/hal/immed.c: do not set proc entry
 	  owner for Linux >= 2.6.30
 
 2009-06-19 Roberto Bucher <roberto.bucher@supsi.ch>

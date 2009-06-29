@@ -7,8 +7,8 @@
 
         * base/arch/i386/hal/hal.c: use general hal_processor_id in place of 
 	  hard_smp_processor_id to avoid Linux version dependencies.
-        * base/arch/i386/hal/immed.c: do not set proc entry owner for 
-	  Linux >= 2.6.30
+        * base/arch/i386/hal/immed.c, base/arch/x_86_64/hal/immed.c: do not 
+	  set proc entry owner for Linux >= 2.6.30
 
 2009-06-06 Paolo Mantegazza <mantegazza@aero.polimi.it>
 

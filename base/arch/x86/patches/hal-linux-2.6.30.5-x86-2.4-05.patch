@@ -10571,7 +10571,7 @@ index 0d3d47f..dd38aac 100644
  		goto out;
  
  	if (p->se.on_rq)
-@@ -2745,22 +2745,29 @@ asmlinkage void schedule_tail(struct tas
+@@ -2746,22 +2746,29 @@ asmlinkage void schedule_tail(struct tas
  #endif
  	if (current->set_child_tid)
  		put_user(task_pid_vnr(current), current->set_child_tid);
@@ -10604,7 +10604,7 @@ index 0d3d47f..dd38aac 100644
  	/*
  	 * For paravirt, this is coupled with an exit in switch_to to
  	 * combine the page table reload and the switch backend into
-@@ -2788,11 +2795,24 @@ context_switch(struct rq *rq, struct tas
+@@ -2789,11 +2796,24 @@ context_switch(struct rq *rq, struct tas
  #ifndef __ARCH_WANT_UNLOCKED_CTXSW
  	spin_release(&rq->lock.dep_map, 1, _THIS_IP_);
  #endif
@@ -10630,7 +10630,7 @@ index 0d3d47f..dd38aac 100644
  	/*
  	 * this_rq must be evaluated again because prev may have moved
  	 * CPUs since it called schedule(), thus the 'rq' on its stack
-@@ -2800,6 +2820,10 @@ context_switch(struct rq *rq, struct tas
+@@ -2801,6 +2821,10 @@ context_switch(struct rq *rq, struct tas
  	 */
  	finish_task_switch(this_rq(), prev);
  }
@@ -10641,7 +10641,7 @@ index 0d3d47f..dd38aac 100644
  
  /*
   * nr_running, nr_uninterruptible and nr_context_switches:
-@@ -4861,6 +4885,7 @@ notrace unsigned long get_parent_ip(unsi
+@@ -4862,6 +4886,7 @@ notrace unsigned long get_parent_ip(unsi
  
  void __kprobes add_preempt_count(int val)
  {
@@ -10649,7 +10649,7 @@ index 0d3d47f..dd38aac 100644
  #ifdef CONFIG_DEBUG_PREEMPT
  	/*
  	 * Underflow?
-@@ -4883,6 +4908,7 @@ EXPORT_SYMBOL(add_preempt_count);
+@@ -4884,6 +4909,7 @@ EXPORT_SYMBOL(add_preempt_count);
  
  void __kprobes sub_preempt_count(int val)
  {
@@ -10657,7 +10657,7 @@ index 0d3d47f..dd38aac 100644
  #ifdef CONFIG_DEBUG_PREEMPT
  	/*
  	 * Underflow?
-@@ -4931,6 +4957,7 @@ static noinline void __schedule_bug(stru
+@@ -4932,6 +4958,7 @@ static noinline void __schedule_bug(stru
   */
  static inline void schedule_debug(struct task_struct *prev)
  {
@@ -10665,7 +10665,7 @@ index 0d3d47f..dd38aac 100644
  	/*
  	 * Test if we are atomic. Since do_exit() needs to call into
  	 * schedule() atomically, we ignore that path for now.
-@@ -5007,7 +5034,7 @@ pick_next_task(struct rq *rq)
+@@ -5008,7 +5035,7 @@ pick_next_task(struct rq *rq)
  /*
   * schedule() is the main scheduler function.
   */
@@ -10674,7 +10674,7 @@ index 0d3d47f..dd38aac 100644
  {
  	struct task_struct *prev, *next;
  	unsigned long *switch_count;
-@@ -5019,6 +5046,9 @@ asmlinkage void __sched __schedule(void)
+@@ -5020,6 +5047,9 @@ asmlinkage void __sched __schedule(void)
  	rcu_qsctr_inc(cpu);
  	prev = rq->curr;
  	switch_count = &prev->nivcsw;
@@ -10684,7 +10684,7 @@ index 0d3d47f..dd38aac 100644
  
  	release_kernel_lock(prev);
  need_resched_nonpreemptible:
-@@ -5058,25 +5088,31 @@ need_resched_nonpreemptible:
+@@ -5059,25 +5089,31 @@ need_resched_nonpreemptible:
  		rq->curr = next;
  		++*switch_count;
  
@@ -10719,7 +10719,7 @@ index 0d3d47f..dd38aac 100644
  	preempt_enable_no_resched();
  	if (unlikely(test_thread_flag(TIF_NEED_RESCHED)))
  		goto need_resched;
-@@ -5906,6 +5942,7 @@ recheck:
+@@ -5907,6 +5943,7 @@ recheck:
  
  	oldprio = p->prio;
  	__setscheduler(rq, p, policy, param->sched_priority);
@@ -10727,7 +10727,7 @@ index 0d3d47f..dd38aac 100644
  
  	if (running)
  		p->sched_class->set_curr_task(rq);
-@@ -6253,6 +6290,7 @@ static void __cond_resched(void)
+@@ -6254,6 +6291,7 @@ static void __cond_resched(void)
  #ifdef CONFIG_DEBUG_SPINLOCK_SLEEP
  	__might_sleep(__FILE__, __LINE__);
  #endif
@@ -10735,7 +10735,7 @@ index 0d3d47f..dd38aac 100644
  	/*
  	 * The BKS might be reacquired before we have dropped
  	 * PREEMPT_ACTIVE, which could trigger a second
-@@ -10239,3 +10277,60 @@ struct cgroup_subsys cpuacct_subsys = {
+@@ -10240,3 +10278,60 @@ struct cgroup_subsys cpuacct_subsys = {
  	.subsys_id = cpuacct_subsys_id,
  };
  #endif	/* CONFIG_CGROUP_CPUACCT */

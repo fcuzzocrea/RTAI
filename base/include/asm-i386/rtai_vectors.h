@@ -30,11 +30,15 @@
 #ifndef _RTAI_ASM_I386_VECTORS_H
 #define _RTAI_ASM_I386_VECTORS_H
 
-#define RTAI_SYS_VECTOR     0xF6
+#include <linux/version.h>
+
+#if LINUX_VERSION_CODE > KERNEL_VERSION(2,6,30)
+#define RTAI_SYS_VECTOR  0xF4
+#else
+#define RTAI_SYS_VECTOR  0xF6
+#endif
 
 #ifdef __KERNEL__
-
-#include <linux/version.h>
 
 #if LINUX_VERSION_CODE > KERNEL_VERSION(2,6,19)
 #include <asm/ipipe.h>

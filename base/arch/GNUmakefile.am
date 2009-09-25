@@ -15,7 +15,11 @@ ARCHDIR = ppc
 endif
 
 if CONFIG_M68KNOMMU
-ARCHDIR = m68knommu
+ARCHDIR = m68k
+endif
+
+if CONFIG_M68K
+ARCHDIR = m68k
 endif
 
 SUBDIRS = $(ARCHDIR)

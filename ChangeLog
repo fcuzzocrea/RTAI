@@ -1,3 +1,9 @@
+2009-09-25 Valentin Pavlyuchenko <TheValik@gmail.com>
+	   Pierangelo Masarati <masarati@aero.polimi.it>
+	* base/arch/m68k:
+	* base/include/asm-m68k: import of m68k support
+	  contributed by Valentin
+
 2009-06-28 Paolo Mantegazza <mantegazza@aero.polimi.it>
 
         * base/arch/i386/hal/immed.c: support CONFIG_X86_32_LAZY_GS for

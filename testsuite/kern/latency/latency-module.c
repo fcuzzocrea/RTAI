@@ -38,7 +38,7 @@ MODULE_AUTHOR("Paolo Mantegazza <mantegazza@aero.polimi.it>, Robert Schwebel <ro
  *	command line parameters
  */
 
-#if defined(CONFIG_UCLINUX) || defined(CONFIG_ARM)
+#if defined(CONFIG_UCLINUX) || defined(CONFIG_ARM) || defined(CONFIG_COLDFIRE)
 #define DEFAULT_PERIOD 1000000
 #else
 #define DEFAULT_PERIOD 100000

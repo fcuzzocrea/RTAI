@@ -29,7 +29,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA.
 #include <rtai_msg.h>
 
 #define AVRGTIME    1
-#if defined(CONFIG_UCLINUX) || defined(CONFIG_ARM)
+#if defined(CONFIG_UCLINUX) || defined(CONFIG_ARM) || defined(CONFIG_COLDFIRE)
 #define PERIOD 1000000
 #else
 #define PERIOD 100000

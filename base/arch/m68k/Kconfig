@@ -1,4 +1,4 @@
-mainmenu "RTAI/PPC configuration"
+mainmenu "RTAI/m68k/m68knommu configuration"
 
 config MODULES
 	bool
@@ -172,12 +172,12 @@ choice
 	  programs against the appropriate support library (e.g. liblxrt.a 
 	  for user space RTAI syscall services).
 
-config RTAI_LXRT_EXTERN_INLINE
-	bool "Conditional inlining"
-	help
-
 config RTAI_LXRT_STATIC_INLINE
 	bool "Eager inlining"
+	help
+
+config RTAI_LXRT_EXTERN_INLINE
+	bool "Conditional inlining"
 	help
 
 config RTAI_LXRT_NO_INLINE
@@ -188,69 +188,33 @@ endchoice
 
 endmenu
 
-menu "Machine (PPC)"
+#menu "Machine (m68k/m68knommu)"
 
 #config RTAI_DONT_DISPATCH_CORE_IRQS
-#	bool "Direct vectoring of RTAI native interrupts"
-#	depends on RTAI_EXTENDED
-#	# to be restored later?
-#	# default y
-#	default n
-#	help
-#	RTAI dispatches real time interrupts immediately to achieve as
-#	low a overhead as possible. Very important on low end CPUs. By
-#	setting this option it is possible to achieve a further improvement
-#	by allowing hard RTAI internal timers and SMP interprocessor 
-#	scheduling interrupts to be vectored directly to their handlers, 
-#	i.e without any dispatching overhead. A must on low end CPUs.
+#	bool
+#	default y
 
 config RTAI_FPU_SUPPORT
-	bool "Enable FPU support"
-	default y
-	help
-	The FPU executes instructions from the processor's normal
-	instruction stream. It can handle the types of high-precision
-	floating-point processing operations commonly found in
-	scientific, engineering, and business applications.  Enabling
-	FPU support on a platform providing this hardware component
-	may greatly improve performances.  You can obtain more
-	information about Float-Point Unit on i386 platform on
-	internet at the following URL:
-	http://www.intel.com/design/intarch/techinfo/Pentium/fpu.htm
+	bool
+	default n
 
 config RTAI_CPUS
-	string "Number of CPUs (SMP-only)"
-	default 2
-	help
-	RTAI has native support for Symmetrical Multi-Processing
-	machines. If it is your case, you may want to enter here the
-	number of CPUs of your motherboard.
-
-	PAY ATTENTION: the default value is 2.
+	string 
+	default 1
 
 #config RTAI_DIAG_TSC_SYNC
-#	bool "Diagnose out of sync MP-TSCs"
+#	bool
 #	default n
-#	help
-#	Check alignement of MP-TSCs, against a master CPU, and show them in
-#	the RTAI HAL proc file system (in TSC count units).
 #
 #config RTAI_MASTER_TSC_CPU
-#	depends on RTAI_DIAG_TSC_SYNC
-#	string "Define the master CPU for aligning MP-TSCs"
+#	string
 #	default 0
-#	help
-#	Master CPU for diagnosis and correction of TSCs alignement.
 #
 #config RTAI_TUNE_TSC_SYNC
-#	depends on RTAI_DIAG_TSC_SYNC
-#	bool "Tune out of sync MP-TSCs"
+#	bool
 #	default n
-#	help
-#	Use offsets made available by enabling the out of sync diagnosis to
-#	keep readings of TSCs times as aligned as possible.
 #
-endmenu
+#endmenu
 
 menu "Base system"
 
@@ -273,31 +237,8 @@ config RTAI_SCHED_ISR_LOCK
 	from ISRs by enabling this configuration option.
 
 config RTAI_RTC_FREQ
-	string "Set RTC clock tick frequency and use RTC as the only timer"
+	string
 	default 0
-	help
-	1 - Are you happy of working in periodic mode?
-	2 - If so, is it accepable to resolve your timing needs with a 
-	    tick within a frequency that can be varied just in powers of
-	    2, from 2 to 8192 Hz?
-	If both your answers are YES than it might be worth setting your 
-	tick frequency of choice here and let RTAI schedulers work with 
-	it using the Real Time Clock (RTC). Be careful though as:
-	- you must not have configured the RTC as available to Linux;
-	- RTC will be the only available timer and its tick frequency 
-	  can be modified only here, so you must reconfigure this param 
-	  to change it, setting it to zero to return using the other 
-	  RTAI timers.
-	The main advantage of using the RTC, if constraints 1 and 2 can be
-	accepted, is that you will not touch any of the hard timing sources
-	used by Linux (8254 especially and APIC too). In fact if an APIC 
-	timer is available (SMP and recent machines) it is possible to avoid
-	the most important interference with Linux timing by not using the 
-	8254. However such a possibilty is not available on low end CPUs 
-	and embedded systems for which the only way to avoid interfering with
-	the Linux timer might be this option. Thus in such cases, 1-2 above 
-	being acceptable once more, setting this config param might be a
-	good choice.
 
 config RTAI_LONG_TIMED_LIST
 	bool "Use a binary tree ordering for RTAI schedulers timed lists."
@@ -314,8 +255,8 @@ config RTAI_LONG_TIMED_LIST
 	likely that it might be worth enabling this option.
 
 config RTAI_SCHED_8254_LATENCY
-	string "8254 tuning latency (ns)"
-	default 4700
+	string "Timer tuning latency (ns)"
+	default 45000
 	help
 	The anticipation time to be used to program the hard timer, in oneshot
 	mode, for the next scheduling shot in order to compensate for the 
@@ -323,13 +264,8 @@ config RTAI_SCHED_8254_LATENCY
 	This parameter has no effect when the periodic mode is used.
 
 config RTAI_SCHED_APIC_LATENCY
-	string "APIC tuning latency (ns)"
+	string 
 	default 3944
-        help
-        The anticipation time to be used to program the hard timer, in oneshot
-        mode, for the next scheduling shot in order to compensate for the
-        programming overhead needed to determine the right firing time.
-	This parameter has no effect when the periodic mode is used.
 
 config RTAI_SCHED_LXRT_NUMSLOTS
 	string "Number of registrable RTAI objects"
@@ -402,36 +338,34 @@ config RTAI_BUSY_TIME_ALIGN
 	waist in favour of precise schedule deadlines.
 	Do not set it if a hard periodic timer is to be used.
 
-#config RTAI_LXRT_USE_LINUX_SYSCALL
-#	bool "Use Linux syscall mechanism for RTAI calls from user space"
-#	# to be restored later?
-#	# default n
-#	default y
-#	help
-#	With this option enabled, RTAI uses the Linux syscall mechanism
-#	for its service calls, including RTAI own srqs, as provided by libc 
-#	"syscall".  This may improve signal handling (and therefore debugging 
-#	of RTAI applications), but has the drawback of a slight overhead. 
-#
-#	When direct inlining of RTAI syscalls is enabled, see the related
-#	configuration options, it is still possible to force the use of 
-#	the Linux syscall mechanism, even if this configuration parameter 
-#	has not been set. Notice that RTAI own srqs are inlined always.
-#	So, since it all depends on the definition of the USE_LINUX_SYSCALL 
-#	macro, the only thing to do is to add:
-#	#define USE_LINUX_SYSCALL
-#	after all of the RTAI headers inclusion in any source file in which 
-#	you want to use the Linux syscall mechanism, to be sure that the macro
-#	USE_LINUX_SYSCALL will not be redifined afterward. In the same way 
-#	when this parameter is set you can selectively revert to RTAI own 
-#	syscall mechanism by defining:
-#	#undef USE_LINUX_SYSCALL
-#	after all of the RTAI headers inclusion in any source file in which 
-#	you want to use the LXRT syscall mechanism.
-#	RTAI will then operate in mixed mode selectively by using both 
-#	its own and Linux syscall mechanisms.
-#	
-#	If in doubt, say no.
+config RTAI_LXRT_USE_LINUX_SYSCALL
+	bool "Use Linux syscall mechanism for RTAI calls from user space"
+	default y
+	help
+	With this option enabled, RTAI uses the Linux syscall mechanism
+	for its service calls, including RTAI own srqs, as provided by libc 
+	"syscall".  This may improve signal handling (and therefore debugging 
+	of RTAI applications), but has the drawback of a slight overhead. 
+
+	When direct inlining of RTAI syscalls is enabled, see the related
+	configuration options, it is still possible to force the use of 
+	the Linux syscall mechanism, even if this configuration parameter 
+	has not been set. Notice that RTAI own srqs are inlined always.
+	So, since it all depends on the definition of the USE_LINUX_SYSCALL 
+	macro, the only thing to do is to add:
+	#define USE_LINUX_SYSCALL
+	after all of the RTAI headers inclusion in any source file in which 
+	you want to use the Linux syscall mechanism, to be sure that the macro
+	USE_LINUX_SYSCALL will not be redifined afterward. In the same way 
+	when this parameter is set you can selectively revert to RTAI own 
+	syscall mechanism by defining:
+	#undef USE_LINUX_SYSCALL
+	after all of the RTAI headers inclusion in any source file in which 
+	you want to use the LXRT syscall mechanism.
+	RTAI will then operate in mixed mode selectively by using both 
+	its own and Linux syscall mechanisms.
+	
+	If in doubt, say no.
 
 config RTAI_ALIGN_LINUX_PRIORITY
 	bool "Keep Linux task priority aligned to RTAI"
@@ -783,7 +717,7 @@ config RTAI_MALLOC
 	default y
 	help
 	RTAI provides a real-time implementation of malloc(). This allows 
-	real-time tasks to allocate and to free memory safely whilst executing
+	real-time tasks to allocate and to free memory safely while executing
 	in the real-time domain.
 	The module will be called rtai_malloc.o.
 
@@ -810,7 +744,7 @@ config RTAI_USE_TLSF
 config RTAI_MALLOC_VMALLOC
 	bool "Use vmalloc() support"
 	depends on RTAI_MALLOC
-	default n
+	default y
 	help
 	RTAI's malloc support offers two different ways to allocate memory 
 	chunks, i.e. kmalloc and vmalloc.
@@ -818,7 +752,7 @@ config RTAI_MALLOC_VMALLOC
 	- it is simpler to share allocated buffers with user space;
 	- it doesn't have the size restrictions of kmalloc.
 	The reasons for using kmalloc:
-	- it is faster (not important since it as to be used in sof real time);
+	- it is faster (not important since it as to be used in soft real time);
 	- it exhibits contiguous buffer addressing needed for DMA controllers 
 	  which don't have scattering/gathering capability.
 	The default is using kmalloc()
@@ -826,7 +760,7 @@ config RTAI_MALLOC_VMALLOC
 config RTAI_MALLOC_HEAPSZ
 	string "Size of the global heap (Kbytes)"
 	depends on RTAI_MALLOC
-	default 2048
+	default 128
 	help
 	RTAI pre-allocates a global heap as part of its initialization
 	chores. This parameter allows to define its size (in
@@ -911,11 +845,9 @@ config RTAI_WD
 	- kill the offending task and remove all traces.
 	The module will be called rtai_wd.o.
 
-#config RTAI_LEDS
-#	tristate "LEDS-based debugging support"
-#	default m
-#	help
-#	The module will be called rtai_leds.o.
+config RTAI_LEDS
+	tristate 
+	default n
 
 endmenu
 
@@ -944,12 +876,8 @@ config RTAI_COMEDI_DIR
 	linux/comedilib.h.
 
 config RTAI_CPLUSPLUS
-	bool "In-kernel C++ support"
-	default y
-	help
-	RTAI offers a C++ framework if you want to develop C++ real-time 
-	applications.
-	The module will be called rtai_cpp.o.
+	bool
+	default n
 
 config RTAI_RTDM
 	bool "Real-Time Driver Model over RTAI"
@@ -994,19 +922,12 @@ config RTAI_DEBUG_RTDM
 menu "Drivers"
 
 config RTAI_DRIVERS_SERIAL
-	bool "RTAI serial line driver"
-	default y
-	help
-	The RTAI real-time serial driver.
-	The module will be called rtai_serial.o.
+	bool 
+	default n
 
 config RTAI_DRIVERS_16550A
-	bool "RTDM based 16550A driver support"
-	depends on RTAI_RTDM
+	bool 
 	default n
-	help
-	An alternate RTAI real-time serial driver based on RTDM.
-	The module will be called rtai_16550A.o.
 
 choice
 	prompt "Hardware access mode"
@@ -1041,7 +962,6 @@ endchoice
 endmenu
 
 endmenu
-
 menu "RTAI Lab"
 
 config RTAI_LAB
@@ -1067,5 +987,3 @@ config RTAI_EFLTK_DIR
 	directory here.
 
 endmenu
-
-source rtai-sim/Kconfig

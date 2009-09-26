@@ -4,6 +4,13 @@
 	* base/include/asm-m68k: import of m68k support
 	  contributed by Valentin
 
+2009-09-22 Paolo Mantegazza <mantegazza@aero.polimi.it>
+
+        * base/include/rtai_wrappers.h: define set find_task_by_pid to work
+	  with Linux > 2.6.30.
+	* base/include/asm-i386/rtai_vectors.h: RTAI_SYS_VECTOR depends on
+	  Linux version now, to support changes in latest HALs.
+
 2009-06-28 Paolo Mantegazza <mantegazza@aero.polimi.it>
 
         * base/arch/i386/hal/immed.c: support CONFIG_X86_32_LAZY_GS for

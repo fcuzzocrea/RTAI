@@ -429,7 +429,9 @@ RTAI_SYSCALL_MODE int rt_task_suspend_until(RT_TASK *task, RTIME time)
 							rt_global_restore_flags(flags);
 							return RTE_UNBLKD;
 						}
-						if (task->suspdepth) {
+						if (unlikely(--task->suspdepth)) {
+							rem_ready_current(task);
+							task->state |= RT_SCHED_SUSPENDED;
 							continue;
 						}
 						rt_global_restore_flags(flags);
@@ -445,7 +447,7 @@ RTAI_SYSCALL_MODE int rt_task_suspend_until(RT_TASK *task, RTIME time)
 				}
 			} else {
 				rt_global_restore_flags(flags);
-				return RTE_TIMOUT;
+				return RTE_TMROVRN;
 			}
 		} else {
 			task->suspdepth++;

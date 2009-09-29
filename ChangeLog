@@ -1,3 +1,8 @@
+2009-09-29 Paolo Mantegazza <mantegazza@aero.polimi.it>
+
+        * base/sched/api.c: fix rt_task_suspend_timed if it does timeout, use 
+	  RTE_TMROVRN in place of RTE_TIMOUT if time is overrunned.
+
 2009-09-25 Valentin Pavlyuchenko <TheValik@gmail.com>
 	   Pierangelo Masarati <masarati@aero.polimi.it>
 	* base/arch/m68k:

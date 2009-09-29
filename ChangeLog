@@ -1,3 +1,8 @@
+2009-09-29 Paolo Mantegazza <mantegazza@aero.polimi.it>
+
+	* base/sched/api.c: fix rt_task_suspend_timed if it does timeout, use
+	  RTE_TMROVRN in place of RTE_TIMOUT if time is overrunned.
+
 2009-09-25 Valentin Pavlyuchenko <TheValik@gmail.com>
 	   Pierangelo Masarati <masarati@aero.polimi.it>
 	* base/arch/m68k:
@@ -6,7 +11,7 @@
 
 2009-09-22 Paolo Mantegazza <mantegazza@aero.polimi.it>
 
-        * base/include/rtai_wrappers.h: define set find_task_by_pid to work
+	* base/include/rtai_wrappers.h: define set find_task_by_pid to work
 	  with Linux > 2.6.30.
 	* base/include/asm-i386/rtai_vectors.h: RTAI_SYS_VECTOR depends on
 	  Linux version now, to support changes in latest HALs.

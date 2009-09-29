@@ -1,6 +1,6 @@
 2009-09-29 Paolo Mantegazza <mantegazza@aero.polimi.it>
 
-        * base/sched/api.c: fix rt_task_suspend_timed if it does timeout, use 
+	* base/sched/api.c: fix rt_task_suspend_timed if it does timeout, use
 	  RTE_TMROVRN in place of RTE_TIMOUT if time is overrunned.
 
 2009-09-25 Valentin Pavlyuchenko <TheValik@gmail.com>
@@ -11,9 +11,9 @@
 
 2009-09-22 Paolo Mantegazza <mantegazza@aero.polimi.it>
 
-        * base/include/rtai_wrappers.h: define set find_task_by_pid to work 
+	* base/include/rtai_wrappers.h: define set find_task_by_pid to work
 	  with Linux > 2.6.30.
-        * base/include/asm-i386/rtai_vectors.h: RTAI_SYS_VECTOR depends on 
+	* base/include/asm-i386/rtai_vectors.h: RTAI_SYS_VECTOR depends on
 	  Linux version now, to support changes in latest HALs.
 
 2009-06-28 Paolo Mantegazza <mantegazza@aero.polimi.it>
@@ -23,14 +23,14 @@
 
 2009-06-27 Paolo Mantegazza <mantegazza@aero.polimi.it>
 
-        * base/arch/i386/hal/hal.c: use general hal_processor_id in place of 
+	* base/arch/i386/hal/hal.c: use general hal_processor_id in place of
 	  hard_smp_processor_id to avoid Linux version dependencies.
-        * base/arch/i386/hal/hal.immed, base/arch/x_86_64/hal/hal_immed: do 
+	* base/arch/i386/hal/hal.immed, base/arch/x_86_64/hal/hal_immed: do
 	  not set proc entry owner for Linux >= 2.6.30
 
 2009-06-06 Paolo Mantegazza <mantegazza@aero.polimi.it>
 
-        * base/arch/i386/hal/hal.c: care of Linux version in calling
+	* base/arch/i386/hal/hal.c: care of Linux version in calling
 	  smp_call_function, pointed at by Rodrigo Amestica
 	  <ramestica@nrao.edu>
 

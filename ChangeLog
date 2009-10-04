@@ -1,3 +1,13 @@
+2009-10-04 Roberto Bucher <roberto.bucher@supsi.ch>
+
+	* rtai-lab/xrtailab.cpp: 
+	* rtai-lab/xrtailab.h: 
+	* rtai-lab/Fl_Scopes_Manager.cpp: 
+	* rtai-lab/scicoslab/macros/RTAI/rtai4_scope.sci:
+	* rtai-lab/scilab/macros/RTAI/rtai4_scope.sci:
+	* rtai-lab/scila5/macros/RTAI/rtai4_scope.sci: Modifications for
+	  scopes with signal names and double type (thanks to Henrik Slotholt).
+
 2009-09-29 Paolo Mantegazza <mantegazza@aero.polimi.it>
 
 	* base/sched/api.c: fix rt_task_suspend_timed if it does timeout, use

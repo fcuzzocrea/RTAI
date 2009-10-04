@@ -1,3 +1,7 @@
+2009-10-04 Paolo Mantegazza <mantegazza@aero.polimi.it>
+
+	* base/sched/api.c: revised all suspend functions.
+
 2009-10-04 Roberto Bucher <roberto.bucher@supsi.ch>
 
 	* rtai-lab/xrtailab.cpp: 

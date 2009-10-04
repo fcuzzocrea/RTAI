@@ -22,12 +22,11 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA.
 
 #include <rtai_comedi.h>
 #include <math.h>
+#include "rtmain.h"
 
 extern void *ComediDev[];
 extern int ComediDev_InUse[];
 extern int ComediDev_AOInUse[];
-
-void exit_on_error(void);
 
 #ifdef SOFTCALIB
 int get_softcal_coef(char *devName, unsigned subdev, unsigned channel,
@@ -51,6 +50,7 @@ struct DACOMDev{
 static void init(scicos_block *block)
 {
   struct DACOMDev * comdev = (struct DACOMDev *) malloc(sizeof(struct DACOMDev));
+  *block->work = (void *)comdev;
 
   char devName[15];
   char board[50];
@@ -69,6 +69,7 @@ static void init(scicos_block *block)
     if (!(comdev->dev)) {
       fprintf(stderr, "COMEDI %s open failed\n", devName);
       exit_on_error();
+      return;
     }
     rt_comedi_get_board_name(comdev->dev, board);
     printf("COMEDI %s (%s) opened.\n\n", devName, board);
@@ -80,11 +81,13 @@ static void init(scicos_block *block)
     fprintf(stderr, "Comedi find_subdevice failed (No analog output)\n");
     comedi_close(comdev->dev);
     exit_on_error();
+    return;
   }
   if (!ComediDev_AOInUse[comdev->index] && comedi_lock(comdev->dev, comdev->subdev) < 0) {
     fprintf(stderr, "Comedi lock failed for subdevice %d\n", comdev->subdev);
     comedi_close(comdev->dev);
     exit_on_error();
+    return;
   }
 
   if (comdev->channel >= comedi_get_n_channels(comdev->dev, comdev->subdev)) {
@@ -92,12 +95,14 @@ static void init(scicos_block *block)
     comedi_unlock(comdev->dev, comdev->subdev);
     comedi_close(comdev->dev);
     exit_on_error();
+    return;
   }
   if ((comedi_get_krange(comdev->dev, comdev->subdev, comdev->channel, comdev->range, &krange)) < 0) {
     fprintf(stderr, "Comedi get_range failed for subdevice %d\n", comdev->subdev);
     comedi_unlock(comdev->dev, comdev->subdev);
     comedi_close(comdev->dev);
     exit_on_error();
+    return;
   }
 #ifdef SOFTCALIB
   int flags;
@@ -132,8 +137,6 @@ static void init(scicos_block *block)
   }
   data = nearbyint(s);
   comedi_data_write(comdev->dev, comdev->subdev, comdev->channel, comdev->range, comdev->aref, data);
-
-  *block->work=(void *)comdev;
 }
 
 static void inout(scicos_block *block)
@@ -167,33 +170,35 @@ static void end(scicos_block *block)
 {
   struct DACOMDev * comdev = (struct DACOMDev *) (*block->work);
 
-  double s, term = 1;
-  lsampl_t data;
+  if (comdev->dev) {
+    double s, term = 1;
+    lsampl_t data;
 
-  int index = comdev->index;
+    int index = comdev->index;
 
-  if (comdev->use_softcal) {
-    unsigned i;
-    for(i = 0; i <= 4; ++i) {
-      s += comdev->coefficients[i+1] * term;
-      term *= 0.0 - comdev->coefficients[0];
+    if (comdev->use_softcal) {
+      unsigned i;
+      for(i = 0; i <= 4; ++i) {
+	s += comdev->coefficients[i+1] * term;
+	term *= 0.0 - comdev->coefficients[0];
+      }
+    } else {
+      s = (0.0 - comdev->range_min)/(comdev->range_max - comdev->range_min)*comdev->maxdata;
     }
-  } else {
-    s = (0.0 - comdev->range_min)/(comdev->range_max - comdev->range_min)*comdev->maxdata;
-  }
-  data = nearbyint(s);
+    data = nearbyint(s);
 
-  comedi_data_write(comdev->dev, comdev->subdev, comdev->channel, comdev->range, comdev->aref, data);
+    comedi_data_write(comdev->dev, comdev->subdev, comdev->channel, comdev->range, comdev->aref, data);
 
-  ComediDev_InUse[index]--;
-  ComediDev_AOInUse[index]--;
-  if (!ComediDev_AOInUse[index]) {
-    comedi_unlock(comdev->dev, comdev->subdev);
-  }
-  if (!ComediDev_InUse[index]) {
-    comedi_close(comdev->dev);
-    printf("\nCOMEDI DA /dev/comedi%d closed.\n\n", index);
-    ComediDev[index] = NULL;
+    ComediDev_InUse[index]--;
+    ComediDev_AOInUse[index]--;
+    if (!ComediDev_AOInUse[index]) {
+      comedi_unlock(comdev->dev, comdev->subdev);
+    }
+    if (!ComediDev_InUse[index]) {
+      comedi_close(comdev->dev);
+      printf("\nCOMEDI /dev/comedi%d closed.\n\n", index);
+      ComediDev[index] = NULL;
+    }
   }
   free(comdev);
 }

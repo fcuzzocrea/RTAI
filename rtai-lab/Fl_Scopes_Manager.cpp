@@ -3,6 +3,8 @@ COPYRIGHT (C) 2003  Lorenzo Dozio (dozio@aero.polimi.it)
 		    Roberto Bucher (roberto.bucher@supsi.ch)
 		    Peter Brier (pbrier@dds.nl)
 
+Modified August 2009 by Henrik Slotholt (rtai@slotholt.net)
+
 This library is free software; you can redistribute it and/or
 modify it under the terms of the GNU Lesser General Public
 License as published by the Free Software Foundation; either
@@ -816,12 +818,10 @@ Fl_Scopes_Manager::Fl_Scopes_Manager(int x, int y, int width, int height, Fl_MDI
 		  
 
 		  for (int j = 0; j < Scopes[i].ntraces; j++) {
-			char buf[10];
 			s_idx_T *idx = new s_idx_T;
 			idx->scope_idx = i;
 			idx->trace_idx = j;
-			sprintf(buf, "Trace %d", j+1);
-		  	Trace_Page[i][j] = o->new_page(buf);
+		  	Trace_Page[i][j] = o->new_page(Scopes[i].traceName[j]);
 			Trace_Page[i][j]->label_color(FL_WHITE);
 			{ Fl_Check_Button *o = Trace_Show[i][j] = new Fl_Check_Button(10, 25, 100, 20, "Show/Hide");
 			  o->value(1);

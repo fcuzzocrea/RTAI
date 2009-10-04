@@ -4,6 +4,8 @@ COPYRIGHT (C) 2003  Lorenzo Dozio (dozio@aero.polimi.it)
 		    Roberto Bucher (roberto.bucher@supsi.ch)
 		    Peter Brier (pbrier@dds.nl)
 
+Modified August 2009 by Henrik Slotholt (rtai@slotholt.net)
+
 This library is free software; you can redistribute it and/or
 modify it under the terms of the GNU Lesser General Public
 License as published by the Free Software Foundation; either
@@ -22,7 +24,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA.
 #ifndef _XRTAILAB_H_
 #define _XRTAILAB_H_
 
-#define XRTAILAB_VERSION	"3.5.1"
+#define XRTAILAB_VERSION	"3.6.1"
 
 #define MAX_NHOSTS		100
 #define MAX_NAMES_SIZE		256
@@ -107,7 +109,8 @@ struct Target_Blocks_Struct
 
 struct Target_Scopes_Struct
 {
-	char name[MAX_NAMES_SIZE];
+	char *name;
+	char **traceName;
 	int ntraces;
 	int visible;
 	float dt;

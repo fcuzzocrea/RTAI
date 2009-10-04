@@ -4,6 +4,8 @@
   Roberto Bucher (roberto.bucher@supsi.ch)
   Daniele Gasperini (daniele.gasperini@elet.polimi.it)
 
+  Modified August 2009 by Henrik Slotholt (rtai@slotholt.net)
+
   This library is free software; you can redistribute it and/or
   modify it under the terms of the GNU Lesser General Public
   License as published by the Free Software Foundation; either
@@ -92,7 +94,7 @@ extern void rt_ODEUpdateContinuousStates(RTWSolverInfo *si);
 extern RT_MODEL *MODEL(void);
 static RT_MODEL *rtM;
 
-#define RTAILAB_VERSION         "3.4.7"
+#define RTAILAB_VERSION         "3.5.1"
 #define MAX_NTARGETS		1000
 #define MAX_NAMES_SIZE		256
 #define RUN_FOREVER		-1.0
@@ -560,7 +562,14 @@ static void *rt_HostInterface(void *args)
 	  rt_returnx(task, &ntraces, sizeof(int));
 	  rt_receivex(task, &scopeIdx, sizeof(int), &len);
 	  rt_returnx(task, (char *)ssGetModelName(rtaiScope[scopeIdx]), MAX_NAMES_SIZE*sizeof(char));
-	  rt_receivex(task, &scopeIdx, sizeof(int), &len);
+		while(1) {
+	      int j;
+	      rt_receivex(task, &j, sizeof(int), &len);
+				if(j < 0) break;
+	      char traceName[10];
+				sprintf(traceName, "Trace %d", j+1);
+	      rt_returnx(task, traceName, strlen(traceName)+1); // return null terminated string	    
+	  }
 	  samplingTime = ssGetSampleTime(rtaiScope[scopeIdx],0);
 	  rt_returnx(task, &samplingTime, sizeof(float));
 	}

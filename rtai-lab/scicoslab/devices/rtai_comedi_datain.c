@@ -21,12 +21,11 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA.
 #include <scicos_block4.h>
 
 #include <rtai_comedi.h>
+#include "rtmain.h"
 
 extern void *ComediDev[];
 extern int ComediDev_InUse[];
 extern int ComediDev_AIInUse[];
-
-void exit_on_error(void);
 
 #ifdef SOFTCALIB
 int get_softcal_coef(char *devName, unsigned subdev, unsigned channel,
@@ -79,11 +78,13 @@ static void init(scicos_block *block)
     fprintf(stderr, "Comedi find_subdevice failed (No analog input)\n");
     comedi_close(comdev->dev);
     exit_on_error();
+    return;
   }
   if (!ComediDev_AIInUse[comdev->index] && comedi_lock(comdev->dev, comdev->subdev) < 0) {
     fprintf(stderr, "Comedi lock failed for subdevice %d\n", comdev->subdev);
     comedi_close(comdev->dev);
     exit_on_error();
+    return;
   }
 
   if (comdev->channel >= comedi_get_n_channels(comdev->dev, comdev->subdev)) {
@@ -91,12 +92,14 @@ static void init(scicos_block *block)
     comedi_unlock(comdev->dev, comdev->subdev);
     comedi_close(comdev->dev);
     exit_on_error();
+    return;
   }
   if ((comedi_get_krange(comdev->dev, comdev->subdev, comdev->channel, comdev->range, &krange)) < 0) {
     fprintf(stderr, "Comedi get_range failed for subdevice %d\n", comdev->subdev);
     comedi_unlock(comdev->dev, comdev->subdev);
     comedi_close(comdev->dev);
     exit_on_error();
+    return;
   }
 #ifdef SOFTCALIB
   int flags;

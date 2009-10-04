@@ -346,32 +346,27 @@ RTAI_SYSCALL_MODE int rt_task_suspend(RT_TASK *task)
 	}
 
 	flags = rt_global_save_flags_and_cli();
-	if (!task_owns_sems(task)) {
-		if (task->suspdepth >= 0) {
-			if (!task->suspdepth) {
-				task->suspdepth++;
-			}
-			if (task == RT_CURRENT) {
-				rem_ready_current(task);
-				task->state |= RT_SCHED_SUSPENDED;
-				rt_schedule();
-				if (unlikely(task->blocked_on != NULL)) {
-					task->suspdepth = 0;
-					rt_global_restore_flags(flags);
-					return RTE_UNBLKD;
-				}
-			} else {
-				rem_ready_task(task);
-				rem_timed_task(task);
-				task->state |= RT_SCHED_SUSPENDED;
-				if (task->runnable_on_cpus != rtai_cpuid()) {
-					send_sched_ipi(1 << task->runnable_on_cpus);
-				}
+	if (!task_owns_sems(task) && !task->suspdepth) {
+		task->suspdepth = 1;
+		task->blocked_on = (void *)task;
+		if (task == RT_CURRENT) {
+			rem_ready_current(task);
+			task->state |= RT_SCHED_SUSPENDED;
+			rt_schedule();
+			if (unlikely(task->blocked_on != NULL)) {
+				task->suspdepth = 0;
+				rt_global_restore_flags(flags);
+				return RTE_UNBLKD;
 			}
 		} else {
-			task->suspdepth++;
+			rem_ready_task(task);
+			rem_timed_task(task);
+			task->state |= RT_SCHED_SUSPENDED;
+			if (task->runnable_on_cpus != rtai_cpuid()) {
+				send_sched_ipi(1 << task->runnable_on_cpus);
+			}
 		}
-	} else if (task->suspdepth < 0) {
+	} else {
 		task->suspdepth++;
 	}
 	rt_global_restore_flags(flags);
@@ -390,7 +385,7 @@ RTAI_SYSCALL_MODE int rt_task_suspend_if(RT_TASK *task)
 	}
 
 	flags = rt_global_save_flags_and_cli();
-	if (!task_owns_sems(task) && task->suspdepth < 0) {
+	if (task->suspdepth < 0) {
 		task->suspdepth++;
 	}
 	rt_global_restore_flags(flags);
@@ -409,50 +404,51 @@ RTAI_SYSCALL_MODE int rt_task_suspend_until(RT_TASK *task, RTIME time)
 	}
 
 	flags = rt_global_save_flags_and_cli();
-	if (!task_owns_sems(task)) {
-		if (task->suspdepth >= 0) {
+	if (!task_owns_sems(task) && !task->suspdepth) {
 #ifdef CONFIG_SMP
-			int cpuid = rtai_cpuid();
+		int cpuid = rtai_cpuid();
 #endif
-			if ((task->resume_time = time) > rt_time_h) {
-				if (!task->suspdepth) {
-					task->suspdepth++;
-				}
-				if (task == RT_CURRENT) {
-					rem_ready_current(task);
-					enq_timed_task(task);
-					task->state |= (RT_SCHED_SUSPENDED | RT_SCHED_DELAYED);
-					while (1) {
-						rt_schedule();
-						if (unlikely(task->blocked_on != NULL)) {
-							task->suspdepth = 0;
-							rt_global_restore_flags(flags);
-							return RTE_UNBLKD;
+		if ((task->resume_time = time) > rt_time_h) {
+			task->suspdepth = 1;
+			if (task == RT_CURRENT) {
+				int retval = RTE_TIMOUT;
+				rem_ready_current(task);
+				enq_timed_task(task);
+				task->state |= (RT_SCHED_SUSPENDED | RT_SCHED_DELAYED);
+				while (1) {
+					task->blocked_on = (void *)task;
+					rt_schedule();
+					if (likely((void *)task->blocked_on > RTP_HIGERR)) {
+						if (!--task->suspdepth) {
+							goto ret;
 						}
-						if (unlikely(--task->suspdepth)) {
-							rem_ready_current(task);
-							task->state |= RT_SCHED_SUSPENDED;
-							continue;
-						}
-						rt_global_restore_flags(flags);
-						return task->resume_time < rt_smp_time_h[rtai_cpuid()] ? RTE_TIMOUT : 0;
+					} else if (unlikely(task->blocked_on != NULL)) {
+						task->suspdepth = 0;
+						retval = RTE_UNBLKD;
+						goto ret;
 					}
-				} else {
-					rem_ready_task(task);
-					enq_timed_task(task);
-					task->state |= (RT_SCHED_SUSPENDED | RT_SCHED_DELAYED);
-					if (task->runnable_on_cpus != rtai_cpuid()) {
-						send_sched_ipi(1 << task->runnable_on_cpus);
+					if (unlikely(task->suspdepth > 0)) {
+						rem_ready_current(task);
+						task->state |= RT_SCHED_SUSPENDED;
+						continue;
 					}
+					retval = task->suspdepth;
 				}
-			} else {
 				rt_global_restore_flags(flags);
-				return RTE_TMROVRN;
+ret:				return retval;
+			} else {
+				rem_ready_task(task);
+				enq_timed_task(task);
+				task->state |= (RT_SCHED_SUSPENDED | RT_SCHED_DELAYED);
+				if (task->runnable_on_cpus != rtai_cpuid()) {
+					send_sched_ipi(1 << task->runnable_on_cpus);
+				}
 			}
 		} else {
-			task->suspdepth++;
+			rt_global_restore_flags(flags);
+			return RTE_TMROVRN;
 		}
-	} else if (task->suspdepth < 0) {
+	} else {
 		task->suspdepth++;
 	}
 	rt_global_restore_flags(flags);

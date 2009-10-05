@@ -346,32 +346,27 @@ RTAI_SYSCALL_MODE int rt_task_suspend(RT_TASK *task)
 	}
 
 	flags = rt_global_save_flags_and_cli();
-	if (!task_owns_sems(task)) {
-		if (task->suspdepth >= 0) {
-			if (!task->suspdepth) {
-				task->suspdepth++;
-			}
-			if (task == RT_CURRENT) {
-				rem_ready_current(task);
-				task->state |= RT_SCHED_SUSPENDED;
-				rt_schedule();
-				if (unlikely(task->blocked_on != NULL)) {
-					task->suspdepth = 0;
-					rt_global_restore_flags(flags);
-					return RTE_UNBLKD;
-				}
-			} else {
-				rem_ready_task(task);
-				rem_timed_task(task);
-				task->state |= RT_SCHED_SUSPENDED;
-				if (task->runnable_on_cpus != rtai_cpuid()) {
-					send_sched_ipi(1 << task->runnable_on_cpus);
-				}
+	if (!task_owns_sems(task) && !task->suspdepth) {
+		task->suspdepth = 1;
+		task->blocked_on = (void *)task;
+		if (task == RT_CURRENT) {
+			rem_ready_current(task);
+			task->state |= RT_SCHED_SUSPENDED;
+			rt_schedule();
+			if (unlikely(task->blocked_on != NULL)) {
+				task->suspdepth = 0;
+				rt_global_restore_flags(flags);
+				return RTE_UNBLKD;
 			}
 		} else {
-			task->suspdepth++;
+			rem_ready_task(task);
+			rem_timed_task(task);
+			task->state |= RT_SCHED_SUSPENDED;
+			if (task->runnable_on_cpus != rtai_cpuid()) {
+				send_sched_ipi(1 << task->runnable_on_cpus);
+			}
 		}
-	} else if (task->suspdepth < 0) {
+	} else {
 		task->suspdepth++;
 	}
 	rt_global_restore_flags(flags);
@@ -390,7 +385,7 @@ RTAI_SYSCALL_MODE int rt_task_suspend_if(RT_TASK *task)
 	}
 
 	flags = rt_global_save_flags_and_cli();
-	if (!task_owns_sems(task) && task->suspdepth < 0) {
+	if (task->suspdepth < 0) {
 		task->suspdepth++;
 	}
 	rt_global_restore_flags(flags);
@@ -409,50 +404,51 @@ RTAI_SYSCALL_MODE int rt_task_suspend_until(RT_TASK *task, RTIME time)
 	}
 
 	flags = rt_global_save_flags_and_cli();
-	if (!task_owns_sems(task)) {
-		if (task->suspdepth >= 0) {
+	if (!task_owns_sems(task) && !task->suspdepth) {
 #ifdef CONFIG_SMP
-			int cpuid = rtai_cpuid();
+		int cpuid = rtai_cpuid();
 #endif
-			if ((task->resume_time = time) > rt_time_h) {
-				if (!task->suspdepth) {
-					task->suspdepth++;
-				}
-				if (task == RT_CURRENT) {
-					rem_ready_current(task);
-					enq_timed_task(task);
-					task->state |= (RT_SCHED_SUSPENDED | RT_SCHED_DELAYED);
-					while (1) {
-						rt_schedule();
-						if (unlikely(task->blocked_on != NULL)) {
-							task->suspdepth = 0;
-							rt_global_restore_flags(flags);
-							return RTE_UNBLKD;
+		if ((task->resume_time = time) > rt_time_h) {
+			task->suspdepth = 1;
+			if (task == RT_CURRENT) {
+				int retval = RTE_TIMOUT;
+				rem_ready_current(task);
+				enq_timed_task(task);
+				task->state |= (RT_SCHED_SUSPENDED | RT_SCHED_DELAYED);
+				while (1) {
+					task->blocked_on = (void *)task;
+					rt_schedule();
+					if (likely((void *)task->blocked_on > RTP_HIGERR)) {
+						if (!--task->suspdepth) {
+							goto ret;
 						}
-						if (unlikely(--task->suspdepth)) {
-							rem_ready_current(task);
-							task->state |= RT_SCHED_SUSPENDED;
-							continue;
-						}
-						rt_global_restore_flags(flags);
-						return task->resume_time < rt_smp_time_h[rtai_cpuid()] ? RTE_TIMOUT : 0;
+					} else if (unlikely(task->blocked_on != NULL)) {
+						task->suspdepth = 0;
+						retval = RTE_UNBLKD;
+						goto ret;
 					}
-				} else {
-					rem_ready_task(task);
-					enq_timed_task(task);
-					task->state |= (RT_SCHED_SUSPENDED | RT_SCHED_DELAYED);
-					if (task->runnable_on_cpus != rtai_cpuid()) {
-						send_sched_ipi(1 << task->runnable_on_cpus);
+					if (unlikely(task->suspdepth > 0)) {
+						rem_ready_current(task);
+						task->state |= RT_SCHED_SUSPENDED;
+						continue;
 					}
+					retval = task->suspdepth;
 				}
-			} else {
 				rt_global_restore_flags(flags);
-				return RTE_TMROVRN;
+ret:				return retval;
+			} else {
+				rem_ready_task(task);
+				enq_timed_task(task);
+				task->state |= (RT_SCHED_SUSPENDED | RT_SCHED_DELAYED);
+				if (task->runnable_on_cpus != rtai_cpuid()) {
+					send_sched_ipi(1 << task->runnable_on_cpus);
+				}
 			}
 		} else {
-			task->suspdepth++;
+			rt_global_restore_flags(flags);
+			return RTE_TMROVRN;
 		}
-	} else if (task->suspdepth < 0) {
+	} else {
 		task->suspdepth++;
 	}
 	rt_global_restore_flags(flags);
@@ -1993,17 +1989,24 @@ RTAI_SYSCALL_MODE void usp_request_rtc(int rtc_freq, void *handler)
 
 /* +++++++++++++++++ SUPPORT FOR THE LINUX SYSCALL SERVER +++++++++++++++++++ */
 
-RTAI_SYSCALL_MODE void rt_set_linux_syscall_mode(long mode, void (*callback_fun)(long, long))
+RTAI_SYSCALL_MODE int rt_set_linux_syscall_mode(long mode, void (*cbfun)(long, long))
 {
-	rt_put_user(callback_fun, &(RT_CURRENT->linux_syscall_server)->callback_fun);
-	rt_put_user(mode, &(RT_CURRENT->linux_syscall_server)->mode);
+	RT_TASK *server;
+	struct linux_syscalls_list *syscalls;
+	if ((server = RT_CURRENT->linux_syscall_server) == NULL || mode != SYNC_LINUX_SYSCALL || mode != ASYNC_LINUX_SYSCALL) {
+		return EINVAL;
+	}
+	syscalls = server->linux_syscall_server;
+	rt_put_user(mode, &syscalls->mode);
+	rt_put_user(cbfun, &syscalls->cbfun);
+	return 0;
 }
 
 void rt_exec_linux_syscall(RT_TASK *rt_current, struct linux_syscalls_list *syscalls, struct pt_regs *regs)
 {
-	int in, sz;
-	struct mode_regs moderegs;
-	struct { int in, out, nr, mode; RT_TASK *serv; } from;
+	int in, id;
+	struct linux_syscall syscall;
+	struct { int in, out, nr, id, mode; void (*cbfun)(long, long); RT_TASK *serv; } from;
 
 	rt_copy_from_user(&from, syscalls, sizeof(from));
 	in = from.in;
@@ -2017,24 +2020,30 @@ void rt_exec_linux_syscall(RT_TASK *rt_current, struct linux_syscalls_list *sysc
 
 #if defined( __NR_socketcall)
 	if (regs->LINUX_SYSCALL_NR == __NR_socketcall) {
-		memcpy(moderegs.pacargs, (void *)regs->LINUX_SYSCALL_REG2, sizeof(moderegs.pacargs));
-		moderegs.regs[2] = (long)(&syscalls->moderegs[in].pacargs);
-		sz = sizeof(moderegs);
+		memcpy(syscall.pacargs, (void *)regs->LINUX_SYSCALL_REG2, sizeof(syscall.pacargs));
+		syscall.args[2] = (long)(&syscalls->syscall[in].pacargs);
+		id = offsetof(struct linux_syscall, retval);
 	} else
 #endif
 	{
-		moderegs.regs[2] = regs->LINUX_SYSCALL_REG2;
-		sz = offsetof(struct mode_regs, pacargs);
+		syscall.args[2] = regs->LINUX_SYSCALL_REG2;
+		id = offsetof(struct linux_syscall, pacargs);
 	}
-
-	moderegs.regs[0] = regs->LINUX_SYSCALL_NR;
-	moderegs.regs[1] = regs->LINUX_SYSCALL_REG1;
-	moderegs.regs[3] = regs->LINUX_SYSCALL_REG3;
-	moderegs.regs[4] = regs->LINUX_SYSCALL_REG4;
-	moderegs.regs[5] = regs->LINUX_SYSCALL_REG5;
-	moderegs.regs[6] = regs->LINUX_SYSCALL_REG6;
-	moderegs.mode = from.mode;
-	rt_copy_to_user(&syscalls->moderegs[in].regs, &moderegs, sz);
+        syscall.args[0] = regs->LINUX_SYSCALL_NR;
+        syscall.args[1] = regs->LINUX_SYSCALL_REG1;
+        syscall.args[3] = regs->LINUX_SYSCALL_REG3;
+        syscall.args[4] = regs->LINUX_SYSCALL_REG4;
+        syscall.args[5] = regs->LINUX_SYSCALL_REG5;
+        syscall.args[6] = regs->LINUX_SYSCALL_REG6;
+        syscall.id      = from.id;
+        syscall.mode    = from.mode;
+        syscall.cbfun   = from.cbfun;
+        rt_copy_to_user(&syscalls->syscall[in].args, &syscall, id);
+	id = from.id;
+	if (++from.id < 0) {
+		from.id = 0;
+	}
+	rt_put_user(from.id, &syscalls->id);
 	rt_put_user(from.in, &syscalls->in);
 	if (from.serv->suspdepth >= -from.nr) {
 		from.serv->priority = rt_current->priority + BASE_SOFT_PRIORITY;
@@ -2042,9 +2051,9 @@ void rt_exec_linux_syscall(RT_TASK *rt_current, struct linux_syscalls_list *sysc
 	}
 	if (from.mode == SYNC_LINUX_SYSCALL) {
 		rt_task_suspend(rt_current);
-		rt_get_user(regs->LINUX_SYSCALL_RETREG, &syscalls->retval);
+		rt_get_user(regs->LINUX_SYSCALL_RETREG, &syscalls->syscall[in].retval);
 	} else {
-		regs->LINUX_SYSCALL_RETREG = -EINPROGRESS;
+		regs->LINUX_SYSCALL_RETREG = id;
 	}
 }
 

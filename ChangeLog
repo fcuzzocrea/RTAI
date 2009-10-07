@@ -1,3 +1,7 @@
+2009-10-07 Roberto Bucher <roberto.bucher@supsi.ch>
+
+	* base/include/rtai_lxrt.h: Modified for C++ support.
+
 2009-10-06 Paolo Mantegazza <mantegazza@aero.polimi.it>
 
 	* base/include/rtai_lxrt.h: a few functions for async Linux syscalls

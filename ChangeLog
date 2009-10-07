@@ -1,3 +1,7 @@
+2009-10-07 Pierangelo Masarati <masarati@aero.polimi.it>
+	* addons/drivers/16550A/GNUmakefile.am:
+	* addons/drivers/16550A/Makefile.kbuild: fix build out of source tree
+
 2009-10-07 Roberto Bucher <roberto.bucher@supsi.ch>
 
 	* base/include/rtai_lxrt.h: Modified for C++ support.

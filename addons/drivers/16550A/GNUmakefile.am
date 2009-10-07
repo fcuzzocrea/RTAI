@@ -30,6 +30,7 @@ INCLUDES = \
 	@RTAI_KMOD_CFLAGS@ \
 	-I$(top_srcdir)/base/include \
 	-I$(top_srcdir)/addons \
+	-I$(top_srcdir)/addons/drivers/16550A/ \
 	-I../../../base/include \
 	-I../..
 

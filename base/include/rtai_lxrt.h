@@ -760,7 +760,7 @@ RTAI_PROTO(void *, rt_linux_syscall_cbfun, (struct linux_syscalls_list *syscalls
 	if (syscalls == NULL) {
 		return (void *)EINVAL;
 	}
-        retval = (void *)((unsigned long)syscalls->cbfun);
+	retval = (void *)((unsigned long)syscalls->cbfun);
 	if ((unsigned long)cbfun > (unsigned long)LINUX_SYSCALL_GET_CALLBACK) {
 		syscalls->cbfun = cbfun;
 	}

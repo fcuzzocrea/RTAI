@@ -1,3 +1,11 @@
+2009-10-16 Roberto Bucher <roberto.bucher@supsi.ch>
+
+	* rtai-lab/scicoslab/macros/RTAI/rtai_ext_clock.sci:
+	* rtai-lab/scicoslab/macros/RTAI/gif_icons/rtai_ext_clock.gif:
+	* rtai-lab/scilab/macros/RTAI/rtai_ext_clock.sci:
+	* rtai-lab/scila5/macros/RTAI/rtai_ext_clock.sci: Modifications for
+	  external synchronization (thanks to Henrik Slotholt).
+
 2009-10-07 Pierangelo Masarati <masarati@aero.polimi.it>
 	* addons/drivers/16550A/GNUmakefile.am:
 	* addons/drivers/16550A/Makefile.kbuild: fix build out of source tree

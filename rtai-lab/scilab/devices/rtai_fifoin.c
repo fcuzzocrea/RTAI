@@ -26,7 +26,9 @@ static void init(scicos_block *block)
   double * y;
   int i;
   int ntraces=block->nout;
-  rtf_create(block->ipar[0],block->ipar[1]);
+  int sizeData = sizeof(float)*(block->nout);
+  int dim = block->ipar[1]/sizeData*sizeData;
+  rtf_create(block->ipar[0],dim);
   rtf_reset(block->ipar[0]);
   for(i=0;i<ntraces;i++) {
     y = block->outptr[i];
@@ -40,7 +42,7 @@ static void inout(scicos_block *block)
   int ntraces=block->nout;
   int count;
   struct {
-    double u[ntraces]; 
+    float u[ntraces]; 
   } data;
   int i;
 

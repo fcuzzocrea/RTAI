@@ -3,6 +3,7 @@
   Paolo Mantegazza (mantegazza@aero.polimi.it)
 
   Modified 15.1.2003 Roberto Bucher bucher@die.supsi.ch
+  Modified 15.8.2009 Henrik Slotholt rtai@slotholt.net
 
   This library is free software; you can redistribute it and/or
   modify it under the terms of the GNU Lesser General Public
@@ -91,7 +92,7 @@ static void mdlStart(SimStruct *S)
 		if (!rt_get_adr(nam2num(name))) break;
 	}
 	rtaiScope[i] = S;
-	if (!(mbx = (MBX *)rt_mbx_init(nam2num(name), (MBX_RTAI_SCOPE_SIZE/(n*sizeof(float))*(n*sizeof(float)))))) {
+	if (!(mbx = (MBX *)rt_mbx_init(nam2num(name), (MBX_RTAI_SCOPE_SIZE/(n*sizeof(double))*(n*sizeof(double)))))) {
 		printf("Cannot init mailbox\n");
 		exit(1);
 	}
@@ -104,15 +105,15 @@ static void mdlOutputs(SimStruct *S, int_T tid)
 	InputRealPtrsType uPtrs = ssGetInputPortRealSignalPtrs(S,0);
 #ifndef MATLAB_MEX_FILE
 	struct {
-		float t;
-		float u[NUM_CHANNELS];
+		double t;
+		double u[NUM_CHANNELS];
 	} data;
 	int i;
 
 	MBX *mbx = (MBX *)ssGetPWorkValue(S,0);
-	data.t = ssGetT(S);
+	data.t = (double)ssGetT(S);
 	for (i = 0; i < NUM_CHANNELS; i++) {
-		data.u[i] = (float)*uPtrs[i];
+		data.u[i] = (double)*uPtrs[i];
 	}
 	rt_mbx_send_if(mbx, &data, sizeof(data));
 #endif

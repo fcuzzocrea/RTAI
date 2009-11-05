@@ -7,6 +7,7 @@ COPYRIGHT (C) 2003  Lorenzo Dozio (dozio@aero.polimi.it)
                     Rob Dye (rdye@telos-systems.com)
 
 Modified March 2009 by Robert Dye (rdye@telos-systems.com)
+Modified August 2009 by Henrik Slotholt (rtai@slotholt.net)
 
 This library is free software; you can redistribute it and/or
 modify it under the terms of the GNU Lesser General Public
@@ -1031,6 +1032,7 @@ void rlg_delete_profile_cb(Fl_Widget *, void *)
 
 void rlg_save_profile_cb(Fl_Widget *, void *)
 {
+
 	Fl_Dialog& dialog = *RLG_Save_Profile_Dialog;
 
 	dialog.x(RLG_Main_Window->x() + (int)((RLG_Main_Window->w()-dialog.w())/2));
@@ -1539,7 +1541,7 @@ static void *rt_get_scope_data(void *arg)
 	char GetScopeDataMbxName[7];
 	long GetScopeDataPort;
 	int MsgData = 0, MsgLen, MaxMsgLen, TracesBytes;
-	float MsgBuf[MAX_MSG_LEN/sizeof(float)];
+	double MsgBuf[MAX_MSG_LEN/sizeof(double)];
 	int n, nn, js, jl;
 	int index = ((Args_T *)arg)->index;
 	char *mbx_id = strdup(((Args_T *)arg)->mbx_id);
@@ -1562,7 +1564,7 @@ static void *rt_get_scope_data(void *arg)
 		printf("Error in getting %s mailbox address\n", GetScopeDataMbxName);
 		return (void *)1;
 	}
-	TracesBytes = (Scopes[index].ntraces + 1)*sizeof(float);
+	TracesBytes = (Scopes[index].ntraces + 1)*sizeof(double);
 	MaxMsgLen = (MAX_MSG_LEN/TracesBytes)*TracesBytes;
 	MsgLen = (((int)(TracesBytes*REFRESH_RATE*(1./Scopes[index].dt)))/TracesBytes)*TracesBytes;
 	if (MsgLen < TracesBytes) MsgLen = TracesBytes;
@@ -1596,7 +1598,7 @@ static void *rt_get_scope_data(void *arg)
 			msleep(10);
 		}
 		Fl::lock();
-		js = 1;
+		js = 1; // Drop sampletime
 		for (n = 0; n < MsgData; n++) {
 			for (nn = 0; nn < Scopes[index].ntraces; nn++) {
 				Scope_Win->Plot->add_to_trace(nn, MsgBuf[js++]);
@@ -1755,12 +1757,21 @@ static int get_scope_blocks_info(long port, RT_TASK *task, const char *mbx_id)
 	}
 	if (n_scopes > 0) Scopes = new Target_Scopes_T [n_scopes];
 	for (int n = 0; n < n_scopes; n++) {
-		char scope_name[MAX_NAMES_SIZE];
+		char name[MAX_NAMES_SIZE];
 		Scopes[n].visible = false;
 		RT_rpcx(Target_Node, port, task, &n, &Scopes[n].ntraces, sizeof(int), sizeof(int));
-		RT_rpcx(Target_Node, port, task, &n, &scope_name, sizeof(int), sizeof(scope_name));
-		strncpy(Scopes[n].name, scope_name, MAX_NAMES_SIZE);
-		RT_rpcx(Target_Node, port, task, &n, &Scopes[n].dt, sizeof(int), sizeof(float));
+		RT_rpcx(Target_Node, port, task, &n, &name, sizeof(int), sizeof(name));
+		Scopes[n].name = (char*)malloc(strlen(name)+1);
+		strcpy(Scopes[n].name, name);
+		Scopes[n].traceName = (char**)malloc(sizeof(char*)*Scopes[n].ntraces);
+		int j;
+		for(j=0; j<Scopes[n].ntraces; j++) {
+			RT_rpcx(Target_Node, port, task, &j, &name, sizeof(int), sizeof(name));
+			Scopes[n].traceName[j] = (char*)malloc(strlen(name)+1);
+			strcpy(Scopes[n].traceName[j], name);
+		}
+		j=-1;
+		RT_rpcx(Target_Node, port, task, &j, &Scopes[n].dt, sizeof(int), sizeof(float));
 	}
 	RT_rpcx(Target_Node, port, task, &req, &msg, sizeof(int), sizeof(int));
 
@@ -2104,9 +2115,12 @@ static void *rt_target_interface(void *args)
 					for (int n = 0; n < Num_Scopes; n++) {
 						printf("Scope: %s\n", Scopes[n].name);
 						printf(" Number of traces...%d\n", Scopes[n].ntraces);
+						for(int j = 0; j < Scopes[n].ntraces; j++) {
+							printf("  %s\n", Scopes[n].traceName[j]);
+						}
 						printf(" Sampling time...%f\n", Scopes[n].dt);
 						if (Scopes[n].dt <= 0.) {
-							printf("Fatal Error, Scope %s samplig time is equal to %f,\n", Scopes[n].name, Scopes[n].dt);
+							printf("Fatal Error, Scope %s sampling time is equal to %f,\n", Scopes[n].name, Scopes[n].dt);
 							printf("while Rtai-lab needs a finite, positive sampling time\n");
 							printf("This error often occurs when the sampling time is inherited\n");
 							printf("from so-called time-continous simulink blocks\n");
@@ -2122,8 +2136,8 @@ static void *rt_target_interface(void *args)
 						printf(" Number of rows...%d\n", Logs[n].nrow);
 						printf(" Number of cols...%d\n", Logs[n].ncol);
 						printf(" Sampling time...%f\n", Logs[n].dt);
-						if (Scopes[n].dt <= 0.) {
-							printf("Fatal Error, Scope %s samplig time is equal to %f,\n", Scopes[n].name, Scopes[n].dt);
+						if (Logs[n].dt <= 0.) {
+							printf("Fatal Error, Log %s sampling time is equal to %f,\n", Logs[n].name, Logs[n].dt);
 							printf("while Rtai-lab needs a finite, positive sampling time\n");
 							printf("This error often occurs when the sampling time is inherited\n");
 							printf("from so-called time-continous simulink blocks\n");
@@ -2140,7 +2154,7 @@ static void *rt_target_interface(void *args)
 						printf(" Number of cols...%d\n", ALogs[n].ncol);
 						printf(" Sampling time...%f\n", ALogs[n].dt);
 						if (ALogs[n].dt <= 0.) {
-							printf("Fatal Error, Log %s samplig time is equal to %f,\n", ALogs[n].name, ALogs[n].dt);
+							printf("Fatal Error, Log %s sampling time is equal to %f,\n", ALogs[n].name, ALogs[n].dt);
 							printf("while Rtai-lab needs a finite, positive sampling time\n");
 							printf("This error often occurs when the sampling time is inherited\n");
 							printf("from so-called time-continous simulink blocks\n");
@@ -2588,6 +2602,13 @@ static void *rt_target_interface(void *args)
 				rt_release_port(Target_Node, Target_Port);
 				Target_Port = 0;
 				free(Tunable_Parameters);
+				for(int n = 0; n < Num_Scopes; n++) { // Free memory used by names in scopes
+					free(Scopes[n].name);
+					for(int j = 0; j < Scopes[n].ntraces; j++) {
+						free(Scopes[n].traceName[j]);
+					}
+					free(Scopes[n].traceName);
+				}
 				Fl::lock();
 				RLG_Main_Status->label("Ready...");
 				RLG_Main_Window->redraw();

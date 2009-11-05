@@ -8,6 +8,7 @@
 //
 //
 //** 10 Set 2007 : cleaner startup code by Simone Mannori
+//** 15 Aug 2009 : Hierarchical block names by Henrik Slotholt
 
 function RTAICodeGen_()
 
@@ -568,6 +569,7 @@ function  [ok,XX,alreadyran,flgcdgen,szclkINTemp,freof] = do_compile_superblock4
                    "CLOCK_c","clocks";
                    "CLOCK_f","clocks";
                    "SampleCLK","clocks";
+                   "rtai_ext_clock","clocks";
                    "RFILE_f","Read block";
                    "READC_f","Read_block";
                    "WFILE_f","Write block";
@@ -771,7 +773,11 @@ function  [ok,XX,alreadyran,flgcdgen,szclkINTemp,freof] = do_compile_superblock4
 
   //** Find the clock connected to the SuperBlock and retreive
   //** the sampling time
+  //** Modified for use with external clock by Henrik Slotholt
   
+  useInternTimer = 1;
+  extClockCode = ['void rtextclk(void) { }']
+
   if XX.graphics.pein==[] | XX.graphics.pein(1)==0 then
     sTsamp="0.001"; //** default value is ONE millisecond 
   else
@@ -780,7 +786,8 @@ function  [ok,XX,alreadyran,flgcdgen,szclkINTemp,freof] = do_compile_superblock4
 
     while (all_scs_m.objs(o_ev).gui~='CLOCK_c' & ...
            all_scs_m.objs(o_ev).gui~='CLOCK_f' & ...
-           all_scs_m.objs(o_ev).gui~='SampleCLK')
+           all_scs_m.objs(o_ev).gui~='SampleCLK' & ...
+           all_scs_m.objs(o_ev).gui~='rtai_ext_clock')
 
                o_ev = all_scs_m.objs(o_ev).graphics.pein(1);
                o_ev = all_scs_m.objs(o_ev).from(1);
@@ -792,13 +799,18 @@ function  [ok,XX,alreadyran,flgcdgen,szclkINTemp,freof] = do_compile_superblock4
       sTsamp=sci2exp(sTsamp);
       Tsamp_delay=all_scs_m.objs(o_ev).model.rpar(2);
       Tsamp_delay=sci2exp(Tsamp_delay);
+    elseif all_scs_m.objs(o_ev).gui=='rtai_ext_clock' then
+      sTsamp=all_scs_m.objs(o_ev).graphics.exprs(1);
+      sTsamp=sci2exp(eval(sTsamp));
+      Tsamp_delay="0.0";
+      useInternTimer = 0;
+      extClockCode = all_scs_m.objs(o_ev).graphics.exprs(2);
     else
       sTsamp=all_scs_m.objs(o_ev).model.rpar.objs(2).graphics.exprs(1);
       sTsamp=sci2exp(eval(sTsamp));
       Tsamp_delay=all_scs_m.objs(o_ev).model.rpar.objs(2).graphics.exprs(2);
       Tsamp_delay=sci2exp(eval(Tsamp_delay));
     end
-
   end
 
   //***********************************
@@ -1296,6 +1308,20 @@ function [Code,Code_common]=make_standalone42()
 	'  return(' + string(Tsamp_delay) + ');'
 	'}'
 	''
+  ]
+
+// Modified for use with external clocks by Henrik Slotholt
+  Code=[Code
+        '/* ---- Clock code ---- */'
+        'int '+rdnom+'_useInternTimer(void) {'
+        '	return '+string(useInternTimer)+';'
+        '}'
+        ''
+        extClockCode
+        ''
+        ]
+
+  Code=[Code
         '/* ---- Internals functions declaration ---- */'
         'int '+rdnom+'_init(void);'
         'int '+rdnom+'_isr(double);'
@@ -2218,12 +2244,17 @@ function txt=make_static_standalone42()
     for i=1:(length(rpptr)-1)
       if rpptr(i+1)-rpptr(i)>0  then
 
+        idPrefix=''
         if size(corinv(i),'*')==1 then
           OO=scs_m.objs(corinv(i));
         else
           path=list('objs');
           for l=cpr.corinv(i)(1:$-1)
             path($+1)=l;
+            OO=scs_m(path);
+            if stripblanks(OO.graphics.id)~=emptystr() then
+              idPrefix = idPrefix + string(OO.graphics.id) + '/';
+            end
             path($+1)='model';
             path($+1)='rpar';
             path($+1)='objs';
@@ -2233,8 +2264,8 @@ function txt=make_static_standalone42()
         end
 
         //** Add comments **//
-	nbrpa=nbrpa+1;
-	ntot_r = ntot_r + (rpptr(i+1)-rpptr(i));
+        nbrpa=nbrpa+1;
+        ntot_r = ntot_r + (rpptr(i+1)-rpptr(i));
         txt($+1)='/* Routine name of block: '+strcat(string(cpr.sim.funs(i)));
         txt($+1)=' * Gui name of block: '+strcat(string(OO.gui));
         txt($+1)=' * Compiled structure index: '+strcat(string(i));
@@ -2245,13 +2276,13 @@ function txt=make_static_standalone42()
         if stripblanks(OO.graphics.exprs(1))~=emptystr() then
           txt=[txt;cformatline(' * Exprs: '+strcat(OO.graphics.exprs(1),","),70)];
         end
-	if stripblanks(OO.graphics.id)~=emptystr() then
-	  str_id = string(OO.graphics.id);
+        if stripblanks(OO.graphics.id)~=emptystr() then
+          str_id = idPrefix + string(OO.graphics.id);
         else
-	  str_id = 'RPARAM[' + string(nbrpa) +']';
-	end
+          str_id = idPrefix + 'RPARAM[' + string(nbrpa) +']';
+        end
         txt=[txt;
-             cformatline(' * Identification: '+strcat(string(OO.graphics.id)),70)];
+             cformatline(' * Identification: '+idPrefix+strcat(string(OO.graphics.id)),70)];
 	txt=[txt;cformatline('rpar= {'+strcat(string(rpar(rpptr(i):rpptr(i+1)-1)),",")+'};',70)];
 	txt($+1)='*/';
                 //******************//
@@ -2305,12 +2336,17 @@ function txt=make_static_standalone42()
 
     for i=1:(length(ipptr)-1)
       if ipptr(i+1)-ipptr(i)>0  then
+        idPrefix='';
         if size(corinv(i),'*')==1 then
           OO=scs_m.objs(corinv(i));
         else
           path=list('objs');
           for l=cpr.corinv(i)(1:$-1)
             path($+1)=l
+            OO=scs_m(path);
+            if stripblanks(OO.graphics.id)~=emptystr() then
+              idPrefix = idPrefix + string(OO.graphics.id) + '/';
+            end
             path($+1)='model'
             path($+1)='rpar'
             path($+1)='objs'
@@ -2321,7 +2357,7 @@ function txt=make_static_standalone42()
 
         //** Add comments **//
         nbipa=nbipa+1;
-	ntot_i = ntot_i + (ipptr(i+1)-ipptr(i));
+        ntot_i = ntot_i + (ipptr(i+1)-ipptr(i));
         txt($+1)='/* Routine name of block: '+strcat(string(cpr.sim.funs(i)));
         txt($+1)=' * Gui name of block: '+strcat(string(OO.gui));
         txt($+1)=' * Compiled structure index: '+strcat(string(i));
@@ -2334,22 +2370,22 @@ function txt=make_static_standalone42()
                cformatline(' * Exprs: '+strcat(OO.graphics.exprs(1),","),70)];
         end
 
-	if stripblanks(OO.graphics.id)~=emptystr() then
-	  str_id = string(OO.graphics.id);
+        if stripblanks(OO.graphics.id)~=emptystr() then
+          str_id = idPrefix + string(OO.graphics.id);
         else
-	  str_id = 'IPARAM[' + string(nbipa) +']';
-	end
+          str_id = idPrefix + 'IPARAM[' + string(nbipa) +']';
+        end
 
         txt=[txt;
-               cformatline(' * Identification: '+strcat(string(OO.graphics.id)),70)];
-	txt=[txt;cformatline('ipar= {'+strcat(string(ipar(ipptr(i):ipptr(i+1)-1)),",")+'};',70)];
-	txt($+1)='*/';
+               cformatline(' * Identification: '+idPrefix+strcat(string(OO.graphics.id)),70)];
+               txt=[txt;cformatline('ipar= {'+strcat(string(ipar(ipptr(i):ipptr(i+1)-1)),",")+'};',70)];
+               txt($+1)='*/';
 
         //******************//
 
         txt=[txt;cformatline(strcat(string(ipar(ipptr(i):ipptr(i+1)-1))+','),70)];
-	strICode = strICode + '""' + str_id + '"",';
-	lenICode = lenICode + string(ipptr(i+1)-ipptr(i)) + ',';
+        strICode = strICode + '""' + str_id + '"",';
+        lenICode = lenICode + string(ipptr(i+1)-ipptr(i)) + ',';
       end
     end
     txt=[txt;
@@ -2391,13 +2427,17 @@ function txt=make_static_standalone42()
           '/* def object parameters */']
     for i=1:(length(opptr)-1)
       if opptr(i+1)-opptr(i)>0  then
-
+        idPrefix = '';
         if size(corinv(i),'*')==1 then
           OO=scs_m.objs(corinv(i));
         else
           path=list('objs');
           for l=cpr.corinv(i)(1:$-1)
             path($+1)=l;
+            OO=scs_m(path);
+            if stripblanks(OO.graphics.id)~=emptystr() then
+              idPrefix = idPrefix + string(OO.graphics.id) + '/';
+            end
             path($+1)='model';
             path($+1)='rpar';
             path($+1)='objs';
@@ -2416,7 +2456,7 @@ function txt=make_static_standalone42()
         end
         if stripblanks(OO.graphics.id)~=emptystr() then
           txt=[txt;
-               cformatline(' * Identification: '+strcat(string(OO.graphics.id)),70)];
+               cformatline(' * Identification: '+idPrefix+strcat(string(OO.graphics.id)),70)];
         end
         txt($+1)=' */';
         //******************//

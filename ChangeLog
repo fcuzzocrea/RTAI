@@ -1,3 +1,26 @@
+2009-11-05 Roberto Bucher <roberto.bucher@supsi.ch>
+	* rtai-lab/matlab/rtmain.c:
+	* rtai-lab/matlab/rtmain.h:
+	* rtai-lab/scicoslab/macros/RTAI/rtai_ext_clock.sci:
+	* rtai-lab/scicoslab/macros/RTAI/gif_icons/rtai_ext_clock.gif:
+	* rtai-lab/scilab/macros/RTAI/rtai_ext_clock.sci:
+	* rtai-lab/scila5/macros/RTAI/rtai_ext_clock.sci: Modifications for
+	  external synchronization (thanks to Henrik Slotholt).
+	* rtai-lab/xrtailab.cpp: 
+	* rtai-lab/xrtailab.h: 
+	* rtai-lab/Fl_Scopes_Manager.cpp:
+	* rtai-lab/matlab/devices/sfun_rtai_scope.c:
+	* rtai-lab/scilab5/RTAI/macros/RTAICodeGen_.sci:
+	* rtai-lab/scilab/macros/RTAI/RTAICodeGen_.sci:
+	* rtai-lab/scicoslab/macros/RTAI/RTAICodeGen_.sci:
+	* rtai-lab/sci*/macros/RTAI/rtai4_scope.sci:
+	* rtai-lab/sci*/macros/RTAI/rtai4_scope.sci:
+	* rtai-lab/scila5/macros/RTAI/rtai4_scope.sci: Modifications for
+	  scopes with signal names and double type (thanks to Henrik Slotholt).
+	* rtai-lab/sci*/devices/rtai_fifoin.c:
+	* rtai-lab/sci*/devices/rtai_fifoout.c: Buffer length set to multiplexed
+          of signal size.
+
 2009-10-07 Pierangelo Masarati <masarati@aero.polimi.it>
 	* addons/drivers/16550A/GNUmakefile.am:
 	* addons/drivers/16550A/Makefile.kbuild: fix build out of source tree

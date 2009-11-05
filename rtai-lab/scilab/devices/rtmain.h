@@ -1,6 +1,8 @@
 /*
 COPYRIGHT (C) 2003  Roberto Bucher (roberto.bucher@die.supsi.ch)
 
+Modified August 2009 by Henrik Slotholt (rtai@slotholt.net)
+
 This library is free software; you can redistribute it and/or
 modify it under the terms of the GNU Lesser General Public
 License as published by the Free Software Foundation; either
@@ -17,7 +19,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA.
 */
 
 void *get_a_name(const char *root, char *name);
-int rtRegisterScope(const char *name, int n);
+int rtRegisterScope(char *name, char **traceNames, int n);
 int rtRegisterLed(const char *name, int n);
 int rtRegisterMeter(const char *name, int n);
 void exit_on_error(void);

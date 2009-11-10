@@ -21,6 +21,15 @@
 	* rtai-lab/sci*/devices/rtai_fifoout.c: Buffer length set to multiplexed
           of signal size.
 
+2009-11-04 Pierangelo Masarati <masarati@aero.polimi.it>
+
+	* makefile: fix path of kconfig file (thanks to suggestion from
+	  Kevin Kemper kemperke at engr.oregonstate.edu)
+
+2009-10-13 Pierangelo Masarati <masarati@aero.polimi.it>
+
+	* RTAI 3.8-test1
+
 2009-10-07 Pierangelo Masarati <masarati@aero.polimi.it>
 	* addons/drivers/16550A/GNUmakefile.am:
 	* addons/drivers/16550A/Makefile.kbuild: fix build out of source tree

@@ -1,3 +1,7 @@
+2009-12-01 Pierangelo Masarati <masarati@aero.polimi.it>
+
+	* RTAI 3.8-test1
+
 2009-11-05 Roberto Bucher <roberto.bucher@supsi.ch>
 	* rtai-lab/matlab/rtmain.c:
 	* rtai-lab/matlab/rtmain.h:
@@ -25,10 +29,6 @@
 
 	* makefile: fix path of kconfig file (thanks to suggestion from
 	  Kevin Kemper kemperke at engr.oregonstate.edu)
-
-2009-10-13 Pierangelo Masarati <masarati@aero.polimi.it>
-
-	* RTAI 3.8-test1
 
 2009-10-07 Pierangelo Masarati <masarati@aero.polimi.it>
 	* addons/drivers/16550A/GNUmakefile.am:

@@ -913,7 +913,7 @@ config RTAI_WD
 
 config RTAI_LEDS
 	tristate "LEDS-based debugging support"
-	default m
+	default n
 	help
 	The module will be called rtai_leds.o.
 

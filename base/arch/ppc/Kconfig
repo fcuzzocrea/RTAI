@@ -6,7 +6,7 @@ config MODULES
 
 config RTAI_VERSION
 	string
-	default "(magma)"
+	default "3.8 (vulcano)"
 
 menu "General"
 
@@ -945,7 +945,7 @@ config RTAI_COMEDI_DIR
 
 config RTAI_CPLUSPLUS
 	bool "In-kernel C++ support"
-	default y
+	default n
 	help
 	RTAI offers a C++ framework if you want to develop C++ real-time 
 	applications.

@@ -45,6 +45,28 @@
 
 MODULE_LICENSE("GPL");
 
+/* ++++++++++++++++++++++++ RT_RETURN COMMON CODE +++++++++++++++++++++++++++ */
+
+#define _rt_return(result) \
+do { \
+	int sched; \
+	dequeue_blocked(task); \
+	sched = set_current_prio_from_resq(rt_current); \
+	task->msg = result; \
+	task->msg_queue.task = task; \
+	rem_timed_task(task); \
+	if (task->state != RT_SCHED_READY && (task->state &= ~(RT_SCHED_RETURN | RT_SCHED_DELAYED)) == RT_SCHED_READY) { \
+		enq_ready_task(task); \
+		if (sched) { \
+			RT_SCHEDULE_BOTH(task, cpuid); \
+		} else { \
+			RT_SCHEDULE(task, cpuid); \
+		} \
+	} else if (sched) { \
+		rt_schedule(); \
+	} \
+} while (0)
+
 /* +++++++++++++++++++++++ SHORT INTERTASK MESSAGES +++++++++++++++++++++++++ */
 
 #define TASK_INVAL  ((RT_TASK *)RTE_OBJINV)
@@ -72,7 +94,7 @@ do { \
 /* ++++++++++++++++++++++++++ TASK POINTERS CHECKS +++++++++++++++++++++++++ */
 
 #define CHECK_SENDER_MAGIC(task) \
-do { if (task->magic != RT_TASK_MAGIC) return TASK_INVAL; } while (0)
+do { if (task && task->magic != RT_TASK_MAGIC) return TASK_INVAL; } while (0)
 
 #define CHECK_RECEIVER_MAGIC(task) \
 do { if (task && task->magic != RT_TASK_MAGIC) return TASK_INVAL; } while (0)
@@ -700,22 +722,7 @@ RTAI_SYSCALL_MODE RT_TASK *rt_return(RT_TASK *task, unsigned long result)
 	flags = rt_global_save_flags_and_cli();
 	ASSIGN_RT_CURRENT;
 	if ((task->state & RT_SCHED_RETURN) && task->msg_queue.task == rt_current) {
-		int sched;
-		dequeue_blocked(task);
-		sched = set_current_prio_from_resq(rt_current);
-		task->msg = result;
-		task->msg_queue.task = task;
-		rem_timed_task(task);
-		if (task->state != RT_SCHED_READY && (task->state &= ~(RT_SCHED_RETURN | RT_SCHED_DELAYED)) == RT_SCHED_READY) {
-			enq_ready_task(task);
-			if (sched) {
-				RT_SCHEDULE_BOTH(task, cpuid);
-			} else {
-				RT_SCHEDULE(task, cpuid);
-			}
-                } else if (sched) {
-                        rt_schedule();
-                }
+		_rt_return(result);
 	} else {
 		task = NULL;
 	}
@@ -1536,7 +1543,14 @@ RTAI_SYSCALL_MODE RT_TASK *rt_sendx_timed(RT_TASK *task, void *msg, int size, RT
  */
 RTAI_SYSCALL_MODE RT_TASK *rt_returnx(RT_TASK *task, void *msg, int size)
 {
-	if (task) {
+	DECLARE_RT_CURRENT;
+	unsigned long flags;
+
+	CHECK_SENDER_MAGIC(task);
+
+	flags = rt_global_save_flags_and_cli();
+	ASSIGN_RT_CURRENT;
+        if ((task->state & RT_SCHED_RETURN) && task->msg_queue.task == rt_current) {
 		struct mcb_t *mcb;
 		if ((mcb = (struct mcb_t *)task->msg)->rbytes < size) {
 			size = mcb->rbytes;
@@ -1544,9 +1558,12 @@ RTAI_SYSCALL_MODE RT_TASK *rt_returnx(RT_TASK *task, void *msg, int size)
 		if (size) {
 			memcpy(mcb->rbuf, msg, size);
 		}
-		return rt_return(task, 0);
+		_rt_return(0UL);
+	} else {
+		task = NULL;
 	}
-	return 0;
+	rt_global_restore_flags(flags);
+	return task;
 }
 
 #define DO_RCV_MSG() \

@@ -71,11 +71,11 @@ RTAI_SYSCALL_MODE int rt_msgq_init(RT_MSGQ *mq, int nmsg, int msg_size)
 
 RTAI_SYSCALL_MODE int rt_msgq_delete(RT_MSGQ *mq)
 {
-        if (rt_sem_delete(&mq->receivers) | rt_sem_delete(&mq->senders) | rt_sem_delete(&mq->received) | rt_sem_delete(&mq->freslots) | rt_sem_delete(&mq->broadcast)) {
-                return -EFAULT;
-        }
-        rt_free(mq->slots);
-        return 0;
+	int err;
+	err = rt_sem_delete(&mq->receivers) || rt_sem_delete(&mq->senders) || rt_sem_delete(&mq->received) || rt_sem_delete(&mq->freslots);
+	rt_sem_delete(&mq->broadcast);
+	rt_free(mq->slots);
+	return err ? -EFAULT : 0;
 }
 
 RTAI_SYSCALL_MODE RT_MSGQ *_rt_named_msgq_init(unsigned long msgq_name, int nmsg, int msg_size)

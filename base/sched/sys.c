@@ -32,10 +32,6 @@ Nov. 2001, Jan Kiszka (Jan.Kiszka@web.de) fix a tiny bug in __task_init.
 #include <linux/mman.h>
 #include <asm/uaccess.h>
 
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,18)
-#include <linux/oom.h>
-#endif
-
 #include <rtai_sched.h>
 #include <rtai_lxrt.h>
 #include <rtai_sem.h>
@@ -253,9 +249,7 @@ static inline RT_TASK* __task_init(unsigned long name, int prio, int stack_size,
 #if (defined VM_PINNED) && (defined CONFIG_MMU)
 			ipipe_disable_ondemand_mappings(current);
 #endif
-#ifdef OOM_DISABLE
-			current->oomkilladj = OOM_DISABLE;
-#endif
+			RTAI_OOM_DISABLE();
 
 			return rt_task;
 		} else {

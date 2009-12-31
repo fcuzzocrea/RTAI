@@ -36,9 +36,6 @@ ACKNOWLEDGMENTS:
 #include <linux/irq.h>
 #include <linux/reboot.h>
 #include <linux/sys.h>
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,18)
-#include <linux/oom.h>
-#endif
 
 #include <asm/param.h>
 #include <asm/system.h>
@@ -2093,9 +2090,8 @@ static void kthread_fun(int cpuid)
 	void give_back_to_linux(RT_TASK *, int);
 	RT_TASK *task;
 
-#ifdef OOM_DISABLE
-	current->oomkilladj = OOM_DISABLE;
-#endif
+	RTAI_OOM_DISABLE();
+
 	rt_daemonize();
 	rtai_set_linux_task_priority(current, SCHED_FIFO, KTHREAD_F_PRIO);
 	sprintf(current->comm, "F:HARD:%d:%d", cpuid, ++rsvr_cnt[cpuid]);
@@ -2155,9 +2151,8 @@ static void kthread_m(int cpuid)
 	struct klist_t *klistp;
 	RT_TASK *task;
 	
-#ifdef OOM_DISABLE
-	current->oomkilladj = OOM_DISABLE;
-#endif
+	RTAI_OOM_DISABLE();
+
 	rt_daemonize();
 	(task = &thread_task[cpuid])->magic = RT_TASK_MAGIC;
 	task->runnable_on_cpus = cpuid;

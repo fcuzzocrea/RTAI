@@ -253,9 +253,7 @@ static inline RT_TASK* __task_init(unsigned long name, int prio, int stack_size,
 #if (defined VM_PINNED) && (defined CONFIG_MMU)
 			ipipe_disable_ondemand_mappings(current);
 #endif
-#ifdef OOM_DISABLE
-			current->oomkilladj = OOM_DISABLE;
-#endif
+			RTAI_OOM_DISABLE();
 
 			return rt_task;
 		} else {

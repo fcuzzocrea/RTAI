@@ -1,9 +1,16 @@
+2010-01-01 Paolo Mantegazza <mantegazza@aero.polimi.it>
+
+	* base/include/rtai_schedcore.h: setup OOM killer protection macro, 
+	  depending on kernel version.
+	* base/sched/sched.c, sys.c: use related macro in rtai_schedcore.h 
+	  to protect real time tasks from the OOM killer.
+
 2009-12-10 Fernando Augusto <fernando_aug@yahoo.com.br>
 
-	base/ipc/tbx/tbx.c: fixed a too earlier error return in deleting
-	a tbx.
-	base/ipc/msg/msg.c: fixed a bug related to returnx trying to reply
-	to a timed out rpcing task, without checking its state.
+	* base/ipc/tbx/tbx.c: fixed a too earlier error return in deleting
+	  a tbx.
+	* base/ipc/msg/msg.c: fixed a bug related to returnx trying to reply
+	  to a timed out rpcing task, without checking its state.
 
 2009-11-04 Pierangelo Masarati <masarati@aero.polimi.it>
 

@@ -32,10 +32,6 @@ Nov. 2001, Jan Kiszka (Jan.Kiszka@web.de) fix a tiny bug in __task_init.
 #include <linux/mman.h>
 #include <asm/uaccess.h>
 
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,18)
-#include <linux/oom.h>
-#endif
-
 #include <rtai_sched.h>
 #include <rtai_lxrt.h>
 #include <rtai_sem.h>

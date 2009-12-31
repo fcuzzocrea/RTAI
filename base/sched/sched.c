@@ -36,9 +36,6 @@ ACKNOWLEDGMENTS:
 #include <linux/irq.h>
 #include <linux/reboot.h>
 #include <linux/sys.h>
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,18)
-#include <linux/oom.h>
-#endif
 
 #include <asm/param.h>
 #include <asm/system.h>

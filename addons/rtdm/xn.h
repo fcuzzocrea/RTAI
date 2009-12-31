@@ -76,7 +76,10 @@
 #if LINUX_VERSION_CODE < KERNEL_VERSION(2,6,24)
 #define trace_mark(ev, fmt, args...)  do { } while (0)
 #else
+#if LINUX_VERSION_CODE < KERNEL_VERSION(2,6,32)
 #include <linux/marker.h>
+#endif
+#define trace_mark(ev, fmt, args...)  do { } while (0)
 #endif
 
 //recursive smp locks, as for RTAI global lock stuff but with an own name

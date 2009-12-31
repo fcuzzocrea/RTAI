@@ -55,10 +55,24 @@
 #include <asm/param.h>
 #include <asm/system.h>
 #include <asm/io.h>
-
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,18)
+#include <linux/oom.h>
+#endif
 
 #ifndef _RTAI_SCHED_XN_H
 #define _RTAI_SCHED_XN_H
+
+#ifdef OOM_DISABLE
+#if LINUX_VERSION_CODE < KERNEL_VERSION(2,6,32)
+#define RTAI_OOM_DISABLE() \
+	do { current->oomkilladj = OOM_DISABLE; } while (0)
+#else
+#define RTAI_OOM_DISABLE() \
+	do { current->signal->oom_adj = OOM_DISABLE; } while (0)
+#endif
+#else
+#define RTAI_OOM_DISABLE()
+#endif
 
 #if defined(CONFIG_RTAI_IMMEDIATE_LINUX_SYSCALL) && CONFIG_RTAI_IMMEDIATE_LINUX_SYSCALL
 

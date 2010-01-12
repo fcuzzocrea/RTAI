@@ -1,7 +1,8 @@
 2010-01-13 Paolo Mantegazza <mantegazza@aero.polimi.it>
 
 	* base/arch/i386/calibration/smi-module.c and setsmi.in: fix the SMI 
-	  set/reset procedure.
+	  set/reset procedure (thanks to some remarks by: Ries van Twisk 
+	  <rtai@rvt.dds.nl>)
 
 2010-01-01 Paolo Mantegazza <mantegazza@aero.polimi.it>
 

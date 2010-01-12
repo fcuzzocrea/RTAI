@@ -35,16 +35,19 @@ else
 	SMI_MASKED_BITS="0x1"
 fi
 
-# NOTE: hal_smi_masked_bits is passed also when resetting;
-# it should be harmless
-insmod "$MODULEDIR/$MODULENAME" smiReset=$SMIRESET hal_smi_masked_bits=$SMI_MASKED_BITS
+if test $SMIRESET -eq 0 ; then
+rmmod -s "$MODULENAMENOEXT"
+insmod "$MODULEDIR/$MODULENAME" hal_smi_masked_bits=$SMI_MASKED_BITS
+fi
 RC=$?
 if test $RC != 0 ; then
 	echo "insmod $MODULEDIR/$MODULENAME failed"
 	exit $RC
 fi
 
-rmmod "$MODULENAMENOEXT"
+if test $SMIRESET -eq 1 ; then
+rmmod -s "$MODULENAMENOEXT"
+fi
 RC=$?
 if test $RC != 0 ; then
 	echo "rmmod $MODULENAMENOEXT failed"

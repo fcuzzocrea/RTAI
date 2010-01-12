@@ -31,9 +31,6 @@
 
 #include <rtai_wrappers.h>
 
-int smiReset = 0;
-RTAI_MODULE_PARM(smiReset, int);
-
 /* set these as you need */
 #define CONFIG_RTAI_HW_SMI_ALL		1
 #define CONFIG_RTAI_HW_SMI_INTEL_USB2	0
@@ -170,7 +167,7 @@ static struct notifier_block rtai_smi_reboot_notifier = {
         .priority       = 0
 };
 
-void hal_smi_restore(void)
+static void hal_smi_restore(void)
 {
 	if (hal_smi_en_addr) {
 		set_bits(hal_smi_saved_bits, hal_smi_en_addr);
@@ -179,7 +176,7 @@ void hal_smi_restore(void)
 	}
 }
 
-void hal_smi_disable(void)
+static void hal_smi_disable(void)
 {
  	if (hal_smi_en_addr) {
 		hal_smi_saved_bits = inl(hal_smi_en_addr) & hal_smi_masked_bits;
@@ -197,7 +194,7 @@ static unsigned short __devinit get_smi_en_addr(struct pci_dev *dev)
 	return SMI_CTRL_ADDR + (((byte1 << 1) | (byte0 >> 7)) << 7); //bits 7-15
 }
 
-int __devinit hal_smi_init(void)
+static int __devinit hal_smi_init(void)
 {
 	struct pci_dev *dev = NULL;
 	struct pci_device_id *id;
@@ -228,18 +225,16 @@ int __devinit hal_smi_init(void)
 int init_module(void)
 {
 	int retval;
-	if (smiReset) {
-		hal_smi_restore();
-		printk("SMI configuration has been reset, mask used = %lx.\n", hal_smi_saved_bits);
-		retval = 0;
-	} else if (!(retval = hal_smi_init())) {
-		printk("SMI configuration has been set, mask used = %lx.\n", hal_smi_masked_bits);
+	if (!(retval = hal_smi_init())) {
+		printk("SMI configuration has been cleared, mask used = %lx (saved mask setting %lx).\n", hal_smi_masked_bits, hal_smi_saved_bits);
 	}
 	return retval;
 }
 
 void cleanup_module(void)         
 {
+	hal_smi_restore();
+	printk("SMI configuration has been reset, saved mask used = %lx.\n", hal_smi_saved_bits);
 	return;
 }
 

@@ -1,7 +1,7 @@
 2010-01-13 Paolo Mantegazza <mantegazza@aero.polimi.it>
 
-	* base/arch/i386/calibration/smi-module.c and setsmi.in: fix the SMI 
-	  set/reset procedure (thanks to some remarks by: Ries van Twisk 
+	* base/arch/i386/calibration/smi-module.c and setsmi.in: fix the SMI
+	  set/reset procedure (thanks to some remarks by: Ries van Twisk
 	  <rtai@rvt.dds.nl>)
 
 2010-01-01 Paolo Mantegazza <mantegazza@aero.polimi.it>
@@ -13,7 +13,7 @@
 
 2009-12-10 Fernando Augusto <fernando_aug@yahoo.com.br>
 
-	* base/ipc/tbx/tbx.c: fixed a too earlier error return in deleting 
+	* base/ipc/tbx/tbx.c: fixed a too earlier error return in deleting
 	  a tbx.
 	* base/ipc/msg/msg.c: fixed a bug related to returnx trying to reply
 	  to a timed out rpcing task, without checking its state.

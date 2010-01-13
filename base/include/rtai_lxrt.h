@@ -697,7 +697,6 @@ RTAI_PROTO(int, rt_thread_join, (long thread))
 #include <unistd.h>
 #include <sys/mman.h>
 
-RTAI_PROTO(int, rt_thread_delete,(RT_TASK *task));
 static void linux_syscall_server_fun(struct linux_syscalls_list *list)
 {
 	struct linux_syscalls_list syscalls;
@@ -730,7 +729,7 @@ static void linux_syscall_server_fun(struct linux_syscalls_list *list)
 			}
 		}
         }
-	rt_thread_delete((RT_TASK *)syscalls.serv);
+	rtai_lxrt(BIDX, sizeof(RT_TASK *), LXRT_TASK_DELETE, &syscalls.serv);
 }
 
 #endif /* __SUPPORT_LINUX_SERVER__ */

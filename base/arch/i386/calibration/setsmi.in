@@ -3,19 +3,9 @@
 MODULENAMENOEXT=rtai_smi
 MODULENAME="${MODULENAMENOEXT}@RTAI_MODULE_EXT@"
 
-MODULEDIR=`rtai-config --module-dir`
-if test $? != 0 ; then
-	echo "cannot find rtai-config (hint: make sure it's in the path; usual location: \$PREFIX/bin)"
-	exit 1
-fi
-
-if test x"$MODULEDIR" = x ; then
-	echo "cannot find module dir"
-	exit 1
-fi
-
 # Determine if setting or resetting
-case `basename $0` in
+CMDNAME=`basename $0`
+case $CMDNAME in
 setsmi)
 	SMIRESET=0
 	;;
@@ -23,10 +13,21 @@ rstsmi)
 	SMIRESET=1
 	;;
 *)
-	echo "invalid script name \"$0\""
+	echo "invalid SMI script name \"$0\""
 	exit 1
 	;;
 esac
+
+MODULEDIR=`rtai-config --module-dir`
+if test $? != 0 ; then
+	echo "$CMDNAME: cannot find rtai-config (hint: make sure it's in the path; usual location: \$PREFIX/bin)"
+	exit 1
+fi
+
+if test x"$MODULEDIR" = x ; then
+	echo "$CMDNAME: rtai-config --module-dir: cannot find module dir"
+	exit 1
+fi
 
 # If hal_smi_masked_bits is not set, use default
 if test x"$1" != x ; then
@@ -35,23 +36,19 @@ else
 	SMI_MASKED_BITS="0x1"
 fi
 
+# remove anyway
+CMD="rmmod"
+rmmod -s "$MODULENAMENOEXT"
 if test $SMIRESET -eq 0 ; then
-rmmod -s "$MODULENAMENOEXT"
-insmod "$MODULEDIR/$MODULENAME" hal_smi_masked_bits=$SMI_MASKED_BITS
+	# if setting, insert
+	CMD="rmmod"
+	insmod "$MODULEDIR/$MODULENAME" hal_smi_masked_bits=$SMI_MASKED_BITS
 fi
 RC=$?
 if test $RC != 0 ; then
-	echo "insmod $MODULEDIR/$MODULENAME failed"
-	exit $RC
-fi
-
-if test $SMIRESET -eq 1 ; then
-rmmod -s "$MODULENAMENOEXT"
-fi
-RC=$?
-if test $RC != 0 ; then
-	echo "rmmod $MODULENAMENOEXT failed"
+	echo "$CMDNAME: $CMD $MODULEDIR/$MODULENAME failed"
 	exit $RC
 fi
 
 exit 0
+

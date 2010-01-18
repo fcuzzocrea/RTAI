@@ -39,12 +39,13 @@ fi
 # remove anyway
 CMD="rmmod"
 rmmod -s "$MODULENAMENOEXT"
+RC=$?
 if test $SMIRESET -eq 0 ; then
 	# if setting, insert
 	CMD="rmmod"
 	insmod "$MODULEDIR/$MODULENAME" hal_smi_masked_bits=$SMI_MASKED_BITS
+	RC=$?
 fi
-RC=$?
 if test $RC != 0 ; then
 	echo "$CMDNAME: $CMD $MODULEDIR/$MODULENAME failed"
 	exit $RC

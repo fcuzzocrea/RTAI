@@ -53,7 +53,7 @@ case 'set' then
       model.evtin=ci
       model.evtout=[]
       model.state=[]
-      model.dstate=[]
+      model.dstate=0
       model.rpar=[]
       model.ipar=[]
       model.firing=[]
@@ -78,7 +78,7 @@ case 'define' then
   model.evtin=1
   model.evtout=[]
   model.state=[]
-  model.dstate=[]
+  model.dstate=0
   model.rpar=[]
   model.ipar=[]
   model.blocktype='d'
@@ -101,7 +101,8 @@ if tt==[] then
           '#ifndef MODEL'
           '#include <math.h>';
           '#include <stdlib.h>';
-          '#include <scicos/scicos_block.h>';
+          '#include <machine.h>';
+          '#include <scicos_block4.h>';
           '#endif'
           '';
           'void '+funam+'(scicos_block *block,int flag)';

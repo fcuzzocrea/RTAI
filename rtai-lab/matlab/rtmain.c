@@ -784,7 +784,7 @@ static int_T rt_Main(RT_MODEL * (*model_name)(void), int_T priority)
   char myname[7];
   SEM *hard_timers_cnt = NULL;
 #ifdef MULTITASKING
-  int sample, *arg;
+  int sample, *taskarg;
 #endif
 
   rt_allow_nonroot_hrt();
@@ -850,12 +850,12 @@ static int_T rt_Main(RT_MODEL * (*model_name)(void), int_T priority)
 #ifdef MULTITASKING
   rt_SubRateTasks   = malloc(NUMST*sizeof(RT_TASK *));
   rt_SubRateThreads = malloc(NUMST*sizeof(pthread_t));
-  arg               = malloc(2*NUMST*sizeof(int));
+  taskarg           = malloc(2*NUMST*sizeof(int));
   for (sample = FIRST_TID + 1; sample < NUMST; sample++) {
-    arg[0] = sample;
-    arg[1] = priority + sample;
-    pthread_create(rt_SubRateThreads + sample, NULL, (void *)rt_SubRate, (void *)arg);
-    arg += 2;
+    taskarg[0] = sample;
+    taskarg[1] = priority + sample;
+    pthread_create(rt_SubRateThreads + sample, NULL, (void *)rt_SubRate, (void *)taskarg);
+    taskarg += 2;
   }
 #endif
   if ((pthread_create(&rt_BaseRateThread, NULL, rt_BaseRate, &priority)) != 0) {

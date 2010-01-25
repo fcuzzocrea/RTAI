@@ -1,7 +1,7 @@
 2010-01-25 Joe Brandt <jbrandt@nrao.edu>
 
 	* rtai-lab/matlab/rtmain.c: create MULTITASKING threads in a way
-	  that does not depend on whom will resume first-
+	  that does not depend on whom will resume first.
 
 2010-01-14 Paolo Mantegazza <mantegazza@aero.polimi.it>
 

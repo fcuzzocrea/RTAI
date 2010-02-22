@@ -1,3 +1,10 @@
+2010-02-21 Paolo Mantegazza <mantegazza@aero.polimi.it>
+
+	* base/include/asm-i386/rtai_hal.h: upgrade to the latest patches
+	  supporting Linux CONFIG_SPARSE_IRQ.
+	* base/arch/i386/hal/hal.immed: upgrade to the latest patches
+	  supporting Linux CONFIG_SPARSE_IRQ.
+
 2010-01-25 Joe Brandt <jbrandt@nrao.edu>
 
 	* rtai-lab/matlab/rtmain.c: create MULTITASKING threads in a way

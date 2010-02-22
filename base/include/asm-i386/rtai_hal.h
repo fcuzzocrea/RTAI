@@ -276,6 +276,15 @@ static inline unsigned long long rtai_u64div32c(unsigned long long a,
 #endif /* CONFIG_X86_LOCAL_APIC */
 #include <rtai_trace.h>
 
+#if defined(__IPIPE_2LEVEL_IRQMAP) || defined(__IPIPE_3LEVEL_IRQMAP)
+#define irqpend_himask     irqpend_himap
+#define irqpend_lomask     irqpend_lomap
+#define irqheld_mask       irqheld_map
+#define IPIPE_IRQMASK_ANY  IPIPE_IRQ_DOALL
+#define IPIPE_IRQ_IMASK    (BITS_PER_LONG - 1)
+#define IPIPE_IRQ_ISHIFT   5
+#endif
+
 struct rtai_realtime_irq_s {
 	int (*handler)(unsigned irq, void *cookie);
 	void *cookie;
@@ -394,6 +403,18 @@ do { \
 #define ROOT_STATUS_ADR(cpuid)  (&ipipe_cpudom_var(hal_root_domain, status))
 #define ROOT_STATUS_VAL(cpuid)  (ipipe_cpudom_var(hal_root_domain, status))
 
+#if defined(__IPIPE_2LEVEL_IRQMAP) || defined(__IPIPE_3LEVEL_IRQMAP)
+#define hal_pend_domain_uncond(irq, domain, cpuid) \
+	__ipipe_set_irq_pending(domain, irq)
+
+#define hal_fast_flush_pipeline(cpuid) \
+do { \
+        if (ipipe_cpudom_var(hal_root_domain, irqpend_himap) != 0) { \
+                rtai_cli(); \
+                hal_sync_stage(IPIPE_IRQ_DOALL); \
+        } \
+} while (0)
+#else
 #define hal_pend_domain_uncond(irq, domain, cpuid) \
 do { \
 	if (likely(!test_bit(IPIPE_LOCK_FLAG, &(domain)->irqs[irq].control))) { \
@@ -412,6 +433,7 @@ do { \
 		hal_sync_stage(IPIPE_IRQMASK_ANY); \
 	} \
 } while (0)
+#endif
 
 #endif
 

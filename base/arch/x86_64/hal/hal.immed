@@ -1269,8 +1269,18 @@ static int rtai_hirq_dispatcher(struct pt_regs *regs)
 #if LINUX_VERSION_CODE < KERNEL_VERSION(2,6,19)
         if (rtai_realtime_irq[irq = regs->orig_rax & 0xFF].handler) {
 #else
-        unsigned long vector = ~regs->RT_REG_ORIG_AX;
-        if (rtai_realtime_irq[irq = vector >= FIRST_SYSTEM_VECTOR ? ipipe_apic_vector_irq(vector) : __get_cpu_var(vector_irq)[vector]].handler) {
+	unsigned long vector = ~regs->RT_REG_ORIG_AX;
+	if (vector >= FIRST_SYSTEM_VECTOR) {
+		irq = ipipe_apic_vector_irq(vector);
+#if defined(CONFIG_SMP) && (defined(__IPIPE_2LEVEL_IRQMAP) || defined(__IPIPE_3LEVEL_IRQMAP))
+	} else if (vector == IRQ_MOVE_CLEANUP_VECTOR){
+		irq = vector;
+#endif
+	} else {
+		irq = __get_cpu_var(vector_irq)[vector];
+	}
+	if (rtai_realtime_irq[irq].handler) {
+//	if (rtai_realtime_irq[irq = vector >= FIRST_SYSTEM_VECTOR ? ipipe_apic_vector_irq(vector) : __get_cpu_var(vector_irq)[vector]].handler) {
 #endif
                 unsigned long sflags;
                 HAL_LOCK_LINUX();

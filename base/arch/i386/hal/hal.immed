@@ -1576,17 +1576,18 @@ static int rtai_hirq_dispatcher (struct pt_regs regs)
 #if LINUX_VERSION_CODE < KERNEL_VERSION(2,6,28)
 	if (rtai_realtime_irq[irq = ~regs.RT_REG_ORIG_AX].handler) {
 #else
+	regs.RT_REG_ORIG_AX = ~regs.RT_REG_ORIG_AX;
 #ifdef CONFIG_X86_LOCAL_APIC
-	if (~regs.RT_REG_ORIG_AX >= FIRST_SYSTEM_VECTOR) {
-		irq = ipipe_apic_vector_irq(~regs.RT_REG_ORIG_AX);
+	if (regs.RT_REG_ORIG_AX >= FIRST_SYSTEM_VECTOR) {
+		irq = ipipe_apic_vector_irq(regs.RT_REG_ORIG_AX);
 #if defined(CONFIG_SMP) && (defined(__IPIPE_2LEVEL_IRQMAP) || defined(__IPIPE_3LEVEL_IRQMAP))
-	} else if (~regs.RT_REG_ORIG_AX == IRQ_MOVE_CLEANUP_VECTOR) {
-		irq = ~regs.RT_REG_ORIG_AX;
+	} else if (regs.RT_REG_ORIG_AX == IRQ_MOVE_CLEANUP_VECTOR) {
+		irq = regs.RT_REG_ORIG_AX;
 #endif /* CONFIG_SMP */
 	} else
 #endif
 	{
-		irq = __get_cpu_var(vector_irq)[~regs.RT_REG_ORIG_AX];
+		irq = __get_cpu_var(vector_irq)[regs.RT_REG_ORIG_AX];
 	}
 	if (rtai_realtime_irq[irq].handler) {
 #endif

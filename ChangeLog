@@ -1,3 +1,10 @@
+2010-02-24 Paolo Mantegazza <mantegazza@aero.polimi.it>
+
+	* base/include/asm-x86_64/rtai_hal.h: upgrade to the latest patches
+	  supporting Linux CONFIG_SPARSE_IRQ.
+	* base/arch/asm-x86_64/hal/hal.immed: upgrade to the latest patches
+	  supporting Linux CONFIG_SPARSE_IRQ.
+
 2010-02-21 Paolo Mantegazza <mantegazza@aero.polimi.it>
 
 	* base/include/asm-i386/rtai_hal.h: upgrade to the latest patches

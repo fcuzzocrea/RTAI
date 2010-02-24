@@ -502,7 +502,7 @@ static inline int emptyq_p(xnqueue_t *queue)
 #define xnthread_test_info    rt_task_test_taskq_retval
 
 #define xnsynch_t                   TASKQ
-#define xnsynch_init                rt_taskq_init
+#define xnsynch_init(s, f, p)       rt_taskq_init(s, f)
 #define xnsynch_destroy             rt_taskq_delete
 #define xnsynch_wakeup_one_sleeper  rt_taskq_ready_one
 #define xnsynch_flush               rt_taskq_ready_all
@@ -519,6 +519,15 @@ static inline void xnsynch_sleep_on(void *synch, xnticks_t timeout, xntmode_t ti
 #define XNSYNCH_PRIO     TASKQ_PRIO
 #define XNSYNCH_FIFO     TASKQ_FIFO
 #define XNSYNCH_RESCHED  1
+
+#define rthal_apc_alloc(name, handler, cookie) \
+	rt_request_srq(nam2num(name), (void *)(handler), NULL);
+
+#define rthal_apc_free(apc) \
+	rt_free_srq((apc))
+
+#define rthal_apc_schedule(apc) \
+	rt_pend_linux_srq((apc))
 
 #ifdef CONFIG_RTAI_RTDM_SELECT
 

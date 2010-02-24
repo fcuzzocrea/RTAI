@@ -901,6 +901,11 @@ int __init rtdm_skin_init(void)
 
 	xnintr_mount();
 
+#ifdef CONFIG_RTAI_RTDM_SELECT
+	if (xnselect_mount()) {
+	        goto cleanup_core;
+	}
+#endif
 #ifdef CONFIG_PROC_FS
 	if ((err = rtdm_proc_init())) {
 	        goto cleanup_core;
@@ -910,17 +915,23 @@ int __init rtdm_skin_init(void)
 	printk("RTDM started.\n");
 	return 0;
 
+cleanup_core:
+#ifdef CONFIG_RTAI_RTDM_SELECT
+	xnselect_umount();
+#endif
+	rtdm_dev_cleanup();
 #ifdef CONFIG_PROC_FS
 	rtdm_proc_cleanup();
 #endif /* CONFIG_PROC_FS */
-cleanup_core:
-	rtdm_dev_cleanup();
 fail:
 	return err;
 }
 
 void __exit rtdm_skin_exit(void)
 {
+#ifdef CONFIG_RTAI_RTDM_SELECT
+	xnselect_umount();
+#endif
 	rtai_timers_cleanup();
 	rtdm_dev_cleanup();
         reset_rt_fun_ext_index(rtdm, RTDM_INDX);

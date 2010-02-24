@@ -53,6 +53,9 @@
 #include <linux/types.h>
 #include <linux/bitops.h>	/* For hweight_long */
 
+static xnqueue_t xnselectors;
+static int xnselect_apc;
+
 #define link2binding(baddr, memb)				\
 	container_of(baddr, struct xnselect_binding, memb)
 
@@ -68,7 +71,7 @@ void xnselect_init(struct xnselect *select_block)
 {
 	initq(&select_block->bindings);
 }
-EXPORT_SYMBOL(xnselect_init);
+EXPORT_SYMBOL_GPL(xnselect_init);
 
 static inline int xnselect_wakeup(struct xnselector *selector)
 {
@@ -128,11 +131,12 @@ int xnselect_bind(struct xnselect *select_block,
 		__FD_SET(index, &selector->fds[type].pending);
 		if (xnselect_wakeup(selector))
 			xnpod_schedule();
-	}
+	} else
+		__FD_CLR(index, &selector->fds[type].pending);
 
 	return 0;
 }
-EXPORT_SYMBOL(xnselect_bind);
+EXPORT_SYMBOL_GPL(xnselect_bind);
 
 /* Must be called with nklock locked irqs off */
 int __xnselect_signal(struct xnselect *select_block, unsigned state)
@@ -163,7 +167,7 @@ int __xnselect_signal(struct xnselect *select_block, unsigned state)
 
 	return resched;
 }
-EXPORT_SYMBOL(__xnselect_signal);
+EXPORT_SYMBOL_GPL(__xnselect_signal);
 
 /** 
  * Destroy the @a xnselect structure associated with a file descriptor.
@@ -175,6 +179,7 @@ EXPORT_SYMBOL(__xnselect_signal);
 void xnselect_destroy(struct xnselect *select_block)
 {
 	xnholder_t *holder;
+	int resched = 0;
 	spl_t s;
 
 	xnlock_get_irqsave(&nklock, s);
@@ -187,8 +192,13 @@ void xnselect_destroy(struct xnselect *select_block)
 
 		__FD_CLR(binding->bit_index,
 			 &selector->fds[binding->type].expected);
-		__FD_CLR(binding->bit_index,
-			 &selector->fds[binding->type].pending);
+		if (!__FD_ISSET(binding->bit_index,
+				&selector->fds[binding->type].pending)) {
+			__FD_SET(binding->bit_index,
+				 &selector->fds[binding->type].pending);
+			if (xnselect_wakeup(selector))
+				resched = 1;
+		}
 		removeq(&selector->bindings, &binding->slink);
 		xnlock_put_irqrestore(&nklock, s);
 
@@ -196,9 +206,11 @@ void xnselect_destroy(struct xnselect *select_block)
 		
 		xnlock_get_irqsave(&nklock, s);
 	}
+	if (resched)
+		xnpod_schedule();
 	xnlock_put_irqrestore(&nklock, s);
 }
-EXPORT_SYMBOL(xnselect_destroy);
+EXPORT_SYMBOL_GPL(xnselect_destroy);
 
 static unsigned
 fd_set_andnot(fd_set *result, fd_set *first, fd_set *second, unsigned n)
@@ -274,7 +286,7 @@ int xnselector_init(struct xnselector *selector)
 {
 	unsigned i;
 
-	xnsynch_init(&selector->synchbase, XNSYNCH_FIFO | XNSYNCH_NOPIP);
+	xnsynch_init(&selector->synchbase, XNSYNCH_FIFO, NULL);
 	for (i = 0; i < XNSELECT_MAX_TYPES; i++) {
 		__FD_ZERO(&selector->fds[i].expected);
 		__FD_ZERO(&selector->fds[i].pending);
@@ -282,7 +294,7 @@ int xnselector_init(struct xnselector *selector)
 	initq(&selector->bindings);
 	return 0;
 }
-EXPORT_SYMBOL(xnselector_init);
+EXPORT_SYMBOL_GPL(xnselector_init);
 
 /** 
  * Check the state of a number of file descriptors, wait for a state change if
@@ -377,7 +389,7 @@ int xnselect(struct xnselector *selector,
 
 	return 0; /* Timeout */
 }
-EXPORT_SYMBOL(xnselect);
+EXPORT_SYMBOL_GPL(xnselect);
 
 /** 
  * Destroy a selector block.
@@ -388,29 +400,68 @@ EXPORT_SYMBOL(xnselect);
  */
 void xnselector_destroy(struct xnselector *selector)
 {
+	spl_t s;
+
+	inith(&selector->destroy_link);
+	xnlock_get_irqsave(&nklock, s);
+	appendq(&xnselectors, &selector->destroy_link);
+	xnlock_put_irqrestore(&nklock, s);
+
+	rthal_apc_schedule(xnselect_apc);
+}
+EXPORT_SYMBOL_GPL(xnselector_destroy);
+
+static void xnselector_destroy_loop(void *cookie)
+{
+	struct xnselector *selector;
 	xnholder_t *holder;
+	int resched;
 	spl_t s;
 
 	xnlock_get_irqsave(&nklock, s);
-	while ((holder = getq(&selector->bindings))) {
-		struct xnselect_binding *binding;
-		struct xnselect *fd;
+	while ((holder = getq(&xnselectors))) {
+		selector = container_of(holder, struct xnselector, destroy_link);
+		while ((holder = getq(&selector->bindings))) {
+			struct xnselect_binding *binding;
+			struct xnselect *fd;
 
-		binding = link2binding(holder, slink);
-		fd = binding->fd;
-		removeq(&fd->bindings, &binding->link);
+			binding = link2binding(holder, slink);
+			fd = binding->fd;
+			removeq(&fd->bindings, &binding->link);
+			xnlock_put_irqrestore(&nklock, s);
+
+			xnfree(binding);
+
+			xnlock_get_irqsave(&nklock, s);
+		}
+		resched = 
+			xnsynch_destroy(&selector->synchbase) == XNSYNCH_RESCHED;
 		xnlock_put_irqrestore(&nklock, s);
 
-		xnfree(binding);
+		xnfree(selector);
+		if (resched)
+			xnpod_schedule();
 
 		xnlock_get_irqsave(&nklock, s);
 	}
 	xnlock_put_irqrestore(&nklock, s);
-
-	if (xnsynch_destroy(&selector->synchbase) == XNSYNCH_RESCHED)
-		xnpod_schedule();
 }
-EXPORT_SYMBOL(xnselector_destroy);
+
+int xnselect_mount(void)
+{
+	initq(&xnselectors);
+	xnselect_apc = rthal_apc_alloc("xnselectors_destroy", 
+				       xnselector_destroy_loop, NULL);
+	if (xnselect_apc < 0)
+		return xnselect_apc;
+
+	return 0;
+}
+
+int xnselect_umount(void)
+{
+	return rthal_apc_free(xnselect_apc);
+}
 
 #endif
 

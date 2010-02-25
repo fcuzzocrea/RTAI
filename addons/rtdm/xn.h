@@ -502,7 +502,7 @@ static inline int emptyq_p(xnqueue_t *queue)
 #define xnthread_test_info    rt_task_test_taskq_retval
 
 #define xnsynch_t                   TASKQ
-#define xnsynch_init(s, f, p)       rt_taskq_init(s, f)
+#define xnsynch_init(s, flags, fl)  rt_taskq_init(s, flags)
 #define xnsynch_destroy             rt_taskq_delete
 #define xnsynch_wakeup_one_sleeper  rt_taskq_ready_one
 #define xnsynch_flush               rt_taskq_ready_all

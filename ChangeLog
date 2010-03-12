@@ -1,3 +1,17 @@
+2009-03-12 Roberto Bucher <roberto.bucher@supsi.ch>
+
+	* rtai-lab/scicoslab/macros/RTAI/rtai4_scope.sci:
+	* rtai-lab/scicoslab/macros/RTAI/rtai_generic_out.sci:
+	* rtai-lab/scilab/devices/rtai_fifoin.c:
+	* rtai-lab/scilab/devices/rtai_fifoout.c:
+	* rtai-lab/scilab/macros/RTAI/rtai4_scope.sci:
+	* rtai-lab/scilab/macros/RTAI/rtai_generic_out.sci:
+	* rtai-lab/scilab5/RTAI/macros/rtai4_scope.sci:
+	* rtai-lab/scilab5/RTAI/macros/rtai_generic_out.sci:
+	* rtai-lab/scilab5/devices/rtai_fifoin.c:
+	* rtai-lab/scilab5/devices/rtai_fifoout.c: ported the vulcano
+	  modifications to magma
+
 2010-02-24 Paolo Mantegazza <mantegazza@aero.polimi.it>
 
 	* base/include/asm-x86_64/rtai_hal.h: upgrade to the latest patches

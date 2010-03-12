@@ -1,26 +1,9 @@
 function [x,y,typ] = rtai4_scope(job,arg1,arg2)
   x=[];y=[];typ=[];
 
-  if size(arg1.model.ipar,1) > 0
-    //Convert from old to new scope
-    name=arg1.graphics.exprs(2)
-    arg1.model.opar=list(iconvert([ascii(stripblanks(name,1)),0],11))
-    traceNames=''
-    for i=1:size(arg1.model.in,1)
-      if i~=1
-        traceNames=traceNames+';'
-      end
-      traceNames=traceNames+sci2exp(i)
-      arg1.model.opar(i+1)=iconvert([ascii(sci2exp(i)),0],11)
-    end
-    arg1.graphics.exprs=[name,traceNames]
-    arg1.model.ipar=[]
-    arg1.model.rpar=[]
-    arg1.graphics.gr_i=['xstringb(orig(1),orig(2)-25,[name],sz(1),25,''fill'');']
-  end
-
   select job
   case 'plot' then
+
     name=arg1.graphics.exprs(1)
     standard_draw(arg1)
     orig=arg1.graphics.orig
@@ -56,6 +39,24 @@ function [x,y,typ] = rtai4_scope(job,arg1,arg2)
   case 'getorigin' then
     [x,y]=standard_origin(arg1)
   case 'set' then
+    if size(arg1.model.ipar,1) > 0 then
+      //Convert from old to new scope
+      name=arg1.graphics.exprs(2)
+      arg1.model.opar=list(iconvert([ascii(stripblanks(name,1)),0],11))
+      traceNames=''
+      for i=1:size(arg1.model.in,1)
+        if i~=1
+          traceNames=traceNames+';'
+        end
+        traceNames=traceNames+sci2exp(i)
+        arg1.model.opar(i+1)=iconvert([ascii(sci2exp(i)),0],11)
+      end
+      arg1.graphics.exprs=[name,traceNames]
+      arg1.model.ipar=[]
+      arg1.model.rpar=[]
+      arg1.graphics.gr_i=['xstringb(orig(1),orig(2)-25,[name],sz(1),25,''fill'');']
+    end
+
     x=arg1
     model=arg1.model;graphics=arg1.graphics;
     exprs=graphics.exprs;
@@ -109,7 +110,7 @@ function [x,y,typ] = rtai4_scope(job,arg1,arg2)
     model.rpar=[]
     model.ipar=[]
     model.opar=list(iconvert([ascii(name),0],11),iconvert([ascii(traceNames),0],11))
-    model.dstate=[]
+    model.dstate=[0]
     model.blocktype='d'
     model.dep_ut=[%t %f]
     exprs=[name,traceNames]

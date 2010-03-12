@@ -23,7 +23,9 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA.
 
 static void init(scicos_block *block)
 {
-  rtf_create(block->ipar[0],block->ipar[1]);
+  int sizeData = sizeof(float)*(block->nin+1);
+  int dim = block->ipar[1]/sizeData*sizeData;
+  rtf_create(block->ipar[0],dim);
   rtf_reset(block->ipar[0]);
 }
 

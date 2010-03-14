@@ -88,9 +88,9 @@
 #define _KCOMEDI_COMD_DATA_WREAD_TIMED  47
 #define _KCOMEDI_COMD_DATA_WRITE        48
 
-//#define  USE_COMEDI_IN_LINUX
+//#define USE_LINUX_COMEDI
 
-#ifdef USE_COMEDI_IN_LINUX
+#ifdef USE_LINUX_COMEDI
 typedef unsigned int lsampl_t;
 typedef unsigned int sampl_t;
 typedef struct comedi_cmd comedi_cmd;
@@ -101,7 +101,7 @@ typedef struct comedi_krange comedi_krange;
 #endif
 
 #ifdef __KERNEL__ /* For kernel module build. */
-#ifdef USE_COMEDI_IN_LINUX
+#ifdef USE_LINUX_COMEDI
 typedef void comedi_t;
 #include "/usr/src/linux-2.6.32.7/drivers/staging/comedi/comedilib.h"
 #else

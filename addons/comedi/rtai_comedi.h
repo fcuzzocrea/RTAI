@@ -546,3 +546,71 @@ RTAI_PROTO(long, rt_comedi_command_data_wread_timed, (void *dev, unsigned int su
 	_BUILD_INSN(INSN_INTTRIG, (insn), subdev, &(data), 1, 0, 0, 0)
 
 #endif /* #ifndef _RTAI_COMEDI_H_ */
+
+
+#if 0
+
+#ifndef _COMEDI_SYSTEM_H_
+#define _COMEDI_SYSTEM_H_
+
+#ifdef CONFIG_IPIPE
+
+#include <linux/interrupt.h>
+
+extern int rt_request_irq(unsigned irq, int (*handler)(unsigned irq, void *cookie), void *cookie, int retmode);
+
+#if 1
+#define comedi_request_irq(irq, handler, flags, name, dev) \
+        ({ rt_request_irq(irq, (void *)handler, NULL, 0); })
+#else
+static inline int comedi_request_irq(unsigned int irq, irq_handler_t handler, unsigned long flags, const char *name, void *dev)
+{
+        return rt_request_irq(irq, (void *)handler, NULL, 0);
+}
+#endif
+
+extern int rt_release_irq(unsigned irq);
+
+#define comedi_free_irq(irq, dev_id) \
+        rt_release_irq((unsigned)irq)
+
+#define comedi_spin_lock_irqsave(lock_ptr, flags) \
+	({ local_irq_save_hw(flags); _raw_spin_lock(lock_ptr); flags; })
+
+#define comedi_spin_unlock_irqrestore(lock_ptr, flags) \
+	do { \
+		_raw_spin_unlock(lock_ptr); \
+		local_irq_restore_hw(flags); \
+	} while (0)
+
+extern void rt_busy_sleep(int ns);
+
+#define comedi_udelay(usec) \
+	rt_busy_sleep(1000*usec)
+
+#else
+
+#define comedi_request_irq(irq, handler, flags, device, dev_id) \
+	request_irq(irq, handler, flags, device, dev_id)
+
+#define comedi_free_irq(irq, dev_id) \
+	free_irq(irq, dev_id)
+
+#define comedi_spin_lock_irqsave(lock_ptr, flags) \
+	({ spin_lock_irqsave(lock_ptr, flags); flags; })
+
+#define comedi_spin_unlock_irqrestore(lock_ptr, flags) \
+	spin_unlock_irqrestore(lock_ptr, flags)
+
+#define comedi_udelay(usec) \
+	udelay(usec)
+
+#endif /* _COMEDI_SYSTEM_H_ */
+
+#else
+
+#endif
+
+for i in `find . -name "*.c"`; do cat $i | sed s/request_irq/comedi_request_irq/g | sed s/free_irq/comedi_free_irq/g | sed s/spin_lock_irqsave/comedi_spin_lock_irqsave/g | sed s/spin_unlock_irqrestore/comedi_spin_unlock_irqrestore/g | sed s/udelay/comedi_udelay/g > newcopy; mv newcopy $i; done
+
+#endif

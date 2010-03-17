@@ -550,7 +550,7 @@ RTAI_PROTO(long, rt_comedi_command_data_wread_timed, (void *dev, unsigned int su
 
 #if 0
 #
-# WHAT TO DO
+# WHAT TO DO:
 #copy this file in linux/drivers/staging/comedi/patchcomedi
 #cd linux/drivers/staging/comedi/
 #chmod +x patchcomedi

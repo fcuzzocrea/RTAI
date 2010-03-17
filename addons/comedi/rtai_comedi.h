@@ -610,10 +610,8 @@ extern void rt_busy_sleep(int ns);
 #define comedi_udelay(usec) \
 	udelay(usec)
 
-#endif /* _COMEDI_SYSTEM_H_ */
-
-#else
-
 #endif
+
+#endif /* _COMEDI_SYSTEM_H_ */
 
 #endif

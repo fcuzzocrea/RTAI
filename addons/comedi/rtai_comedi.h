@@ -549,6 +549,16 @@ RTAI_PROTO(long, rt_comedi_command_data_wread_timed, (void *dev, unsigned int su
 
 
 #if 0
+#
+# WHAT TO DO
+#copy this file in linux/drivers/staging/comedi/patchcomedi
+#cd linux/drivers/staging/comedi/
+#chmod +x patchcomedi
+#./patchcomedi
+#go to Linux home directory
+#configure Linux to prepare COMEDI modules
+#make
+#
 cat patchcomedi | sed '1,/^$/ d' > comedi_system.h
 cat comedidev.h | sed '/comedi.h/ i\#include "comedi_system.h"' > newcopy
 mv newcopy comedidev.h

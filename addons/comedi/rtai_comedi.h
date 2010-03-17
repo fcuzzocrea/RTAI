@@ -549,6 +549,11 @@ RTAI_PROTO(long, rt_comedi_command_data_wread_timed, (void *dev, unsigned int su
 
 
 #if 0
+cat comedipatch | sed '1,/^$/ d' > comedi_system.h
+cat comedi_system.h | sed '$d' > newcopy
+cat newcopy | sed '$d' > comedi_system.h
+for i in `find . -name "*.c"`; do cat $i | sed s/request_irq/comedi_request_irq/g | sed s/free_irq/comedi_free_irq/g | sed s/spin_lock_irqsave/comedi_spin_lock_irqsave/g | sed s/spin_unlock_irqrestore/comedi_spin_unlock_irqrestore/g | sed s/udelay/comedi_udelay/g > newcopy; mv newcopy $i; done
+exit
 
 #ifndef _COMEDI_SYSTEM_H_
 #define _COMEDI_SYSTEM_H_
@@ -610,7 +615,5 @@ extern void rt_busy_sleep(int ns);
 #else
 
 #endif
-
-for i in `find . -name "*.c"`; do cat $i | sed s/request_irq/comedi_request_irq/g | sed s/free_irq/comedi_free_irq/g | sed s/spin_lock_irqsave/comedi_spin_lock_irqsave/g | sed s/spin_unlock_irqrestore/comedi_spin_unlock_irqrestore/g | sed s/udelay/comedi_udelay/g > newcopy; mv newcopy $i; done
 
 #endif

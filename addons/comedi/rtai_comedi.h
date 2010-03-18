@@ -92,15 +92,18 @@
 
 #ifdef USE_LINUX_COMEDI
 typedef unsigned int lsampl_t;
-typedef unsigned int sampl_t;
+typedef unsigned short sampl_t;
 typedef struct comedi_cmd comedi_cmd;
 typedef struct comedi_insn comedi_insn;
 typedef struct comedi_insnlist comedi_insnlist;
 typedef struct comedi_krange comedi_krange;
 #include "/usr/src/linux-2.6.32.7/drivers/staging/comedi/comedi.h"
+#else
+#include <linux/comedi.h>
 #endif
 
 #ifdef __KERNEL__ /* For kernel module build. */
+
 #ifdef USE_LINUX_COMEDI
 #include "/usr/src/linux-2.6.32.7/drivers/staging/comedi/comedilib.h"
 #else
@@ -148,10 +151,6 @@ RTAI_SYSCALL_MODE long rt_comedi_command_data_write(void *dev, unsigned int subd
 #else  /* __KERNEL__ not defined */
 
 #include <string.h>
-#ifndef USE_COMEDI_IN_LINUX
-#include <linux/comedi.h>
-#endif
-
 #include <asm/rtai_lxrt.h>
 #include <rtai_msg.h>
 #include <rtai_shm.h>

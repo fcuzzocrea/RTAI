@@ -413,7 +413,7 @@ static RTAI_SYSCALL_MODE int _comedi_get_rangetype(unsigned int minor, unsigned 
 }
 */
 
-static RTAI_SYSCALL_MODE unsigned int _comedi_get_subdevice_flags(comedi_t *dev,unsigned int subdev)
+static RTAI_SYSCALL_MODE unsigned int _comedi_get_subdevice_flags(void *dev,unsigned int subdev)
 {
 	int retval;
 	RTAI_COMEDI_LOCK(dev, subdev);
@@ -436,7 +436,7 @@ static RTAI_SYSCALL_MODE int _comedi_get_buf_head_pos(void * dev, unsigned int s
 	return retval;
 }
 
-static RTAI_SYSCALL_MODE int _comedi_set_user_int_count(comedi_t *dev, unsigned int subdev, unsigned int buf_user_count)
+static RTAI_SYSCALL_MODE int _comedi_set_user_int_count(void *dev, unsigned int subdev, unsigned int buf_user_count)
 {
 	int retval;
 	RTAI_COMEDI_LOCK(dev, subdev);
@@ -445,7 +445,7 @@ static RTAI_SYSCALL_MODE int _comedi_set_user_int_count(comedi_t *dev, unsigned 
 	return retval;
 }
 
-static RTAI_SYSCALL_MODE int _comedi_map(comedi_t *dev, unsigned int subdev, void *ptr)
+static RTAI_SYSCALL_MODE int _comedi_map(void *dev, unsigned int subdev, void *ptr)
 {
 	int retval;
 	RTAI_COMEDI_LOCK(dev, subdev);
@@ -454,7 +454,7 @@ static RTAI_SYSCALL_MODE int _comedi_map(comedi_t *dev, unsigned int subdev, voi
 	return retval;
 }
 
-static RTAI_SYSCALL_MODE int _comedi_unmap(comedi_t *dev, unsigned int subdev)
+static RTAI_SYSCALL_MODE int _comedi_unmap(void *dev, unsigned int subdev)
 {
 	int retval;
 	RTAI_COMEDI_LOCK(dev, subdev);

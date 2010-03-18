@@ -102,11 +102,9 @@ typedef struct comedi_krange comedi_krange;
 
 #ifdef __KERNEL__ /* For kernel module build. */
 #ifdef USE_LINUX_COMEDI
-typedef void comedi_t;
 #include "/usr/src/linux-2.6.32.7/drivers/staging/comedi/comedilib.h"
 #else
 #include <linux/comedilib.h>
-//#include <linux/comedidev.h>
 #endif
 
 #ifdef __cplusplus

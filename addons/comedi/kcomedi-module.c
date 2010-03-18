@@ -582,15 +582,15 @@ static struct rt_fun_entry rtai_comedi_fun[] = {
  ,[_KCOMEDI_SET_USER_INT_COUNT]    = { 0, _comedi_set_user_int_count }
  ,[_KCOMEDI_MAP]                   = { 0, _comedi_map }
  ,[_KCOMEDI_UNMAP]                 = { 0, _comedi_unmap }
- ,[_KCOMEDI_WAIT]                  = { 0, rt_comedi_wait }
+ ,[_KCOMEDI_WAIT]                  = { 1, rt_comedi_wait }
  ,[_KCOMEDI_WAIT_IF]               = { 0, rt_comedi_wait_if }
- ,[_KCOMEDI_WAIT_UNTIL]            = { 0, rt_comedi_wait_until }
- ,[_KCOMEDI_WAIT_TIMED]            = { 0, rt_comedi_wait_timed }
+ ,[_KCOMEDI_WAIT_UNTIL]            = { 1, rt_comedi_wait_until }
+ ,[_KCOMEDI_WAIT_TIMED]            = { 1, rt_comedi_wait_timed }
  ,[_KCOMEDI_COMD_DATA_READ]        = { 0, rt_comedi_command_data_read }
- ,[_KCOMEDI_COMD_DATA_WREAD]       = { 0, rt_comedi_command_data_wread }
+ ,[_KCOMEDI_COMD_DATA_WREAD]       = { 1, rt_comedi_command_data_wread }
  ,[_KCOMEDI_COMD_DATA_WREAD_IF]    = { 0, rt_comedi_command_data_wread_if }
- ,[_KCOMEDI_COMD_DATA_WREAD_UNTIL] = { 0, rt_comedi_command_data_wread_until }
- ,[_KCOMEDI_COMD_DATA_WREAD_TIMED] = { 0, rt_comedi_command_data_wread_timed }
+ ,[_KCOMEDI_COMD_DATA_WREAD_UNTIL] = { 1, rt_comedi_command_data_wread_until }
+ ,[_KCOMEDI_COMD_DATA_WREAD_TIMED] = { 1, rt_comedi_command_data_wread_timed }
  ,[_KCOMEDI_COMD_DATA_WRITE]       = { 0, rt_comedi_command_data_write }
 };
 

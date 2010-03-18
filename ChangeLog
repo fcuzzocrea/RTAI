@@ -1,3 +1,9 @@
+2010-03-18 Paolo Mantegazza <mantegazza@aero.polimi.it>
+
+	* addons/comedi/kcomedi-module.c: set the blocking flag in the calling
+	  table of waiting functions, to have them work correctly when called
+	  in soft mode.
+
 2010-01-25 Joe Brandt <jbrandt@nrao.edu>
 
 	* rtai-lab/matlab/rtmain.c: create MULTITASKING threads in a way

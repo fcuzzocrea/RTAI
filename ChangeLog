@@ -1,3 +1,8 @@
+2010-03-19 Paolo Mantegazza <mantegazza@aero.polimi.it>
+
+	* base/sched/api.c: fixed a never ending loop and a missing unlock 
+	  in rt_task_suspend_until.
+
 2010-03-18 Paolo Mantegazza <mantegazza@aero.polimi.it>
 
 	* addons/comedi/kcomedi-module.c: set the blocking flag in the calling

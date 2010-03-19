@@ -420,12 +420,12 @@ RTAI_SYSCALL_MODE int rt_task_suspend_until(RT_TASK *task, RTIME time)
 					rt_schedule();
 					if (likely((void *)task->blocked_on > RTP_HIGERR)) {
 						if (!--task->suspdepth) {
-							goto ret;
+							break;
 						}
 					} else if (unlikely(task->blocked_on != NULL)) {
 						task->suspdepth = 0;
 						retval = RTE_UNBLKD;
-						goto ret;
+						break;
 					}
 					if (unlikely(task->suspdepth > 0)) {
 						rem_ready_current(task);
@@ -433,9 +433,10 @@ RTAI_SYSCALL_MODE int rt_task_suspend_until(RT_TASK *task, RTIME time)
 						continue;
 					}
 					retval = task->suspdepth;
+					break;
 				}
 				rt_global_restore_flags(flags);
-ret:				return retval;
+				return retval;
 			} else {
 				rem_ready_task(task);
 				enq_timed_task(task);

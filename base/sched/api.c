@@ -348,8 +348,8 @@ RTAI_SYSCALL_MODE int rt_task_suspend(RT_TASK *task)
 	flags = rt_global_save_flags_and_cli();
 	if (!task_owns_sems(task) && !task->suspdepth) {
 		task->suspdepth = 1;
-		task->blocked_on = (void *)task;
 		if (task == RT_CURRENT) {
+			task->blocked_on = (void *)task;
 			rem_ready_current(task);
 			task->state |= RT_SCHED_SUSPENDED;
 			rt_schedule();

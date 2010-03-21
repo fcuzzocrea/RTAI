@@ -560,6 +560,10 @@ cat patchcomedi | sed '1,/^$/ d' > comedi_system.h
 cat comedidev.h | sed '/comedi.h/ i\#include "comedi_system.h"' > newcopy
 mv newcopy comedidev.h
 for i in `find . -name "*.c"`; do cat $i | sed s/request_irq/comedi_request_irq/g | sed s/free_irq/comedi_free_irq/g | sed s/spin_lock_irqsave/comedi_spin_lock_irqsave/g | sed s/spin_unlock_irqrestore/comedi_spin_unlock_irqrestore/g | sed s/udelay/comedi_udelay/g > newcopy; mv newcopy $i; done
+mkdir include
+mkdir include/linux
+cp comedi.h include/linux
+cp comedilib.h include/linux
 exit
 
 #ifndef _COMEDI_SYSTEM_H_

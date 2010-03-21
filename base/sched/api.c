@@ -354,7 +354,6 @@ RTAI_SYSCALL_MODE int rt_task_suspend(RT_TASK *task)
 			task->state |= RT_SCHED_SUSPENDED;
 			rt_schedule();
 			if (unlikely(task->blocked_on != NULL)) {
-				task->suspdepth = 0;
 				rt_global_restore_flags(flags);
 				return RTE_UNBLKD;
 			}
@@ -411,35 +410,24 @@ RTAI_SYSCALL_MODE int rt_task_suspend_until(RT_TASK *task, RTIME time)
 		if ((task->resume_time = time) > rt_time_h) {
 			task->suspdepth = 1;
 			if (task == RT_CURRENT) {
-				int retval = RTE_TIMOUT;
+				int retval = 0;
+				task->blocked_on = (void *)task;
 				rem_ready_current(task);
 				enq_timed_task(task);
 				task->state |= (RT_SCHED_SUSPENDED | RT_SCHED_DELAYED);
-				while (1) {
-					task->blocked_on = (void *)task;
-					rt_schedule();
-					if (likely((void *)task->blocked_on > RTP_HIGERR)) {
-						if (!--task->suspdepth) {
-							break;
-						}
-					} else if (unlikely(task->blocked_on != NULL)) {
-						task->suspdepth = 0;
-						retval = RTE_UNBLKD;
-						break;
-					}
-					if (unlikely(task->suspdepth > 0)) {
-						rem_ready_current(task);
-						task->state |= RT_SCHED_SUSPENDED;
-						continue;
-					}
-					retval = task->suspdepth;
-					break;
+				rt_schedule();
+				if ((void *)task->blocked_on > RTP_HIGERR) {
+					retval = RTE_TIMOUT;
+				} else if (unlikely(task->blocked_on)) {
+					retval = RTE_UNBLKD;
 				}
 				rt_global_restore_flags(flags);
-				return retval;
+				return retval ? retval : task->suspdepth;
 			} else {
 				rem_ready_task(task);
-				enq_timed_task(task);
+				if (!(task->state & RT_SCHED_DELAYED)) {
+					enq_timed_task(task);
+				}
 				task->state |= (RT_SCHED_SUSPENDED | RT_SCHED_DELAYED);
 				if (task->runnable_on_cpus != rtai_cpuid()) {
 					send_sched_ipi(1 << task->runnable_on_cpus);
@@ -1069,10 +1057,15 @@ RTAI_SYSCALL_MODE int rt_task_masked_unblock(RT_TASK *task, unsigned long mask)
 		if (mask & RT_SCHED_DELAYED) {
 			rem_timed_task(task);
 		}
-		if (task->state != RT_SCHED_READY && (task->state &= ~mask) == RT_SCHED_READY) {
-			task->blocked_on = RTP_UNBLKD;
-			enq_ready_task(task);
-			RT_SCHEDULE(task, rtai_cpuid());
+		if (task->state != RT_SCHED_READY) {
+			if ((mask & task->state & RT_SCHED_SUSPENDED) && task->suspdepth > 0) {
+				task->suspdepth = 0;
+			}
+			if ((task->state &= ~mask) == RT_SCHED_READY) {
+				task->blocked_on = RTP_UNBLKD;
+				enq_ready_task(task);
+				RT_SCHEDULE(task, rtai_cpuid());
+			}
 		}
 		rt_global_restore_flags(flags);
 		return RTE_UNBLKD;

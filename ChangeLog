@@ -1,3 +1,15 @@
+2010-03-21 Paolo Mantegazza <mantegazza@aero.polimi.it>
+
+	* base/include/rtai_schedcore.h: resume a timed out, suspended task,
+	  unconditionally, zeroing suspdepth if it is > 0: this choice allows 
+	  a uniform resumption mechanism both for self and externally 
+	  suspended tasks.
+	* base/sched/api.c: resume a suspended task forced to unblock 
+	  unconditionally by zeroing suspdepth if it is > 0: this choice allows 
+	  a uniform resumption mechanism both for self and externally 
+	  suspended tasks; use both of the previous resulting modifications
+	  for all rt_task_suspend flavours.
+
 2010-03-19 Paolo Mantegazza <mantegazza@aero.polimi.it>
 
 	* base/sched/api.c: fixed a never ending loop and a missing unlock 

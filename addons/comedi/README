@@ -214,7 +214,7 @@ patches eventually.
 WHAT TO DO
 
 In linux:
-1 - download the script "patchcomedi" from the RTAI contributions repositori
+1 - download the script "patchcomedi" from the RTAI contributions repository
     found at "www.rta.org".
 2 - Copy it in "mylinux/drivers/staging/comedi/patchcomedi", where "mylinux"
     is the elected linux installation directory, it should be >= 2.6.29.

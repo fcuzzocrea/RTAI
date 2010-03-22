@@ -227,7 +227,9 @@ In linux:
 8 - Make Linux
 
 In RTAI:
- - nothing special, simply configure RTAI by setting the COMEDI installation 
-   directory at "mylinux/drivers/staging/comedi/" and make it as usual.
+1 - Uncomment the macro "#define USE_LINUX_COMEDI" in rtai_comedi.h.
+2 - nothing special afterward, simply configure RTAI by setting the COMEDI
+    installation directory at "mylinux/drivers/staging/comedi/" and make it 
+    as usual.
 
 Paolo Mantegazza

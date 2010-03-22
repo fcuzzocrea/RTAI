@@ -205,9 +205,9 @@ by default.
 
 Starting circa linux-2.6.29 a native COMEDI distribution can be found in linux
 own subdirectory "drivers/staging/comedi". So there is no need to install COMEDI
-anew anymore. Moreover, using it, will make it surer to have the latest COMEDI
-update available. What follows explains the immediate, likely provisional, way
-to exploit such a possibility. One can expect it will stabilize in RTAI hal 
+anew anymore. Moreover, using it, will make one surer to have the latest COMEDI
+update available. What follows explains a prompt, likely provisional, way to 
+exploit such a possibility. One can expect it will stabilize in RTAI hal 
 patches eventually.
 
 
@@ -215,21 +215,21 @@ WHAT TO DO
 
 In linux:
 1 - download the script "patchcomedi" from the RTAI contributions repository
-    found at "www.rta.org".
+    found at "www.rtai.org"
 2 - Copy it in "mylinux/drivers/staging/comedi/patchcomedi", where "mylinux"
-    is the elected linux installation directory, it should be >= 2.6.29.
-3 - cd mylinux/drivers/staging/comedi/.
+    is the elected linux installation directory, it should be >= 2.6.29
+3 - cd mylinux/drivers/staging/comedi/
 4 - chmod +x patchcomedi
 5 - ./patchcomedi
-6 - Go to Linux home directory, e.g. cd ../../..
-7 - Configure Linux to prepare COMEDI modules; it is in the staging part of
-    Linux drivers configuration.
-8 - Make Linux
+6 - Go to the elected linux installation directory, e.g. cd ../../..
+7 - Configure linux to prepare COMEDI modules; they are in the staging part of
+    Linux drivers configuration
+8 - Make linux
 
 In RTAI:
-1 - Uncomment the macro "#define USE_LINUX_COMEDI" in rtai_comedi.h.
+1 - Uncomment the macro "#define USE_LINUX_COMEDI" in rtai_comedi.h
 2 - nothing special afterward, simply configure RTAI by setting the COMEDI
     installation directory at "mylinux/drivers/staging/comedi/" and make it 
-    as usual.
+    as usual
 
 Paolo Mantegazza

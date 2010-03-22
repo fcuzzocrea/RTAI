@@ -97,18 +97,12 @@ typedef struct comedi_cmd comedi_cmd;
 typedef struct comedi_insn comedi_insn;
 typedef struct comedi_insnlist comedi_insnlist;
 typedef struct comedi_krange comedi_krange;
-#include "/usr/src/linux-2.6.32.7/drivers/staging/comedi/comedi.h"
-#else
-#include <linux/comedi.h>
 #endif
+#include <linux/comedi.h>
 
 #ifdef __KERNEL__ /* For kernel module build. */
 
-#ifdef USE_LINUX_COMEDI
-#include "/usr/src/linux-2.6.32.7/drivers/staging/comedi/comedilib.h"
-#else
 #include <linux/comedilib.h>
-#endif
 
 #ifdef __cplusplus
 extern "C" {

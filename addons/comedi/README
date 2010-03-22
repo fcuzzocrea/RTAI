@@ -199,3 +199,35 @@ free to apply them explicitly whenever (s)he has decided to not configure them
 by default.
 
 "The Comedi Players"
+
+
+	         <*> USING LINUX NATIVE COMEDI DISTRIBUTION <*>
+
+Starting circa linux-2.6.29 a native COMEDI distribution can be found in linux
+own subdirectory "drivers/staging/comedi". So there is no need to install COMEDI
+anew anymore. Moreover, using it, will make it surer to have the latest COMEDI
+update available. What follows explains the immediate, likely provisional, way
+to exploit such a possibility. One can expect it will stabilize in RTAI hal 
+patches eventually.
+
+
+WHAT TO DO
+
+In linux:
+1 - download the script "patchcomedi" from the RTAI contributions repositori
+    found at "www.rta.org".
+2 - Copy it in "mylinux/drivers/staging/comedi/patchcomedi", where "mylinux"
+    is the elected linux installation directory, it should be >= 2.6.29.
+3 - cd mylinux/drivers/staging/comedi/.
+4 - chmod +x patchcomedi
+5 - ./patchcomedi
+6 - Go to Linux home directory, e.g. cd ../../..
+7 - Configure Linux to prepare COMEDI modules; it is in the staging part of
+    Linux drivers configuration.
+8 - Make Linux
+
+In RTAI:
+ - nothing special, simply configure RTAI by setting the COMEDI installation 
+   directory at "mylinux/drivers/staging/comedi/" and make it as usual.
+
+Paolo Mantegazza

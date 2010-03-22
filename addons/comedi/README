@@ -88,7 +88,7 @@ above wait functions can be used anywhere and rt_comedi_wait_if makes it
 possible an easy implementation of a polling scheme.
 Notice that rt_comedi_wait_if is provided to comply with the standard RTAI
 synchronizing functions scheme: unconditional, if, until, timed. 
-An alternative way is provides through the standard KCOMEDI async data polling,
+An alternative way is provided through the standard KCOMEDI async data polling,
 i.e.: comedi_poll.
 
 Once woken up from wait one can call:
@@ -131,7 +131,7 @@ of taking two trips to kernel space. Since what is mostly required is a
 succesfull rt_comedi_wait with a mask containing the appropriate user expected
 callback mask the two calls can be unified. Such a scheme is mostly useful in 
 a digital controller where a single call paces its action in such a way that 
-at each sampling time one is ready to apply her/his control low on the 
+at each sampling time one is ready to apply her/his control law on the 
 available channels samples immediatly.
 
 To that end RTAI makes available the following:
@@ -190,10 +190,10 @@ to set up an instruction for digital input/output.
 
 A final warning: all KCOMEDI functions are executed without the comedi_lock
 being activated. That's because it adds some, albeit neglegible on nowadays 
-machines, overhaed and because in control system it is rare to have possible
+machines, overhead and because in control systems it is rare to have possible
 conficting acquisitions shared among more tasks. If a locked execution is
 needed nonetheless then the user must explicitly configure a possible 
-extensioin for that, in which case it will be applied to all services. Being
+extension for that, in which case it will be applied to all services. Being
 "comedi_lock" and "comedi_unlock" available esplicitely to the user (s)he is
 free to apply them explicitly whenever (s)he has decided to not configure them
 by default.

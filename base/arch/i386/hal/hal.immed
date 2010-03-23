@@ -245,7 +245,6 @@ int rt_release_irq (unsigned irq)
 	if (irq >= RTAI_NR_IRQS || !rtai_realtime_irq[irq].handler) {
 		return -EINVAL;
 	}
-	rt_shutdown_irq(irq);
 	flags = rtai_critical_enter(NULL);
 	rtai_realtime_irq[irq].handler = NULL;
 	rtai_realtime_irq[irq].irq_ack = (void *)hal_root_domain->irqs[irq].acknowledge;

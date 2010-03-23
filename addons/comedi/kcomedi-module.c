@@ -594,12 +594,23 @@ static struct rt_fun_entry rtai_comedi_fun[] = {
  ,[_KCOMEDI_COMD_DATA_WRITE]       = { 0, rt_comedi_command_data_write }
 };
 
+#ifdef CONFIG_RTAI_USE_LINUX_COMEDI
+extern void *rt_comedi_request_irq;
+extern void *rt_comedi_release_irq;
+extern void *rt_comedi_busy_sleep;
+#endif
+
 int __rtai_comedi_init(void)
 {
 	if( set_rt_fun_ext_index(rtai_comedi_fun, FUN_COMEDI_LXRT_INDX) ) {
 		printk("Recompile your module with a different index\n");
 		return -EACCES;
 	}
+#ifdef CONFIG_RTAI_USE_LINUX_COMEDI
+	rt_comedi_request_irq = rt_request_irq;
+	rt_comedi_release_irq = rt_release_irq;
+	rt_comedi_busy_sleep  = rt_busy_sleep;
+#endif
 	return 0;
 }
 

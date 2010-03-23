@@ -88,9 +88,9 @@
 #define _KCOMEDI_COMD_DATA_WREAD_TIMED  47
 #define _KCOMEDI_COMD_DATA_WRITE        48
 
-//#define USE_LINUX_COMEDI
+//#define CONFIG_RTAI_USE_LINUX_COMEDI
 
-#ifdef USE_LINUX_COMEDI
+#ifdef CONFIG_RTAI_USE_LINUX_COMEDI
 typedef unsigned int lsampl_t;
 typedef unsigned short sampl_t;
 typedef struct comedi_cmd comedi_cmd;
@@ -550,10 +550,34 @@ RTAI_PROTO(long, rt_comedi_command_data_wread_timed, (void *dev, unsigned int su
 #configure Linux to prepare COMEDI modules
 #make
 #
-for i in `find . -name "*.c"`; do cat $i | sed s/request_irq/comedi_request_irq/g | sed s/free_irq/comedi_free_irq/g | sed s/spin_lock_irqsave/comedi_spin_lock_irqsave/g | sed s/spin_unlock_irqrestore/comedi_spin_unlock_irqrestore/g | sed s/udelay/comedi_udelay/g > newcopy; mv newcopy $i; done
+# >>> Set generic calls in comedi.
+#
+for i in `find . -name "*.c"`; do cat $i | sed s/request_irq/comedi_request_irq/g | sed s/free_irq/comedi_free_irq/g | sed s/udelay/comedi_udelay/g | sed s/spin_lock_irqsave/comedi_spin_lock_irqsave/g | sed s/spin_unlock_irqrestore/comedi_spin_unlock_irqrestore/g > newcopy; mv newcopy $i; done
+#
+# >>> Create comedi_system.h by cleaning this script part, care of not inserting
+# >>> blank lines but the one that separates this script from comedi_system.h
+# >>> body.
+#
 cat patchcomedi | sed '1,/^$/ d' > comedi_system.h
+#
+# >>> Put comedi_system.h in comedidev.h, to be seen everywhere.
+#
 cat comedidev.h | sed '/comedi.h/ i\#include "comedi_system.h"' > newcopy
 mv newcopy comedidev.h
+#
+# >>> Append and export pointer for dynamically linking rtai_comedi extension.
+#
+echo "" >>comedi_ksyms.c
+echo "int  (*rt_comedi_request_irq)(unsigned int, void *, void *, int);" >>comedi_ksyms.c
+echo "int  (*rt_comedi_release_irq)(unsigned int);" >>comedi_ksyms.c
+echo "void (*rt_comedi_busy_sleep)(unsigned int);" >>comedi_ksyms.c
+echo "" >>comedi_ksyms.c
+echo "EXPORT_SYMBOL(rt_comedi_request_irq);" >>comedi_ksyms.c
+echo "EXPORT_SYMBOL(rt_comedi_release_irq);" >>comedi_ksyms.c
+echo "EXPORT_SYMBOL(rt_comedi_busy_sleep);" >>comedi_ksyms.c
+#
+# >>> Simulate a comedi.org distribution, to cheat RTAI confgure for a while.
+#
 mkdir include
 mkdir include/linux
 cp comedi.h include/linux
@@ -567,22 +591,18 @@ exit
 
 #include <linux/interrupt.h>
 
-int rt_request_irq(unsigned irq, int (*handler)(unsigned irq, void *cookie), void *cookie, int retmode);
+extern int  (*rt_comedi_request_irq)(unsigned int, void *, void *, int);
+extern int  (*rt_comedi_release_irq)(unsigned int);
+extern void (*rt_comedi_busy_sleep)(unsigned int);
 
-#if 1
-#define comedi_request_irq(irq, handler, flags, name, dev) \
-        ({ rt_request_irq(irq, (void *)handler, NULL, 0); })
-#else
-static inline int comedi_request_irq(unsigned int irq, irq_handler_t handler, unsigned long flags, const char *name, void *dev)
-{
-        return rt_request_irq(irq, (void *)handler, NULL, 0);
-}
-#endif
-
-int rt_release_irq(unsigned irq);
+#define comedi_request_irq(irq, handler, flags, device, dev_id) \
+        ({ rt_comedi_request_irq(irq, (void *)handler, dev_id, 0); })
 
 #define comedi_free_irq(irq, dev_id) \
-        rt_release_irq((unsigned)irq)
+        rt_comedi_release_irq((unsigned)irq)
+
+#define comedi_udelay(usec) \
+	rt_comedi_busy_sleep(usec<<10)
 
 #define comedi_spin_lock_irqsave(lock_ptr, flags) \
 	({ local_irq_save_hw(flags); _raw_spin_lock(lock_ptr); flags; })
@@ -593,11 +613,6 @@ int rt_release_irq(unsigned irq);
 		local_irq_restore_hw(flags); \
 	} while (0)
 
-void rt_busy_sleep(int ns);
-
-#define comedi_udelay(usec) \
-	rt_busy_sleep(1000*usec)
-
 #else
 
 #define comedi_request_irq(irq, handler, flags, device, dev_id) \
@@ -606,14 +621,14 @@ void rt_busy_sleep(int ns);
 #define comedi_free_irq(irq, dev_id) \
 	free_irq(irq, dev_id)
 
+#define comedi_udelay(usec) \
+	udelay(usec)
+
 #define comedi_spin_lock_irqsave(lock_ptr, flags) \
 	({ spin_lock_irqsave(lock_ptr, flags); flags; })
 
 #define comedi_spin_unlock_irqrestore(lock_ptr, flags) \
 	spin_unlock_irqrestore(lock_ptr, flags)
-
-#define comedi_udelay(usec) \
-	udelay(usec)
 
 #endif
 

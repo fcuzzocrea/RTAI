@@ -2,8 +2,7 @@
 
 	* base/arch/i386/hal.immed: use retmode arg in rt_request_interrupt
 	  as a mask to optionally apply rt_startup_irq: first bit as before,
-	  second ibit set to have startup applied; always rt_shutdown_irq 
-	  before releasing an irq in rt_release_irq.
+	  second ibit set to have startup applied.
 
 2010-03-22 Paolo Mantegazza <mantegazza@aero.polimi.it>
 

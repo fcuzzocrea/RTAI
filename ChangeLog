@@ -9,6 +9,14 @@
 	  table of waiting functions, to have them work correctly when called
 	  in soft mode.
 
+2010-02-16 Pierangelo Masarati <masarati@aero.polimi.it>
+
+	* RTAI 3.8
+
+2010-02-15 Pierangelo Masarati <masarati@aero.polimi.it>
+
+	* RTAI 3.8-test2
+
 2010-01-25 Joe Brandt <jbrandt@nrao.edu>
 
 	* rtai-lab/matlab/rtmain.c: create MULTITASKING threads in a way

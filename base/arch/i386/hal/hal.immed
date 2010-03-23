@@ -227,11 +227,14 @@ int rt_request_irq (unsigned irq, int (*handler)(unsigned irq, void *cookie), vo
 	flags = rtai_critical_enter(NULL);
 	rtai_realtime_irq[irq].handler = (void *)handler;
 	rtai_realtime_irq[irq].cookie  = cookie;
-	rtai_realtime_irq[irq].retmode = retmode ? 1 : 0;
+	rtai_realtime_irq[irq].retmode = retmode & 0x1 ? 1 : 0;
 	rtai_realtime_irq[irq].irq_ack = (void *)hal_root_domain->irqs[irq].acknowledge;
 	rtai_critical_exit(flags);
 	if (IsolCpusMask && irq < IPIPE_NR_XIRQS) {
 		rtai_realtime_irq[irq].cpumask = rt_assign_irq_to_cpu(irq, IsolCpusMask);
+	}
+	if (retmode & 0x2) {
+		rt_startup_irq(irq);
 	}
 	return 0;
 }
@@ -242,6 +245,7 @@ int rt_release_irq (unsigned irq)
 	if (irq >= RTAI_NR_IRQS || !rtai_realtime_irq[irq].handler) {
 		return -EINVAL;
 	}
+	rt_shutdown_irq(irq);
 	flags = rtai_critical_enter(NULL);
 	rtai_realtime_irq[irq].handler = NULL;
 	rtai_realtime_irq[irq].irq_ack = (void *)hal_root_domain->irqs[irq].acknowledge;

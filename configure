@@ -20251,9 +20251,9 @@ echo "${ECHO_T}${CONFIG_RTAI_RT_POLL_ON_STACK:-no}" >&6; }
 
 { echo "$as_me:$LINENO: checking for messaging support" >&5
 echo $ECHO_N "checking for messaging support... $ECHO_C" >&6; }
-# Check whether --enable-mbx was given.
-if test "${enable_mbx+set}" = set; then
-  enableval=$enable_mbx; case "$enableval" in
+# Check whether --enable-msg was given.
+if test "${enable_msg+set}" = set; then
+  enableval=$enable_msg; case "$enableval" in
 	y | yes | b | builtin | built-in) CONFIG_RTAI_MSG=y ;;
 	m | mod | module) CONFIG_RTAI_MSG=m ;;
 	*) unset CONFIG_RTAI_MSG ;;

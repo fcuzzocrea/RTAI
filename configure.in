@@ -508,7 +508,7 @@ AC_ARG_ENABLE(rt-poll-on-stack,
 AC_MSG_RESULT(${CONFIG_RTAI_RT_POLL_ON_STACK:-no})
 
 AC_MSG_CHECKING(for messaging support)
-AC_ARG_ENABLE(mbx,
+AC_ARG_ENABLE(msg,
 	[ --enable-msg		Enable messaging support],
 	[case "$enableval" in
 	y | yes | b | builtin | built-in) CONFIG_RTAI_MSG=y ;;

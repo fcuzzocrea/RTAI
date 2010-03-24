@@ -595,9 +595,37 @@ static struct rt_fun_entry rtai_comedi_fun[] = {
 };
 
 #ifdef CONFIG_RTAI_USE_LINUX_COMEDI
+
 extern void *rt_comedi_request_irq;
 extern void *rt_comedi_release_irq;
 extern void *rt_comedi_busy_sleep;
+
+static int (*comedi_irq_handler_p)(unsigned int irq, void *dev_id);
+
+static int comedi_irq_handler(unsigned int irq, void *dev_id)
+{
+	comedi_irq_handler_p(irq, dev_id);
+	rt_enable_irq(irq);
+	return 0;
+}
+
+static int comedi_request_irq(unsigned int irq, int (*handler)(unsigned int irq, void *dev_id), void *dev_id, int retmode)
+{
+	int retval = rt_request_irq(irq, comedi_irq_handler, dev_id, retmode);
+	if (retval) {
+		return retval;
+	}
+	comedi_irq_handler_p = handler;
+	rt_startup_irq(irq);
+	return 0;
+}
+
+static void comedi_release_irq(unsigned irq)
+{
+	rt_shutdown_irq(irq);
+	rt_release_irq(irq);
+}
+
 #endif
 
 int __rtai_comedi_init(void)
@@ -607,8 +635,8 @@ int __rtai_comedi_init(void)
 		return -EACCES;
 	}
 #ifdef CONFIG_RTAI_USE_LINUX_COMEDI
-	rt_comedi_request_irq = rt_request_irq;
-	rt_comedi_release_irq = rt_release_irq;
+	rt_comedi_request_irq = comedi_request_irq;
+	rt_comedi_release_irq = comedi_release_irq;
 	rt_comedi_busy_sleep  = rt_busy_sleep;
 #endif
 	return 0;

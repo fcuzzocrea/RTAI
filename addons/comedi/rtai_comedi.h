@@ -596,7 +596,7 @@ extern int  (*rt_comedi_release_irq)(unsigned int);
 extern void (*rt_comedi_busy_sleep)(unsigned int);
 
 #define comedi_request_irq(irq, handler, flags, device, dev_id) \
-        ({ rt_comedi_request_irq(irq, (void *)handler, dev_id, 0x2); })
+        ({ rt_comedi_request_irq(irq, (void *)handler, dev_id, 0); })
 
 #define comedi_free_irq(irq, dev_id) \
         rt_comedi_release_irq((unsigned)irq)

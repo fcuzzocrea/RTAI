@@ -600,22 +600,26 @@ extern void *rt_comedi_request_irq;
 extern void *rt_comedi_release_irq;
 extern void *rt_comedi_busy_sleep;
 
-static int (*comedi_irq_handler_p)(unsigned int irq, void *dev_id);
+#define COMEDI_NR_IRQS IPIPE_NR_XIRQS
+static int (*comedi_irq_handler_p[COMEDI_NR_IRQS])(unsigned int irq, void *dev_id);
 
 static int comedi_irq_handler(unsigned int irq, void *dev_id)
 {
-	comedi_irq_handler_p(irq, dev_id);
+	comedi_irq_handler_p[irq](irq, dev_id);
 	rt_enable_irq(irq);
 	return 0;
 }
 
 static int comedi_request_irq(unsigned int irq, int (*handler)(unsigned int irq, void *dev_id), void *dev_id, int retmode)
 {
-	int retval = rt_request_irq(irq, comedi_irq_handler, dev_id, retmode);
-	if (retval) {
-		return retval;
+	int retval;
+	if (comedi_irq_handler_p[irq]) {
+		return -EBUSY;
 	}
-	comedi_irq_handler_p = handler;
+	if ((retval = rt_request_irq(irq, comedi_irq_handler, dev_id, retmode))) {
+		return -retval;
+	}
+	comedi_irq_handler_p[irq] = handler;
 	rt_startup_irq(irq);
 	return 0;
 }

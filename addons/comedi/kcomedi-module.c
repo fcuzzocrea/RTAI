@@ -624,7 +624,7 @@ static int comedi_request_irq(unsigned int irq, int (*handler)(unsigned int irq,
 	return 0;
 }
 
-static void comedi_release_irq(unsigned irq)
+static void comedi_release_irq(unsigned int irq)
 {
 	rt_shutdown_irq(irq);
 	rt_release_irq(irq);

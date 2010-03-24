@@ -649,6 +649,7 @@ int __rtai_comedi_init(void)
 void __rtai_comedi_exit(void)
 {
 #ifdef CONFIG_RTAI_USE_LINUX_COMEDI
+	rt_comedi_request_irq = rt_request_irq;
 	rt_comedi_release_irq = rt_release_irq;
 #endif
 	reset_rt_fun_ext_index(rtai_comedi_fun, FUN_COMEDI_LXRT_INDX);

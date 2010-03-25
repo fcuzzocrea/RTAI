@@ -254,3 +254,38 @@ EXPORT_SYMBOL(rtai_tsc_ofst);
 #include "hal.piped"
 #endif
 #include "rtc.c"
+
+#if 1 //def CONFIG_RTAI_USE_LINUX_COMEDI
+
+static int (*comedi_irq_handler_p[RTAI_NR_IRQS])(unsigned int irq, void *dev_id);
+
+static int comedi_irq_handler(unsigned int irq, void *dev_id)
+{
+	comedi_irq_handler_p[irq](irq, dev_id);
+	rt_enable_irq(irq);
+	return IRQ_HANDLED;
+}
+
+int rtai_comedi_request_irq(unsigned int irq, int (*handler)(unsigned int irq, void *dev_id), void *dev_id, int retmode)
+{
+	int retval;
+	if (comedi_irq_handler_p[irq]) {
+		return -EBUSY;
+	}
+	if ((retval = rt_request_irq(irq, comedi_irq_handler, dev_id, 0))) {
+		return -retval;
+	}
+	comedi_irq_handler_p[irq] = handler;
+	rt_startup_irq(irq);
+	return 0;
+}
+EXPORT_SYMBOL(rtai_comedi_request_irq);
+
+void rtai_comedi_release_irq(unsigned int irq)
+{
+	rt_shutdown_irq(irq);
+	rt_release_irq(irq);
+}
+EXPORT_SYMBOL(rtai_comedi_release_irq);
+
+#endif /* CONFIG_RTAI_USE_LINUX_COMEDI) */

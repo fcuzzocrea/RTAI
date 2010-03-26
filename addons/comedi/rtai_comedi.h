@@ -579,7 +579,7 @@ echo "EXPORT_SYMBOL(rt_comedi_request_irq);" >>comedi_ksyms.c
 echo "EXPORT_SYMBOL(rt_comedi_release_irq);" >>comedi_ksyms.c
 echo "EXPORT_SYMBOL(rt_comedi_busy_sleep);" >>comedi_ksyms.c
 #
-# >>> Simulate a comedi.org distribution, to cheat RTAI confgure for a while.
+# >>> Simulate a comedi.org distribution, to cheat RTAI configure for a while.
 #
 mkdir include
 mkdir include/linux

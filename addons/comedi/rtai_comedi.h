@@ -568,7 +568,7 @@ cat patchcomedi | sed '1,/^$/ d' > comedi_system.h
 cat comedidev.h | sed '/comedi.h/ i\#include "comedi_system.h"' > newcopy
 mv newcopy comedidev.h
 #
-# >>> Append and export pointer for dynamically linking rtai_comedi extension.
+# >>> Append and export pointers for dynamically linking rtai_comedi extensions.
 #
 echo "" >>comedi_ksyms.c
 echo "int  (*rt_comedi_request_irq)(unsigned int, void *, void *, int);" >>comedi_ksyms.c

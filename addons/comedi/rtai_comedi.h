@@ -592,8 +592,6 @@ exit
 
 #ifdef CONFIG_IPIPE
 
-#include <linux/interrupt.h>
-
 extern int  (*rt_comedi_request_irq)(unsigned int, void *, void *, int);
 extern int  (*rt_comedi_release_irq)(unsigned int);
 extern void (*rt_comedi_busy_sleep)(unsigned int);

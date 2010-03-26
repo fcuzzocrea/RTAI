@@ -231,5 +231,11 @@ In RTAI:
 2 - nothing special afterward, simply configure RTAI by setting the COMEDI
     installation directory at "mylinux/drivers/staging/comedi/" and make it 
     as usual
+3 - COMEDI modules must be installed, at least, after RTAI modules: rtai_hal.ko
+    and (whatever) rtai_sched.ko; then you must install Linux COMEDI: 
+    comedi.ko, comedi_fc.ko, kcomedilib.ko; and rtai_comedi.ko; after them all
+    of the Linux COMEDI modules of the drivers you need. If you use depmod 
+    beware of staging calls so that the above order is satisfied; that implies 
+    depmoding rtai_comedi.ko first, then the driver(s) you need.
 
 Paolo Mantegazza

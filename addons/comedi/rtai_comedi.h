@@ -88,7 +88,7 @@
 #define _KCOMEDI_COMD_DATA_WREAD_TIMED  47
 #define _KCOMEDI_COMD_DATA_WRITE        48
 
-//#define CONFIG_RTAI_USE_LINUX_COMEDI
+#define CONFIG_RTAI_USE_LINUX_COMEDI
 
 #ifdef CONFIG_RTAI_USE_LINUX_COMEDI
 typedef unsigned int lsampl_t;
@@ -605,7 +605,7 @@ extern void (*rt_comedi_busy_sleep)(unsigned int);
         rt_comedi_release_irq((unsigned)irq)
 
 #define comedi_udelay(usec) \
-	rt_comedi_busy_sleep(usec<<10)
+	do { if (rt_comedi_busy_sleep) rt_comedi_busy_sleep(usec<<10); else udelay(usec); } while (0)
 
 #define comedi_spin_lock_irqsave(lock_ptr, flags) \
 	({ local_irq_save_hw(flags); _raw_spin_lock(lock_ptr); flags; })

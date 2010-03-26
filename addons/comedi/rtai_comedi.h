@@ -88,7 +88,7 @@
 #define _KCOMEDI_COMD_DATA_WREAD_TIMED  47
 #define _KCOMEDI_COMD_DATA_WRITE        48
 
-#define CONFIG_RTAI_USE_LINUX_COMEDI
+//#define CONFIG_RTAI_USE_LINUX_COMEDI
 
 #ifdef CONFIG_RTAI_USE_LINUX_COMEDI
 typedef unsigned int lsampl_t;

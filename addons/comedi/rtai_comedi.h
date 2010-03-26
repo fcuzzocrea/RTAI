@@ -563,7 +563,7 @@ for i in `find . -name "*.c"`; do cat $i | sed s/request_irq/comedi_request_irq/
 #
 cat patchcomedi | sed '1,/^$/ d' > comedi_system.h
 #
-# >>> Put comedi_system.h in comedidev.h, to be seen everywhere.
+# >>> Add an include for comedi_system.h in comedidev.h, to be seen everywhere.
 #
 cat comedidev.h | sed '/comedi.h/ i\#include "comedi_system.h"' > newcopy
 mv newcopy comedidev.h

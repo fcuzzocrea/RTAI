@@ -551,6 +551,8 @@ RTAI_PROTO(long, rt_comedi_command_data_wread_timed, (void *dev, unsigned int su
 #configure Linux to prepare COMEDI modules
 #make
 #
+# END OF WHAT TO DO.
+#
 # >>> Set generic calls in comedi.
 #
 for i in `find . -name "*.c"`; do cat $i | sed s/request_irq/comedi_request_irq/g | sed s/free_irq/comedi_free_irq/g | sed s/udelay/comedi_udelay/g | sed s/spin_lock_irqsave/comedi_spin_lock_irqsave/g | sed s/spin_unlock_irqrestore/comedi_spin_unlock_irqrestore/g > newcopy; mv newcopy $i; done

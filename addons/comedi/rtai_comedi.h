@@ -611,7 +611,7 @@ extern void (*rt_comedi_busy_sleep)(unsigned int);
 	({ local_irq_save_hw(flags); _raw_spin_lock(lock_ptr); flags; })
 
 #define comedi_spin_unlock_irqrestore(lock_ptr, flags) \
-	do { \ _raw_spin_unlock(lock_ptr); local_irq_restore_hw(flags); } while (0)
+	do { _raw_spin_unlock(lock_ptr); local_irq_restore_hw(flags); } while (0)
 
 #else
 

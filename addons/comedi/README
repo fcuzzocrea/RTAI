@@ -213,7 +213,7 @@ patches eventually.
 
 WHAT TO DO
 
-In linux:
+In Linux:
 1 - download the script "patchcomedi" from the RTAI contributions repository
     found at "www.rtai.org"
 2 - Copy it in "mylinux/drivers/staging/comedi/patchcomedi", where "mylinux"
@@ -233,9 +233,9 @@ In RTAI:
     as usual
 3 - COMEDI modules must be installed, at least, after RTAI modules: rtai_hal.ko
     and (whatever) rtai_sched.ko; then you must install Linux COMEDI: 
-    comedi.ko, comedi_fc.ko, kcomedilib.ko; and rtai_comedi.ko; after them all
-    of the Linux COMEDI modules of the drivers you need. If you use depmod 
+    comedi.ko, comedi_fc.ko, kcomedilib.ko, then rtai_comedi.ko; after them all
+    of the Linux COMEDI modules of the drivers you need. If you using depmod 
     beware of staging calls so that the above order is satisfied; that implies 
-    depmoding rtai_comedi.ko first, then the driver(s) you need.
+    depmoding rtai_comedi.ko first, then the driver(s) you need
 
 Paolo Mantegazza

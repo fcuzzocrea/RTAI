@@ -648,13 +648,13 @@ int __rtai_comedi_init(void)
 
 void __rtai_comedi_exit(void)
 {
+#ifdef CONFIG_RTAI_USE_LINUX_COMEDI
 	int irq;
 	for (irq = 0; irq < RTAI_NR_IRQS; irq++) {
 		if (comedi_irq_handler_p[irq]) {
 			comedi_release_irq(irq);
 		}
 	}
-#ifdef CONFIG_RTAI_USE_LINUX_COMEDI
 	rt_comedi_request_irq = rt_request_irq;
 	rt_comedi_release_irq = rt_release_irq;
 	rt_comedi_busy_sleep  = NULL;

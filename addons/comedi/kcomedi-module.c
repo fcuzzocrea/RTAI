@@ -601,7 +601,7 @@ extern void *rt_comedi_release_irq;
 extern void *rt_comedi_busy_sleep;
 
 #define RTAI_NR_IRQS  IPIPE_NR_XIRQS
-static int (*comedi_irq_handler_p[RTAI_NR_IRQS])(unsigned int irq, void *dev_id);
+static int (*comedi_irq_handler_p[RTAI_NR_IRQS])(unsigned int, void *);
 
 static int comedi_irq_handler(unsigned int irq, void *dev_id)
 {

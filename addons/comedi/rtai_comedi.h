@@ -26,7 +26,7 @@
 #include <rtai_types.h>
 #include <rtai_sem.h>
 
-//#define CONFIG_RTAI_USE_LINUX_COMEDI
+#define CONFIG_RTAI_USE_LINUX_COMEDI
 #ifdef CONFIG_RTAI_USE_LINUX_COMEDI
 // undef RTAI VERSION to avoid conflicting with the same macro in COMEDI
 #undef VERSION
@@ -102,6 +102,7 @@ typedef struct comedi_insn comedi_insn;
 typedef struct comedi_insnlist comedi_insnlist;
 typedef struct comedi_krange comedi_krange;
 #endif
+
 #include <linux/comedi.h>
 
 #ifdef __KERNEL__ /* For kernel module build. */

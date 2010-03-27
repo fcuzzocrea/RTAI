@@ -939,10 +939,12 @@ config RTAI_COMEDI_DIR
 	default "/usr/local"
 	help
 	You need the COMEDI support for data acquisition to build
-	applications such as RTAILab.
-	You can set the path to this package's installation
-	directory here. More specifically, RTAI needs the file
-	linux/comedilib.h.
+	applications, such as RTAILab.
+	You can set the path to COMEDI installation directory here. 
+	It will be found either in Linux, since 2.6.29 (circa), see README
+	in "addons/comedi" for what to do in such a case, or by getting 
+        kcomedi from www.comedi.org, in which case RTAI needs the file 
+	linux/comedilib.h also.
 
 config RTAI_CPLUSPLUS
 	bool "In-kernel C++ support"

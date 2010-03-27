@@ -26,6 +26,12 @@
 #include <rtai_types.h>
 #include <rtai_sem.h>
 
+//#define CONFIG_RTAI_USE_LINUX_COMEDI
+#ifdef CONFIG_RTAI_USE_LINUX_COMEDI
+// undef RTAI VERSION to avoid conflicting with the same macro in COMEDI
+#undef VERSION
+#endif
+
 #define FUN_COMEDI_LXRT_INDX  9
 
 #define _KCOMEDI_OPEN 			 0
@@ -87,8 +93,6 @@
 #define _KCOMEDI_COMD_DATA_WREAD_UNTIL  46
 #define _KCOMEDI_COMD_DATA_WREAD_TIMED  47
 #define _KCOMEDI_COMD_DATA_WRITE        48
-
-//#define CONFIG_RTAI_USE_LINUX_COMEDI
 
 #ifdef CONFIG_RTAI_USE_LINUX_COMEDI
 typedef unsigned int lsampl_t;

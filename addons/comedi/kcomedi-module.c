@@ -630,6 +630,14 @@ static void comedi_release_irq(unsigned int irq)
 	rt_release_irq(irq);
 }
 
+static int us2tsc;
+void comedi_busy_sleep(int us)
+{
+	RTIME break_time;
+	break_time = rtai_rdtsc() + us*us2tsc;
+	while (rtai_rdtsc() < break_time);
+}
+
 #endif /* CONFIG_RTAI_USE_LINUX_COMEDI) */
 
 int __rtai_comedi_init(void)
@@ -638,10 +646,11 @@ int __rtai_comedi_init(void)
 		printk("Recompile your module with a different index\n");
 		return -EACCES;
 	}
+	us2tsc = (tuned.cpu_freq + 499999)/1000000;
 #ifdef CONFIG_RTAI_USE_LINUX_COMEDI
 	rt_comedi_request_irq = comedi_request_irq;
 	rt_comedi_release_irq = comedi_release_irq;
-	rt_comedi_busy_sleep  = rt_busy_sleep;
+	rt_comedi_busy_sleep  = comedi_busy_sleep;
 #endif
 	return 0;
 }

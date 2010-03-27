@@ -615,7 +615,7 @@ extern void (*rt_comedi_busy_sleep)(unsigned int);
         rt_comedi_release_irq((unsigned)irq)
 
 #define comedi_udelay(usec) \
-	do { if (rt_comedi_busy_sleep) rt_comedi_busy_sleep(usec<<10); else udelay(usec); } while (0)
+	do { if (likely(rt_comedi_busy_sleep != NULL)) rt_comedi_busy_sleep(usec); else udelay(usec); } while (0)
 
 #define comedi_spin_lock_irqsave(lock_ptr, flags) \
 	({ local_irq_save_hw(flags); _raw_spin_lock(lock_ptr); flags; })

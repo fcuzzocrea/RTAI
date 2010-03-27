@@ -26,7 +26,7 @@
 #include <rtai_types.h>
 #include <rtai_sem.h>
 
-#define CONFIG_RTAI_USE_LINUX_COMEDI
+//#define CONFIG_RTAI_USE_LINUX_COMEDI
 #ifdef CONFIG_RTAI_USE_LINUX_COMEDI
 // undef RTAI VERSION to avoid conflicting with the same macro in COMEDI
 #undef VERSION

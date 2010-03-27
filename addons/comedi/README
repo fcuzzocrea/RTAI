@@ -16,8 +16,9 @@ One is related to a couple of name returning functions:
 In kernel space the requested name is simply got by returning a pointer to 
 a directly addressable global namestring, which is useless in user space. 
 So there is the need of copying the namestring available in kernel space to 
-user space, so the calling convention must be changed. So the following two 
-aliases, usable both in kernel and user space, have been made available:
+user space, therefore the calling convention must be changed. Then the 
+following two aliases, usable both in kernel and user space, have been made 
+available:
 void *rt_comedi_get_driver_name(unsigned int dev, char *name);
 void *rt_comedi_get_board_name(unsigned int dev, char *name);
 On success both of them return the address "name", at which the actual name 
@@ -26,8 +27,7 @@ is copied, NULL otherwise.
 The solution of the above problem is simple and, almost, compulsory. 
 In fact the only real problem to be solved for a symmetric approach to 
 KCOMEDI in kernel and user space has been the use of a callback function 
-in user space for which a fairly general, but frozen, usage scheme has 
-been devised.
+in user space for which a fairly general usage scheme has been devised.
 
 The callback method made available is based on using a built in callback 
 function that triggers an rt_task_resume and allows returning back to the 
@@ -35,13 +35,13 @@ user the important unsigned long mask, made available by the standard KCOMEDI
 callback service as its first argument.
 
 The related support comes from using the following function, not needed but 
-available in kernel space also (if you'll like it):
+available in kernel space also (in case you'll like it):
 int rt_comedi_register_callback(void *dev, unsigned int subdev, unsigned int 
 mask, int (*callback)(unsigned int, void *), void *task);
-- the first 3 arguments are the same as in "comedi_register_callback" while
+- the first 3 arguments are the same as in "comedi_register_callback", while
   "callback" is discarded and "task" is the pointer to an RTAI task that
   waits for asynchronous events to happen. NULL can be used in place of 
-  "task", if it is the current one, in which case RTAI will care of setting 
+  "task", if it is the current one, in which case RTAI can care of setting 
   it appropriately.
 
 For compatibility reasons the standard COMEDI: 
@@ -50,7 +50,7 @@ unsigned int mask, int (*cb)(unsigned int, void *), void *arg);
 is also available in user space in the form of a macro that redirects it to 
 "rt_comedi_register_callback", setting "cb" to NULL while "arg" should have 
 assigned either the pointer to the task to be used or NULL. 
-As said there is clearly no need for anything similar in kernel space as the 
+As said there is clearly no need for anything similar in kernel space, as the 
 original COMEDI function is available directly, but the user space approach 
 might prove viable and easier to use in kernel space also.
 
@@ -106,6 +106,10 @@ decide what to do in place of waiting on a rescheduling by default. In fact,
 after an appropriate wait function is called, missing data might be a error 
 to care of. If it is not so then, by exploting the available wait functions, 
 the user has plenty of opportunities to implement her/his own best policy.
+If one notices a bias toward sampling data for digital control systems, versus
+pure data acquisition, (s)he is right, absolutely. Se below for something
+reinforcing such a bias. Despite such an attitude nothing is lost in the case
+of pure data acquisition.
 
 A typical code sample could be:
 
@@ -172,7 +176,7 @@ int rt_comedi_do_insnlist(void *dev, comedi_insnlist *ilist);
 has been added, symmetrically in kernel/user space as usual.
 It is an exact image of its parent:
 int comedi_do_insnlist(void *dev, comedi_insnlist *list);
-which is not available in KCOMEDI; that's why we prefixed it with an "rt_".
+which is not available in KCOMEDI. That's why we prefixed it with an "rt_".
 The simple reason of it being missed in kernel space is because it will add 
 just the overhead of one call more to obtain something that a user can have 
 directly by executing repeated "comedi_do_insn" in her/his own way. From the

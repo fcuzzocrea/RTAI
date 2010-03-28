@@ -154,8 +154,6 @@ RTAI_SYSCALL_MODE long rt_comedi_command_data_write(void *dev, unsigned int subd
 #include <rtai_msg.h>
 #include <rtai_shm.h>
 
-typedef void comedi_t;
-
 #define COMEDI_LXRT_SIZARG sizeof(arg)
 
 RTAI_PROTO(void *, comedi_open, (const char *filename))

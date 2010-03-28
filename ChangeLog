@@ -1,3 +1,13 @@
+2010-03-28 Paolo Mantegazza <mantegazza@aero.polimi.it>
+
+	* addons/comedi/rtai_comedi.h: rework and reorder previous layout
+	  setup for making it possible to use COMEDI as found in Linux 
+	  kernels.
+	* addons/comedi/kcomedi-module.c: set interface to Linux COMEDI within
+	  this module, to avoid touching RTAI hal module; set safe pointers
+	  at module cleanup, to avoid oopses in betweem rtai_comedi module
+	  removel and the full closure of an application.
+
 2010-03-22 Paolo Mantegazza <mantegazza@aero.polimi.it>
 
 	* addons/comedi/rtai_comedi.h: make it possible to use COMEDI as found

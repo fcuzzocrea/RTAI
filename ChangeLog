@@ -3,6 +3,8 @@
 	* addons/comedi/rtai_comedi.h: rework and reorder previous layout
 	  setup, for making it possible to use COMEDI as found in Linux 
 	  kernels.
+	* addons/comedi/patchlinuxcomed: add shell script for patching Linux
+	  COMEDI.
 	* addons/comedi/kcomedi-module.c: set interface to Linux COMEDI within
 	  this module, to avoid touching RTAI hal module and to be usable on
 	  any arch; set safe pointers at module cleanup, to avoid oopses in 

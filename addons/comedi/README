@@ -218,17 +218,14 @@ patches eventually.
 WHAT TO DO
 
 In Linux:
-1 - download the script "patchcomedi" from the RTAI contributions repository
-    found at "www.rtai.org"
-2 - Copy it in "mylinux/drivers/staging/comedi/patchcomedi", where "mylinux"
-    is the elected linux installation directory, it should be >= 2.6.29
-3 - cd mylinux/drivers/staging/comedi/
-4 - chmod +x patchcomedi
-5 - ./patchcomedi
-6 - Go to the elected linux installation directory, e.g. cd ../../..
-7 - Configure linux to prepare COMEDI modules; they are in the staging part of
-    Linux drivers configuration
-8 - Make linux
+1 - cd mylinux/drivers/staging/comedi/, where "mylinux" is the path to the 
+    elected Linux installation directory, it should be >= 2.6.29
+2 - sh /rtaidir/addons/comedi/patchlinuxcomedi, where "rtaidir" is the path 
+    to the elected RTAI home directory, not the one you'll install it
+3 - Go to the elected Linux installation directory, e.g. cd ../../..
+4 - Configure Linux to prepare COMEDI modules; they are in the staging part 
+    of Linux drivers configuration
+5 - Make
 
 In RTAI:
 1 - Uncomment the macro "CONFIG_RTAI_USE_LINUX_COMEDI" in rtai_comedi.h

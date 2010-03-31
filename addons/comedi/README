@@ -228,11 +228,10 @@ In Linux:
 5 - Make
 
 In RTAI:
-1 - Uncomment the macro "CONFIG_RTAI_USE_LINUX_COMEDI" in rtai_comedi.h
-2 - nothing special afterward, simply configure RTAI by setting the COMEDI
+1 - nothing special afterward, simply configure RTAI by setting the COMEDI
     installation directory at "mylinux/drivers/staging/comedi/" and make it 
     as usual
-3 - COMEDI modules must be installed, at least, after RTAI modules: rtai_hal.ko
+2 - COMEDI modules must be installed, at least, after RTAI modules: rtai_hal.ko
     and (whatever) rtai_sched.ko; then you must install Linux COMEDI: 
     comedi.ko, comedi_fc.ko, kcomedilib.ko, then rtai_comedi.ko; after them all
     of the Linux COMEDI modules of the drivers you need. If you are using 

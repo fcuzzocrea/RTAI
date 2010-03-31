@@ -207,7 +207,7 @@ by default.
 
 	         <*> USING LINUX NATIVE COMEDI DISTRIBUTION <*>
 
-Starting circa linux-2.6.29 a native COMEDI distribution can be found in linux
+Starting circa linux-2.6.29 a native COMEDI distribution can be found in Linux
 own subdirectory "drivers/staging/comedi". So there is no need to install COMEDI
 anew anymore. Moreover, using it, will make one surer to have the latest COMEDI
 update available. What follows explains a prompt, likely provisional, way to 
@@ -215,9 +215,10 @@ exploit such a possibility. One can expect it will stabilize in RTAI hal
 patches eventually.
 
 
-WHAT TO DO
+			      - WHAT TO DO -
 
 In Linux:
+
 1 - cd mylinux/drivers/staging/comedi/, where "mylinux" is the path to the 
     elected Linux installation directory, it should be >= 2.6.29
 2 - sh /rtaidir/addons/comedi/patchlinuxcomedi, where "rtaidir" is the path 
@@ -227,7 +228,9 @@ In Linux:
     of Linux drivers configuration
 5 - Make
 
+
 In RTAI:
+
 1 - nothing special afterward, simply configure RTAI by setting the COMEDI
     installation directory at "mylinux/drivers/staging/comedi/" and make it 
     as usual

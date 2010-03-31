@@ -646,8 +646,8 @@ int __rtai_comedi_init(void)
 		printk("Recompile your module with a different index\n");
 		return -EACCES;
 	}
-	us2tsc = tuned.cpu_freq/1000000;
 #ifdef CONFIG_RTAI_USE_LINUX_COMEDI
+	us2tsc = tuned.cpu_freq/1000000;
 	rt_comedi_request_irq = comedi_request_irq;
 	rt_comedi_release_irq = comedi_release_irq;
 	rt_comedi_busy_sleep  = comedi_busy_sleep;

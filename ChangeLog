@@ -1,3 +1,8 @@
+2009-03-31 Pierangelo Masarati <masarati@aero.polimi.it>
+
+	* configure.in, rtai_config.h: add support for use of COMEDI as 
+	  distributed within Linux.
+
 2010-03-28 Paolo Mantegazza <mantegazza@aero.polimi.it>
 
 	* addons/comedi/rtai_comedi.h: rework and reorder previous layout

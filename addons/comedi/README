@@ -214,7 +214,6 @@ update available. What follows explains a prompt, likely provisional, way to
 exploit such a possibility. One can expect it will stabilize in RTAI hal 
 patches eventually.
 
-
 			      - WHAT TO DO -
 
 In Linux:
@@ -231,9 +230,8 @@ In Linux:
 
 In RTAI:
 
-1 - nothing special afterward, simply configure RTAI by setting the COMEDI
-    installation directory at "mylinux/drivers/staging/comedi/" and make it 
-    as usual
+1 - Nothing special, simply configure RTAI by setting the COMEDI installation 
+    directory at "mylinux/drivers/staging/comedi/" and make it as usual
 2 - COMEDI modules must be installed, at least, after RTAI modules: rtai_hal.ko
     and (whatever) rtai_sched.ko; then you must install Linux COMEDI: 
     comedi.ko, comedi_fc.ko, kcomedilib.ko, then rtai_comedi.ko; after them all

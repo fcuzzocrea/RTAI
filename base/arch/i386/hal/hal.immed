@@ -2280,6 +2280,14 @@ void __rtai_hal_exit (void)
 	cleanup_tsc_sync();
 #endif
 
+#ifdef CONFIG_RTAI_USE_LINUX_COMEDI
+	do {
+		extern void *rt_comedi_request_irq;
+		extern void *rt_comedi_release_irq;
+		rt_comedi_request_irq = request_irq;
+		rt_comedi_release_irq = free_irq;
+	} while (0);
+#endif
 	printk(KERN_INFO "RTAI[hal]: unmounted.\n");
 }
 

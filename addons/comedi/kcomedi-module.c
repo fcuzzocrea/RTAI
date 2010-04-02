@@ -28,6 +28,7 @@
 
 #include <linux/module.h>
 #include <linux/version.h>
+#include <linux/delay.h>
 #include <asm/uaccess.h>
 
 #include <rtai_schedcore.h>
@@ -666,7 +667,7 @@ void __rtai_comedi_exit(void)
 	}
 	rt_comedi_request_irq = rt_request_irq;
 	rt_comedi_release_irq = rt_release_irq;
-	rt_comedi_busy_sleep  = NULL;
+	rt_comedi_busy_sleep  = __udelay;
 #endif
 	reset_rt_fun_ext_index(rtai_comedi_fun, FUN_COMEDI_LXRT_INDX);
 }

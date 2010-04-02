@@ -946,6 +946,19 @@ config RTAI_COMEDI_DIR
         kcomedi from www.comedi.org, in which case RTAI needs the file 
 	linux/comedilib.h also.
 
+config RTAI_USE_COMEDI_LOCK
+	depends on RTAI_COMEDI_LXRT
+	bool "Use COMEDI lock by default"
+	default "n"
+	help
+	You may need the COMEDI lock for data acquisition when sharing a
+	board among many users. You can lock/unlock explicitely any 
+	operation by calling comedi_lock/unlock yourself. By setting this
+	parameter all functions needing a lock for a safe shared use are
+	lock/unlocked by default. It can be useful to save a couple of
+	calls to enforce locking from user space. Little is gained with it
+	in kernel space.
+
 config RTAI_CPLUSPLUS
 	bool "In-kernel C++ support"
 	default n

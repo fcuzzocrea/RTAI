@@ -1,3 +1,7 @@
+2009-04-02 Pierangelo Masarati <masarati@aero.polimi.it>
+
+	* configure.in, rtai_config.h: add support for COMEDI lock.
+
 2009-03-31 Pierangelo Masarati <masarati@aero.polimi.it>
 
 	* configure.in, rtai_config.h: add support for use of COMEDI as 

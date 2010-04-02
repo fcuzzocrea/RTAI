@@ -952,7 +952,7 @@ config RTAI_USE_COMEDI_LOCK
 	default "n"
 	help
 	You may need the COMEDI lock for data acquisition when sharing a
-	board among many users. You can lock/unlock explicitely any 
+	board among many users. You can lock/unlock explicitly any 
 	operation by calling comedi_lock/unlock yourself. By setting this
 	parameter all functions needing a lock for a safe shared use are
 	lock/unlocked by default. It can be useful to save a couple of

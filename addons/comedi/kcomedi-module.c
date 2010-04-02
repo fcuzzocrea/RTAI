@@ -43,9 +43,7 @@ MODULE_DESCRIPTION("RTAI LXRT binding for COMEDI kcomedilib");
 MODULE_AUTHOR("The Comedi Players");
 MODULE_LICENSE("GPL");
 
-//#define RTAI_COMEDI_USE_LOCK
-
-#ifdef RTAI_COMEDI_USE_LOCK
+#ifdef CONFIG_RTAI_USE_COMEDI_LOCK
 
 #define RTAI_COMEDI_LOCK(dev, subdev) \
 	do { comedi_lock(dev, subdev); } while (0)

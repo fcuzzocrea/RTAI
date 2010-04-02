@@ -516,7 +516,7 @@ RTAI_PROTO(long, rt_comedi_command_data_wread_timed, (void *dev, unsigned int su
 	return retval;
 }
 
-#if 0
+#ifdef CONFIG_RTAI_NETRPC
 
 static inline void *RT_comedi_open(unsigned long node, int port, const char *filename)
 {

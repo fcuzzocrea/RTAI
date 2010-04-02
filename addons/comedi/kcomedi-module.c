@@ -611,13 +611,13 @@ static int comedi_irq_handler(unsigned int irq, void *dev_id)
 	return IRQ_HANDLED;
 }
 
-static int comedi_request_irq(unsigned int irq, int (*handler)(unsigned int irq, void *dev_id), void *dev_id, int retmode)
+static int comedi_request_irq(unsigned int irq, int (*handler)(unsigned int irq, void *dev_id), unsigned long flags, const char *name, void *dev)
 {
 	int retval;
 	if (comedi_irq_handler_p[irq]) {
 		return -EBUSY;
 	}
-	if ((retval = rt_request_irq(irq, comedi_irq_handler, dev_id, 0))) {
+	if ((retval = rt_request_irq(irq, comedi_irq_handler, dev, 0))) {
 		return retval;
 	}
 	comedi_irq_handler_p[irq] = handler;
@@ -625,7 +625,7 @@ static int comedi_request_irq(unsigned int irq, int (*handler)(unsigned int irq,
 	return 0;
 }
 
-static void comedi_release_irq(unsigned int irq)
+static void comedi_release_irq(unsigned int irq, void *dev)
 {
 	rt_shutdown_irq(irq);
 	rt_release_irq(irq);
@@ -662,7 +662,7 @@ void __rtai_comedi_exit(void)
 	int irq;
 	for (irq = 0; irq < RTAI_NR_IRQS; irq++) {
 		if (comedi_irq_handler_p[irq]) {
-			comedi_release_irq(irq);
+			comedi_release_irq(irq, NULL);
 		}
 	}
 	rt_comedi_request_irq = rt_request_irq;

@@ -212,7 +212,8 @@ own subdirectory "drivers/staging/comedi". So there is no need to install COMEDI
 anew anymore. Moreover its use will make one surer to have the latest COMEDI
 update available. What follows explains a prompt, likely provisional, way to 
 exploit such a possibility. One can expect it will stabilize in RTAI hal 
-patches eventually.
+patches eventually. Notice that it must be applied on a kernel patched for 
+RTAI already.
 
 			      - WHAT TO DO -
 

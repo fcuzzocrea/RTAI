@@ -47,9 +47,9 @@ mv newcopy comedidev.h
 # >>> Append and export pointers for dynamically linking rtai_comedi extensions.
 #
 echo "" >>comedi_ksyms.c
-echo "int  (*rt_comedi_request_irq)(unsigned int, void *, void *, int);" >>comedi_ksyms.c
-echo "int  (*rt_comedi_release_irq)(unsigned int);" >>comedi_ksyms.c
-echo "void (*rt_comedi_busy_sleep)(unsigned int);" >>comedi_ksyms.c
+echo "int  (*rt_comedi_request_irq)(unsigned int, irq_handler_t, unsigned long, const char *, void *) = request_irq;" >>comedi_ksyms.c
+echo "void (*rt_comedi_release_irq)(unsigned int, void *) = free_irq;" >>comedi_ksyms.c
+echo "void (*rt_comedi_busy_sleep)(unsigned long) = __udelay;" >>comedi_ksyms.c
 echo "" >>comedi_ksyms.c
 echo "EXPORT_SYMBOL(rt_comedi_request_irq);" >>comedi_ksyms.c
 echo "EXPORT_SYMBOL(rt_comedi_release_irq);" >>comedi_ksyms.c
@@ -68,18 +68,20 @@ exit
 
 #ifdef CONFIG_IPIPE
 
-extern int  (*rt_comedi_request_irq)(unsigned int, void *, void *, int);
-extern int  (*rt_comedi_release_irq)(unsigned int);
-extern void (*rt_comedi_busy_sleep)(unsigned int);
+#include <linux/interrupt.h>
 
-#define comedi_request_irq(irq, handler, flags, device, dev_id) \
-        ({ rt_comedi_request_irq(irq, (void *)handler, dev_id, 0); })
+extern int  (*rt_comedi_request_irq)(unsigned int, irq_handler_t, unsigned long, const char *, void *);
+extern void (*rt_comedi_release_irq)(unsigned int, void *);
+extern void (*rt_comedi_busy_sleep)(unsigned long);
 
-#define comedi_free_irq(irq, dev_id) \
-        rt_comedi_release_irq((unsigned)irq)
+#define comedi_request_irq(irq, handler, flags, name, dev) \
+        ({ rt_comedi_request_irq(irq, (void *)handler, flags, name, dev); })
+
+#define comedi_free_irq(irq, dev) \
+        rt_comedi_release_irq(irq, dev)
 
 #define comedi_udelay(usec) \
-	do { if (likely(rt_comedi_busy_sleep != NULL)) rt_comedi_busy_sleep(usec); else udelay(usec); } while (0)
+	rt_comedi_busy_sleep(usec)
 
 #define comedi_spin_lock_irqsave(lock_ptr, flags) \
 	({ local_irq_save_hw(flags); _raw_spin_lock(lock_ptr); flags; })

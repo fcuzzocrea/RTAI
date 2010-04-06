@@ -1,3 +1,12 @@
+2010-04-06 Paolo Mantegazza <mantegazza@aero.polimi.it>
+
+	* addons/comedi/rtai_comedi.h: add netrpc based support for 
+	  remote/distributed COMEDI usage.
+	* addons/comedi/kcomedi-module.c: add specific functions to support
+	  remote/distributed COMEDI commands and instructions.
+	* addons/comedi/README: add explanation on how to use 
+	  remote/distributed COMEDI.
+
 2009-04-02 Pierangelo Masarati <masarati@aero.polimi.it>
 
 	* configure.in, rtai_config.h: add support for setting COMEDI locks
@@ -6,7 +15,7 @@
 2009-03-31 Pierangelo Masarati <masarati@aero.polimi.it>
 
 	* configure.in, rtai_config.h: add support for use of COMEDI as 
-	  distributed within Linux.
+	  distributed within Linux (in: drivers/staging/comedi).
 
 2010-03-28 Paolo Mantegazza <mantegazza@aero.polimi.it>
 

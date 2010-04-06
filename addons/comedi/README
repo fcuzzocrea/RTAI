@@ -159,7 +159,7 @@ The previous code snippet would become:
 	}
 .
 
-There is an example in RTAI "showroom" CVS, "user/comedi" that should help
+There are examples in RTAI "showroom" CVS, "user/comedi" that should help
 in depicting the use of the above explained extensions.
 
 The async write mate of async data reading is the following:
@@ -203,6 +203,34 @@ free to apply them explicitly whenever (s)he has decided to not configure them
 by default.
 
 "The Comedi Players"
+
+
+          <*> USING RTAI_KCOMEDI FOR DISTRIBUTED DATA ACQUISITION <*>
+
+Distributed data acquisition is obtained by simply using the standard NETRPC
+specification, i.e.:
+
+- use just the name of any already available function substituting either 
+  "rt_..." with "RT_..." or, as for the direct use of COMEDI APIs names.
+  prefixing "RT_" in front of them
+- add two initial arguments more, i.e. the "node" of and the "port" on the
+  remote machine that will execute "RT_..." functions"r.
+
+For example:
+	rt_comedi_do_insnlist(dev, ilist);
+becomes:
+	RT_comedi_do_insnlist(dev, ilist);
+while:
+	comedi_do_insn(dev, insn);
+becomes:
+	RT_comedi_do_insn(dev, insn);
+as well.
+
+Naturally the remote node, where the data acquisition hardware is installed,
+must have installed, all of the modules needed for COMEDI, rtai_netrpc and
+rtai_comedi.
+There are examples in RTAI "showroom" CVS, "user/comedi" that should help
+in depicting the use of the above explained extensions.
 
 
 	         <*> USING LINUX NATIVE COMEDI DISTRIBUTION <*>

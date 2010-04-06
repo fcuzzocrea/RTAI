@@ -123,8 +123,8 @@ rt_create_linux_syscall_server(task, SYNC_LINUX_SYSCALL, NULL, 1).
 
 Notice that in sync mode Linux functions will return their usual values while 
 that is not possible in async mode and what returned is an identifier, id, of 
-that specific async calli, a negative id meaning the call was not sotisfied
-because of a buffer overrun. When <= 0 id can be used for monitoring async i
+that specific async call, a negative id meaning the call was not sotisfied
+because of a buffer overrun. When <= 0 id can be used for monitoring async
 calls execution, as explained below.
 
 - int rt_set_linux_syscall_mode(int mode, void (*callback_fun)(long, long);

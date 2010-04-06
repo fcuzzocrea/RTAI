@@ -882,7 +882,7 @@ do { \
 	linsns.ofstlens.n_ofst      = offsetof(struct comedi_insn, n); \
 	linsns.ofstlens.subdev_ofst = offsetof(struct comedi_insn, subdev); \
 	linsns.ofstlens.chanspec_ofst = offsetof(struct comedi_insn, chanspec);\
-	linsns.ofstlens.insn_len    = sizeof(comedi_insn); \
+	linsns.ofstlens.insn_len    = &insns[1] - &insns[0]; \
 	linsns.ofstlens.insns_ofst  = offsetof(struct rpced_insns, insns); \
 	linsns.ofstlens.data_ofsts  = offsetof(struct rpced_insns, data_ofsts);\
 	linsns.ofstlens.data_ofst   = offsetof(struct rpced_insns, data); \

@@ -132,13 +132,11 @@ static RTAI_SYSCALL_MODE int RT_comedi_command(void *dev, struct cmds_ofstlens *
 	int retval;
 	comedi_cmd cmd[2]; // 2 instances, a safe room for 64 getting into 32
 	memcpy(cmd, (void *)ofstlens + ofstlens->cmd_ofst, ofstlens->cmd_len);
-	cmd[0].chanlist = (void *)ofstlens + ofstlens->chanlist_ofst;
+	cmd[0].chanlist     = (void *)ofstlens + ofstlens->chanlist_ofst;
 	cmd[0].chanlist_len = ofstlens->chanlist_len;
-	cmd[0].data = (void *)ofstlens + ofstlens->data_ofst;
-	cmd[0].data_len = ofstlens->data_len;
-	RTAI_COMEDI_LOCK(dev, cmd[0].subdev);
-	retval = test ?  comedi_command(dev, cmd) : comedi_command(dev, cmd);
-	RTAI_COMEDI_UNLOCK(dev, cmd[0].subdev);
+	cmd[0].data         = (void *)ofstlens + ofstlens->data_ofst;
+	cmd[0].data_len     = ofstlens->data_len;
+	retval = test ? _comedi_command_test(dev, cmd) : _comedi_command(dev, cmd);
 	return retval;
 }
 
@@ -385,32 +383,33 @@ static RTAI_SYSCALL_MODE int _comedi_do_insn(void *dev, comedi_insn *insn)
 
 RTAI_SYSCALL_MODE int rt_comedi_do_insnlist(void *dev, comedi_insnlist *ilist)
 {
-	int i, retval;
+	int i;
 	for (i = 0; i < ilist->n_insns; i ++) {
-		if ((retval = comedi_do_insn(dev, &ilist->insns[i])) < 0) {
+		if ((ilist->insns[i].n = comedi_do_insn(dev, &ilist->insns[i])) < 0) {
 			break;
 		}
-		ilist->insns[i].n = retval;
 	}
 	return i;
 }
 
 RTAI_SYSCALL_MODE int RT_comedi_do_insnlist(void *dev, long n_insns, struct insns_ofstlens *ofstlens)
 {
-	int i, retval;
-	unsigned int *data_ofsts = (void *)ofstlens + ofstlens->data_ofsts;
-	void *insns = (void *)ofstlens->insns_ofst;
-	lsampl_t *data = (void *)ofstlens + ofstlens->data_ofst;
+#define RT_INSN(offset) (*((unsigned int *)(insns + ofstlens->subdev_ofst)))
+#define RT_INSN_ADR(offset) ((void *)ofstlens + ofstlens->offset)
+	int i;
+	void *insns              = RT_INSN_ADR(insns_ofst);
+	unsigned int *data_ofsts = RT_INSN_ADR(data_ofsts);
+	lsampl_t *data           = RT_INSN_ADR(data_ofst);
 	comedi_insn insn[2]; // 2 instances, a safe room for 64 getting into 32
 	for (i = 0; i < n_insns; i ++) {
 		memcpy(insn, insns, ofstlens->insn_len);	
-		insn[0].data = data + data_ofsts[i];
-		insn[0].subdev = *((unsigned int *)(insns + i*ofstlens->insn_len + ofstlens->subdev_ofst));
-		insn[0].chanspec = *((unsigned int *)(insns + i*ofstlens->insn_len + ofstlens->chanspec_ofst));
-		if ((retval = comedi_do_insn(dev, insn)) < 0) {
+		insn[0].data     = data + data_ofsts[i];
+		insn[0].subdev   = RT_INSN(subdev_ofst);
+		insn[0].chanspec = RT_INSN(chanspec_ofst);
+		if ((RT_INSN(n_ofst) = comedi_do_insn(dev, insn)) < 0) {
 			break;
 		}
-		*((unsigned int *)(insns + i*ofstlens->insn_len + ofstlens->n_ofst)) = retval;
+		insns += ofstlens->insn_len;
 	}
 	return i;
 }

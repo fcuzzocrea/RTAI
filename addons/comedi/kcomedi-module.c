@@ -127,6 +127,21 @@ static RTAI_SYSCALL_MODE int _comedi_command_test(void *dev, comedi_cmd *cmd)
 	return retval;
 }
 
+static RTAI_SYSCALL_MODE int RT_comedi_command(void *dev, struct cmds_ofstlens *ofstlens, long test)
+{
+	int retval;
+	comedi_cmd cmd[2]; // 2 instances, a safe room for 64 getting into 32
+	memcpy(cmd, (void *)ofstlens + ofstlens->cmd_ofst, ofstlens->cmd_len);
+	cmd[0].chanlist = (void *)ofstlens + ofstlens->chanlist_ofst;
+	cmd[0].chanlist_len = ofstlens->chanlist_len;
+	cmd[0].data = (void *)ofstlens + ofstlens->data_ofst;
+	cmd[0].data_len = ofstlens->data_len;
+	RTAI_COMEDI_LOCK(dev, cmd[0].subdev);
+	retval = test ?  comedi_command(dev, cmd) : comedi_command(dev, cmd);
+	RTAI_COMEDI_UNLOCK(dev, cmd[0].subdev);
+	return retval;
+}
+
 RTAI_SYSCALL_MODE long rt_comedi_command_data_read(void *dev, unsigned int subdev, long nchans, lsampl_t *data)
 {
 	void *aibuf;
@@ -380,6 +395,26 @@ RTAI_SYSCALL_MODE int rt_comedi_do_insnlist(void *dev, comedi_insnlist *ilist)
 	return i;
 }
 
+RTAI_SYSCALL_MODE int RT_comedi_do_insnlist(void *dev, long n_insns, struct insns_ofstlens *ofstlens)
+{
+	int i, retval;
+	unsigned int *data_ofsts = (void *)ofstlens + ofstlens->data_ofsts;
+	void *insns = (void *)ofstlens->insns_ofst;
+	lsampl_t *data = (void *)ofstlens + ofstlens->data_ofst;
+	comedi_insn insn[2]; // 2 instances, a safe room for 64 getting into 32
+	for (i = 0; i < n_insns; i ++) {
+		memcpy(insn, insns, ofstlens->insn_len);	
+		insn[0].data = data + data_ofsts[i];
+		insn[0].subdev = *((unsigned int *)(insns + i*ofstlens->insn_len + ofstlens->subdev_ofst));
+		insn[0].chanspec = *((unsigned int *)(insns + i*ofstlens->insn_len + ofstlens->chanspec_ofst));
+		if ((retval = comedi_do_insn(dev, insn)) < 0) {
+			break;
+		}
+		*((unsigned int *)(insns + i*ofstlens->insn_len + ofstlens->n_ofst)) = retval;
+	}
+	return i;
+}
+
 static inline int _rt_comedi_trigger(void *dev, unsigned int subdev)
 {
         comedi_insn insn;
@@ -591,6 +626,8 @@ static struct rt_fun_entry rtai_comedi_fun[] = {
  ,[_KCOMEDI_COMD_DATA_WREAD_UNTIL] = { 1, rt_comedi_command_data_wread_until }
  ,[_KCOMEDI_COMD_DATA_WREAD_TIMED] = { 1, rt_comedi_command_data_wread_timed }
  ,[_KCOMEDI_COMD_DATA_WRITE]       = { 0, rt_comedi_command_data_write }
+ ,[_RT_KCOMEDI_COMMAND]            = { 0, RT_comedi_command }
+ ,[_RT_KCOMEDI_DO_INSN_LIST]       = { 0, RT_comedi_do_insnlist }
 };
 
 #ifdef CONFIG_RTAI_USE_LINUX_COMEDI

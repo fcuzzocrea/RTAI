@@ -529,7 +529,7 @@ RTAI_PROTO(long, rt_comedi_command_data_wread_timed, (void *dev, unsigned int su
 static inline void *RT_comedi_open(unsigned long node, int port, const char *filename)
 {
 	if (node) {
-		struct { const char *minor; long size; } arg = { filename, strnlen(filename, COMEDI_NAMELEN) };
+		struct { const char *minor; long size; } arg = { filename, strnlen(filename, COMEDI_NAMELEN) + 1 };
                 struct { unsigned long fun; long type; void *args; long argsize; long space; unsigned long partypes; } args = { PACKPORT(port, FUN_COMEDI_LXRT_INDX, _KCOMEDI_OPEN, 0), UR1(1, 2), &arg, COMEDI_LXRT_SIZARG, 0, PARTYPES2(UINT, UINT) };
                 return rtai_lxrt(NET_RPC_IDX, SIZARGS, NETRPC, &args).v[LOW];
 	}

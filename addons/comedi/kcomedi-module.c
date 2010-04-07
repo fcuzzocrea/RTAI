@@ -394,7 +394,7 @@ RTAI_SYSCALL_MODE int rt_comedi_do_insnlist(void *dev, comedi_insnlist *ilist)
 
 RTAI_SYSCALL_MODE int RT_comedi_do_insnlist(void *dev, long n_insns, struct insns_ofstlens *ofstlens)
 {
-#define RT_INSN(offset) (*((unsigned int *)(insns + ofstlens->subdev_ofst)))
+#define RT_INSN(offset) (*((unsigned int *)(insns + ofstlens->offset)))
 #define RT_INSN_ADR(offset) ((void *)ofstlens + ofstlens->offset)
 	int i;
 	void *insns              = RT_INSN_ADR(insns_ofst);

@@ -882,7 +882,7 @@ do { \
 	linsns.ofstlens.n_ofst      = offsetof(struct comedi_insn, n); \
 	linsns.ofstlens.subdev_ofst = offsetof(struct comedi_insn, subdev); \
 	linsns.ofstlens.chanspec_ofst = offsetof(struct comedi_insn, chanspec);\
-	linsns.ofstlens.insn_len    = &insns[1] - &insns[0]; \
+	linsns.ofstlens.insn_len    = (void *)&insns[1] - (void *)&insns[0]; \
 	linsns.ofstlens.insns_ofst  = offsetof(struct rpced_insns, insns); \
 	linsns.ofstlens.data_ofsts  = offsetof(struct rpced_insns, data_ofsts);\
 	linsns.ofstlens.data_ofst   = offsetof(struct rpced_insns, data); \
@@ -897,8 +897,8 @@ static inline int _RT_comedi_do_insnlist(unsigned long node, int port, void *dev
 			maxdata += insns[i].n;
 		} {
 		struct rpced_insns { struct insns_ofstlens ofstlens; comedi_insn insns[n_insns]; unsigned int data_ofsts[n_insns]; lsampl_t data[maxdata]; } linsns;
-		struct { void *dev; long n_insns; void *linsns; unsigned long linsns_size; } arg = { dev, n_insns, &linsns, sizeof(linsns) };
-		struct { unsigned long fun; long type; void *args; long argsize; long space; unsigned long partypes; } args = { PACKPORT(port, FUN_COMEDI_LXRT_INDX, _RT_KCOMEDI_DO_INSN_LIST, 0), UR1(3, 4) | UW1(3, 4), &arg, COMEDI_LXRT_SIZARG, 0, PARTYPES4(VADR, UINT, UINT, UINT) };
+		struct { void *dev; long n_insns; void *linsns_in; void *linsns_out; unsigned long linsns_size; } arg = { dev, n_insns, &linsns, &linsns, sizeof(linsns) };
+		struct { unsigned long fun; long type; void *args; long argsize; long space; unsigned long partypes; } args = { PACKPORT(port, FUN_COMEDI_LXRT_INDX, _RT_KCOMEDI_DO_INSN_LIST, 0), UR1(3, 5) | UW1(4, 5), &arg, COMEDI_LXRT_SIZARG, 0, PARTYPES4(VADR, UINT, UINT, UINT) };
 		int retval, offset;
 		for (offset = i = 0; i < n_insns; i++) { 
 			memcpy(&linsns.data[offset], insns[i].data, insns[i].n*sizeof(lsampl_t));

@@ -2,7 +2,7 @@
 
 The default RTAI way of dealing with Linux syscalls done while in hard real
 time consists in moving a task wanting to use Linux back to soft mode, 
-recovering it to hard real time again as soon as possible afterward. See the 
+recovering it to hard real time again, as soon as possible, afterward. See the 
 related RTAI configuration helper for an explanation of the different available 
 modes to implement the "as soon as possible" above on various architectures.
 
@@ -59,10 +59,10 @@ processes and tasks. The async server should be of much help in such cases by
 letting you use standard Linux, with the ensuing advantage of not needing any 
 special hard real time driver.
 
-Clearly what above does not impede you to set up your own async server to whom 
-your hard real time task is connected by using RTAI non blocking communication 
-functions, i.e. those ending with "_if". So the choice of the most viable 
-solution is left to you.
+Clearly what above does not impede you to set up your own async server to 
+which your hard real time task can be connected by using RTAI non blocking 
+communication functions, i.e. those ending with "_if". So the choice of the 
+most viable solution is left to you.
  
 How it works
 ------------
@@ -81,16 +81,17 @@ returning an identifier.
 
 As said in sync mode real time is lost, but there will be two task switches per
 Linux service request only, while there will be four if no sync server is used.
-In async mode there is no need of any task switch as the server will execute 
+In async mode there is no need for any task switch, as the server will execute 
 in soft mode when there will be no RTAI real time activity any more.
 The need of passing syscall data to the server is responsible for most of the 
 penalty incurred by using a Linux server. 
 Let's stress once more that this is a far better alternative way to what the 
 RTAI scheduler will have to do anyhow, i.e. make you soft and recover hard mode 
 at the next RTAI proper service call, which will require four task switches, 
-keeping you in Linux hands from the Linux syscall till RTAI is used again. 
+keeping you in Linux hands from the Linux syscall till an RTAI function is 
+called again. 
 With a server instead you will stay soft just either till Linux has finished 
-servicing your request, when in sync mode, or keep working in real time, when
+servicing your request, when in sync mode, or kept working in real time, when
 in async mode.
 
 API Functions prototypes
@@ -123,8 +124,8 @@ rt_create_linux_syscall_server(task, SYNC_LINUX_SYSCALL, NULL, 1).
 
 Notice that in sync mode Linux functions will return their usual values while 
 that is not possible in async mode and what returned is an identifier, id, of 
-that specific async call, a negative id meaning the call was not sotisfied
-because of a buffer overrun. When <= 0 id can be used for monitoring async
+that specific async call, a negative id meaning the call was not satisfied
+because of a buffer overrun. When <= 0 ids can be used for monitoring async
 calls execution, as explained below.
 
 - int rt_set_linux_syscall_mode(int mode, void (*callback_fun)(long, long);

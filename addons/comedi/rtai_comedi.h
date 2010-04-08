@@ -652,7 +652,7 @@ static inline int _RT_comedi_command(unsigned long node, int port, void *dev, co
 	return comedi_command(dev, cmd);
 }
 
-static inline int RT_comedi_command(unsigned long node, int port, void *dev, comedi_cmd *cmd, long test)
+static inline int RT_comedi_command(unsigned long node, int port, void *dev, comedi_cmd *cmd)
 {
 	return _RT_comedi_command(node, port, dev, cmd, 0);
 }

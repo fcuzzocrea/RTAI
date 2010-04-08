@@ -192,7 +192,7 @@ RTAI_SYSCALL_MODE long rt_comedi_command_data_read(void *dev, unsigned int subde
 #define WAITIF     1
 #define WAITUNTIL  2
 
-static inline long _rt_comedi_command_data_wread(void *dev, unsigned int subdev, long nchans, lsampl_t *data, RTIME until, unsigned int *cbmaskarg, int waitmode)
+static inline int _rt_comedi_command_data_wread(void *dev, unsigned int subdev, long nchans, lsampl_t *data, RTIME until, unsigned int *cbmaskarg, int waitmode)
 {
 	unsigned int cbmask, mask;
 	long retval, space;
@@ -497,7 +497,7 @@ static RTAI_SYSCALL_MODE int _comedi_unmap(void *dev, unsigned int subdev)
 	return retval;
 }
 
-static inline long _rt_comedi_wait(RTIME until, unsigned int *cbmask, int waitmode)
+static inline int _rt_comedi_wait(RTIME until, unsigned int *cbmask, int waitmode)
 { 
 	if (cbmask) {
 		long retval;

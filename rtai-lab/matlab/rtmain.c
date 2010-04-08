@@ -510,7 +510,7 @@ static void *rt_HostInterface(void *args)
   RT_TASK *task;
   unsigned int IRequest;
   char Request;
-  int len;
+  long len;
 
   rt_allow_nonroot_hrt();
   if (!(rt_HostInterfaceTask = rt_task_init_schmod(nam2num(HostInterfaceTaskName), rt_HostInterfaceTaskPriority, 0, 0, SCHED_FIFO, 0xFF))) {

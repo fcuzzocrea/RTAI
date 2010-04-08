@@ -192,14 +192,15 @@ RTAI_SYSCALL_MODE long rt_comedi_command_data_read(void *dev, unsigned int subde
 #define WAITIF     1
 #define WAITUNTIL  2
 
-static inline long _rt_comedi_command_data_wread(void *dev, unsigned int subdev, long nchans, lsampl_t *data, RTIME until, long *maskarg, int waitmode)
+static inline long _rt_comedi_command_data_wread(void *dev, unsigned int subdev, long nchans, lsampl_t *data, RTIME until, unsigned int *cbmaskarg, int waitmode)
 {
-	long cbmask, retval, space, mask;
-	space = space(maskarg);
+	unsigned int cbmask, mask;
+	long retval, space;
+	space = space(cbmaskarg);
 	if (space) {
-		mask = maskarg[0];
+		mask = cbmaskarg[0];
 	} else {
-		rt_get_user(mask, maskarg);
+		rt_get_user(mask, cbmaskarg);
 	}
 	switch (waitmode) {
 		case WAIT: 
@@ -216,31 +217,31 @@ static inline long _rt_comedi_command_data_wread(void *dev, unsigned int subdev,
 	}
 	if (!retval && (mask & cbmask)) {
 		if (space) {
-			maskarg[0] = cbmask;
+			cbmaskarg[0] = cbmask;
 		} else {
-			rt_put_user(cbmask, maskarg);
+			rt_put_user(cbmask, cbmaskarg);
 		}
 		return rt_comedi_command_data_read(dev, subdev, nchans, data);
 	}
 	return retval;
 }
 
-RTAI_SYSCALL_MODE long rt_comedi_command_data_wread(void *dev, unsigned int subdev, long nchans, lsampl_t *data, long *maskarg)
+RTAI_SYSCALL_MODE long rt_comedi_command_data_wread(void *dev, unsigned int subdev, long nchans, lsampl_t *data, unsigned int *cbmask)
 {
-	return _rt_comedi_command_data_wread(dev, subdev, nchans, data, (RTIME)0, maskarg, WAIT);
+	return _rt_comedi_command_data_wread(dev, subdev, nchans, data, (RTIME)0, cbmask, WAIT);
 }
 
-RTAI_SYSCALL_MODE long rt_comedi_command_data_wread_if(void *dev, unsigned int subdev, long nchans, lsampl_t *data, long *maskarg)
+RTAI_SYSCALL_MODE long rt_comedi_command_data_wread_if(void *dev, unsigned int subdev, long nchans, lsampl_t *data, unsigned int *cbmask)
 {
-	return _rt_comedi_command_data_wread(dev, subdev, nchans, data, (RTIME)0, maskarg, WAITIF);
+	return _rt_comedi_command_data_wread(dev, subdev, nchans, data, (RTIME)0, cbmask, WAITIF);
 }
 
-RTAI_SYSCALL_MODE long rt_comedi_command_data_wread_until(void *dev, unsigned int subdev, long nchans, lsampl_t *data, RTIME until, long *maskarg)
+RTAI_SYSCALL_MODE long rt_comedi_command_data_wread_until(void *dev, unsigned int subdev, long nchans, lsampl_t *data, RTIME until, unsigned int *cbmask)
 {
-	return _rt_comedi_command_data_wread(dev, subdev, nchans, data, until, maskarg, WAITUNTIL);
+	return _rt_comedi_command_data_wread(dev, subdev, nchans, data, until, cbmask, WAITUNTIL);
 }
 
-RTAI_SYSCALL_MODE long rt_comedi_command_data_wread_timed(void *dev, unsigned int subdev, long nchans, lsampl_t *data, RTIME delay, long *cbmask)
+RTAI_SYSCALL_MODE long rt_comedi_command_data_wread_timed(void *dev, unsigned int subdev, long nchans, lsampl_t *data, RTIME delay, unsigned int *cbmask)
 {
 	return rt_comedi_command_data_wread_until(dev, subdev, nchans, data, rt_get_time() + delay, cbmask);
 }
@@ -496,7 +497,7 @@ static RTAI_SYSCALL_MODE int _comedi_unmap(void *dev, unsigned int subdev)
 	return retval;
 }
 
-static inline long _rt_comedi_wait(RTIME until, long *cbmask, int waitmode)
+static inline long _rt_comedi_wait(RTIME until, unsigned int *cbmask, int waitmode)
 { 
 	if (cbmask) {
 		long retval;
@@ -515,9 +516,9 @@ static inline long _rt_comedi_wait(RTIME until, long *cbmask, int waitmode)
 				return RTE_PERM;
 		}
 		if (space(cbmask)) {
-			cbmask[0] = task->resumsg;
+			cbmask[0] = (unsigned int)task->resumsg;
 		} else {
-			rt_put_user(task->resumsg, cbmask);
+			rt_put_user((unsigned int)task->resumsg, cbmask);
 		}
 		task->resumsg = 0;
 		return retval;
@@ -525,22 +526,22 @@ static inline long _rt_comedi_wait(RTIME until, long *cbmask, int waitmode)
 	return RTE_PERM;
 }
 
-RTAI_SYSCALL_MODE long rt_comedi_wait(long *cbmask)
+RTAI_SYSCALL_MODE long rt_comedi_wait(unsigned int *cbmask)
 { 
 	return _rt_comedi_wait((RTIME)0, cbmask, WAIT);
 }
 
-RTAI_SYSCALL_MODE long rt_comedi_wait_if(long *cbmask)
+RTAI_SYSCALL_MODE long rt_comedi_wait_if(unsigned int *cbmask)
 { 
 	return _rt_comedi_wait((RTIME)0, cbmask, WAITIF);
 }
 
-RTAI_SYSCALL_MODE long rt_comedi_wait_until(RTIME until, long *cbmask)
+RTAI_SYSCALL_MODE long rt_comedi_wait_until(RTIME until, unsigned int *cbmask)
 {
 	return _rt_comedi_wait(until, cbmask, WAITUNTIL);
 }
 
-RTAI_SYSCALL_MODE long rt_comedi_wait_timed(RTIME delay, long *cbmask)
+RTAI_SYSCALL_MODE long rt_comedi_wait_timed(RTIME delay, unsigned int *cbmask)
 {
 	return rt_comedi_wait_until(rt_get_time() + delay, cbmask);
 }

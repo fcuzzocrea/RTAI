@@ -46,7 +46,8 @@ Nov. 2001, Jan Kiszka (Jan.Kiszka@web.de) fix a tiny bug in __task_init.
 #include <rtai_schedcore.h>
 
 #define MAX_FUN_EXT  16
-static struct rt_fun_entry *rt_fun_ext[MAX_FUN_EXT];
+struct rt_fun_entry *rt_fun_ext[MAX_FUN_EXT];
+EXPORT_SYMBOL(rt_fun_ext);
 
 /* 
  * WATCH OUT for the default max expected size of messages from/to user space.

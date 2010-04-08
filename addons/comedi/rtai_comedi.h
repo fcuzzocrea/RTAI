@@ -952,7 +952,7 @@ static inline long RT_comedi_command_data_wread(unsigned long node, int port, vo
 {
 	if (node) {
 		struct { void *dev; unsigned long subdev; long nchans; lsampl_t *data; unsigned int *cbmask; long datalen; long cbmasklen; } arg = { dev, subdev, nchans, data, cbmask, nchans*sizeof(lsampl_t), sizeof(unsigned int) };
-		struct { unsigned long fun; long type; void *args; long argsize; long space; unsigned long partypes; } args = { PACKPORT(port, FUN_COMEDI_LXRT_INDX, _KCOMEDI_COMD_DATA_WREAD, 0), UR1(4, 6) | UW1(5, 7), &arg, COMEDI_LXRT_SIZARG, 0, PARTYPES7(VADR, UINT, UINT, UINT, UINT, UINT, UINT) };
+		struct { unsigned long fun; long type; void *args; long argsize; long space; unsigned long partypes; } args = { PACKPORT(port, FUN_COMEDI_LXRT_INDX, _KCOMEDI_COMD_DATA_WREAD, 0), UR1(4, 6) | UW1(5, 7), &arg, COMEDI_LXRT_SIZARG, 0, PARTYPES7(VADR, UINT, UINT, UINT, SINT, UINT, UINT) };
 		return rtai_lxrt(NET_RPC_IDX, SIZARGS, NETRPC, &args).i[LOW];
 	}
 	return rt_comedi_command_data_wread(dev, subdev, nchans, data, cbmask);
@@ -962,7 +962,7 @@ static inline long RT_comedi_command_data_wread_if(unsigned long node, int port,
 {
 	if (node) {
 		struct { void *dev; unsigned long subdev; long nchans; lsampl_t *data; unsigned int *cbmask; long datalen; long cbmasklen; } arg = { dev, subdev, nchans, data, cbmask, nchans*sizeof(lsampl_t), sizeof(unsigned int) };
-		struct { unsigned long fun; long type; void *args; long argsize; long space; unsigned long partypes; } args = { PACKPORT(port, FUN_COMEDI_LXRT_INDX, _KCOMEDI_COMD_DATA_WREAD_IF, 0), UR1(4, 6) | UW1(5, 7), &arg, COMEDI_LXRT_SIZARG, 0, PARTYPES7(VADR, UINT, UINT, UINT, UINT, UINT, UINT) };
+		struct { unsigned long fun; long type; void *args; long argsize; long space; unsigned long partypes; } args = { PACKPORT(port, FUN_COMEDI_LXRT_INDX, _KCOMEDI_COMD_DATA_WREAD_IF, 0), UR1(4, 6) | UW1(5, 7), &arg, COMEDI_LXRT_SIZARG, 0, PARTYPES7(VADR, UINT, UINT, UINT, SINT, UINT, UINT) };
 		return rtai_lxrt(NET_RPC_IDX, SIZARGS, NETRPC, &args).i[LOW];
 	}
 	return rt_comedi_command_data_wread_if(dev, subdev, nchans, data, cbmask);
@@ -972,7 +972,7 @@ static inline long RT_comedi_command_data_wread_until(unsigned long node, int po
 {
 	if (node) {
 		struct { void *dev; unsigned long subdev; long nchans; lsampl_t *data; RTIME until; unsigned int *cbmask; long datalen; long cbmasklen; } arg = { dev, subdev, nchans, data, until, cbmask, nchans*sizeof(lsampl_t), sizeof(unsigned int) };
-		struct { unsigned long fun; long type; void *args; long argsize; long space; unsigned long partypes; } args = { PACKPORT(port, FUN_COMEDI_LXRT_INDX, _KCOMEDI_COMD_DATA_WREAD_UNTIL, 5), UR1(4, 7) | UW1(6, 8), &arg, COMEDI_LXRT_SIZARG, 0, PARTYPES8(VADR, UINT, UINT, UINT, RTIM, UINT, UINT, UINT) };
+		struct { unsigned long fun; long type; void *args; long argsize; long space; unsigned long partypes; } args = { PACKPORT(port, FUN_COMEDI_LXRT_INDX, _KCOMEDI_COMD_DATA_WREAD_UNTIL, 5), UR1(4, 7) | UW1(6, 8), &arg, COMEDI_LXRT_SIZARG, 0, PARTYPES8(VADR, UINT, UINT, UINT, RTIM, SINT, UINT, UINT) };
 		return rtai_lxrt(NET_RPC_IDX, SIZARGS, NETRPC, &args).i[LOW];
 	}
 	return rt_comedi_command_data_wread_until(dev, subdev, nchans, data, until, cbmask);
@@ -982,7 +982,7 @@ static inline long RT_comedi_command_data_wread_timed(unsigned long node, int po
 {
 	if (node) {
 		struct { void *dev; unsigned long subdev; long nchans; lsampl_t *data; RTIME delay; unsigned int *cbmask; long datalen; long cbmasklen; } arg = { dev, subdev, nchans, data, delay, cbmask, nchans*sizeof(lsampl_t), sizeof(unsigned int) };
-		struct { unsigned long fun; long type; void *args; long argsize; long space; unsigned long partypes; } args = { PACKPORT(port, FUN_COMEDI_LXRT_INDX, _KCOMEDI_COMD_DATA_WREAD_UNTIL, 5), UR1(4, 7) | UW1(6, 8), &arg, COMEDI_LXRT_SIZARG, 0, PARTYPES8(VADR, UINT, UINT, UINT, RTIM, UINT, UINT, UINT) };
+		struct { unsigned long fun; long type; void *args; long argsize; long space; unsigned long partypes; } args = { PACKPORT(port, FUN_COMEDI_LXRT_INDX, _KCOMEDI_COMD_DATA_WREAD_UNTIL, 5), UR1(4, 7) | UW1(6, 8), &arg, COMEDI_LXRT_SIZARG, 0, PARTYPES8(VADR, UINT, UINT, UINT, RTIM, SINT, UINT, UINT) };
 		return rtai_lxrt(NET_RPC_IDX, SIZARGS, NETRPC, &args).i[LOW];
 	}
 	return rt_comedi_command_data_wread_until(dev, subdev, nchans, data, delay, cbmask);

@@ -99,7 +99,9 @@ static char *ThisHardNode = 0;
 RTAI_MODULE_PARM(ThisHardNode, charp);
 
 #define MAX_DFUN_EXT  16
-static struct rt_fun_entry *rt_net_rpc_fun_ext[MAX_DFUN_EXT];
+//static struct rt_fun_entry *rt_net_rpc_fun_ext[MAX_DFUN_EXT];
+extern struct rt_fun_entry *rt_fun_ext[];
+#define rt_net_rpc_fun_ext rt_fun_ext
 
 static unsigned long this_node[2];
 

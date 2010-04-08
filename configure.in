@@ -2008,6 +2008,7 @@ if test -d $srcdir/rtai-lab; then
         rtai-lab/matlab/GNUmakefile \
         rtai-lab/matrixx/GNUmakefile \
         rtai-lab/scilab/GNUmakefile \
+        rtai-lab/scicoslab/GNUmakefile \
         rtai-lab/scilab/utility/GNUmakefile \
    ])
 elif test \! x$CONFIG_RTAI_LAB = x; then

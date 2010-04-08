@@ -201,11 +201,15 @@ static void timer_fun(unsigned long none)
 static int (*encode)(struct portslot_t *portslotp, void *msg, int size, int where);
 static int (*decode)(struct portslot_t *portslotp, void *msg, int size, int where);
 
+static void *encdec_ext;
 void set_netrpc_encoding(void *encode_fun, void *decode_fun, void *ext)
 {
 	encode = encode_fun;
 	decode = decode_fun;
-	rt_net_rpc_fun_ext[1] = ext;
+	if (!set_rt_fun_ext_index(ext, 1)) {
+		encdec_ext = ext;
+	}
+//	rt_net_rpc_fun_ext[1] = ext;
 }
 
 struct req_rel_msg { long long op, port, priority, hard; unsigned long long owner, name, rem_node, chkspare;};
@@ -1820,7 +1824,10 @@ void __rtai_netrpc_exit(void)
 {
 	int i;
 
-	reset_rt_fun_entries(rt_netrpc_entries);
+	reset_rt_fun_ext_index(NULL, 1);
+	if (encdec_ext) {
+		reset_rt_fun_ext_index(encdec_ext, 1);
+	}
 	del_timer(&timer);
 	rt_sem_delete(&timer_sem);
 	for (i = 0; i < MaxStubs; i++) {

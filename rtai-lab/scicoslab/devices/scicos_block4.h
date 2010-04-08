@@ -100,11 +100,24 @@ typedef struct {
 */
 #define ReInitialization 6
 
+#define DoColdRestart(block)        (do_cold_restart()) 
+#define GetSimulationPhase(block)   (get_phase_simulation())
+#define GetScicosTime(block)        (get_scicos_time())
+#define GetFinalTime(block)         (get_final_time())
+#define GetBlockNum(block)          (get_block_number())
+#define SetBlockNum(block,val)      (set_block_number(val))
+#define GetBlockError(block)        (get_block_error())
+#define SetBlockError(block,val)    (set_block_error(val))
+#define StopSimulation(block,val)   (end_scicos_sim()) 
+
 /* utility function for block declaration */
 void do_cold_restart();
 int get_phase_simulation();
+int get_fcaller_id();
 double get_scicos_time();
+double get_final_time();
 int get_block_number();
+void set_block_number(int);
 void set_block_error(int);
 int get_block_error(void);
 void end_scicos_sim();
@@ -156,6 +169,7 @@ extern int s_cmp();
 #define SCSUINT8_N 811
 #define SCSUINT16_N 812
 #define SCSUINT32_N 814
+#define SCSBOOL_N 84
 #define SCSUNKNOW_N -1
 
 /* Define scicos simulator data type C operators (_COP) */
@@ -169,6 +183,7 @@ extern int s_cmp();
 #define SCSUINT8_COP unsigned char
 #define SCSUINT16_COP unsigned short
 #define SCSUINT32_COP unsigned long
+#define SCSBOOL_COP long
 #define SCSUNKNOW_COP double
 
  /* scicos_block macros definition :
@@ -256,6 +271,9 @@ extern int s_cmp();
   * 76 - GetNmode(blk)
   * 77 - GetModePtrs(blk)
   * 78 - GetLabelPtrs(blk)
+  * 79 - GetBoolInPortPtrs(blk,x)
+  * 80 - GetBoolOutPortPtrs(blk,x)
+  * 81 - GetPtrWorkPtrs(blk) 
   */
 
 /**
@@ -438,6 +456,7 @@ extern int s_cmp();
    \brief Get the pointer of the Work array.
 */
 #define GetWorkPtrs(blk) (*(blk->work))
+
 
 /**
    \brief Get number of continuous state.
@@ -689,6 +708,21 @@ extern int s_cmp();
    \brief Get pointer of the block label
 */
 #define GetLabelPtrs(blk) (blk->label)
+
+/**
+   \brief Get pointer of boolean typed regular input port number x.
+*/
+#define GetBoolInPortPtrs(blk,x) Getint32InPortPtrs(blk,x)
+
+/**
+   \brief Get pointer of boolean typed regular output port number x.
+*/
+#define GetBoolOutPortPtrs(blk,x) Getint32OutPortPtrs(blk,x)
+
+/**
+   \brief Get the pointer of pointer of the Work array.
+*/
+#define GetPtrWorkPtrs(blk) (blk->work)
 
 #if WIN32
 #ifdef min

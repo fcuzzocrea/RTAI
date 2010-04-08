@@ -635,9 +635,9 @@ do { \
 	lcmd.ofstlens.cmd_ofst      = offsetof(struct rpced_cmd, cmd); \
 	lcmd.ofstlens.cmd_len       = sizeof(comedi_cmd); \
 	lcmd.ofstlens.chanlist_ofst = offsetof(struct rpced_cmd, chanlist); \
-	lcmd.ofstlens.chanlist_len  = sizeof(lcmd.chanlist); \
+	lcmd.ofstlens.chanlist_len  = cmd->chanlist_len; \
 	lcmd.ofstlens.data_ofst     = offsetof(struct rpced_cmd, data); \
-	lcmd.ofstlens.data_len      = sizeof(lcmd.data);  \
+	lcmd.ofstlens.data_len      = cmd->data_len;  \
 } while (0)
 
 static inline int _RT_comedi_command(unsigned long node, int port, void *dev, comedi_cmd *cmd, long test)
@@ -646,6 +646,8 @@ static inline int _RT_comedi_command(unsigned long node, int port, void *dev, co
 		struct rpced_cmd { struct cmds_ofstlens ofstlens; comedi_cmd cmd; unsigned int chanlist[cmd->chanlist_len]; short data[cmd->data_len]; } lcmd;
         	struct { void *dev; void *lcmd; long test; long cmdlen; } arg = { dev, &lcmd, test, sizeof(struct rpced_cmd) };
 		set_cmd_offsets_lens();
+		memcpy(lcmd.chanlist, cmd->chanlist, lcmd.ofstlens.chanlist_len*sizeof(unsigned int)); 
+		memcpy(lcmd.data, cmd->data, lcmd.ofstlens.data_len*sizeof(short)); 
                 struct { unsigned long fun; long type; void *args; long argsize; long space; unsigned long partypes; } args = { PACKPORT(port, FUN_COMEDI_LXRT_INDX, _RT_KCOMEDI_COMMAND, 0), UR1(2, 4), &arg, COMEDI_LXRT_SIZARG, 0, PARTYPES4(VADR, SINT, UINT, UINT) };
 		return rtai_lxrt(NET_RPC_IDX, SIZARGS, NETRPC, &args).i[LOW];
 	}

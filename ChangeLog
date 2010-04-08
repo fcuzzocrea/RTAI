@@ -1,3 +1,14 @@
+2010-04-08 Roberto Bucher <roberto.bucher@supsi.ch>
+        * rtai-lab/matlab/rtmain.c: Variable Len for rt_receicex changed to
+        long.
+        * configure.in: Added folder scicoslab.
+        * rtai-lab/scicoslab/devices/scicos_block4.h:
+        * rtai-lab/scicoslab/macros/Makefile:  
+        * rtai-lab/scicoslab/macros/RTAI/RTAICodeGen_.sci:
+        * rtai-lab/scicoslab/macros/RTAI/RT_templates/rtai.mak:
+        * rtai-lab/scicoslab/macros/RTAI/RT_templates/standalone.cmd: Modifications
+          for Scicoslab-4.4.
+
 2010-04-08 Paolo Mantegazza <mantegazza@aero.polimi.it>
 
 	* base/sched/sys.c: export rt_fun_ext for direct use in netrpc.c.

@@ -530,7 +530,7 @@ static inline void *RT_comedi_open(unsigned long node, int port, const char *fil
 {
 	if (node) {
 		struct { const char *minor; long size; } arg = { filename, strnlen(filename, COMEDI_NAMELEN) + 1 };
-                struct { unsigned long fun; long type; void *args; long argsize; long space; unsigned long partypes; } args = { PACKPORT(port, FUN_COMEDI_LXRT_INDX, _KCOMEDI_OPEN, 0), UR1(1, 2), &arg, COMEDI_LXRT_SIZARG, 0, PARTYPES2(UINT, UINT) };
+                struct { unsigned long fun; long type; void *args; long argsize; long space; unsigned long partypes; } args = { PACKPORT(port, FUN_COMEDI_LXRT_INDX, _KCOMEDI_OPEN, 0), UR1(1, 2), &arg, COMEDI_LXRT_SIZARG, 0, PARTYPES2(SINT, UINT) };
                 return rtai_lxrt(NET_RPC_IDX, SIZARGS, NETRPC, &args).v[LOW];
 	}
 	return comedi_open(filename);
@@ -592,7 +592,7 @@ static inline long RT_comedi_wait(unsigned long node, int port, long *cbmask)
 		int retval;
 		union { long mask; long long ll; } mask = { *cbmask };
 		struct { void *mask; long size; } arg = { &mask, sizeof(mask) };
-                struct { unsigned long fun; long type; void *args; long argsize; long space; unsigned long partypes; } args = { PACKPORT(port, FUN_COMEDI_LXRT_INDX, _KCOMEDI_WAIT, 0), UR1(1, 2) | UW1(1, 2), &arg, COMEDI_LXRT_SIZARG, 0, PARTYPES1(SINT) };
+                struct { unsigned long fun; long type; void *args; long argsize; long space; unsigned long partypes; } args = { PACKPORT(port, FUN_COMEDI_LXRT_INDX, _KCOMEDI_WAIT, 0), UW1(1, 2), &arg, COMEDI_LXRT_SIZARG, 0, PARTYPES1(SINT) };
 		retval = rtai_lxrt(NET_RPC_IDX, SIZARGS, NETRPC, &args).i[LOW];
 		*cbmask = mask.mask;
 		return retval;
@@ -606,7 +606,7 @@ static inline long RT_comedi_wait_if(unsigned long node, int port, long *cbmask)
 		int retval;
 		union { long mask; long long ll; } mask = { *cbmask };
 		struct { void *mask; long size; } arg = { &mask, sizeof(mask) };
-                struct { unsigned long fun; long type; void *args; long argsize; long space; unsigned long partypes; } args = { PACKPORT(port, FUN_COMEDI_LXRT_INDX, _KCOMEDI_WAIT_IF, 0), UR1(1, 2) | UW1(1, 2), &arg, COMEDI_LXRT_SIZARG, 0, PARTYPES1(SINT) };
+                struct { unsigned long fun; long type; void *args; long argsize; long space; unsigned long partypes; } args = { PACKPORT(port, FUN_COMEDI_LXRT_INDX, _KCOMEDI_WAIT_IF, 0), UW1(1, 2), &arg, COMEDI_LXRT_SIZARG, 0, PARTYPES1(SINT) };
 		retval = rtai_lxrt(NET_RPC_IDX, SIZARGS, NETRPC, &args).i[LOW];
 		*cbmask = mask.mask;
 		return retval;
@@ -620,7 +620,7 @@ static inline long RT_comedi_wait_until(unsigned long node, int port, RTIME unti
 		int retval;
 		union { long mask; long long ll; } mask = { *cbmask };
 		struct { RTIME until; void *mask; long size; } arg = { until, &mask, sizeof(mask) };
-                struct { unsigned long fun; long type; void *args; long argsize; long space; unsigned long partypes; } args = { PACKPORT(port, FUN_COMEDI_LXRT_INDX, _KCOMEDI_WAIT_UNTIL, 1), UR1(2, 3) | UW1(2, 3), &arg, COMEDI_LXRT_SIZARG, 0, PARTYPES2(RTIM, SINT) };
+                struct { unsigned long fun; long type; void *args; long argsize; long space; unsigned long partypes; } args = { PACKPORT(port, FUN_COMEDI_LXRT_INDX, _KCOMEDI_WAIT_UNTIL, 1), UW1(2, 3), &arg, COMEDI_LXRT_SIZARG, 0, PARTYPES2(RTIM, SINT) };
 		retval = rtai_lxrt(NET_RPC_IDX, SIZARGS, NETRPC, &args).i[LOW];
 		*cbmask = mask.mask;
 		return retval;
@@ -634,7 +634,7 @@ static inline long RT_comedi_wait_timed(unsigned long node, int port, RTIME dela
 		int retval;
 		union { long mask; long long ll; } mask = { *cbmask };
 		struct { RTIME delay; void *mask; long size; } arg = { delay, &mask, sizeof(mask) };
-                struct { unsigned long fun; long type; void *args; long argsize; long space; unsigned long partypes; } args = { PACKPORT(port, FUN_COMEDI_LXRT_INDX, _KCOMEDI_WAIT_TIMED, 1), UR1(2, 3) | UW1(2, 3), &arg, COMEDI_LXRT_SIZARG, 0, PARTYPES2(RTIM, SINT) };
+                struct { unsigned long fun; long type; void *args; long argsize; long space; unsigned long partypes; } args = { PACKPORT(port, FUN_COMEDI_LXRT_INDX, _KCOMEDI_WAIT_TIMED, 1), UW1(2, 3), &arg, COMEDI_LXRT_SIZARG, 0, PARTYPES2(RTIM, SINT) };
 		retval = rtai_lxrt(NET_RPC_IDX, SIZARGS, NETRPC, &args).i[LOW];
 		*cbmask = mask.mask;
 		return retval;

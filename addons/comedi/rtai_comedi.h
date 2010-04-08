@@ -589,7 +589,7 @@ static inline int RT_comedi_register_callback(unsigned long node, int port, void
 static inline long RT_comedi_wait(unsigned long node, int port, unsigned int *cbmask)
 {
 	if (node) {
-		struct { unsigned int *mask; long cbmasklen; } arg = { cbmask, sizeof(unsigned int) };
+		struct { unsigned int *cbmask; long cbmasklen; } arg = { cbmask, sizeof(unsigned int) };
                 struct { unsigned long fun; long type; void *args; long argsize; long space; unsigned long partypes; } args = { PACKPORT(port, FUN_COMEDI_LXRT_INDX, _KCOMEDI_WAIT, 0), UW1(1, 2), &arg, COMEDI_LXRT_SIZARG, 0, PARTYPES2(SINT, UINT) };
 		return rtai_lxrt(NET_RPC_IDX, SIZARGS, NETRPC, &args).i[LOW];
 	}
@@ -599,7 +599,7 @@ static inline long RT_comedi_wait(unsigned long node, int port, unsigned int *cb
 static inline long RT_comedi_wait_if(unsigned long node, int port, unsigned int *cbmask)
 {
 	if (node) {
-		struct { unsigned int *cbmask; long masklen; } arg = { cbmask, sizeof(unsigned int) };
+		struct { unsigned int *cbmask; long cbmasklen; } arg = { cbmask, sizeof(unsigned int) };
                 struct { unsigned long fun; long type; void *args; long argsize; long space; unsigned long partypes; } args = { PACKPORT(port, FUN_COMEDI_LXRT_INDX, _KCOMEDI_WAIT_IF, 0), UW1(1, 2), &arg, COMEDI_LXRT_SIZARG, 0, PARTYPES2(SINT,
 UINT) };
 		return rtai_lxrt(NET_RPC_IDX, SIZARGS, NETRPC, &args).i[LOW];

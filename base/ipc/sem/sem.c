@@ -1470,8 +1470,8 @@ RTAI_SYSCALL_MODE int rt_spl_lock_timed(SPL *spl, unsigned long ns)
 	} else {
 		RTIME end_time;
 		long locked;
-		end_time = rdtsc() + imuldiv(ns, tuned.cpu_freq, 1000000000);
-		while ((locked = (long)cmpxchg(&spl->owndby, 0L, rt_current)) && rdtsc() < end_time);
+		end_time = rtai_rdtsc() + imuldiv(ns, tuned.cpu_freq, 1000000000);
+		while ((locked = (long)cmpxchg(&spl->owndby, 0L, rt_current)) && rtai_rdtsc() < end_time);
 		if (locked) {
 			rtai_restore_flags(flags);
 			return -1;

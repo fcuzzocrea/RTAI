@@ -610,7 +610,7 @@ static inline long long handle_lxrt_request (unsigned int lxsrq, long *arg, RT_T
 			if ((larg->task)->exectime[0] && (larg->task)->exectime[1]) {
 				larg->exectime[0] = (larg->task)->exectime[0]; 
 				larg->exectime[1] = (larg->task)->exectime[1]; 
-				larg->exectime[2] = rdtsc(); 
+				larg->exectime[2] = rtai_rdtsc(); 
 			}
                         return 0;
 		}

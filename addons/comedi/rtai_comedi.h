@@ -607,11 +607,13 @@ UINT) };
 	return rt_comedi_wait_if(cbmask);
 }
 
+#define URWI(name, var) (offsetof(struct name, var)/sizeof(long) + 1)
+
 static inline long RT_comedi_wait_until(unsigned long node, int port, RTIME until, unsigned int *cbmask)
 {
 	if (node) {
-		struct { RTIME until; unsigned int *cbmask; long cbmasklen; } arg = { until, cbmask, sizeof(unsigned int) };
-                struct { unsigned long fun; long type; void *args; long argsize; long space; unsigned long partypes; } args = { PACKPORT(port, FUN_COMEDI_LXRT_INDX, _KCOMEDI_WAIT_UNTIL, 1), UW1(2, 3), &arg, COMEDI_LXRT_SIZARG, 0, PARTYPES3(RTIM, SINT, UINT) };
+		struct waits { RTIME until; unsigned int *cbmask; long cbmasklen; } arg = { until, cbmask, sizeof(unsigned int) };
+                struct { unsigned long fun; long type; void *args; long argsize; long space; unsigned long partypes; } args = { PACKPORT(port, FUN_COMEDI_LXRT_INDX, _KCOMEDI_WAIT_UNTIL, 1), UW1(URWI(waits, cbmask), URWI(waits, cbmasklen)), &arg, COMEDI_LXRT_SIZARG, 0, PARTYPES3(RTIM, SINT, UINT) };
 		return rtai_lxrt(NET_RPC_IDX, SIZARGS, NETRPC, &args).i[LOW];
 	}
 	return rt_comedi_wait_until(until, cbmask);
@@ -620,8 +622,8 @@ static inline long RT_comedi_wait_until(unsigned long node, int port, RTIME unti
 static inline long RT_comedi_wait_timed(unsigned long node, int port, RTIME delay, unsigned int *cbmask)
 {
 	if (node) {
-		struct { RTIME delay; unsigned int *cbmask; long cbmasklen; } arg = { delay, cbmask, sizeof(unsigned int) };
-                struct { unsigned long fun; long type; void *args; long argsize; long space; unsigned long partypes; } args = { PACKPORT(port, FUN_COMEDI_LXRT_INDX, _KCOMEDI_WAIT_TIMED, 1), UW1(2, 3), &arg, COMEDI_LXRT_SIZARG, 0, PARTYPES3(RTIM, SINT, UINT) };
+		struct waits { RTIME delay; unsigned int *cbmask; long cbmasklen; } arg = { delay, cbmask, sizeof(unsigned int) };
+                struct { unsigned long fun; long type; void *args; long argsize; long space; unsigned long partypes; } args = { PACKPORT(port, FUN_COMEDI_LXRT_INDX, _KCOMEDI_WAIT_TIMED, 1), UW1(URWI(waits, cbmask), URWI(waits, cbmasklen)), &arg, COMEDI_LXRT_SIZARG, 0, PARTYPES3(RTIM, SINT, UINT) };
 		return rtai_lxrt(NET_RPC_IDX, SIZARGS, NETRPC, &args).i[LOW];
 	}
 	return rt_comedi_wait_timed(delay, cbmask);
@@ -974,8 +976,8 @@ static inline long RT_comedi_command_data_wread_if(unsigned long node, int port,
 static inline long RT_comedi_command_data_wread_until(unsigned long node, int port, void *dev, unsigned int subdev, long nchans, lsampl_t *data, RTIME until, unsigned int *cbmask)
 {
 	if (node) {
-		struct { void *dev; unsigned long subdev; long nchans; lsampl_t *data; RTIME until; unsigned int *cbmaskin; unsigned int *cbmaskout; long datalen; long cbmasklen; } arg = { dev, subdev, nchans, data, until, cbmask, cbmask, nchans*sizeof(lsampl_t), sizeof(unsigned int) };
-		struct { unsigned long fun; long type; void *args; long argsize; long space; unsigned long partypes; } args = { PACKPORT(port, FUN_COMEDI_LXRT_INDX, _KCOMEDI_COMD_DATA_WREAD, 0), UR1(6, 9) | UW1(4, 8) | UW2(7, 9), &arg, COMEDI_LXRT_SIZARG, 0, PARTYPES9(VADR, UINT, UINT, SINT, RTIM, SINT, SINT, UINT, UINT) };
+		struct reads { void *dev; unsigned long subdev; long nchans; lsampl_t *data; RTIME until; unsigned int *cbmaskin; unsigned int *cbmaskout; long datalen; long cbmasklen; } arg = { dev, subdev, nchans, data, until, cbmask, cbmask, nchans*sizeof(lsampl_t), sizeof(unsigned int) };
+		struct { unsigned long fun; long type; void *args; long argsize; long space; unsigned long partypes; } args = { PACKPORT(port, FUN_COMEDI_LXRT_INDX, _KCOMEDI_COMD_DATA_WREAD, 0), UR1(URWI(reads, cbmaskin), URWI(reads, cbmasklen)) | UW1(4, URWI(reads, datalen)) | UW2(URWI(reads, cbmaskout), URWI(reads, cbmasklen)), &arg, COMEDI_LXRT_SIZARG, 0, PARTYPES9(VADR, UINT, UINT, SINT, RTIM, SINT, SINT, UINT, UINT) };
 		return rtai_lxrt(NET_RPC_IDX, SIZARGS, NETRPC, &args).i[LOW];
 	}
 	return rt_comedi_command_data_wread_until(dev, subdev, nchans, data, until, cbmask);
@@ -984,8 +986,8 @@ static inline long RT_comedi_command_data_wread_until(unsigned long node, int po
 static inline long RT_comedi_command_data_wread_timed(unsigned long node, int port, void *dev, unsigned int subdev, long nchans, lsampl_t *data, RTIME delay, unsigned int *cbmask)
 {
 	if (node) {
-		struct { void *dev; unsigned long subdev; long nchans; lsampl_t *data; RTIME delay; unsigned int *cbmaskin; unsigned int *cbmaskout; long datalen; long cbmasklen; } arg = { dev, subdev, nchans, data, delay, cbmask, cbmask, nchans*sizeof(lsampl_t), sizeof(unsigned int) };
-		struct { unsigned long fun; long type; void *args; long argsize; long space; unsigned long partypes; } args = { PACKPORT(port, FUN_COMEDI_LXRT_INDX, _KCOMEDI_COMD_DATA_WREAD, 0), UR1(6, 9) | UW1(4, 8) | UW2(7, 9), &arg, COMEDI_LXRT_SIZARG, 0, PARTYPES9(VADR, UINT, UINT, SINT, RTIM, SINT, SINT, UINT, UINT) };
+		struct reads { void *dev; unsigned long subdev; long nchans; lsampl_t *data; RTIME delay; unsigned int *cbmaskin; unsigned int *cbmaskout; long datalen; long cbmasklen; } arg = { dev, subdev, nchans, data, delay, cbmask, cbmask, nchans*sizeof(lsampl_t), sizeof(unsigned int) };
+		struct { unsigned long fun; long type; void *args; long argsize; long space; unsigned long partypes; } args = { PACKPORT(port, FUN_COMEDI_LXRT_INDX, _KCOMEDI_COMD_DATA_WREAD, 0), UR1(URWI(reads, cbmaskin), URWI(reads, cbmasklen)) | UW1(4, URWI(reads, datalen)) | UW2(URWI(reads, cbmaskout), URWI(reads, cbmasklen)), &arg, COMEDI_LXRT_SIZARG, 0, PARTYPES9(VADR, UINT, UINT, SINT, RTIM, SINT, SINT, UINT, UINT) };
 		return rtai_lxrt(NET_RPC_IDX, SIZARGS, NETRPC, &args).i[LOW];
 	}
 	return rt_comedi_command_data_wread_until(dev, subdev, nchans, data, delay, cbmask);

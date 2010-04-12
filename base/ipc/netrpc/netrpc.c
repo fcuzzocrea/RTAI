@@ -1127,7 +1127,6 @@ RTAI_SYSCALL_MODE long long _rt_net_rpc(long fun_ext_timed, long type, void *arg
 					}
 				}
 			}
-
 			return reply->retval;
 		}
 	}

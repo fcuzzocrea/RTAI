@@ -528,6 +528,10 @@ recvrys:
 				if (wsize > 0) {
 					arg.arg.wsize = wsize;
 					a[USP_WBF1(type) - 1] = (long)arg.arg.msg;
+					if ((USP_WBF1(type) - 1) == (USP_RBF1(type) - 1) && wsize == par->rsize) {
+						memcpy(arg.arg.msg, (char *)ain + par->argsize, wsize);
+						a[USP_RBF1(type) - 1] = (long)(arg.arg.msg);
+					}
 				} else {
 					arg.arg.wsize = 0;
 				}
@@ -630,6 +634,10 @@ recvryh:
 				arg.arg.myport = 0;
 				if (wsize > 0) {
 					arg.arg.wsize = wsize;
+					if ((USP_WBF1(type) - 1) == (USP_RBF1(type) - 1) && wsize == par->rsize) {
+						memcpy(arg.arg.msg, (char *)ain + par->argsize, wsize);
+						a[USP_RBF1(type) - 1] = (long)(arg.arg.msg);
+					}
 					a[USP_WBF1(type) - 1] = (long)arg.arg.msg;
 				} else {
 					arg.arg.wsize = 0;

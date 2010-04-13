@@ -210,7 +210,7 @@ static inline int _rt_comedi_command_data_wread(void *dev, unsigned int subdev, 
 			retval = rt_comedi_wait_if(&cbmask);
 			break;
 		case WAITUNTIL: 
-			retval = rt_comedi_wait_until(until, &cbmask);
+			retval = rt_comedi_wait_until(&cbmask, until);
 			break;
 		default: // useless, just to avoid compiler warnings
 			return RTE_PERM;
@@ -236,14 +236,31 @@ RTAI_SYSCALL_MODE long rt_comedi_command_data_wread_if(void *dev, unsigned int s
 	return _rt_comedi_command_data_wread(dev, subdev, nchans, data, (RTIME)0, cbmask, WAITIF);
 }
 
-RTAI_SYSCALL_MODE long rt_comedi_command_data_wread_until(void *dev, unsigned int subdev, long nchans, lsampl_t *data, RTIME until, unsigned int *cbmask)
+RTAI_SYSCALL_MODE long rt_comedi_command_data_wread_until(void *dev, unsigned int subdev, long nchans, lsampl_t *data, unsigned int *cbmask, RTIME until)
 {
 	return _rt_comedi_command_data_wread(dev, subdev, nchans, data, until, cbmask, WAITUNTIL);
 }
 
-RTAI_SYSCALL_MODE long rt_comedi_command_data_wread_timed(void *dev, unsigned int subdev, long nchans, lsampl_t *data, RTIME delay, unsigned int *cbmask)
+RTAI_SYSCALL_MODE long rt_comedi_command_data_wread_timed(void *dev, unsigned int subdev, long nchans, lsampl_t *data, unsigned int *cbmask, RTIME delay)
 {
-	return rt_comedi_command_data_wread_until(dev, subdev, nchans, data, rt_get_time() + delay, cbmask);
+	return rt_comedi_command_data_wread_until(dev, subdev, nchans, data, cbmask, rt_get_time() + delay);
+}
+
+RTAI_SYSCALL_MODE long RT_comedi_command_data_wread(void *dev, unsigned int subdev, long nchans, lsampl_t *data, unsigned int *cbmask, unsigned int datalen, RTIME time)
+{
+	int fun = nchans & 0x3;
+	nchans >>= 2;
+	switch (fun) {
+		case 0: 
+			return _rt_comedi_command_data_wread(dev, subdev, nchans, data, (RTIME)0, cbmask, WAIT);
+		case 1: 
+			return _rt_comedi_command_data_wread(dev, subdev, nchans, data, (RTIME)0, cbmask, WAITIF);
+		case 2: 
+			return _rt_comedi_command_data_wread(dev, subdev, nchans, data, time, cbmask, WAITUNTIL);
+		case 3: 
+			return rt_comedi_command_data_wread_until(dev, subdev, nchans, data, cbmask, rt_get_time() + time);
+	}
+	return 0;
 }
 
 static RTAI_SYSCALL_MODE int _comedi_data_write(void *dev, unsigned int subdev, unsigned int chan, unsigned int range, unsigned int aref, lsampl_t data)
@@ -309,11 +326,11 @@ static RTAI_SYSCALL_MODE int _comedi_dio_write(void *dev, unsigned int subdev, u
 	return retval;
 }
 
-static RTAI_SYSCALL_MODE int _comedi_dio_bitfield(void *dev, unsigned int subdev, unsigned int mask, unsigned int *bits)
+static RTAI_SYSCALL_MODE int _comedi_dio_bitfield(void *dev, unsigned int subdev, unsigned int write_mask, unsigned int *bits)
 {
 	int retval;
 	RTAI_COMEDI_LOCK(dev, subdev);
-	retval = comedi_dio_bitfield(dev, subdev, mask, bits);
+	retval = comedi_dio_bitfield(dev, subdev, write_mask, bits);
 	RTAI_COMEDI_UNLOCK(dev, subdev);
 	return retval;
 }
@@ -536,14 +553,14 @@ RTAI_SYSCALL_MODE long rt_comedi_wait_if(unsigned int *cbmask)
 	return _rt_comedi_wait((RTIME)0, cbmask, WAITIF);
 }
 
-RTAI_SYSCALL_MODE long rt_comedi_wait_until(RTIME until, unsigned int *cbmask)
+RTAI_SYSCALL_MODE long rt_comedi_wait_until(unsigned int *cbmask, RTIME until)
 {
 	return _rt_comedi_wait(until, cbmask, WAITUNTIL);
 }
 
-RTAI_SYSCALL_MODE long rt_comedi_wait_timed(RTIME delay, unsigned int *cbmask)
+RTAI_SYSCALL_MODE long rt_comedi_wait_timed(unsigned int *cbmask, RTIME delay)
 {
-	return rt_comedi_wait_until(rt_get_time() + delay, cbmask);
+	return rt_comedi_wait_until(cbmask, rt_get_time() + delay);
 }
 
 RTAI_SYSCALL_MODE long rt_comedi_command_data_write(void *dev, unsigned int subdev, long nchans, lsampl_t *data)
@@ -628,6 +645,7 @@ static struct rt_fun_entry rtai_comedi_fun[] = {
  ,[_KCOMEDI_COMD_DATA_WRITE]       = { 0, rt_comedi_command_data_write }
  ,[_RT_KCOMEDI_COMMAND]            = { 0, RT_comedi_command }
  ,[_RT_KCOMEDI_DO_INSN_LIST]       = { 0, RT_comedi_do_insnlist }
+ ,[_RT_KCOMEDI_COMD_DATA_WREAD]    = { 0, RT_comedi_command_data_wread }
 };
 
 #ifdef CONFIG_RTAI_USE_LINUX_COMEDI

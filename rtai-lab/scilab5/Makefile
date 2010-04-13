@@ -1,7 +1,7 @@
 all: 
 
-SCILAB_VERSION = 5.1.1
-SCILAB_DIR = /usr/local/scilab-$(SCILAB_VERSION)/share/scilab
+SCILAB_VERSION = 5.2.1
+SCILAB_DIR = /usr/share/scilab
 
 RTAIDIR = $(shell rtai-config --prefix)
 

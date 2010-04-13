@@ -148,6 +148,12 @@ function [txt]=call_block42(bk,pt,flag)
   txt_nf=['block_'+rdnom+'['+string(bk-1)+'].nevprt = '+string(pt)+';'
           'local_flag = '+string(flag)+';']
 
+  //@@ add block number for standalone
+  if stalone then
+    txt_nf=[txt_nf;
+            'set_block_number('+string(bk)+');']
+  end
+
   //@@ init evout
   if flag==3 then
     txt_init_evout=['/* initialize evout */'
@@ -1378,12 +1384,15 @@ function [ok,XX,gui_path,flgcdgen,szclkINTemp,freof,c_atomic_code,cpr]=do_compil
   if ierr==0
     outtb_init = state.outtb;
   else
+    with_work = ones(cpr.sim.nb,1)
     outtb_init = cpr.state.outtb
+    state = cpr.state
+    ierr = 0;
   end
+
 
   //** retrieve all open ScicosLab windows with winsid()
   AfterCG_WinList = winsid();
-
   if ierr==0 then
     for i=1:cpr.sim.nb
        if state.iz(i)<>0 then
@@ -2242,7 +2251,9 @@ Code_common= []
 	'extern int phase;'
         '/* block_error must be pass in argument of _sim function */'
         'extern int *block_error;'
-	'']
+        '/* block_number */'
+        'extern int block_number;'
+        '']
 
   if impl_blk then
     Code=[Code;
@@ -3489,6 +3500,11 @@ Code = [Code;
 	       ''
 	       ]
 
+  Code_common=[Code_common
+               '/* block_number */'
+               'int block_number;'
+               '']
+
 	       if(isempty(grep(SCI,'5.1.1'))) then
 	       Code_common=[Code_common
                '/*'+part('-',ones(1,40))+'  Lapack messag function */';
@@ -3512,6 +3528,21 @@ Code = [Code;
                'void get_block_error(int err)'
                '{'
  	       '  return *block_error;'
+               '}'
+               '']
+
+	       Code_common=[Code_common
+               'void set_block_number(int kfun)'
+               '{'
+               '  block_number = kfun;'
+               '  return;'
+               '}'
+               '']
+
+	       Code_common=[Code_common
+               'int get_block_number()'
+               '{'
+               '  return block_number;'
                '}'
                '']
  

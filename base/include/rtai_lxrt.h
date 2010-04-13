@@ -448,8 +448,10 @@ arg  INDX   |||| .... .... .... .... .... .... ....
 */
 
 /*
-These USP (unsigned long) type fields allow to read and write up to 2 arguments.  
-                                               
+These USP (unsigned long) type fields allow to read and write up to 2 arguments.
+SZ and BF must be in the reange 1-7.
+If SZ is zero sizeof(long) is copied by default.
+
 The high part of the unsigned long encodes writes
 W ARG1 BF .... .... ..|| |... .... .... .... ....
 W ARG1 SZ .... ...| ||.. .... .... .... .... ....
@@ -465,7 +467,6 @@ R ARG2 SZ .... .... .... .... .||| .... .... ....
 The low part of the unsigned long encodes also
 RT Switch .... .... .... .... .... .... .... ...|
 
-If SZ is zero sizeof(int) is copied by default, if LL bit is set sizeof(long long) is copied.
 */
 
 // These are for setting appropriate bits in any function entry structure, OR

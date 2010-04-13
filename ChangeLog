@@ -1,3 +1,8 @@
+2010-04-13 Roberto Bucher <roberto.bucher@supsi.ch>
+	* rtai-lab/scicoslab/macros/RTAI/RTAICodeGen_.sci:
+	* rtai-lab/scicoslab/macros/RTAI/SetTarget_.sci: TARGET_DIR
+	  set to SCI/contrib/RT_templates.
+
 2010-04-08 Roberto Bucher <roberto.bucher@supsi.ch>
 	* rtai-lab/matlab/rtmain.c: Variable Len for rt_receicex changed to
 	long.
@@ -8,8 +13,6 @@
 	* rtai-lab/scicoslab/macros/RTAI/RT_templates/rtai.mak:
 	* rtai-lab/scicoslab/macros/RTAI/RT_templates/standalone.cmd: Modifications
 	  for Scicoslab-4.4.
-
-
 2010-03-19 Paolo Mantegazza <mantegazza@aero.polimi.it>
 
 	* base/sched/api.c: fixed a never ending loop and a missing unlock

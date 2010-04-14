@@ -370,9 +370,9 @@ static RTAI_SYSCALL_MODE int _comedi_get_subdevice_type(void *dev, unsigned int 
 	return comedi_get_subdevice_type(dev, subdev);
 }
 
-static RTAI_SYSCALL_MODE int _comedi_find_subdevice_by_type(void *dev, int type, unsigned int subd)
+static RTAI_SYSCALL_MODE int _comedi_find_subdevice_by_type(void *dev, int type, unsigned int start_subdevice)
 {
-	return comedi_find_subdevice_by_type(dev, type, subd);
+	return comedi_find_subdevice_by_type(dev, type, start_subdevice);
 }
 
 static RTAI_SYSCALL_MODE int _comedi_get_n_channels(void *dev, unsigned int subdev)

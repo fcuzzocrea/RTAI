@@ -1,14 +1,14 @@
 2010-04-14 Paolo Mantegazza <mantegazza@aero.polimi.it>
 
 	* base/ipc/netrpc/netrpc.c: copy UR1 over UW1 if its address and size
-	  are equal. What has to be done on  differing architectures must be
+	  are equal. What has to be done on differing architectures must be
 	  cared by the application.
 	* addons/comedi/rtai_comedi.h: rework all of netrpced based support
 	  so that netrpc.c has not to be modified to support distributed 
-	 COMEDI APIs, netrpc seems robust enough to stand that duty too.
+	  COMEDI APIs, netrpc seems robust enough to stand that duty too.
 	* addons/comedi/kcomedi-module.c: modify a few general and specific 
 	  functions used to support remote/distributed COMEDI commands and 
-          instructions, to work with the corresponding new declarations in
+	  instructions, to work with the corresponding new declarations in
 	  rtai_comedi.h; needed to maintain full backword compatibility.
 
 2010-04-08 Roberto Bucher <roberto.bucher@supsi.ch>

@@ -449,7 +449,7 @@ arg  INDX   |||| .... .... .... .... .... .... ....
 
 /*
 These USP (unsigned long) type fields allow to read and write up to 2 arguments.
-SZ and BF must be in the reange 1-7.
+SZ and BF must be in the range 1-7.
 If SZ is zero sizeof(long) is copied by default.
 
 The high part of the unsigned long encodes writes

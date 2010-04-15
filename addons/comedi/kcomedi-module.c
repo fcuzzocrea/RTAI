@@ -57,7 +57,7 @@ MODULE_LICENSE("GPL");
 
 #endif
 
-#define space(adr)  ((unsigned long)adr > PAGE_OFFSET)
+#define KSPACE(adr)  ((unsigned long)adr > PAGE_OFFSET)
 
 static int rtai_comedi_callback(unsigned int, RT_TASK *) __attribute__ ((__unused__));
 static int rtai_comedi_callback(unsigned int val, RT_TASK *task)
@@ -195,9 +195,8 @@ RTAI_SYSCALL_MODE long rt_comedi_command_data_read(void *dev, unsigned int subde
 static inline int __rt_comedi_command_data_wread(void *dev, unsigned int subdev, long nchans, lsampl_t *data, RTIME until, unsigned int *cbmaskarg, int waitmode)
 {
 	unsigned int cbmask, mask;
-	long retval, space;
-	space = space(cbmaskarg);
-	if (space) {
+	long retval, kspace;
+	if ((kspace = KSPACE(cbmaskarg))) {
 		mask = cbmaskarg[0];
 	} else {
 		rt_get_user(mask, cbmaskarg);
@@ -216,7 +215,7 @@ static inline int __rt_comedi_command_data_wread(void *dev, unsigned int subdev,
 			return RTE_PERM;
 	}
 	if (!retval && (mask & cbmask)) {
-		if (space) {
+		if (kspace) {
 			cbmaskarg[0] = cbmask;
 		} else {
 			rt_put_user(cbmask, cbmaskarg);
@@ -532,7 +531,7 @@ static inline int __rt_comedi_wait(RTIME until, unsigned int *cbmask, int waitmo
 			default: // useless, just to avoid compiler warnings
 				return RTE_PERM;
 		}
-		if (space(cbmask)) {
+		if (KSPACE(cbmask)) {
 			cbmask[0] = (unsigned int)task->resumsg;
 		} else {
 			rt_put_user((unsigned int)task->resumsg, cbmask);

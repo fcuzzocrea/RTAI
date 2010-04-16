@@ -463,7 +463,7 @@ static RTAI_SYSCALL_MODE int _comedi_get_rangetype(unsigned int minor, unsigned 
 }
 */
 
-static RTAI_SYSCALL_MODE unsigned int _comedi_get_subdevice_flags(void *dev,unsigned int subdev)
+static RTAI_SYSCALL_MODE unsigned int _comedi_get_subdevice_flags(void *dev, unsigned int subdev)
 {
 	int retval;
 	RTAI_COMEDI_LOCK(dev, subdev);

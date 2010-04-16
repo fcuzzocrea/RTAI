@@ -441,9 +441,8 @@ RTAI_PROTO(int, comedi_do_insn, (void *dev, comedi_insn *insn))
 		int retval;
 		memcpy(ldata, linsn.data, sizeof(ldata));
 		linsn.data = ldata;
-		if ((retval = rtai_lxrt(FUN_COMEDI_LXRT_INDX, COMEDI_LXRT_SIZARG, _KCOMEDI_DO_INSN, &arg).i[LOW]) >= 0) {
-			memcpy(insn[0].data, ldata, sizeof(ldata));
-		}
+		retval = rtai_lxrt(FUN_COMEDI_LXRT_INDX, COMEDI_LXRT_SIZARG, _KCOMEDI_DO_INSN, &arg).i[LOW];
+		memcpy(insn[0].data, ldata, sizeof(ldata));
         	return retval;
 	}
 	return -1;
@@ -469,10 +468,9 @@ RTAI_PROTO(int, rt_comedi_do_insnlist, (void *dev, comedi_insnlist *ilist))
 			insns[i] = lilist.insns[i];
 		}
 		lilist.insns = insns;
-		if (!(retval = rtai_lxrt(FUN_COMEDI_LXRT_INDX, COMEDI_LXRT_SIZARG, _KCOMEDI_DO_INSN_LIST, &arg).i[LOW])) {
-			for (i = 0; i < retval; i++) { 
-				memcpy(ilist->insns[i].data, ldata[i], insns[i].n*sizeof(lsampl_t));
-			} 
+		retval = rtai_lxrt(FUN_COMEDI_LXRT_INDX, COMEDI_LXRT_SIZARG, _KCOMEDI_DO_INSN_LIST, &arg).i[LOW];
+		for (i = 0; i < retval; i++) { 
+			memcpy(ilist->insns[i].data, ldata[i], insns[i].n*sizeof(lsampl_t));
 		} }
         	return retval;
 	}
@@ -910,13 +908,12 @@ static inline int _RT_comedi_do_insnlist(unsigned long node, int port, void *dev
 			offset += insns[i].n;
 		}
 		set_insn_offsets_lens();
-		if ((retval = rtai_lxrt(NET_RPC_IDX, SIZARGS, NETRPC, &args).i[LOW])) {
-			for (offset = i = 0; i < retval; i++) { 
-				memcpy(insns[i].data, &linsns.data[offset], insns[i].n*sizeof(lsampl_t));
-				offset += insns[i].n;
-				insns[i].n = linsns.insns[i].n;
-			} 
-		}
+		retval = rtai_lxrt(NET_RPC_IDX, SIZARGS, NETRPC, &args).i[LOW];
+		for (offset = i = 0; i < retval; i++) { 
+			memcpy(insns[i].data, &linsns.data[offset], insns[i].n*sizeof(lsampl_t));
+			offset += insns[i].n;
+			insns[i].n = linsns.insns[i].n;
+		} 
 	       	return retval;
 	} }
        	return -1;

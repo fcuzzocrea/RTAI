@@ -628,7 +628,7 @@ static inline long RT_comedi_wait_until(unsigned long node, int port, RTIME unti
                 struct { unsigned long fun; long type; void *args; long argsize; long space; unsigned long partypes; } args = { PACKPORT(port, FUN_COMEDI_LXRT_INDX, _KCOMEDI_WAIT_UNTIL, 2), UW1(1, 0), &arg, COMEDI_LXRT_SIZARG, 0, PARTYPES2(SINT, RTIM) };
 		return rtai_lxrt(NET_RPC_IDX, SIZARGS, NETRPC, &args).i[LOW];
 	}
-	return rt_comedi_wait_until(until, cbmask);
+	return rt_comedi_wait_until(nano2count(until), cbmask);
 }
 
 static inline long RT_comedi_wait_timed(unsigned long node, int port, RTIME delay, unsigned int *cbmask)
@@ -638,7 +638,7 @@ static inline long RT_comedi_wait_timed(unsigned long node, int port, RTIME dela
                 struct { unsigned long fun; long type; void *args; long argsize; long space; unsigned long partypes; } args = { PACKPORT(port, FUN_COMEDI_LXRT_INDX, _KCOMEDI_WAIT_TIMED, 2), UW1(1, 0), &arg, COMEDI_LXRT_SIZARG, 0, PARTYPES2(SINT, RTIM) };
 		return rtai_lxrt(NET_RPC_IDX, SIZARGS, NETRPC, &args).i[LOW];
 	}
-	return rt_comedi_wait_timed(delay, cbmask);
+	return rt_comedi_wait_timed(nano2count(delay), cbmask);
 }
 
 #define set_cmd_offsets_lens() \
@@ -992,7 +992,7 @@ static inline long RT_comedi_command_data_wread_until(unsigned long node, int po
 		struct { unsigned long fun; long type; void *args; long argsize; long space; unsigned long partypes; } args = { PACKPORT(port, FUN_COMEDI_LXRT_INDX, _RT_KCOMEDI_COMD_DATA_WREAD, 7), UR1(5, 0) | UW1(5, 0) | UW2(4, 6), &arg, COMEDI_LXRT_SIZARG, 0, PARTYPES7(VADR, UINT, UINT, SINT, SINT, UINT, RTIM) };
 		return rtai_lxrt(NET_RPC_IDX, SIZARGS, NETRPC, &args).i[LOW];
 	}
-	return rt_comedi_command_data_wread_until(dev, subdev, nchans, data, until, cbmask);
+	return rt_comedi_command_data_wread_until(dev, subdev, nchans, data, nano2count(until), cbmask);
 }
 
 static inline long RT_comedi_command_data_wread_timed(unsigned long node, int port, void *dev, unsigned int subdev, long nchans, lsampl_t *data, RTIME delay, unsigned int *cbmask)
@@ -1002,7 +1002,7 @@ static inline long RT_comedi_command_data_wread_timed(unsigned long node, int po
 		struct { unsigned long fun; long type; void *args; long argsize; long space; unsigned long partypes; } args = { PACKPORT(port, FUN_COMEDI_LXRT_INDX, _RT_KCOMEDI_COMD_DATA_WREAD, 7), UR1(5, 0) | UW1(5, 0) | UW2(4, 6), &arg, COMEDI_LXRT_SIZARG, 0, PARTYPES7(VADR, UINT, UINT, SINT, SINT, UINT, RTIM) };
 		return rtai_lxrt(NET_RPC_IDX, SIZARGS, NETRPC, &args).i[LOW];
 	}
-	return rt_comedi_command_data_wread_timed(dev, subdev, nchans, data, delay, cbmask);
+	return rt_comedi_command_data_wread_timed(dev, subdev, nchans, data, nano2count(delay), cbmask);
 }
 
 #endif

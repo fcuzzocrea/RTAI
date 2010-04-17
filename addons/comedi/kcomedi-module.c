@@ -247,17 +247,15 @@ RTAI_SYSCALL_MODE long _rt_comedi_command_data_wread_timed(void *dev, unsigned i
 
 RTAI_SYSCALL_MODE long RT_comedi_command_data_wread(void *dev, unsigned int subdev, long nchans, lsampl_t *data, unsigned int *cbmask, unsigned int datalen, RTIME time)
 {
-	int fun = nchans & 0x3;
-	nchans >>= 2;
-	switch (fun) {
+	switch (nchans & 0x3) {
 		case 0: 
-			return __rt_comedi_command_data_wread(dev, subdev, nchans, data, (RTIME)0, cbmask, WAIT);
+			return __rt_comedi_command_data_wread(dev, subdev, nchans >> 2, data, (RTIME)0, cbmask, WAIT);
 		case 1: 
-			return __rt_comedi_command_data_wread(dev, subdev, nchans, data, (RTIME)0, cbmask, WAITIF);
+			return __rt_comedi_command_data_wread(dev, subdev, nchans >> 2, data, (RTIME)0, cbmask, WAITIF);
 		case 2: 
-			return __rt_comedi_command_data_wread(dev, subdev, nchans, data, time, cbmask, WAITUNTIL);
+			return __rt_comedi_command_data_wread(dev, subdev, nchans >> 2, data, time, cbmask, WAITUNTIL);
 		case 3: 
-			return _rt_comedi_command_data_wread_until(dev, subdev, nchans, data, cbmask, rt_get_time() + time);
+			return _rt_comedi_command_data_wread_until(dev, subdev, nchans >> 2, data, cbmask, rt_get_time() + time);
 	}
 	return 0;
 }

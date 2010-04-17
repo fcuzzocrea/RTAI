@@ -1,15 +1,8 @@
-2010-04-14 Paolo Mantegazza <mantegazza@aero.polimi.it>
+2010-04-18 Paolo Mantegazza <mantegazza@aero.polimi.it>
 
-	* base/ipc/netrpc/netrpc.c: copy UR1 over UW1 if its address and size
-	  are equal. What has to be done on differing architectures must be
-	  cared by the application.
-	* addons/comedi/rtai_comedi.h: rework all of netrpced based support
-	  so that netrpc.c has not to be modified to support distributed 
-	  COMEDI APIs, netrpc seems robust enough to stand that duty too.
-	* addons/comedi/kcomedi-module.c: modify a few general and specific 
-	  functions used to support remote/distributed COMEDI commands and 
-	  instructions, to work with the corresponding new declarations in
-	  rtai_comedi.h; needed to maintain full backword compatibility.
+	* addons/comedi/rtai_comedi.h: comply to the usage of nanos for
+	  timings in netrpc, by automatically converting to internal counts
+	  when a local service is called, i.e. (node == 0).
 
 2010-04-08 Roberto Bucher <roberto.bucher@supsi.ch>
         * rtai-lab/matlab/rtmain.c: Variable Len for rt_receicex changed to
@@ -19,8 +12,8 @@
         * rtai-lab/scicoslab/macros/Makefile:  
         * rtai-lab/scicoslab/macros/RTAI/RTAICodeGen_.sci:
         * rtai-lab/scicoslab/macros/RTAI/RT_templates/rtai.mak:
-        * rtai-lab/scicoslab/macros/RTAI/RT_templates/standalone.cmd: Modifications
-          for Scicoslab-4.4.
+        * rtai-lab/scicoslab/macros/RTAI/RT_templates/standalone.cmd: 
+	  Modifications for Scicoslab-4.4.
 
 2010-04-08 Paolo Mantegazza <mantegazza@aero.polimi.it>
 

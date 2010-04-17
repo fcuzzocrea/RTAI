@@ -2,7 +2,8 @@
 
 	* addons/comedi/rtai_comedi.h: comply to the usage of nanos for
 	  timings in netrpc, by automatically converting to internal counts
-	  when a local service is called, i.e. (node == 0).
+	  when a local service is called, i.e. (node == 0). REMARK: better
+	  to check it for long time estabilished netrpc services also.
 
 2010-04-08 Roberto Bucher <roberto.bucher@supsi.ch>
         * rtai-lab/matlab/rtmain.c: Variable Len for rt_receicex changed to

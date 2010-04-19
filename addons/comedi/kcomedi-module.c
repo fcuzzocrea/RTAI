@@ -20,9 +20,8 @@
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
  */
 
-/**
- * This file is the kernel module counterpart of the KComedi-LXRT support.
- * It will be compiled to a rtai_comedi.o kernel module.
+/*
+ * This is the module to support using COMEDI in hard real time within RTAI.
  */
 
 

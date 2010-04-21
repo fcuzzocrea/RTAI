@@ -1,3 +1,8 @@
+2010-04-21 Paolo Mantegazza <mantegazza@aero.polimi.it>
+
+	* addons/comedi/rtai_comedi.h: in rt_comedi_do_insnlist put the right
+	  pointer to data in the passed insnlist arg.
+
 2010-04-16 Paolo Mantegazza <mantegazza@aero.polimi.it>
 
 	* addons/comedi/rtai_comedi.h: grant more appropriate and consistent

@@ -239,7 +239,7 @@ in depicting the use of the above explained extensions.
 Starting circa linux-2.6.29 a native COMEDI distribution can be found in
 Linux own subdirectory "drivers/staging/comedi". So there is no need to 
 install COMEDI, as found at www.comedi.org, anew anymore. Moreover its use
-will likley make one surer to have the latest COMEDI update available. 
+will likely make one surer to have the latest COMEDI update available. 
 What follows explains a prompt, likely provisional, way to exploit such a 
 possibility. One can expect it will stabilize in RTAI hal patches eventually. 
 Notice that it must be applied to a kernel patched for RTAI already.

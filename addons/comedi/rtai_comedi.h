@@ -427,6 +427,7 @@ RTAI_PROTO(int, rt_comedi_do_insnlist, (void *dev, comedi_insnlist *ilist))
 		for (i = 0; i < lilist.n_insns; i++) { 
 			memcpy(ldata[i], lilist.insns[i].data, lilist.insns[i].n*sizeof(lsampl_t));
 			insns[i] = lilist.insns[i];
+			insns[i].data = ldata[i];
 		}
 		lilist.insns = insns;
 		retval = rtai_lxrt(FUN_COMEDI_LXRT_INDX, COMEDI_LXRT_SIZARG, _KCOMEDI_DO_INSN_LIST, &arg).i[LOW];

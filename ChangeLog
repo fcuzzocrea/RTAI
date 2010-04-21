@@ -1,3 +1,8 @@
+2010-04-21 Paolo Mantegazza <mantegazza@aero.polimi.it>
+
+	* addons/comedi/rtai_comedi.h: in rt_comedi_do_insnlist put the right
+          pointer to data in the passed insnlist arg.
+
 2010-04-18 Roberto Bucher <roberto.bucher@supsi.ch>
 	* rtai-lab/scicoslab/macros/RTAI/RTAICodeGen_.sci:
 	* rtai-lab/scicoslab/macros/RTAI/SetTarget_.sci: TARGET_DIR

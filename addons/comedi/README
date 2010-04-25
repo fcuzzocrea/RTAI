@@ -262,10 +262,14 @@ In RTAI:
 
 1  - Nothing special, simply configure RTAI by setting the COMEDI installation 
      directory to "mylinux/drivers/staging/comedi/" and make it as usual
-2 -  All COMEDI modules must be installed first, followed by all of the
-     needed RTAI modules, including rtai_netrpc.ko if the distributed COMEDI
-     support has to be used, rtai_comedi.ko being the very last to install.
+2 -  Basic COMEDI modules (comedi.ko, kcomedilib.ko, comedi_fc.ko) must be i
+     installed first, followed by all of the needed RTAI modules, including 
+     rtai_netrpc.ko if the distributed COMEDI support has to be used, 
+     rtai_comedi.ko being the very last to install. Then specific drivers
+     modules follows.
      Alternative modules installation orders are possible, but the one above
-     should be the simpler.
+     should be the best. Beware using depmode, because it does not know RTAI
+     will use dynamic linking through pointers. So it might work but module
+     removal can create problems by cutting still needed links.
 
 Paolo Mantegazza

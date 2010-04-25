@@ -94,10 +94,10 @@ do { \
 /* ++++++++++++++++++++++++++ TASK POINTERS CHECKS +++++++++++++++++++++++++ */
 
 #define CHECK_SENDER_MAGIC(task) \
-do { if (task && task->magic != RT_TASK_MAGIC) return TASK_INVAL; } while (0)
+do { if ((unsigned long)task > RTE_HIGERR && task->magic != RT_TASK_MAGIC) return TASK_INVAL; } while (0)
 
 #define CHECK_RECEIVER_MAGIC(task) \
-do { if (task && task->magic != RT_TASK_MAGIC) return TASK_INVAL; } while (0)
+do { if ((unsigned long)task > RTE_HIGERR && task->magic != RT_TASK_MAGIC) return TASK_INVAL; } while (0)
 
 /* +++++++++++++++++++++++++++++ ASYNC SENDS ++++++++++++++++++++++++++++++++ */
 
@@ -1148,8 +1148,9 @@ RTAI_SYSCALL_MODE RT_TASK *rt_rpcx(RT_TASK *task, void *smsg, void *rmsg, int ss
 {
 	if (task) {
 		struct mcb_t mcb;
+		unsigned long retrep;
 		SET_RPC_MCB();
-		return rt_rpc(task, (unsigned long)&mcb, &mcb.rbytes);
+		return rt_rpc(task, (unsigned long)&mcb, &retrep);
 	}
 	return 0;
 }
@@ -1197,8 +1198,9 @@ RTAI_SYSCALL_MODE RT_TASK *rt_rpcx_if(RT_TASK *task, void *smsg, void *rmsg, int
 {
 	if (task) {
 		struct mcb_t mcb;
+		unsigned long retrep;
 		SET_RPC_MCB();
-		return rt_rpc_if(task, (unsigned long)&mcb, &mcb.rbytes);
+		return rt_rpc_if(task, (unsigned long)&mcb, &retrep);
 	}
 	return 0;
 }
@@ -1251,8 +1253,9 @@ RTAI_SYSCALL_MODE RT_TASK *rt_rpcx_until(RT_TASK *task, void *smsg, void *rmsg, 
 {
 	if (task) {
 		struct mcb_t mcb;
+		unsigned long retrep;
 		SET_RPC_MCB();
-		return rt_rpc_until(task, (unsigned long)&mcb, &mcb.rbytes, time);
+		return rt_rpc_until(task, (unsigned long)&mcb, &retrep, time);
 	}
 	return 0;
 }
@@ -1305,19 +1308,19 @@ RTAI_SYSCALL_MODE RT_TASK *rt_rpcx_timed(RT_TASK *task, void *smsg, void *rmsg, 
 {
 	if (task) {
 		struct mcb_t mcb;
+		unsigned long retrep;
 		SET_RPC_MCB();
-		return rt_rpc_timed(task, (unsigned long)&mcb, &mcb.rbytes, delay);
+		return rt_rpc_timed(task, (unsigned long)&mcb, &retrep, delay);
 	}
 	return 0;
 }
 
-#define task_mcb (task->mcb)
 #define SET_SEND_MCB() \
 	do { \
-		task_mcb.sbuf   = msg; \
-		task_mcb.sbytes = size; \
-		task_mcb.rbuf   = 0; \
-		task_mcb.rbytes = 0; \
+		mcb.sbuf   = msg; \
+		mcb.sbytes = size; \
+		mcb.rbuf   = NULL; \
+		mcb.rbytes = 0; \
 	} while (0)
 
 /**
@@ -1356,8 +1359,10 @@ RTAI_SYSCALL_MODE RT_TASK *rt_rpcx_timed(RT_TASK *task, void *smsg, void *rmsg, 
 RTAI_SYSCALL_MODE RT_TASK *rt_sendx(RT_TASK *task, void *msg, int size) 
 {
 	if (task) {
+		struct mcb_t mcb;
+		unsigned long retrep;
 		SET_SEND_MCB();
-		return rt_send(task, (unsigned long)&task_mcb);
+		return rt_rpc(task, (unsigned long)&mcb, &retrep);
 	}
 	return 0;
 }
@@ -1397,8 +1402,10 @@ RTAI_SYSCALL_MODE RT_TASK *rt_sendx(RT_TASK *task, void *msg, int size)
 RTAI_SYSCALL_MODE RT_TASK *rt_sendx_if(RT_TASK *task, void *msg, int size)
 {
 	if (task) {
+		struct mcb_t mcb;
+		unsigned long retrep;
 		SET_SEND_MCB();
-		return rt_send_if(task, (unsigned long)&task_mcb);
+		return rt_rpc(task, (unsigned long)&mcb, &retrep);
 	}
 	return 0;
 }
@@ -1448,8 +1455,10 @@ RTAI_SYSCALL_MODE RT_TASK *rt_sendx_if(RT_TASK *task, void *msg, int size)
 RTAI_SYSCALL_MODE RT_TASK *rt_sendx_until(RT_TASK *task, void *msg, int size, RTIME time)
 {
 	if (task) {
+		struct mcb_t mcb;
+		unsigned long retrep;
 		SET_SEND_MCB();
-		return rt_send_until(task, (unsigned long)&task_mcb, time);
+		return rt_rpc_until(task, (unsigned long)&mcb, &retrep, time);
 	}
 	return 0;
 }
@@ -1499,8 +1508,10 @@ RTAI_SYSCALL_MODE RT_TASK *rt_sendx_until(RT_TASK *task, void *msg, int size, RT
 RTAI_SYSCALL_MODE RT_TASK *rt_sendx_timed(RT_TASK *task, void *msg, int size, RTIME delay)
 {
 	if (task) {
+		struct mcb_t mcb;
+		unsigned long retrep;
 		SET_SEND_MCB();
-		return rt_send_timed(task, (unsigned long)&task_mcb, delay);
+		return rt_rpc_timed(task, (unsigned long)&mcb, &retrep, delay);
 	}
 	return 0;
 }
@@ -1571,6 +1582,9 @@ RTAI_SYSCALL_MODE RT_TASK *rt_returnx(RT_TASK *task, void *msg, int size)
 		if ((*len = size <= mcb->sbytes ? size : mcb->sbytes)) { \
 			memcpy(msg, mcb->sbuf, *len); \
 		} \
+		if ((unsigned long)task > RTE_HIGERR && !mcb->rbytes) { \
+			rt_return(task, 0UL); \
+		} \
 	} while (0)
 
 
@@ -1609,11 +1623,10 @@ RTAI_SYSCALL_MODE RT_TASK *rt_returnx(RT_TASK *task, void *msg, int size)
 RTAI_SYSCALL_MODE RT_TASK *rt_evdrpx(RT_TASK *task, void *msg, int size, long *len)
 {
 	struct mcb_t *mcb;
-	if ((task = rt_evdrp(task, (unsigned long *)&mcb))) {
+	if ((unsigned long)(task = rt_evdrp(task, (unsigned long *)&mcb)) > RTE_HIGERR) {
 		DO_RCV_MSG();
-		return task;
 	}
-	return 0;
+	return task;
 }
 
 
@@ -1660,11 +1673,10 @@ RTAI_SYSCALL_MODE RT_TASK *rt_evdrpx(RT_TASK *task, void *msg, int size, long *l
 RTAI_SYSCALL_MODE RT_TASK *rt_receivex(RT_TASK *task, void *msg, int size, long *len)
 {
 	struct mcb_t *mcb;
-	if ((task = rt_receive(task, (unsigned long *)&mcb))) {
+	if ((unsigned long)(task = rt_receive(task, (unsigned long *)&mcb)) > RTE_HIGERR) {
 		DO_RCV_MSG();
-		return task;
 	}
-	return 0;
+	return task;
 }
 
 
@@ -1711,11 +1723,10 @@ RTAI_SYSCALL_MODE RT_TASK *rt_receivex(RT_TASK *task, void *msg, int size, long 
 RTAI_SYSCALL_MODE RT_TASK *rt_receivex_if(RT_TASK *task, void *msg, int size, long *len)
 {
 	struct mcb_t *mcb;
-	if ((task = rt_receive_if(task, (unsigned long *)&mcb))) {
+	if ((unsigned long)(task = rt_receive_if(task, (unsigned long *)&mcb)) > RTE_HIGERR) {
 		DO_RCV_MSG();
-		return task;
 	}
-	return 0;
+	return task;
 }
 
 
@@ -1768,11 +1779,10 @@ RTAI_SYSCALL_MODE RT_TASK *rt_receivex_if(RT_TASK *task, void *msg, int size, lo
 RTAI_SYSCALL_MODE RT_TASK *rt_receivex_until(RT_TASK *task, void *msg, int size, long *len, RTIME time)
 {
 	struct mcb_t *mcb;
-	if ((task = rt_receive_until(task, (unsigned long *)&mcb, time))) {
+	if ((unsigned long)(task = rt_receive_until(task, (unsigned long *)&mcb, time)) > RTE_HIGERR) {
 		DO_RCV_MSG();
-		return task;
 	}
-	return 0;
+	return task;
 }
 
 
@@ -1825,11 +1835,10 @@ RTAI_SYSCALL_MODE RT_TASK *rt_receivex_until(RT_TASK *task, void *msg, int size,
 RTAI_SYSCALL_MODE RT_TASK *rt_receivex_timed(RT_TASK *task, void *msg, int size, long *len, RTIME delay)
 {
 	struct mcb_t *mcb;
-	if ((task = rt_receive_timed(task, (unsigned long *)&mcb, delay))) {
+	if ((unsigned long)(task = rt_receive_timed(task, (unsigned long *)&mcb, delay)) > RTE_HIGERR) {
 		DO_RCV_MSG();
-		return task;
-	}
-	return 0;
+	} 
+	return task;
 }
 
 /* +++++++++++++++++++++++++++++++ PROXIES ++++++++++++++++++++++++++++++++++ */

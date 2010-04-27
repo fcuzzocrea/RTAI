@@ -127,11 +127,12 @@ static RTAI_SYSCALL_MODE int sys_rtdm_sendmsg(long fd, const struct msghdr *msg,
 static RTAI_SYSCALL_MODE int sys_rtdm_select(int nfds, fd_set *rfds, fd_set *wfds, fd_set *efds, nanosecs_rel_t timeout)
 {
 #ifdef CONFIG_RTAI_RTDM_SELECT
-	struct xnselector selector;
+	struct xnselector *selector;
 	int ret;
-	xnselector_init(&selector);
-	ret = __rt_dev_select(nfds, rfds, wfds, efds, timeout, &selector, 0);
-	xnselector_destroy(&selector);
+	selector = rt_malloc(sizeof(struct xnselector));
+	xnselector_init(selector);
+	ret = __rt_dev_select(nfds, rfds, wfds, efds, timeout, selector, 0);
+	xnselector_destroy(selector);
 	return ret;
 #else
 	return -ENOSYS;

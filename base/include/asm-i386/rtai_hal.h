@@ -596,7 +596,7 @@ do { \
 	apic_write_around(APIC_ICR, APIC_DEST_LOGICAL | SCHED_VECTOR); \
 } while (0)
 
-#ifdef CONFIG_PREEMPT
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,0)
 #if LINUX_VERSION_CODE < KERNEL_VERSION(2,6,34)
 #define RTAI_SPIN_LOCK_TYPE(lock) lock
 #else
@@ -604,10 +604,10 @@ do { \
 #endif
 #define rt_spin_lock(lock)    do { barrier(); _raw_spin_lock(RTAI_SPIN_LOCK_TYPE(lock)); barrier(); } while (0)
 #define rt_spin_unlock(lock)  do { barrier(); _raw_spin_unlock(RTAI_SPIN_LOCK_TYPE(lock)); barrier(); } while (0)
-#else /* !CONFIG_PREEMPT */
+#else /* LINUX_VERSION_CODE < KERNEL_VERSION(2,6,0) */
 #define rt_spin_lock(lock)    spin_lock(lock)
 #define rt_spin_unlock(lock)  spin_unlock(lock)
-#endif /* CONFIG_PREEMPT */
+#endif /* LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,0) */
 
 static inline void rt_spin_lock_hw_irq(spinlock_t *lock)
 {

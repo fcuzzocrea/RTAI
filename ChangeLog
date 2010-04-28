@@ -1,3 +1,8 @@
+2010-04-2r85 Paolo Mantegazza <mantegazza@aero.polimi.it>
+
+	* addons/rtdm/module.c: allocate selector on the real time heap as
+	  its deletion is now delayed to an srq service. 
+
 2010-04-25 Paolo Mantegazza <mantegazza@aero.polimi.it>
 
 	* base/ipc/msg/msg.c: strengthened correctness check of task args,

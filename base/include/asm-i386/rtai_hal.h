@@ -300,6 +300,9 @@ struct rtai_realtime_irq_s {
  */
 
 #ifdef CONFIG_X86_IO_APIC
+#ifndef FIRST_DEVICE_VECTOR
+#define FIRST_DEVICE_VECTOR (FIRST_EXTERNAL_VECTOR + VECTOR_OFFSET_START)
+#endif
 static inline int ext_irq_vector(int irq)
 {
 	if (irq != 2) {
@@ -594,8 +597,8 @@ do { \
 } while (0)
 
 #ifdef CONFIG_PREEMPT
-#define rt_spin_lock(lock)    do { barrier(); _raw_spin_lock(lock); barrier(); } while (0)
-#define rt_spin_unlock(lock)  do { barrier(); _raw_spin_unlock(lock); barrier(); } while (0)
+#define rt_spin_lock(lock)    do { barrier(); _raw_spin_lock(((void *)lock)); barrier(); } while (0)
+#define rt_spin_unlock(lock)  do { barrier(); _raw_spin_unlock(((void *)lock)); barrier(); } while (0)
 #else /* !CONFIG_PREEMPT */
 #define rt_spin_lock(lock)    spin_lock(lock)
 #define rt_spin_unlock(lock)  spin_unlock(lock)

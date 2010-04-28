@@ -597,8 +597,13 @@ do { \
 } while (0)
 
 #ifdef CONFIG_PREEMPT
-#define rt_spin_lock(lock)    do { barrier(); _raw_spin_lock(((void *)lock)); barrier(); } while (0)
-#define rt_spin_unlock(lock)  do { barrier(); _raw_spin_unlock(((void *)lock)); barrier(); } while (0)
+#if LINUX_VERSION_CODE < KERNEL_VERSION(2,6,34)
+#define RTAI_SPIN_LOCK_TYPE(lock) lock
+#else
+#define RTAI_SPIN_LOCK_TYPE(lock) ((raw_spinlock_t *)lock)
+#endif
+#define rt_spin_lock(lock)    do { barrier(); _raw_spin_lock(RTAI_SPIN_LOCK_TYPE(lock)); barrier(); } while (0)
+#define rt_spin_unlock(lock)  do { barrier(); _raw_spin_unlock(RTAI_SPIN_LOCK_TYPE(lock)); barrier(); } while (0)
 #else /* !CONFIG_PREEMPT */
 #define rt_spin_lock(lock)    spin_lock(lock)
 #define rt_spin_unlock(lock)  spin_unlock(lock)

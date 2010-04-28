@@ -68,6 +68,7 @@ exit
 
 #ifdef CONFIG_IPIPE
 
+#include <linux/version.h>
 #include <linux/interrupt.h>
 
 extern int  (*rt_comedi_request_irq)(unsigned int, irq_handler_t, unsigned long, const char *, void *);
@@ -83,11 +84,16 @@ extern void (*rt_comedi_busy_sleep)(unsigned long);
 #define comedi_udelay(usec) \
 	rt_comedi_busy_sleep(usec)
 
+#if LINUX_VERSION_CODE < KERNEL_VERSION(2,6,34)
+#define COMEDI_SPIN_LOCKP(lock_ptr) lock_ptr
+#else
+#define COMEDI_SPIN_LOCKP(lock_ptr) ((raw_spinlock_t *)lock_ptr)
+#endif
 #define comedi_spin_lock_irqsave(lock_ptr, flags) \
-	({ local_irq_save_hw(flags); _raw_spin_lock(lock_ptr); flags; })
+	({ local_irq_save_hw(flags); _raw_spin_lock(COMEDI_SPIN_LOCKP(lock_ptr)); flags; })
 
 #define comedi_spin_unlock_irqrestore(lock_ptr, flags) \
-	do { _raw_spin_unlock(lock_ptr); local_irq_restore_hw(flags); } while (0)
+	do { _raw_spin_unlock(COMEDI_SPIN_LOCKP(lock_ptr)); local_irq_restore_hw(flags); } while (0)
 
 #else
 

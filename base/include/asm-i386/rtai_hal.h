@@ -597,7 +597,7 @@ do { \
 } while (0)
 
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,0)
-#if LINUX_VERSION_CODE < KERNEL_VERSION(2,6,34)
+#if LINUX_VERSION_CODE < KERNEL_VERSION(2,6,33)
 #define RTAI_SPIN_LOCK_TYPE(lock) lock
 #else
 #define RTAI_SPIN_LOCK_TYPE(lock) ((raw_spinlock_t *)lock)

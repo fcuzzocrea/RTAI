@@ -1,3 +1,8 @@
+2010-05-01 Paolo Mantegazza <mantegazza@aero.polimi.it>
+
+	* addons/rtdm/drvlib.c: fix wrong return value in sems support
+	  function _sem_wait_timed.
+
 2010-04-21 Paolo Mantegazza <mantegazza@aero.polimi.it>
 
 	* addons/comedi/rtai_comedi.h: in rt_comedi_do_insnlist put the right

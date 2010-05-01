@@ -656,7 +656,7 @@ static inline int _sem_wait_timed(void *sem, nanosecs_rel_t timeout, rtdm_toseq_
 		/* timeout sequence, i.e. abs timeout, or relative timeout */
 		ret = timeout_seq ? rt_sem_wait_until(sem, *timeout_seq) : rt_sem_wait_timed(sem, nano2count(timeout)); 
 	}
-	if (ret < SEM_TIMOUT) {
+	if (ret < RTE_LOWERR) {
 		return 0;
 	}
 	if (ret == SEM_TIMOUT) {

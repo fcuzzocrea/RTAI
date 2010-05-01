@@ -1,4 +1,9 @@
-2010-04-2r85 Paolo Mantegazza <mantegazza@aero.polimi.it>
+2010-04-28 Paolo Mantegazza <mantegazza@aero.polimi.it>
+
+	* addons/rtdm/drvlib.c: fix wrong return value in sems support 
+	  function _sem_wait_timed.
+
+2010-04-28 Paolo Mantegazza <mantegazza@aero.polimi.it>
 
 	* addons/rtdm/module.c: allocate selector on the real time heap as
 	  its deletion is now delayed to an srq service. 

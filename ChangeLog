@@ -1,4 +1,4 @@
-2010-04-28 Paolo Mantegazza <mantegazza@aero.polimi.it>
+2010-05-01 Paolo Mantegazza <mantegazza@aero.polimi.it>
 
 	* addons/rtdm/drvlib.c: fix wrong return value in sems support 
 	  function _sem_wait_timed.

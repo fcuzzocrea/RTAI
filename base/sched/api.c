@@ -418,7 +418,7 @@ RTAI_SYSCALL_MODE int rt_task_suspend_until(RT_TASK *task, RTIME time)
 				rt_schedule();
 				if ((void *)task->blocked_on > RTP_HIGERR) {
 					retval = RTE_TIMOUT;
-				} else if (unlikely(task->blocked_on)) {
+				} else if (unlikely(task->blocked_on != NULL)) {
 					retval = RTE_UNBLKD;
 				}
 				rt_global_restore_flags(flags);

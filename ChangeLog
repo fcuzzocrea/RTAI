@@ -1,3 +1,9 @@
+2010-05-03 Paolo Mantegazza <mantegazza@aero.polimi.it>
+
+	* arch/i386/hal/hal.immed, include/asm-i386/rtai_hal.h, 
+	  arch/x86/hal/hail.immed, include/asm-x86/rtai_hal.h: aligned to use 
+	  the latest 2.6.32.11 patch support.
+
 2010-05-01 Paolo Mantegazza <mantegazza@aero.polimi.it>
 
 	* addons/rtdm/drvlib.c: fix wrong return value in sems support

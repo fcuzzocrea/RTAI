@@ -412,10 +412,10 @@ do { \
 
 #define hal_fast_flush_pipeline(cpuid) \
 do { \
-        if (ipipe_cpudom_var(hal_root_domain, irqpend_himap) != 0) { \
-                rtai_cli(); \
-                hal_sync_stage(IPIPE_IRQ_DOALL); \
-        } \
+	if (ipipe_cpudom_var(hal_root_domain, irqpend_himap) != 0) { \
+		rtai_cli(); \
+		hal_sync_stage(IPIPE_IRQ_DOALL); \
+	} \
 } while (0)
 #else
 #define hal_pend_domain_uncond(irq, domain, cpuid) \

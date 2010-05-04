@@ -306,9 +306,16 @@ extern unsigned long io_apic_irqs;
 #if (LINUX_VERSION_CODE > KERNEL_VERSION(2,4,31) && LINUX_VERSION_CODE < KERNEL_VERSION(2,6,0)) || LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,9)
 
 #if LINUX_VERSION_CODE < KERNEL_VERSION(2,6,18)
-#define rtai_irq_desc(irq) (irq_desc[irq].handler)
+#define rtai_irq_desc_chip(irq) (irq_desc[irq].handler)
+#define rtai_irq_desc(irq) irq_desc[irq]
 #else
-#define rtai_irq_desc(irq) (irq_desc[irq].chip)
+#if defined(__IPIPE_2LEVEL_IRQMAP) || defined(__IPIPE_3LEVEL_IRQMAP) 
+#define rtai_irq_desc_chip(irq) (irq_to_desc(irq)->chip)
+#define rtai_irq_desc(irq) (irq_to_desc(irq))[0]
+#else
+#define rtai_irq_desc_chip(irq) (irq_desc[irq].chip)
+#define rtai_irq_desc(irq) irq_desc[irq]
+#endif
 #endif
 
 #define BEGIN_PIC()
@@ -321,7 +328,8 @@ extern unsigned long io_apic_irqs;
 #else
 
 extern struct hw_interrupt_type hal_std_irq_dtype[];
-#define rtai_irq_desc(irq) (&hal_std_irq_dtype[irq])
+#define rtai_irq_desc_chip(irq) (&hal_std_irq_dtype[irq])
+#define rtai_irq_desc(irq) irq_desc[irq]
 
 #define BEGIN_PIC() \
 do { \
@@ -372,7 +380,7 @@ unsigned rt_startup_irq (unsigned irq)
 
 	BEGIN_PIC();
 	hal_unlock_irq(hal_root_domain, irq);
-	retval = rtai_irq_desc(irq)->startup(irq);
+	retval = rtai_irq_desc_chip(irq)->startup(irq);
 	END_PIC();
         return retval;
 }
@@ -409,7 +417,7 @@ unsigned rt_startup_irq (unsigned irq)
 void rt_shutdown_irq (unsigned irq)
 {
 	BEGIN_PIC();
-	rtai_irq_desc(irq)->shutdown(irq);
+	rtai_irq_desc_chip(irq)->shutdown(irq);
 #if LINUX_VERSION_CODE < RTAI_LT_KERNEL_VERSION_FOR_NONPERCPU
 	hal_clear_irq(hal_root_domain, irq);
 #endif
@@ -420,7 +428,7 @@ static inline void _rt_enable_irq (unsigned irq)
 {
 	BEGIN_PIC();
 	hal_unlock_irq(hal_root_domain, irq);
-	rtai_irq_desc(irq)->enable(irq);
+	rtai_irq_desc_chip(irq)->enable(irq);
 	END_PIC();
 }
 
@@ -486,7 +494,7 @@ void rt_enable_irq (unsigned irq)
 void rt_disable_irq (unsigned irq)
 {
 	BEGIN_PIC();
-	rtai_irq_desc(irq)->disable(irq);
+	rtai_irq_desc_chip(irq)->disable(irq);
 	hal_lock_irq(hal_root_domain, cpuid, irq);
 	END_PIC();
 }
@@ -524,7 +532,7 @@ void rt_disable_irq (unsigned irq)
  */
 void rt_mask_and_ack_irq (unsigned irq)
 {
-	rtai_irq_desc(irq)->ack(irq);
+	rtai_irq_desc_chip(irq)->ack(irq);
 }
 
 static inline void _rt_end_irq (unsigned irq)
@@ -534,10 +542,10 @@ static inline void _rt_end_irq (unsigned irq)
 #ifdef CONFIG_X86_IO_APIC
 	    !IO_APIC_IRQ(irq) ||
 #endif /* CONFIG_X86_IO_APIC */
-	    !(irq_desc[irq].status & (IRQ_DISABLED | IRQ_INPROGRESS))) {
+	    !(rtai_irq_desc(irq).status & (IRQ_DISABLED | IRQ_INPROGRESS))) {
 		hal_unlock_irq(hal_root_domain, irq);
 	}
-	rtai_irq_desc(irq)->end(irq);
+	rtai_irq_desc_chip(irq)->end(irq);
 	END_PIC();
 }
 
@@ -623,14 +631,14 @@ void rt_eoi_irq (unsigned irq)
 #ifdef CONFIG_X86_IO_APIC
             !IO_APIC_IRQ(irq) ||
 #endif /* CONFIG_X86_IO_APIC */
-            !(irq_desc[irq].status & (IRQ_DISABLED | IRQ_INPROGRESS))) {
+            !(rtai_irq_desc(irq).status & (IRQ_DISABLED | IRQ_INPROGRESS))) {
                 hal_unlock_irq(hal_root_domain, irq);
         }
 #if defined(CONFIG_X86_IO_APIC) && LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,19)
-        rtai_irq_desc(irq)->eoi(irq);
+        rtai_irq_desc_chip(irq)->eoi(irq);
 #else /* !(CONFIG_X86_IO_APIC && LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,19))
 */
-        rtai_irq_desc(irq)->end(irq);
+        rtai_irq_desc_chip(irq)->end(irq);
 #endif
         END_PIC();
 }
@@ -669,12 +677,12 @@ int rt_request_linux_irq (unsigned irq, void *handler, char *name, void *dev_id)
 	}
 
 	rtai_save_flags_and_cli(flags);
-	spin_lock(&irq_desc[irq].lock);
-	if (rtai_linux_irq[irq].count++ == 0 && irq_desc[irq].action) {
-		rtai_linux_irq[irq].flags = irq_desc[irq].action->flags;
-		irq_desc[irq].action->flags |= IRQF_SHARED;
+	spin_lock(&rtai_irq_desc(irq).lock);
+	if (rtai_linux_irq[irq].count++ == 0 && rtai_irq_desc(irq).action) {
+		rtai_linux_irq[irq].flags = rtai_irq_desc(irq).action->flags;
+		rtai_irq_desc(irq).action->flags |= IRQF_SHARED;
 	}
-	spin_unlock(&irq_desc[irq].lock);
+	spin_unlock(&rtai_irq_desc(irq).lock);
 	rtai_restore_flags(flags);
 
 	retval = request_irq(irq, handler, IRQF_SHARED, name, dev_id);
@@ -703,11 +711,11 @@ int rt_free_linux_irq (unsigned irq, void *dev_id)
 
 	rtai_save_flags_and_cli(flags);
 	free_irq(irq,dev_id);
-	spin_lock(&irq_desc[irq].lock);
-	if (--rtai_linux_irq[irq].count == 0 && irq_desc[irq].action) {
-		irq_desc[irq].action->flags = rtai_linux_irq[irq].flags;
+	spin_lock(&rtai_irq_desc(irq).lock);
+	if (--rtai_linux_irq[irq].count == 0 && rtai_irq_desc(irq).action) {
+		rtai_irq_desc(irq).action->flags = rtai_linux_irq[irq].flags;
 	}
-	spin_unlock(&irq_desc[irq].lock);
+	spin_unlock(&rtai_irq_desc(irq).lock);
 	rtai_restore_flags(flags);
 
 	return 0;
@@ -901,7 +909,7 @@ irqreturn_t rtai_broadcast_to_local_timers (int irq, void *dev_id, struct pt_reg
 
 #define RTAI_IRQ_ACK(irq) \
 	do { \
-		rtai_realtime_irq[irq].irq_ack(irq, irq_desc + irq); \
+		rtai_realtime_irq[irq].irq_ack(irq, &(rtai_irq_desc(irq))); \
 	} while (0)
 
 #else
@@ -1568,13 +1576,18 @@ static int rtai_hirq_dispatcher (struct pt_regs regs)
 #if LINUX_VERSION_CODE < KERNEL_VERSION(2,6,28)
 	if (rtai_realtime_irq[irq = ~regs.RT_REG_ORIG_AX].handler) {
 #else
+	regs.RT_REG_ORIG_AX = ~regs.RT_REG_ORIG_AX;
 #ifdef CONFIG_X86_LOCAL_APIC
-	if (~regs.RT_REG_ORIG_AX >= FIRST_SYSTEM_VECTOR) {
-		irq = ipipe_apic_vector_irq(~regs.RT_REG_ORIG_AX);
+	if (regs.RT_REG_ORIG_AX >= FIRST_SYSTEM_VECTOR) {
+		irq = ipipe_apic_vector_irq(regs.RT_REG_ORIG_AX);
+#if defined(CONFIG_SMP) && (defined(__IPIPE_2LEVEL_IRQMAP) || defined(__IPIPE_3LEVEL_IRQMAP))
+	} else if (regs.RT_REG_ORIG_AX == IRQ_MOVE_CLEANUP_VECTOR) {
+		irq = regs.RT_REG_ORIG_AX;
+#endif /* CONFIG_SMP */
 	} else
 #endif
 	{
-		irq = __get_cpu_var(vector_irq)[~regs.RT_REG_ORIG_AX];
+		irq = __get_cpu_var(vector_irq)[regs.RT_REG_ORIG_AX];
 	}
 	if (rtai_realtime_irq[irq].handler) {
 #endif

@@ -2,7 +2,7 @@ install-data-local:
 
 SUBDIRS = 
 
-EXTRA_DIST = rtmain44.c examples macros devices
+EXTRA_DIST = rtmain44.c macros devices
 
 install-exec-local: rtmain44.c
 	$(mkinstalldirs) $(DESTDIR)/$(pkgdatadir)/scicos

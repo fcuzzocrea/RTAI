@@ -636,7 +636,7 @@ void rtdm_timer_stop_in_handler(rtdm_timer_t *timer);
 
 static inline int _sem_wait(void *sem)
 {
-	if (rt_sem_wait(sem) < SEM_TIMOUT) {
+	if (rt_sem_wait(sem) < RTE_LOWERR) {
 		return 0;
 	}
 	return _rt_whoami()->unblocked ? -EINTR : -EIDRM;

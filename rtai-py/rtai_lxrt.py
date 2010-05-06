@@ -52,9 +52,9 @@ rt_thread_create = rtai.rt_thread_create
 rt_make_soft_real_time = rtai.rt_make_soft_real_time
 rt_make_hard_real_time = rtai.rt_make_hard_real_time
 
-rtai.rt_task_delete.argtypes = [c_void_p]
-rt_task_delete = rtai.rt_task_delete
-rt_thread_delete = rtai.rt_task_delete
+rtai.rt_thread_delete.argtypes = [c_void_p]
+rt_thread_delete = rtai.rt_thread_delete
+rt_task_delete = rtai.rt_thread_delete
 
 rtai.rt_thread_join.argtypes = [c_ulong]
 rt_thread_join = rtai.rt_thread_join

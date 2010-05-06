@@ -1,3 +1,8 @@
+2010-05-07 Paolo Mantegazza <mantegazza@aero.polimi.it>
+
+	* rtai-py/rtai_lxrt.py: fix rt_task_delete and rt_thread_delete, to
+	  match changes in rtai_lxrt.h (thanks to Chris Cole).
+
 2010-05-01 Paolo Mantegazza <mantegazza@aero.polimi.it>
 
 	* addons/rtdm/drvlib.c: fix wrong return value in sems support 

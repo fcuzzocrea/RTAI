@@ -44,6 +44,61 @@ MODULE_LICENSE("GPL");
 
 extern struct epoch_struct boot_epoch;
 
+#if 1
+
+#define rt_untruly_ownd_wait(sem) \
+do { \
+	RT_TASK *task; \
+	if (!sem->truly_ownd && (task = sem->owndby) && task->state == RT_SCHED_READY && task->runnable_on_cpus == rt_current->runnable_on_cpus && rt_current->priority < task->priority) { \
+		rem_ready_task(task); \
+		sem->count--; \
+		task->state |= RT_SCHED_SEMAPHORE; \
+		enqueue_blocked(task, &sem->queue, PRIO_Q); \
+		enqueue_resqel(&sem->resq, sem->owndby = rt_current); \
+		sem->truly_ownd = 1; \
+		rt_global_restore_flags(flags); \
+		return 1; \
+	} \
+} while (0)
+
+#define rt_untruly_ownd_wait_if(sem) \
+do { \
+	if (sem->type > 0) { \
+		RT_TASK *rt_current = RT_CURRENT; \
+		rt_untruly_ownd_wait(sem); \
+	} \
+} while (0)
+
+#define rt_untruly_ownd_wait_until(sem) \
+do { \
+	RT_TASK *task; \
+	if (!sem->truly_ownd && (task = sem->owndby) && task->state == RT_SCHED_READY && task->runnable_on_cpus == rt_current->runnable_on_cpus && rt_current->priority < task->priority) { \
+		if (task->resume_time > rt_time_h) { \
+			rem_ready_task(task); \
+			sem->count--; \
+			task->state |= (RT_SCHED_SEMAPHORE | RT_SCHED_DELAYED);\
+			enqueue_blocked(task, &sem->queue, PRIO_Q); \
+			enq_timed_task(task); \
+			enqueue_resqel(&sem->resq, sem->owndby = rt_current); \
+			sem->truly_ownd = 1; \
+		} else { \
+			task->blocked_on = &sem->queue; \
+		} \
+		rt_global_restore_flags(flags); \
+		return 1; \
+	} \
+} while (0)
+
+#else
+
+#define rt_untruly_ownd_wait(sem)
+
+#define rt_untruly_ownd_wait_if(sem)
+
+#define rt_untruly_ownd_wait_until(sem)
+
+#endif
+
 #ifdef CONFIG_RTAI_RT_POLL
 
 #define WAKEUP_WAIT_ONE_POLLER(wakeup) \
@@ -150,6 +205,7 @@ RTAI_SYSCALL_MODE void rt_typed_sem_init(SEM *sem, int value, int type)
 
 	sem->resq.prev = sem->resq.next = &sem->resq;
 	sem->resq.task = (void *)&sem->queue;
+	sem->truly_ownd = 0;
 #ifdef CONFIG_RTAI_RT_POLL
 	sem->poll_wait_all.pollq.prev = sem->poll_wait_all.pollq.next = &(sem->poll_wait_all.pollq);
 	sem->poll_wait_one.pollq.prev = sem->poll_wait_one.pollq.next = &(sem->poll_wait_one.pollq);
@@ -340,7 +396,8 @@ res:	if (sem->type > 0) {
 		DECLARE_RT_CURRENT;
 		int sched;
 		ASSIGN_RT_CURRENT;
-		sem->owndby = 0;
+		sem->owndby = task;
+		sem->truly_ownd = 0;
 		sched = dequeue_resqel_reset_current_priority(&sem->resq, rt_current);
 		if (rt_current->suspdepth) {
 			if (rt_current->suspdepth > 0) {
@@ -476,6 +533,7 @@ RTAI_SYSCALL_MODE int rt_sem_wait(SEM *sem)
 		void *retp;
 		unsigned long schedmap;
 		if (sem->type > 0) {
+			rt_untruly_ownd_wait(sem);
 			if (sem->restype && sem->owndby == rt_current) {
 				if (sem->restype > 0) {
 					count = sem->type++;
@@ -518,6 +576,7 @@ RTAI_SYSCALL_MODE int rt_sem_wait(SEM *sem)
 	}
 	if (sem->type > 0) {
 		enqueue_resqel(&sem->resq, sem->owndby = rt_current);
+		sem->truly_ownd = 1;
 	}
 	rt_global_restore_flags(flags);
 	return count;
@@ -555,6 +614,7 @@ RTAI_SYSCALL_MODE int rt_sem_wait_if(SEM *sem)
 
 	flags = rt_global_save_flags_and_cli();
 	if ((count = sem->count) <= 0) {
+		rt_untruly_ownd_wait_if(sem);
 		if (sem->restype && sem->owndby == RT_CURRENT) {
 			if (sem->restype > 0) {
 				count = sem->type++;
@@ -568,6 +628,7 @@ RTAI_SYSCALL_MODE int rt_sem_wait_if(SEM *sem)
 		sem->count--;
 		if (sem->type > 0) {
 			enqueue_resqel(&sem->resq, sem->owndby = RT_CURRENT);
+			sem->truly_ownd = 1;
 		}
 	}
 	rt_global_restore_flags(flags);
@@ -627,6 +688,7 @@ RTAI_SYSCALL_MODE int rt_sem_wait_until(SEM *sem, RTIME time)
 		if ((rt_current->resume_time = time) > rt_time_h) {
 			unsigned long schedmap;
 			if (sem->type > 0) {
+				rt_untruly_ownd_wait_until(sem);
 				if (sem->restype && sem->owndby == rt_current) {
 					if (sem->restype > 0) {
 						count = sem->type++;
@@ -672,6 +734,7 @@ RTAI_SYSCALL_MODE int rt_sem_wait_until(SEM *sem, RTIME time)
 	}
 	if (sem->type > 0) {
 		enqueue_resqel(&sem->resq, sem->owndby = rt_current);
+		sem->truly_ownd = 1;
 	}
 	rt_global_restore_flags(flags);
 	return count;

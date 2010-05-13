@@ -2,6 +2,8 @@
 
 	* base/ipc/sem/sem.c: a higher prio task can grab a resem that is
 	  owned by a task that has not been scheduled yet.
+	* base/include/rtai_sem.h: add a variable to the sem struct to allow
+	  checking if a resem is truly owned already.
 
 2010-05-07 Paolo Mantegazza <mantegazza@aero.polimi.it>
 

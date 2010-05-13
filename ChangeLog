@@ -1,3 +1,8 @@
+2010-05-14 Paolo Mantegazza <mantegazza@aero.polimi.it>
+
+	* base/ipc/sem/sem.c: a higher prio task can grab a resem that is
+	  owned by a task that has not been scheduled yet.
+
 2010-05-07 Paolo Mantegazza <mantegazza@aero.polimi.it>
 
 	* rtai-py/rtai_lxrt.py: fix rt_task_delete and rt_thread_delete, to

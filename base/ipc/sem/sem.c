@@ -46,13 +46,20 @@ extern struct epoch_struct boot_epoch;
 
 #if 1
 
-#define rt_untruly_ownd_wait(sem) \
+#define UBI_MAIOR_MINOR_CESSAT_WAIT(sem) \
 do { \
 	RT_TASK *task; \
-	if (!sem->truly_ownd && (task = sem->owndby) && task->state == RT_SCHED_READY && task->runnable_on_cpus == rt_current->runnable_on_cpus && rt_current->priority < task->priority) { \
-		rem_ready_task(task); \
-		sem->count--; \
-		task->state |= RT_SCHED_SEMAPHORE; \
+	if (sem->truly_ownd <= 0 && (task = sem->owndby) && task->state == RT_SCHED_READY && task->runnable_on_cpus == rt_current->runnable_on_cpus && rt_current->priority < task->priority) { \
+		if (!sem->truly_ownd) { \
+			sem->count--; \
+			rem_ready_task(task); \
+			task->state |= RT_SCHED_SEMAPHORE; \
+		} else if (task->resume_time > rt_smp_time_h[rt_current->runnable_on_cpus]) { \
+			sem->count--; \
+			rem_ready_task(task); \
+			task->state |= (RT_SCHED_SEMAPHORE | RT_SCHED_SEMAPHORE); \
+			enq_timed_task(task); \
+		} \
 		enqueue_blocked(task, &sem->queue, PRIO_Q); \
 		enqueue_resqel(&sem->resq, sem->owndby = rt_current); \
 		sem->truly_ownd = 1; \
@@ -61,41 +68,19 @@ do { \
 	} \
 } while (0)
 
-#define rt_untruly_ownd_wait_if(sem) \
+#define UBI_MAIOR_MINOR_CESSAT_WAIT_IF(sem) \
 do { \
 	if (sem->type > 0) { \
 		RT_TASK *rt_current = RT_CURRENT; \
-		rt_untruly_ownd_wait(sem); \
-	} \
-} while (0)
-
-#define rt_untruly_ownd_wait_until(sem) \
-do { \
-	RT_TASK *task; \
-	if (!sem->truly_ownd && (task = sem->owndby) && task->state == RT_SCHED_READY && task->runnable_on_cpus == rt_current->runnable_on_cpus && rt_current->priority < task->priority) { \
-		if (task->resume_time > rt_time_h) { \
-			rem_ready_task(task); \
-			sem->count--; \
-			task->state |= (RT_SCHED_SEMAPHORE | RT_SCHED_DELAYED);\
-			enqueue_blocked(task, &sem->queue, PRIO_Q); \
-			enq_timed_task(task); \
-			enqueue_resqel(&sem->resq, sem->owndby = rt_current); \
-			sem->truly_ownd = 1; \
-		} else { \
-			task->blocked_on = &sem->queue; \
-		} \
-		rt_global_restore_flags(flags); \
-		return 1; \
+		UBI_MAIOR_MINOR_CESSAT_WAIT(sem); \
 	} \
 } while (0)
 
 #else
 
-#define rt_untruly_ownd_wait(sem)
+#define UBI_MAIOR_MINOR_CESSAT_WAIT(sem)
 
-#define rt_untruly_ownd_wait_if(sem)
-
-#define rt_untruly_ownd_wait_until(sem)
+#define UBI_MAIOR_MINOR_CESSAT_WAIT_IF(sem)
 
 #endif
 
@@ -355,7 +340,7 @@ RTAI_SYSCALL_MODE int rt_sem_signal(SEM *sem)
 {
 	unsigned long flags;
 	RT_TASK *task;
-	int tosched;
+	int tosched, truly_ownd = 0;
 
 	CHECK_SEM_MAGIC(sem);
 
@@ -379,6 +364,7 @@ RTAI_SYSCALL_MODE int rt_sem_signal(SEM *sem)
 	if ((task = (sem->queue.next)->task)) {
 		dequeue_blocked(task);
 		rem_timed_task(task);
+		truly_ownd = - (task->state & RT_SCHED_DELAYED);
 		if (task->state != RT_SCHED_READY && (task->state &= ~(RT_SCHED_SEMAPHORE | RT_SCHED_DELAYED)) == RT_SCHED_READY) {
 			enq_ready_task(task);
 			if (sem->type <= 0) {
@@ -397,7 +383,7 @@ res:	if (sem->type > 0) {
 		int sched;
 		ASSIGN_RT_CURRENT;
 		sem->owndby = task;
-		sem->truly_ownd = 0;
+		sem->truly_ownd = truly_ownd;
 		sched = dequeue_resqel_reset_current_priority(&sem->resq, rt_current);
 		if (rt_current->suspdepth) {
 			if (rt_current->suspdepth > 0) {
@@ -533,7 +519,7 @@ RTAI_SYSCALL_MODE int rt_sem_wait(SEM *sem)
 		void *retp;
 		unsigned long schedmap;
 		if (sem->type > 0) {
-			rt_untruly_ownd_wait(sem);
+			UBI_MAIOR_MINOR_CESSAT_WAIT(sem);
 			if (sem->restype && sem->owndby == rt_current) {
 				if (sem->restype > 0) {
 					count = sem->type++;
@@ -614,7 +600,7 @@ RTAI_SYSCALL_MODE int rt_sem_wait_if(SEM *sem)
 
 	flags = rt_global_save_flags_and_cli();
 	if ((count = sem->count) <= 0) {
-		rt_untruly_ownd_wait_if(sem);
+		UBI_MAIOR_MINOR_CESSAT_WAIT_IF(sem);
 		if (sem->restype && sem->owndby == RT_CURRENT) {
 			if (sem->restype > 0) {
 				count = sem->type++;
@@ -688,7 +674,7 @@ RTAI_SYSCALL_MODE int rt_sem_wait_until(SEM *sem, RTIME time)
 		if ((rt_current->resume_time = time) > rt_time_h) {
 			unsigned long schedmap;
 			if (sem->type > 0) {
-				rt_untruly_ownd_wait_until(sem);
+				UBI_MAIOR_MINOR_CESSAT_WAIT(sem);
 				if (sem->restype && sem->owndby == rt_current) {
 					if (sem->restype > 0) {
 						count = sem->type++;

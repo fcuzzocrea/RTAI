@@ -49,7 +49,7 @@ extern struct epoch_struct boot_epoch;
 #define UBI_MAIOR_MINOR_CESSAT_WAIT(sem) \
 do { \
 	RT_TASK *task; \
-	if (sem->truly_ownd <= 0 && (task = sem->owndby) && task->state == RT_SCHED_READY && task->runnable_on_cpus == rt_current->runnable_on_cpus && rt_current->priority < task->priority) { \
+	if ((task = sem->owndby) && sem->truly_ownd <= 0 && task->state == RT_SCHED_READY && task->runnable_on_cpus == rt_current->runnable_on_cpus && rt_current->priority < task->priority) { \
 		if (!sem->truly_ownd) { \
 			sem->count--; \
 			rem_ready_task(task); \

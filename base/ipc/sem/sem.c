@@ -54,10 +54,10 @@ do { \
 			sem->count--; \
 			rem_ready_task(task); \
 			task->state |= RT_SCHED_SEMAPHORE; \
-		} else if (task->resume_time > rt_smp_time_h[rt_current->runnable_on_cpus]) { \
+		} else if (task->resume_time > rt_smp_time_h[task->runnable_on_cpus]) { \
 			sem->count--; \
 			rem_ready_task(task); \
-			task->state |= (RT_SCHED_SEMAPHORE | RT_SCHED_SEMAPHORE); \
+			task->state |= (RT_SCHED_SEMAPHORE | RT_SCHED_DELAYED);\
 			enq_timed_task(task); \
 		} \
 		enqueue_blocked(task, &sem->queue, PRIO_Q); \
@@ -340,7 +340,7 @@ RTAI_SYSCALL_MODE int rt_sem_signal(SEM *sem)
 {
 	unsigned long flags;
 	RT_TASK *task;
-	int tosched, truly_ownd = 0;
+	int tosched;
 
 	CHECK_SEM_MAGIC(sem);
 
@@ -364,7 +364,7 @@ RTAI_SYSCALL_MODE int rt_sem_signal(SEM *sem)
 	if ((task = (sem->queue.next)->task)) {
 		dequeue_blocked(task);
 		rem_timed_task(task);
-		truly_ownd = - (task->state & RT_SCHED_DELAYED);
+		sem->truly_ownd = - (task->state & RT_SCHED_DELAYED);
 		if (task->state != RT_SCHED_READY && (task->state &= ~(RT_SCHED_SEMAPHORE | RT_SCHED_DELAYED)) == RT_SCHED_READY) {
 			enq_ready_task(task);
 			if (sem->type <= 0) {
@@ -383,7 +383,6 @@ res:	if (sem->type > 0) {
 		int sched;
 		ASSIGN_RT_CURRENT;
 		sem->owndby = task;
-		sem->truly_ownd = truly_ownd;
 		sched = dequeue_resqel_reset_current_priority(&sem->resq, rt_current);
 		if (rt_current->suspdepth) {
 			if (rt_current->suspdepth > 0) {

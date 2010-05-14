@@ -1,7 +1,8 @@
 2010-05-14 Paolo Mantegazza <mantegazza@aero.polimi.it>
 
 	* base/ipc/sem/sem.c: a higher prio task can grab a resem that is
-	  owned by a task that has not been scheduled yet.
+	  owned by a task that has not been scheduled yet (ubi maior minor 
+	  cessat).
 	* base/include/rtai_sem.h: add a variable to the sem struct to allow
 	  checking if a resem is truly owned already.
 

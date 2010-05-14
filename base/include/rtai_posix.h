@@ -1598,7 +1598,8 @@ RTAI_PROTO(int, __wrap_pthread_cond_wait, (pthread_cond_t *cond, pthread_mutex_t
 	if (arg.cond && arg.mutex) {
 		pthread_cleanup_push(internal_cond_cleanup, mutex);
 		INC_VAL(mutex);
-		retval = !rtai_lxrt(BIDX, SIZARG, COND_WAIT, &arg).i[LOW] ? 0 : EPERM;
+		retval = rtai_lxrt(BIDX, SIZARG, COND_WAIT, &arg).i[LOW];
+		retval = !retval || retval == RTE_UNBLKD ? 0 : EPERM;
 		DEC_VAL(mutex);
 		pthread_cleanup_pop(0);
 	} else {

@@ -273,11 +273,6 @@ include_HEADERS = \
 	rtai_taskq.h \
 	select.h
 
-noinst_HEADERS = \
-	core.h \
-	device.h \
-	proc.h
-
 @CONFIG_KBUILD_FALSE@noinst_LIBRARIES = librtdm.a
 @CONFIG_KBUILD_FALSE@librtdm_a_AR = $(CROSS_COMPILE)ar cru
 @CONFIG_KBUILD_FALSE@INCLUDES = \

@@ -117,7 +117,7 @@ void rt_taskq_wait(TASKQ *taskq)
 	rem_ready_current(rt_current);
 	enqueue_blocked(rt_current, &taskq->queue, taskq->qtype);
 	rt_schedule();
-	if (unlikely((retp = rt_current->blocked_on))) { 
+	if (unlikely((retp = rt_current->blocked_on) != NULL)) { 
 		if (likely(retp != RTP_OBJREM)) { 
 			dequeue_blocked(rt_current);
 			rt_current->retval  = XNBREAK;
@@ -150,7 +150,7 @@ void rt_taskq_wait_until(TASKQ *taskq, RTIME time)
 		enq_timed_task(rt_current);
 		rt_schedule();
 	}
-	if (unlikely((retp = rt_current->blocked_on))) {
+	if (unlikely((retp = rt_current->blocked_on) != NULL)) {
 		if (likely(retp != RTP_OBJREM)) {
 			dequeue_blocked(rt_current);
 			rt_current->retval = retp > RTP_HIGERR ? XNTIMEO : XNBREAK;

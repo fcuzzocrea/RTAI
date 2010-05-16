@@ -1,11 +1,17 @@
+2010-05-17 Paolo Mantegazza <mantegazza@aero.polimi.it>
+
+	* addons/rtdm/* and addons/drivers/16559A/*: upgraded to the latest
+	  rtdm changes.
+
 2010-05-16 Paolo Mantegazza <mantegazza@aero.polimi.it>
 
-	* base/sched/sched.c: use RT_TASK "running" variable to support "ubi 
-	  maior minor cessat" in resource semaphores.
-	* base/ipc/sem/sem.c: modify "ubi maior minor cessat" basing it on the 
-	  "running" variable of RT_TASK.
-	* base/include/rtai_sem.h: the modified "ubi maior minor cessat"
-	  allows reverting to previous sem structure declaration.
+	* base/sched/sched.c: use RT_TASK "running" variable to mark a truly
+	  owned resource semaphores when scheduling.
+	* base/ipc/sem/sem.c: modify "ubi maior minor cessat" basing it on 
+	  the "running" variable of RT_TASK; add the feature also to mutex 
+	  signal specific to conds.
+	* base/include/rtai_sem.h: the use of RT_TASK "running" in "ubi maior
+	  minor cessat" allows reverting to previous sem structure declaration.
 
 2010-05-15 Paolo Mantegazza <mantegazza@aero.polimi.it>
 

@@ -64,7 +64,7 @@ MODULE_LICENSE("GPL");
 #define hard_rt_sendto           	rt_dev_sendto
 #else
 #define MSG_SOFT 0
-#define MSG_HARD 0
+#define MSG_HARD 1
 #define hard_rt_socket(a, b, c)  	portslot[i].socket[0]
 #define hard_rt_bind(a, b, c)
 #define hard_rt_close(a)
@@ -284,7 +284,7 @@ static void net_resume_task(int sock, struct portslot_t *p)
 	all_ok = 1;
 	if ((p->indx > 0) && (p->indx < MaxStubs)) {
 		if (!((p->task) && (p->hard == my->is_hard))) {
-			all_ok = 0;
+			all_ok = 1;
 		}
 	}
 	if (all_ok) {

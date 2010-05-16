@@ -881,7 +881,7 @@
 2008-11-14 Valentin Pavlyuchenko <TheValik@gmail.com>
 
 	* addons/rtdm/xn.h: care if it is either MMU or not in 
-	  strncpy_from_useri and xnarch_remap_vm_page.
+	  strncpy_from_user and xnarch_remap_vm_page.
 	* base/sched/sys.c: VM_PINNED just for the MMU case, care of Linux 
 	  version in extending nonroot capabilities.
 	* base/include/rtai_lxrt.h: care of growing and locking the stack 

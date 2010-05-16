@@ -260,6 +260,7 @@ int set_rtext(RT_TASK *task, int priority, int uses_fpu, void(*signal)(void), un
 	task->magic = RT_TASK_MAGIC; 
 	task->policy = 0;
 	task->owndres = 0;
+	task->running = 0;
 	task->prio_passed_to = 0;
 	task->period = 0;
 	task->resume_time = RT_TIME_END;
@@ -382,6 +383,7 @@ int rt_task_init_cpuid(RT_TASK *task, void (*rt_thread)(long), long data, int st
 	task->suspdepth = 1;
 	task->state = (RT_SCHED_SUSPENDED | RT_SCHED_READY);
 	task->owndres = 0;
+	task->running = 0;
 	task->is_hard = 1;
 	task->lnxtsk = 0;
 	task->priority = task->base_priority = priority;
@@ -565,6 +567,7 @@ do { \
 	if (CONFIG_RTAI_ALLOW_RR && new_task->policy > 0) { \
 		new_task->yield_time = rt_times.tick_time + new_task->rr_remaining; \
 	} \
+	new_task->running = 1; \
 } while (0)
 
 #define RR_INTR_TIME(fire_shot) \
@@ -1993,6 +1996,7 @@ static inline void fast_schedule(RT_TASK *new_task, struct task_struct *lnxtsk, 
 	rt_global_cli();
 	new_task->state |= RT_SCHED_READY;
 	enq_soft_ready_task(new_task);
+	new_task->running = 1;
 	sched_release_global_lock(cpuid);
 	LOCK_LINUX(cpuid);
 	(rt_current = &rt_linux_task)->lnxtsk = lnxtsk;

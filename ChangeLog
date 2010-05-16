@@ -1,3 +1,12 @@
+2010-05-16 Paolo Mantegazza <mantegazza@aero.polimi.it>
+
+	* base/sched/sched.c: use RT_TASK "running" variable to support "ubi 
+	  maior minor cessat" in resource semaphores.
+	* base/ipc/sem/sem.c: modify "ubi maior minor cessat" basing it on the 
+	  "running" variable of RT_TASK.
+	* base/include/rtai_sem.h: the modified "ubi maior minor cessat"
+	  allows reverting to previous sem structure declaration.
+
 2010-05-15 Paolo Mantegazza <mantegazza@aero.polimi.it>
 
 	* base/include/rtai_posix.h: fixed return value of pthread_cond_wait.
@@ -5,8 +14,8 @@
 2010-05-14 Paolo Mantegazza <mantegazza@aero.polimi.it>
 
 	* base/ipc/sem/sem.c: a higher prio task can grab a resem that is
-	  owned by a task that has not been scheduled yet (ubi maior minor 
-	  cessat); mimicking Linux rt-mutexes.
+	  owned by a task that has not been scheduled yet "ubi maior minor 
+	  cessat"; mimicking Linux rt-mutexes.
 	* base/include/rtai_sem.h: add a variable to the sem struct to allow
 	  checking if a resem is truly owned already.
 

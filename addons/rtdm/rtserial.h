@@ -31,7 +31,7 @@
  * Feel free to comment on this profile via the RTAI mailing list
  * (rtai@rtai.org) or directly to the author (jan.kiszka@web.de).
  *
- * @b Profile @b Revision: 2
+ * @b Profile @b Revision: 3
  * @n
  * @n
  * @par Device Characteristics
@@ -81,7 +81,7 @@
 
 #include <rtdm/rtdm.h>
 
-#define RTSER_PROFILE_VER		2
+#define RTSER_PROFILE_VER		3
 
 /*!
  * @anchor RTSER_DEF_BAUD   @name RTSER_DEF_BAUD
@@ -264,6 +264,8 @@ typedef struct rtser_config {
 
 	/** reception FIFO interrupt threshold, see @ref RTSER_FIFO_xxx */
 	int		fifo_depth;
+
+	int		reserved;
 
 	/** reception timeout, see @ref RTSER_TIMEOUT_xxx for special
 	 *  values */

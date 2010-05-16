@@ -4,7 +4,7 @@
  *
  * @note Copyright (C) 2005, 2006 Jan Kiszka <jan.kiszka@web.de>
  * @note Copyright (C) 2005 Joerg Langenberg <joerg.langenberg@gmx.net>
- * @note Copyright (C) 2005-2008 Paolo Mantegazza <mantegazza@aero.polimi.it>
+ * @note Copyright (C) 2005-2010 Paolo Mantegazza <mantegazza@aero.polimi.it>
  *
  * RTAI is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License as published by
@@ -32,7 +32,7 @@
  * RT/non-RT systems like RTAI. RTDM conforms to POSIX
  * semantics (IEEE Std 1003.1) where available and applicable.
  *
- * @b API @b Revision: 7
+ * @b API @b Revision: 8
  */
 
 /*!
@@ -68,7 +68,7 @@
 #include <linux/sched.h>
 #include <linux/socket.h>
 
-typedef size_t socklen_t;
+typedef u32 socklen_t;
 typedef struct task_struct rtdm_user_info_t;
 
 #else /* !__KERNEL__ */
@@ -89,7 +89,7 @@ typedef struct task_struct rtdm_user_info_t;
  * @anchor api_versioning @name API Versioning
  * @{ */
 /** Common user and driver API version */
-#define RTDM_API_VER			7
+#define RTDM_API_VER			8
 
 /** Minimum API revision compatible with the current release */
 #define RTDM_API_MIN_COMPAT_VER		6
@@ -132,6 +132,7 @@ typedef int64_t nanosecs_rel_t;
 #define RTDM_CLASS_NETWORK		4
 #define RTDM_CLASS_RTMAC		5
 #define RTDM_CLASS_TESTING		6
+#define RTDM_CLASS_RTIPC                7
 /*
 #define RTDM_CLASS_USB			?
 #define RTDM_CLASS_FIREWIRE		?
@@ -323,11 +324,12 @@ static inline ssize_t rt_dev_recvfrom(int fd, void *buf, size_t len, int flags,
 static inline int rt_dev_select(int nfds, fd_set *rfds, fd_set *wfds, fd_set *efds, nanosecs_rel_t timeout)
 {
 #ifdef CONFIG_RTAI_RTDM_SELECT
-	struct xnselector selector;
+	struct xnselector *selector;
 	int ret;
-	xnselector_init(&selector);
-        ret = __rt_dev_select(nfds, rfds, wfds, efds, timeout, &selector, 1);
-	xnselector_destroy(&selector);
+	selector = rt_malloc(sizeof(struct xnselector));
+	xnselector_init(selector);
+        ret = __rt_dev_select(nfds, rfds, wfds, efds, timeout, selector, 1);
+	xnselector_destroy(selector);
 	return ret;
 #else
 	return -ENOSYS;

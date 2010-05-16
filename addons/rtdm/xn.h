@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2005-2008 Paolo Mantegazza <mantegazza@aero.polimi.it>
+ * Copyright (C) 2005-2010 Paolo Mantegazza <mantegazza@aero.polimi.it>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License as
@@ -45,10 +45,10 @@
     } \
 } while(0)
 
-#define RTAI_BUGON(subsystem, cond)  do { \
-    if (unlikely(CONFIG_RTAI_DEBUG_##subsystem > 0 && (cond))) \
-        xnpod_fatal("bug at %s:%d (%s)", __FILE__, __LINE__, (#cond)); \
-} while(0)
+#define RTAI_BUGON(subsystem, cond)  do { /*\
+	if (unlikely(CONFIG_RTAI_DEBUG_##subsystem > 0 && (cond))) \
+		xnpod_fatal("bug at %s:%d (%s)", __FILE__, __LINE__, (#cond)); */ \
+ } while(0)
 
 /* 
   With what above we let some assertion diagnostic. Here below we keep knowledge
@@ -56,8 +56,18 @@
  */
 
 #define xnpod_root_p()          (!current->rtai_tskext(TSKEXT0) || !((RT_TASK *)(current->rtai_tskext(TSKEXT0)))->is_hard)
+#define xnshadow_thread(t)      ((xnthread_t *)current->rtai_tskext(TSKEXT0))
 #define rthal_local_irq_test()  (!rtai_save_flags_irqbit())
 #define rthal_local_irq_enable  rtai_sti 
+#define rthal_domain rtai_domain
+#define rthal_local_irq_disabled()                              \
+({                                                              \
+        unsigned long __flags, __ret;                           \
+        local_irq_save_hw_smp(__flags);                         \
+        __ret = ipipe_test_pipeline_from(&rthal_domain);        \
+        local_irq_restore_hw_smp(__flags);                      \
+        __ret;                                                  \
+})
 
 #if LINUX_VERSION_CODE < KERNEL_VERSION(2,6,0)
 
@@ -65,6 +75,8 @@
 #define compat_module_param_array(name, type, count, perm) \
         static inline void *__check_existence_##name(void) { return &name; } \
         MODULE_PARM(name, "1-" __MODULE_STRING(count) _MODULE_PARM_STRING_##type)
+
+typedef unsigned long phys_addr_t;
 
 #else
 
@@ -91,12 +103,65 @@
 typedef unsigned long spl_t;
 typedef struct { volatile unsigned long lock[2]; } xnlock_t;
 
+#ifndef list_first_entry
+#define list_first_entry(ptr, type, member) \
+        list_entry((ptr)->next, type, member)
+#endif
+
+#ifndef local_irq_save_hw_smp
+#ifdef CONFIG_SMP
+#define local_irq_save_hw_smp(flags)    local_irq_save_hw(flags)
+#define local_irq_restore_hw_smp(flags) local_irq_restore_hw(flags)
+#else /* !CONFIG_SMP */
+#define local_irq_save_hw_smp(flags)    do { (void)(flags); } while (0)
+#define local_irq_restore_hw_smp(flags) do { } while (0)
+#endif /* !CONFIG_SMP */
+#endif /* !local_irq_save_hw_smp */
+
 #ifdef CONFIG_SMP
 
-#define DECLARE_XNLOCK(lock)            xnlock_t lock
-#define DECLARE_EXTERN_XNLOCK(lock)     extern xnlock_t lock
-#define DEFINE_XNLOCK(lock)             xnlock_t lock = XNARCH_LOCK_UNLOCKED
-#define DEFINE_PRIVATE_XNLOCK(lock)     static DEFINE_XNLOCK(lock)
+#define DECLARE_XNLOCK(lock)              xnlock_t lock
+#define DECLARE_EXTERN_XNLOCK(lock)       extern xnlock_t lock
+#define DEFINE_XNLOCK(lock)               xnlock_t lock = XNARCH_LOCK_UNLOCKED
+#define DEFINE_PRIVATE_XNLOCK(lock)       static DEFINE_XNLOCK(lock)
+
+#if LINUX_VERSION_CODE < KERNEL_VERSION(2,6,0)
+
+#if 1
+#define __WORK_INITIALIZER(n,f,d) {                             \
+        .list   = { &(n).list, &(n).list },                     \
+        .sync = 0,                                              \
+        .routine = (f),                                         \
+        .data = (d),                                            \
+}
+#endif
+
+#define DECLARE_WORK(n,f,d)             struct tq_struct n = __WORK_INITIALIZER(n, f, d)
+#define DECLARE_WORK_NODATA(n, f)       DECLARE_WORK(n, f, NULL)
+#define DECLARE_WORK_FUNC(f)            void f(void *cookie)
+#define DECLARE_DELAYED_WORK_NODATA(n, f) DECLARE_WORK(n, f, NULL)
+
+#define schedule_delayed_work(work, delay) do {                 \
+	if (delay) {                                            \
+		set_current_state(TASK_UNINTERRUPTIBLE);        \
+		schedule_timeout(delay);                        \
+	}                                                       \
+	schedule_task(work);                                    \
+} while (0)
+
+#else
+
+#if LINUX_VERSION_CODE < KERNEL_VERSION(2,6,20)
+#define DECLARE_WORK_NODATA(f, n)       DECLARE_WORK(f, n, NULL)
+#define DECLARE_WORK_FUNC(f)            void f(void *cookie)
+#define DECLARE_DELAYED_WORK_NODATA(n, f) DECLARE_DELAYED_WORK(n, f, NULL)
+#else /* >= 2.6.20 */
+#define DECLARE_WORK_NODATA(f, n)       DECLARE_WORK(f, n)
+#define DECLARE_WORK_FUNC(f)            void f(struct work_struct *work)
+#define DECLARE_DELAYED_WORK_NODATA(n, f) DECLARE_DELAYED_WORK(n, f)
+#endif /* >= 2.6.20 */
+
+#endif
 
 static inline void xnlock_init(xnlock_t *lock)
 {
@@ -174,6 +239,7 @@ static inline void xnlock_put_irqrestore(xnlock_t *lock, spl_t flags)
 
 #define xnmalloc  rt_malloc
 #define xnfree    rt_free
+#define xnarch_fault_range(vma)
 
 // in kernel printing (taken from RTDM pet system)
 
@@ -210,7 +276,7 @@ static inline void xnlock_put_irqrestore(xnlock_t *lock, spl_t flags)
 	({ long err = strncpy_from_user(dstP, srcP, n); err; })
 #endif /* CONFIG_M68K */
 
-static inline int xnarch_remap_io_page_range(struct vm_area_struct *vma, unsigned long from, unsigned long to, unsigned long size, pgprot_t prot)
+static inline int xnarch_remap_io_page_range(struct file *filp, struct vm_area_struct *vma, unsigned long from, unsigned long to, unsigned long size, pgprot_t prot)
 {
 #if LINUX_VERSION_CODE < KERNEL_VERSION(2,6,0)
 
@@ -226,6 +292,32 @@ static inline int xnarch_remap_io_page_range(struct vm_area_struct *vma, unsigne
 #else /* LINUX_VERSION_CODE < KERNEL_VERSION(2,6,10) */
 	vma->vm_flags |= VM_RESERVED;
 	return remap_page_range(vma, from, to, size, prot);
+#endif /* LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,15) */
+
+#endif /* LINUX_VERSION_CODE < KERNEL_VERSION(2,6,0) */
+}
+
+#define wrap_remap_kmem_page_range(vma,from,to,size,prot) ({ \
+    vma->vm_flags |= VM_RESERVED; \
+    remap_page_range(from,to,size,prot); \
+})
+
+static inline int xnarch_remap_kmem_page_range(struct vm_area_struct *vma, unsigned long from, unsigned long to, unsigned long size, pgprot_t prot)
+{
+#if LINUX_VERSION_CODE < KERNEL_VERSION(2,6,0)
+
+	vma->vm_flags |= VM_RESERVED;
+	return remap_page_range(from, to, size, prot);
+
+#else /* LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,0) */
+
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,15) && defined(CONFIG_MMU)
+	return remap_pfn_range(vma, from, to >> PAGE_SHIFT, size, prot);
+#elif LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,10)
+	return remap_pfn_range(vma, from, to >> PAGE_SHIFT, size, prot);
+#else /* LINUX_VERSION_CODE < KERNEL_VERSION(2,6,10) */
+	vma->vm_flags |= VM_RESERVED;
+	return remap_page_range(from, to, size, prot);
 #endif /* LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,15) */
 
 #endif /* LINUX_VERSION_CODE < KERNEL_VERSION(2,6,0) */

@@ -179,7 +179,7 @@ EXPORT_SYMBOL_GPL(__xnselect_signal);
 void xnselect_destroy(struct xnselect *select_block)
 {
 	xnholder_t *holder;
-	int resched = 0;
+	int resched;
 	spl_t s;
 
 	xnlock_get_irqsave(&nklock, s);

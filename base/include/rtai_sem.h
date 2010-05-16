@@ -54,7 +54,7 @@ typedef struct rt_semaphore {
 	int type, restype;
 	int count;
 	struct rt_task_struct *owndby;
-	int qtype, truly_ownd;
+	int qtype;
 	struct rt_queue resq;
 #ifdef CONFIG_RTAI_RT_POLL
 	struct rt_poll_ql poll_wait_all;

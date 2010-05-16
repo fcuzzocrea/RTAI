@@ -48,8 +48,8 @@ extern struct epoch_struct boot_epoch;
 #define UBI_MAIOR_MINOR_CESSAT_WAIT(sem) \
 do { \
 	RT_TASK *task; \
-	if ((task = sem->owndby) && rt_current->priority < task->priority && sem->truly_ownd <= 0 && task->state == RT_SCHED_READY) { \
-		if (!sem->truly_ownd) { \
+	if ((task = sem->owndby) && rt_current->priority < task->priority && task->running <= 0) { \
+		if (!task->running) { \
 			sem->count--; \
 			rem_ready_task(task); \
 			task->state |= RT_SCHED_SEMAPHORE; \
@@ -61,7 +61,6 @@ do { \
 		} \
 		enqueue_blocked(task, &sem->queue, PRIO_Q); \
 		enqueue_resqel(&sem->resq, sem->owndby = rt_current); \
-		sem->truly_ownd = 1; \
 		rt_global_restore_flags(flags); \
 		return 1; \
 	} \
@@ -189,7 +188,6 @@ RTAI_SYSCALL_MODE void rt_typed_sem_init(SEM *sem, int value, int type)
 
 	sem->resq.prev = sem->resq.next = &sem->resq;
 	sem->resq.task = (void *)&sem->queue;
-	sem->truly_ownd = 0;
 #ifdef CONFIG_RTAI_RT_POLL
 	sem->poll_wait_all.pollq.prev = sem->poll_wait_all.pollq.next = &(sem->poll_wait_all.pollq);
 	sem->poll_wait_one.pollq.prev = sem->poll_wait_one.pollq.next = &(sem->poll_wait_one.pollq);
@@ -363,7 +361,6 @@ RTAI_SYSCALL_MODE int rt_sem_signal(SEM *sem)
 	if ((task = (sem->queue.next)->task)) {
 		dequeue_blocked(task);
 		rem_timed_task(task);
-		sem->truly_ownd = - (task->state & RT_SCHED_DELAYED);
 		if (task->state != RT_SCHED_READY && (task->state &= ~(RT_SCHED_SEMAPHORE | RT_SCHED_DELAYED)) == RT_SCHED_READY) {
 			enq_ready_task(task);
 			if (sem->type <= 0) {
@@ -372,6 +369,7 @@ RTAI_SYSCALL_MODE int rt_sem_signal(SEM *sem)
 				WAKEUP_WAIT_ALL_POLLERS(1);
 				return 0;
 			}
+			task->running = - (task->state & RT_SCHED_DELAYED);
 			tosched = 1;
 			goto res;
 		}
@@ -560,7 +558,6 @@ RTAI_SYSCALL_MODE int rt_sem_wait(SEM *sem)
 	}
 	if (sem->type > 0) {
 		enqueue_resqel(&sem->resq, sem->owndby = rt_current);
-		sem->truly_ownd = 1;
 	}
 	rt_global_restore_flags(flags);
 	return count;
@@ -612,7 +609,6 @@ RTAI_SYSCALL_MODE int rt_sem_wait_if(SEM *sem)
 		sem->count--;
 		if (sem->type > 0) {
 			enqueue_resqel(&sem->resq, sem->owndby = RT_CURRENT);
-			sem->truly_ownd = 1;
 		}
 	}
 	rt_global_restore_flags(flags);
@@ -718,7 +714,6 @@ RTAI_SYSCALL_MODE int rt_sem_wait_until(SEM *sem, RTIME time)
 	}
 	if (sem->type > 0) {
 		enqueue_resqel(&sem->resq, sem->owndby = rt_current);
-		sem->truly_ownd = 1;
 	}
 	rt_global_restore_flags(flags);
 	return count;

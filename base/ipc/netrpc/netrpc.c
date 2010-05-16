@@ -284,7 +284,7 @@ static void net_resume_task(int sock, struct portslot_t *p)
 	all_ok = 1;
 	if ((p->indx > 0) && (p->indx < MaxStubs)) {
 		if (!((p->task) && (p->hard == my->is_hard))) {
-			all_ok = 1;
+			all_ok = 0;
 		}
 	}
 	if (all_ok) {

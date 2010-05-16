@@ -847,6 +847,7 @@ static inline int rt_cndmtx_signal(SEM *mtx, RT_TASK *rt_current)
 		rem_timed_task(task);
 		if (task->state != RT_SCHED_READY && (task->state &= ~(RT_SCHED_SEMAPHORE | RT_SCHED_DELAYED)) == RT_SCHED_READY) {
 			enq_ready_task(task);
+			task->running = - (task->state & RT_SCHED_DELAYED);
 		}
 	}
 	mtx->owndby = 0;

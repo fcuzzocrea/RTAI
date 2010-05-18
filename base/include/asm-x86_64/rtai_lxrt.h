@@ -32,7 +32,7 @@
 #endif
 
 #ifndef NR_syscalls
-#include <asm/asm-offsets.h>
+//#include <asm/asm-offsets.h>
 #define NR_syscalls __NR_syscall_max
 #endif
 

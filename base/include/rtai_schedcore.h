@@ -20,6 +20,23 @@
 #ifndef _RTAI_SCHEDCORE_H
 #define _RTAI_SCHEDCORE_H
 
+#ifdef __KERNEL__
+
+#include <linux/module.h>
+#include <linux/init.h>
+#include <linux/kernel.h>
+#include <linux/version.h>
+#include <linux/errno.h>
+#include <linux/slab.h>
+#include <linux/timex.h>
+#include <linux/sched.h>
+#include <asm/param.h>
+#include <asm/system.h>
+#include <asm/io.h>
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,18)
+#include <linux/oom.h>
+#endif
+
 #include <rtai_version.h>
 #include <rtai_lxrt.h>
 #include <rtai_sched.h>
@@ -41,23 +58,6 @@
 #include <rtai_netrpc.h>
 #include <rtai_shm.h>
 #include <rtai_usi.h>
-
-#ifdef __KERNEL__
-
-#include <linux/module.h>
-#include <linux/init.h>
-#include <linux/kernel.h>
-#include <linux/version.h>
-#include <linux/errno.h>
-#include <linux/slab.h>
-#include <linux/timex.h>
-#include <linux/sched.h>
-#include <asm/param.h>
-#include <asm/system.h>
-#include <asm/io.h>
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,18)
-#include <linux/oom.h>
-#endif
 
 #ifndef _RTAI_SCHED_XN_H
 #define _RTAI_SCHED_XN_H
@@ -772,6 +772,30 @@ int rt_kthread_init_cpuid(RT_TASK *task,
 			  int uses_fpu,
 			  void(*signal)(void),
 			  unsigned int cpuid);
+
+#else /* !__KERNEL__ */
+
+#include <rtai_version.h>
+#include <rtai_lxrt.h>
+#include <rtai_sched.h>
+#include <rtai_malloc.h>
+#include <rtai_trace.h>
+#include <rtai_leds.h>
+#include <rtai_sem.h>
+#include <rtai_rwl.h>
+#include <rtai_spl.h>
+#include <rtai_scb.h>
+#include <rtai_mbx.h>
+#include <rtai_msg.h>
+#include <rtai_tbx.h>
+#include <rtai_mq.h>
+#include <rtai_bits.h>
+#include <rtai_wd.h>
+#include <rtai_tasklets.h>
+#include <rtai_fifos.h>
+#include <rtai_netrpc.h>
+#include <rtai_shm.h>
+#include <rtai_usi.h>
 
 #endif /* __KERNEL__ */
 

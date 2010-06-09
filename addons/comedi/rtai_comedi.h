@@ -881,9 +881,9 @@ static inline int RT_comedi_get_n_ranges(unsigned long node, int port, void *dev
 
 #define set_insn_offsets_lens() \
 do { \
-	linsns.ofstlens.n_ofst      = offsetof(struct comedi_insn, n); \
-	linsns.ofstlens.subdev_ofst = offsetof(struct comedi_insn, subdev); \
-	linsns.ofstlens.chanspec_ofst = offsetof(struct comedi_insn, chanspec);\
+	linsns.ofstlens.n_ofst      = offsetof(comedi_insn, n); \
+	linsns.ofstlens.subdev_ofst = offsetof(comedi_insn, subdev); \
+	linsns.ofstlens.chanspec_ofst = offsetof(comedi_insn, chanspec);\
 	linsns.ofstlens.insn_len    = (void *)&insns[1] - (void *)&insns[0]; \
 	linsns.ofstlens.insns_ofst  = offsetof(struct rpced_insns, insns); \
 	linsns.ofstlens.data_ofsts  = offsetof(struct rpced_insns, data_ofsts);\

@@ -1,3 +1,9 @@
+2010-06-29 Roberto Bucher <roberto.bucher@supsi.ch>
+
+	* rtai-lab/scicoslab/macros/RTAI/RTAICodeGen_.sci:
+	* rtai-lab/scicoslab/macros/RTAI/gif_icons: Patches
+	  from Rafael Campos (thanks!!!)+modification from INRIA.
+
 2010-06-09 Rafael Campos <rafael@freedom.ind.br>
 
 	* addons/comedi/rtai_comedi.h: fix a macro to keep it compatible for 

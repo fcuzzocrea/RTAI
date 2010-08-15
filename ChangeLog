@@ -1,3 +1,9 @@
+2010-08-15 Paolo Mantegazza <mantegazza@aero.polimi.it>
+	   suggested by Tommaso Falchi Delitala <volalto86@gmail.com>
+
+	* addons/rtdm/rtdm.h: change RTAI_LXRT into RTDM_RTAI_LXRT to avoid 
+	  naming conflicts
+
 2010-06-29 Roberto Bucher <roberto.bucher@supsi.ch>
 
 	* rtai-lab/scicoslab/macros/RTAI/RTAICodeGen_.sci:

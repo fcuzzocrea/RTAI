@@ -4,6 +4,10 @@
 	* addons/rtdm/rtdm.h: change RTAI_LXRT into RTDM_RTAI_LXRT
 	  to avoid naming conflicts
 
+2010-05-07 Pierangelo Masarati <masarati@aero.polimi.it>
+
+	* RTAI 3.8.1
+
 2010-05-07 Paolo Mantegazza <mantegazza@aero.polimi.it>
 
 	* rtai-py/rtai_lxrt.py: fix rt_task_delete and rt_thread_delete, to

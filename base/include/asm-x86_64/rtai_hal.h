@@ -160,6 +160,10 @@ static inline unsigned long long rtai_u64div32c(unsigned long long a,
 #endif /* CONFIG_X86_LOCAL_APIC */
 #include <rtai_trace.h>
 
+#ifndef IPIPE_IRQ_DOALL
+#define IPIPE_IRQ_DOALL
+#endif
+
 #if defined(__IPIPE_2LEVEL_IRQMAP) || defined(__IPIPE_3LEVEL_IRQMAP)
 #define irqpend_himask     irqpend_himap
 #define irqpend_lomask     irqpend_lomap

@@ -1,7 +1,7 @@
-2010-08-22 Paolo Mantegazza <mantegazza@aero.polimi.it>
+2010-08-23 Paolo Mantegazza <mantegazza@aero.polimi.it>
 
-	* base/include/asm-i386/rtai_hal.h: define a blank IPIPE_IRQ_DOALL 
-	  when not defined yet.
+	* base/include/asm-i386/rtai_hal.h, base/include/asm-x86_64/rtai_hal.h: 
+	  define a blank IPIPE_IRQ_DOALL when not defined yet.
 
 2010-08-15 Paolo Mantegazza <mantegazza@aero.polimi.it>
 	   suggested by Tommaso Falchi Delitala <volalto86@gmail.com>

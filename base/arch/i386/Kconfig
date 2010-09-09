@@ -755,7 +755,7 @@ config RTAI_IMMEDIATE_LINUX_SYSCALL
 		- call the related sys service through the Linux syscall path;
 		- return to user space in soft real time mode;
 		- resume hard real time at the next call of an RTAI function.
-	The marginally most efficient behaviour is likely 1 but 2, the default, 
+	The marginally most efficient behaviour is likely 1 but 2, the default,
 	is safer.
 	It is remarked that nothing is changed if hard/soft transitions 
 	are called controlled by an application task through 

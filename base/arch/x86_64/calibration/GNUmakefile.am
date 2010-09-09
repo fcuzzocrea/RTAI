@@ -6,17 +6,10 @@ modext = @RTAI_MODULE_EXT@
 CROSS_COMPILE = @CROSS_COMPILE@
 
 libcalibrate_rt_a_SOURCES = calibrate-module.c calibrate.h
-libsmi_rt_a_SOURCES = smi-module.c
 
 if CONFIG_KBUILD
-rtai_calibrate.ko: @RTAI_KBUILD_ENV@
-rtai_calibrate.ko: $(libcalibrate_rt_a_SOURCES)
-	@RTAI_KBUILD_TOP@ \
-	@RTAI_KBUILD_CMD@ \
-	@RTAI_KBUILD_BOTTOM@
-
-rtai_smi.ko: @RTAI_KBUILD_ENV@
-rtai_smi.ko: $(libsmi_rt_a_SOURCES)
+calibrate_rt.ko: @RTAI_KBUILD_ENV@
+calibrate_rt.ko: $(libcalibrate_rt_a_SOURCES)
 	@RTAI_KBUILD_TOP@ \
 	@RTAI_KBUILD_CMD@ \
 	@RTAI_KBUILD_BOTTOM@
@@ -27,7 +20,7 @@ clean-local:
 distclean-local:
 	@RTAI_KBUILD_DISTCLEAN@
 else
-noinst_LIBRARIES = libcalibrate_rt.a libsmi_rt.a
+noinst_LIBRARIES = libcalibrate_rt.a
 
 libcalibrate_rt_a_AR = $(CROSS_COMPILE)ar cru
 
@@ -36,17 +29,7 @@ libcalibrate_rt_a_CPPFLAGS = \
 	-I$(top_srcdir)/base/include \
 	-I../../../include
 
-rtai_calibrate.o: libcalibrate_rt.a
-	$(CROSS_COMPILE)$(LD) --whole-archive $< -r -o $@
-
-libsmi_rt_a_AR = $(CROSS_COMPILE)ar cru
-
-libsmi_rt_a_CPPFLAGS = \
-	@RTAI_KMOD_CFLAGS@ \
-	-I$(top_srcdir)/base/include \
-	-I../../../include
-
-rtai_smi.o: libsmi_rt.a
+calibrate_rt.o: libcalibrate_rt.a
 	$(CROSS_COMPILE)$(LD) --whole-archive $< -r -o $@
 endif
 
@@ -58,7 +41,7 @@ calibrate_SOURCES = calibrate.c calibrate.h
 
 calibrate_CPPFLAGS = \
 	@RTAI_USER_CFLAGS@ \
-	-DKERNEL_HELPER_PATH="\"$(calibrationdir)/rtai_calibrate$(modext)\"" \
+	-DKERNEL_HELPER_PATH="\"$(calibrationdir)/calibrate_rt$(modext)\"" \
 	-DUSER_HELPER_PATH="\"$(calibrationdir)/calibration_helper\"" \
 	-I$(top_srcdir)/base/include \
 	-I../../../include
@@ -74,31 +57,25 @@ calibration_helper_LDADD = \
 	../../../sched/liblxrt/liblxrt.la \
 	-lpthread
 
-all-local: rtai_calibrate$(modext) rtai_smi$(modext)
-
-RT_MODULES = rtai_calibrate$(modext) rtai_smi$(modext)
-
 calibrate_DEPENDENCIES = liblxrt.la
 liblxrt.la:
 	@(cd ../../../sched/liblxrt && make liblxrt.la)
 
 .PHONY: liblxrt.la
 
-install-exec-local: $(RT_MODULES)
+
+all-local: calibrate_rt$(modext)
+
+install-exec-local: calibrate_rt$(modext)
 	$(mkinstalldirs) $(DESTDIR)$(moduledir)
-	@for m in $(RT_MODULES) ; do \
-		echo "installing module $$m in $(DESTDIR)$(moduledir)" ; \
-		$(INSTALL_DATA) $$m $(DESTDIR)$(moduledir)/$$m ; \
-	done
+	$(INSTALL_DATA) $^ $(DESTDIR)$(moduledir)/rtai_calibrate.ko
 
 install-data-local:
-	$(mkinstalldirs) $(DESTDIR)$(calibrationdir) $(DESTDIR)$(bindir)
+	$(mkinstalldirs) $(DESTDIR)$(calibrationdir)
 	$(INSTALL_DATA) $(srcdir)/runinfo $(DESTDIR)$(calibrationdir)/.runinfo
 	@echo '#!/bin/sh' > $(DESTDIR)$(calibrationdir)/run
 	@echo "\$${DESTDIR}$(bindir)/rtai-load \$$*" >> $(DESTDIR)$(calibrationdir)/run
 	@chmod +x $(DESTDIR)$(calibrationdir)/run
-	$(INSTALL_SCRIPT) -m 755 setsmi $(DESTDIR)$(bindir)
-	@$(LN_S) -f $(bindir)/setsmi $(DESTDIR)$(bindir)/rstsmi
 
 run: all
 	@$(top_srcdir)/rtai-scripts/rtai-load --verbose

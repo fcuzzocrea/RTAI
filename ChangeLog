@@ -7,7 +7,7 @@
 	  sync'ed with vulcano
 	* base/arch/i386/calibration/smi-module.c,
 	  base/arch/x86_64/calibration/smi-module.c,::
-	  #ifdef PCI_DEVICE_ID_INTEL_ICH10_1
+	  #ifndef PCI_DEVICE_ID_INTEL_ICH10_1, for older kernel without it.
 
 2010-08-23 Paolo Mantegazza <mantegazza@aero.polimi.it>
 

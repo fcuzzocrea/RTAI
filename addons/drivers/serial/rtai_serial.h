@@ -198,7 +198,7 @@ RTAI_PROTO(int, rt_spclose, (unsigned int tty))
 	return rtai_lxrt(FUN_EXT_RTAI_SP, SIZARG, _SPCLOSE, &arg).i[LOW];
 }
 
-RTAI_PROTO_ALWAYS_INLINE(int, rt_spread, (unsigned int tty, char *msg, int msg_size))
+RTAI_PROTO(int, rt_spread, (unsigned int tty, char *msg, int msg_size))
 {
 	int notrd, size;
 	char lmsg[size = abs(msg_size)];
@@ -210,7 +210,7 @@ RTAI_PROTO_ALWAYS_INLINE(int, rt_spread, (unsigned int tty, char *msg, int msg_s
 	return notrd;
 }
 
-RTAI_PROTO_ALWAYS_INLINE(int, rt_spevdrp, (unsigned int tty, char *msg, int msg_size))
+RTAI_PROTO(int, rt_spevdrp, (unsigned int tty, char *msg, int msg_size))
 {
 	int notrd, size;
 	char lmsg[size = abs(msg_size)];
@@ -222,7 +222,7 @@ RTAI_PROTO_ALWAYS_INLINE(int, rt_spevdrp, (unsigned int tty, char *msg, int msg_
 	return notrd;
 }
 
-RTAI_PROTO_ALWAYS_INLINE(int, rt_spwrite, (unsigned int tty, char *msg, int msg_size))
+RTAI_PROTO(int, rt_spwrite, (unsigned int tty, char *msg, int msg_size))
 {
 	int size;
 	char lmsg[size = abs(msg_size)];
@@ -303,7 +303,7 @@ RTAI_PROTO(int, rt_spset_thrs, (unsigned int tty, int rxthrs, int txthrs))
 	return rtai_lxrt(FUN_EXT_RTAI_SP, SIZARG, _SPSET_THRS, &arg).i[LOW];
 }
 
-static inline void rt_spwait_usr_callback(unsigned int tty, unsigned long *retvals)
+RTAI_PROTO(void, rt_spwait_usr_callback, (unsigned int tty, unsigned long *retvals))
 {
 	struct { unsigned long tty; unsigned long *retvals; long size; } arg = { tty, retvals, 6*sizeof(unsigned long) };
 	rtai_lxrt(FUN_EXT_RTAI_SP, SIZARG, _SPWAIT_USR_CALLBACK, &arg);
@@ -351,7 +351,7 @@ static void *callback_thread(void *farg)
 }
 #endif
 
-RTAI_PROTO_ALWAYS_INLINE(int, rt_spset_callback_fun, (unsigned int tty, void (*callback_fun)(int, int), int rxthrs, int txthrs))
+RTAI_PROTO(int, rt_spset_callback_fun, (unsigned int tty, void (*callback_fun)(int, int), int rxthrs, int txthrs))
 {
 	int ret;
 	pthread_t thread;
@@ -365,7 +365,7 @@ RTAI_PROTO_ALWAYS_INLINE(int, rt_spset_callback_fun, (unsigned int tty, void (*c
 	return ret;
 }
 
-RTAI_PROTO_ALWAYS_INLINE(int, rt_spset_err_callback_fun, (unsigned int tty, void (*err_callback_fun)(int)))
+RTAI_PROTO(int, rt_spset_err_callback_fun, (unsigned int tty, void (*err_callback_fun)(int)))
 {
 	int ret;
 	pthread_t thread;

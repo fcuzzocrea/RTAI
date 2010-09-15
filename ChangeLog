@@ -1,3 +1,9 @@
+2010-09-15 Paolo Mantegazza <mantegazza@aero.polimi.it>
+
+	* addons/drivers/serial/rtai_serial.h: make all declared prototypes 
+          compilible in a lib.
+	* rtai-py/rtai_ser.py: add RTAI serial support for python.
+
 2010-09-09 Pierangelo Masarati <masarati@aero.polimi.it>
 	* base/arch/x86_64/calibration/GNUmakefile.am,
 	  base/arch/x86_64/calibration/GNUmakefile.in,

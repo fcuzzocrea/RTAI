@@ -1,3 +1,8 @@
+2010-10-08 Paolo Mantegazza <mantegazza@aero.polimi.it>
+
+	* base/include/asm-x86_64/rtai_fpu.h: upgrade to new FP link in thread
+	  struct definition for > 2.6.34.
+
 2010-10-06 Paolo Mantegazza <mantegazza@aero.polimi.it>
 
 	* base/include/asm-i386/rtai_fpu.h: upgrade to new FP link in thread

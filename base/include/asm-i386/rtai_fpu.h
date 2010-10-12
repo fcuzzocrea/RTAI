@@ -35,7 +35,7 @@
 #if LINUX_VERSION_CODE <= KERNEL_VERSION(2,6,25)
 typedef union i387_union FPU_ENV;
 #define TASK_FPENV(tsk)  (&(tsk)->thread.i387)
-#elseif LINUX_VERSION_CODE <= KERNEL_VERSION(2,6,34)
+#elif LINUX_VERSION_CODE <= KERNEL_VERSION(2,6,34)
 typedef union thread_xstate FPU_ENV;
 #define TASK_FPENV(tsk)  ((tsk)->thread.xstate)
 #else

@@ -1401,6 +1401,36 @@ RTAI_SYSCALL_MODE RT_TASK *rt_sendx(RT_TASK *task, void *msg, int size)
  */
 RTAI_SYSCALL_MODE RT_TASK *rt_sendx_if(RT_TASK *task, void *msg, int size)
 {
+#if 1
+	DECLARE_RT_CURRENT;
+	unsigned long flags;
+
+	CHECK_SENDER_MAGIC(task);
+
+	flags = rt_global_save_flags_and_cli();
+	ASSIGN_RT_CURRENT;
+	if ((task->state & RT_SCHED_RECEIVE) &&
+	      (!task->msg_queue.task || task->msg_queue.task == rt_current)) {
+		task->mcb.sbuf = msg;
+		task->mcb.sbytes = size;
+		task->msg = (unsigned long)&task->mcb;
+		task->msg_queue.task = rt_current;
+		task->ret_queue.task = NULL;
+		rem_timed_task(task);
+		if (task->state != RT_SCHED_READY && (task->state &= ~(RT_SCHED_RECEIVE | RT_SCHED_DELAYED)) == RT_SCHED_READY) {
+			enq_ready_task(task);
+			RT_SCHEDULE(task, cpuid);
+		}
+		if (rt_current->msg_queue.task != rt_current) {
+			rt_current->msg_queue.task = rt_current;
+			task = NULL;
+		}
+	} else {
+		task = NULL;
+	}
+	rt_global_restore_flags(flags);
+	return task;
+#else
 	if (task) {
 		struct mcb_t mcb;
 		unsigned long retrep;
@@ -1408,6 +1438,7 @@ RTAI_SYSCALL_MODE RT_TASK *rt_sendx_if(RT_TASK *task, void *msg, int size)
 		return rt_rpc(task, (unsigned long)&mcb, &retrep);
 	}
 	return 0;
+#endif
 }
 
 

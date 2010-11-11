@@ -1,3 +1,11 @@
+2010-11-11 Holger Nahrstaedt <nahrstaedt@control.tu-berlin.de>
+
+	* rtai-lab/scilab/loader.sce: 
+	* rtai-lab/scilab/macros/RTAI/loadmacros.sce:
+	* rtai-lab/scilab/macros/Makefile:
+	* rtai-lab/scilab/macros/scilab: New approach in including RTAI files
+	  in scilab (same approach as for scicoslab).
+
 2010-10-12 Paolo Mantegazza <mantegazza@aero.polimi.it>
 
 	* base/ipc/msg/msg.c; make rt_sendx_if usable form interrupt handlers.

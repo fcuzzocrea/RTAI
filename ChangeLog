@@ -1,3 +1,9 @@
+2010-11-16 Holger Nahrstaedt <nahrstaedt@control.tu-berlin.de>
+
+	* rtai-lab/scilab/rtmain.c: 
+	* rtai-lab/scilab5/devices/rtmain.h:
+	* rtai-lab/scilab/devices/rtmain.h: rtRegisterLogData should not be static (otherwise there is a problem with shared libraries)
+
 2010-11-11 Holger Nahrstaedt <nahrstaedt@control.tu-berlin.de>
 
 	* rtai-lab/scilab/loader.sce: 

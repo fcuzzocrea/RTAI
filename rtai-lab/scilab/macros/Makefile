@@ -1,7 +1,7 @@
 all: install
 
 SCILAB_VERSION = 4.1.2
-SCILAB_DIR = /usr/local/scilab-$(SCILAB_VERSION)
+SCILAB_DIR = /opt/scilab-$(SCILAB_VERSION)
 SCILAB = scilab
 RTAIDIR = $(shell rtai-config --prefix)
 

@@ -392,9 +392,8 @@ RTAI_SYSCALL_MODE int rt_sem_broadcast(SEM *sem)
 	CHECK_SEM_MAGIC(sem);
 
 	schedmap = 0;
-	q = &(sem->queue);
 	flags = rt_global_save_flags_and_cli();
-	while ((q = q->next) != &(sem->queue)) {
+	while ((q = sem->queue.next) != &(sem->queue)) {
 		if ((task = q->task)) {
 			dequeue_blocked(task = q->task);
 			rem_timed_task(task);

@@ -1,7 +1,7 @@
 2010-11-27 Fernando Augusto <fernando_aug@yahoo.com.
 
-	base/ipc/sem/sem.c: fixed a possible nasty locking loop in 
-	rt_sem_broadcast.
+	* base/ipc/sem/sem.c: fixed a possible nasty locking loop in 
+	  rt_sem_broadcast.
 
 2010-09-01 Roberto Bucher <roberto.bucher@supsi.ch>
 

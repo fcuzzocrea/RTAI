@@ -1,3 +1,8 @@
+2010-11-27 Fernando Augusto <fernando_aug@yahoo.com.
+
+	*base/ipc/sem/sem.c: fixed a possible nasty locking loop in
+	 rt_sem_broadcast.
+
 2010-11-16 Holger Nahrstaedt <nahrstaedt@control.tu-berlin.de>
 
 	* rtai-lab/scilab/rtmain.c: 

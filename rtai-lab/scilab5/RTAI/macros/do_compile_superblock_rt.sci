@@ -10,46 +10,10 @@
 //** 10 Set 2007 : cleaner startup code by Simone Mannori
 //** 15 Aug 2009 : Hierarchical block names by Henrik Slotholt
 
-function RTAICodeGen_()
 
-//** ------------- Preliminary I/O section ___________________________________________________________________________
-    k = [] ; //** index of the CodeGen source superbloc candidate
 
-    xc = %pt(1); //** last valid click position 
-    yc = %pt(2); 
-    
-    %pt = []   ;
-    Cmenu = [] ;
 
-    k  = getobj(scs_m,[xc;yc]) ; //** look for a block 
-    //** check if we have clicked near an object
-    if k==[] then
-      return
-    //** check if we have clicked near a block
-    elseif typeof(scs_m.objs(k))<>"Block" then
-      return
-    end
 
-    //** If the clicked/selected block is really a superblock 
-    //**         <k>
-    if scs_m.objs(k).model.sim(1)=="super" then
-      
-        XX = scs_m.objs(k); //** isolate the super block to use 
-        
-//---------------------------------------------------->       THE REAL CODE GEN IS HERE --------------------------------
-        //** the real code generator is here 
-        [ok, XX, alreadyran, flgcdgen, szclkINTemp, freof] =  do_compile_superblock42(XX, scs_m, k, alreadyran);
-        
-        
-        //**quick fix for sblock that contains scope
-        gh_curwin = scf(curwin)
-    
-    else
-      //** the clicked/selected block is NOT a superblock 
-      message("Generation Code only work for a Super Block ! ")
-    end
-
-endfunction
 
 //==========================================================================
 //BlockProto : generate prototype
@@ -520,7 +484,7 @@ function ok = compile_standalone()
 //Author : Roberto Bucher (roberto.bucher@die.supsi.ch)
 
 
-  xinfo('Compiling standalone');
+  //xinfo('Compiling standalone');
   wd = pwd();
   chdir(rpat);
 
@@ -542,7 +506,7 @@ endfunction
 // Modified for RT purposes by Roberto Bucher - RTAI Team
 // roberto.bucher@supsi.ch
 
-function  [ok,XX,alreadyran,flgcdgen,szclkINTemp,freof] = do_compile_superblock42(XX,all_scs_m,numk,alreadyran)
+function  [ok,XX,alreadyran,flgcdgen,szclkINTemp,freof] = do_compile_superblock_rt(XX,all_scs_m,numk,alreadyran)
 
   scs_m = XX.model.rpar ; //** isolate the super block scs_m data structure 
   par = scs_m.props;
@@ -632,8 +596,8 @@ function  [ok,XX,alreadyran,flgcdgen,szclkINTemp,freof] = do_compile_superblock4
   end
 
   
-  //** BEWARE : update to new graphics instructions ! 
-  %windo = xget('window') ; 
+  //** OLD GRAPHICS
+  //%windo = xget('window') ; 
   
   cpr = c_pass2(bllst,connectmat,clkconnect,cor,corinv)
 
@@ -705,8 +669,8 @@ function  [ok,XX,alreadyran,flgcdgen,szclkINTemp,freof] = do_compile_superblock4
   cpr.sim.funs=funs_save;
   cpr.sim.funtyp=funtyp_save;
 
-  //** BEWARE: replace this OLD graphics instruction !
-  xset('window',%windo) ; 
+  //** OLD GRAPHICS
+  //xset('window',%windo) ; 
 
   ///////////////////
   //** %cpr pointers 
@@ -819,14 +783,17 @@ function  [ok,XX,alreadyran,flgcdgen,szclkINTemp,freof] = do_compile_superblock4
   foo = 3; //** probably this variable is never used ? 
   okk = %f; 
   rdnom='foo'; 
-  rpat = getcwd(); 
+  rpat = pwd(); 
   archname=''; 
   Tsamp = sci2exp(eval(sTsamp));
+
+  TARGETDIR = SCI+"/contrib/RTAI/RT_templates";
+
   
   template = ''; //** default values for this version 
   
   if XX.model.rpar.props.void3 == [] then
-	target = 'rtai'; //** default compilation chain 
+        target = 'rtai';
 	odefun = 'ode4';  //** default solver 
 	odestep = '10';   //** default continous step size 
   else
@@ -838,8 +805,8 @@ function  [ok,XX,alreadyran,flgcdgen,szclkINTemp,freof] = do_compile_superblock4
   libs='';
 
   //** dialog box default variables 
-  label1=[hname;getcwd()+'/'+hname+"_scig";target;template];
-  label2=[hname;getcwd()+'/'+hname+"_scig";target;template;odefun;odestep];
+  label1=[hname;pwd()+'/'+hname+"_scig";target;template];
+  label2=[hname;pwd()+'/'+hname+"_scig";target;template;odefun;odestep];
   
   ode_x=['ode1';'ode2';'ode4']; //** available continous solver 
   
@@ -931,8 +898,8 @@ function  [ok,XX,alreadyran,flgcdgen,szclkINTemp,freof] = do_compile_superblock4
     //** pippo.cmd : sequenza di comandi Scilab 
 
 
-    TARGETDIR = SCI+"/contrib/RTAI/RT_templates";
-
+     TARGETDIR = SCI+"/contrib/RTAI/RT_templates";
+    
 
     [fd,ierr] = mopen(TARGETDIR+'/'+target+'.gen','r');
 
@@ -1238,7 +1205,7 @@ endfunction
 // rmq : La fonction zdoit n'est pas utilis�e pour le moment
 
 // Original file from Project Metalau - INRIA
-// Modified for RT purposes by Roberto Bucher - RTAI Team
+// Modified for RT purposes by Robertoa Bucher - RTAI Team
 // roberto.bucher@supsi.ch
 
 function [Code,Code_common]=make_standalone42()
@@ -1305,7 +1272,8 @@ function [Code,Code_common]=make_standalone42()
 	'double '+rdnom+'_get_tsamp_delay()'
 	''
         '{'
-	'  return(' + string(Tsamp_delay) + ');'
+	//'  return(' + string(Tsamp_delay) + ');'
+        'return(0);'
 	'}'
 	''
   ]
@@ -1338,6 +1306,44 @@ function [Code,Code_common]=make_standalone42()
           'static int ode2();'
           'static int ode4();'
           '']
+  end
+
+Code=[Code;
+        '/* Table of constant values */'
+        'static int nrd_'+string(0:maxtotal)'+' = '+string(0:maxtotal)'+';']
+
+  if maxtotal<10 then
+    Code=[Code;
+          'static int nrd_10 = 10;']
+  end
+  if maxtotal<11 then
+    Code=[Code;
+          'static int nrd_11 = 11;']
+  end
+
+  if maxtotal<81 then
+    Code=[Code;
+          'static int nrd_81 = 81;']
+  end
+  if maxtotal<82 then
+    Code=[Code;
+          'static int nrd_82 = 82;']
+  end
+  if maxtotal<84 then
+    Code=[Code;
+          'static int nrd_84 = 84;']
+  end
+  if maxtotal<811 then
+    Code=[Code;
+          'static int nrd_811 = 811;']
+  end
+  if maxtotal<812 then
+    Code=[Code;
+          'static int nrd_812 = 812;']
+  end
+  if maxtotal<814 then
+    Code=[Code;
+          'static int nrd_814 = 814;']
   end
 
   Code=[Code;
@@ -1396,7 +1402,7 @@ function [Code,Code_common]=make_standalone42()
 	'  double t;'
         '  int local_flag;'
 //	'#ifdef linux'
-//        '  double *args[2];'
+        '  double *args[100];'
 //	'#endif'
         '']
 
@@ -1819,7 +1825,7 @@ function [Code,Code_common]=make_standalone42()
         '  int local_flag;'
 	'  int i;'
 //	'#ifdef linux'
-//        '  double *args[2];'
+        '  double *args[100];'
 //	'#endif'
        ]
 
@@ -1951,7 +1957,7 @@ function [Code,Code_common]=make_standalone42()
 	'  double t;'
         '  int local_flag;'
 //	'#ifdef linux'
-//        '  double *args[2];'
+        '  double *args[100];'
 //	'#endif'
         '']
 
@@ -1989,20 +1995,13 @@ function [Code,Code_common]=make_standalone42()
                '/* ---- Headers ---- */'
                '#include <memory.h>'
                '#include '"machine.h'"'
-               '']
-
-	       if(isempty(grep(SCI,'5.1.1'))) then
-	       Code_common=[Code_common
+               ''
                '/*'+part('-',ones(1,40))+'  Lapack messag function */';
                'void C2F(xerbla)(SRNAME,INFO,L)'
                '     char *SRNAME;'
                '     int *INFO;'
                '     long int L;'
                '{}'
-	       '']
-	       end
-
-               Code_common=[Code_common
                'void set_block_error(int err)'
                '{'
                '  return;'
@@ -2056,7 +2055,7 @@ function [Code,Code_common]=make_standalone42()
           '  int nport;'
 //          '  int nevprt=1;'
 //	  '#ifdef linux'
-//          '  double *args[2];'
+          '  double *args[100];'
 //	  '#endif'
           '  C2F(dset)(&neq, &c_b14,xd , &c__1);'
           '']
@@ -2244,7 +2243,7 @@ function txt=make_static_standalone42()
     for i=1:(length(rpptr)-1)
       if rpptr(i+1)-rpptr(i)>0  then
 
-        idPrefix=''
+     idPrefix=''
         if size(corinv(i),'*')==1 then
           OO=scs_m.objs(corinv(i));
         else
@@ -2266,7 +2265,8 @@ function txt=make_static_standalone42()
         //** Add comments **//
         nbrpa=nbrpa+1;
         ntot_r = ntot_r + (rpptr(i+1)-rpptr(i));
-        txt($+1)='/* Routine name of block: '+strcat(string(cpr.sim.funs(i)));
+
+	 txt($+1)='/* Routine name of block: '+strcat(string(cpr.sim.funs(i)));
         txt($+1)=' * Gui name of block: '+strcat(string(OO.gui));
         txt($+1)=' * Compiled structure index: '+strcat(string(i));
 
@@ -2277,10 +2277,10 @@ function txt=make_static_standalone42()
           txt=[txt;cformatline(' * Exprs: '+strcat(OO.graphics.exprs(1),","),70)];
         end
         if stripblanks(OO.graphics.id)~=emptystr() then
-          str_id = idPrefix + string(OO.graphics.id);
+	  str_id = idPrefix + string(OO.graphics.id);
         else
           str_id = idPrefix + 'RPARAM[' + string(nbrpa) +']';
-        end
+	end
         txt=[txt;
              cformatline(' * Identification: '+idPrefix+strcat(string(OO.graphics.id)),70)];
 	txt=[txt;cformatline('rpar= {'+strcat(string(rpar(rpptr(i):rpptr(i+1)-1)),",")+'};',70)];
@@ -2659,7 +2659,7 @@ endfunction
 function Makename=rt_gen_make(name,files,libs)
 
   Makename=rpat+'/Makefile';
-
+  
   T=mgetl(TARGETDIR+'/'+makfil);
   T=strsubst(T,'$$MODEL$$',name);
   T=strsubst(T,'$$OBJ$$',strcat(files+'.o',' '));
@@ -3329,3 +3329,4 @@ function [files]=write_code(Code,CCode,FCode,Code_common)
 endfunction
 
 //==========================================================================
+

@@ -1,3 +1,30 @@
+2011-01-11 Holger Nahrstaedt <nahrstaedt@control.tu-berlin.de>
+
+	* rtai-lab/scilab5/RTAI/macros/gif_icons: add icons for each block
+	* rtai-lab/scilab5/RTAI/macros/svg_icons: add svg-icons for each block
+	* rtai-lab/scilab5/RTAI/macros/h5: add directory for xcos-block generation
+	* rtai-lab/scilab5/RTAI/macros/do_compile_superblock_rt.sci: code generation (same function as for scilab 4.1.2)
+	* rtai-lab/scilab5/RTAI/macros/RTCodeGen.sci: code generation for scilab 5.3 (replaced  RTAICodeGen_.sci)
+	* rtai-lab/scilab5/RTAI/macros/buildmacros.sce
+	* rtai-lab/scilab5/RTAI/macros/*.sci: replace getvalue by scicos_getvalue and change exprs from a column vector to a row vector.
+	* rtai-lab/scilab5/RTAI/license.txt	
+	* rtai-lab/scilab5/RTAI/builder.sce
+	* rtai-lab/scilab5/RTAI/loader.sce
+	* rtai-lab/scilab5/RTAI/readme.txt
+	* rtai-lab/scilab5/RTAI/src/c/builder_c.sce
+	* rtai-lab/scilab5/RTAI/src/c/rtai_sinus.sce
+	* rtai-lab/scilab5/RTAI/src/c/rtai_square.sce	
+	* rtai-lab/scilab5/RTAI/src/c/rtai_step.sce
+	* rtai-lab/scilab5/RTAI/RT_templates/rtai.mak
+	* rtai-lab/scilab5/RTAI/RT_templates/rtai_sh.mak
+	* rtai-lab/scilab5/RTAI/etc/RTAI.start
+	* rtai-lab/scilab5/libs/scicoslibs.tgz
+	* rtai-lab/scilab5/examples/test.xcos:	
+	* rtai-lab/scilab5/Makefile:
+	* rtai-lab/scilab5/scilab 
+	* rtai-lab/scilab5/devices/Makefile:
+	* rtai-lab/scila5/devices/scicos_block4.h:  modifications for scilab 5.3.0
+
 2010-11-27 Fernando Augusto <fernando_aug@yahoo.com.
 
 	* base/ipc/sem/sem.c: fixed a possible nasty locking loop in

@@ -1409,8 +1409,14 @@ static ssize_t rtf_write(struct file *filp, const char *buf, size_t count, loff_
 
 #define DELAY(x) (((x)*HZ + 500)/1000)
 
+#ifdef HAVE_UNLOCKED_IOCTL
+static long rtf_ioctl(struct file *filp, unsigned int cmd, unsigned long arg)
+{
+	struct inode *inode = filp->f_dentry->d_inode;
+#else
 static int rtf_ioctl(struct inode *inode, struct file *filp, unsigned int cmd, unsigned long arg)
-{	
+{
+#endif
 	unsigned int minor;
 	FIFO *fifop;
 
@@ -1661,7 +1667,11 @@ static struct file_operations rtf_fops =
 	read:		rtf_read,
 	write:		rtf_write,
 	poll:		rtf_poll,
+#ifdef HAVE_UNLOCKED_IOCTL
+	unlocked_ioctl:	rtf_ioctl,
+#else
 	ioctl:		rtf_ioctl,
+#endif
 	open:		rtf_open,
 	release:	rtf_release,
 	fasync:		rtf_fasync,

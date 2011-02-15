@@ -204,7 +204,11 @@ static struct vm_operations_struct rtai_shm_vm_ops = {
 static RTAI_SYSCALL_MODE void rt_set_heap(unsigned long, void *);
 #endif
 
+#ifdef HAVE_UNLOCKED_IOCTL
+static long rtai_shm_f_ioctl(struct file *file, unsigned int cmd, unsigned long arg)
+#else
 static int rtai_shm_f_ioctl(struct inode *inode, struct file *file, unsigned int cmd, unsigned long arg)
+#endif
 {
 	switch (cmd) {
 		case SHM_ALLOC: {
@@ -244,8 +248,12 @@ static int rtai_shm_f_mmap(struct file *file, struct vm_area_struct *vma)
 }
 
 static struct file_operations rtai_shm_fops = {
-	ioctl:	rtai_shm_f_ioctl,
-	mmap:	rtai_shm_f_mmap
+#ifdef HAVE_UNLOCKED_IOCTL
+	unlocked_ioctl:	rtai_shm_f_ioctl,
+#else
+	ioctl:		rtai_shm_f_ioctl,
+#endif
+	mmap:		rtai_shm_f_mmap
 };
 
 static struct miscdevice rtai_shm_dev = 

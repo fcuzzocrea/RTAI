@@ -632,8 +632,10 @@ RTAI_PROTO(unsigned long, rt_get_name, (void *adr))
 
 RTAI_PROTO(RT_TASK *, rt_task_init_schmod, (unsigned long name, int priority, int stack_size, int max_msg_size, int policy, int cpus_allowed))
 {
+	void * ret;
         struct sched_param mysched;
         struct { unsigned long name; long priority, stack_size, max_msg_size, cpus_allowed; } arg = { name ? name : rt_get_name(NULL), priority, stack_size, max_msg_size, cpus_allowed };
+	char pippo[10];
 
         if (policy == SCHED_OTHER) {
         	mysched.sched_priority = 0;
@@ -645,8 +647,11 @@ RTAI_PROTO(RT_TASK *, rt_task_init_schmod, (unsigned long name, int priority, in
         }
 	rtai_iopl();
 	mlockall(MCL_CURRENT | MCL_FUTURE);
-
-	return (RT_TASK *)rtai_lxrt(BIDX, SIZARG, LXRT_TASK_INIT, &arg).v[LOW];
+	num2nam(name, pippo);
+printf(">>> PRIMA SCHMOD %s\n", pippo);
+	ret = (RT_TASK *)rtai_lxrt(BIDX, SIZARG, LXRT_TASK_INIT, &arg).v[LOW];
+printf(">>> DOPO SCHMOD %s\n", pippo);
+	return ret;
 }
 
 static inline int rt_clone(void *fun, void *args, long stack_size, unsigned long flags)

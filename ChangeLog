@@ -1,3 +1,11 @@
+2011-02-15 Paolo Mantegazza <mantegazza@aero.polimi.it>
+
+	* base/include/rtai_wrappers.h: define init_MUTEX_LOCKED if not 
+	  defined in Linux.
+	* base/ipc/fifos/fifos.c: define iopl according to
+	  HAVE_UNLOCKED_IOCTL.
+	* base/ipc/shm/shm.c: define iopl according to HAVE_UNLOCKED_IOCTL.
+
 2011-01-11 Holger Nahrstaedt <nahrstaedt@control.tu-berlin.de>
 
 	* rtai-lab/scilab5/RTAI/macros/gif_icons: add icons for each block
@@ -46,7 +54,7 @@
 
 2010-10-12 Paolo Mantegazza <mantegazza@aero.polimi.it>
 
-	* base/ipc/msg/msg.c; make rt_sendx_if usable form interrupt handlers.
+	* base/ipc/msg/msg.c: make rt_sendx_if usable form interrupt handlers.
  
 2010-10-08 Paolo Mantegazza <mantegazza@aero.polimi.it>
 

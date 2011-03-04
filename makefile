@@ -130,7 +130,7 @@ clean distclean:
 	fi
 	@find . -name autom4te.cache | xargs rm -fr
 
-all %::
+all ::
 	@if test -r GNUmakefile ; then \
 	$(MAKE) -f GNUmakefile $@ ; else \
 	echo "*** Please configure RTAI first (running 'make help' in RTAI's toplevel dir might help)." ; \

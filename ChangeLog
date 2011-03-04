@@ -1,3 +1,7 @@
+2011-03-04 Pierangelo Masarati <masarati@aero.polimi.it>
+
+	* makefile: remove erroneous '%' in 'all ::' rule
+
 2011-02-15 Paolo Mantegazza <mantegazza@aero.polimi.it>
 
 	* base/include/rtai_wrappers.h: define init_MUTEX_LOCKED if not 

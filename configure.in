@@ -227,6 +227,9 @@ fi
 if grep KERNELSRC $RTAI_LINUX_DIR/Makefile > /dev/null; then
 eval LINUX_`grep '^KERNELSRC' $RTAI_LINUX_DIR/Makefile | sed -e 's, ,,g'|sed -e 's,:,,g'`
 eval LINUX_`grep '^KERNELOUTPUT' $RTAI_LINUX_DIR/Makefile | sed -e 's, ,,g'|sed -e 's,:,,g'`
+elif grep '^MAKEARGS *:= *-C' $RTAI_LINUX_DIR/Makefile > /dev/null; then
+LINUX_KERNELSRC=`sed -n -e 's,^MAKEARGS *:= *-C *\(@<:@^@<:@:space:@:>@@:>@*\),\1,p' $RTAI_LINUX_DIR/Makefile`
+LINUX_KERNELOUTPUT=$RTAI_LINUX_DIR
 else
 LINUX_KERNELOUTPUT=$RTAI_LINUX_DIR
 LINUX_KERNELSRC=$RTAI_LINUX_DIR
@@ -1399,8 +1402,8 @@ case $CONFIG_RTAI_16550A_HAM in
 	1) AC_DEFINE(CONFIG_RTAI_16550A_PIO,1,[Kconfig]) ;;
 	2) AC_DEFINE(CONFIG_RTAI_16550A_MMIO,1,[Kconfig]) ;;
 	3) AC_DEFINE(CONFIG_RTAI_16550A_ANY,1,[Kconfig]) ;;
-	*) if test \! x$CONFIG_RTAI_DRIVERS_16550A = x ; then \
-		AC_MSG_ERROR([Missing 16550A hardware access mode]) \
+	*) if test \! x$CONFIG_RTAI_DRIVERS_16550A = x ; then
+		AC_MSG_ERROR([Missing 16550A hardware access mode])
 	fi ;;
 esac
 test \! x$CONFIG_RTAI_RTDM = x && AC_DEFINE(CONFIG_RTAI_RTDM,1,[Kconfig])
@@ -1953,6 +1956,7 @@ AC_CONFIG_FILES([ \
 	base/arch/x86_64/GNUmakefile \
         base/arch/x86_64/hal/GNUmakefile \
         base/arch/x86_64/calibration/GNUmakefile \
+	base/arch/x86_64/calibration/setsmi \
         base/include/asm-x86_64/GNUmakefile \
         base/arch/arm/GNUmakefile \
 	base/arch/arm/hal/GNUmakefile \

@@ -19933,6 +19933,9 @@ fi
 if grep KERNELSRC $RTAI_LINUX_DIR/Makefile > /dev/null; then
 eval LINUX_`grep '^KERNELSRC' $RTAI_LINUX_DIR/Makefile | sed -e 's, ,,g'|sed -e 's,:,,g'`
 eval LINUX_`grep '^KERNELOUTPUT' $RTAI_LINUX_DIR/Makefile | sed -e 's, ,,g'|sed -e 's,:,,g'`
+elif grep '^MAKEARGS *:= *-C' $RTAI_LINUX_DIR/Makefile > /dev/null; then
+LINUX_KERNELSRC=`sed -n -e 's,^MAKEARGS *:= *-C *\([^[:space:]]*\),\1,p' $RTAI_LINUX_DIR/Makefile`
+LINUX_KERNELOUTPUT=$RTAI_LINUX_DIR
 else
 LINUX_KERNELOUTPUT=$RTAI_LINUX_DIR
 LINUX_KERNELSRC=$RTAI_LINUX_DIR
@@ -23916,10 +23919,10 @@ cat >>confdefs.h <<\_ACEOF
 #define CONFIG_RTAI_16550A_ANY 1
 _ACEOF
  ;;
-	*) if test \! x$CONFIG_RTAI_DRIVERS_16550A = x ; then \
+	*) if test \! x$CONFIG_RTAI_DRIVERS_16550A = x ; then
 		{ { echo "$as_me:$LINENO: error: Missing 16550A hardware access mode" >&5
 echo "$as_me: error: Missing 16550A hardware access mode" >&2;}
-   { (exit 1); exit 1; }; } \
+   { (exit 1); exit 1; }; }
 	fi ;;
 esac
 test \! x$CONFIG_RTAI_RTDM = x &&
@@ -25120,7 +25123,7 @@ RTAI_POSIX_WRAP=`for f in \`cat "${srcdir}/base/posix/POSIX_WRAPS"\`; do echo -n
 
 
 
-ac_config_files="$ac_config_files GNUmakefile base/GNUmakefile base/arch/GNUmakefile base/include/GNUmakefile base/ipc/GNUmakefile base/sched/GNUmakefile base/sched/liblxrt/GNUmakefile base/scripts/GNUmakefile base/scripts/rtai-config base/scripts/rtai-load base/arch/i386/GNUmakefile base/arch/i386/hal/GNUmakefile base/arch/i386/calibration/GNUmakefile base/arch/i386/calibration/setsmi base/include/asm-i386/GNUmakefile base/arch/x86_64/GNUmakefile base/arch/x86_64/hal/GNUmakefile base/arch/x86_64/calibration/GNUmakefile base/include/asm-x86_64/GNUmakefile base/arch/arm/GNUmakefile base/arch/arm/hal/GNUmakefile base/include/asm-arm/GNUmakefile base/arch/ppc/GNUmakefile base/arch/ppc/hal/GNUmakefile base/include/asm-ppc/GNUmakefile base/arch/m68k/GNUmakefile base/arch/m68k/hal/GNUmakefile base/include/asm-m68k/GNUmakefile base/ipc/bits/GNUmakefile base/ipc/fifos/GNUmakefile base/ipc/netrpc/GNUmakefile base/ipc/shm/GNUmakefile base/ipc/sem/GNUmakefile base/ipc/msg/GNUmakefile base/ipc/mbx/GNUmakefile base/ipc/tbx/GNUmakefile base/ipc/mq/GNUmakefile base/math/GNUmakefile base/malloc/GNUmakefile base/tasklets/GNUmakefile base/trace/GNUmakefile base/wd/GNUmakefile base/usi/GNUmakefile base/leds/GNUmakefile base/posix/GNUmakefile"
+ac_config_files="$ac_config_files GNUmakefile base/GNUmakefile base/arch/GNUmakefile base/include/GNUmakefile base/ipc/GNUmakefile base/sched/GNUmakefile base/sched/liblxrt/GNUmakefile base/scripts/GNUmakefile base/scripts/rtai-config base/scripts/rtai-load base/arch/i386/GNUmakefile base/arch/i386/hal/GNUmakefile base/arch/i386/calibration/GNUmakefile base/arch/i386/calibration/setsmi base/include/asm-i386/GNUmakefile base/arch/x86_64/GNUmakefile base/arch/x86_64/hal/GNUmakefile base/arch/x86_64/calibration/GNUmakefile base/arch/x86_64/calibration/setsmi base/include/asm-x86_64/GNUmakefile base/arch/arm/GNUmakefile base/arch/arm/hal/GNUmakefile base/include/asm-arm/GNUmakefile base/arch/ppc/GNUmakefile base/arch/ppc/hal/GNUmakefile base/include/asm-ppc/GNUmakefile base/arch/m68k/GNUmakefile base/arch/m68k/hal/GNUmakefile base/include/asm-m68k/GNUmakefile base/ipc/bits/GNUmakefile base/ipc/fifos/GNUmakefile base/ipc/netrpc/GNUmakefile base/ipc/shm/GNUmakefile base/ipc/sem/GNUmakefile base/ipc/msg/GNUmakefile base/ipc/mbx/GNUmakefile base/ipc/tbx/GNUmakefile base/ipc/mq/GNUmakefile base/math/GNUmakefile base/malloc/GNUmakefile base/tasklets/GNUmakefile base/trace/GNUmakefile base/wd/GNUmakefile base/usi/GNUmakefile base/leds/GNUmakefile base/posix/GNUmakefile"
 
 
 build_drivers=$CONFIG_RTAI_DRIVERS_SERIAL$CONFIG_RTAI_DRIVERS_16550A
@@ -25145,7 +25148,7 @@ fi
 
 
 if test -d $srcdir/rtai-lab; then
-   ac_config_files="$ac_config_files rtai-lab/GNUmakefile rtai-lab/matlab/GNUmakefile rtai-lab/matrixx/GNUmakefile rtai-lab/scilab/GNUmakefile rtai-lab/scilab/utility/GNUmakefile"
+   ac_config_files="$ac_config_files rtai-lab/GNUmakefile rtai-lab/matlab/GNUmakefile rtai-lab/matrixx/GNUmakefile rtai-lab/scilab/GNUmakefile rtai-lab/scicoslab/GNUmakefile rtai-lab/scilab/utility/GNUmakefile"
 
 elif test \! x$CONFIG_RTAI_LAB = x; then
      { { echo "$as_me:$LINENO: error: rtai-lab package is missing" >&5
@@ -26316,6 +26319,7 @@ do
     "base/arch/x86_64/GNUmakefile") CONFIG_FILES="$CONFIG_FILES base/arch/x86_64/GNUmakefile" ;;
     "base/arch/x86_64/hal/GNUmakefile") CONFIG_FILES="$CONFIG_FILES base/arch/x86_64/hal/GNUmakefile" ;;
     "base/arch/x86_64/calibration/GNUmakefile") CONFIG_FILES="$CONFIG_FILES base/arch/x86_64/calibration/GNUmakefile" ;;
+    "base/arch/x86_64/calibration/setsmi") CONFIG_FILES="$CONFIG_FILES base/arch/x86_64/calibration/setsmi" ;;
     "base/include/asm-x86_64/GNUmakefile") CONFIG_FILES="$CONFIG_FILES base/include/asm-x86_64/GNUmakefile" ;;
     "base/arch/arm/GNUmakefile") CONFIG_FILES="$CONFIG_FILES base/arch/arm/GNUmakefile" ;;
     "base/arch/arm/hal/GNUmakefile") CONFIG_FILES="$CONFIG_FILES base/arch/arm/hal/GNUmakefile" ;;
@@ -26355,6 +26359,7 @@ do
     "rtai-lab/matlab/GNUmakefile") CONFIG_FILES="$CONFIG_FILES rtai-lab/matlab/GNUmakefile" ;;
     "rtai-lab/matrixx/GNUmakefile") CONFIG_FILES="$CONFIG_FILES rtai-lab/matrixx/GNUmakefile" ;;
     "rtai-lab/scilab/GNUmakefile") CONFIG_FILES="$CONFIG_FILES rtai-lab/scilab/GNUmakefile" ;;
+    "rtai-lab/scicoslab/GNUmakefile") CONFIG_FILES="$CONFIG_FILES rtai-lab/scicoslab/GNUmakefile" ;;
     "rtai-lab/scilab/utility/GNUmakefile") CONFIG_FILES="$CONFIG_FILES rtai-lab/scilab/utility/GNUmakefile" ;;
     "testsuite/GNUmakefile") CONFIG_FILES="$CONFIG_FILES testsuite/GNUmakefile" ;;
     "testsuite/kern/GNUmakefile") CONFIG_FILES="$CONFIG_FILES testsuite/kern/GNUmakefile" ;;

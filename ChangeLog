@@ -1,3 +1,10 @@
+2011-05-09 Pierangelo Masarati <masarati@aero.polimi.it>
+
+	* configure.in, configure: avoid potential shell syntax error,
+	  allow separate src and build dirs for Linux, from Ian Abbott
+	* configure.in, configure: create/install setsmi for x86_64,
+	  from Ian Abbott
+
 2011-03-04 Pierangelo Masarati <masarati@aero.polimi.it>
 
 	* makefile: remove erroneous '%' in 'all ::' rule

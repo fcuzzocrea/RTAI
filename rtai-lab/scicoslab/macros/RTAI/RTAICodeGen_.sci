@@ -2506,16 +2506,26 @@ Code = [Code;
 
       for j=1:nopar
         if mat2scs_c_nb(opar(opptr(i)+j-1)) <> 11 then
-          Code_opar =[Code_opar;
-                 cformatline('  __CONST__ ' + mat2c_typ(opar(opptr(i)+j-1)) +...
-                         ' opar_'+string(opptr(i)+j-1) + '[]={'+...
-                             strcat(string(opar(opptr(i)+j-1)),',')+'};',70)]
-        else //** cmplx test
-          Code_opar =[Code_opar;
-                 cformatline('  __CONST__ ' + mat2c_typ(opar(opptr(i)+j-1)) +...
+
+	// Thanks to Matteo Morelli for the correction of this bug
+
+          Code_tmp = cformatline(mat2c_typ(opar(opptr(i)+j-1)) +...
+                                 ' opar_'+string(opptr(i)+j-1) + '[]={'+...
+                                 strcat(string(opar(opptr(i)+j-1)),',')+'};',70);
+          Code_tmp(1) = '  __CONST__ '+Code_tmp(1); 
+          Code_opar =[Code_opar; Code_tmp]         
+
+
+
+
+
+       else //** cmplx test
+          Code_tmp = cformatline(mat2c_typ(opar(opptr(i)+j-1)) +...
                          ' opar_'+string(opptr(i)+j-1) + '[]={'+...
                              strcat(string([real(opar(opptr(i)+j-1)(:));
-                                            imag(opar(opptr(i)+j-1)(:))]),',')+'};',70)]
+                                            imag(opar(opptr(i)+j-1)(:))]),',')+'};',70);
+          Code_tmp(1) = '  __CONST__ '+Code_tmp(1); 
+          Code_opar =[Code_opar; Code_tmp]         
         end
       end
 

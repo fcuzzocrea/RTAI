@@ -3,8 +3,7 @@
  * Semaphore functions.
  * @author Paolo Mantegazza
  *
- * @note Copyright (C) 1999-2008 Paolo Mantegazza
- * <mantegazza@aero.polimi.it>
+ * @note Copyright (C) 1999-2010 Paolo Mantegazza <mantegazza@aero.polimi.it>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License as
@@ -43,6 +42,45 @@
 MODULE_LICENSE("GPL");
 
 extern struct epoch_struct boot_epoch;
+
+#if 1
+
+#define UBI_MAIOR_MINOR_CESSAT_WAIT(sem) \
+do { \
+	RT_TASK *task; \
+	if ((task = sem->owndby) && rt_current->priority < task->priority && task->running <= 0) { \
+		if (!task->running) { \
+			sem->count--; \
+			rem_ready_task(task); \
+			task->state |= RT_SCHED_SEMAPHORE; \
+		} else if (task->resume_time > rt_smp_time_h[task->runnable_on_cpus]) { \
+			sem->count--; \
+			rem_ready_task(task); \
+			task->state |= (RT_SCHED_SEMAPHORE | RT_SCHED_DELAYED);\
+			enq_timed_task(task); \
+		} \
+		enqueue_blocked(task, &sem->queue, PRIO_Q); \
+		enqueue_resqel(&sem->resq, sem->owndby = rt_current); \
+		rt_global_restore_flags(flags); \
+		return 1; \
+	} \
+} while (0)
+
+#define UBI_MAIOR_MINOR_CESSAT_WAIT_IF(sem) \
+do { \
+	if (sem->type > 0) { \
+		RT_TASK *rt_current = RT_CURRENT; \
+		UBI_MAIOR_MINOR_CESSAT_WAIT(sem); \
+	} \
+} while (0)
+
+#else
+
+#define UBI_MAIOR_MINOR_CESSAT_WAIT(sem)
+
+#define UBI_MAIOR_MINOR_CESSAT_WAIT_IF(sem)
+
+#endif
 
 #ifdef CONFIG_RTAI_RT_POLL
 
@@ -331,6 +369,7 @@ RTAI_SYSCALL_MODE int rt_sem_signal(SEM *sem)
 				WAKEUP_WAIT_ALL_POLLERS(1);
 				return 0;
 			}
+			task->running = - (task->state & RT_SCHED_DELAYED);
 			tosched = 1;
 			goto res;
 		}
@@ -340,7 +379,7 @@ res:	if (sem->type > 0) {
 		DECLARE_RT_CURRENT;
 		int sched;
 		ASSIGN_RT_CURRENT;
-		sem->owndby = 0;
+		sem->owndby = task;
 		sched = dequeue_resqel_reset_current_priority(&sem->resq, rt_current);
 		if (rt_current->suspdepth) {
 			if (rt_current->suspdepth > 0) {
@@ -475,6 +514,7 @@ RTAI_SYSCALL_MODE int rt_sem_wait(SEM *sem)
 		void *retp;
 		unsigned long schedmap;
 		if (sem->type > 0) {
+			UBI_MAIOR_MINOR_CESSAT_WAIT(sem);
 			if (sem->restype && sem->owndby == rt_current) {
 				if (sem->restype > 0) {
 					count = sem->type++;
@@ -554,6 +594,7 @@ RTAI_SYSCALL_MODE int rt_sem_wait_if(SEM *sem)
 
 	flags = rt_global_save_flags_and_cli();
 	if ((count = sem->count) <= 0) {
+		UBI_MAIOR_MINOR_CESSAT_WAIT_IF(sem);
 		if (sem->restype && sem->owndby == RT_CURRENT) {
 			if (sem->restype > 0) {
 				count = sem->type++;
@@ -626,6 +667,7 @@ RTAI_SYSCALL_MODE int rt_sem_wait_until(SEM *sem, RTIME time)
 		if ((rt_current->resume_time = time) > rt_time_h) {
 			unsigned long schedmap;
 			if (sem->type > 0) {
+				UBI_MAIOR_MINOR_CESSAT_WAIT(sem);
 				if (sem->restype && sem->owndby == rt_current) {
 					if (sem->restype > 0) {
 						count = sem->type++;
@@ -804,6 +846,7 @@ static inline int rt_cndmtx_signal(SEM *mtx, RT_TASK *rt_current)
 		rem_timed_task(task);
 		if (task->state != RT_SCHED_READY && (task->state &= ~(RT_SCHED_SEMAPHORE | RT_SCHED_DELAYED)) == RT_SCHED_READY) {
 			enq_ready_task(task);
+			task->running = - (task->state & RT_SCHED_DELAYED);
 		}
 	}
 	mtx->owndby = 0;
@@ -1469,8 +1512,8 @@ RTAI_SYSCALL_MODE int rt_spl_lock_timed(SPL *spl, unsigned long ns)
 	} else {
 		RTIME end_time;
 		long locked;
-		end_time = rdtsc() + imuldiv(ns, tuned.cpu_freq, 1000000000);
-		while ((locked = (long)cmpxchg(&spl->owndby, 0L, rt_current)) && rdtsc() < end_time);
+		end_time = rtai_rdtsc() + imuldiv(ns, tuned.cpu_freq, 1000000000);
+		while ((locked = (long)cmpxchg(&spl->owndby, 0L, rt_current)) && rtai_rdtsc() < end_time);
 		if (locked) {
 			rtai_restore_flags(flags);
 			return -1;

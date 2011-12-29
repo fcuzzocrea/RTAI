@@ -64,7 +64,7 @@ MODULE_LICENSE("GPL");
 #define hard_rt_sendto           	rt_dev_sendto
 #else
 #define MSG_SOFT 0
-#define MSG_HARD 0
+#define MSG_HARD 1
 #define hard_rt_socket(a, b, c)  	portslot[i].socket[0]
 #define hard_rt_bind(a, b, c)
 #define hard_rt_close(a)
@@ -99,7 +99,9 @@ static char *ThisHardNode = 0;
 RTAI_MODULE_PARM(ThisHardNode, charp);
 
 #define MAX_DFUN_EXT  16
-static struct rt_fun_entry *rt_net_rpc_fun_ext[MAX_DFUN_EXT];
+//static struct rt_fun_entry *rt_net_rpc_fun_ext[MAX_DFUN_EXT];
+extern struct rt_fun_entry *rt_fun_ext[];
+#define rt_net_rpc_fun_ext rt_fun_ext
 
 static unsigned long this_node[2];
 
@@ -199,11 +201,15 @@ static void timer_fun(unsigned long none)
 static int (*encode)(struct portslot_t *portslotp, void *msg, int size, int where);
 static int (*decode)(struct portslot_t *portslotp, void *msg, int size, int where);
 
+static void *encdec_ext;
 void set_netrpc_encoding(void *encode_fun, void *decode_fun, void *ext)
 {
 	encode = encode_fun;
 	decode = decode_fun;
-	rt_net_rpc_fun_ext[1] = ext;
+	if (!set_rt_fun_ext_index(ext, 1)) {
+		encdec_ext = ext;
+	}
+//	rt_net_rpc_fun_ext[1] = ext;
 }
 
 struct req_rel_msg { long long op, port, priority, hard; unsigned long long owner, name, rem_node, chkspare;};
@@ -522,6 +528,10 @@ recvrys:
 				if (wsize > 0) {
 					arg.arg.wsize = wsize;
 					a[USP_WBF1(type) - 1] = (long)arg.arg.msg;
+					if ((USP_WBF1(type) - 1) == (USP_RBF1(type) - 1) && wsize == par->rsize) {
+						memcpy(arg.arg.msg, (char *)ain + par->argsize, wsize);
+						a[USP_RBF1(type) - 1] = (long)(arg.arg.msg);
+					}
 				} else {
 					arg.arg.wsize = 0;
 				}
@@ -624,6 +634,10 @@ recvryh:
 				arg.arg.myport = 0;
 				if (wsize > 0) {
 					arg.arg.wsize = wsize;
+					if ((USP_WBF1(type) - 1) == (USP_RBF1(type) - 1) && wsize == par->rsize) {
+						memcpy(arg.arg.msg, (char *)ain + par->argsize, wsize);
+						a[USP_RBF1(type) - 1] = (long)(arg.arg.msg);
+					}
 					a[USP_WBF1(type) - 1] = (long)arg.arg.msg;
 				} else {
 					arg.arg.wsize = 0;
@@ -1121,7 +1135,6 @@ RTAI_SYSCALL_MODE long long _rt_net_rpc(long fun_ext_timed, long type, void *arg
 					}
 				}
 			}
-
 			return reply->retval;
 		}
 	}
@@ -1818,7 +1831,10 @@ void __rtai_netrpc_exit(void)
 {
 	int i;
 
-	reset_rt_fun_entries(rt_netrpc_entries);
+	reset_rt_fun_ext_index(NULL, 1);
+	if (encdec_ext) {
+		reset_rt_fun_ext_index(encdec_ext, 1);
+	}
 	del_timer(&timer);
 	rt_sem_delete(&timer_sem);
 	for (i = 0; i < MaxStubs; i++) {

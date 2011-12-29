@@ -25,6 +25,8 @@
         * base/ipc/netrpc/netrpc.c: use rt_fun_ext directly, in place of
 	  rt_net_rpc_fun_ext.
         * base/include/rtai_posix.h: fixed return value of pthread_cond_wait.
+	* addons/rtdm/* and addons/drivers/16559A/*: upgraded to more recent 
+	  rtdm changes.
 
 2011-01-17 Roberto Bucher <roberto.bucher@supsi.ch>
 

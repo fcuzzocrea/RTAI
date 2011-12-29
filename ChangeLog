@@ -12,6 +12,10 @@
           HAVE_UNLOCKED_IOCTL.
         * base/ipc/shm/shm.c: define iopl according to
 	  HAVE_UNLOCKED_IOCTL.
+        * base/include/rtai_schedcore.h: resume a timed out, suspended task,
+          unconditionally, zeroing suspdepth if it is > 0: this choice allows
+          a uniform resumption mechanism both for self and externally
+          suspended tasks.
         * base/sched/api.c: resume a suspended task forced to unblock
           unconditionally by zeroing suspdepth if it is > 0: this choice allows 	  a uniform resumption mechanism both for self and externally
           suspended tasks; use both of the previous resulting modifications

@@ -3,6 +3,9 @@
 	* base/arch/i386/hal/hal.c: put diag for APIC timers sync under ifdef.
 	* base/include/asm-i386/rtai_fpu.h: upgrade to support 2.6.35.
 	* base/include/asm-i386/rtai_hal.h: upgrade to support 2.6.35.
+        * addons/drivers/serial/rtai_serial.h: make all declared prototypes
+          compilible in a lib.
+        * rtai-py/rtai_ser.py: add RTAI serial support for python.
 
 2011-01-17 Roberto Bucher <roberto.bucher@supsi.ch>
 

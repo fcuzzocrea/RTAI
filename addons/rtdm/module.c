@@ -4,8 +4,8 @@
  *
  * @note Copyright (C) 2005 Jan Kiszka <jan.kiszka@web.de>
  * @note Copyright (C) 2005 Joerg Langenberg <joerg.langenberg@gmx.net>
- * @note Copyright (C) 2005-2008 Paolo Mantegazza <mantegazza@aero.polimi.it>
- *       for the adaption to RTAI only.
+ * @note Copyright (C) 2005-2010 Paolo Mantegazza <mantegazza@aero.polimi.it>
+ *       only for the adaption to RTAI.
  *
  * RTAI is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License as published by
@@ -126,16 +126,7 @@ static RTAI_SYSCALL_MODE int sys_rtdm_sendmsg(long fd, const struct msghdr *msg,
 
 static RTAI_SYSCALL_MODE int sys_rtdm_select(int nfds, fd_set *rfds, fd_set *wfds, fd_set *efds, nanosecs_rel_t timeout)
 {
-#ifdef CONFIG_RTAI_RTDM_SELECT
-	struct xnselector selector;
-	int ret;
-	xnselector_init(&selector);
-	ret = __rt_dev_select(nfds, rfds, wfds, efds, timeout, &selector, 0);
-	xnselector_destroy(&selector);
-	return ret;
-#else
-	return -ENOSYS;
-#endif
+	return rt_dev_select(nfds, rfds, wfds, efds, timeout);
 }
 
 static struct rt_fun_entry rtdm[] = {
@@ -901,6 +892,11 @@ int __init rtdm_skin_init(void)
 
 	xnintr_mount();
 
+#ifdef CONFIG_RTAI_RTDM_SELECT
+	if (xnselect_mount()) {
+	        goto cleanup_core;
+	}
+#endif
 #ifdef CONFIG_PROC_FS
 	if ((err = rtdm_proc_init())) {
 	        goto cleanup_core;
@@ -910,17 +906,23 @@ int __init rtdm_skin_init(void)
 	printk("RTDM started.\n");
 	return 0;
 
+cleanup_core:
+#ifdef CONFIG_RTAI_RTDM_SELECT
+	xnselect_umount();
+#endif
+	rtdm_dev_cleanup();
 #ifdef CONFIG_PROC_FS
 	rtdm_proc_cleanup();
 #endif /* CONFIG_PROC_FS */
-cleanup_core:
-	rtdm_dev_cleanup();
 fail:
 	return err;
 }
 
 void __exit rtdm_skin_exit(void)
 {
+#ifdef CONFIG_RTAI_RTDM_SELECT
+	xnselect_umount();
+#endif
 	rtai_timers_cleanup();
 	rtdm_dev_cleanup();
         reset_rt_fun_ext_index(rtdm, RTDM_INDX);

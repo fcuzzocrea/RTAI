@@ -5,7 +5,7 @@
  * @note Copyright (C) 2005-2007 Jan Kiszka <jan.kiszka@web.de>
  * @note Copyright (C) 2005 Joerg Langenberg <joerg.langenberg@gmx.net>
  * @note Copyright (C) 2008 Gilles Chanteperdrix <gilles.chanteperdrix@gmail.com>
- * @note Copyright (C) 2005 Paolo Mantegazza <mantegazza@aero.polimi.it>
+ * @note Copyright (C) 2005-2010 Paolo Mantegazza <mantegazza@aero.polimi.it>
  *
  * RTAI is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License as published by
@@ -154,7 +154,9 @@ enum rtdm_selecttype {
  * NULL if kernel mode call
  * @param[in] oflag Open flags as passed by the user
  *
- * @return 0 on success, otherwise negative error code
+ * @return 0 on success. On failure return either -ENOSYS, to request that
+ * this handler be called again from the opposite realtime/non-realtime
+ * context, or another negative error code.
  *
  * @see @c open() in IEEE Std 1003.1,
  * http://www.opengroup.org/onlinepubs/009695399 */
@@ -169,7 +171,9 @@ typedef int (*rtdm_open_handler_t)(struct rtdm_dev_context *context,
  * NULL if kernel mode call
  * @param[in] protocol Protocol number as passed by the user
  *
- * @return 0 on success, otherwise negative error code
+ * @return 0 on success. On failure return either -ENOSYS, to request that
+ * this handler be called again from the opposite realtime/non-realtime
+ * context, or another negative error code.
  *
  * @see @c socket() in IEEE Std 1003.1,
  * http://www.opengroup.org/onlinepubs/009695399 */
@@ -181,9 +185,18 @@ typedef int (*rtdm_socket_handler_t)(struct rtdm_dev_context *context,
  *
  * @param[in] context Context structure associated with opened device instance
  * @param[in] user_info Opaque pointer to information about user mode caller,
- * NULL if kernel mode call
+ * NULL if kernel mode or deferred user mode call
  *
- * @return 0 on success, otherwise negative error code
+ * @return 0 on success. On failure return either -ENOSYS, to request that
+ * this handler be called again from the opposite realtime/non-realtime
+ * context, -EAGAIN to request a recall after a grace period, or a valid
+ * negative error code according to IEEE Std 1003.1.
+ *
+ * @note Drivers must be prepared for that case that the close handler is
+ * invoked more than once per open context (even if the handler already
+ * completed an earlier run successfully). The driver has to avoid releasing
+ * resources twice as well as returning false errors on successive close
+ * invocations.
  *
  * @see @c close() in IEEE Std 1003.1,
  * http://www.opengroup.org/onlinepubs/009695399 */
@@ -199,7 +212,9 @@ typedef int (*rtdm_close_handler_t)(struct rtdm_dev_context *context,
  * @param[in] request Request number as passed by the user
  * @param[in,out] arg Request argument as passed by the user
  *
- * @return Positiv value on success, otherwise negative error code
+ * @return A positive value or 0 on success. On failure return either
+ * -ENOSYS, to request that the function be called again from the opposite
+ * realtime/non-realtime context, or another negative error code.
  *
  * @see @c ioctl() in IEEE Std 1003.1,
  * http://www.opengroup.org/onlinepubs/009695399 */
@@ -216,7 +231,9 @@ typedef int (*rtdm_ioctl_handler_t)(struct rtdm_dev_context *context,
  * @param[in] fd_index Opaque value, to be passed to rtdm_event_select_bind or
  * rtdm_sem_select_bind unmodfied
  *
- * @return 0 on success, otherwise negative error code
+ * @return 0 on success. On failure return either -ENOSYS, to request that
+ * this handler be called again from the opposite realtime/non-realtime
+ * context, or another negative error code.
  */
 typedef int (*rtdm_select_bind_handler_t)(struct rtdm_dev_context *context,
 					  rtdm_selector_t *selector,
@@ -232,7 +249,9 @@ typedef int (*rtdm_select_bind_handler_t)(struct rtdm_dev_context *context,
  * @param[out] buf Input buffer as passed by the user
  * @param[in] nbyte Number of bytes the user requests to read
  *
- * @return On success, the number of bytes read, otherwise negative error code
+ * @return On success, the number of bytes read. On failure return either
+ * -ENOSYS, to request that this handler be called again from the opposite
+ * realtime/non-realtime context, or another negative error code.
  *
  * @see @c read() in IEEE Std 1003.1,
  * http://www.opengroup.org/onlinepubs/009695399 */
@@ -249,8 +268,9 @@ typedef ssize_t (*rtdm_read_handler_t)(struct rtdm_dev_context *context,
  * @param[in] buf Output buffer as passed by the user
  * @param[in] nbyte Number of bytes the user requests to write
  *
- * @return On success, the number of bytes written, otherwise negative error
- * code
+ * @return On success, the number of bytes written. On failure return
+ * either -ENOSYS, to request that this handler be called again from the
+ * opposite realtime/non-realtime context, or another negative error code.
  *
  * @see @c write() in IEEE Std 1003.1,
  * http://www.opengroup.org/onlinepubs/009695399 */
@@ -268,8 +288,9 @@ typedef ssize_t (*rtdm_write_handler_t)(struct rtdm_dev_context *context,
  * mirrored to safe kernel memory in case of user mode call
  * @param[in] flags Message flags as passed by the user
  *
- * @return On success, the number of bytes received, otherwise negative error
- * code
+ * @return On success, the number of bytes received. On failure return
+ * either -ENOSYS, to request that this handler be called again from the
+ * opposite realtime/non-realtime context, or another negative error code.
  *
  * @see @c recvmsg() in IEEE Std 1003.1,
  * http://www.opengroup.org/onlinepubs/009695399 */
@@ -287,8 +308,9 @@ typedef ssize_t (*rtdm_recvmsg_handler_t)(struct rtdm_dev_context *context,
  * mirrored to safe kernel memory in case of user mode call
  * @param[in] flags Message flags as passed by the user
  *
- * @return On success, the number of bytes transmitted, otherwise negative
- * error code
+ * @return On success, the number of bytes transmitted. On failure return
+ * either -ENOSYS, to request that this handler be called again from the
+ * opposite realtime/non-realtime context, or another negative error code.
  *
  * @see @c sendmsg() in IEEE Std 1003.1,
  * http://www.opengroup.org/onlinepubs/009695399 */
@@ -305,7 +327,8 @@ typedef int (*rtdm_rt_handler_t)(struct rtdm_dev_context *context,
 struct rtdm_operations {
 	/*! @name Common Operations
 	 * @{ */
-	/** Close handler for real-time contexts (optional) */
+	/** Close handler for real-time contexts (optional, deprecated)
+	 *  @deprecated Only use non-real-time close handler in new drivers. */
 	rtdm_close_handler_t close_rt;
 	/** Close handler for non-real-time contexts (required) */
 	rtdm_close_handler_t close_nrt;
@@ -348,6 +371,7 @@ struct rtdm_operations {
 
 struct rtdm_devctx_reserved {
 	void *owner;
+	struct list_head cleanup;
 };
 
 /**
@@ -385,6 +409,34 @@ struct rtdm_dev_context {
 	char dev_private[0];
 };
 
+/**
+ * Locate the driver private area associated to a device context structure
+ *
+ * @param[in] context Context structure associated with opened device instance
+ *
+ * @return The address of the private driver area associated to @a
+ * context.
+ */
+static inline void *
+rtdm_context_to_private(struct rtdm_dev_context *context)
+{
+	return (void *)context->dev_private;
+}
+
+/**
+ * Locate a device context structure from its driver private area
+ *
+ * @param[in] dev_private Address of a private context area
+ *
+ * @return The address of the device context structure defining @a
+ * dev_private.
+ */
+static inline struct rtdm_dev_context *
+rtdm_private_to_context(void *dev_private)
+{
+	return container_of(dev_private, struct rtdm_dev_context, dev_private);
+}
+
 struct rtdm_dev_reserved {
 	struct list_head entry;
 	atomic_t refcount;
@@ -417,14 +469,19 @@ struct rtdm_device {
 	int socket_type;
 
 	/** Named device instance creation for real-time contexts,
-	 *  optional if open_nrt is non-NULL, ignored for protocol devices */
+	 *  optional (but deprecated) if open_nrt is non-NULL, ignored for
+	 *  protocol devices
+	 *  @deprecated Only use non-real-time open handler in new drivers. */
 	rtdm_open_handler_t open_rt;
 	/** Named device instance creation for non-real-time contexts,
 	 *  optional if open_rt is non-NULL, ignored for protocol devices */
 	rtdm_open_handler_t open_nrt;
 
 	/** Protocol socket creation for real-time contexts,
-	 *  optional if socket_nrt is non-NULL, ignored for named devices */
+	 *  optional (but deprecated) if socket_nrt is non-NULL, ignored for
+	 *  named devices
+	 *  @deprecated Only use non-real-time socket creation handler in new
+	 *  drivers. */
 	rtdm_socket_handler_t socket_rt;
 	/** Protocol socket creation for non-real-time contexts,
 	 *  optional if socket_rt is non-NULL, ignored for named devices */
@@ -496,14 +553,33 @@ int rtdm_dev_unregister(struct rtdm_device *device, unsigned int poll_delay);
 struct rtdm_dev_context *rtdm_context_get(int fd);
 
 #ifndef DOXYGEN_CPP /* Avoid static inline tags for RTDM in doxygen */
+
+#define CONTEXT_IS_LOCKED(context) \
+	(atomic_read(&(context)->close_lock_count) > 1 || \
+	 (test_bit(RTDM_CLOSING, &(context)->context_flags) && \
+	  atomic_read(&(context)->close_lock_count) > 0))
+
 static inline void rtdm_context_lock(struct rtdm_dev_context *context)
 {
+	RTAI_ASSERT(RTDM, CONTEXT_IS_LOCKED(context),
+		    /* just warn if context was a dangling pointer */);
 	atomic_inc(&context->close_lock_count);
 }
 
+extern int rtdm_apc;
+
 static inline void rtdm_context_unlock(struct rtdm_dev_context *context)
 {
-	atomic_dec(&context->close_lock_count);
+	RTAI_ASSERT(RTDM, CONTEXT_IS_LOCKED(context),
+		    /* just warn if context was a dangling pointer */);
+	smp_mb__before_atomic_dec();
+	if (unlikely(atomic_dec_and_test(&context->close_lock_count)))
+		rthal_apc_schedule(rtdm_apc);
+}
+
+static inline void rtdm_context_put(struct rtdm_dev_context *context)
+{
+	rtdm_context_unlock(context);
 }
 
 /* --- clock services --- */
@@ -635,7 +711,15 @@ typedef unsigned long rtdm_lockctx_t;
  *
  * Rescheduling: never.
  */
+#ifdef DOXYGEN_CPP /* Beautify doxygen output */
 #define rtdm_lock_get(lock)	rt_spin_lock(lock)
+#else /* This is how it really works */
+#define rtdm_lock_get(lock)					\
+	do {							\
+		RTAI_BUGON(RTDM, !rthal_local_irq_disabled());	\
+		rt_spin_lock(lock);				\
+	} while (0)
+#endif
 
 /**
  * Release lock without preemption restoration
@@ -993,6 +1077,7 @@ void rtdm_task_join_nrt(rtdm_task_t *task, unsigned int poll_delay);
 static inline void rtdm_task_set_priority(rtdm_task_t *task, int priority)
 {
 
+
 	rt_change_prio(task, priority);
 }
 
@@ -1090,7 +1175,7 @@ void rtdm_event_init(rtdm_event_t *event, unsigned long pending);
 int rtdm_event_select_bind(rtdm_event_t *event, rtdm_selector_t *selector,
 			   enum rtdm_selecttype type, unsigned fd_index);
 #else /* !CONFIG_RTAI_RTDM_SELECT */
-#define rtdm_event_select_bind(e, s, t, i) ({ -EBADF; })
+#define rtdm_event_select_bind(e, s, t, i) ({ (void)(e); -EBADF; })
 #endif /* !CONFIG_RTAI_RTDM_SELECT */
 int rtdm_event_wait(rtdm_event_t *event);
 int rtdm_event_timedwait(rtdm_event_t *event, nanosecs_rel_t timeout,
@@ -1104,13 +1189,13 @@ void rtdm_event_clear(rtdm_event_t *event);
 
 static inline void rtdm_event_pulse(rtdm_event_t *event)
 {
-	trace_mark(xn_rtdm_event_pulse, "event %p", event);
+	trace_mark(xn_rtdm, event_pulse, "event %p", event);
 	rt_sem_broadcast(&event->synch_base);
 }
 
 static inline void rtdm_event_destroy(rtdm_event_t *event)
 {
-	trace_mark(xn_rtdm_event_destroy, "event %p", event);
+	trace_mark(xn_rtdm, event_destroy, "event %p", event);
 	rt_sem_delete(&event->synch_base);
 	xnselect_destroy(&event->select_block);
 }
@@ -1139,7 +1224,7 @@ void rtdm_sem_up(rtdm_sem_t *sem);
 #ifndef DOXYGEN_CPP /* Avoid static inline tags for RTDM in doxygen */
 static inline void rtdm_sem_destroy(rtdm_sem_t *sem)
 {
-	trace_mark(xn_rtdm_sem_destroy, "sem %p", sem);
+	trace_mark(xn_rtdm, sem_destroy, "sem %p", sem);
 	rt_sem_delete(&sem->sem);
 	xnselect_destroy(&sem->select_block);
 }
@@ -1161,7 +1246,7 @@ static inline void rtdm_mutex_unlock(rtdm_mutex_t *mutex)
 {
 
 
-	trace_mark(xn_rtdm_mutex_unlock, "mutex %p", mutex);
+	trace_mark(xn_rtdm, mutex_unlock, "mutex %p", mutex);
 
 
 	rt_sem_signal(mutex);
@@ -1169,7 +1254,7 @@ static inline void rtdm_mutex_unlock(rtdm_mutex_t *mutex)
 
 static inline void rtdm_mutex_destroy(rtdm_mutex_t *mutex)
 {
-	trace_mark(xn_rtdm_mutex_destroy, "mutex %p", mutex);
+	trace_mark(xn_rtdm, mutex_destroy, "mutex %p", mutex);
 
 	rt_sem_delete(mutex);
 }
@@ -1197,7 +1282,7 @@ int rtdm_mmap_to_user(rtdm_user_info_t *user_info,
 		      struct vm_operations_struct *vm_ops,
 		      void *vm_private_data);
 int rtdm_iomap_to_user(rtdm_user_info_t *user_info,
-		       unsigned long src_addr, size_t len,
+		       phys_addr_t src_addr, size_t len,
 		       int prot, void **pptr,
 		       struct vm_operations_struct *vm_ops,
 		       void *vm_private_data);
@@ -1270,6 +1355,15 @@ static inline int rtdm_in_rt_context(void)
 {
 	return (_rt_whoami()->is_hard > 0);
 }
+
+static inline int rtdm_rt_capable(rtdm_user_info_t *user_info)
+{
+
+
+        return (user_info ? xnshadow_thread(user_info) != NULL
+                          : !xnpod_root_p());
+}
+
 #endif /* !DOXYGEN_CPP */
 
 int rtdm_exec_in_rt(struct rtdm_dev_context *context,

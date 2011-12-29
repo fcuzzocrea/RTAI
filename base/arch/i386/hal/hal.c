@@ -52,7 +52,11 @@ MODULE_LICENSE("GPL");
 	Hacked from arch/ia64/kernel/smpboot.c.
 */
 
+//#define DIAG_OUT_OF_SYNC_TSC
+
+#ifdef DIAG_OUT_OF_SYNC_TSC
 static int sync_cnt[RTAI_NR_CPUS];
+#endif
 
 volatile long rtai_tsc_ofst[RTAI_NR_CPUS];
 
@@ -169,7 +173,9 @@ static void sync_tsc(unsigned int master, unsigned int slave)
 	delta = get_delta(&rt, &master_time_stamp, slave);
 	spin_unlock_irqrestore(&tsc_sync_lock, flags);
 
-//	printk(KERN_INFO "# %d - CPU %u: synced its TSC with CPU %u (master time stamp %llu cycles, < - OFFSET %lld cycles - > , max double tsc read span %llu cycles)\n", ++sync_cnt[slave], slave, master, master_time_stamp, delta, rt);
+#ifdef DIAG_OUT_OF_SYNC_TSC
+	printk(KERN_INFO "# %d - CPU %u: synced its TSC with CPU %u (master time stamp %llu cycles, < - OFFSET %lld cycles - > , max double tsc read span %llu cycles)\n", ++sync_cnt[slave], slave, master, master_time_stamp, delta, rt);
+#endif
 }
 
 //#define CONFIG_RTAI_MASTER_TSC_CPU  0

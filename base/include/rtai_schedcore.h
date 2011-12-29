@@ -20,6 +20,23 @@
 #ifndef _RTAI_SCHEDCORE_H
 #define _RTAI_SCHEDCORE_H
 
+#ifdef __KERNEL__
+
+#include <linux/module.h>
+#include <linux/init.h>
+#include <linux/kernel.h>
+#include <linux/version.h>
+#include <linux/errno.h>
+#include <linux/slab.h>
+#include <linux/timex.h>
+#include <linux/sched.h>
+#include <asm/param.h>
+#include <asm/system.h>
+#include <asm/io.h>
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,18)
+#include <linux/oom.h>
+#endif
+
 #include <rtai_version.h>
 #include <rtai_lxrt.h>
 #include <rtai_sched.h>
@@ -41,23 +58,6 @@
 #include <rtai_netrpc.h>
 #include <rtai_shm.h>
 #include <rtai_usi.h>
-
-#ifdef __KERNEL__
-
-#include <linux/module.h>
-#include <linux/init.h>
-#include <linux/kernel.h>
-#include <linux/version.h>
-#include <linux/errno.h>
-#include <linux/slab.h>
-#include <linux/timex.h>
-#include <linux/sched.h>
-#include <asm/param.h>
-#include <asm/system.h>
-#include <asm/io.h>
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,18)
-#include <linux/oom.h>
-#endif
 
 #ifndef _RTAI_SCHED_XN_H
 #define _RTAI_SCHED_XN_H
@@ -516,6 +516,9 @@ static inline void wake_up_timed_tasks(int cpuid)
 #endif
 	if (task->resume_time <= rt_time_h) {
 		do {
+			if ((task->state & RT_SCHED_SUSPENDED) && task->suspdepth > 0) {
+				task->suspdepth = 0;
+			}
         	        if ((task->state &= ~(RT_SCHED_DELAYED | RT_SCHED_SUSPENDED | RT_SCHED_SEMAPHORE | RT_SCHED_RECEIVE | RT_SCHED_SEND | RT_SCHED_RPC | RT_SCHED_RETURN | RT_SCHED_MBXSUSP | RT_SCHED_POLL)) == RT_SCHED_READY) {
                 	        if (task->policy < 0) {
                         	        enq_ready_edf_task(task);
@@ -769,6 +772,30 @@ int rt_kthread_init_cpuid(RT_TASK *task,
 			  int uses_fpu,
 			  void(*signal)(void),
 			  unsigned int cpuid);
+
+#else /* !__KERNEL__ */
+
+#include <rtai_version.h>
+#include <rtai_lxrt.h>
+#include <rtai_sched.h>
+#include <rtai_malloc.h>
+#include <rtai_trace.h>
+#include <rtai_leds.h>
+#include <rtai_sem.h>
+#include <rtai_rwl.h>
+#include <rtai_spl.h>
+#include <rtai_scb.h>
+#include <rtai_mbx.h>
+#include <rtai_msg.h>
+#include <rtai_tbx.h>
+#include <rtai_mq.h>
+#include <rtai_bits.h>
+#include <rtai_wd.h>
+#include <rtai_tasklets.h>
+#include <rtai_fifos.h>
+#include <rtai_netrpc.h>
+#include <rtai_shm.h>
+#include <rtai_usi.h>
 
 #endif /* __KERNEL__ */
 

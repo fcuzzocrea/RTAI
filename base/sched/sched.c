@@ -260,6 +260,7 @@ int set_rtext(RT_TASK *task, int priority, int uses_fpu, void(*signal)(void), un
 	task->magic = RT_TASK_MAGIC; 
 	task->policy = 0;
 	task->owndres = 0;
+	task->running = 0;
 	task->prio_passed_to = 0;
 	task->period = 0;
 	task->resume_time = RT_TIME_END;
@@ -342,7 +343,7 @@ asmlinkage static void rt_startup(void(*rt_thread)(long), long data)
 	RT_TASK *rt_current = rt_smp_current[rtai_cpuid()];
 	rt_global_sti();
 #if CONFIG_RTAI_MONITOR_EXECTIME
-	rt_current->exectime[1] = rdtsc();
+	rt_current->exectime[1] = rtai_rdtsc();
 #endif
 	((void (*)(long))rt_current->max_msg_size[0])(rt_current->max_msg_size[1]);
 	rt_drg_on_adr(rt_current);
@@ -382,6 +383,7 @@ int rt_task_init_cpuid(RT_TASK *task, void (*rt_thread)(long), long data, int st
 	task->suspdepth = 1;
 	task->state = (RT_SCHED_SUSPENDED | RT_SCHED_READY);
 	task->owndres = 0;
+	task->running = 0;
 	task->is_hard = 1;
 	task->lnxtsk = 0;
 	task->priority = task->base_priority = priority;
@@ -565,6 +567,7 @@ do { \
 	if (CONFIG_RTAI_ALLOW_RR && new_task->policy > 0) { \
 		new_task->yield_time = rt_times.tick_time + new_task->rr_remaining; \
 	} \
+	new_task->running = 1; \
 } while (0)
 
 #define RR_INTR_TIME(fire_shot) \
@@ -623,12 +626,12 @@ RTIME switch_time[NR_RT_CPUS];
 #define SET_EXEC_TIME() \
 	do { \
 		RTIME now; \
-		now = rdtsc(); \
+		now = rtai_rdtsc(); \
 		rt_current->exectime[0] += (now - switch_time[cpuid]); \
 		switch_time[cpuid] = now; \
 	} while (0)
 
-#define RST_EXEC_TIME()  do { switch_time[cpuid] = rdtsc(); } while (0)
+#define RST_EXEC_TIME()  do { switch_time[cpuid] = rtai_rdtsc(); } while (0)
 
 #else
 
@@ -907,7 +910,7 @@ static void rt_schedule_on_schedule_ipi(void)
 	if (oneshot_running) {
 		int prio, fire_shot;
 
-		rt_time_h = rdtsc() + rt_half_tick;
+		rt_time_h = rtai_rdtsc() + rt_half_tick;
 		wake_up_timed_tasks(cpuid);
 		TASK_TO_SCHEDULE();
 
@@ -956,7 +959,7 @@ sched_exit:
 #if CONFIG_RTAI_BUSY_TIME_ALIGN
 	if (rt_current->busy_time_align) {
 		rt_current->busy_time_align = 0;
-		while(rdtsc() < rt_current->resume_time);
+		while(rtai_rdtsc() < rt_current->resume_time);
 	}
 #endif
 }
@@ -973,7 +976,7 @@ void rt_schedule(void)
 	if (oneshot_running) {
 		int prio, fire_shot;
 
-		rt_time_h = rdtsc() + rt_half_tick;
+		rt_time_h = rtai_rdtsc() + rt_half_tick;
 		wake_up_timed_tasks(cpuid);
 		TASK_TO_SCHEDULE();
 
@@ -1059,7 +1062,7 @@ sched_exit:
 #if CONFIG_RTAI_BUSY_TIME_ALIGN
 	if (rt_current->busy_time_align) {
 		rt_current->busy_time_align = 0;
-		while(rdtsc() < rt_current->resume_time);
+		while(rtai_rdtsc() < rt_current->resume_time);
 	}
 #endif
 	sched_get_global_lock(cpuid);
@@ -1253,7 +1256,7 @@ static void rt_timer_handler(void)
 
 redo_timer_handler:
 
-	rt_times.tick_time = oneshot_timer ? rdtsc() : rt_times.intr_time;
+	rt_times.tick_time = oneshot_timer ? rtai_rdtsc() : rt_times.intr_time;
 	rt_time_h = rt_times.tick_time + rt_half_tick;
 	SET_PEND_LINUX_TIMER_SHOT();
 
@@ -1836,30 +1839,30 @@ RTAI_SYSCALL_MODE RTIME nano2count_cpuid(RTIME ns, unsigned int cpuid)
 RTIME rt_get_time(void)
 {
 	int cpuid;
-	return rt_smp_oneshot_timer[cpuid = rtai_cpuid()] ? rdtsc() : rt_smp_times[cpuid].tick_time;
+	return rt_smp_oneshot_timer[cpuid = rtai_cpuid()] ? rtai_rdtsc() : rt_smp_times[cpuid].tick_time;
 }
 
 RTAI_SYSCALL_MODE RTIME rt_get_time_cpuid(unsigned int cpuid)
 {
-	return oneshot_timer ? rdtsc(): rt_times.tick_time;
+	return oneshot_timer ? rtai_rdtsc(): rt_times.tick_time;
 }
 
 RTIME rt_get_time_ns(void)
 {
 	int cpuid = rtai_cpuid();
-	return oneshot_timer ? llimd(rdtsc(), 1000000000, tuned.cpu_freq) :
+	return oneshot_timer ? llimd(rtai_rdtsc(), 1000000000, tuned.cpu_freq) :
 	    		       llimd(rt_times.tick_time, 1000000000, TIMER_FREQ);
 }
 
 RTAI_SYSCALL_MODE RTIME rt_get_time_ns_cpuid(unsigned int cpuid)
 {
-	return oneshot_timer ? llimd(rdtsc(), 1000000000, tuned.cpu_freq) :
+	return oneshot_timer ? llimd(rtai_rdtsc(), 1000000000, tuned.cpu_freq) :
 			       llimd(rt_times.tick_time, 1000000000, TIMER_FREQ);
 }
 
 RTIME rt_get_cpu_time_ns(void)
 {
-	return llimd(rdtsc(), 1000000000, tuned.cpu_freq);
+	return llimd(rtai_rdtsc(), 1000000000, tuned.cpu_freq);
 }
 
 extern struct epoch_struct boot_epoch;
@@ -1993,6 +1996,7 @@ static inline void fast_schedule(RT_TASK *new_task, struct task_struct *lnxtsk, 
 	rt_global_cli();
 	new_task->state |= RT_SCHED_READY;
 	enq_soft_ready_task(new_task);
+	new_task->running = 1;
 	sched_release_global_lock(cpuid);
 	LOCK_LINUX(cpuid);
 	(rt_current = &rt_linux_task)->lnxtsk = lnxtsk;
@@ -2112,7 +2116,7 @@ static void kthread_fun(int cpuid)
 			break;
 		}
 #if CONFIG_RTAI_MONITOR_EXECTIME
-		task->exectime[1] = rdtsc();
+		task->exectime[1] = rtai_rdtsc();
 #endif
 		((void (*)(long))task->max_msg_size[0])(task->max_msg_size[1]);
 		task->owndres = 0;
@@ -2238,7 +2242,7 @@ void steal_from_linux(RT_TASK *rt_task)
 	} while (rt_task->state != RT_SCHED_READY);
 #if CONFIG_RTAI_MONITOR_EXECTIME
 	if (!rt_task->exectime[1]) {
-		rt_task->exectime[1] = rdtsc();
+		rt_task->exectime[1] = rtai_rdtsc();
 	}
 #endif
 	if (lnxtsk_uses_fpu(lnxtsk)) {
@@ -2695,7 +2699,7 @@ static int rtai_read_sched(char *page, char **start, off_t off, int count,
 */
 			t = 0;
 			if ((!task->lnxtsk || task->is_hard) && task->exectime[1]) {
-				unsigned long den = (unsigned long)llimd(rdtsc() - task->exectime[1], 10, tuned.cpu_freq);
+				unsigned long den = (unsigned long)llimd(rtai_rdtsc() - task->exectime[1], 10, tuned.cpu_freq);
 				if (den) {
 					t = 1000UL*(unsigned long)llimd(task->exectime[0], 10, tuned.cpu_freq)/den;
 				}				

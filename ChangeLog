@@ -4,23 +4,26 @@
 	* base/include/asm-i386/rtai_fpu.h: upgrade to support 2.6.35.
 	* base/include/asm-i386/rtai_hal.h: upgrade to support 2.6.35.
         * addons/drivers/serial/rtai_serial.h: make all declared prototypes
-          compilible in a lib.
+	  compilible in a lib.
         * rtai-py/rtai_ser.py: add RTAI serial support for python.
         * base/include/rtai_wrappers.h: define init_MUTEX_LOCKED if not
-          defined in Linux.
+	  defined in Linux.
         * base/ipc/fifos/fifos.c: define iopl according to
-          HAVE_UNLOCKED_IOCTL.
+	  HAVE_UNLOCKED_IOCTL.
         * base/ipc/shm/shm.c: define iopl according to
 	  HAVE_UNLOCKED_IOCTL.
         * base/include/rtai_schedcore.h: resume a timed out, suspended task,
           unconditionally, zeroing suspdepth if it is > 0: this choice allows
-          a uniform resumption mechanism both for self and externally
-          suspended tasks.
+	  a uniform resumption mechanism both for self and externally
+	  suspended tasks.
         * base/sched/api.c: resume a suspended task forced to unblock
-          unconditionally by zeroing suspdepth if it is > 0: this choice allows 	  a uniform resumption mechanism both for self and externally
-          suspended tasks; use both of the previous resulting modifications
-          for all rt_task_suspend flavours.
-
+	  unconditionally by zeroing suspdepth if it is > 0: this choice
+	  allows a uniform resumption mechanism both for self and externally
+	  suspended tasks; use both of the previous resulting modifications
+	  for all rt_task_suspend flavours.
+	* base/sched/sys.c: export rt_fun_ext for direct use in netrpc.c.
+        * base/ipc/netrpc/netrpc.c: use rt_fun_ext directly, in place of
+	  rt_net_rpc_fun_ext.
 
 2011-01-17 Roberto Bucher <roberto.bucher@supsi.ch>
 

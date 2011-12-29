@@ -24,6 +24,7 @@
 	* base/sched/sys.c: export rt_fun_ext for direct use in netrpc.c.
         * base/ipc/netrpc/netrpc.c: use rt_fun_ext directly, in place of
 	  rt_net_rpc_fun_ext.
+        * base/include/rtai_posix.h: fixed return value of pthread_cond_wait.
 
 2011-01-17 Roberto Bucher <roberto.bucher@supsi.ch>
 

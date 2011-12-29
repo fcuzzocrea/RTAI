@@ -12,6 +12,11 @@
           HAVE_UNLOCKED_IOCTL.
         * base/ipc/shm/shm.c: define iopl according to
 	  HAVE_UNLOCKED_IOCTL.
+        * base/sched/api.c: resume a suspended task forced to unblock
+          unconditionally by zeroing suspdepth if it is > 0: this choice allows 	  a uniform resumption mechanism both for self and externally
+          suspended tasks; use both of the previous resulting modifications
+          for all rt_task_suspend flavours.
+
 
 2011-01-17 Roberto Bucher <roberto.bucher@supsi.ch>
 

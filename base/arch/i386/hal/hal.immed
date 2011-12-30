@@ -1926,7 +1926,11 @@ static void rtai_install_archdep (void)
 	if (rtai_cpufreq_arg == 0) {
 		struct hal_sysinfo_struct sysinfo;
 		hal_get_sysinfo(&sysinfo);
+#if LINUX_VERSION_CODE > KERNEL_VERSION(2,6,35)
+		rtai_cpufreq_arg = (unsigned long)sysinfo.sys_cpu_freq;
+#else
 		rtai_cpufreq_arg = (unsigned long)sysinfo.cpufreq;
+#endif
 	}
 	rtai_tunables.cpu_freq = rtai_cpufreq_arg;
 

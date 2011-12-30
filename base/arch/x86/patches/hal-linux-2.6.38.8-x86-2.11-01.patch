@@ -8879,7 +8879,7 @@ index 0000000..51a8be6
 +cpumask_t ipipe_set_irq_affinity (unsigned irq, cpumask_t cpumask)
 +{
 +#ifdef CONFIG_SMP
-+	if (irq >= IPIPE_NR_XIRQS)
++	if (irq >= NR_IRQS) // if (irq >= IPIPE_NR_XIRQS)
 +		/* Allow changing affinity of external IRQs only. */
 +		return CPU_MASK_NONE;
 +

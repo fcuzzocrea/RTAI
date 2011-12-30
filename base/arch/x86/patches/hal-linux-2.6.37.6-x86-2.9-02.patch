@@ -2281,7 +2281,7 @@ index 591e601..efb5dcf 100644
 +	SAVE_ALL
 +	IPIPE_TRACE_IRQ_ENTER
 +	movl %esp, %eax
-+	call __ipipe_handle_irq
++	call *ipipe_irq_handler
 +	IPIPE_TRACE_IRQ_EXIT
 +	testl %eax,%eax
 +	jnz  ret_from_intr
@@ -2297,7 +2297,7 @@ index 591e601..efb5dcf 100644
 +	SAVE_ALL;			\
 +	IPIPE_TRACE_IRQ_ENTER;		\
 + 	movl %esp, %eax;		\
-+	call __ipipe_handle_irq;	\
++	call *ipipe_irq_handler;	\
 +	IPIPE_TRACE_IRQ_EXIT;		\
 +	testl %eax,%eax;		\
 +	jnz  ret_from_intr;		\
@@ -2646,7 +2646,7 @@ index b235db9..8b4419c 100644
 +#ifdef CONFIG_IPIPE
 +	XCPT_FRAME
 +	addq $-0x80,(%rsp)		/* Adjust vector to [-256,-1] range */
-+	interrupt __ipipe_handle_irq
++	interrupt *ipipe_irq_handler
 +	testl %eax, %eax
 +	jnz ret_from_intr
 +	decl PER_CPU_VAR(irq_count)
@@ -2720,7 +2720,7 @@ index b235db9..8b4419c 100644
  	INTR_FRAME
  	pushq_cfi $~(\num)
 +#ifdef CONFIG_IPIPE
-+	interrupt __ipipe_handle_irq
++	interrupt *ipipe_irq_handler
 +	testl %eax, %eax
 +	jnz ret_from_intr
 +	decl PER_CPU_VAR(irq_count)
@@ -3101,7 +3101,7 @@ new file mode 100644
 index 0000000..cd63d02
 --- /dev/null
 +++ b/arch/x86/kernel/ipipe.c
-@@ -0,0 +1,857 @@
+@@ -0,0 +1,881 @@
 +/*   -*- linux-c -*-
 + *   linux/arch/x86/kernel/ipipe.c
 + *
@@ -3155,6 +3155,30 @@ index 0000000..cd63d02
 +#endif	/* CONFIG_X86_LOCAL_APIC */
 +#include <asm/traps.h>
 +#include <asm/tsc.h>
++
++void *ipipe_irq_handler = __ipipe_handle_irq;
++EXPORT_SYMBOL(ipipe_irq_handler);
++EXPORT_SYMBOL(io_apic_irqs);
++EXPORT_PER_CPU_SYMBOL(__ipipe_tick_regs);
++__attribute__((regparm(3))) void do_notify_resume(struct pt_regs *, void *, __u32);
++EXPORT_SYMBOL(do_notify_resume);
++extern void *sys_call_table;
++EXPORT_SYMBOL(sys_call_table);
++#ifdef CONFIG_X86_32
++extern void ret_from_intr(void);
++EXPORT_SYMBOL(ret_from_intr);
++extern spinlock_t i8259A_lock;
++extern struct desc_struct idt_table[];
++#else
++extern ipipe_spinlock_t i8259A_lock;
++extern gate_desc idt_table[];
++#endif
++EXPORT_PER_CPU_SYMBOL(vector_irq);
++EXPORT_SYMBOL(idt_table);
++EXPORT_SYMBOL(i8259A_lock);
++EXPORT_SYMBOL(__ipipe_sync_stage);
++EXPORT_SYMBOL(kill_proc_info);
++EXPORT_SYMBOL(find_task_by_pid_ns);
 +
 +int __ipipe_tick_irq = 0;	/* Legacy timer */
 +
@@ -6745,6 +6769,44 @@ index 676149a..c8f2f9d 100644
  	exit_sem(tsk);
  	exit_files(tsk);
  	exit_fs(tsk);
+@@ -1796,3 +1797,37 @@ SYSCALL_DEFINE3(waitpid, pid_t, pid, int
+ }
+ 
+ #endif
++
++void rt_daemonize(void)
++{
++	sigset_t blocked;
++
++	/*
++	 * We don't want to have TIF_FREEZE set if the system-wide hibernation
++	 * or suspend transition begins right now.
++	 */
++	current->flags |= (PF_NOFREEZE | PF_KTHREAD);
++
++	if (current->nsproxy != &init_nsproxy) {
++		get_nsproxy(&init_nsproxy);
++		switch_task_namespaces(current, &init_nsproxy);
++	}
++	set_special_pids(&init_struct_pid);
++	proc_clear_tty(current);
++
++	/* Block and flush all signals */
++	sigfillset(&blocked);
++	sigprocmask(SIG_BLOCK, &blocked, NULL);
++	flush_signals(current);
++
++	/* Become as one with the init task */
++
++	daemonize_fs_struct();
++	exit_files(current);
++	current->files = init_task.files;
++	atomic_inc(&current->files->count);
++
++	reparent_to_kthreadd();
++}
++
++EXPORT_SYMBOL(rt_daemonize);
 diff --git a/kernel/fork.c b/kernel/fork.c
 index 5447dc7..8348e59 100644
 --- a/kernel/fork.c
@@ -6942,7 +7004,7 @@ new file mode 100644
 index 0000000..9aa4800
 --- /dev/null
 +++ b/kernel/ipipe/core.c
-@@ -0,0 +1,2194 @@
+@@ -0,0 +1,2195 @@
 +/* -*- linux-c -*-
 + * linux/kernel/ipipe/core.c
 + *
@@ -7990,6 +8052,7 @@ index 0000000..9aa4800
 +
 +int __ipipe_dispatch_event (unsigned event, void *data)
 +{
++extern void *ipipe_irq_handler; void *handler; if (ipipe_irq_handler != __ipipe_handle_irq && (handler = ipipe_root_domain->evhand[event])) { return ((int (*)(unsigned long, void *))handler)(event, data); } else {
 +	struct ipipe_domain *start_domain, *this_domain, *next_domain;
 +	struct ipipe_percpu_domain_data *np;
 +	ipipe_event_handler_t evhand;
@@ -8061,7 +8124,7 @@ index 0000000..9aa4800
 +	local_irq_restore_hw(flags);
 +
 +	return !propagate;
-+}
++} }
 +
 +/*
 + * __ipipe_dispatch_wired -- Wired interrupt dispatcher. Wired
@@ -8562,7 +8625,7 @@ index 0000000..9aa4800
 +cpumask_t ipipe_set_irq_affinity (unsigned irq, cpumask_t cpumask)
 +{
 +#ifdef CONFIG_SMP
-+	if (irq >= IPIPE_NR_XIRQS)
++	if (irq >= NR_IRQS) // if (irq >= IPIPE_NR_XIRQS)
 +		/* Allow changing affinity of external IRQs only. */
 +		return CPU_MASK_NONE;
 +
@@ -11052,7 +11115,7 @@ index 5e0a919..337b388 100644
  		goto out;
  
  	if (p->se.on_rq)
-@@ -3034,13 +3035,15 @@ asmlinkage void schedule_tail(struct task_struct *prev)
+@@ -3034,22 +3035,29 @@ asmlinkage void schedule_tail(struct tas
  #endif
  	if (current->set_child_tid)
  		put_user(task_pid_vnr(current), current->set_child_tid);
@@ -11065,35 +11128,64 @@ index 5e0a919..337b388 100644
   * thread's register state.
   */
 -static inline void
-+static inline int
++int
  context_switch(struct rq *rq, struct task_struct *prev,
  	       struct task_struct *next)
  {
-@@ -3082,12 +3085,23 @@ context_switch(struct rq *rq, struct task_struct *prev,
+ 	struct mm_struct *mm, *oldmm;
+ 
+-	prepare_task_switch(rq, prev, next);
+-	trace_sched_switch(prev, next);
+ 	mm = next->mm;
+ 	oldmm = prev->active_mm;
++
++if (!rq) {
++	switch_mm(oldmm, next->active_mm, next);
++	if (!mm) enter_lazy_tlb(oldmm, next);
++} else {
++	prepare_task_switch(rq, prev, next);
++	trace_sched_switch(prev, next);
+ 	/*
+ 	 * For paravirt, this is coupled with an exit in switch_to to
+ 	 * combine the page table reload and the switch backend into
+@@ -3077,11 +3085,24 @@ context_switch(struct rq *rq, struct tas
+ #ifndef __ARCH_WANT_UNLOCKED_CTXSW
+ 	spin_release(&rq->lock.dep_map, 1, _THIS_IP_);
+ #endif
+-
++}
++#ifdef CONFIG_IPIPE
++	next->ptd[IPIPE_ROOT_NPTDKEYS - 1] = prev;
++#endif /* CONFIG_IPIPE */
+ 	/* Here we just switch the register state and the stack. */
  	switch_to(prev, next, prev);
  
  	barrier();
 +
-+#ifdef CONFIG_IPIPE_DELAYED_ATOMICSW
++if (unlikely(rq)) {
++#if 1 // def CONFIG_IPIPE_DELAYED_ATOMICSW
 +	current->state &= ~TASK_ATOMICSWITCH;
 +#else
 +	prev->state &= ~TASK_ATOMICSWITCH;
 +#endif
 +	if (task_hijacked(prev))
-+		return 1;
++		return 1; __ipipe_dispatch_event(IPIPE_FIRST_EVENT - 2, 0);
 +
  	/*
  	 * this_rq must be evaluated again because prev may have moved
  	 * CPUs since it called schedule(), thus the 'rq' on its stack
- 	 * frame will be invalid.
+@@ -3089,6 +3110,10 @@ context_switch(struct rq *rq, struct tas
  	 */
  	finish_task_switch(this_rq(), prev);
-+
-+	return 0;
  }
++	return 0;
++}
++
++EXPORT_SYMBOL(context_switch);
  
  /*
-@@ -3940,6 +3954,7 @@ notrace unsigned long get_parent_ip(unsigned long addr)
+  * nr_running, nr_uninterruptible and nr_context_switches:
+@@ -3940,6 +3965,7 @@ notrace unsigned long get_parent_ip(unsi
  
  void __kprobes add_preempt_count(int val)
  {
@@ -11101,7 +11193,7 @@ index 5e0a919..337b388 100644
  #ifdef CONFIG_DEBUG_PREEMPT
  	/*
  	 * Underflow?
-@@ -3962,6 +3977,7 @@ EXPORT_SYMBOL(add_preempt_count);
+@@ -3962,6 +3988,7 @@ EXPORT_SYMBOL(add_preempt_count);
  
  void __kprobes sub_preempt_count(int val)
  {
@@ -11109,7 +11201,7 @@ index 5e0a919..337b388 100644
  #ifdef CONFIG_DEBUG_PREEMPT
  	/*
  	 * Underflow?
-@@ -4010,6 +4026,7 @@ static noinline void __schedule_bug(struct task_struct *prev)
+@@ -4010,6 +4037,7 @@ static noinline void __schedule_bug(stru
   */
  static inline void schedule_debug(struct task_struct *prev)
  {
@@ -11117,7 +11209,7 @@ index 5e0a919..337b388 100644
  	/*
  	 * Test if we are atomic. Since do_exit() needs to call into
  	 * schedule() atomically, we ignore that path for now.
-@@ -4067,7 +4084,7 @@ pick_next_task(struct rq *rq)
+@@ -4067,7 +4095,7 @@ pick_next_task(struct rq *rq)
  /*
   * schedule() is the main scheduler function.
   */
@@ -11126,7 +11218,7 @@ index 5e0a919..337b388 100644
  {
  	struct task_struct *prev, *next;
  	unsigned long *switch_count;
-@@ -4081,6 +4098,10 @@ need_resched:
+@@ -4081,6 +4109,10 @@ need_resched:
  	rcu_note_context_switch(cpu);
  	prev = rq->curr;
  
@@ -11137,7 +11229,7 @@ index 5e0a919..337b388 100644
  	release_kernel_lock(prev);
  need_resched_nonpreemptible:
  
-@@ -4132,7 +4153,8 @@ need_resched_nonpreemptible:
+@@ -4132,7 +4164,8 @@ need_resched_nonpreemptible:
  		rq->curr = next;
  		++*switch_count;
  
@@ -11147,7 +11239,7 @@ index 5e0a919..337b388 100644
  		/*
  		 * The context switch have flipped the stack from under us
  		 * and restored the local variables which were saved when
-@@ -4141,8 +4163,10 @@ need_resched_nonpreemptible:
+@@ -4141,8 +4174,10 @@ need_resched_nonpreemptible:
  		 */
  		cpu = smp_processor_id();
  		rq = cpu_rq(cpu);
@@ -11159,7 +11251,7 @@ index 5e0a919..337b388 100644
  
  	post_schedule(rq);
  
-@@ -4152,6 +4176,8 @@ need_resched_nonpreemptible:
+@@ -4152,6 +4187,8 @@ need_resched_nonpreemptible:
  	preempt_enable_no_resched();
  	if (need_resched())
  		goto need_resched;
@@ -11168,7 +11260,7 @@ index 5e0a919..337b388 100644
  }
  EXPORT_SYMBOL(schedule);
  
-@@ -4243,7 +4269,8 @@ asmlinkage void __sched notrace preempt_schedule(void)
+@@ -4243,7 +4280,8 @@ asmlinkage void __sched notrace preempt_
  
  	do {
  		add_preempt_count_notrace(PREEMPT_ACTIVE);
@@ -11178,7 +11270,7 @@ index 5e0a919..337b388 100644
  		sub_preempt_count_notrace(PREEMPT_ACTIVE);
  
  		/*
-@@ -5034,6 +5061,7 @@ recheck:
+@@ -5034,6 +5072,7 @@ recheck:
  	oldprio = p->prio;
  	prev_class = p->sched_class;
  	__setscheduler(rq, p, policy, param->sched_priority);
@@ -11186,7 +11278,7 @@ index 5e0a919..337b388 100644
  
  	if (running)
  		p->sched_class->set_curr_task(rq);
-@@ -5702,6 +5730,7 @@ void __cpuinit init_idle(struct task_struct *idle, int cpu)
+@@ -5702,6 +5741,7 @@ void __cpuinit init_idle(struct task_str
  #else
  	task_thread_info(idle)->preempt_count = 0;
  #endif
@@ -11194,7 +11286,7 @@ index 5e0a919..337b388 100644
  	/*
  	 * The idle tasks have their own, simple scheduling class:
  	 */
-@@ -9621,3 +9650,64 @@ void synchronize_sched_expedited(void)
+@@ -9621,3 +9661,64 @@ void synchronize_sched_expedited(void)
  EXPORT_SYMBOL_GPL(synchronize_sched_expedited);
  
  #endif /* #else #ifndef CONFIG_SMP */

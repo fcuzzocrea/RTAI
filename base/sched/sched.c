@@ -2106,7 +2106,11 @@ static void kthread_fun(int cpuid)
 	task->msg_queue.next = &task->msg_queue;
 	task->resq.next = &task->resq;
 #ifdef PF_EVNOTIFY
+#if LINUX_VERSION_CODE > KERNEL_VERSION(2,6,35)
+	current->ipipe_flags |= PF_EVNOTIFY;
+#else
 	current->flags |= PF_EVNOTIFY;
+#endif
 #endif
 	steal_from_linux(task);
 	while(1) {

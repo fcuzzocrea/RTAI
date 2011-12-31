@@ -1,3 +1,12 @@
+2011-12-31 Paolo Mantegazza <mantegazza@aero.polimi.it>
+
+	* base/sched/sched.c and sys.c: if PF_EVNOTIFY is defined use the
+	  related Linux patch service, instead of or-ring the related flag
+	  directly.
+	* addons/rtdm/device.c: avoid DECLARE_MUTEX, use the related struct
+	  declaration and initialize it explicitly at module init.
+	* base/arch/i386/hal/hal.immed: upgraded to work up to Linux 2.6.38.8.
+
 2011-12-29 Paolo Mantegazza <mantegazza@aero.polimi.it>
 
 	* base/arch/i386/hal/hal.c: put diag for APIC timers sync under ifdef.

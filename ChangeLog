@@ -3,6 +3,8 @@
 	* base/sched/sched.c and sys.c: if PF_EVNOTIFY is defined use the
 	  related Linux patch service, instead of or-ring the related flag
 	  directly.
+	* addons/rtdm/device.c: avoid DECLARE_MUTEX, use the related struct 
+	  declaration and initialize explicitly at module init.
 
 2011-12-30 Paolo Mantegazza <mantegazza@aero.polimi.it>
 

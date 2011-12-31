@@ -1,3 +1,11 @@
+2011-12-31 Roberto Bucher <roberto.bucher@supsi.ch>
+
+	* rtai-lab/scicoslab/macros/RTAI/RTAICodeGen_.sci: if state are not
+	  present, code for state update is not generated.
+	* rtai-lab/scicoslab/macros/RTAI/RTAICodeGen_.sci: scicosim is not
+	  started by creating code, avoiding problems with blocks used for
+	  HIL (thanks to Klaus Weichinger).
+	
 2011-12-31 Paolo Mantegazza <mantegazza@aero.polimi.it>
 
 	* base/sched/sched.c and sys.c: if PF_EVNOTIFY is defined use the

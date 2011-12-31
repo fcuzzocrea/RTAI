@@ -99,6 +99,10 @@ function [txt]=call_block42(bk,pt,flag)
 
   txt=[]
 
+  if flag==2 & (zptr(bk+1)-zptr(bk)+xptr(bk+1)-xptr(bk) == 0) then
+    return
+  end
+
   //**
   if flag==2 & ((zcptr(bk+1)-zcptr(bk))<>0) & pt<0 then
 
@@ -1378,9 +1382,9 @@ function [ok,XX,gui_path,flgcdgen,szclkINTemp,freof,c_atomic_code,cpr]=do_compil
   //**** solve which blocks use work ****//
   BeforeCG_WinList = winsid();
 
-  ierr=execstr('[state,t]=scicosim(cpr.state,0,0,cpr.sim,'+..
-               '''start'',scs_m.props.tol)','errcatch')
-
+  //  ierr=execstr('[state,t]=scicosim(cpr.state,0,0,cpr.sim,'+..
+  //               '''start'',scs_m.props.tol)','errcatch')
+  ierr = 1
   //@@ save initial outtb
   if ierr==0
     outtb_init = state.outtb;
@@ -1401,8 +1405,8 @@ function [ok,XX,gui_path,flgcdgen,szclkINTemp,freof,c_atomic_code,cpr]=do_compil
        end
     end
 
-    ierr=execstr('[state,t]=scicosim(state,0,0,cpr.sim,'+..
-                 '''finish'',scs_m.props.tol)','errcatch')
+  //  ierr=execstr('[state,t]=scicosim(state,0,0,cpr.sim,'+..
+  //               '''finish'',scs_m.props.tol)','errcatch')
   end
 
   //@@ remove windows opened by simulation

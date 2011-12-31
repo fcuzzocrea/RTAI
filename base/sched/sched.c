@@ -2106,6 +2106,8 @@ static void kthread_fun(int cpuid)
 	task->msg_queue.next = &task->msg_queue;
 	task->resq.next = &task->resq;
 #ifdef PF_EVNOTIFY
+	ipipe_enable_notifier(current);
+#else
 	current->flags |= PF_EVNOTIFY;
 #endif
 	steal_from_linux(task);

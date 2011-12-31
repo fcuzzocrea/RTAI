@@ -243,8 +243,9 @@ static inline RT_TASK* __task_init(unsigned long name, int prio, int stack_size,
 		rt_task->max_msg_size[1] = max_msg_size;
 		if (rt_register(name, rt_task, IS_TASK, 0)) {
 			rt_task->state = 0;
-
 #ifdef PF_EVNOTIFY
+			ipipe_enable_notifier(current);
+#else
 			current->flags |= PF_EVNOTIFY;
 #endif
 #if (defined VM_PINNED) && (defined CONFIG_MMU)

@@ -1868,7 +1868,7 @@ RTAI_SYSCALL_MODE RT_TASK *rt_receivex_timed(RT_TASK *task, void *msg, int size,
 	struct mcb_t *mcb;
 	if ((unsigned long)(task = rt_receive_timed(task, (unsigned long *)&mcb, delay)) > RTE_HIGERR) {
 		DO_RCV_MSG();
-	} 
+	}
 	return task;
 }
 

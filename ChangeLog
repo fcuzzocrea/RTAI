@@ -10,7 +10,7 @@
 
 	* base/sched/sched.c and sys.c: update PF_EVNOTIFY flag assignement
 	  according to Linux version.
-	* base/arch/i386/hal/hal.immed: upgraded to work with Linux > 2.6.35.
+	* base/arch/i386/hal/hal.immed: upgraded to work up to Linux 2.6.38.8.
 
 2011-05-09 Pierangelo Masarati <masarati@aero.polimi.it>
 

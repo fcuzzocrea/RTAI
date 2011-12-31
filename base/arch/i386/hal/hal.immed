@@ -310,7 +310,11 @@ extern unsigned long io_apic_irqs;
 #define rtai_irq_desc(irq) irq_desc[irq]
 #else
 #if defined(__IPIPE_2LEVEL_IRQMAP) || defined(__IPIPE_3LEVEL_IRQMAP) 
+#if LINUX_VERSION_CODE > KERNEL_VERSION(2,6,35)
+#define rtai_irq_desc_chip(irq) (irq_to_desc(irq)->irq_data.chip)
+#else
 #define rtai_irq_desc_chip(irq) (irq_to_desc(irq)->chip)
+#endif
 #define rtai_irq_desc(irq) (irq_to_desc(irq))[0]
 #else
 #define rtai_irq_desc_chip(irq) (irq_desc[irq].chip)
@@ -1027,7 +1031,7 @@ int _rtai_sched_on_ipi_handler(void)
 	if (!test_bit(IPIPE_STALL_FLAG, ROOT_STATUS_ADR(cpuid))) {
 		rtai_sti();
 		hal_fast_flush_pipeline(cpuid);
-#if defined(CONFIG_SMP) &&  LINUX_VERSION_CODE >= KERNEL_VERSION(2,4,32)
+#if defined(CONFIG_SMP) && LINUX_VERSION_CODE < KERNEL_VERSION(2,6,37)
 		__set_bit(IPIPE_STALL_FLAG, ROOT_STATUS_ADR(rtai_cpuid()));
 #endif
 		return 1;
@@ -1089,7 +1093,7 @@ int _rtai_apic_timer_handler(struct pt_regs regs)
 #endif
 		}
 		hal_fast_flush_pipeline(cpuid);
-#if defined(CONFIG_SMP) &&  LINUX_VERSION_CODE >= KERNEL_VERSION(2,4,32)
+#if defined(CONFIG_SMP) && LINUX_VERSION_CODE < KERNEL_VERSION(2,6,37)
 		__set_bit(IPIPE_STALL_FLAG, ROOT_STATUS_ADR(rtai_cpuid()));
 #endif
 		return 1;
@@ -1139,7 +1143,7 @@ int _rtai_8254_timer_handler(struct pt_regs regs)
 #endif
 		}
 		hal_fast_flush_pipeline(cpuid);
-#if defined(CONFIG_SMP) && LINUX_VERSION_CODE >= KERNEL_VERSION(2,4,32)
+#if defined(CONFIG_SMP) && LINUX_VERSION_CODE < KERNEL_VERSION(2,6,37)
 		__set_bit(IPIPE_STALL_FLAG, ROOT_STATUS_ADR(cpuid));
 #endif
 		return 1;
@@ -1651,7 +1655,7 @@ static int rtai_hirq_dispatcher (struct pt_regs regs)
 #endif
 	}
 	hal_fast_flush_pipeline(cpuid);
-#if defined(CONFIG_SMP) &&  LINUX_VERSION_CODE >= KERNEL_VERSION(2,4,32)
+#if defined(CONFIG_SMP) && LINUX_VERSION_CODE < KERNEL_VERSION(2,6,37)
 	__set_bit(IPIPE_STALL_FLAG, ROOT_STATUS_ADR(rtai_cpuid()));
 #endif
 	return 1;
@@ -1922,7 +1926,11 @@ static void rtai_install_archdep (void)
 	if (rtai_cpufreq_arg == 0) {
 		struct hal_sysinfo_struct sysinfo;
 		hal_get_sysinfo(&sysinfo);
+#if LINUX_VERSION_CODE > KERNEL_VERSION(2,6,37)
+		rtai_cpufreq_arg = (unsigned long)sysinfo.sys_cpu_freq;
+#else
 		rtai_cpufreq_arg = (unsigned long)sysinfo.cpufreq;
+#endif
 	}
 	rtai_tunables.cpu_freq = rtai_cpufreq_arg;
 

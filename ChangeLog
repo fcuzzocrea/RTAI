@@ -1,5 +1,11 @@
 2011-12-31 Paolo Mantegazza <mantegazza@aero.polimi.it>
 
+	* base/sched/sched.c and sys.c: if PF_EVNOTIFY is defined use the
+	  related Linux patch service, instead of or-ring the related flag
+	  directly.
+
+2011-12-30 Paolo Mantegazza <mantegazza@aero.polimi.it>
+
 	* base/sched/sched.c and sys.c: update PF_EVNOTIFY flag assignement
 	  according to Linux version.
 	* base/arch/i386/hal/hal.immed: upgraded to work with Linux > 2.6.35.

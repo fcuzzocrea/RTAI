@@ -176,7 +176,7 @@
 
 	* base/ipc/msg/msg.c: strengthened correctness check of task args,
 	  used a more appropriate unsigned long as return arg of rpcs, revised
-	  sendx, previous implementation could be overwrite previous sends,
+	  sendx, previous implementation could overwrite previous sends,
 	  receivexes have more appropriate returns now.
 
 2010-04-21 Paolo Mantegazza <mantegazza@aero.polimi.it>

@@ -2105,7 +2105,7 @@ static void kthread_fun(int cpuid)
 	init_hard_fpu(current);
 	task->msg_queue.next = &task->msg_queue;
 	task->resq.next = &task->resq;
-#ifdef PF_EVNOTIFY
+#ifdef __IPIPE_FEATURE_ENABLE_NOTIFIER
 	ipipe_enable_notifier(current);
 #else
 	current->flags |= PF_EVNOTIFY;

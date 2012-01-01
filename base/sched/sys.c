@@ -243,7 +243,7 @@ static inline RT_TASK* __task_init(unsigned long name, int prio, int stack_size,
 		rt_task->max_msg_size[1] = max_msg_size;
 		if (rt_register(name, rt_task, IS_TASK, 0)) {
 			rt_task->state = 0;
-#ifdef PF_EVNOTIFY
+#ifdef __IPIPE_FEATURE_ENABLE_NOTIFIER
 			ipipe_enable_notifier(current);
 #else
 			current->flags |= PF_EVNOTIFY;

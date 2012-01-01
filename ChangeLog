@@ -1,3 +1,11 @@
+2012-01-01 Paolo Mantegazza <mantegazza@aero.polimi.it>
+
+        * base/ipc/msg/msg.c: revised sendx, previous implementation could
+	  overwrite previous sends, made rt_sendx_if safer for in interrupt 
+	  handlers usage, strengthened correctness check of task args and 
+	  copying into pointed variables, receivexes should have more 
+	  appropriate returns now.
+
 2011-12-31 Roberto Bucher <roberto.bucher@supsi.ch>
 
 	* rtai-lab/scicoslab/macros/RTAI/RTAICodeGen_.sci: if state are not

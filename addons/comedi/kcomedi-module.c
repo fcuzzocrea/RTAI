@@ -3,7 +3,7 @@
  *               2002 David Schleef (ds@schleef.org) (COMEDI master)
  *               2002 Lorenzo Dozio (dozio@aero.polimi.it) (made it all work)
  *               2006 Roberto Bucher <roberto.bucher@supsi.ch> (upgrade)
- *               2002-2009 Paolo Mantegazza (mantegazza@aero.polimi.it) (hints/support)
+ *               2002-2010 Paolo Mantegazza (mantegazza@aero.polimi.it) (hints/support)
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License as
@@ -20,14 +20,14 @@
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
  */
 
-/**
- * This file is the kernel module counterpart of the KComedi-LXRT support.
- * It will be compiled to a rtai_comedi.o kernel module.
+/*
+ * This is the module to support using COMEDI in hard real time within RTAI.
  */
 
 
 #include <linux/module.h>
 #include <linux/version.h>
+#include <linux/delay.h>
 #include <asm/uaccess.h>
 
 #include <rtai_schedcore.h>
@@ -42,9 +42,7 @@ MODULE_DESCRIPTION("RTAI LXRT binding for COMEDI kcomedilib");
 MODULE_AUTHOR("The Comedi Players");
 MODULE_LICENSE("GPL");
 
-//#define RTAI_COMEDI_USE_LOCK
-
-#ifdef RTAI_COMEDI_USE_LOCK
+#ifdef CONFIG_RTAI_USE_COMEDI_LOCK
 
 #define RTAI_COMEDI_LOCK(dev, subdev) \
 	do { comedi_lock(dev, subdev); } while (0)
@@ -58,7 +56,7 @@ MODULE_LICENSE("GPL");
 
 #endif
 
-#define space(adr)  ((unsigned long)adr > PAGE_OFFSET)
+#define KSPACE(adr)  ((unsigned long)adr > PAGE_OFFSET)
 
 static int rtai_comedi_callback(unsigned int, RT_TASK *) __attribute__ ((__unused__));
 static int rtai_comedi_callback(unsigned int val, RT_TASK *task)
@@ -128,6 +126,19 @@ static RTAI_SYSCALL_MODE int _comedi_command_test(void *dev, comedi_cmd *cmd)
 	return retval;
 }
 
+static RTAI_SYSCALL_MODE int RT_comedi_command(void *dev, struct cmds_ofstlens *ofstlens, long test)
+{
+	int retval;
+	comedi_cmd cmd[2]; // 2 instances, a safe room for 64 getting into 32
+	memcpy(cmd, (void *)ofstlens + ofstlens->cmd_ofst, ofstlens->cmd_len);
+	cmd[0].chanlist     = (void *)ofstlens + ofstlens->chanlist_ofst;
+	cmd[0].chanlist_len = ofstlens->chanlist_len;
+	cmd[0].data         = (void *)ofstlens + ofstlens->data_ofst;
+	cmd[0].data_len     = ofstlens->data_len;
+	retval = test ? _comedi_command_test(dev, cmd) : _comedi_command(dev, cmd);
+	return retval;
+}
+
 RTAI_SYSCALL_MODE long rt_comedi_command_data_read(void *dev, unsigned int subdev, long nchans, lsampl_t *data)
 {
 	void *aibuf;
@@ -180,14 +191,14 @@ RTAI_SYSCALL_MODE long rt_comedi_command_data_read(void *dev, unsigned int subde
 #define WAITIF     1
 #define WAITUNTIL  2
 
-static inline long _rt_comedi_command_data_wread(void *dev, unsigned int subdev, long nchans, lsampl_t *data, RTIME until, long *maskarg, int waitmode)
+static inline int __rt_comedi_command_data_wread(void *dev, unsigned int subdev, long nchans, lsampl_t *data, RTIME until, unsigned int *cbmaskarg, int waitmode)
 {
-	long cbmask, retval, space, mask;
-	space = space(maskarg);
-	if (space) {
-		mask = maskarg[0];
+	unsigned int cbmask, mask;
+	long retval, kspace;
+	if ((kspace = KSPACE(cbmaskarg))) {
+		mask = cbmaskarg[0];
 	} else {
-		rt_get_user(mask, maskarg);
+		rt_get_user(mask, cbmaskarg);
 	}
 	switch (waitmode) {
 		case WAIT: 
@@ -197,40 +208,55 @@ static inline long _rt_comedi_command_data_wread(void *dev, unsigned int subdev,
 			retval = rt_comedi_wait_if(&cbmask);
 			break;
 		case WAITUNTIL: 
-			retval = rt_comedi_wait_until(until, &cbmask);
+			retval = _rt_comedi_wait_until(&cbmask, until);
 			break;
 		default: // useless, just to avoid compiler warnings
 			return RTE_PERM;
 	}
 	if (!retval && (mask & cbmask)) {
-		if (space) {
-			maskarg[0] = cbmask;
+		if (kspace) {
+			cbmaskarg[0] = cbmask;
 		} else {
-			rt_put_user(cbmask, maskarg);
+			rt_put_user(cbmask, cbmaskarg);
 		}
 		return rt_comedi_command_data_read(dev, subdev, nchans, data);
 	}
 	return retval;
 }
 
-RTAI_SYSCALL_MODE long rt_comedi_command_data_wread(void *dev, unsigned int subdev, long nchans, lsampl_t *data, long *maskarg)
+RTAI_SYSCALL_MODE long rt_comedi_command_data_wread(void *dev, unsigned int subdev, long nchans, lsampl_t *data, unsigned int *cbmask)
 {
-	return _rt_comedi_command_data_wread(dev, subdev, nchans, data, (RTIME)0, maskarg, WAIT);
+	return __rt_comedi_command_data_wread(dev, subdev, nchans, data, (RTIME)0, cbmask, WAIT);
 }
 
-RTAI_SYSCALL_MODE long rt_comedi_command_data_wread_if(void *dev, unsigned int subdev, long nchans, lsampl_t *data, long *maskarg)
+RTAI_SYSCALL_MODE long rt_comedi_command_data_wread_if(void *dev, unsigned int subdev, long nchans, lsampl_t *data, unsigned int *cbmask)
 {
-	return _rt_comedi_command_data_wread(dev, subdev, nchans, data, (RTIME)0, maskarg, WAITIF);
+	return __rt_comedi_command_data_wread(dev, subdev, nchans, data, (RTIME)0, cbmask, WAITIF);
 }
 
-RTAI_SYSCALL_MODE long rt_comedi_command_data_wread_until(void *dev, unsigned int subdev, long nchans, lsampl_t *data, RTIME until, long *maskarg)
+RTAI_SYSCALL_MODE long _rt_comedi_command_data_wread_until(void *dev, unsigned int subdev, long nchans, lsampl_t *data, unsigned int *cbmask, RTIME until)
 {
-	return _rt_comedi_command_data_wread(dev, subdev, nchans, data, until, maskarg, WAITUNTIL);
+	return __rt_comedi_command_data_wread(dev, subdev, nchans, data, until, cbmask, WAITUNTIL);
 }
 
-RTAI_SYSCALL_MODE long rt_comedi_command_data_wread_timed(void *dev, unsigned int subdev, long nchans, lsampl_t *data, RTIME delay, long *cbmask)
+RTAI_SYSCALL_MODE long _rt_comedi_command_data_wread_timed(void *dev, unsigned int subdev, long nchans, lsampl_t *data, unsigned int *cbmask, RTIME delay)
 {
-	return rt_comedi_command_data_wread_until(dev, subdev, nchans, data, rt_get_time() + delay, cbmask);
+	return _rt_comedi_command_data_wread_until(dev, subdev, nchans, data, cbmask, rt_get_time() + delay);
+}
+
+RTAI_SYSCALL_MODE long RT_comedi_command_data_wread(void *dev, unsigned int subdev, long nchans, lsampl_t *data, unsigned int *cbmask, unsigned int datalen, RTIME time)
+{
+	switch (nchans & 0x3) {
+		case 0: 
+			return __rt_comedi_command_data_wread(dev, subdev, nchans >> 2, data, (RTIME)0, cbmask, WAIT);
+		case 1: 
+			return __rt_comedi_command_data_wread(dev, subdev, nchans >> 2, data, (RTIME)0, cbmask, WAITIF);
+		case 2: 
+			return __rt_comedi_command_data_wread(dev, subdev, nchans >> 2, data, time, cbmask, WAITUNTIL);
+		case 3: 
+			return _rt_comedi_command_data_wread_until(dev, subdev, nchans >> 2, data, cbmask, rt_get_time() + time);
+	}
+	return 0;
 }
 
 static RTAI_SYSCALL_MODE int _comedi_data_write(void *dev, unsigned int subdev, unsigned int chan, unsigned int range, unsigned int aref, lsampl_t data)
@@ -296,11 +322,11 @@ static RTAI_SYSCALL_MODE int _comedi_dio_write(void *dev, unsigned int subdev, u
 	return retval;
 }
 
-static RTAI_SYSCALL_MODE int _comedi_dio_bitfield(void *dev, unsigned int subdev, unsigned int mask, unsigned int *bits)
+static RTAI_SYSCALL_MODE int _comedi_dio_bitfield(void *dev, unsigned int subdev, unsigned int write_mask, unsigned int *bits)
 {
 	int retval;
 	RTAI_COMEDI_LOCK(dev, subdev);
-	retval = comedi_dio_bitfield(dev, subdev, mask, bits);
+	retval = comedi_dio_bitfield(dev, subdev, write_mask, bits);
 	RTAI_COMEDI_UNLOCK(dev, subdev);
 	return retval;
 }
@@ -340,9 +366,9 @@ static RTAI_SYSCALL_MODE int _comedi_get_subdevice_type(void *dev, unsigned int 
 	return comedi_get_subdevice_type(dev, subdev);
 }
 
-static RTAI_SYSCALL_MODE int _comedi_find_subdevice_by_type(void *dev, int type, unsigned int subd)
+static RTAI_SYSCALL_MODE int _comedi_find_subdevice_by_type(void *dev, int type, unsigned int start_subdevice)
 {
-	return comedi_find_subdevice_by_type(dev, type, subd);
+	return comedi_find_subdevice_by_type(dev, type, start_subdevice);
 }
 
 static RTAI_SYSCALL_MODE int _comedi_get_n_channels(void *dev, unsigned int subdev)
@@ -371,12 +397,33 @@ static RTAI_SYSCALL_MODE int _comedi_do_insn(void *dev, comedi_insn *insn)
 
 RTAI_SYSCALL_MODE int rt_comedi_do_insnlist(void *dev, comedi_insnlist *ilist)
 {
-	int i, retval;
+	int i;
 	for (i = 0; i < ilist->n_insns; i ++) {
-		if ((retval = comedi_do_insn(dev, &ilist->insns[i])) < 0) {
+		if ((ilist->insns[i].n = comedi_do_insn(dev, &ilist->insns[i])) < 0) {
 			break;
 		}
-		ilist->insns[i].n = retval;
+	}
+	return i;
+}
+
+RTAI_SYSCALL_MODE int RT_comedi_do_insnlist(void *dev, long n_insns, struct insns_ofstlens *ofstlens)
+{
+#define RT_INSN(offset) (*((unsigned int *)(insns + ofstlens->offset)))
+#define RT_INSN_ADR(offset) ((void *)ofstlens + ofstlens->offset)
+	int i;
+	void *insns              = RT_INSN_ADR(insns_ofst);
+	unsigned int *data_ofsts = RT_INSN_ADR(data_ofsts);
+	lsampl_t *data           = RT_INSN_ADR(data_ofst);
+	comedi_insn insn[2]; // 2 instances, a safe room for 64 getting into 32
+	for (i = 0; i < n_insns; i ++) {
+		memcpy(insn, insns, ofstlens->insn_len);	
+		insn[0].data     = data + data_ofsts[i];
+		insn[0].subdev   = RT_INSN(subdev_ofst);
+		insn[0].chanspec = RT_INSN(chanspec_ofst);
+		if ((RT_INSN(n_ofst) = comedi_do_insn(dev, insn)) < 0) {
+			break;
+		}
+		insns += ofstlens->insn_len;
 	}
 	return i;
 }
@@ -413,7 +460,7 @@ static RTAI_SYSCALL_MODE int _comedi_get_rangetype(unsigned int minor, unsigned 
 }
 */
 
-static RTAI_SYSCALL_MODE unsigned int _comedi_get_subdevice_flags(comedi_t *dev,unsigned int subdev)
+static RTAI_SYSCALL_MODE unsigned int _comedi_get_subdevice_flags(void *dev, unsigned int subdev)
 {
 	int retval;
 	RTAI_COMEDI_LOCK(dev, subdev);
@@ -436,7 +483,7 @@ static RTAI_SYSCALL_MODE int _comedi_get_buf_head_pos(void * dev, unsigned int s
 	return retval;
 }
 
-static RTAI_SYSCALL_MODE int _comedi_set_user_int_count(comedi_t *dev, unsigned int subdev, unsigned int buf_user_count)
+static RTAI_SYSCALL_MODE int _comedi_set_user_int_count(void *dev, unsigned int subdev, unsigned int buf_user_count)
 {
 	int retval;
 	RTAI_COMEDI_LOCK(dev, subdev);
@@ -445,7 +492,7 @@ static RTAI_SYSCALL_MODE int _comedi_set_user_int_count(comedi_t *dev, unsigned 
 	return retval;
 }
 
-static RTAI_SYSCALL_MODE int _comedi_map(comedi_t *dev, unsigned int subdev, void *ptr)
+static RTAI_SYSCALL_MODE int _comedi_map(void *dev, unsigned int subdev, void *ptr)
 {
 	int retval;
 	RTAI_COMEDI_LOCK(dev, subdev);
@@ -454,7 +501,7 @@ static RTAI_SYSCALL_MODE int _comedi_map(comedi_t *dev, unsigned int subdev, voi
 	return retval;
 }
 
-static RTAI_SYSCALL_MODE int _comedi_unmap(comedi_t *dev, unsigned int subdev)
+static RTAI_SYSCALL_MODE int _comedi_unmap(void *dev, unsigned int subdev)
 {
 	int retval;
 	RTAI_COMEDI_LOCK(dev, subdev);
@@ -463,7 +510,7 @@ static RTAI_SYSCALL_MODE int _comedi_unmap(comedi_t *dev, unsigned int subdev)
 	return retval;
 }
 
-static inline long _rt_comedi_wait(RTIME until, long *cbmask, int waitmode)
+static inline int __rt_comedi_wait(RTIME until, unsigned int *cbmask, int waitmode)
 { 
 	if (cbmask) {
 		long retval;
@@ -481,10 +528,10 @@ static inline long _rt_comedi_wait(RTIME until, long *cbmask, int waitmode)
 			default: // useless, just to avoid compiler warnings
 				return RTE_PERM;
 		}
-		if (space(cbmask)) {
-			cbmask[0] = task->resumsg;
+		if (KSPACE(cbmask)) {
+			cbmask[0] = (unsigned int)task->resumsg;
 		} else {
-			rt_put_user(task->resumsg, cbmask);
+			rt_put_user((unsigned int)task->resumsg, cbmask);
 		}
 		task->resumsg = 0;
 		return retval;
@@ -492,24 +539,24 @@ static inline long _rt_comedi_wait(RTIME until, long *cbmask, int waitmode)
 	return RTE_PERM;
 }
 
-RTAI_SYSCALL_MODE long rt_comedi_wait(long *cbmask)
+RTAI_SYSCALL_MODE long rt_comedi_wait(unsigned int *cbmask)
 { 
-	return _rt_comedi_wait((RTIME)0, cbmask, WAIT);
+	return __rt_comedi_wait((RTIME)0, cbmask, WAIT);
 }
 
-RTAI_SYSCALL_MODE long rt_comedi_wait_if(long *cbmask)
+RTAI_SYSCALL_MODE long rt_comedi_wait_if(unsigned int *cbmask)
 { 
-	return _rt_comedi_wait((RTIME)0, cbmask, WAITIF);
+	return __rt_comedi_wait((RTIME)0, cbmask, WAITIF);
 }
 
-RTAI_SYSCALL_MODE long rt_comedi_wait_until(RTIME until, long *cbmask)
+RTAI_SYSCALL_MODE long _rt_comedi_wait_until(unsigned int *cbmask, RTIME until)
 {
-	return _rt_comedi_wait(until, cbmask, WAITUNTIL);
+	return __rt_comedi_wait(until, cbmask, WAITUNTIL);
 }
 
-RTAI_SYSCALL_MODE long rt_comedi_wait_timed(RTIME delay, long *cbmask)
+RTAI_SYSCALL_MODE long _rt_comedi_wait_timed(unsigned int *cbmask, RTIME delay)
 {
-	return rt_comedi_wait_until(rt_get_time() + delay, cbmask);
+	return _rt_comedi_wait_until(cbmask, rt_get_time() + delay);
 }
 
 RTAI_SYSCALL_MODE long rt_comedi_command_data_write(void *dev, unsigned int subdev, long nchans, lsampl_t *data)
@@ -584,15 +631,64 @@ static struct rt_fun_entry rtai_comedi_fun[] = {
  ,[_KCOMEDI_UNMAP]                 = { 0, _comedi_unmap }
  ,[_KCOMEDI_WAIT]                  = { 1, rt_comedi_wait }
  ,[_KCOMEDI_WAIT_IF]               = { 0, rt_comedi_wait_if }
- ,[_KCOMEDI_WAIT_UNTIL]            = { 1, rt_comedi_wait_until }
- ,[_KCOMEDI_WAIT_TIMED]            = { 1, rt_comedi_wait_timed }
+ ,[_KCOMEDI_WAIT_UNTIL]            = { 1, _rt_comedi_wait_until }
+ ,[_KCOMEDI_WAIT_TIMED]            = { 1, _rt_comedi_wait_timed }
  ,[_KCOMEDI_COMD_DATA_READ]        = { 0, rt_comedi_command_data_read }
  ,[_KCOMEDI_COMD_DATA_WREAD]       = { 1, rt_comedi_command_data_wread }
  ,[_KCOMEDI_COMD_DATA_WREAD_IF]    = { 0, rt_comedi_command_data_wread_if }
- ,[_KCOMEDI_COMD_DATA_WREAD_UNTIL] = { 1, rt_comedi_command_data_wread_until }
- ,[_KCOMEDI_COMD_DATA_WREAD_TIMED] = { 1, rt_comedi_command_data_wread_timed }
+ ,[_KCOMEDI_COMD_DATA_WREAD_UNTIL] = { 1, _rt_comedi_command_data_wread_until }
+ ,[_KCOMEDI_COMD_DATA_WREAD_TIMED] = { 1, _rt_comedi_command_data_wread_timed }
  ,[_KCOMEDI_COMD_DATA_WRITE]       = { 0, rt_comedi_command_data_write }
+ ,[_RT_KCOMEDI_COMMAND]            = { 0, RT_comedi_command }
+ ,[_RT_KCOMEDI_DO_INSN_LIST]       = { 0, RT_comedi_do_insnlist }
+ ,[_RT_KCOMEDI_COMD_DATA_WREAD]    = { 0, RT_comedi_command_data_wread }
 };
+
+#ifdef CONFIG_RTAI_USE_LINUX_COMEDI
+
+extern void *rt_comedi_request_irq;
+extern void *rt_comedi_release_irq;
+extern void *rt_comedi_busy_sleep;
+
+#define RTAI_NR_IRQS  IPIPE_NR_XIRQS
+static int (*comedi_irq_handler_p[RTAI_NR_IRQS])(unsigned int, void *);
+
+static int comedi_irq_handler(unsigned int irq, void *dev_id)
+{
+	comedi_irq_handler_p[irq](irq, dev_id);
+	rt_enable_irq(irq);
+	return IRQ_HANDLED;
+}
+
+static int comedi_request_irq(unsigned int irq, int (*handler)(unsigned int irq, void *dev_id), unsigned long flags, const char *name, void *dev)
+{
+	int retval;
+	if (comedi_irq_handler_p[irq]) {
+		return -EBUSY;
+	}
+	if ((retval = rt_request_irq(irq, comedi_irq_handler, dev, 0))) {
+		return retval;
+	}
+	comedi_irq_handler_p[irq] = handler;
+	rt_startup_irq(irq);
+	return 0;
+}
+
+static void comedi_release_irq(unsigned int irq, void *dev)
+{
+	rt_shutdown_irq(irq);
+	rt_release_irq(irq);
+}
+
+static int us2tsc;
+void comedi_busy_sleep(int us)
+{
+	RTIME break_time;
+	break_time = rtai_rdtsc() + us*us2tsc;
+	while (rtai_rdtsc() < break_time);
+}
+
+#endif /* CONFIG_RTAI_USE_LINUX_COMEDI) */
 
 int __rtai_comedi_init(void)
 {
@@ -600,11 +696,28 @@ int __rtai_comedi_init(void)
 		printk("Recompile your module with a different index\n");
 		return -EACCES;
 	}
+#ifdef CONFIG_RTAI_USE_LINUX_COMEDI
+	us2tsc = tuned.cpu_freq/1000000;
+	rt_comedi_request_irq = comedi_request_irq;
+	rt_comedi_release_irq = comedi_release_irq;
+	rt_comedi_busy_sleep  = comedi_busy_sleep;
+#endif
 	return 0;
 }
 
 void __rtai_comedi_exit(void)
 {
+#ifdef CONFIG_RTAI_USE_LINUX_COMEDI
+	int irq;
+	for (irq = 0; irq < RTAI_NR_IRQS; irq++) {
+		if (comedi_irq_handler_p[irq]) {
+			comedi_release_irq(irq, NULL);
+		}
+	}
+	rt_comedi_request_irq = rt_request_irq;
+	rt_comedi_release_irq = rt_release_irq;
+	rt_comedi_busy_sleep  = __udelay;
+#endif
 	reset_rt_fun_ext_index(rtai_comedi_fun, FUN_COMEDI_LXRT_INDX);
 }
 
@@ -613,16 +726,16 @@ module_exit(__rtai_comedi_exit);
 
 EXPORT_SYMBOL(rt_comedi_wait);
 EXPORT_SYMBOL(rt_comedi_wait_if);
-EXPORT_SYMBOL(rt_comedi_wait_until);
-EXPORT_SYMBOL(rt_comedi_wait_timed);
+EXPORT_SYMBOL(_rt_comedi_wait_until);
+EXPORT_SYMBOL(_rt_comedi_wait_timed);
 EXPORT_SYMBOL(rt_comedi_get_driver_name);
 EXPORT_SYMBOL(rt_comedi_get_board_name);
 EXPORT_SYMBOL(rt_comedi_register_callback);
 EXPORT_SYMBOL(rt_comedi_command_data_read);
 EXPORT_SYMBOL(rt_comedi_command_data_wread);
 EXPORT_SYMBOL(rt_comedi_command_data_wread_if);
-EXPORT_SYMBOL(rt_comedi_command_data_wread_until);
-EXPORT_SYMBOL(rt_comedi_command_data_wread_timed);
+EXPORT_SYMBOL(_rt_comedi_command_data_wread_until);
+EXPORT_SYMBOL(_rt_comedi_command_data_wread_timed);
 EXPORT_SYMBOL(rt_comedi_do_insnlist);
 EXPORT_SYMBOL(rt_comedi_trigger);
 EXPORT_SYMBOL(rt_comedi_command_data_write);

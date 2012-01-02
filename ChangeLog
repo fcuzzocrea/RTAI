@@ -80,7 +80,7 @@
 	* base/sched/sched.c: use RT_TASK "running" variable to mark a truly
 	  owned resource semaphores when scheduling.
 
-2011-01-17 Roberto Bucher <roberto.bucher@supsi.ch>
+2011-06-27 Roberto Bucher <roberto.bucher@supsi.ch>
 
 	* rtai-lab/scicoslab/macros/RTAI/RTAICodeGen_.sci: Removed
 	  bug on creating opar structure (thanks to Matteo Morelli)

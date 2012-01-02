@@ -242,6 +242,9 @@ install COMEDI, as found at www.comedi.org, anew anymore. Moreover its use
 will likely make one surer to have the latest COMEDI update available. 
 What follows explains a prompt, likely provisional, way to exploit such a 
 possibility. One can expect it will stabilize in RTAI hal patches eventually. 
+At the moment it is supported up to Linux-2.6.35, as the latest Linux releases
+have change the basic COMEDI infrastructure a lot and need further work on the
+RTAI side.
 Notice that it must be applied to a kernel patched for RTAI already.
 
 			      - WHAT TO DO -

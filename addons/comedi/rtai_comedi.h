@@ -23,6 +23,8 @@
 #ifndef _RTAI_COMEDI_H_
 #define _RTAI_COMEDI_H_
 
+#include <linux/compiler.h>
+
 #include <rtai_types.h>
 #include <rtai_sem.h>
 #include <rtai_netrpc.h>

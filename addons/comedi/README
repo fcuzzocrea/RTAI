@@ -242,7 +242,7 @@ install COMEDI, as found at www.comedi.org, anew anymore. Moreover its use
 will likely make one surer to have the latest COMEDI update available. 
 What follows explains a prompt, likely provisional, way to exploit such a 
 possibility. One can expect it will stabilize in RTAI hal patches eventually. 
-At the moment it is supported up to Linux-2.6.35, as the latest Linux releases
+At the moment it is supported up to Linux-2.6.34, as the latest Linux releases
 have change the basic COMEDI infrastructure a lot and need further work on the
 RTAI side.
 Notice that it must be applied to a kernel patched for RTAI already.
@@ -253,7 +253,7 @@ In Linux:
 
 1 - cd mylinux/drivers/staging/comedi/, where "mylinux" is the path to the 
     elected Linux installation directory. Linux version should be >= 2.6.29
-    and <= 2.6.35.
+    and <= 2.6.34.
 2 - sh /rtaidir/addons/comedi/patchlinuxcomedi, where "rtaidir" is the path 
     to the elected RTAI home directory, not the one you'll install it
 3 - Go to the elected Linux installation directory, e.g. cd ../../..

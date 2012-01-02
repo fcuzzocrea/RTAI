@@ -268,7 +268,7 @@ libkcomedilxrt_a_CFLAGS = \
 
 libkcomedilxrt_a_SOURCES = kcomedi.c
 libkcomedilxrt_a_AR = $(CROSS_COMPILE)ar cru
-EXTRA_DIST = Makefile.kbuild
+EXTRA_DIST = Makefile.kbuild patchlinuxcomedi
 all: all-am
 
 .SUFFIXES:

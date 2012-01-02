@@ -107,7 +107,7 @@ It is believed that imposing that either "nchans" data or nothing is available
 is the most appropriate real time mechanism, as it is better to let the user
 decide what to do in place of waiting on a rescheduling by default. In fact,
 after an appropriate wait function is called, missing data might be a error 
-to care of. If it is not so then, by exploting the available wait functions, 
+to care of. If it is not so then, by exploiting the available wait functions, 
 the user has plenty of opportunities to implement her/his own best policy.
 If one notices a bias toward sampling data for digital control systems, versus
 pure data acquisition, (s)he is right, absolutely. See below for something
@@ -133,9 +133,9 @@ A typical code sample could be:
 .
 
 Calling an rt_comedi_wait followed by rt_comedi_command_data_read is OK and
-let the user do whatver check (s)he needs. Nonetheless, when working in user
+let the user do whatever check (s)he needs. Nonetheless, when working in user
 space, it has the disadvantage of taking two trips to kernel space. Since what 
-is mostly required is a succesfull rt_comedi_wait with a mask containing the 
+is mostly required is a successful rt_comedi_wait with a mask containing the 
 appropriate user expected callback mask the two calls can be unified. Such a 
 scheme is mostly useful in a digital controller, whereas a single call paces 
 its action in such a way that at each sampling time one is ready to apply 
@@ -186,7 +186,7 @@ space instead the overhead of calling "comedi_do_insn" many times could
 be much more significant, so it might help in having the possibility of 
 executing a whole set of instructions in a single shot to kernel space only.
 
-The following macros can be used to avoid rememberig the instruction fields:	
+The following macros can be used to avoid remembering the instruction fields:	
 #define BUILD_AREAD_INSN(insn, subdev, data, nd, chan, arange, aref) 
 to set up an instruction for analog input;
 #define BUILD_AWRITE_INSN(insn, subdev, data, nd, chan, arange, aref)
@@ -195,10 +195,10 @@ to set up an instruction for analog output;
 to set up an instruction for digital input/output.
 
 A final warning: all KCOMEDI functions are executed without the comedi_lock
-being activated. That's because it adds some, albeit neglegible on nowadays 
+being activated. That's because it adds some, albeit negligible on nowadays 
 machines, overhead and because in control systems it is rare to have possible
-conficting acquisitions shared among more tasks. If a locked execution is
-needed nonetheless, then the user can explicitely configure RTAI to do that, 
+conflicting acquisitions shared among more tasks. If a locked execution is
+needed nonetheless, then the user can explicitly configure RTAI to do that, 
 in which case it will be applied to all services. Being "comedi_lock" and 
 "comedi_unlock" available to the user anyhow, (s)he is free to apply them 
 explicitly whenever (s)he has decided to not configure them by default.
@@ -242,6 +242,9 @@ install COMEDI, as found at www.comedi.org, anew anymore. Moreover its use
 will likely make one surer to have the latest COMEDI update available. 
 What follows explains a prompt, likely provisional, way to exploit such a 
 possibility. One can expect it will stabilize in RTAI hal patches eventually. 
+At the moment it is supported up to Linux-2.6.35, as the latest Linux releases
+have change the basic COMEDI infrastructure a lot and need further work on the
+RTAI side.
 Notice that it must be applied to a kernel patched for RTAI already.
 
 			      - WHAT TO DO -

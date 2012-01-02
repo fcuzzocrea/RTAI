@@ -2260,7 +2260,6 @@ int __rtai_hal_init (void)
 	init_tsc_sync();
 #endif
 
-	printk("KERN_INFO %d %d\n", RTAI_APIC_TIMER_IPI, RTAI_NR_IRQS);
 	return 0;
 }
 

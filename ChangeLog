@@ -10,7 +10,7 @@
         * addons/comedi/kcomedi-module.c: set the interface to native Linux 
 	  COMEDI within this module, to avoid touching RTAI hal module and 
 	  to be usable on any arch; set safe pointers at module cleanup to 
-	  avoid oopses in betweem rtai_comedi module removal and the full 
+	  avoid oopses in between rtai_comedi module removal and the full 
 	  closure of an application; add specific functions to support
           remote/distributed COMEDI commands and instructions.
 	* base/arch/i386/Kconfig: make default use of COMEDI lock configurable.
@@ -25,7 +25,7 @@
         * base/ipc/msg/msg.c: revised sendx, previous implementation could
 	  overwrite previous sends, made rt_sendx_if safer for in interrupt 
 	  handlers usage, strengthened correctness check of task args and 
-	  copying into pointed variables, receivexes should have more 
+	  copying into pointed variables, receivex-es should have more 
 	  appropriate returns now.
 
 2011-12-31 Roberto Bucher <roberto.bucher@supsi.ch>
@@ -51,7 +51,7 @@
 	* base/include/asm-i386/rtai_fpu.h: upgrade to support 2.6.35.
 	* base/include/asm-i386/rtai_hal.h: upgrade to support 2.6.35.
 	* addons/drivers/serial/rtai_serial.h: make all declared prototypes
-	  compilible in a lib.
+	  compilable in a lib.
 	* rtai-py/rtai_ser.py: add RTAI serial support for python.
 	* base/include/rtai_wrappers.h: define init_MUTEX_LOCKED if not
 	  defined in Linux.

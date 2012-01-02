@@ -13,6 +13,7 @@
 	  avoid oopses in betweem rtai_comedi module removal and the full 
 	  closure of an application; add specific functions to support
           remote/distributed COMEDI commands and instructions.
+	* base/arch/i386/Kconfig: make default use of COMEDI lock configurable.
 
 2012-01-02 Pierangelo Masarati <masarati@aero.polimi.it>
 

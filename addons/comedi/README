@@ -253,6 +253,7 @@ In Linux:
 
 1 - cd mylinux/drivers/staging/comedi/, where "mylinux" is the path to the 
     elected Linux installation directory. Linux version should be >= 2.6.29
+    and <= 2.6.35.
 2 - sh /rtaidir/addons/comedi/patchlinuxcomedi, where "rtaidir" is the path 
     to the elected RTAI home directory, not the one you'll install it
 3 - Go to the elected Linux installation directory, e.g. cd ../../..

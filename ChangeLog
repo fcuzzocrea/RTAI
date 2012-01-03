@@ -1,3 +1,8 @@
+2012-01-03 Paolo Mantegazza <mantegazza@aero.polimi.it>
+
+        * base/x86_64/hal/hal.immed: updated to work with Linux up to
+          2.6.38.
+
 2011-12-31 Paolo Mantegazza <mantegazza@aero.polimi.it>
 
 	* base/sched/sched.c and sys.c: if PF_EVNOTIFY is defined use the

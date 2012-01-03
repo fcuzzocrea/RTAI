@@ -160,6 +160,10 @@ static inline unsigned long long rtai_u64div32c(unsigned long long a,
 #endif /* CONFIG_X86_LOCAL_APIC */
 #include <rtai_trace.h>
 
+#ifndef IPIPE_IRQ_DOALL
+#define IPIPE_IRQ_DOALL
+#endif
+
 #if defined(__IPIPE_2LEVEL_IRQMAP) || defined(__IPIPE_3LEVEL_IRQMAP)
 #define irqpend_himask     irqpend_himap
 #define irqpend_lomask     irqpend_lomap
@@ -184,6 +188,9 @@ struct rtai_realtime_irq_s {
  */
 
 #ifdef CONFIG_X86_IO_APIC
+#ifndef FIRST_DEVICE_VECTOR
+#define FIRST_DEVICE_VECTOR (FIRST_EXTERNAL_VECTOR + VECTOR_OFFSET_START)
+#endif
 static inline int ext_irq_vector(int irq)
 {
 	if (irq != 2) {
@@ -436,13 +443,13 @@ do { \
 	apic_write_around(APIC_ICR, APIC_DEST_LOGICAL | SCHED_VECTOR); \
 } while (0)
 
-#ifdef CONFIG_PREEMPT
-#define rt_spin_lock(lock)    do { barrier(); _raw_spin_lock(lock); barrier(); } while (0)
-#define rt_spin_unlock(lock)  do { barrier(); _raw_spin_unlock(lock); barrier(); } while (0)
-#else /* !CONFIG_PREEMPT */
-#define rt_spin_lock(lock)    spin_lock(lock)
-#define rt_spin_unlock(lock)  spin_unlock(lock)
-#endif /* CONFIG_PREEMPT */
+#if LINUX_VERSION_CODE < KERNEL_VERSION(2,6,33)
+#define RTAI_SPIN_LOCK_TYPE(lock) lock
+#else
+#define RTAI_SPIN_LOCK_TYPE(lock) ((raw_spinlock_t *)lock)
+#endif
+#define rt_spin_lock(lock)    do { barrier(); _raw_spin_lock(RTAI_SPIN_LOCK_TYPE(lock)); barrier(); } while (0)
+#define rt_spin_unlock(lock)  do { barrier(); _raw_spin_unlock(RTAI_SPIN_LOCK_TYPE(lock)); barrier(); } while (0)
 
 static inline void rt_spin_lock_hw_irq(spinlock_t *lock)
 {

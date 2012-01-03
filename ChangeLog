@@ -1,3 +1,12 @@
+2012-01-03 Paolo Mantegazza <mantegazza@aero.polimi.it>
+
+        * base/x86_64/hal/hal.immed: updated to work with Linux up to 
+	  2.6.38.
+        * base/x86_64/hal/rtai_fpu.h: add FPU_ENV compatibility for 
+          Linux > 2.6.34.
+        * base/x86_64/hal/rtai_hal.h: upgraded macros definition to support 
+	  Linux > 2.6.34.
+ 
 2012-01-02 Paolo Mantegazza <mantegazza@aero.polimi.it>
 
         * addons/comedi/README: add explanations about using native LINUX

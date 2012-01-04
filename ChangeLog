@@ -4,7 +4,8 @@
         * configure.in, rtai_config.h: add support for setting COMEDI locks
           by default.
 	* configure, rtai_config.h, [*/]GNUmakefile.in: regenerate with
-	different autotools (automake 1.11.1, libtoolize 2.2.6b, autoconf 2.67)
+	  different autotools (automake 1.11.1, libtoolize 2.2.6b, 
+	  autoconf 2.67).
 
 2012-01-03 Paolo Mantegazza <mantegazza@aero.polimi.it>
 

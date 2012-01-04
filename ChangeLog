@@ -1,3 +1,11 @@
+2012-01-04 Pierangelo Masarati <masarati@aero.polimi.it>
+
+	* configure.in, rtai_config.h: add support for Linux COMEDI.
+        * configure.in, rtai_config.h: add support for setting COMEDI locks
+          by default.
+	* configure, rtai_config.h, [*/]GNUmakefile.in: regenerate with
+	different autotools (automake 1.11.1, libtoolize 2.2.6b, autoconf 2.67)
+
 2012-01-03 Paolo Mantegazza <mantegazza@aero.polimi.it>
 
         * base/x86_64/hal/hal.immed: updated to work with Linux up to 
@@ -23,11 +31,6 @@
 	  closure of an application; add specific functions to support
           remote/distributed COMEDI commands and instructions.
 	* base/arch/i386/Kconfig: make default use of COMEDI lock configurable.
-
-2012-01-02 Pierangelo Masarati <masarati@aero.polimi.it>
-
-        * configure.in, rtai_config.h: add support for setting COMEDI locks
-          by default.
 
 2012-01-01 Paolo Mantegazza <mantegazza@aero.polimi.it>
 

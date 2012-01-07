@@ -1,3 +1,8 @@
+2012-01-07 Paolo Mantegazza <mantegazza@aero.polimi.it>
+
+        * base/x86_64/hal/hal.immed and base/i386/hal/hal.immed: use 
+	  IPIPE_HEAD_PRIORITY for the RTAI domain.
+
 2012-01-04 Pierangelo Masarati <masarati@aero.polimi.it>
 
 	* configure.in, rtai_config.h: add support for Linux COMEDI.

@@ -1780,7 +1780,7 @@ int __rtai_hal_init (void)
 	attr.name     = "RTAI";
 	attr.domid    = RTAI_DOMAIN_ID;
 	attr.entry    = (void *)rtai_domain_entry;
-	attr.priority = get_domain_pointer(1)->priority + 100;
+	attr.priority = IPIPE_HEAD_PRIORITY;
 	hal_register_domain(&rtai_domain, &attr);
 	for (trapnr = 0; trapnr < HAL_NR_FAULTS; trapnr++) {
 		hal_catch_event(hal_root_domain, trapnr, (void *)rtai_trap_fault);

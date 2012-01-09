@@ -18928,7 +18928,7 @@ RTAI_KMOD_CFLAGS="$RTAI_KMOD_CFLAGS -D__IN_RTAI__"
 RTAI_KMOD_CXXFLAGS="$RTAI_KMOD_CXXFLAGS -D__IN_RTAI__"
 RTAI_USER_CFLAGS="$RTAI_USER_CFLAGS -D__IN_RTAI__"
 
-ac_config_links="$ac_config_links base/include/asm:base/include/asm-$RTAI_TARGET_ARCH"
+ac_config_links="$ac_config_links base/include/asm:$srcdir/base/include/asm-$RTAI_TARGET_ARCH"
 
 
 if test x$CONFIG_RTAI_OLD_FASHIONED_BUILD = xy; then
@@ -20464,7 +20464,7 @@ do
     "depfiles") CONFIG_COMMANDS="$CONFIG_COMMANDS depfiles" ;;
     "libtool") CONFIG_COMMANDS="$CONFIG_COMMANDS libtool" ;;
     "base/include/asm-arm/arch") CONFIG_LINKS="$CONFIG_LINKS base/include/asm-arm/arch:base/include/asm-arm/arch-$RTAI_TARGET_SUBARCH" ;;
-    "base/include/asm") CONFIG_LINKS="$CONFIG_LINKS base/include/asm:base/include/asm-$RTAI_TARGET_ARCH" ;;
+    "base/include/asm") CONFIG_LINKS="$CONFIG_LINKS base/include/asm:$srcdir/base/include/asm-$RTAI_TARGET_ARCH" ;;
     "base/include/rtai_config.h") CONFIG_LINKS="$CONFIG_LINKS base/include/rtai_config.h:rtai_config.h" ;;
     "base/arch/$RTAI_TARGET_ARCH/hal/Makefile") CONFIG_LINKS="$CONFIG_LINKS base/arch/$RTAI_TARGET_ARCH/hal/Makefile:base/arch/$RTAI_TARGET_ARCH/hal/Makefile.kbuild" ;;
     "base/arch/$RTAI_TARGET_ARCH/calibration/Makefile") CONFIG_LINKS="$CONFIG_LINKS base/arch/$RTAI_TARGET_ARCH/calibration/Makefile:base/arch/$RTAI_TARGET_ARCH/calibration/Makefile.kbuild" ;;

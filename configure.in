@@ -1849,7 +1849,7 @@ RTAI_KMOD_CFLAGS="$RTAI_KMOD_CFLAGS -D__IN_RTAI__"
 RTAI_KMOD_CXXFLAGS="$RTAI_KMOD_CXXFLAGS -D__IN_RTAI__"
 RTAI_USER_CFLAGS="$RTAI_USER_CFLAGS -D__IN_RTAI__"
 
-AC_CONFIG_LINKS(base/include/asm:base/include/asm-$RTAI_TARGET_ARCH)
+AC_CONFIG_LINKS(base/include/asm:$srcdir/base/include/asm-$RTAI_TARGET_ARCH)
 
 if test x$CONFIG_RTAI_OLD_FASHIONED_BUILD = xy; then
    AC_CONFIG_LINKS(base/include/rtai_config.h:rtai_config.h)

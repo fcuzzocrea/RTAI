@@ -1,3 +1,9 @@
+2012-01-10 Paolo Mantegazza <mantegazza@aero.polimi.it>
+
+        * base/i386/hal/hal.immed: reworked all the enabling/disabling 
+	  interrupt controllers functions to hopefully work from 2.4.36
+	  to 2.6.38.
+
 2012-01-09 Pierangelo Masarati <masarati@aero.polimi.it>
 
 	* RTAI 3.9-test1

@@ -1,5 +1,9 @@
 2012-01-09 Pierangelo Masarati <masarati@aero.polimi.it>
 
+	* RTAI 3.9-test1
+
+2012-01-09 Pierangelo Masarati <masarati@aero.polimi.it>
+
 	* configure configure.in: fix build out of source dir
 
 2012-01-07 Paolo Mantegazza <mantegazza@aero.polimi.it>

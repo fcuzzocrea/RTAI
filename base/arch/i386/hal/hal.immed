@@ -97,6 +97,7 @@ static void rtai_release_tickdev(void);
 static unsigned long rtai_apicfreq_arg = RTAI_CALIBRATED_APIC_FREQ;
 RTAI_MODULE_PARM(rtai_apicfreq_arg, ulong);
 
+
 static inline void rtai_setup_periodic_apic (unsigned count, unsigned vector)
 {
 	apic_read(APIC_LVTT);
@@ -108,7 +109,7 @@ static inline void rtai_setup_periodic_apic (unsigned count, unsigned vector)
 static inline void rtai_setup_oneshot_apic (unsigned count, unsigned vector)
 {
 	apic_read(APIC_LVTT);
-        apic_write(APIC_LVTT, APIC_INTEGRATED(GET_APIC_VERSION(apic_read(APIC_LVR))) ? SET_APIC_TIMER_BASE(APIC_TIMER_BASE_DIV) | vector : vector);
+	apic_write(APIC_LVTT, APIC_INTEGRATED(GET_APIC_VERSION(apic_read(APIC_LVR))) ? SET_APIC_TIMER_BASE(APIC_TIMER_BASE_DIV) | vector : vector);
 	apic_read(APIC_TMICT);
 	apic_write(APIC_TMICT, count);
 }
@@ -336,9 +337,15 @@ void rt_set_irq_retmode (unsigned irq, int retmode)
 
 // 3 - IRQs enabling/disabling naming and calling
 #if LINUX_VERSION_CODE < KERNEL_VERSION(2,6,37)
-#define rtai_irq_endis_fun(fun, irq) fun(irq)
+#define rtai_irq_endis_fun_wret(fun, irq) \
+return rtai_irq_desc_chip(irq)->fun ? rtai_irq_desc_chip(irq)->fun(irq):-EINVAL;
+#define rtai_irq_endis_fun(fun, irq) \
+if (rtai_irq_desc_chip(irq)->fun) rtai_irq_desc_chip(irq)->fun(irq);
 #else
-#define rtai_irq_endis_fun(fun, irq) irq_##fun(&(rtai_irq_desc(irq).irq_data))
+#define rtai_irq_endis_fun_wret(fun, irq) \
+return rtai_irq_desc_chip(irq)->irq_##fun ? rtai_irq_desc_chip(irq)->irq_##fun(&(rtai_irq_desc(irq).irq_data)) : -EINVAL;
+#define rtai_irq_endis_fun(fun, irq) \
+if (rtai_irq_desc_chip(irq)->irq_##fun) rtai_irq_desc_chip(irq)->irq_##fun(&(rtai_irq_desc(irq).irq_data));
 #endif
 
 /**
@@ -370,7 +377,8 @@ void rt_set_irq_retmode (unsigned irq, int retmode)
  */
 unsigned rt_startup_irq (unsigned irq)
 {
-	return rtai_irq_desc_chip(irq)->rtai_irq_endis_fun(startup, irq);
+//	return rtai_irq_desc_chip(irq)->rtai_irq_endis_fun(startup, irq, 1);
+	rtai_irq_endis_fun_wret(startup, irq);
 }
 
 /**
@@ -404,12 +412,14 @@ unsigned rt_startup_irq (unsigned irq)
  */
 void rt_shutdown_irq (unsigned irq)
 {
-	rtai_irq_desc_chip(irq)->rtai_irq_endis_fun(shutdown, irq);
+//	rtai_irq_desc_chip(irq)->rtai_irq_endis_fun(shutdown, irq);
+	rtai_irq_endis_fun(shutdown, irq);
 }
 
 static inline void _rt_enable_irq (unsigned irq)
 {
-	rtai_irq_desc_chip(irq)->rtai_irq_endis_fun(enable, irq);
+//	rtai_irq_desc_chip(irq)->rtai_irq_endis_fun(enable, irq);
+	rtai_irq_endis_fun(enable, irq);
 }
 
 /**
@@ -473,7 +483,8 @@ void rt_enable_irq (unsigned irq)
  */
 void rt_disable_irq (unsigned irq)
 {
-	rtai_irq_desc_chip(irq)->rtai_irq_endis_fun(disable, irq);
+//	rtai_irq_desc_chip(irq)->rtai_irq_endis_fun(disable, irq);
+	rtai_irq_endis_fun(disable, irq);
 }
 
 /**
@@ -611,10 +622,12 @@ void rt_eoi_irq (unsigned irq)
             !(rtai_irq_desc(irq).status & (IRQ_DISABLED | IRQ_INPROGRESS))) {
         }
 #if defined(CONFIG_X86_IO_APIC) && LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,19)
-        rtai_irq_desc_chip(irq)->rtai_irq_endis_fun(eoi, irq);
+//	rtai_irq_desc_chip(irq)->rtai_irq_endis_fun(eoi, irq);
+        rtai_irq_endis_fun(eoi, irq);
 #else /* !(CONFIG_X86_IO_APIC && LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,19))
 */
-        rtai_irq_desc_chip(irq)->rtai_irq_endis_fun(end, irq);
+//	rtai_irq_desc_chip(irq)->rtai_irq_endis_fun(end, irq);
+	rtai_irq_endis_fun(end, irq);
 #endif
 }
 

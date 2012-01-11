@@ -2,7 +2,7 @@
 
         * base/i386/hal/hal.immed: reworked all the enabling/disabling 
 	  interrupt controllers functions to hopefully work from 2.4.36
-	  to 2.6.38.
+	  to 2.6.38; also added a check for possible NULL pointers.
 
 2012-01-09 Pierangelo Masarati <masarati@aero.polimi.it>
 

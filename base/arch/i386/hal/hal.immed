@@ -520,7 +520,7 @@ void rt_disable_irq (unsigned irq)
  */
 void rt_mask_and_ack_irq (unsigned irq)
 {
-	rtai_irq_desc_chip(irq)->ack(irq);
+	rtai_irq_endis_fun(ack, irq);
 }
 
 #if 0
@@ -532,7 +532,7 @@ static inline void _rt_end_irq (unsigned irq)
 #endif /* CONFIG_X86_IO_APIC */
 	    !(rtai_irq_desc(irq).status & (IRQ_DISABLED | IRQ_INPROGRESS))) {
 	}
-	rtai_irq_desc_chip(irq)->rtai_irq_endis_fun(end, irq);
+	rtai_irq_endis_fun(end, irq);
 }
 #endif
 

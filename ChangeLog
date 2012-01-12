@@ -1,3 +1,8 @@
+2012-01-12 Paolo Mantegazza <mantegazza@aero.polimi.it>
+
+        * base/arch/x86_64/hal/hal.immed: reworked all the enabling/disabling 
+	  interrupt controllers functions as already done for i386.
+
 2012-01-10 Paolo Mantegazza <mantegazza@aero.polimi.it>
 
         * base/i386/hal/hal.immed: reworked all the enabling/disabling 

@@ -1,3 +1,7 @@
+2012-01-13 Roberto Bucher <roberto.bucher@supsi.ch>
+
+	* rtai-lab/scicoslab/macros/Makefile: Installation for Scicoslab-4.4.1
+	
 2012-01-12 Paolo Mantegazza <mantegazza@aero.polimi.it>
 
         * base/arch/x86_64/hal/hal.immed: reworked all the enabling/disabling 

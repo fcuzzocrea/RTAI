@@ -1,6 +1,6 @@
 all: install
 
-SCILAB_VERSION = 4.4
+SCILAB_VERSION = 4.4.1
 SCILAB_DIR = /usr/lib/scicoslab-gtk-$(SCILAB_VERSION)
 RTAIDIR = $(shell rtai-config --prefix)
 

@@ -1,3 +1,7 @@
+2012-02-07 Pierangelo Masarati <masarati@aero.polimi.it>
+
+	* RTAI 3.9-test2
+
 2012-01-13 Roberto Bucher <roberto.bucher@supsi.ch>
 
 	* rtai-lab/scicoslab/macros/Makefile: Installation for Scicoslab-4.4.1

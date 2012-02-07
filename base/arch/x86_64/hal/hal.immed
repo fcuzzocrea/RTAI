@@ -301,7 +301,8 @@ void rt_set_irq_retmode (unsigned irq, int retmode)
 // 3 - IRQs enabling/disabling naming and calling
 #if LINUX_VERSION_CODE < KERNEL_VERSION(2,6,37)
 #define rtai_irq_endis_fun_wret(fun, irq) \
-return rtai_irq_desc_chip(irq)->fun ? rtai_irq_desc_chip(irq)->fun(irq):-EINVAL;#define rtai_irq_endis_fun(fun, irq) \
+return rtai_irq_desc_chip(irq)->fun ? rtai_irq_desc_chip(irq)->fun(irq):-EINVAL;
+#define rtai_irq_endis_fun(fun, irq) \
 if (rtai_irq_desc_chip(irq)->fun) rtai_irq_desc_chip(irq)->fun(irq);
 #else
 #define rtai_irq_endis_fun_wret(fun, irq) \

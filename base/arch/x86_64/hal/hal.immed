@@ -292,7 +292,7 @@ void rt_set_irq_retmode (unsigned irq, int retmode)
 // 2 - IRQs atomic protections
 #if LINUX_VERSION_CODE <= KERNEL_VERSION(2,6,32)
 #define rtai_irq_desc_lock(irq, flags) spin_lock_irqsave(&rtai_irq_desc(irq).lock, flags)
-#define rtai_irq_desc_unlock(irq, flags) spin_unlock_irqrestore(&rtai_irq_desc(irq)->lock, flags)
+#define rtai_irq_desc_unlock(irq, flags) spin_unlock_irqrestore(&rtai_irq_desc(irq).lock, flags)
 #else
 #define rtai_irq_desc_lock(irq, flags) raw_spin_lock_irqsave(&rtai_irq_desc(irq).lock, flags)
 #define rtai_irq_desc_unlock(irq, flags) raw_spin_unlock_irqrestore(&rtai_irq_desc(irq).lock, flags)
@@ -304,11 +304,15 @@ void rt_set_irq_retmode (unsigned irq, int retmode)
 return rtai_irq_desc_chip(irq)->fun ? rtai_irq_desc_chip(irq)->fun(irq):-EINVAL;
 #define rtai_irq_endis_fun(fun, irq) \
 if (rtai_irq_desc_chip(irq)->fun) rtai_irq_desc_chip(irq)->fun(irq);
+#define rtai_irq_end(irq) \
+if (rtai_irq_desc_chip(irq)->end) rtai_irq_desc_chip(irq)->end(irq);
 #else
 #define rtai_irq_endis_fun_wret(fun, irq) \
 return rtai_irq_desc_chip(irq)->irq_##fun ? rtai_irq_desc_chip(irq)->irq_##fun(&(rtai_irq_desc(irq).irq_data)) : -EINVAL;
 #define rtai_irq_endis_fun(fun, irq) \
 if (rtai_irq_desc_chip(irq)->irq_##fun) rtai_irq_desc_chip(irq)->irq_##fun(&(rtai_irq_desc(irq).irq_data));
+#define rtai_irq_end(irq) \
+if (rtai_irq_desc_chip(irq)->irq_eoi) rtai_irq_desc_chip(irq)->irq_eoi(&(rtai_irq_desc(irq).irq_data));
 #endif
 
 /**
@@ -582,7 +586,7 @@ void rt_eoi_irq (unsigned irq)
 	rtai_irq_endis_fun(eoi, irq);
 #else /* !(CONFIG_X86_IO_APIC && LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,19))
 */
-	rtai_irq_endis_fun(end, irq);
+	rtai_irq_end(irq);
 #endif
 }
 

@@ -1,3 +1,12 @@
+2012-02-14 Paolo Mantegazza <mantegazza@aero.polimi.it>
+
+        * base/addons/rtdm/xn.h: move WORK stuff out of a wrong embedding 
+	  within an ifdef CONFIG_SMP
+        * base/arch/i386/hal/hal.immed: review and fix a few bugs of the 
+	  reworked stuff related to enabling/disabling. 
+        * base/arch/x86_64/hal/hal.immed: review and fix a few bugs of the 
+	  reworked stuff related to enabling/disabling. 
+
 2012-02-07 Pierangelo Masarati <masarati@aero.polimi.it>
 
 	* RTAI 3.9-test2

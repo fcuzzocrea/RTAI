@@ -1,3 +1,10 @@
+2009-01-21  Torsten Koschorrek <devel@koschorrek.com>
+
+        * EXPORT_SYMBOL(save_crunch);" in file "kernel/ksyms.c"
+	  The rtai_up.o module needs symbol "save_crunch" which is not exported
+	  by kernel,so rtai_up.o is unable to insert to kernel.
+          (suggested in rtai-ml mail dated 19.12.2008)
+
 2004-02-16  Michael Neuhauser  <mike@firmix.at>
 
 	* New version:

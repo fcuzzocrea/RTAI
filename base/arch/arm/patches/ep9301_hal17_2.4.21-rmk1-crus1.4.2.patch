@@ -6264,7 +6264,7 @@ diff -rdpNU 5 -x .cvsignore -x CVS -x '.*.sw[a-z]' -x FirmixChangeLog linux-2.4.
 diff -rdpNU 5 -x .cvsignore -x CVS -x '.*.sw[a-z]' -x FirmixChangeLog linux-2.4.21_rmk-1_crus-1.4.2/kernel/ksyms.c linux-2.4.21_rmk-1_crus-1.4.2-adeos/kernel/ksyms.c
 --- linux-2.4.21_rmk-1_crus-1.4.2/kernel/ksyms.c	2004-10-18 12:16:56.000000000 +0200
 +++ linux-2.4.21_rmk-1_crus-1.4.2-adeos/kernel/ksyms.c	2005-01-23 17:10:13.000000000 +0100
-@@ -55,10 +55,38 @@
+@@ -55,10 +55,40 @@
  #endif
  #ifdef CONFIG_KMOD
  #include <linux/kmod.h>
@@ -6291,6 +6291,8 @@ diff -rdpNU 5 -x .cvsignore -x CVS -x '.*.sw[a-z]' -x FirmixChangeLog linux-2.4.
 +extern unsigned long __adeos_virtual_irq_map;
 +EXPORT_SYMBOL(__adeos_virtual_irq_map);
 +EXPORT_SYMBOL(__adeos_event_monitors);
++/* rtai_up needs this */
++EXPORT_SYMBOL(save_crunch);
 +/* The following are convenience exports which are needed by some
 +   Adeos domains loaded as kernel modules. */
 +EXPORT_SYMBOL_NOVERS(__mmdrop);

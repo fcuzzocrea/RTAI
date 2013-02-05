@@ -3357,7 +3357,7 @@ new file mode 100644
 index 0000000..f833663
 --- /dev/null
 +++ b/arch/x86/kernel/ipipe.c
-@@ -0,0 +1,679 @@
+@@ -0,0 +1,677 @@
 +/*   -*- linux-c -*-
 + *   linux/arch/x86/kernel/ipipe.c
 + *
@@ -3415,8 +3415,6 @@ index 0000000..f833663
 +#include <asm/i387.h>
 +#include <asm/fpu-internal.h>
 +
-+void *ipipe_irq_handler = NULL;
-+EXPORT_SYMBOL(ipipe_irq_handler);
 +EXPORT_SYMBOL(io_apic_irqs);
 +EXPORT_SYMBOL(find_task_by_pid_ns);
 +#ifdef CONFIG_X86_32
@@ -3985,7 +3983,7 @@ index 0000000..f833663
 +			tick_regs->flags &= ~X86_EFLAGS_IF;
 +	}
 +
-+	if (ipipe_irq_handler) { ((void (*)(int))ipipe_irq_handler)(irq); } else __ipipe_dispatch_irq(irq, flags);
++	__ipipe_dispatch_irq(irq, flags);
 +
 +	if (user_mode(regs) && (current->ipipe.flags & PF_MAYDAY)) {
 +		current->ipipe.flags &= ~PF_MAYDAY;
@@ -8786,7 +8784,7 @@ new file mode 100644
 index 0000000..3bc6ef5
 --- /dev/null
 +++ b/kernel/ipipe/core.c
-@@ -0,0 +1,1736 @@
+@@ -0,0 +1,1739 @@
 +/* -*- linux-c -*-
 + * linux/kernel/ipipe/core.c
 + *
@@ -9983,6 +9981,9 @@ index 0000000..3bc6ef5
 +	__ipipe_do_sync_pipeline(head);
 +}
 +
++void *rtai_irq_handler = NULL;
++EXPORT_SYMBOL(rtai_irq_handler);
++
 +void __ipipe_dispatch_irq(unsigned int irq, int flags) /* hw interrupts off */
 +{
 +	struct ipipe_domain *ipd;
@@ -10082,7 +10083,7 @@ index 0000000..3bc6ef5
 +		if (unlikely(flags & IPIPE_IRQF_NOSYNC))
 +			__ipipe_set_irq_pending(ipd, irq);
 +		else
-+			dispatch_irq_head(irq);
++			if (rtai_irq_handler) { ((void (*)(int))rtai_irq_handler)(irq); } else { dispatch_irq_head(irq); }
 +		return;
 +	}
 +

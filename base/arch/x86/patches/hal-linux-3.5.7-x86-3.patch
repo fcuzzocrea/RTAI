@@ -6010,7 +6010,7 @@ new file mode 100644
 index 0000000..1ae32a1
 --- /dev/null
 +++ b/include/linux/ipipe_base.h
-@@ -0,0 +1,359 @@
+@@ -0,0 +1,360 @@
 +/* -*- linux-c -*-
 + * include/linux/ipipe_base.h
 + *
@@ -6273,8 +6273,9 @@ index 0000000..1ae32a1
 +#define IPIPE_EVENT_CLEANUP	(IPIPE_FIRST_EVENT + 4)
 +#define IPIPE_EVENT_HOSTRT	(IPIPE_FIRST_EVENT + 5)
 +#define IPIPE_EVENT_SYSCALL	(IPIPE_FIRST_EVENT + 6)
++#define IPIPE_EVENT_STEALNX	(IPIPE_FIRST_EVENT + 7)
 +#define IPIPE_LAST_EVENT	IPIPE_EVENT_SYSCALL
-+#define IPIPE_NR_EVENTS		(IPIPE_LAST_EVENT + 1)
++#define IPIPE_NR_EVENTS	(IPIPE_LAST_EVENT + 1)
 +
 +typedef int (*ipipe_event_handler_t)(unsigned int event,
 +				     struct ipipe_domain *from,
@@ -8510,7 +8511,7 @@ new file mode 100644
 index 0000000..1147bf4
 --- /dev/null
 +++ b/kernel/ipipe/compat.c
-@@ -0,0 +1,268 @@
+@@ -0,0 +1,270 @@
 +/* -*- linux-c -*-
 + * linux/kernel/ipipe/compat.c
 + *
@@ -8671,7 +8672,7 @@ index 0000000..1147bf4
 +}
 +EXPORT_SYMBOL_GPL(ipipe_virtualize_irq);
 +
-+static int null_handler(unsigned int event,
++int null_handler(unsigned int event,
 +			struct ipipe_domain *from, void *data)
 +{
 +	/*
@@ -8682,6 +8683,8 @@ index 0000000..1147bf4
 +	 */
 +	return 0;
 +}
++EXPORT_SYMBOL_GPL(null_handler);
++
 +
 +ipipe_event_handler_t ipipe_catch_event(struct ipipe_domain *ipd,
 +					unsigned int event,
@@ -13196,7 +13199,7 @@ index 9f81a3a..f8c95cf 100644
 +
 +if (unlikely(rq)) {
 +	if (unlikely(__ipipe_switch_tail()))
-+		return 1; // __ipipe_notify_kevent(-2, 0);
++		return 1; __ipipe_notify_kevent(IPIPE_EVENT_STEALNX, NULL);
 +
  	/*
  	 * this_rq must be evaluated again because prev may have moved

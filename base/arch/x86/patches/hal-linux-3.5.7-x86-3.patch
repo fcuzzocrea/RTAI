@@ -8506,7 +8506,7 @@ new file mode 100644
 index 0000000..1147bf4
 --- /dev/null
 +++ b/kernel/ipipe/compat.c
-@@ -0,0 +1,270 @@
+@@ -0,0 +1,268 @@
 +/* -*- linux-c -*-
 + * linux/kernel/ipipe/compat.c
 + *
@@ -8667,7 +8667,7 @@ index 0000000..1147bf4
 +}
 +EXPORT_SYMBOL_GPL(ipipe_virtualize_irq);
 +
-+int null_handler(unsigned int event,
++static int null_handler(unsigned int event,
 +			struct ipipe_domain *from, void *data)
 +{
 +	/*
@@ -8678,8 +8678,6 @@ index 0000000..1147bf4
 +	 */
 +	return 0;
 +}
-+EXPORT_SYMBOL_GPL(null_handler);
-+
 +
 +ipipe_event_handler_t ipipe_catch_event(struct ipipe_domain *ipd,
 +					unsigned int event,

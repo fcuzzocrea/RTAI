@@ -640,7 +640,7 @@ RTAI_SYSCALL_MODE int rt_task_signal_handler(RT_TASK *task, void (*handler)(void
 
 /* ++++++++++++++++++++++++++++ MEASURING TIME ++++++++++++++++++++++++++++++ */
 
-struct epoch_struct boot_epoch = { SPIN_LOCK_UNLOCKED, 0, };
+struct epoch_struct boot_epoch = { __SPIN_LOCK_UNLOCKED(boot_epoch.lock), 0, };
 EXPORT_SYMBOL(boot_epoch);
 
 static inline void _rt_get_boot_epoch(volatile RTIME time_orig[])
@@ -1205,7 +1205,7 @@ RTAI_SYSCALL_MODE int rt_named_task_delete(RT_TASK *task)
 
 int max_slots;
 static struct rt_registry_entry *lxrt_list;
-static spinlock_t list_lock = SPIN_LOCK_UNLOCKED;
+static DEFINE_SPINLOCK(list_lock);
 
 #define COLLISION_COUNT() do { col++; } while(0)
 static unsigned long long col;
@@ -1547,7 +1547,7 @@ void rt_registry_free(void)
 #else
 volatile int max_slots;
 static struct rt_registry_entry *lxrt_list;
-static spinlock_t list_lock = SPIN_LOCK_UNLOCKED;
+static DEFINE_SPINLOCK(list_lock);
 
 int rt_registry_alloc(void)
 {

@@ -366,9 +366,9 @@ static inline long long handle_lxrt_request (unsigned int lxsrq, long *arg, RT_T
 			return ((RTAI_SYSCALL_MODE long long (*)(unsigned long, ...))funcm[srq].fun)(RTAI_FUN_ARGS);
 		}
 		if (unlikely(NEED_TO_RW(type))) {
-			lxrt_fun_call_wbuf(task, funcm[srq].fun, NARG(lxsrq), arg, type);
+			lxrt_fun_call_wbuf(task, funcm[srq].fun, LXRT_NARG(lxsrq), arg, type);
 		} else {
-			lxrt_fun_call(task, funcm[srq].fun, NARG(lxsrq), arg);
+			lxrt_fun_call(task, funcm[srq].fun, LXRT_NARG(lxsrq), arg);
 	        }
 		return task->retval;
 	}

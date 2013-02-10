@@ -1,3 +1,13 @@
+2013-02-10 Paolo Mantegazza <mantegazza@aero.polimi.it>
+
+        * base/sched/sched.c, api.c, sys.c: made compatible with Linux-3.x.
+        * base/include/rtai_lxrt.h: specialized NARG macro into LXRT_NARG, to
+	  avoid warning with the same name appearing in Linux.
+        * base/include/rtai_wrappers.h: modified to be made compatible with
+          Linux-3.x.
+        * base/include/asm/rtai_fpu.h: modified to be made compatible with 
+	  Linux-3.x. 
+
 2012-01-03 Paolo Mantegazza <mantegazza@aero.polimi.it>
 
         * base/x86_64/hal/hal.immed: updated to work with Linux up to

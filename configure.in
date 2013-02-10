@@ -318,6 +318,9 @@ case "$RTAI_LINUX_VERSION" in
 	dnl and RTAI Adeos-newgen HAL is supported since 2.6.13 included
 	CONFIG_KBUILD=y
     ;;
+  3.*)
+	CONFIG_KBUILD=y
+    ;;
   *) 
     AC_MSG_ERROR([Unsupported kernel version $RTAI_LINUX_VERSION])
 esac

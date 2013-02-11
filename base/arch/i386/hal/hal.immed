@@ -97,10 +97,11 @@ static void rtai_release_tickdev(void);
 static unsigned long rtai_apicfreq_arg = RTAI_CALIBRATED_APIC_FREQ;
 RTAI_MODULE_PARM(rtai_apicfreq_arg, ulong);
 
+
 static inline void rtai_setup_periodic_apic (unsigned count, unsigned vector)
 {
 	apic_read(APIC_LVTT);
-	apic_write(APIC_LVTT, APIC_LVT_TIMER_PERIODIC | vector);
+	apic_write(APIC_LVTT, APIC_INTEGRATED(GET_APIC_VERSION(apic_read(APIC_LVR))) ? SET_APIC_TIMER_BASE(APIC_TIMER_BASE_DIV) | APIC_LVT_TIMER_PERIODIC | vector : APIC_LVT_TIMER_PERIODIC | vector);
 	apic_read(APIC_TMICT);
 	apic_write(APIC_TMICT, count);
 }
@@ -108,7 +109,7 @@ static inline void rtai_setup_periodic_apic (unsigned count, unsigned vector)
 static inline void rtai_setup_oneshot_apic (unsigned count, unsigned vector)
 {
 	apic_read(APIC_LVTT);
-	apic_write(APIC_LVTT, vector);
+	apic_write(APIC_LVTT, APIC_INTEGRATED(GET_APIC_VERSION(apic_read(APIC_LVR))) ? SET_APIC_TIMER_BASE(APIC_TIMER_BASE_DIV) | vector : vector);
 	apic_read(APIC_TMICT);
 	apic_write(APIC_TMICT, count);
 }
@@ -301,54 +302,54 @@ void rt_set_irq_retmode (unsigned irq, int retmode)
 	}
 }
 
-extern unsigned long io_apic_irqs;
+// A bunch of macros to support Linux developers moods in relation to
+// interrupt handling across various releases.
+// Here we care about ProgrammableInterruptControllers (PIC) in particular.
 
-#if (LINUX_VERSION_CODE > KERNEL_VERSION(2,4,31) && LINUX_VERSION_CODE < KERNEL_VERSION(2,6,0)) || LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,9)
-
-#if LINUX_VERSION_CODE < KERNEL_VERSION(2,6,18)
-#define rtai_irq_desc_chip(irq) (irq_desc[irq].handler)
+// 1 - IRQs descriptor and chip
+#if LINUX_VERSION_CODE <= KERNEL_VERSION(2,6,18)
 #define rtai_irq_desc(irq) irq_desc[irq]
-#else
-#if defined(__IPIPE_2LEVEL_IRQMAP) || defined(__IPIPE_3LEVEL_IRQMAP) 
+#define rtai_irq_desc_chip(irq) (irq_desc[irq].handler)
+#endif
+
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,19) && LINUX_VERSION_CODE <= KERNEL_VERSION(2,6,27)
+#define rtai_irq_desc_chip(irq) (irq_desc[irq].chip)
+#define rtai_irq_desc(irq) irq_desc[irq]
+#endif
+
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,28)
+#define rtai_irq_desc(irq) (irq_to_desc(irq))[0]
 #if LINUX_VERSION_CODE > KERNEL_VERSION(2,6,35)
 #define rtai_irq_desc_chip(irq) (irq_to_desc(irq)->irq_data.chip)
 #else
 #define rtai_irq_desc_chip(irq) (irq_to_desc(irq)->chip)
 #endif
-#define rtai_irq_desc(irq) (irq_to_desc(irq))[0]
-#else
-#define rtai_irq_desc_chip(irq) (irq_desc[irq].chip)
-#define rtai_irq_desc(irq) irq_desc[irq]
-#endif
 #endif
 
-#define BEGIN_PIC()
-#define END_PIC()
-#undef hal_lock_irq
-#undef hal_unlock_irq
-#define hal_lock_irq(x, y, z)
-#define hal_unlock_irq(x, y)
-
+// 2 - IRQs atomic protections
+#if LINUX_VERSION_CODE <= KERNEL_VERSION(2,6,32)
+#define rtai_irq_desc_lock(irq, flags) spin_lock_irqsave(&rtai_irq_desc(irq).lock, flags)
+#define rtai_irq_desc_unlock(irq, flags) spin_unlock_irqrestore(&rtai_irq_desc(irq).lock, flags)
 #else
+#define rtai_irq_desc_lock(irq, flags) raw_spin_lock_irqsave(&rtai_irq_desc(irq).lock, flags)
+#define rtai_irq_desc_unlock(irq, flags) raw_spin_unlock_irqrestore(&rtai_irq_desc(irq).lock, flags)
+#endif
 
-extern struct hw_interrupt_type hal_std_irq_dtype[];
-#define rtai_irq_desc_chip(irq) (&hal_std_irq_dtype[irq])
-#define rtai_irq_desc(irq) irq_desc[irq]
-
-#define BEGIN_PIC() \
-do { \
-        unsigned long flags, pflags, cpuid; \
-	rtai_save_flags_and_cli(flags); \
-	cpuid = rtai_cpuid(); \
-	pflags = xchg(ROOT_STATUS_ADR(cpuid), 1 << IPIPE_STALL_FLAG); \
-	rtai_save_and_lock_preempt_count()
-
-#define END_PIC() \
-	rtai_restore_preempt_count(); \
-	ROOT_STATUS_VAL(cpuid) = pflags; \
-	rtai_restore_flags(flags); \
-} while (0)
-
+// 3 - IRQs enabling/disabling naming and calling
+#if LINUX_VERSION_CODE < KERNEL_VERSION(2,6,37)
+#define rtai_irq_endis_fun_wret(fun, irq) \
+return rtai_irq_desc_chip(irq)->fun ? rtai_irq_desc_chip(irq)->fun(irq):-EINVAL;
+#define rtai_irq_endis_fun(fun, irq) \
+if (rtai_irq_desc_chip(irq)->fun) rtai_irq_desc_chip(irq)->fun(irq);
+#define rtai_irq_end(irq) \
+if (rtai_irq_desc_chip(irq)->end) rtai_irq_desc_chip(irq)->end(irq);
+#else
+#define rtai_irq_endis_fun_wret(fun, irq) \
+return rtai_irq_desc_chip(irq)->irq_##fun ? rtai_irq_desc_chip(irq)->irq_##fun(&(rtai_irq_desc(irq).irq_data)) : -EINVAL;
+#define rtai_irq_endis_fun(fun, irq) \
+if (rtai_irq_desc_chip(irq)->irq_##fun) rtai_irq_desc_chip(irq)->irq_##fun(&(rtai_irq_desc(irq).irq_data));
+#define rtai_irq_end(irq) \
+if (rtai_irq_desc_chip(irq)->irq_eoi) rtai_irq_desc_chip(irq)->irq_eoi(&(rtai_irq_desc(irq).irq_data));
 #endif
 
 /**
@@ -380,13 +381,8 @@ do { \
  */
 unsigned rt_startup_irq (unsigned irq)
 {
-        int retval;
-
-	BEGIN_PIC();
-	hal_unlock_irq(hal_root_domain, irq);
-	retval = rtai_irq_desc_chip(irq)->startup(irq);
-	END_PIC();
-        return retval;
+//	return rtai_irq_desc_chip(irq)->rtai_irq_endis_fun(startup, irq, 1);
+	rtai_irq_endis_fun_wret(startup, irq);
 }
 
 /**
@@ -420,20 +416,14 @@ unsigned rt_startup_irq (unsigned irq)
  */
 void rt_shutdown_irq (unsigned irq)
 {
-	BEGIN_PIC();
-	rtai_irq_desc_chip(irq)->shutdown(irq);
-#if LINUX_VERSION_CODE < RTAI_LT_KERNEL_VERSION_FOR_NONPERCPU
-	hal_clear_irq(hal_root_domain, irq);
-#endif
-	END_PIC();
+//	rtai_irq_desc_chip(irq)->rtai_irq_endis_fun(shutdown, irq);
+	rtai_irq_endis_fun(shutdown, irq);
 }
 
 static inline void _rt_enable_irq (unsigned irq)
 {
-	BEGIN_PIC();
-	hal_unlock_irq(hal_root_domain, irq);
-	rtai_irq_desc_chip(irq)->enable(irq);
-	END_PIC();
+//	rtai_irq_desc_chip(irq)->rtai_irq_endis_fun(enable, irq);
+	rtai_irq_endis_fun(enable, irq);
 }
 
 /**
@@ -497,10 +487,8 @@ void rt_enable_irq (unsigned irq)
  */
 void rt_disable_irq (unsigned irq)
 {
-	BEGIN_PIC();
-	rtai_irq_desc_chip(irq)->disable(irq);
-	hal_lock_irq(hal_root_domain, cpuid, irq);
-	END_PIC();
+//	rtai_irq_desc_chip(irq)->rtai_irq_endis_fun(disable, irq);
+	rtai_irq_endis_fun(disable, irq);
 }
 
 /**
@@ -536,22 +524,21 @@ void rt_disable_irq (unsigned irq)
  */
 void rt_mask_and_ack_irq (unsigned irq)
 {
-	rtai_irq_desc_chip(irq)->ack(irq);
+	rtai_irq_endis_fun(ack, irq);
 }
 
+#if 0
 static inline void _rt_end_irq (unsigned irq)
 {
-	BEGIN_PIC();
 	if (
 #ifdef CONFIG_X86_IO_APIC
 	    !IO_APIC_IRQ(irq) ||
 #endif /* CONFIG_X86_IO_APIC */
 	    !(rtai_irq_desc(irq).status & (IRQ_DISABLED | IRQ_INPROGRESS))) {
-		hal_unlock_irq(hal_root_domain, irq);
 	}
-	rtai_irq_desc_chip(irq)->end(irq);
-	END_PIC();
+	rtai_irq_endis_fun(end, irq);
 }
+#endif
 
 /**
  * Unmask and IRQ source.
@@ -585,7 +572,8 @@ static inline void _rt_end_irq (unsigned irq)
  */
 void rt_unmask_irq (unsigned irq)
 {
-	_rt_end_irq(irq);
+//      rtai_irq_desc_chip(irq)->rtai_irq_endis_fun(unmask, irq);
+        _rt_enable_irq(irq);
 }
 
 /**
@@ -625,26 +613,26 @@ void rt_ack_irq (unsigned irq)
 
 void rt_end_irq (unsigned irq)
 {
-	_rt_end_irq(irq);
+//      rtai_irq_desc_chip(irq)->rtai_irq_endis_fun(unmask, irq);
+        _rt_enable_irq(irq);
 }
 
 void rt_eoi_irq (unsigned irq)
 {
-        BEGIN_PIC();
         if (
 #ifdef CONFIG_X86_IO_APIC
             !IO_APIC_IRQ(irq) ||
 #endif /* CONFIG_X86_IO_APIC */
             !(rtai_irq_desc(irq).status & (IRQ_DISABLED | IRQ_INPROGRESS))) {
-                hal_unlock_irq(hal_root_domain, irq);
         }
 #if defined(CONFIG_X86_IO_APIC) && LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,19)
-        rtai_irq_desc_chip(irq)->eoi(irq);
+//	rtai_irq_desc_chip(irq)->rtai_irq_endis_fun(eoi, irq);
+	rtai_irq_endis_fun(eoi, irq);
 #else /* !(CONFIG_X86_IO_APIC && LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,19))
 */
-        rtai_irq_desc_chip(irq)->end(irq);
+//	rtai_irq_desc_chip(irq)->rtai_irq_endis_fun(end, irq);
+	rtai_irq_end(irq);
 #endif
-        END_PIC();
 }
 
 /**
@@ -680,14 +668,12 @@ int rt_request_linux_irq (unsigned irq, void *handler, char *name, void *dev_id)
 		return -EINVAL;
 	}
 
-	rtai_save_flags_and_cli(flags);
-	spin_lock(&rtai_irq_desc(irq).lock);
+	rtai_irq_desc_lock(irq, flags);
 	if (rtai_linux_irq[irq].count++ == 0 && rtai_irq_desc(irq).action) {
 		rtai_linux_irq[irq].flags = rtai_irq_desc(irq).action->flags;
 		rtai_irq_desc(irq).action->flags |= IRQF_SHARED;
 	}
-	spin_unlock(&rtai_irq_desc(irq).lock);
-	rtai_restore_flags(flags);
+	rtai_irq_desc_unlock(irq, flags);
 
 	retval = request_irq(irq, handler, IRQF_SHARED, name, dev_id);
 
@@ -713,14 +699,11 @@ int rt_free_linux_irq (unsigned irq, void *dev_id)
 		return -EINVAL;
 	}
 
-	rtai_save_flags_and_cli(flags);
-	free_irq(irq,dev_id);
-	spin_lock(&rtai_irq_desc(irq).lock);
+	rtai_irq_desc_lock(irq, flags);
 	if (--rtai_linux_irq[irq].count == 0 && rtai_irq_desc(irq).action) {
 		rtai_irq_desc(irq).action->flags = rtai_linux_irq[irq].flags;
 	}
-	spin_unlock(&rtai_irq_desc(irq).lock);
-	rtai_restore_flags(flags);
+	rtai_irq_desc_unlock(irq, flags);
 
 	return 0;
 }
@@ -2229,7 +2212,7 @@ int __rtai_hal_init (void)
 	attr.name     = "RTAI";
 	attr.domid    = RTAI_DOMAIN_ID;
 	attr.entry    = (void *)rtai_domain_entry;
-	attr.priority = get_domain_pointer(1)->priority + 100;
+	attr.priority = IPIPE_HEAD_PRIORITY;
 	hal_register_domain(&rtai_domain, &attr);
 	for (trapnr = 0; trapnr < HAL_NR_FAULTS; trapnr++) {
 		hal_catch_event(hal_root_domain, trapnr, (void *)rtai_trap_fault);
@@ -2294,34 +2277,8 @@ void __rtai_hal_exit (void)
 module_init(__rtai_hal_init);
 module_exit(__rtai_hal_exit);
 
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(2,60,0)
-asmlinkage int rt_printk(const char *fmt, ...)
-{
-	va_list args;
-	int r;
 
-	va_start(args, fmt);
-	r = vprintk(fmt, args);
-	va_end(args);
-
-	return r;
-}
-
-asmlinkage int rt_sync_printk(const char *fmt, ...)
-{
-	va_list args;
-	int r;
-
-	va_start(args, fmt);
-	hal_set_printk_sync(&rtai_domain);
-	r = vprintk(fmt, args);
-	hal_set_printk_async(&rtai_domain);
-	va_end(args);
-
-	return r;
-}
-#else
-#define VSNPRINTF_BUF 256
+#define VSNPRINTF_BUF 512
 asmlinkage int rt_printk(const char *fmt, ...)
 {
 	char buf[VSNPRINTF_BUF];
@@ -2348,10 +2305,11 @@ asmlinkage int rt_sync_printk(const char *fmt, ...)
 
 	return r;
 }
-#endif
+
 
 /*
- *  support for decoding long long numbers in kernel space.
+ *  support for decoding long long numbers in kernel space, somebody may need 
+ *  it in 2.4.xx; no problem nowadays on the latest kernels.
  */
 
 void *ll2a (long long ll, char *s)

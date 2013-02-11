@@ -3923,7 +3923,7 @@ index 0000000..f833663
 +	if (!__ipipe_syscall_watched_p(current, regs->orig_ax))
 +		return 0;
 +
-+	ret = __ipipe_notify_syscall(regs);
++	ret = __ipipe_notify_kevent(IPIPE_EVENT_SYSCALL - IPIPE_FIRST_EVENT, regs); // __ipipe_notify_syscall(regs);
 +
 +	flags = hard_local_irq_save();
 +

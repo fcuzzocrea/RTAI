@@ -20028,6 +20028,9 @@ case "$RTAI_LINUX_VERSION" in
   2.6.*)
 			CONFIG_KBUILD=y
     ;;
+  3.5.*)
+                        CONFIG_KBUILD=y
+    ;;
   *)
     { { echo "$as_me:$LINENO: error: Unsupported kernel version $RTAI_LINUX_VERSION" >&5
 echo "$as_me: error: Unsupported kernel version $RTAI_LINUX_VERSION" >&2;}

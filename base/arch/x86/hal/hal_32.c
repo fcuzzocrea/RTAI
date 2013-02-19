@@ -661,7 +661,7 @@ int rt_free_linux_irq (unsigned irq, void *dev_id)
 	}
 
 	rtai_save_flags_and_cli(flags);
-	free_irq(irq,dev_id);
+	free_irq(irq, dev_id);
 	spin_lock(&rtai_irq_desc(irq).lock);
 	if (--rtai_linux_irq[irq].count == 0 && rtai_irq_desc(irq).action) {
 		rtai_irq_desc(irq).action->flags = rtai_linux_irq[irq].flags;
@@ -1210,7 +1210,7 @@ do { sflags = rt_save_switch_to_real_time(cpuid = rtai_cpuid()); } while (0)
 #define HAL_UNLOCK_LINUX() \
 do { rtai_cli(); rt_restore_switch_to_linux(sflags, cpuid); } while (0)
 
-#ifdef CONFIG_RTAI_SCHED_ISR_LOCK
+#if 1 //def CONFIG_RTAI_SCHED_ISR_LOCK
 static void (*rtai_isr_hook)(int cpuid);
 #define RTAI_SCHED_ISR_LOCK() \
 	do { \
@@ -1405,7 +1405,7 @@ static void rtai_lsrq_dispatcher (unsigned virq)
 	spin_unlock(&rtai_lsrq_lock);
 }
 
-static inline long long rtai_usrq_dispatcher (unsigned long srq, unsigned long label)
+long long rtai_usrq_dispatcher (unsigned long srq, unsigned long label)
 {
 	TRACE_RTAI_SRQ_ENTRY(srq);
 	if (srq > 0 && srq < RTAI_NR_SRQS && test_bit(srq, &rtai_sysreq_map) && rtai_sysreq_table[srq].u_handler) {
@@ -1420,35 +1420,14 @@ static inline long long rtai_usrq_dispatcher (unsigned long srq, unsigned long l
 	TRACE_RTAI_SRQ_EXIT();
 	return 0LL;
 }
+EXPORT_SYMBOL(rtai_usrq_dispatcher);
 
 #include <asm/rtai_usi.h>
-
-long long (*rtai_lxrt_dispatcher)(unsigned long, unsigned long);
-
-static int (*sched_intercept_syscall_prologue)(struct pt_regs *);
 
 static int intercept_syscall_prologue(unsigned long event, struct pt_regs *regs)
 {
 	if (likely(regs->LINUX_SYSCALL_NR >= RTAI_SYSCALL_NR)) {
-		unsigned long srq  = regs->LINUX_SYSCALL_REG1;
-		IF_IS_A_USI_SRQ_CALL_IT(srq, regs->LINUX_SYSCALL_REG2, (long long *)regs->LINUX_SYSCALL_REG3, regs->LINUX_SYSCALL_FLAGS, 1);
-		*((long long *)regs->LINUX_SYSCALL_REG3) = srq > RTAI_NR_SRQS ? rtai_lxrt_dispatcher(srq, regs->LINUX_SYSCALL_REG2) : rtai_usrq_dispatcher(srq, regs->LINUX_SYSCALL_REG2);
-		if (!in_hrt_mode(srq = rtai_cpuid())) {
-			hal_test_and_fast_flush_pipeline(srq);
-			return 0;
-		}
-		return 1;
-	}
-	return likely(sched_intercept_syscall_prologue != NULL) ? sched_intercept_syscall_prologue(regs) : 0;
-}
-
-asmlinkage int rtai_syscall_dispatcher (struct pt_regs regs)
-{
-	int cpuid;
-	IF_IS_A_USI_SRQ_CALL_IT(regs.LINUX_SYSCALL_RETREG, regs.LINUX_SYSCALL_REG2, (long long *)regs.LINUX_SYSCALL_REG3, regs.LINUX_SYSCALL_FLAGS, 0);
-	*((long long *)regs.LINUX_SYSCALL_REG3) = regs.LINUX_SYSCALL_RETREG > RTAI_NR_SRQS ? rtai_lxrt_dispatcher(regs.LINUX_SYSCALL_RETREG, regs.LINUX_SYSCALL_REG2) : rtai_usrq_dispatcher(regs.LINUX_SYSCALL_RETREG, regs.LINUX_SYSCALL_REG2);
-	if (!in_hrt_mode(cpuid = rtai_cpuid())) {
-		hal_test_and_fast_flush_pipeline(cpuid);
+		*((long long *)regs->LINUX_SYSCALL_REG3) = rtai_usrq_dispatcher(regs->LINUX_SYSCALL_REG1, regs->LINUX_SYSCALL_REG2);
 		return 1;
 	}
 	return 0;
@@ -1646,7 +1625,7 @@ static int rtai_proc_register (void)
 		printk(KERN_ERR "Unable to initialize /proc/rtai/hal.\n");
 		return -1;
         }
-	ent->read_proc = rtai_read_proc;
+	ent->read_proc  = rtai_read_proc;
 
 	return 0;
 }
@@ -1671,10 +1650,6 @@ LAST_LINE_OF_RTAI_DOMAIN_ENTRY
 
 long rtai_catch_event (struct hal_domain_struct *from, unsigned long event, int (*handler)(unsigned long, void *))
 {
-	if (event == HAL_SYSCALL_PROLOGUE) {
-		sched_intercept_syscall_prologue = (void *)handler;
-		return 0;
-	}
 	return (long)hal_catch_event(from, event, (void *)handler);
 }
 
@@ -1964,7 +1939,6 @@ EXPORT_SYMBOL(ll2a);
 
 EXPORT_SYMBOL(rtai_catch_event);
 
-EXPORT_SYMBOL(rtai_lxrt_dispatcher);
 EXPORT_SYMBOL(rt_scheduling);
 #if LINUX_VERSION_CODE < RTAI_LT_KERNEL_VERSION_FOR_NONPERCPU
 EXPORT_SYMBOL(ipipe_root_status);

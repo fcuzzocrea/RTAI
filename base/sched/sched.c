@@ -2526,7 +2526,7 @@ static int lxrt_intercept_exit (unsigned long event, struct task_struct *lnx_tas
 	return 0;
 }
 
-extern long long rtai_lxrt_invoke (unsigned long, void *, void *);
+extern long long rtai_lxrt_invoke (unsigned long, void *);
 extern int (*sys_call_table[])(struct pt_regs);
 
 #if 0
@@ -2621,6 +2621,24 @@ static int lxrt_intercept_syscall_prologue(struct pt_regs *regs)
 		}
 	}
 	return 0;
+}
+
+#include <asm/rtai_usi.h>
+
+extern long long rtai_usrq_dispatcher (unsigned long, unsigned long);
+
+static int lxrt_intercept_syscall(unsigned long event, struct pt_regs *regs){
+        if (likely(regs->LINUX_SYSCALL_NR >= RTAI_SYSCALL_NR)) {
+                unsigned long srq  = regs->LINUX_SYSCALL_REG1;
+                IF_IS_A_USI_SRQ_CALL_IT(srq, regs->LINUX_SYSCALL_REG2, (long long *)regs->LINUX_SYSCALL_REG3, regs->LINUX_SYSCALL_FLAGS, 1);
+                *((long long *)regs->LINUX_SYSCALL_REG3) = srq > RTAI_NR_SRQS ?  rtai_lxrt_invoke(srq, (void *)regs->LINUX_SYSCALL_REG2) : rtai_usrq_dispatcher(srq, regs->LINUX_SYSCALL_REG2);
+                if (!in_hrt_mode(srq = rtai_cpuid())) {
+                        hal_test_and_fast_flush_pipeline(srq);
+                        return 0;
+                }
+                return 1;
+        }
+        return lxrt_intercept_syscall_prologue(regs);
 }
 
 static int lxrt_intercept_syscall_epilogue(unsigned long event, void *nothing)
@@ -2850,12 +2868,10 @@ static struct rt_native_fun_entry rt_sched_entries[] = {
 	{ { 0, 0 },			            000 }
 };
 
-extern void *rtai_lxrt_dispatcher;
-
 DECLARE_FUSION_WAKE_UP_STUFF;
+static void *saved_syscall_prologue;
 
 static int lxrt_init(void)
-
 {
 	void init_fun_ext(void);
 	int cpuid;
@@ -2897,11 +2913,10 @@ static int lxrt_init(void)
 
 	INTERCEPT_SCHEDULE_HEAD();
 	rtai_catch_event(hal_root_domain, HAL_SCHEDULE_TAIL, (void *)lxrt_intercept_schedule_tail);
-	rtai_catch_event(hal_root_domain, HAL_SYSCALL_PROLOGUE, (void *)lxrt_intercept_syscall_prologue);
+	saved_syscall_prologue = hal_catch_event(hal_root_domain, HAL_SYSCALL_PROLOGUE, (void *)lxrt_intercept_syscall);
 	rtai_catch_event(hal_root_domain, HAL_SYSCALL_EPILOGUE, (void *)lxrt_intercept_syscall_epilogue);
 	rtai_catch_event(hal_root_domain, HAL_EXIT_PROCESS, (void *)lxrt_intercept_exit);
 	rtai_catch_event(hal_root_domain, HAL_KICK_PROCESS, (void *)lxrt_intercept_sig_wakeup);
-	rtai_lxrt_dispatcher = rtai_lxrt_invoke;
 
 	return 0;
 }
@@ -2950,11 +2965,10 @@ static void lxrt_exit(void)
 
 	RELEASE_SCHEDULE_HEAD();
 	rtai_catch_event(hal_root_domain, HAL_SCHEDULE_TAIL, NULL);
-	rtai_catch_event(hal_root_domain, HAL_SYSCALL_PROLOGUE, NULL);
+	rtai_catch_event(hal_root_domain, HAL_SYSCALL_PROLOGUE, saved_syscall_prologue);
 	rtai_catch_event(hal_root_domain, HAL_SYSCALL_EPILOGUE, NULL);
 	rtai_catch_event(hal_root_domain, HAL_EXIT_PROCESS, NULL);
 	rtai_catch_event(hal_root_domain, HAL_KICK_PROCESS, NULL);
-	rtai_lxrt_dispatcher = NULL;
     
 	DROP_ALL_PENDING_MM2DROP();
 

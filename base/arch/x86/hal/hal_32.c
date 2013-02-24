@@ -1210,8 +1210,9 @@ do { sflags = rt_save_switch_to_real_time(cpuid = rtai_cpuid()); } while (0)
 #define HAL_UNLOCK_LINUX() \
 do { rtai_cli(); rt_restore_switch_to_linux(sflags, cpuid); } while (0)
 
-#if 1 //def CONFIG_RTAI_SCHED_ISR_LOCK
-static void (*rtai_isr_hook)(int cpuid);
+#ifdef CONFIG_RTAI_SCHED_ISR_LOCK
+void (*rtai_isr_sched)(int cpuid);
+EXPORT_SYMBOL(rtai_isr_sched);
 #define RTAI_SCHED_ISR_LOCK() \
 	do { \
 		if (!rt_scheduling[cpuid].locked++) { \
@@ -1221,14 +1222,15 @@ static void (*rtai_isr_hook)(int cpuid);
 #define RTAI_SCHED_ISR_UNLOCK() \
 	do { \
 		if (rt_scheduling[cpuid].locked && !(--rt_scheduling[cpuid].locked)) { \
-			if (rt_scheduling[cpuid].rqsted > 0 && rtai_isr_hook) { \
-				rtai_isr_hook(cpuid); \
+			if (rt_scheduling[cpuid].rqsted > 0 && rtai_isr_sched) { \
+				rtai_isr_sched(cpuid); \
         		} \
 		} \
 	} while (0)
 #else  /* !CONFIG_RTAI_SCHED_ISR_LOCK */
 #define RTAI_SCHED_ISR_LOCK() \
-	do { cpuid = rtai_cpuid(); } while (0)
+	do {                       } while (0)
+//	do { cpuid = rtai_cpuid(); } while (0)
 #define RTAI_SCHED_ISR_UNLOCK() \
 	do {                       } while (0)
 #endif /* CONFIG_RTAI_SCHED_ISR_LOCK */
@@ -1247,7 +1249,7 @@ static int rtai_hirq_dispatcher (int irq)
 			return 0;
 		}
 	}
-	rtai_sti();
+//	rtai_sti();
 	hal_fast_flush_pipeline(cpuid);
 	return 0;
 }
@@ -1441,11 +1443,14 @@ static void hal_request_apic_freq(unsigned long *apic_freq);
 
 static void rtai_install_archdep (void)
 {
+
 	hal_catch_event(hal_root_domain, HAL_SYSCALL_PROLOGUE, (void *)intercept_syscall_prologue);
 
 	if (rtai_cpufreq_arg == 0) {
 		struct hal_sysinfo_struct sysinfo;
 		hal_get_sysinfo(&sysinfo);
+printk("SYSINFO CPUs %d IRQ %d TIM_FREQ %llu CLK_FREQ %llu CPU_FREQ %llu\n", sysinfo.sys_nr_cpus, sysinfo.sys_hrtimer_irq, sysinfo.sys_hrtimer_freq, sysinfo.sys_hrclock_freq, sysinfo.sys_cpu_freq); 
+
 #if LINUX_VERSION_CODE > KERNEL_VERSION(2,6,37)
 		rtai_cpufreq_arg = (unsigned long)sysinfo.sys_cpu_freq;
 #else
@@ -1486,16 +1491,6 @@ int rtai_calibrate_8254 (void)
 
 	return rtai_imuldiv(dt, 100000, RTAI_CPU_FREQ);
 }
-
-void (*rt_set_ihook (void (*hookfn)(int)))(int)
-{
-#ifdef CONFIG_RTAI_SCHED_ISR_LOCK
-	return (void (*)(int))xchg(&rtai_isr_hook, hookfn); /* This is atomic */
-#else  /* !CONFIG_RTAI_SCHED_ISR_LOCK */
-	return NULL;
-#endif /* CONFIG_RTAI_SCHED_ISR_LOCK */
-}
-
 
 #if LINUX_VERSION_CODE < KERNEL_VERSION(2,6,11)
 static int errno;
@@ -1756,6 +1751,12 @@ int __rtai_hal_init (void)
 #if defined(CONFIG_SMP) && defined(CONFIG_RTAI_DIAG_TSC_SYNC)
 	init_tsc_sync();
 #endif
+{
+		int i;
+		struct hal_sysinfo_struct sysinfo;
+		hal_get_sysinfo(&sysinfo);
+printk("SYSINFO CPUs %d IRQ %d TIM_FREQ %llu CLK_FREQ %llu CPU_FREQ %llu\n", sysinfo.sys_nr_cpus, sysinfo.sys_hrtimer_irq, sysinfo.sys_hrtimer_freq, sysinfo.sys_hrclock_freq, sysinfo.sys_cpu_freq); 
+}
 
 	return 0;
 }
@@ -1914,7 +1915,6 @@ EXPORT_SYMBOL(rt_free_timer);
 EXPORT_SYMBOL(rt_set_trap_handler);
 EXPORT_SYMBOL(rd_8254_ts);
 EXPORT_SYMBOL(rt_setup_8254_tsc);
-EXPORT_SYMBOL(rt_set_ihook);
 EXPORT_SYMBOL(rt_set_irq_ack);
 EXPORT_SYMBOL(ack_8259A_irq);
 
@@ -2044,3 +2044,4 @@ static void hal_request_apic_freq(unsigned long *apic_freq) { return; }
 
 EXPORT_SYMBOL(rt_linux_hrt_set_mode);
 EXPORT_SYMBOL(rt_linux_hrt_next_shot);
+

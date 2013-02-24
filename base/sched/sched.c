@@ -153,15 +153,15 @@ static inline int rt_request_sched_ipi(void)
 {
         int retval;
         retval = rt_request_irq(SCHED_IPI, (void *)rt_schedule_on_schedule_ipi, NULL, 0);
-        rt_set_sched_ipi_gate();
+//        rt_set_sched_ipi_gate();
         return retval;
 }
 
-#define rt_free_sched_ipi() \
-do { \
-        rt_release_irq(SCHED_IPI); \
-        rt_reset_sched_ipi_gate(); \
-} while (0)
+static inline void rt_free_sched_ipi(void)
+{
+        rt_release_irq(SCHED_IPI);
+// 	rt_reset_sched_ipi_gate();
+}
 
 static inline void sched_get_global_lock(int cpuid)
 {
@@ -1145,10 +1145,6 @@ void rt_sched_unlock(void)
 }
 
 
-void rtai_handle_isched_lock (int cpuid) /* Called with interrupts off */
-{
-	SCHED_UNLOCK_SCHEDULE(cpuid);
-}
 
 
 void *rt_get_lxrt_fun_entry(int index);
@@ -1404,7 +1400,7 @@ void stop_rt_timer(void)
 	if (rt_sched_timed) {
 		int cpuid;
 		rt_sched_timed = 0;
-		rt_release_rtc();
+//		rt_release_rtc();
 		rt_release_irq(RTAI_APIC_TIMER_IPI);
 		for (cpuid = 0; cpuid < NR_RT_CPUS; cpuid++) {
 			rt_time_h = RT_TIME_END;
@@ -1437,7 +1433,7 @@ void stop_rt_timer(void)
 {
 	if (rt_sched_timed) {
 		rt_sched_timed = 0;
-		rt_release_rtc();
+//		rt_release_rtc();
 		rt_time_h = RT_TIME_END;
 		rt_smp_oneshot_timer[0] = 0;
 	}
@@ -2854,7 +2850,7 @@ static struct rt_native_fun_entry rt_sched_entries[] = {
 	{ { 0, rt_get_name },			    GET_NAME },
 	{ { 0, rt_get_adr },			    GET_ADR },
 	{ { 0, usr_rt_pend_linux_irq },		    PEND_LINUX_IRQ },
-	{ { 0, rt_release_rtc },                    RELEASE_RTC },
+//	{ { 0, rt_release_rtc },                    RELEASE_RTC },
 	{ { 0, rt_gettid },                         RT_GETTID },
 	{ { 0, rt_get_real_time },		    GET_REAL_TIME },
 	{ { 0, rt_get_real_time_ns },		    GET_REAL_TIME_NS },
@@ -2870,6 +2866,14 @@ static struct rt_native_fun_entry rt_sched_entries[] = {
 
 DECLARE_FUSION_WAKE_UP_STUFF;
 static void *saved_syscall_prologue;
+
+#ifdef CONFIG_RTAI_SCHED_ISR_LOCK
+extern void *rtai_isr_sched;
+static void rtai_isr_sched_handle(int cpuid) /* Called with interrupts off */
+{
+	SCHED_UNLOCK_SCHEDULE(cpuid);
+}
+#endif /* CONFIG_RTAI_SCHED_ISR_LOCK */
 
 static int lxrt_init(void)
 {
@@ -2889,6 +2893,7 @@ static int lxrt_init(void)
 
 	Reservoir = (Reservoir + num_online_cpus() - 1)/num_online_cpus();
 
+#if 1
 	for (cpuid = 0; cpuid < num_online_cpus(); cpuid++) {
 		taskav[cpuid] = (void *)kmalloc(SpareKthreads*sizeof(void *), GFP_KERNEL);
 		init_MUTEX_LOCKED(&resem[cpuid]);
@@ -2897,6 +2902,7 @@ static int lxrt_init(void)
 		klistm[cpuid].in = (2*Reservoir) & (MAX_WAKEUP_SRQ - 1);
 		WAKE_UP_THREADM(kthreadm[cpuid]);
 	}
+#endif
 
 	for (cpuid = 0; cpuid < MAX_LXRT_FUN; cpuid++) {
 		rt_fun_lxrt[cpuid].type = 1;
@@ -2931,6 +2937,7 @@ static void lxrt_exit(void)
 	rtai_proc_lxrt_unregister();
 #endif
 
+#if 1
 	rt_task = kmalloc(sizeof(RT_TASK), GFP_KERNEL);
 	for (cpuid = 0; cpuid < num_online_cpus(); cpuid++) {
 		while ((kthread = __get_kthread(cpuid))) {
@@ -2958,6 +2965,7 @@ static void lxrt_exit(void)
 		}
 		kfree(taskav[cpuid]);
 	}
+#endif
 
 	rt_set_rtai_trap_handler(lxrt_old_trap_handler);
 
@@ -3074,7 +3082,7 @@ static int __rtai_lxrt_init(void)
 		goto free_sched_ipi;
 
 #ifdef CONFIG_RTAI_SCHED_ISR_LOCK
-	rt_set_ihook(&rtai_handle_isched_lock);
+	rtai_isr_sched = rtai_isr_sched_handle;
 #endif /* CONFIG_RTAI_SCHED_ISR_LOCK */
 
 	register_reboot_notifier(&lxrt_reboot_notifier);
@@ -3161,7 +3169,7 @@ static void __rtai_lxrt_exit(void)
 	current->state = TASK_INTERRUPTIBLE;
 	schedule_timeout(HZ/10);
 #ifdef CONFIG_RTAI_SCHED_ISR_LOCK
-	rt_set_ihook(NULL);
+	rtai_isr_sched = NULL;
 #endif /* CONFIG_RTAI_SCHED_ISR_LOCK */
 
 #ifdef DECLR_8254_TSC_EMULATION
@@ -3193,7 +3201,6 @@ EXPORT_SYMBOL(rt_schedule_soft);
 EXPORT_SYMBOL(rt_do_force_soft);
 EXPORT_SYMBOL(rt_schedule_soft_tail);
 EXPORT_SYMBOL(rt_sched_timed);
-EXPORT_SYMBOL(rtai_handle_isched_lock);
 #if CONFIG_RTAI_MONITOR_EXECTIME
 EXPORT_SYMBOL(switch_time);
 #endif

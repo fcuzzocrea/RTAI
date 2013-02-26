@@ -9823,7 +9823,7 @@ index 0000000..3bc6ef5
 +
 +int __ipipe_notify_kevent(int kevent, void *data)
 +{
-+{ void *handler; if ((handler = ipipe_root_domain->legacy.handlers[IPIPE_FIRST_EVENT + kevent])) return ((int (*)(unsigned long, void *))handler)(IPIPE_FIRST_EVENT + kevent, data); } {
+{ return ((int (*)(unsigned long, void *))ipipe_root_domain->legacy.handlers[IPIPE_FIRST_EVENT + kevent])(IPIPE_FIRST_EVENT + kevent, data); } {
 +	struct ipipe_percpu_domain_data *p;
 +	unsigned long flags;
 +	int ret = 0;
@@ -13200,7 +13200,7 @@ index 9f81a3a..f8c95cf 100644
 +
 +if (unlikely(rq)) {
 +	if (unlikely(__ipipe_switch_tail()))
-+		return 1; if (ipipe_notifier_enabled_p(prev)) __ipipe_notify_kevent(-2, NULL);
++		return 1; __ipipe_notify_kevent(-2, NULL);
  	/*
  	 * this_rq must be evaluated again because prev may have moved
  	 * CPUs since it called schedule(), thus the 'rq' on its stack

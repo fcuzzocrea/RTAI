@@ -9823,7 +9823,7 @@ index 0000000..3bc6ef5
 +
 +int __ipipe_notify_kevent(int kevent, void *data)
 +{
-{ return ((int (*)(unsigned long, void *))ipipe_root_domain->legacy.handlers[IPIPE_FIRST_EVENT + kevent])(IPIPE_FIRST_EVENT + kevent, data); } {
++{ return ((int (*)(unsigned long, void *))ipipe_root_domain->legacy.handlers[IPIPE_FIRST_EVENT + kevent])(IPIPE_FIRST_EVENT + kevent, data); } {
 +	struct ipipe_percpu_domain_data *p;
 +	unsigned long flags;
 +	int ret = 0;

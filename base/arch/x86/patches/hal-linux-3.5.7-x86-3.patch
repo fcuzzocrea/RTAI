@@ -10525,7 +10525,7 @@ new file mode 100644
 index 0000000..4281cb1
 --- /dev/null
 +++ b/kernel/ipipe/timer.c
-@@ -0,0 +1,483 @@
+@@ -0,0 +1,491 @@
 +/* -*- linux-c -*-
 + * linux/kernel/ipipe/timer.c
 + *
@@ -10814,6 +10814,8 @@ index 0000000..4281cb1
 +	return -ENODEV;
 +}
 +
++EXPORT_SYMBOL(ipipe_select_timers);
++
 +static void ipipe_timer_release_sync(void)
 +{
 +	struct ipipe_timer *timer = __ipipe_this_cpu_read(percpu_timer);
@@ -10836,6 +10838,8 @@ index 0000000..4281cb1
 +		__ipipe_hrtimer_freq = 0;
 +	}
 +}
++
++EXPORT_SYMBOL(ipipe_timers_release);
 +
 +static void __ipipe_ack_hrtimer_irq(unsigned int irq, struct irq_desc *desc)
 +{
@@ -10905,6 +10909,8 @@ index 0000000..4281cb1
 +	return ret;
 +}
 +
++EXPORT_SYMBOL(ipipe_timer_start);
++
 +void ipipe_timer_stop(unsigned cpu)
 +{
 +	unsigned long __maybe_unused flags;
@@ -10940,6 +10946,8 @@ index 0000000..4281cb1
 +
 +	ipipe_free_irq(ipipe_head_domain, timer->irq);
 +}
++
++EXPORT_SYMBOL(ipipe_timer_stop);
 +
 +void ipipe_timer_set(unsigned long cdelay)
 +{
@@ -13176,7 +13184,7 @@ index 9f81a3a..f8c95cf 100644
  	/*
  	 * For paravirt, this is coupled with an exit in switch_to to
  	 * combine the page table reload and the switch backend into
-@@ -2079,11 +2091,20 @@ context_switch(struct rq *rq, struct tas
+@@ -2079,11 +2091,19 @@ context_switch(struct rq *rq, struct tas
  #ifndef __ARCH_WANT_UNLOCKED_CTXSW
  	spin_release(&rq->lock.dep_map, 1, _THIS_IP_);
  #endif
@@ -13193,20 +13201,21 @@ index 9f81a3a..f8c95cf 100644
 +if (unlikely(rq)) {
 +	if (unlikely(__ipipe_switch_tail()))
 +		return 1; __ipipe_notify_kevent(-2, NULL);
-+
  	/*
  	 * this_rq must be evaluated again because prev may have moved
  	 * CPUs since it called schedule(), thus the 'rq' on its stack
-@@ -2091,6 +2112,8 @@ context_switch(struct rq *rq, struct tas
+@@ -2091,6 +2111,10 @@ context_switch(struct rq *rq, struct tas
  	 */
  	finish_task_switch(this_rq(), prev);
  }
 +	return 0;
 +}
++
++EXPORT_SYMBOL(context_switch);
  
  /*
   * nr_running, nr_uninterruptible and nr_context_switches:
-@@ -3248,6 +3271,7 @@ notrace unsigned long get_parent_ip(unsi
+@@ -3248,6 +3272,7 @@ notrace unsigned long get_parent_ip(unsi
  
  void __kprobes add_preempt_count(int val)
  {
@@ -13214,7 +13223,7 @@ index 9f81a3a..f8c95cf 100644
  #ifdef CONFIG_DEBUG_PREEMPT
  	/*
  	 * Underflow?
-@@ -3316,6 +3340,7 @@ static noinline void __schedule_bug(stru
+@@ -3316,6 +3341,7 @@ static noinline void __schedule_bug(stru
   */
  static inline void schedule_debug(struct task_struct *prev)
  {
@@ -13222,7 +13231,7 @@ index 9f81a3a..f8c95cf 100644
  	/*
  	 * Test if we are atomic. Since do_exit() needs to call into
  	 * schedule() atomically, we ignore that path for now.
-@@ -3368,7 +3393,7 @@ pick_next_task(struct rq *rq)
+@@ -3368,7 +3394,7 @@ pick_next_task(struct rq *rq)
  /*
   * __schedule() is the main scheduler function.
   */
@@ -13231,7 +13240,7 @@ index 9f81a3a..f8c95cf 100644
  {
  	struct task_struct *prev, *next;
  	unsigned long *switch_count;
-@@ -3382,6 +3407,10 @@ need_resched:
+@@ -3382,6 +3408,10 @@ need_resched:
  	rcu_note_context_switch(cpu);
  	prev = rq->curr;
  
@@ -13242,7 +13251,7 @@ index 9f81a3a..f8c95cf 100644
  	schedule_debug(prev);
  
  	if (sched_feat(HRTICK))
-@@ -3428,7 +3457,8 @@ need_resched:
+@@ -3428,7 +3458,8 @@ need_resched:
  		rq->curr = next;
  		++*switch_count;
  
@@ -13252,7 +13261,7 @@ index 9f81a3a..f8c95cf 100644
  		/*
  		 * The context switch have flipped the stack from under us
  		 * and restored the local variables which were saved when
-@@ -3437,14 +3467,18 @@ need_resched:
+@@ -3437,14 +3468,18 @@ need_resched:
  		 */
  		cpu = smp_processor_id();
  		rq = cpu_rq(cpu);
@@ -13272,7 +13281,7 @@ index 9f81a3a..f8c95cf 100644
  }
  
  static inline void sched_submit_work(struct task_struct *tsk)
-@@ -3544,7 +3578,8 @@ asmlinkage void __sched notrace preempt_
+@@ -3544,7 +3579,8 @@ asmlinkage void __sched notrace preempt_
  
  	do {
  		add_preempt_count_notrace(PREEMPT_ACTIVE);
@@ -13282,7 +13291,7 @@ index 9f81a3a..f8c95cf 100644
  		sub_preempt_count_notrace(PREEMPT_ACTIVE);
  
  		/*
-@@ -3607,6 +3642,8 @@ static void __wake_up_common(wait_queue_
+@@ -3607,6 +3643,8 @@ static void __wake_up_common(wait_queue_
  {
  	wait_queue_t *curr, *next;
  
@@ -13291,7 +13300,7 @@ index 9f81a3a..f8c95cf 100644
  	list_for_each_entry_safe(curr, next, &q->task_list, task_list) {
  		unsigned flags = curr->flags;
  
-@@ -4385,6 +4422,7 @@ recheck:
+@@ -4385,6 +4423,7 @@ recheck:
  	oldprio = p->prio;
  	prev_class = p->sched_class;
  	__setscheduler(rq, p, policy, param->sched_priority);
@@ -13299,7 +13308,7 @@ index 9f81a3a..f8c95cf 100644
  
  	if (running)
  		p->sched_class->set_curr_task(rq);
-@@ -5132,6 +5170,7 @@ void __cpuinit init_idle(struct task_str
+@@ -5132,6 +5171,7 @@ void __cpuinit init_idle(struct task_str
  
  	/* Set the preempt count _outside_ the spinlocks! */
  	task_thread_info(idle)->preempt_count = 0;
@@ -13307,7 +13316,7 @@ index 9f81a3a..f8c95cf 100644
  
  	/*
  	 * The idle tasks have their own, simple scheduling class:
-@@ -8559,3 +8598,40 @@ struct cgroup_subsys cpuacct_subsys = {
+@@ -8559,3 +8599,40 @@ struct cgroup_subsys cpuacct_subsys = {
  	.base_cftypes = files,
  };
  #endif	/* CONFIG_CGROUP_CPUACCT */

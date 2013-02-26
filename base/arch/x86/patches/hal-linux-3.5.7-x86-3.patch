@@ -13200,7 +13200,7 @@ index 9f81a3a..f8c95cf 100644
 +
 +if (unlikely(rq)) {
 +	if (unlikely(__ipipe_switch_tail()))
-+		return 1; __ipipe_notify_kevent(-2, NULL);
++		return 1; if (ipipe_notifier_enabled_p(prev)) __ipipe_notify_kevent(-2, NULL);
  	/*
  	 * this_rq must be evaluated again because prev may have moved
  	 * CPUs since it called schedule(), thus the 'rq' on its stack

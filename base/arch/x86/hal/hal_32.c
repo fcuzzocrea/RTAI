@@ -88,7 +88,7 @@ RTAI_MODULE_PARM(rtai_cpufreq_arg, ulong);
 
 #define RTAI_NR_IRQS  IPIPE_NR_IRQS
 
-static int rtai_request_tickdev(void);
+static int rtai_request_tickdev(void *);
 
 static void rtai_release_tickdev(void);
 
@@ -939,7 +939,7 @@ void rt_request_apic_timers (void (*handler)(void), struct apic_timer_setup_data
 		}
 	}
 
-	rtai_request_tickdev();
+	rtai_request_tickdev(handler);
 	rtai_critical_exit(flags);
 }
 
@@ -1132,7 +1132,7 @@ int rt_request_timer (void (*handler)(void), unsigned tick, int use_apic)
 			retval = rt_request_irq(RTAI_TIMER_8254_IRQ, (rt_irq_handler_t)handler, NULL, 0);
 		}
 	}
-	rtai_request_tickdev();
+	rtai_request_tickdev(handler);
 	rtai_restore_flags(flags);
 	return retval;
 }
@@ -1438,18 +1438,21 @@ static int intercept_syscall_prologue(unsigned long event, struct pt_regs *regs)
 void rtai_uvec_handler(void);
 
 #ifdef CONFIG_X86_LOCAL_APIC
-static void hal_request_apic_freq(unsigned long *apic_freq);
+static unsigned long hal_request_apic_freq(void);
 #endif
+
+#include <linux/clockchips.h>
+#include <linux/ipipe_tickdev.h>
 
 static void rtai_install_archdep (void)
 {
-
+	unsigned long cpumap = 3;
+	ipipe_select_timers((void *)&cpumap);
 	hal_catch_event(hal_root_domain, HAL_SYSCALL_PROLOGUE, (void *)intercept_syscall_prologue);
 
 	if (rtai_cpufreq_arg == 0) {
 		struct hal_sysinfo_struct sysinfo;
 		hal_get_sysinfo(&sysinfo);
-printk("SYSINFO CPUs %d IRQ %d TIM_FREQ %llu CLK_FREQ %llu CPU_FREQ %llu\n", sysinfo.sys_nr_cpus, sysinfo.sys_hrtimer_irq, sysinfo.sys_hrtimer_freq, sysinfo.sys_hrclock_freq, sysinfo.sys_cpu_freq); 
 
 #if LINUX_VERSION_CODE > KERNEL_VERSION(2,6,37)
 		rtai_cpufreq_arg = (unsigned long)sysinfo.sys_cpu_freq;
@@ -1462,7 +1465,7 @@ printk("SYSINFO CPUs %d IRQ %d TIM_FREQ %llu CLK_FREQ %llu CPU_FREQ %llu\n", sys
 #ifdef CONFIG_X86_LOCAL_APIC
 	if (rtai_apicfreq_arg == 0) {
 		rtai_apicfreq_arg = HZ*apic_read(APIC_TMICT);
-		hal_request_apic_freq(&rtai_apicfreq_arg);
+		rtai_apicfreq_arg = hal_request_apic_freq();
 	}
 	rtai_tunables.apic_freq = rtai_apicfreq_arg;
 #endif /* CONFIG_X86_LOCAL_APIC */
@@ -1470,6 +1473,7 @@ printk("SYSINFO CPUs %d IRQ %d TIM_FREQ %llu CLK_FREQ %llu CPU_FREQ %llu\n", sys
 
 static void rtai_uninstall_archdep(void)
 {
+	ipipe_timers_release();
 	hal_catch_event(hal_root_domain, HAL_SYSCALL_PROLOGUE, NULL);
 }
 
@@ -1751,11 +1755,14 @@ int __rtai_hal_init (void)
 #if defined(CONFIG_SMP) && defined(CONFIG_RTAI_DIAG_TSC_SYNC)
 	init_tsc_sync();
 #endif
+
+// (very) dirty development checks
 {
-		int i;
-		struct hal_sysinfo_struct sysinfo;
-		hal_get_sysinfo(&sysinfo);
-printk("SYSINFO CPUs %d IRQ %d TIM_FREQ %llu CLK_FREQ %llu CPU_FREQ %llu\n", sysinfo.sys_nr_cpus, sysinfo.sys_hrtimer_irq, sysinfo.sys_hrtimer_freq, sysinfo.sys_hrclock_freq, sysinfo.sys_cpu_freq); 
+struct hal_sysinfo_struct sysinfo;
+hal_get_sysinfo(&sysinfo);
+printk("SYSINFO: CPUs %d, LINUX APIC IRQ %d, TIM_FREQ %llu, CLK_FREQ %llu, CPU_FREQ %llu\n", sysinfo.sys_nr_cpus, sysinfo.sys_hrtimer_irq, sysinfo.sys_hrtimer_freq, sysinfo.sys_hrclock_freq, sysinfo.sys_cpu_freq); 
+printk("RTAI_APIC_TIMER_IPI: RTAI DEFINED %d, VECTOR %d; LINUX_APIC_TIMER_IPI: RTAI DEFINED %d, VECTOR %d\n", RTAI_APIC_TIMER_IPI, ipipe_apic_vector_irq(0xf1), LOCAL_TIMER_IPI, ipipe_apic_vector_irq(0xef));
+printk("TIMER NAME: %s; VARIOUSLY FOUND APIC FREQs: %lu, %lu, %u\n", ipipe_timer_name(), hal_request_apic_freq(), hal_request_apic_freq(), apic_read(APIC_TMICT)*HZ);
 }
 
 	return 0;
@@ -1948,20 +1955,20 @@ EXPORT_SYMBOL(IsolCpusMask);
 
 /*@}*/
 
-#if 0 //defined(CONFIG_GENERIC_CLOCKEVENTS) && CONFIG_RTAI_RTC_FREQ == 0
+#if defined(CONFIG_GENERIC_CLOCKEVENTS) && CONFIG_RTAI_RTC_FREQ == 0
 
-#include <linux/clockchips.h>
-#include <linux/ipipe_tickdev.h>
+//#include <linux/clockchips.h>
+//#include <linux/ipipe_tickdev.h>
 
-void (*rt_linux_hrt_set_mode)(enum clock_event_mode, struct ipipe_tick_device *);
-int (*rt_linux_hrt_next_shot)(unsigned long, struct ipipe_tick_device *);
+void (*rt_linux_hrt_set_mode)(enum clock_event_mode, struct clock_event_device *);
+int (*rt_linux_hrt_next_shot)(unsigned long, struct clock_event_device *);
 
 /* 
  * _rt_linux_hrt_set_mode and _rt_linux_hrt_next_shot below should serve 
  * RTAI examples only and assume that RTAI is in periodic mode always
  */
 
-static void _rt_linux_hrt_set_mode(enum clock_event_mode mode, struct ipipe_tick_device *hrt_dev)
+static void _rt_linux_hrt_set_mode(enum clock_event_mode mode, struct clock_event_device *hrt_dev)
 {
 	if (mode == CLOCK_EVT_MODE_ONESHOT || mode == CLOCK_EVT_MODE_SHUTDOWN) {
 		rt_times.linux_tick = 0;
@@ -1970,7 +1977,7 @@ static void _rt_linux_hrt_set_mode(enum clock_event_mode mode, struct ipipe_tick
 	}
 }
 
-static int _rt_linux_hrt_next_shot(unsigned long delay, struct ipipe_tick_device *hrt_dev)
+static int _rt_linux_hrt_next_shot(unsigned long delay, struct clock_event_device *hrt_dev)
 {
 	rt_times.linux_time = rt_times.tick_time + llimd(delay, TIMER_FREQ, 1000000000);
 	return 0;
@@ -1982,15 +1989,16 @@ static int _rt_linux_hrt_next_shot(unsigned long delay, struct ipipe_tick_device
 #define  IPIPE_REQUEST_TICKDEV(a, b, c, d, e)  ipipe_request_tickdev(a, b, c, d)
 #endif
 
-static int rtai_request_tickdev(void)
+static int rtai_request_tickdev(void* handler)
 {
 	int mode, cpuid;
-	unsigned long timer_freq;
 	for (cpuid = 0; cpuid < num_online_cpus(); cpuid++) {
 		if ((void *)rt_linux_hrt_set_mode != (void *)rt_linux_hrt_next_shot) {
-			mode = IPIPE_REQUEST_TICKDEV(HRT_LINUX_TIMER_NAME, rt_linux_hrt_set_mode, rt_linux_hrt_next_shot, cpuid, &timer_freq);
+			mode = ipipe_timer_start(handler, rt_linux_hrt_set_mode, rt_linux_hrt_next_shot, cpuid);
+//			mode = IPIPE_REQUEST_TICKDEV(HRT_LINUX_TIMER_NAME, rt_linux_hrt_set_mode, rt_linux_hrt_next_shot, cpuid, &timer_freq);
 		} else {
-			mode = IPIPE_REQUEST_TICKDEV(HRT_LINUX_TIMER_NAME, _rt_linux_hrt_set_mode, _rt_linux_hrt_next_shot, cpuid, &timer_freq);
+			mode = ipipe_timer_start(handler, _rt_linux_hrt_set_mode, _rt_linux_hrt_next_shot, cpuid);
+//			mode = IPIPE_REQUEST_TICKDEV(HRT_LINUX_TIMER_NAME, _rt_linux_hrt_set_mode, _rt_linux_hrt_next_shot, cpuid, &timer_freq);
 		}
 		if (mode == CLOCK_EVT_MODE_UNUSED || mode == CLOCK_EVT_MODE_ONESHOT) {
 			rt_times.linux_tick = 0;
@@ -2005,14 +2013,19 @@ static void rtai_release_tickdev(void)
 {
 	int cpuid;
 	for (cpuid = 0; cpuid < num_online_cpus(); cpuid++) {
-		ipipe_release_tickdev(cpuid);
+//		ipipe_release_tickdev(cpuid);
+		ipipe_timer_stop(cpuid);
 	}
 }
 
 #ifdef CONFIG_X86_LOCAL_APIC
 
-static void hal_request_apic_freq(unsigned long *apic_freq)
+static unsigned long hal_request_apic_freq(void)
 {
+		struct hal_sysinfo_struct sysinfo;
+		hal_get_sysinfo(&sysinfo);
+		return sysinfo.sys_hrtimer_freq;
+#if 0
 	unsigned long cpuid, avrg_freq, freq;
 	for (avrg_freq = freq = cpuid = 0; cpuid < num_online_cpus(); cpuid++) {
 		IPIPE_REQUEST_TICKDEV(HRT_LINUX_TIMER_NAME, _rt_linux_hrt_set_mode, _rt_linux_hrt_next_shot, cpuid, &freq);
@@ -2025,6 +2038,7 @@ static void hal_request_apic_freq(unsigned long *apic_freq)
 		}
 		*apic_freq = avrg_freq;
 	}
+#endif
 }
 
 #endif

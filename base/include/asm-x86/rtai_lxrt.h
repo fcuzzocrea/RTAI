@@ -256,14 +256,10 @@ __attribute__((regparm(3))) void do_notify_resume(struct pt_regs *regs, void *_u
 #include <sys/syscall.h>
 #include <unistd.h>
 
-static union rtai_lxrt_t _rtai_lxrt(int srq, void *arg)
+static inline union rtai_lxrt_t _rtai_lxrt(int srq, void *arg)
 {
 	union rtai_lxrt_t retval;
-#ifdef USE_LINUX_SYSCALL
 	syscall(RTAI_SYSCALL_NR, srq, arg, &retval);
-#else 
-	RTAI_DO_TRAP(RTAI_SYS_VECTOR, retval, srq, arg);
-#endif
 	return retval;
 }
 

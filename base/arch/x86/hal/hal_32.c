@@ -1429,8 +1429,13 @@ EXPORT_SYMBOL(rtai_usrq_dispatcher);
 static int intercept_syscall_prologue(unsigned long event, struct pt_regs *regs)
 {
 	if (likely(regs->LINUX_SYSCALL_NR >= RTAI_SYSCALL_NR)) {
-		*((long long *)regs->LINUX_SYSCALL_REG3) = rtai_usrq_dispatcher(regs->LINUX_SYSCALL_REG1, regs->LINUX_SYSCALL_REG2);
-		return 1;
+		unsigned long srq  = regs->LINUX_SYSCALL_REG1;
+		IF_IS_A_USI_SRQ_CALL_IT(srq, regs->LINUX_SYSCALL_REG2, (long long *)regs->LINUX_SYSCALL_REG3, regs->LINUX_SYSCALL_FLAGS, 1);
+		*((long long *)regs->LINUX_SYSCALL_REG3) = rtai_usrq_dispatcher(srq, regs->LINUX_SYSCALL_REG2);
+		if (!in_hrt_mode(srq = rtai_cpuid())) {
+			hal_test_and_fast_flush_pipeline(srq);
+			return 1;
+		}
 	}
 	return 0;
 }

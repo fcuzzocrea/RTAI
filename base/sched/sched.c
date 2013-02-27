@@ -2624,17 +2624,17 @@ static int lxrt_intercept_syscall_prologue(struct pt_regs *regs)
 extern long long rtai_usrq_dispatcher (unsigned long, unsigned long);
 
 static int lxrt_intercept_syscall(unsigned long event, struct pt_regs *regs){
-        if (likely(regs->LINUX_SYSCALL_NR >= RTAI_SYSCALL_NR)) {
-                unsigned long srq  = regs->LINUX_SYSCALL_REG1;
-                IF_IS_A_USI_SRQ_CALL_IT(srq, regs->LINUX_SYSCALL_REG2, (long long *)regs->LINUX_SYSCALL_REG3, regs->LINUX_SYSCALL_FLAGS, 1);
-                *((long long *)regs->LINUX_SYSCALL_REG3) = srq > RTAI_NR_SRQS ?  rtai_lxrt_invoke(srq, (void *)regs->LINUX_SYSCALL_REG2) : rtai_usrq_dispatcher(srq, regs->LINUX_SYSCALL_REG2);
-                if (!in_hrt_mode(srq = rtai_cpuid())) {
-                        hal_test_and_fast_flush_pipeline(srq);
-                        return 0;
-                }
-                return 1;
-        }
-        return lxrt_intercept_syscall_prologue(regs);
+	if (likely(regs->LINUX_SYSCALL_NR >= RTAI_SYSCALL_NR)) {
+		unsigned long srq  = regs->LINUX_SYSCALL_REG1;
+		IF_IS_A_USI_SRQ_CALL_IT(srq, regs->LINUX_SYSCALL_REG2, (long long *)regs->LINUX_SYSCALL_REG3, regs->LINUX_SYSCALL_FLAGS, 1);
+		*((long long *)regs->LINUX_SYSCALL_REG3) = srq > RTAI_NR_SRQS ?  rtai_lxrt_invoke(srq, (void *)regs->LINUX_SYSCALL_REG2) : rtai_usrq_dispatcher(srq, regs->LINUX_SYSCALL_REG2);
+		if (!in_hrt_mode(srq = rtai_cpuid())) {
+			hal_test_and_fast_flush_pipeline(srq);
+			return 0;
+		}
+		return 1;
+	}
+	return lxrt_intercept_syscall_prologue(regs);
 }
 
 static int lxrt_intercept_syscall_epilogue(unsigned long event, void *nothing)

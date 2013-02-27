@@ -1,4 +1,4 @@
-mainmenu "RTAI/x86 configuration"
+mainmenu "RTAI/x86_32 configuration"
 
 config MODULES
 	bool
@@ -188,7 +188,7 @@ endchoice
 
 endmenu
 
-menu "Machine (x86)"
+menu "Machine (x86_32)"
 
 config RTAI_DONT_DISPATCH_CORE_IRQS
 	bool "Direct vectoring of RTAI native interrupts"
@@ -343,7 +343,7 @@ config RTAI_MONITOR_EXECTIME
 	hard real time tasks, in per thousand of the total time available, 
 	by using the RTAI scheduler proc file, e.g. "cat /proc/rtai/scheduler".
 	Since this option uses the TSC it is better to avoid it in production
-	for x86 CPUs not having TSCs, i.e. 486s and some untrue 586s.
+	for x86_32 CPUs not having TSCs, i.e. 486s and some untrue 586s.
 
 config RTAI_ALLOW_RR
 	bool "Allow round-robin scheduling"

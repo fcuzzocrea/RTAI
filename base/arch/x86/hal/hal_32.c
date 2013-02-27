@@ -6,7 +6,7 @@
  *   the original RTAI layer for x86.
  *
  *   Original RTAI/x86 layer implementation: \n
- *   Copyright &copy; 2000 Paolo Mantegazza, \n
+ *   Copyright &copy; 2000-2013 Paolo Mantegazza, \n
  *   Copyright &copy; 2000 Steve Papacharalambous, \n
  *   Copyright &copy; 2000 Stuart Hughes, \n
  *   and others.
@@ -1973,13 +1973,13 @@ static void _rt_linux_hrt_set_mode(enum clock_event_mode mode, struct clock_even
 	if (mode == CLOCK_EVT_MODE_ONESHOT || mode == CLOCK_EVT_MODE_SHUTDOWN) {
 		rt_times.linux_tick = 0;
 	} else if (mode == CLOCK_EVT_MODE_PERIODIC) {
-		rt_times.linux_tick = llimd((1000000000 + HZ/2)/HZ, TIMER_FREQ, 1000000000);
+		rt_times.linux_tick = rtai_llimd((1000000000 + HZ/2)/HZ, TIMER_FREQ, 1000000000);
 	}
 }
 
 static int _rt_linux_hrt_next_shot(unsigned long delay, struct clock_event_device *hrt_dev)
 {
-	rt_times.linux_time = rt_times.tick_time + llimd(delay, TIMER_FREQ, 1000000000);
+	rt_times.linux_time = rt_times.tick_time + rtai_llimd(delay, TIMER_FREQ, 1000000000);
 	return 0;
 }
 

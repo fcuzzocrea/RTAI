@@ -6,7 +6,7 @@
  *   the original RTAI layer for x86.
  *
  *   Original RTAI/x86 layer implementation: \n
- *   Copyright &copy; 2000-2008 Paolo Mantegazza, \n
+ *   Copyright &copy; 2000-2013 Paolo Mantegazza, \n
  *   Copyright &copy; 2000      Steve Papacharalambous, \n
  *   Copyright &copy; 2000      Stuart Hughes, \n
  *   and others.
@@ -251,11 +251,3 @@ void cleanup_tsc_sync(void)
 EXPORT_SYMBOL(rtai_tsc_ofst);
 
 #endif /* defined(CONFIG_SMP) && defined(CONFIG_RTAI_DIAG_TSC_SYNC) */
-
-#undef INCLUDED_BY_HAL_C
-#define INCLUDED_BY_HAL_C
-#ifdef __i386__
-#include "hal_32.c"
-#else
-#include "hal_64.c"
-#endif

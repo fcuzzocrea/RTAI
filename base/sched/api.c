@@ -1911,21 +1911,21 @@ RTAI_SYSCALL_MODE int rt_irq_wait(unsigned irq)
 {	
 	int retval;
 	retval = rt_task_suspend(0);
-	return rtai_realtime_irq[irq].handler ? -retval : RT_IRQ_TASK_ERR;
+	return rtai_domain.irqs[irq].handler ? -retval : RT_IRQ_TASK_ERR;
 }
 
 RTAI_SYSCALL_MODE int rt_irq_wait_if(unsigned irq)
 {
 	int retval;
 	retval = rt_task_suspend_if(0);
-	return rtai_realtime_irq[irq].handler ? -retval : RT_IRQ_TASK_ERR;
+	return rtai_domain.irqs[irq].handler ? -retval : RT_IRQ_TASK_ERR;
 }
 
 RTAI_SYSCALL_MODE int rt_irq_wait_until(unsigned irq, RTIME time)
 {
 	int retval;
 	retval = rt_task_suspend_until(0, time);
-	return rtai_realtime_irq[irq].handler ? -retval : RT_IRQ_TASK_ERR;
+	return rtai_domain.irqs[irq].handler ? -retval : RT_IRQ_TASK_ERR;
 }
 
 RTAI_SYSCALL_MODE int rt_irq_wait_timed(unsigned irq, RTIME delay)
@@ -1935,8 +1935,8 @@ RTAI_SYSCALL_MODE int rt_irq_wait_timed(unsigned irq, RTIME delay)
 
 RTAI_SYSCALL_MODE void rt_irq_signal(unsigned irq)
 {
-	if (rtai_realtime_irq[irq].handler) {
-		rt_task_resume((void *)rtai_realtime_irq[irq].cookie);
+	if (rtai_domain.irqs[irq].handler) {
+		rt_task_resume((void *)rtai_domain.irqs[irq].cookie);
 	}
 }
 
@@ -1964,7 +1964,7 @@ RTAI_SYSCALL_MODE int rt_release_irq_task (unsigned irq)
 {
 	int retval;
 	RT_TASK *task;
-	task = (void *)rtai_realtime_irq[irq].cookie;
+	task = (void *)rtai_domain.irqs[irq].cookie;
 	if (!(retval = rt_release_irq(irq))) {
 		rt_task_resume(task);
 		rt_reset_irq_to_sym_mode(irq);

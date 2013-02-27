@@ -31,7 +31,7 @@
 #include <linux/timex.h>
 #include <linux/sched.h>
 #include <asm/param.h>
-#include <asm/system.h>
+//#include <asm/system.h>
 #include <asm/io.h>
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,18)
 #include <linux/oom.h>

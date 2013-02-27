@@ -334,7 +334,9 @@
 #define SEM_RT_POLL 		       228
 #define RT_POLL_NETRPC		       229
 
-#define MAX_LXRT_FUN		       230
+#define RT_USRQ_DISPATCHER	       230
+
+#define MAX_LXRT_FUN		       231
 
 // not recovered yet 
 // Qblk's 
@@ -420,7 +422,7 @@
 #define ENCODE_LXRT_REQ(dynx, srq, lsize)  (((dynx) << 24) | ((srq) << 12) | GT_NR_SYSCALLS | (lsize))
 // ... and this is the decoding.
 #define SRQ(x)   (((x) >> 12) & 0xFFF)
-#define NARG(x)  ((x) & (GT_NR_SYSCALLS - 1))
+#define LXRT_NARG(x)  ((x) & (GT_NR_SYSCALLS - 1))
 #define INDX(x)  (((x) >> 24) & 0xF)
 
 #define LINUX_SYSCALL_GET_MODE       0
@@ -448,10 +450,8 @@ arg  INDX   |||| .... .... .... .... .... .... ....
 */
 
 /*
-These USP (unsigned long) type fields allow to read and write up to 2 arguments.
-SZ and BF must be in the range 1-7.
-If SZ is zero sizeof(long) is copied by default.
-
+These USP (unsigned long) type fields allow to read and write up to 2 arguments.  
+                                               
 The high part of the unsigned long encodes writes
 W ARG1 BF .... .... ..|| |... .... .... .... ....
 W ARG1 SZ .... ...| ||.. .... .... .... .... ....
@@ -467,6 +467,7 @@ R ARG2 SZ .... .... .... .... .||| .... .... ....
 The low part of the unsigned long encodes also
 RT Switch .... .... .... .... .... .... .... ...|
 
+If SZ is zero sizeof(int) is copied by default, if LL bit is set sizeof(long long) is copied.
 */
 
 // These are for setting appropriate bits in any function entry structure, OR
@@ -822,11 +823,9 @@ RTAI_PROTO(void *, rt_create_linux_syscall_server, (RT_TASK *task, int mode, voi
 	return NULL;
 }
 
-#define rt_sync_async_linux_syscall_server_create(task, mode, cbfun, nr_calls) \
-   rt_create_linux_syscall_server(task, mode, cbfun, nr_calls)
+#define rt_sync_async_linux_syscall_server_create(task, mode, cbfun, nr_calls)  rt_create_linux_syscall_server(task, mode, cbfun, nr_calls)
 
-#define rt_linux_syscall_server_create(task) \
-   rt_sync_async_linux_syscall_server_create(task, SYNC_LINUX_SYSCALL, NULL, 1);
+#define rt_linux_syscall_server_create(task)  rt_sync_async_linux_syscall_server_create(task, SYNC_LINUX_SYSCALL, NULL, 1);
 
 RTAI_PROTO(void, rt_destroy_linux_syscall_server, (RT_TASK *task))
 {

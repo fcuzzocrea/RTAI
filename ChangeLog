@@ -1,3 +1,14 @@
+2013-02-28 Sebastian Kuzminsky <seb@highlab.com\> 
+
+	* base/arch/x86/patches/hal-linux-3.5.7-x86-3.patch: fix to help
+	  DEBIAN packaging.
+
+2013-02-28 Paolo Mantegazza <mantegazza@aero.polimi.it> 
+	   Pierangelo Masarati <masarati@aero.polimi.it>
+
+	* Completed the first structuring for a unified X86 arch, making
+	  it work for X86_32-i386. X86_64 still in progress.
+
 2013-02-10 Paolo Mantegazza <mantegazza@aero.polimi.it>
 
         * base/sched/sched.c, api.c, sys.c: made compatible with Linux-3.x.

@@ -6,7 +6,7 @@
 2013-02-28 Paolo Mantegazza <mantegazza@aero.polimi.it> 
 	   Pierangelo Masarati <masarati@aero.polimi.it>
 
-	* Completed the first structuring for a unified X86 arch, making
+	* Completed the initial tructuring for a unified X86 arch, making
 	  it work for X86_32-i386. X86_64 still in progress.
 
 2013-02-10 Paolo Mantegazza <mantegazza@aero.polimi.it>

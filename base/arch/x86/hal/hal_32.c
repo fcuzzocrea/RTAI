@@ -1432,10 +1432,8 @@ static int intercept_syscall_prologue(unsigned long event, struct pt_regs *regs)
 		unsigned long srq  = regs->LINUX_SYSCALL_REG1;
 		IF_IS_A_USI_SRQ_CALL_IT(srq, regs->LINUX_SYSCALL_REG2, (long long *)regs->LINUX_SYSCALL_REG3, regs->LINUX_SYSCALL_FLAGS, 1);
 		*((long long *)regs->LINUX_SYSCALL_REG3) = rtai_usrq_dispatcher(srq, regs->LINUX_SYSCALL_REG2);
-		if (!in_hrt_mode(srq = rtai_cpuid())) {
-			hal_test_and_fast_flush_pipeline(srq);
-			return 1;
-		}
+		hal_test_and_fast_flush_pipeline(rtai_cpuid());
+		return 1;
 	}
 	return 0;
 }

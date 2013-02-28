@@ -1,3 +1,14 @@
+2013-02-28 John Morris <john@zultron.com>
+
+	* base/sched/sched.c: changed set_cpu_allowed to set_cpu_allowed_ptr and 
+	  to cpumask_of_cpu to cpumask_of, to allow compilation against kernels 
+	  that have CONFIG_CPUMASK_OFFSTACK=y
+
+2013-02-28 Shahbaz Youssefi <ShabbyX@gmail.com>
+
+	* base/include/rtai_rwl.h: fixed a missing nam2num in rt_named_rwl_init.
+	* base/include/rtai_spl.h: fixed a missing nam2num in rt_named_spl_init.
+
 2013-02-28 Sebastian Kuzminsky <seb@highlab.com\> 
 
 	* base/arch/x86/patches/hal-linux-3.5.7-x86-3.patch: fix to help

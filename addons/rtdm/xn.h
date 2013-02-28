@@ -270,7 +270,8 @@ static inline void xnlock_put_irqrestore(xnlock_t *lock, spl_t flags)
 
 #if !defined CONFIG_M68K || defined CONFIG_MMU
 #define __xn_strncpy_from_user(task, dstP, srcP, n) \
-	({ long err = __strncpy_from_user(dstP, srcP, n); err; })
+	({ long err = rt_strncpy_from_user(dstP, srcP, n); err; })
+/*	({ long err = __strncpy_from_user(dstP, srcP, n); err; }) */
 #else
 #define __xn_strncpy_from_user(task, dstP, srcP, n) \
 	({ long err = strncpy_from_user(dstP, srcP, n); err; })
@@ -457,7 +458,8 @@ int xnintr_disable (xnintr_t *intr);
 	rt_release_irq(irq);
 
 extern struct rtai_realtime_irq_s rtai_realtime_irq[];
-#define xnarch_get_irq_cookie(irq)  (rtai_realtime_irq[irq].cookie)
+//#define xnarch_get_irq_cookie(irq)  (rtai_realtime_irq[irq].cookie)
+#define xnarch_get_irq_cookie(irq)  (rtai_domain.irqs[irq].cookie)
 
 extern unsigned long IsolCpusMask;
 #define xnarch_set_irq_affinity(irq, nkaffinity) \

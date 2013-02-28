@@ -183,18 +183,6 @@ endmenu
 
 menu "Machine (x86)"
 
-config RTAI_DONT_DISPATCH_CORE_IRQS
-	bool "Direct vectoring of RTAI native interrupts"
-#	depends on RTAI_EXTENDED
-	default y
-	help
-	RTAI dispatches real time interrupts immediately to achieve as
-	low a overhead as possible. Very important on low end CPUs. By
-	setting this option it is possible to achieve a further improvement
-	by allowing hard RTAI internal timers and SMP interprocessor 
-	scheduling interrupts to be vectored directly to their handlers, 
-	i.e without any dispatching overhead. A must on low end CPUs.
-
 config RTAI_FPU_SUPPORT
 	bool "Enable FPU support"
 	default y
@@ -247,8 +235,6 @@ menu "Base system"
 
 menu "Scheduling options"
 
-#	depends on RTAI_EXTENDED
-
 config RTAI_SCHED_ISR_LOCK
 	bool "Disable immediate rescheduling from within ISRs"
 	default n
@@ -262,33 +248,6 @@ config RTAI_SCHED_ISR_LOCK
 	after exiting the ISR, regardless from where a scheduling API is
 	called within the handler, should disable immediate rescheduling 
 	from ISRs by enabling this configuration option.
-
-config RTAI_RTC_FREQ
-	string "Set RTC clock tick frequency and use RTC as the only timer"
-	default 0
-	help
-	1 - Are you happy of working in periodic mode?
-	2 - If so, is it accepable to resolve your timing needs with a 
-	    tick within a frequency that can be varied just in powers of
-	    2, from 2 to 8192 Hz?
-	If both your answers are YES than it might be worth setting your 
-	tick frequency of choice here and let RTAI schedulers work with 
-	it using the Real Time Clock (RTC). Be careful though as:
-	- you must not have configured the RTC as available to Linux;
-	- RTC will be the only available timer and its tick frequency 
-	  can be modified only here, so you must reconfigure this param 
-	  to change it, setting it to zero to return using the other 
-	  RTAI timers.
-	The main advantage of using the RTC, if constraints 1 and 2 can be
-	accepted, is that you will not touch any of the hard timing sources
-	used by Linux (8254 especially and APIC too). In fact if an APIC 
-	timer is available (SMP and recent machines) it is possible to avoid
-	the most important interference with Linux timing by not using the 
-	8254. However such a possibilty is not available on low end CPUs 
-	and embedded systems for which the only way to avoid interfering with
-	the Linux timer might be this option. Thus in such cases, 1-2 above 
-	being acceptable once more, setting this config param might be a
-	good choice.
 
 config RTAI_LONG_TIMED_LIST
 	bool "Use a binary tree ordering for RTAI schedulers timed lists."
@@ -392,37 +351,6 @@ config RTAI_BUSY_TIME_ALIGN
 	processor time. Useful when there is enough computational power to 
 	waist in favour of precise schedule deadlines.
 	Do not set it if a hard periodic timer is to be used.
-
-config RTAI_LXRT_USE_LINUX_SYSCALL
-	bool "Use Linux syscall mechanism for RTAI calls from user space"
-	default y
-	help
-	With this option enabled, RTAI uses the Linux syscall mechanism
-	for its service calls, including RTAI own srqs, as provided by libc 
-	"syscall".  This may improve signal handling (and therefore debugging 
-	of RTAI applications), but has the drawback of a slight overhead,
-	which might be more than compensated on cpus having the SysEnter Present
-	(SEP) flag, see "cat /proc/cpuinfo".
-
-	When direct inlining of RTAI syscalls is enabled, see the related
-	configuration options, it is still possible to force the use of 
-	the Linux syscall mechanism, even if this configuration parameter 
-	has not been set. Notice that RTAI own srqs are inlined always.
-	So, since it all depends on the definition of the USE_LINUX_SYSCALL 
-	macro, the only thing to do is to add:
-	#define USE_LINUX_SYSCALL
-	after all of the RTAI headers inclusion in any source file in which 
-	you want to use the Linux syscall mechanism, to be sure that the macro
-	USE_LINUX_SYSCALL will not be redifined afterward. In the same way 
-	when this parameter is set you can selectively revert to RTAI own 
-	syscall mechanism by defining:
-	#undef USE_LINUX_SYSCALL
-	after all of the RTAI headers inclusion in any source file in which 
-	you want to use the LXRT syscall mechanism.
-	RTAI will then operate in mixed mode selectively by using both 
-	its own and Linux syscall mechanisms.
-	
-	If in doubt, say no.
 
 config RTAI_ALIGN_LINUX_PRIORITY
 	bool "Keep Linux task priority aligned to RTAI"
@@ -712,7 +640,7 @@ menu "Other features"
 
 config RTAI_USE_NEWERR
 	bool "New return values of blocking RTAI APIs"
-	default n
+	default y
 	help
 	Return values for RTAI blocking APIs are a bit sketchy. That 
 	is due to a long standing legacy dating back to DOS and 8 bits PCs,
@@ -730,29 +658,6 @@ config RTAI_USE_NEWERR
 	Thus the new scheme has been made configurable to allow RTAI users
 	to choose what to do, without forcing any adaption for already 
 	existing working applications.
-
-config RTAI_IMMEDIATE_LINUX_SYSCALL
-	bool "Immediate Linux syscall in hard real time"
-	default n
-	help
-	This parameter allows to control RTAI behaviour when a Linux syscall
-	is made while in hard real time, according to the following two ways:
-	- 1) 	- if it is set RTAI will put the task back into Linux hands,
-		  i.e pass it to soft mode; 
-		- call the related sys service immediately, i.e. without 
-		  going through the Linux syscall path;
-		- put the task back to hard real time, so that it will return
-		  to user space in hard real time mode again.
-	- 2) 	- if it is not set RTAI will put the task back into Linux hands,
-		  i.e pass it to soft mode; 
-		- call the related sys service through the Linux syscall path;
-		- return to user space in soft real time mode;
-		- resume hard real time at the next call of an RTAI function.
-	The marginally most efficient behaviour is likely 1 but 2, the default,
-	is safer.
-	It is remarked that nothing is changed if hard/soft transitions 
-	are called controlled by an application task through 
-	rt_make_hard_real_time/rt_make_soft_real_time.
 
 config RTAI_MATH
 	bool "Mathfuns support in kernel"
@@ -847,21 +752,6 @@ config RTAI_TASK_SWITCH_SIGNAL
 	The default is to not make available this feature, so you must enable
 	it explicitly if it is useful for your application.
 
-config RTAI_TRACE
-	bool "LTT support"
-	default n
-	help
-	Originally, the Linux Trace Toolkit is a suite of tools
-	designed to extract program execution details from the Linux
-	operating system and interpret them. Specifically, it enables
-	to extract processor utilization and allocation information
-	for a certain period of time. It is then possible to perform
-	various calculations on this data and dump this in a text
-	file. This tool is enhanced by a GTK GUI which allows an easy
-	exploitation of those results.  The Linux Trace Toolkit has
-	been natively integrated into RTAI modules.
-	You may refer to http://www.opersys.com/LTT/ for more information.
-
 config RTAI_USI
 	bool "User-space interrupts"
 	default n
@@ -878,7 +768,7 @@ config RTAI_USI
 
 config RTAI_WD
 	bool "Watchdog support"
-	default y
+	default n
 	help
 	The purpose of the watchdog is to provide protection services
 	to RTAI thereby protecting it (and the host Linux OS) against
@@ -904,12 +794,6 @@ config RTAI_WD
 	- suspend the offending task so that it no longer threaten the system;
 	- kill the offending task and remove all traces.
 	The module will be called rtai_wd.o.
-
-config RTAI_LEDS
-	tristate "LEDS-based debugging support"
-	default n
-	help
-	The module will be called rtai_leds.o.
 
 endmenu
 

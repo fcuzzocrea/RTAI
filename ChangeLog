@@ -1,3 +1,8 @@
+2013-03-14 Paolo Mantegazza <mantegazza@aero.polimi.it>
+
+        * base/arch/x86/hal/hal_32.h: use CPU_MASK_ALL to fix a quick and
+	  dirty, but very very bad hack, in selecting Linux timers for RTAI.
+
 2013-02-28 John Morris <john@zultron.com>
 
 	* base/sched/sched.c: changed set_cpu_allowed to set_cpu_allowed_ptr and 

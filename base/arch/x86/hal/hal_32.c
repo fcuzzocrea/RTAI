@@ -1059,12 +1059,12 @@ void rt_free_apic_timers(void)
 	rt_free_timer();
 }
 
-int rt_assign_irq_to_cpu (int irq, unsigned long cpus_mask)
+unsigned long rt_assign_irq_to_cpu (int irq, unsigned long cpus_mask)
 {
 	return 0;
 }
 
-int rt_reset_irq_to_sym_mode (int irq)
+unsigned long rt_reset_irq_to_sym_mode (int irq)
 {
 	return 0;
 }
@@ -1449,8 +1449,7 @@ static unsigned long hal_request_apic_freq(void);
 
 static void rtai_install_archdep (void)
 {
-	unsigned long cpumap = 3;
-	ipipe_select_timers((void *)&cpumap);
+	ipipe_select_timers(&CPU_MASK_ALL);
 	hal_catch_event(hal_root_domain, HAL_SYSCALL_PROLOGUE, (void *)intercept_syscall_prologue);
 
 	if (rtai_cpufreq_arg == 0) {

@@ -29,8 +29,8 @@
  *   Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
  */
 
-#ifndef _RTAI_ASM_I386_OLDNAMES_H
-#define _RTAI_ASM_I386_OLDNAMES_H
+#ifndef _RTAI_ASM_X86_OLDNAMES_H
+#define _RTAI_ASM_X86_OLDNAMES_H
 
 #ifdef __KERNEL__
 
@@ -82,6 +82,19 @@
 #ifndef __cplusplus
 
 #include <linux/irq.h>
+
+static inline int rt_request_cpu_own_irq (unsigned irq, void (*handler)(void)) {
+
+    return rt_request_irq(irq, (rt_irq_handler_t)handler, NULL, 0);
+}
+
+static inline int rt_free_cpu_own_irq (unsigned irq) {
+
+    return rt_release_irq(irq);
+}
+
+#ifdef __i386__
+
 #include <asm/desc.h>
 
 extern struct desc_struct idt_table[];
@@ -99,16 +112,6 @@ static inline struct desc_struct rt_set_full_intr_vect (unsigned vector,
 static inline void rt_reset_full_intr_vect(unsigned vector,
 					   struct desc_struct e) {
     idt_table[vector] = e;
-}
-
-static inline int rt_request_cpu_own_irq (unsigned irq, void (*handler)(void)) {
-
-    return rt_request_irq(irq, (rt_irq_handler_t)handler, NULL, 0);
-}
-
-static inline int rt_free_cpu_own_irq (unsigned irq) {
-
-    return rt_release_irq(irq);
 }
 
 static inline void *get_intr_handler (unsigned vector) {
@@ -146,10 +149,20 @@ static inline unsigned long get_cr2 (void) {
     return address;
 }
 
+#else
+
+static inline unsigned long get_cr2 (void) {
+        unsigned long address;
+        __asm__("movq %%cr2,%0":"=r" (address));
+        return address;
+}
+
+#endif
+
 #endif /* __KERNEL__ */
 
 #endif /* !__cplusplus */
 
 #endif /* !__RTAI_HAL__ */
 
-#endif /* !_RTAI_ASM_I386_OLDNAMES_H */
+#endif /* !_RTAI_ASM_X86_OLDNAMES_H */

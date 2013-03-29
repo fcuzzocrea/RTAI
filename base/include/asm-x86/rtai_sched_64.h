@@ -18,8 +18,8 @@
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
  */
 
-#ifndef _RTAI_ASM_X8664_SCHED_H
-#define _RTAI_ASM_X8664_SCHED_H
+#ifndef _RTAI_ASM_X86_64_SCHED_H
+#define _RTAI_ASM_X86_64_SCHED_H
 
 #if 1
 // adapted from Linux kernel 2.6.20.1 (include/asm-x86_64/calling.h)
@@ -293,4 +293,4 @@ static inline void *get_stack_pointer(void)
 
 #define DO_TIMER_PROPER_OP()
 
-#endif /* !_RTAI_ASM_X8664_SCHED_H */
+#endif /* !_RTAI_ASM_X86_64_SCHED_H */

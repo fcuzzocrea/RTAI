@@ -27,8 +27,8 @@
  *   Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
  */
 
-#ifndef _RTAI_ASM_X8664_FPU_H
-#define _RTAI_ASM_X8664_FPU_H
+#ifndef _RTAI_ASM_X86_64_FPU_H
+#define _RTAI_ASM_X86_64_FPU_H
 
 #ifndef __cplusplus
 #include <asm/processor.h>
@@ -202,4 +202,4 @@ static inline int __restore_fpenv(struct i387_fxsave_struct *fx)
 #endif /* LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,11) */
 
 
-#endif /* !_RTAI_ASM_X8664_FPU_H */
+#endif /* !_RTAI_ASM_X86_64_FPU_H */

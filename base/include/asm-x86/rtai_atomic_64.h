@@ -17,8 +17,8 @@
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
  */
 
-#ifndef _RTAI_ASM_X8664_ATOMIC_H
-#define _RTAI_ASM_X8664_ATOMIC_H
+#ifndef _RTAI_ASM_X86_64_ATOMIC_H
+#define _RTAI_ASM_X86_64_ATOMIC_H
 
 #ifdef __KERNEL__
 
@@ -93,4 +93,4 @@ static __inline__ void atomic_inc(atomic_t *v)
 
 #endif /* __KERNEL__ */
 
-#endif /* !_RTAI_ASM_X8664_ATOMIC_H */
+#endif /* !_RTAI_ASM_X86_64_ATOMIC_H */

@@ -6,7 +6,7 @@
  *   the original RTAI layer for x86.
  *
  *   Original RTAI/x86 layer implementation: \n
- *   Copyright &copy; 2000-2008 Paolo Mantegazza, \n
+ *   Copyright &copy; 2000-2013 Paolo Mantegazza, \n
  *   Copyright &copy; 2000      Steve Papacharalambous, \n
  *   Copyright &copy; 2000      Stuart Hughes, \n
  *   and others.
@@ -15,7 +15,7 @@
  *   Copyright &copy 2002 Philippe Gerum.
  *
  *   Porting to x86_64 architecture:
- *   Copyright &copy; 2005-2008 Paolo Mantegazza, \n
+ *   Copyright &copy; 2005-2013 Paolo Mantegazza, \n
  *   Copyright &copy; 2005 Daniele Gasperini \n
  *
  *   This program is free software; you can redistribute it and/or modify

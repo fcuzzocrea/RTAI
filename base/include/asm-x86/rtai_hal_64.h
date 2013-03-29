@@ -6,7 +6,7 @@
  *   the original RTAI layer for x86.
  *
  *   Original RTAI/x86 layer implementation: \n
- *   Copyright &copy; 2000 Paolo Mantegazza, \n
+ *   Copyright &copy; 2013 Paolo Mantegazza, \n
  *   Copyright &copy; 2000 Steve Papacharalambous, \n
  *   Copyright &copy; 2000 Stuart Hughes, \n
  *   and others.
@@ -15,7 +15,7 @@
  *   Copyright &copy 2002 Philippe Gerum.
  *
  *   Porting to x86_64 architecture:
- *   Copyright &copy; 2005-2008 Paolo Mantegazza, \n
+ *   Copyright &copy; 2005-2013 Paolo Mantegazza, \n
  *   Copyright &copy; 2005      Daniele Gasperini \n
  *
  *   This program is free software; you can redistribute it and/or modify
@@ -39,8 +39,8 @@
  *@{*/
 
 
-#ifndef _RTAI_ASM_X8664_HAL_H
-#define _RTAI_ASM_X8664_HAL_H
+#ifndef _RTAI_ASM_X86_64_HAL_H
+#define _RTAI_ASM_X86_64_HAL_H
 
 #define RTAI_SYSCALL_MODE //__attribute__((regparm(0)))
 
@@ -953,7 +953,7 @@ static inline int rt_free_global_irq(unsigned irq)
 
 /*@}*/
 
-#endif /* !_RTAI_ASM_X8664_HAL_H */
+#endif /* !_RTAI_ASM_X86_64_HAL_H */
 
 #ifndef _RTAI_HAL_XN_H
 #define _RTAI_HAL_XN_H

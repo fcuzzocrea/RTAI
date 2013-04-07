@@ -9977,7 +9977,7 @@ index 0000000..3bc6ef5
 +	__ipipe_do_sync_pipeline(head);
 +}
 +
-+void *rtai_irq_handler = NULL;
++void (*rtai_irq_handler)(int) = NULL;
 +EXPORT_SYMBOL(rtai_irq_handler);
 +
 +void __ipipe_dispatch_irq(unsigned int irq, int flags) /* hw interrupts off */
@@ -10079,7 +10079,7 @@ index 0000000..3bc6ef5
 +		if (unlikely(flags & IPIPE_IRQF_NOSYNC))
 +			__ipipe_set_irq_pending(ipd, irq);
 +		else
-+			if (rtai_irq_handler) { ((void (*)(int))rtai_irq_handler)(irq); } else { dispatch_irq_head(irq); }
++			rtai_irq_handler(irq); // dispatch_irq_head(irq);
 +		return;
 +	}
 +

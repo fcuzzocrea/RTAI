@@ -1,4 +1,8 @@
-2013-03-07 Paolo Mantegazza <mantegazza@aero.polimi.it>
+2013-04-08 Pierangelo Masarati <masarati@aero.polimi.it>
+
+	* RTAI 3.9.1
+
+2013-04-07 Paolo Mantegazza <mantegazza@aero.polimi.it>
 
         * base/isched/sched.c: make the setting of linux shot atomic a bit 
 	  more, so to avoid undue hard timers shots.

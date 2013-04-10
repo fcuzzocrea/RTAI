@@ -6,7 +6,7 @@
  *   the original RTAI layer for x86.
  *
  *   Original RTAI/x86 layer implementation: \n
- *   Copyright &copy; 2000 Paolo Mantegazza, \n
+ *   Copyright &copy; 2000-2013 Paolo Mantegazza, \n
  *   Copyright &copy; 2000 Steve Papacharalambous, \n
  *   Copyright &copy; 2000 Stuart Hughes, \n
  *   and others.
@@ -46,9 +46,8 @@
 #define RTAI_SYSCALL_MODE
 #endif
 
-#define RTAI_DUOSS
 #define LOCKED_LINUX_IN_IRQ_HANDLER
-#define DOMAIN_TO_STALL  (fusion_domain)
+//#define DOMAIN_TO_STALL  (fusion_domain)
 
 #include <rtai_hal_names.h>
 #include <asm/rtai_vectors.h>
@@ -60,7 +59,6 @@
 #define RTAI_NR_CPUS  1
 #endif /* CONFIG_SMP */
 
-#ifndef _RTAI_FUSION_H
 static __inline__ unsigned long ffnz (unsigned long word) {
     /* Derived from bitops.h's ffs() */
     __asm__("bsfl %1, %0"
@@ -68,7 +66,6 @@ static __inline__ unsigned long ffnz (unsigned long word) {
 	    : "r"  (word));
     return word;
 }
-#endif
 
 #if LINUX_VERSION_CODE < KERNEL_VERSION(2,6,0)
 
@@ -277,49 +274,10 @@ static inline unsigned long long rtai_u64div32c(unsigned long long a,
 #define IPIPE_IRQ_DOALL
 #endif
 
-#if defined(__IPIPE_2LEVEL_IRQMAP) || defined(__IPIPE_3LEVEL_IRQMAP)
-#define irqpend_himask     irqpend_himap
-#define irqpend_lomask     irqpend_lomap
-#define irqheld_mask       irqheld_map
-#define IPIPE_IRQMASK_ANY  IPIPE_IRQ_DOALL
-#define IPIPE_IRQ_IMASK    (BITS_PER_LONG - 1)
-#define IPIPE_IRQ_ISHIFT   5
-#endif
-
 struct rtai_realtime_irq_s {
-//	int (*handler)(unsigned irq, void *cookie);
-//	void *cookie;
 	int retmode;
 	unsigned long cpumask;
-//	int (*irq_ack)(unsigned int, void *);
 };
-
-/* 
- * Linux has this information in io_apic.c, but it does not export it;
- * on the other hand it should be fairly stable this way and so we try
- * to avoid putting something else in our patch.
- */
-
-#ifdef CONFIG_X86_IO_APIC
-#ifndef FIRST_DEVICE_VECTOR
-#define FIRST_DEVICE_VECTOR (FIRST_EXTERNAL_VECTOR + VECTOR_OFFSET_START)
-#endif
-static inline int ext_irq_vector(int irq)
-{
-	if (irq != 2) {
-		return (FIRST_DEVICE_VECTOR + 8*(irq < 2 ? irq : irq - 1));
-	}
-	return -EINVAL;
-}
-#else
-static inline int ext_irq_vector(int irq)
-{
-	if (irq != 2) {
-		return (FIRST_EXTERNAL_VECTOR + irq);
-	}
-	return -EINVAL;
-}
-#endif
 
 #define RTAI_DOMAIN_ID  0x9ac15d93  // nam2num("rtai_d")
 #define RTAI_NR_TRAPS   HAL_NR_FAULTS
@@ -362,23 +320,6 @@ static inline int ext_irq_vector(int irq)
 #define rtai_save_flags_and_cli(x)  hal_hw_local_irq_save(x)
 #define rtai_restore_flags(x)       hal_hw_local_irq_restore(x)
 #define rtai_save_flags(x)          hal_hw_local_irq_flags(x)
-
-/*
-static inline struct hal_domain_struct *get_domain_pointer(int n)
-{
-	struct list_head *p = hal_pipeline.next;
-	struct hal_domain_struct *d;
-	unsigned long i = 0;
-	while (p != &hal_pipeline) {
-		d = list_entry(p, struct hal_domain_struct, p_link);
-		if (++i == n) {
-			return d;
-		}
-		p = d->p_link.next;
-	}
-	return (struct hal_domain_struct *)i;
-}
-*/
 
 #define RTAI_LT_KERNEL_VERSION_FOR_NONPERCPU  KERNEL_VERSION(2,6,20)
 
@@ -538,23 +479,6 @@ extern volatile unsigned long rtai_cpu_lock[];
 
 #if LINUX_VERSION_CODE > KERNEL_VERSION(2,6,26)
 #define apic_write_around apic_write
-#endif
-
-//#define RTAI_TASKPRI 0xf0  // simplest usage without changing Linux code base
-#if defined(CONFIG_X86_LOCAL_APIC) && defined(RTAI_TASKPRI)
-#define SET_TASKPRI(cpuid) \
-	if (!rtai_linux_context[cpuid].set_taskpri) { \
-		apic_write_around(APIC_TASKPRI, ((apic_read(APIC_TASKPRI) & ~APIC_TPRI_MASK) | RTAI_TASKPRI)); \
-		rtai_linux_context[cpuid].set_taskpri = 1; \
-	}
-#define CLR_TASKPRI(cpuid) \
-	if (rtai_linux_context[cpuid].set_taskpri) { \
-		apic_write_around(APIC_TASKPRI, (apic_read(APIC_TASKPRI) & ~APIC_TPRI_MASK)); \
-		rtai_linux_context[cpuid].set_taskpri = 0; \
-	}
-#else
-#define SET_TASKPRI(cpuid)
-#define CLR_TASKPRI(cpuid)
 #endif
 
 extern struct rtai_switch_data {
@@ -913,7 +837,7 @@ do { \
 	if (!sflags) { \
 		rt_switch_to_linux(cpuid); \
 	} else if (!rtai_linux_context[cpuid].sflags) { \
-		SET_TASKPRI(cpuid); \
+		/*SET_TASKPRI(cpuid);*/ \
 		_rt_switch_to_real_time(cpuid); \
 	} \
 } while (0)
@@ -932,8 +856,8 @@ static inline unsigned long save_and_set_taskpri(unsigned long taskpri)
 	do { apic_write_around(APIC_TASKPRI, taskpri); } while (0)
 #endif
 
-static inline void rt_set_timer_delay (int delay) {
-
+static inline void rt_set_timer_delay (int delay) 
+{
     if (delay) {
         unsigned long flags;
         rtai_hw_save_flags_and_cli(flags);
@@ -1125,21 +1049,3 @@ static inline int rt_free_global_irq(unsigned irq)
 /*@}*/
 
 #endif /* !_RTAI_ASM_I386_HAL_H */
-
-
-#ifndef _RTAI_HAL_XN_H
-#define _RTAI_HAL_XN_H
-
-// this is now a bit misplaced, to be moved where it should belong
-
-#define SET_FUSION_TIMER_RUNNING()
-
-#define CLEAR_FUSION_TIMER_RUNNING()
-
-#define IS_FUSION_TIMER_RUNNING()  (0)
-
-#define NON_RTAI_SCHEDULE(cpuid)  do { schedule(); } while (0)
-
-#endif /* !_RTAI_HAL_XN_H */
-
-

@@ -3,7 +3,7 @@
  *   the original RTAI layer for x86.
  *
  *   Original RTAI/x86 layer implementation:
- *   Copyright (C) 2000 Paolo Mantegazza,
+ *   Copyright (C) 2000-2013 Paolo Mantegazza,
  *   Copyright (C) 2000 Steve Papacharalambous,
  *   Copyright (C) 2000 Stuart Hughes,
  *   and others.
@@ -32,17 +32,7 @@
 
 #include <linux/version.h>
 
-#if LINUX_VERSION_CODE > KERNEL_VERSION(2,6,30)
-//#define RTAI_SYS_VECTOR  0xF4
-#else
-//#define RTAI_SYS_VECTOR  0xF6
-#endif
-
 #ifdef __KERNEL__
-
-#if LINUX_VERSION_CODE > KERNEL_VERSION(2,6,19)
-#include <asm/ipipe.h>
-#endif
 
 #include <rtai_hal_names.h>
 #include <rtai_config.h>
@@ -58,18 +48,12 @@
 #ifdef ipipe_apic_vector_irq /* LINUX_VERSION_CODE > KERNEL_VERSION(2,6,19) */
 #define RTAI_APIC_HIGH_IPI     ipipe_apic_vector_irq(RTAI_APIC_HIGH_VECTOR)
 #define RTAI_APIC_LOW_IPI      ipipe_apic_vector_irq(RTAI_APIC_LOW_VECTOR)
-//#define RTAI_SYS_IRQ           ipipe_apic_vector_irq(RTAI_SYS_VECTOR)
 #define LOCAL_TIMER_IPI        ipipe_apic_vector_irq(LOCAL_TIMER_VECTOR)
 #else
 #define RTAI_APIC_HIGH_IPI     (RTAI_APIC_HIGH_VECTOR - FIRST_EXTERNAL_VECTOR)
 #define RTAI_APIC_LOW_IPI      (RTAI_APIC_LOW_VECTOR - FIRST_EXTERNAL_VECTOR)
-//#define RTAI_SYS_IRQ           (RTAI_SYS_VECTOR - FIRST_EXTERNAL_VECTOR)
 #define LOCAL_TIMER_IPI        (LOCAL_TIMER_VECTOR - FIRST_EXTERNAL_VECTOR)
 #endif
-
-//#if RTAI_APIC_HIGH_VECTOR == RTAI_SYS_VECTOR || RTAI_APIC_LOW_VECTOR == RTAI_SYS_VECTOR
-//#error *** RTAI_SYS_VECTOR CONFLICTS WITH APIC VECTORS USED BY RTAI ***
-//#endif
 
 #endif
 

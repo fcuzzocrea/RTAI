@@ -6,7 +6,7 @@
  *
  * This file is part of the RTAI project.
  *
- * @note Copyright &copy; 1999-2003 Paolo Mantegazza <mantegazza@aero.polimi.it>
+ * @note Copyright &copy; 1999-2013 Paolo Mantegazza <mantegazza@aero.polimi.it>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License as
@@ -1972,13 +1972,6 @@ RTAI_SYSCALL_MODE int rt_release_irq_task (unsigned irq)
 	return retval;
 }
 
-//extern void usp_request_rtc(int, void *);
-RTAI_SYSCALL_MODE void usp_request_rtc(int rtc_freq, void *handler)
-{
-//	rt_request_rtc(rtc_freq, !handler || (handler && handler == (void *)1) ? handler : rt_irq_signal);
-		
-}
-
 #endif
 
 /* +++++++++++++++++ SUPPORT FOR THE LINUX SYSCALL SERVER +++++++++++++++++++ */
@@ -2200,7 +2193,6 @@ EXPORT_SYMBOL(rt_get_timer_cpu);
 EXPORT_SYMBOL(start_rt_timer);
 EXPORT_SYMBOL(stop_rt_timer);
 EXPORT_SYMBOL(start_rt_apic_timers);
-EXPORT_SYMBOL(rt_sched_type);
 EXPORT_SYMBOL(rt_hard_timer_tick_count);
 EXPORT_SYMBOL(rt_hard_timer_tick_count_cpuid);
 EXPORT_SYMBOL(rt_set_task_trap_handler);
@@ -2220,8 +2212,6 @@ EXPORT_SYMBOL(nano2count);
 EXPORT_SYMBOL(count2nano_cpuid);
 EXPORT_SYMBOL(nano2count_cpuid);
 
-EXPORT_SYMBOL(rt_kthread_init);
-EXPORT_SYMBOL(rt_kthread_init_cpuid);
 EXPORT_SYMBOL(rt_smp_linux_task);
 EXPORT_SYMBOL(rt_smp_current);
 EXPORT_SYMBOL(rt_smp_time_h);

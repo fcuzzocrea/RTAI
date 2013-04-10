@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 1999-2003 Paolo Mantegazza <mantegazza@aero.polimi.it>
+ * Copyright (C) 1999-2013 Paolo Mantegazza <mantegazza@aero.polimi.it>
  * extensions for user space modules are jointly copyrighted (2000) with:
  *		Pierre Cloutier <pcloutier@poseidoncontrols.com>,
  *		Steve Papacharalambous <stevep@zentropix.com>.
@@ -23,7 +23,7 @@
 
 #include <linux/version.h>
 
-#include <asm/rtai_vectors.h>
+//#include <asm/rtai_vectors.h>
 
 #ifdef CONFIG_RTAI_LXRT_USE_LINUX_SYSCALL
 #define USE_LINUX_SYSCALL
@@ -136,21 +136,13 @@
 #define TIMER_SETUP_TIME  RTAI_SETUP_TIME_8254
 #define ONESHOT_SPAN      ((0x7FFF*(CPU_FREQ/TIMER_FREQ))/(CONFIG_RTAI_CAL_FREQS_FACT + 1)) //(0x7FFF*(CPU_FREQ/TIMER_FREQ))
 #define update_linux_timer(cpuid) \
-do { \
-	if (!IS_FUSION_TIMER_RUNNING()) { \
-		hal_pend_uncond(TIMER_8254_IRQ, cpuid); \
-	} \
-} while (0)
+	do { hal_pend_uncond(TIMER_8254_IRQ, cpuid); } while (0)
 
 #endif /* CONFIG_X86_LOCAL_APIC */
 
 #endif /* CONFIG_RTAI_RTC_FREQ != 0 */
 
-union rtai_lxrt_t {
-    RTIME rt;
-    int i[2];
-    void *v[2];
-};
+union rtai_lxrt_t { RTIME rt; int i[2]; void *v[2]; };
 
 #ifdef __cplusplus
 extern "C" {
@@ -169,19 +161,11 @@ extern "C" {
 
 static inline void _lxrt_context_switch (struct task_struct *prev, struct task_struct *next, int cpuid)
 {
-#if LINUX_VERSION_CODE < KERNEL_VERSION(2,6,0)
-	extern void context_switch(void *, void *);
-	struct mm_struct *oldmm = prev->active_mm;
-	switch_mm(oldmm, next->active_mm, next, cpuid);
-	if (!next->mm) enter_lazy_tlb(oldmm, next, cpuid);
-	context_switch(prev, next); // was switch_to(prev, next, prev);
-#else /* >= 2.6.0 */
 	extern void context_switch(void *, void *, void *);
 #if LINUX_VERSION_CODE > KERNEL_VERSION(2,6,19)
 	prev->fpu_counter = 0;
 #endif
 	context_switch(0, prev, next);
-#endif /* < 2.6.0 */
 }
 
 #if 0
@@ -193,36 +177,6 @@ static inline void _lxrt_context_switch (struct task_struct *prev, struct task_s
 #endif
 
 #include <linux/slab.h>
-
-#if 1 // optimised (?)
-static inline void kthread_fun_set_jump(struct task_struct *lnxtsk)
-{
-	lnxtsk->rtai_tskext(TSKEXT2) = kmalloc(sizeof(struct thread_struct)/* + sizeof(struct thread_info)*/ + (lnxtsk->thread.RT_REG_SP & ~(THREAD_SIZE - 1)) + THREAD_SIZE - lnxtsk->thread.RT_REG_SP, GFP_KERNEL);
-	*((struct thread_struct *)lnxtsk->rtai_tskext(TSKEXT2)) = lnxtsk->thread;
-//	memcpy(lnxtsk->rtai_tskext(TSKEXT2) + sizeof(struct thread_struct), (void *)(lnxtsk->thread.RT_REG_SP & ~(THREAD_SIZE - 1)), sizeof(struct thread_info));
-	memcpy(lnxtsk->rtai_tskext(TSKEXT2) + sizeof(struct thread_struct)/* + sizeof(struct thread_info)*/, (void *)(lnxtsk->thread.RT_REG_SP), (lnxtsk->thread.RT_REG_SP & ~(THREAD_SIZE - 1)) + THREAD_SIZE - lnxtsk->thread.RT_REG_SP);
-}
-
-static inline void kthread_fun_long_jump(struct task_struct *lnxtsk)
-{
-	lnxtsk->thread = *((struct thread_struct *)lnxtsk->rtai_tskext(TSKEXT2));
-//	memcpy((void *)(lnxtsk->thread.RT_REG_SP & ~(THREAD_SIZE - 1)), lnxtsk->rtai_tskext(TSKEXT2) + sizeof(struct thread_struct), sizeof(struct thread_info));
-	memcpy((void *)lnxtsk->thread.RT_REG_SP, lnxtsk->rtai_tskext(TSKEXT2) + sizeof(struct thread_struct)/* + sizeof(struct thread_info)*/, (lnxtsk->thread.RT_REG_SP & ~(THREAD_SIZE - 1)) + THREAD_SIZE - lnxtsk->thread.RT_REG_SP);
-}
-#else  // brute force
-static inline void kthread_fun_set_jump(struct task_struct *lnxtsk)
-{
-	lnxtsk->rtai_tskext(TSKEXT2) = kmalloc(sizeof(struct thread_struct) + THREAD_SIZE, GFP_KERNEL);
-	*((struct thread_struct *)lnxtsk->rtai_tskext(TSKEXT2)) = lnxtsk->thread;
-	memcpy(lnxtsk->rtai_tskext(TSKEXT2) + sizeof(struct thread_struct), (void *)(lnxtsk->thread.RT_REG_SP & ~(THREAD_SIZE - 1)), THREAD_SIZE);
-}
-
-static inline void kthread_fun_long_jump(struct task_struct *lnxtsk)
-{
-	lnxtsk->thread = *((struct thread_struct *)lnxtsk->rtai_tskext(TSKEXT2));
-	memcpy((void *)(lnxtsk->thread.RT_REG_SP & ~(THREAD_SIZE - 1)), lnxtsk->rtai_tskext(TSKEXT2) + sizeof(struct thread_struct), THREAD_SIZE);
-}
-#endif
 
 #if LINUX_VERSION_CODE < KERNEL_VERSION(2,6,0)
 #define rt_copy_from_user     __copy_from_user
@@ -265,7 +219,10 @@ static inline union rtai_lxrt_t _rtai_lxrt(int srq, void *arg)
 
 static inline union rtai_lxrt_t rtai_lxrt(short int dynx, short int lsize, int srq, void *arg)
 {
-	return _rtai_lxrt(ENCODE_LXRT_REQ(dynx, srq, lsize), arg);
+	union rtai_lxrt_t ret;
+	syscall(RTAI_SYSCALL_NR, ENCODE_LXRT_REQ(dynx, srq, lsize), arg, &ret);
+	return ret;
+//	return _rtai_lxrt(ENCODE_LXRT_REQ(dynx, srq, lsize), arg);
 }
 
 #define rtai_iopl()  do { extern int iopl(int); iopl(3); } while (0)

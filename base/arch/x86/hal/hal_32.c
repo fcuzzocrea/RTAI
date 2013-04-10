@@ -1249,7 +1249,7 @@ static int rtai_hirq_dispatcher (int irq)
 			return 0;
 		}
 	}
-//	rtai_sti();
+	rtai_sti();
 	hal_fast_flush_pipeline(cpuid);
 	return 0;
 }

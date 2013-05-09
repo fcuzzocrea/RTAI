@@ -1912,7 +1912,7 @@ RT_TASK *__rt_proxy_attach(void (*agent)(long), RT_TASK *task, void *msg, int nb
 	if (priority == -1 && (priority = rt_current->base_priority) == RT_SCHED_LINUX_PRIORITY) {
 		priority = RT_SCHED_LOWEST_PRIORITY;
 	}
-	if (rt_kthread_init(proxy, agent, (long)proxy, PROXY_MIN_STACK_SIZE + nbytes + sizeof(struct proxy_t), priority, 0, 0)) {
+	if (1 /*rt_kthread_init(proxy, agent, (long)proxy, PROXY_MIN_STACK_SIZE + nbytes + sizeof(struct proxy_t), priority, 0, 0)*/) {
 		rt_free(proxy);
 		return 0;
 	}

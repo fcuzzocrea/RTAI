@@ -1,3 +1,10 @@
+2013-06-09 Paolo Mantegazza <mantegazza@aero.polimi.it>
+
+        * addons/rtdm/xn.h and base/ipc/shm/kvmem.c: define VM_RESERVED if it
+	  does not exist.
+        * base/arch/x86/calibration/smi-module.c: discard __devinit in function
+	  definitions, found no more in Linux.
+
 2013-03-14 Paolo Mantegazza <mantegazza@aero.polimi.it>
 
         * base/arch/x86/hal/hal_32.c: use CPU_MASK_ALL to fix a quick and

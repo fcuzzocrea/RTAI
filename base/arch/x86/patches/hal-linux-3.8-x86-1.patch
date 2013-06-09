@@ -8426,7 +8426,7 @@ index b4df219..f25542a 100644
 +                get_nsproxy(&init_nsproxy);
 +                switch_task_namespaces(current, &init_nsproxy);
 +        }
-+        set_special_pids(&init_struct_pid);
++//      set_special_pids(&init_struct_pid);
 +        proc_clear_tty(current);
 + 
 +        /* Block and flush all signals */
@@ -8435,12 +8435,12 @@ index b4df219..f25542a 100644
 +        flush_signals(current);
 + 
 +        /* Become as one with the init task */
-+        daemonize_fs_struct();
++//      daemonize_fs_struct();
 +        exit_files(current);
 +        current->files = init_task.files;
 +        atomic_inc(&current->files->count);
 + 
-+	reparent_to_kthreadd();
++//	 reparent_to_kthreadd();
 + }
 + 
 +EXPORT_SYMBOL(rt_daemonize);

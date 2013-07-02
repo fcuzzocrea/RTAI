@@ -1,3 +1,7 @@
+2013-07-03 Paolo Mantegazza <mantegazza@aero.polimi.it>
+
+        * base/sched/liblxrt/init.c: used nomore, just an empty code.
+
 2013-07-02 Paolo Mantegazza <mantegazza@aero.polimi.it>
 
         * base/include/rtai_lxrt.h: remove unused rt_clone and lower 

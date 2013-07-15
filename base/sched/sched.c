@@ -312,24 +312,22 @@ int set_rtext(RT_TASK *task, int priority, int uses_fpu, void(*signal)(void), un
 }
 
 
-//static void start_stop_kthread(RT_TASK *, void (*)(long), long, int, int, void(*)(void), int);
-
 int rt_kthread_init_cpuid(RT_TASK *task, void (*rt_thread)(long), long data,
 			int stack_size, int priority, int uses_fpu,
 			void(*signal)(void), unsigned int cpuid)
 {
-//	start_stop_kthread(task, rt_thread, data, priority, uses_fpu, signal, cpuid);
-	return (int)task->retval;
+	return rt_task_init_cpuid(task, rt_thread, data, stack_size, priority, 0, signal, cpuid);
 }
+EXPORT_SYMBOL(rt_kthread_init_cpuid);
 
 
 int rt_kthread_init(RT_TASK *task, void (*rt_thread)(long), long data,
 			int stack_size, int priority, int uses_fpu,
 			void(*signal)(void))
 {
-	return rt_kthread_init_cpuid(task, rt_thread, data, stack_size, priority, 
-				 uses_fpu, signal, get_min_tasks_cpuid());
+	return rt_task_init_cpuid(task, rt_thread, data, stack_size, priority, uses_fpu, signal, get_min_tasks_cpuid());
 }
+EXPORT_SYMBOL(rt_kthread_init);
 
 
 asmlinkage static void rt_startup(void(*rt_thread)(long), long data)
@@ -345,6 +343,24 @@ asmlinkage static void rt_startup(void(*rt_thread)(long), long data)
 	rt_task_delete(rt_smp_current[rtai_cpuid()]);
 	rt_printk("LXRT: task %p returned but could not be delated.\n", rt_current); 
 }
+
+
+static int rt_pid = INT_MAX;
+RT_TASK *rt_find_task_by_pid(pid_t pid)
+{
+	int cpuid;
+	RT_TASK *task;
+	for (cpuid = 0; cpuid < NR_RT_CPUS; cpuid++) {
+		task = &rt_linux_task;
+		while ((task = task->next)) {
+			if (task->tid == pid) {
+				return task;
+			}
+		}
+	}
+	return NULL;
+}
+EXPORT_SYMBOL(rt_find_task_by_pid);
 
 
 int rt_task_init_cpuid(RT_TASK *task, void (*rt_thread)(long), long data, int stack_size, int priority, int uses_fpu, void(*signal)(void), unsigned int cpuid)
@@ -417,6 +433,7 @@ int rt_task_init_cpuid(RT_TASK *task, void (*rt_thread)(long), long data, int st
 	init_arch_stack();
 
 	flags = rt_global_save_flags_and_cli();
+	task->tid = rt_pid--;
 	task->next = 0;
 	rt_linux_task.prev->next = task;
 	task->prev = rt_linux_task.prev;
@@ -1939,7 +1956,6 @@ do { \
 	struct task_struct *task; \
 	while (p->out != p->in) { \
 		task = p->task[p->out++ & (MAX_WAKEUP_SRQ - 1)]; \
-		set_task_state(task, TASK_UNINTERRUPTIBLE); \
 		wake_up_process(task); \
 	} \
 } while (0)

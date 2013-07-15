@@ -793,9 +793,9 @@ void init_fun_ext (void)
 }
 
 
+#if 0
 void rt_daemonize(void);
 
-#if 0
 struct thread_args { void *fun; long data; int priority; int policy; int cpus_allowed; RT_TASK *task; struct semaphore *sem; };
 
 static void kthread_fun(struct thread_args *args) 
@@ -832,7 +832,6 @@ RT_TASK *rt_kthread_create(void *fun, long data, int priority, int linux_policy,
 	msleep(100);
 	return args.task;
 }
-#endif
 	
 #include <linux/kthread.h>
 long rt_thread_create(void *fun, void *args, int stack_size)
@@ -874,3 +873,4 @@ int rt_thread_delete(RT_TASK *rt_task)
 	return __task_delete(rt_task);
 }
 EXPORT_SYMBOL(rt_thread_delete);
+#endif

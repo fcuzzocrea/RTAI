@@ -198,6 +198,7 @@ static inline void lxrt_fun_call_wbuf(RT_TASK *rt_task, void *fun, int narg, lon
 }
 
 void put_current_on_cpu(int cpuid);
+void rt_set_task_pid(RT_TASK *);
 
 static inline RT_TASK* __task_init(unsigned long name, int prio, int stack_size, int max_msg_size, int cpus_allowed)
 {
@@ -255,6 +256,7 @@ static inline RT_TASK* __task_init(unsigned long name, int prio, int stack_size,
 #endif
 			RTAI_OOM_DISABLE();
 
+			rt_set_task_pid(rt_task);
 			return rt_task;
 		} else {
 			clr_rtext(rt_task);

@@ -345,17 +345,25 @@ asmlinkage static void rt_startup(void(*rt_thread)(long), long data)
 }
 
 
-static int rt_pid = INT_MAX;
+static int rt_pid = (INT_MAX & ~(0xF));
+static DEFINE_SPINLOCK(rt_pid_lock);
+
+void rt_set_task_pid(RT_TASK *task)
+{
+	unsigned long flags;
+	flags = rt_spin_lock_irqsave(&rt_pid_lock);
+	task->tid = rt_pid = rt_pid - 0x10;
+	rt_spin_unlock_irqrestore(flags, &rt_pid_lock);
+	task->tid += task->runnable_on_cpus;
+}
+EXPORT_SYMBOL(rt_set_task_pid);
+
 RT_TASK *rt_find_task_by_pid(pid_t pid)
 {
-	int cpuid;
-	RT_TASK *task;
-	for (cpuid = 0; cpuid < NR_RT_CPUS; cpuid++) {
-		task = &rt_linux_task;
-		while ((task = task->next)) {
-			if (task->tid == pid) {
-				return task;
-			}
+	RT_TASK *task = &rt_smp_linux_task[pid & 0xF];
+	while ((task = task->next)) {
+		if (task->tid == pid) {
+			return task;
 		}
 	}
 	return NULL;
@@ -433,7 +441,6 @@ int rt_task_init_cpuid(RT_TASK *task, void (*rt_thread)(long), long data, int st
 	init_arch_stack();
 
 	flags = rt_global_save_flags_and_cli();
-	task->tid = rt_pid--;
 	task->next = 0;
 	rt_linux_task.prev->next = task;
 	task->prev = rt_linux_task.prev;
@@ -443,6 +450,7 @@ int rt_task_init_cpuid(RT_TASK *task, void (*rt_thread)(long), long data, int st
 
 	task->resq.prev = task->resq.next = &task->resq;
 	task->resq.task = NULL;
+	rt_set_task_pid(task);
 
 	return 0;
 }

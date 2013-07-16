@@ -519,6 +519,23 @@ int set_rt_fun_entries(struct rt_native_fun_entry *entry);
 extern "C" {
 #endif /* __cplusplus */
 
+/*+++++++++++ INLINES FOR PIERRE's PROXIES AND INTERTASK MESSAGES ++++++++++++*/
+
+#include <linux/types.h>
+RT_TASK *rt_find_task_by_pid(pid_t);
+
+static inline struct rt_task_struct *pid2rttask(pid_t pid)
+{
+	return rt_find_task_by_pid(pid);
+}
+
+static inline long rttask2pid(struct rt_task_struct *task)
+{
+        return task->tid;
+}
+
+/*+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++ */
+
 int set_rtai_callback(void (*fun)(void));
 
 void remove_rtai_callback(void (*fun)(void));

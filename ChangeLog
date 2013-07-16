@@ -1,3 +1,12 @@
+2013-07-17 Paolo Mantegazza <mantegazza@aero.polimi.it>
+
+        * base/sched/sched.c and sys.c: use RTAI own task pid for Pierre's 
+	  intertask messaging stuff.
+        * base/include/rtai_lxrt.h: return pid<->task stuff back here, it is 
+	  used also elsewhere than in Pierre's intertask messaging stuff.
+        * base/ipc/msg/msg.c: use unified rtai own task pids in Pierre's 
+	  intertask messaging stuff.
+
 2013-07-16 Paolo Mantegazza <mantegazza@aero.polimi.it>
 
         * base/include/rtai_lxrt.h: removed call to rt_kthread_init and moved 

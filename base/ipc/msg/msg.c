@@ -1874,6 +1874,7 @@ RTAI_SYSCALL_MODE RT_TASK *rt_receivex_timed(RT_TASK *task, void *msg, int size,
 
 /*+++++++++++ INLINES FOR PIERRE's PROXIES AND INTERTASK MESSAGES ++++++++++++*/
 
+#if 0
 extern RT_TASK * rt_find_task_by_pid(pid_t);
 
 static inline struct rt_task_struct *pid2rttask(long pid)
@@ -1886,6 +1887,7 @@ static inline long rttask2pid(struct rt_task_struct * task)
 {
 	return task->lnxtsk ? task->lnxtsk->pid : task->tid;
 }
+#endif
 
 /* +++++++++++++++++++++++++++++++ PROXIES ++++++++++++++++++++++++++++++++++ */
 
@@ -2094,7 +2096,7 @@ static void Proxy_Task(RT_TASK *me)
 RTAI_SYSCALL_MODE pid_t rt_Proxy_attach(pid_t pid, void *msg, int nbytes, int prio)
 {
 	RT_TASK *task;
-	return (task = __rt_proxy_attach((void *)Proxy_Task, pid ? pid2rttask(pid) : 0, msg, nbytes, prio)) ? (task->lnxtsk ? task->lnxtsk->pid : task->tid) : -ENOMEM;
+	return (task = __rt_proxy_attach((void *)Proxy_Task, pid ? pid2rttask(pid) : 0, msg, nbytes, prio)) ? task->tid : -ENOMEM;
 }
 
 RTAI_SYSCALL_MODE int rt_Proxy_detach(pid_t pid)
@@ -2134,7 +2136,7 @@ RTAI_SYSCALL_MODE pid_t rt_Name_attach(const char *argname)
 	    	strncpy(task->task_name, argname, RTAI_MAX_NAME_LENGTH);
 	}
     	task->task_name[RTAI_MAX_NAME_LENGTH - 1] = 0;
-	return strnlen(task->task_name, RTAI_MAX_NAME_LENGTH) > (RTAI_MAX_NAME_LENGTH - 1) ? -EINVAL : task->lnxtsk ? ((struct task_struct *)current->rtai_tskext(TSKEXT1))->pid : (long)task;
+	return strnlen(task->task_name, RTAI_MAX_NAME_LENGTH) > (RTAI_MAX_NAME_LENGTH - 1) ? -EINVAL : task->tid;
 }
 
 RTAI_SYSCALL_MODE pid_t rt_Name_locate(const char *arghost, const char *argname)
@@ -2146,8 +2148,7 @@ RTAI_SYSCALL_MODE pid_t rt_Name_locate(const char *arghost, const char *argname)
                 task = &rt_smp_linux_task[cpuid];
                 while ((task = task->next)) {
 			if (!strncmp(argname, task->task_name, RTAI_MAX_NAME_LENGTH - 1)) {
-				return (struct task_struct *)(task->lnxtsk) ?  ((struct task_struct *)(task->lnxtsk)->rtai_tskext(TSKEXT1))->pid : (long)task;
-
+				return task->tid;
 			}
 		}
 	}
@@ -2156,14 +2157,7 @@ RTAI_SYSCALL_MODE pid_t rt_Name_locate(const char *arghost, const char *argname)
 
 RTAI_SYSCALL_MODE int rt_Name_detach(pid_t pid)
 {
-	if (pid <= PID_MAX_LIMIT) {
-	 	if (pid != ((struct task_struct *)current->rtai_tskext(TSKEXT1))->pid ) {
-			return -EINVAL;
-		}
-	    	((RT_TASK *)current->rtai_tskext(TSKEXT0))->task_name[0] = 0;
-	} else {
-	    	((RT_TASK *)(long)pid)->task_name[0] = 0;
-	}
+	rt_find_task_by_pid(pid)->task_name[0] = 0;
 	return 0;
 }
 

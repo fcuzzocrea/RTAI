@@ -2105,15 +2105,12 @@ static int lxrt_handle_trap(int vec, int signo, struct pt_regs *regs, void *dumm
 
 static inline void rt_signal_wake_up(RT_TASK *task)
 {
-	if (task->state && task->state != RT_SCHED_READY) {
-#ifdef TASK_NOWAKEUP
-		struct task_struct *lnxtsk;
-		if ((lnxtsk = task->lnxtsk)->state & TASK_HARDREALTIME) {
-			set_task_state(lnxtsk, lnxtsk->state | TASK_NOWAKEUP);
+	struct task_struct *lnxtsk;
+	if ((lnxtsk = task->lnxtsk) && task->state && task->state != RT_SCHED_READY) {
+		if ((lnxtsk->state & TASK_HARDREALTIME) && sig_user_defined(lnxtsk, SIGTERM)) {
+			task->unblocked = 1;
+			rt_task_masked_unblock(task, ~RT_SCHED_READY);
 		}
-#endif
-		task->unblocked = 1;
-		rt_task_masked_unblock(task, ~RT_SCHED_READY);
 	} else {
 		task->unblocked = -1;
 	}

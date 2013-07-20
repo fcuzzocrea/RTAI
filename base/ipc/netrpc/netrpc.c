@@ -566,7 +566,6 @@ recvrys:
 		soft_rt_sendto(sock, &arg, encode ? encode(portslotp, &arg, sizeof(struct reply_t), RPC_RTR) : sizeof(struct reply_t), 0, addr, ADRSZ);
 		goto recvrys;
 	}
-//	soft_rt_fun_call(task, rt_task_suspend, task);
 }
 
 static void hard_stub_fun(struct portslot_t *portslotp)
@@ -748,7 +747,6 @@ ret:
 			soft_rt_sendto(portslot[0].socket[0], &msg, encode ? encode(&portslot[0], &msg, sizeof(msg), PRT_RTR) : sizeof(msg), 0, addr, ADRSZ);
 		}
 	}
-//soft_rt_fun_call(port_server, rt_task_suspend, port_server);
 }
 
 static int mod_timer_srq;

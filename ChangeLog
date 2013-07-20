@@ -1,3 +1,14 @@
+2013-07-20 Paolo Mantegazza <mantegazza@aero.polimi.it>
+
+        * base/ipc/netrpc/netrpc.c: aligned to the latest kthreads Linux 
+	  support.
+
+2013-07-18 Paolo Mantegazza <mantegazza@aero.polimi.it>
+
+        * base/sched/sched.c: rt_signal_wake_up will allow hard real time 
+	  tasks to receive signals only if the user has indicated to be 
+	  willing to accept them by installing a signal handler for SIGTERM.
+
 2013-07-17 Paolo Mantegazza <mantegazza@aero.polimi.it>
 
         * base/sched/sched.c and sys.c: use RTAI own task pid for Pierre's 

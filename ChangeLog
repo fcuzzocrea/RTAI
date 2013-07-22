@@ -1,6 +1,6 @@
 2013-07-21 Paolo Mantegazza <mantegazza@aero.polimi.it>
 
-        * base/ipc/mq/mq.c: trivial changes to avoid annoyng compiler
+        * base/ipc/mq/mq.c: trivial changes to avoid annoying compiler
 	  warnings.
         * base/inclede/rtai_mq.h: fixed a few wrong working space indicators.
         * base/sched/sys.c: added test to avoid copying from null user space

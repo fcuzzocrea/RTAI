@@ -2,6 +2,9 @@
 
         * base/ipc/mq/mq.c: trivial changes to avoid annoyng compiler
 	  warnings.
+        * base/inclede/rtai_mq.h: fixed a few wrong working space indicators.
+        * base/sched/sys.c: added test to avoid copying from null user space
+	  pointers into the kernel space task specific buffer.
 
 2013-07-20 Paolo Mantegazza <mantegazza@aero.polimi.it>
 

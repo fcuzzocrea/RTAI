@@ -970,7 +970,7 @@ static int pqueue_proc_unregister(void)
 ///////////////////////////////////////////////////////////////////////////////
 
 struct rt_native_fun_entry rt_pqueue_entries[] = {
-	{ { UR1(1, 5) | UR2(4, 6), _mq_open },  	        MQ_OPEN },
+	{ { UR1(1, 5) | UR2(4, 6), _mq_open }, 	        MQ_OPEN },
         { { 1, _mq_receive },  		                MQ_RECEIVE },
         { { 1, _mq_send },    		                MQ_SEND },
         { { 1, mq_close },                              MQ_CLOSE },

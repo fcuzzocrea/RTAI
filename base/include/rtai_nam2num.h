@@ -37,11 +37,13 @@
 #ifdef __KERNEL__
 
 #include <linux/ctype.h>
+#include <linux/string.h>
 #define NAM2NUM_PROTO(type, name, arglist)  static inline type name arglist
 
 #else
 
 #include <ctype.h>
+#include <string.h>
 #define NAM2NUM_PROTO  RTAI_PROTO
 
 #endif
@@ -99,8 +101,10 @@ NAM2NUM_PROTO(unsigned long, nam2num, (const char *name))
 NAM2NUM_PROTO(void, num2nam, (unsigned long num, char *name))
 {
         int c, i, k, q; 
-	if (num == 0xFFFFFFFF) {
-		name[0] = 0;
+	if (num >= 4201025642UL) {
+		unsigned int lnum = num;
+		memcpy(name, &lnum, 4);
+		name[4] = 0;
 		return;
 	}
         i = 5; 

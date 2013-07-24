@@ -1469,14 +1469,19 @@ static inline unsigned long get_name(void *adr)
 {
 	static unsigned long nameseed = (0xFFFFFFFFUL - 1);
 	if (!adr) {
-		unsigned long flags;
-		unsigned long name;
-		flags = rt_spin_lock_irqsave(&list_lock);
-		if ((name = ++nameseed) == 0xFFFFFFFFUL) {
-			nameseed = 4201025642UL;
+		unsigned long flags, name;
+		int i;
+		for (i = 0; i < 10; i++) {
+			flags = rt_spin_lock_irqsave(&list_lock);
+			if ((name = ++nameseed) == 0xFFFFFFFFUL) {
+				name = nameseed = 4201025642UL;
+			}
+			rt_spin_unlock_irqrestore(flags, &list_lock);
+			if (!hash_find_name(name, lxrt_list, max_slots, 0, NULL)) {
+				return name;
+			}
 		}
-		rt_spin_unlock_irqrestore(flags, &list_lock);
-		return name;
+		return 0;
 	} else {
 		return hash_find_adr(adr, lxrt_list, max_slots, 0);
 	}

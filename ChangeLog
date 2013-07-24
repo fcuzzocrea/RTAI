@@ -1,3 +1,10 @@
+2013-07-24 Paolo Mantegazza <mantegazza@aero.polimi.it>
+
+        * base/sched/api.c: make getting a unique name from registry safer
+	  against duplications.
+        * base/include/rtai_nam2num.h: embellished the coding and added a 
+	  couple of usable characters more.
+
 2013-07-21 Paolo Mantegazza <mantegazza@aero.polimi.it>
 
         * base/ipc/mq/mq.c: trivial changes to avoid annoying compiler

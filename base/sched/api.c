@@ -1467,13 +1467,13 @@ static inline int drg_on_adr_cnt(void *adr)
 
 static inline unsigned long get_name(void *adr)
 {
-	static unsigned long nameseed = 3518743764UL;
+	static unsigned long nameseed = (0xFFFFFFFFUL - 1);
 	if (!adr) {
 		unsigned long flags;
 		unsigned long name;
 		flags = rt_spin_lock_irqsave(&list_lock);
 		if ((name = ++nameseed) == 0xFFFFFFFFUL) {
-			nameseed = 3518743764UL;
+			nameseed = 4201025642UL;
 		}
 		rt_spin_unlock_irqrestore(flags, &list_lock);
 		return name;

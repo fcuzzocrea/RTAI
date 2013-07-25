@@ -1467,15 +1467,20 @@ static inline int drg_on_adr_cnt(void *adr)
 
 static inline unsigned long get_name(void *adr)
 {
-	static unsigned long nameseed = (0xFFFFFFFFUL - 1);
 	if (!adr) {
 		unsigned long flags, name;
 		int i;
 		for (i = 0; i < 10; i++) {
+#if 0
+			static unsigned long nameseed = MAX_NAM2NUM;
 			flags = rt_spin_lock_irqsave(&list_lock);
 			if ((name = ++nameseed) == 0xFFFFFFFFUL) {
-				name = nameseed = 4201025642UL;
+				name = nameseed = MAX_NAM2NUM;
 			}
+#else
+			flags = rt_spin_lock_irqsave(&list_lock);
+			name = MAX_NAM2NUM + irandu(0xFFFFFFFFUL - MAX_NAM2NUM - 2);
+#endif
 			rt_spin_unlock_irqrestore(flags, &list_lock);
 			if (!hash_find_name(name, lxrt_list, max_slots, 0, NULL)) {
 				return name;

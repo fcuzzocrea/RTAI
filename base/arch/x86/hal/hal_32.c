@@ -1668,6 +1668,8 @@ void ack_bad_irq(unsigned int irq)
 }
 
 extern struct ipipe_domain ipipe_root;
+extern void init_tsc_sync(void);
+extern void cleanup_tsc_sync(void);
 
 int __rtai_hal_init (void)
 {

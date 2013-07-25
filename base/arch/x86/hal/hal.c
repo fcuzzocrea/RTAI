@@ -44,7 +44,7 @@
 
 MODULE_LICENSE("GPL");
 
-#include <asm/rtai_hal.h>
+#include <rtai.h>
 
 #if defined(CONFIG_SMP) && defined(CONFIG_RTAI_DIAG_TSC_SYNC)
 

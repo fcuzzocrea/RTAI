@@ -2420,11 +2420,12 @@ static void *saved_syscall_prologue;
 
 #ifdef CONFIG_RTAI_SCHED_ISR_LOCK
 extern void *rtai_isr_sched;
+#endif /* CONFIG_RTAI_SCHED_ISR_LOCK */
 static void rtai_isr_sched_handle(int cpuid) /* Called with interrupts off */
 {
 	SCHED_UNLOCK_SCHEDULE(cpuid);
 }
-#endif /* CONFIG_RTAI_SCHED_ISR_LOCK */
+EXPORT_SYMBOL(rtai_isr_sched_handle);
 
 static int lxrt_init(void)
 {

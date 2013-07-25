@@ -268,7 +268,7 @@ libpreempt_rt_a_SOURCES = preempt-module.c
 
 display_SOURCES = display.c
 display_CPPFLAGS = \
-	@RTAI_USER_CFLAGS@ \
+	@RTAI_REAL_USER_CFLAGS@ \
 	-I$(top_srcdir)/base/include \
 	-I../../../base/include
 

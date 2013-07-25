@@ -183,36 +183,6 @@ static void sync_tsc(unsigned int master, unsigned int slave)
 #define DSLEEP  500 // ms
 static volatile int end;
 
-// see: Computing Practices, ACM, vol. 31, n. 10, 1988, pgs 1192-1201.
-
-#define TWOPWR31M1 2147483647  // 2^31 - 1
-
-static inline long next_rand(long rand)
-{
-	const long a = 16807;
-	const long m = TWOPWR31M1;
-	const long q = 127773;
-	const long r = 2836;
-
-	long lo, hi;
-
-	hi = rand/q;
-	lo = rand - hi*q;
-	rand = a*lo - r*hi;
-	if (rand <= 0) {
-		rand += m;
-	}
-	return rand;
-}
-
-static inline long irandu(unsigned long range)
-{
-	static long seed = 783637;
-	const long m = TWOPWR31M1;
-
-	seed = next_rand(seed);
-	return rtai_imuldiv(seed, range, m);
-}
 static void kthread_fun(void *null)
 {
 	int i;

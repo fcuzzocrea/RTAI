@@ -48,6 +48,8 @@
 
 #endif
 
+#define MAX_NAM2NUM 4096000003UL  // nam2num("$$$$$$") + 2
+
 /**
  * Convert a 6 characters string to an unsigned long.
  *
@@ -101,10 +103,8 @@ NAM2NUM_PROTO(unsigned long, nam2num, (const char *name))
 NAM2NUM_PROTO(void, num2nam, (unsigned long num, char *name))
 {
         int c, i, k, q; 
-	if (num >= 4201025642UL) {
-		unsigned int lnum = num;
-		memcpy(name, &lnum, 4);
-		name[4] = 0;
+	if (num >= MAX_NAM2NUM) {
+		strncpy(name, "|null|", 7);
 		return;
 	}
         i = 5; 

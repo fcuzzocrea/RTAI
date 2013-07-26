@@ -1,3 +1,9 @@
+2013-07-26 Paolo Mantegazza <mantegazza@aero.polimi.it>
+
+        * base/arch/x86/hal/hal.c and hal_32.c: fixed TSC sync support, broken
+	  because of both the new x86 unified making and the need to avoid 
+	  using kernel_thread(...) directly.
+
 2013-07-25 Pierangelo Masarati <masarati@aero.polimi.it>
 
 	* change making configuration so to not include Linux headers for user 

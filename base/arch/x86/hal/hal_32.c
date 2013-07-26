@@ -1554,6 +1554,12 @@ void rtai_set_linux_task_priority (struct task_struct *task, int policy, int pri
 
 struct proc_dir_entry *rtai_proc_root = NULL;
 
+#if defined(CONFIG_SMP) && defined(CONFIG_RTAI_DIAG_TSC_SYNC)
+extern void init_tsc_sync(void);
+extern void cleanup_tsc_sync(void);
+extern volatile long rtai_tsc_ofst[];
+#endif
+
 static int rtai_read_proc (char *page, char **start, off_t off, int count, int *eof, void *data)
 {
 	PROC_PRINT_VARS;
@@ -1601,7 +1607,7 @@ static int rtai_read_proc (char *page, char **start, off_t off, int count, int *
 #if defined(CONFIG_SMP) && defined(CONFIG_RTAI_DIAG_TSC_SYNC)
 	PROC_PRINT("** RTAI TSC OFFSETs (TSC units, 0 ref. CPU): ");
     	for (i = 0; i < num_online_cpus(); i++) {
-		PROC_PRINT("CPU#%d > %ld; ", i, rtai_tsc_ofst[i]);
+		PROC_PRINT("CPU#%d: %ld; ", i, rtai_tsc_ofst[i]);
         }
     	PROC_PRINT("\n\n");
 #endif
@@ -1668,8 +1674,6 @@ void ack_bad_irq(unsigned int irq)
 }
 
 extern struct ipipe_domain ipipe_root;
-extern void init_tsc_sync(void);
-extern void cleanup_tsc_sync(void);
 
 int __rtai_hal_init (void)
 {

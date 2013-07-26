@@ -198,10 +198,12 @@ static void kthread_fun(void *null)
 	end = 0;
 }
 
+#include <linux/kthread.h>
+
 void init_tsc_sync(void)
 {
 	if (num_online_cpus() > 1) {
-		kernel_thread((void *)kthread_fun, NULL, 0);
+		kthread_run((void *)kthread_fun, NULL, "RTAI_TSC_SYNC");
 		while(!first_sync_loop_done) {
 			msleep(100);
 		}
@@ -217,7 +219,5 @@ void cleanup_tsc_sync(void)
 		}
 	}
 }
-
-EXPORT_SYMBOL(rtai_tsc_ofst);
 
 #endif /* defined(CONFIG_SMP) && defined(CONFIG_RTAI_DIAG_TSC_SYNC) */

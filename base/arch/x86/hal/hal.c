@@ -59,6 +59,7 @@ static int sync_cnt[RTAI_NR_CPUS];
 #endif
 
 volatile long rtai_tsc_ofst[RTAI_NR_CPUS];
+EXPORT_SYMBOL(rtai_tsc_ofst);
 
 static inline long long readtsc(void)
 {

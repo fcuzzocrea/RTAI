@@ -1,3 +1,10 @@
+2013-07-26 Pierangelo Masarati <masarati@aero.polimi.it>
+
+	* change the making of the schedulers, finally we got rid of a useless
+	  double creation of the same scheduler; now the only real scheduler
+	  is rtai_sched, legacy is saved by linking lxrt, ksched, up, mup and
+	  smp to it.
+
 2013-07-26 Paolo Mantegazza <mantegazza@aero.polimi.it>
 
         * base/arch/x86/hal/hal.c and hal_32.c: fixed TSC sync support, broken
@@ -7,7 +14,7 @@
 2013-07-25 Pierangelo Masarati <masarati@aero.polimi.it>
 
 	* change making configuration so to not include Linux headers for user 
-	  space code; it makes GCC >= 4.7.2 yell for conflicting definitions 
+	  space code; it made GCC >= 4.7.2 yell for conflicting definitions 
 	  within the same headers; it does not break under older GCCs, which
 	  did not yell.
 

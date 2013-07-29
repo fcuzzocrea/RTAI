@@ -1,3 +1,7 @@
+2013-07-29 Paolo Mantegazza <mantegazza@aero.polimi.it>
+
+        * base/ipc/netrpc/netrpc.c added a missing kclose for x86_64.
+
 2013-07-26 Pierangelo Masarati <masarati@aero.polimi.it>
 
 	* change the making of the schedulers, finally we got rid of a useless

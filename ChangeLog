@@ -1,3 +1,8 @@
+2013-07-30 Paolo Mantegazza <mantegazza@aero.polimi.it>
+
+        * base/ipc/msg/msg.c: tightened task and message copying pointers
+	  checks.
+
 2013-07-29 Paolo Mantegazza <mantegazza@aero.polimi.it>
 
         * base/ipc/netrpc/netrpc.c added a missing kclose for x86_64.

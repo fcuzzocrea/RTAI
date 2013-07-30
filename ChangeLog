@@ -1,6 +1,6 @@
 2013-07-30 Paolo Mantegazza <mantegazza@aero.polimi.it>
 
-        * base/ipc/msg/msg.c: tightened task and message copying pointers
+        * base/ipc/msg/msg.c: tightened task and message copying pointer
 	  checks.
 
 2013-07-29 Paolo Mantegazza <mantegazza@aero.polimi.it>

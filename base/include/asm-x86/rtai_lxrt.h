@@ -18,8 +18,8 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA.
  */
 
-#ifndef _RTAI_ASM_I386_LXRT_H
-#define _RTAI_ASM_I386_LXRT_H
+#ifndef _RTAI_ASM_X86_LXRT_H
+#define _RTAI_ASM_X86_LXRT_H
 
 #include <linux/version.h>
 
@@ -163,4 +163,4 @@ static inline union rtai_lxrt_t rtai_lxrt(short int dynx, short int lsize, int s
 }
 #endif /* __cplusplus */
 
-#endif /* !_RTAI_ASM_I386_LXRT_H */
+#endif /* !_RTAI_ASM_X86_LXRT_H */

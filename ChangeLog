@@ -1,3 +1,9 @@
+2013-08-01 Paolo Mantegazza <mantegazza@aero.polimi.it>
+
+        * base/include/asm-x86/rtai_sched_32.h, rtai_sched_64.h and 
+	  rtai_sched.h: removed and gathered code common to 64 and 32 into 
+	  rtai_sched.h.
+
 2013-07-30 Paolo Mantegazza <mantegazza@aero.polimi.it>
 
         * base/ipc/msg/msg.c: tightened task and message copying pointer

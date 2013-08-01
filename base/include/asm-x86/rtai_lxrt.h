@@ -23,8 +23,6 @@
 
 #include <linux/version.h>
 
-//#include <asm/rtai_vectors.h>
-
 #ifdef CONFIG_RTAI_LXRT_USE_LINUX_SYSCALL
 #define USE_LINUX_SYSCALL
 #else

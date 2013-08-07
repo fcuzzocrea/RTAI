@@ -605,14 +605,10 @@ static inline long long handle_lxrt_request (unsigned int lxsrq, long *arg, RT_T
 #ifdef CONFIG_RTAI_HARD_SOFT_TOGGLER
 			  else if (task) {
 				rtai_cli();
-				if (task->is_hard < 0) {
-					task->is_hard = 0;
+				if (task->is_hard > 0) {
+					rt_make_soft_real_time(task); 
 				} else {
-					if (task->is_hard > 0) {
-						rt_make_soft_real_time(task); 
-					} else {
-						rt_make_hard_real_time(task);
-					}
+					rt_make_hard_real_time(task);
 				}
 				rtai_sti();
 			}

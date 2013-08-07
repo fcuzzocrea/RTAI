@@ -1379,7 +1379,7 @@ RTAI_PROTO(void,rt_set_usp_flags_mask,(unsigned long flags_mask))
 	rtai_lxrt(BIDX, SIZARG, SET_USP_FLG_MSK, &arg);
 }
 
-RTAI_PROTO(int, rt_get_linux_tid, (RT_TASK *task))
+RTAI_PROTO(pid_t, rt_get_linux_tid, (RT_TASK *task))
 {
 	struct { RT_TASK *task; } arg = { task };
 	return rtai_lxrt(BIDX, SIZARG, HARD_SOFT_TOGGLER, &arg).i[LOW];

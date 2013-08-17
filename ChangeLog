@@ -1,4 +1,4 @@
-2013-17-08 Paolo Mantegazza <mantegazza@aero.polimi.it>
+2013-08-17 Paolo Mantegazza <mantegazza@aero.polimi.it>
         * base/sched/sched.c: rt_signal_wake_up wakes up on Linux signals 
 	  hanyhow.
 

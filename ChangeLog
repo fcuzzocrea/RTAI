@@ -4,8 +4,8 @@
 	  into two parts, fixes possible SMP preemption issues.
 	* base/addons/rtdm/xn.h: add missing list pointers at timers
 	  initialization.
-	 (N.B. a forgotten due recovery of a year old fix existing in 
-	  VULCANO CVS.) 
+	 (N.B. a forgotten due recovery of a year old, 2012-08-03, fix 
+	  existing in VULCANO CVS already.) 
 
 2013-08-07 Paolo Mantegazza <mantegazza@aero.polimi.it>
 

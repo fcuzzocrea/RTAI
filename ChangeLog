@@ -1,3 +1,7 @@
+2013-17-08 Paolo Mantegazza <mantegazza@aero.polimi.it>
+        * base/sched/sched.c: rt_signal_wake_up wakes up on Linux signals 
+	  hanyhow.
+
 2013-08-08 Paolo Mantegazza <mantegazza@aero.polimi.it>
 
         * base/isched/sys.c: check msg pointer before copying it from user

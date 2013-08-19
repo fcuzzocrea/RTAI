@@ -39,7 +39,7 @@ host_triplet = @host@
 @CONFIG_I386_TRUE@	rtai_fpu_32.h \
 @CONFIG_I386_TRUE@	rtai_hal_32.h \
 @CONFIG_I386_TRUE@	rtai_sched_32.h \
-@CONFIG_I386_FALSE@	rtai_lxrt_32.h
+@CONFIG_I386_TRUE@	rtai_lxrt_32.h
 
 @CONFIG_I386_FALSE@am__append_2 = 
 subdir = base/include/asm-x86

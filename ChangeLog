@@ -1,7 +1,7 @@
 2013-08-19 Paolo Mantegazza <mantegazza@aero.polimi.it>
 
 	* base/arch/x86/Kconfig: ask for RTNet installation directory if 
-          NETRPC has to use it.
+	  NETRPC has to use it.
 
 2013-08-19 Roberto Bucher <roberto.bucher@supsi.ch>
 

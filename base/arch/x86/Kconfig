@@ -461,6 +461,14 @@ config RTAI_NETRPC_RTNET
 	Notice that the initial linking and set up of remote port stubs is 
 	done in soft mode always.
 
+config RTAI_RTNET_DIR
+	depends on RTAI_NETRPC_RTNET
+	string "RTNET installation directory"
+	default "/usr/rtnet"
+	help
+	You Rhave chosen to use RTAI netrpc services with RTNet, so you have
+	to tell where it is located.
+
 config RTAI_SHM
 	tristate "Shared memory"
 	default m
@@ -492,7 +500,7 @@ config RTAI_SEM
 	The module will be called rtai_sem.o.
 
 config RTAI_RT_POLL
-	bool "Enable IPCs polling"
+	bool "  Enable IPCs polling"
 	depends on RTAI_SEM
 	default n
 	help

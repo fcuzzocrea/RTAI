@@ -1,3 +1,16 @@
+2013-08-19 Roberto Bucher <roberto.bucher@supsi.ch>
+
+	* rtai-lab/xrtailab.cpp: few blank lines for better read code
+	* rtai-lab/scicoslab/devices/scicos_block4.h: new version from 
+	  scicoslab-4.4.1
+	* rtai-lab/scicoslab/macros/Makefile: fitted to scicoslab-4.4.1
+	* rtai-lab/scicoslab/macros/RTAICodeGen_.sci: new version for
+	  scicoslab-4.4.1
+	* rtai-lab/scicoslab/macros/SetTarget_.sci: new version for
+	  scicoslab-4.4.1
+	* rtai-lab/scicoslab/macros/RT_templates/rtai.mak: added blas, 
+	  lapack and gfortran libs for the linker
+	
 2013-08-18 Paolo Mantegazza <mantegazza@aero.polimi.it>
 
 	* base/include/asm-x86/rtai_lxrt.h: set appropriate use of the 

@@ -591,16 +591,7 @@ void rt_end_irq (unsigned irq)
 
 void rt_eoi_irq (unsigned irq)
 {
-        if (
 #ifdef CONFIG_X86_IO_APIC
-            !IO_APIC_IRQ(irq) ||
-#endif /* CONFIG_X86_IO_APIC */
-            !(rtai_irq_desc(irq).status_use_accessors & (IRQD_IRQ_DISABLED | IRQD_IRQ_INPROGRESS))) {
-        }
-#if defined(CONFIG_X86_IO_APIC) && LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,19)
-        rtai_irq_desc_chip(irq)->rtai_irq_endis_fun(eoi, irq);
-#else /* !(CONFIG_X86_IO_APIC && LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,19))
-*/
         rtai_irq_desc_chip(irq)->rtai_irq_endis_fun(end, irq);
 #endif
 }
@@ -1780,8 +1771,10 @@ int __rtai_hal_init (void)
 struct hal_sysinfo_struct sysinfo;
 hal_get_sysinfo(&sysinfo);
 printk("SYSINFO: CPUs %d, LINUX APIC IRQ %d, TIM_FREQ %llu, CLK_FREQ %llu, CPU_FREQ %llu\n", sysinfo.sys_nr_cpus, sysinfo.sys_hrtimer_irq, sysinfo.sys_hrtimer_freq, sysinfo.sys_hrclock_freq, sysinfo.sys_cpu_freq); 
+#ifdef CONFIG_X86_LOCAL_APIC
 printk("RTAI_APIC_TIMER_IPI: RTAI DEFINED %d, VECTOR %d; LINUX_APIC_TIMER_IPI: RTAI DEFINED %d, VECTOR %d\n", RTAI_APIC_TIMER_IPI, ipipe_apic_vector_irq(0xf1), LOCAL_TIMER_IPI, ipipe_apic_vector_irq(0xef));
 printk("TIMER NAME: %s; VARIOUSLY FOUND APIC FREQs: %lu, %lu, %u\n", ipipe_timer_name(), hal_request_apic_freq(), hal_request_apic_freq(), apic_read(APIC_TMICT)*HZ);
+#endif
 }
 
 	return 0;

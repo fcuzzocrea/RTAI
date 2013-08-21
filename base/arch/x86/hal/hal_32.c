@@ -61,7 +61,6 @@
 #include <asm/uaccess.h>
 #include <asm/unistd.h>
 #ifdef CONFIG_X86_LOCAL_APIC
-a=
 #include <asm/fixmap.h>
 #include <asm/bitops.h>
 #include <asm/mpspec.h>

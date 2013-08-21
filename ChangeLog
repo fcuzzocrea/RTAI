@@ -1,3 +1,10 @@
+2013-08-22 Paolo Mantegazza <mantegazza@aero.polimi.it>
+
+	* base/arch/x86/hal/hal_32.c: do not request the 8254-PIT interrupt, 
+	  it is done by the patch already; so if the related timer handler 
+	  is installed in advance the following rtai_request_tickdev will 
+	  get an error and the related 8254 stuff will not be initialized.
+
 2013-08-20 Paolo Mantegazza <mantegazza@aero.polimi.it>
 
 	* base/arch/x86/hal/hal_32.c: use the irq desc eoi.

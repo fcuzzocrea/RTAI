@@ -61,6 +61,7 @@
 #include <asm/uaccess.h>
 #include <asm/unistd.h>
 #ifdef CONFIG_X86_LOCAL_APIC
+a=
 #include <asm/fixmap.h>
 #include <asm/bitops.h>
 #include <asm/mpspec.h>
@@ -591,9 +592,7 @@ void rt_end_irq (unsigned irq)
 
 void rt_eoi_irq (unsigned irq)
 {
-#ifdef CONFIG_X86_IO_APIC
-        rtai_irq_desc_chip(irq)->rtai_irq_endis_fun(end, irq);
-#endif
+        rtai_irq_desc_chip(irq)->rtai_irq_endis_fun(eoi, irq);
 }
 
 /**

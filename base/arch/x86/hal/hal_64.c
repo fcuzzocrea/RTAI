@@ -1678,8 +1678,9 @@ int __rtai_hal_init (void)
 	int trapnr, halinv = 0;
 	struct hal_attr_struct attr;
 
+	ipipe_catch_event(hal_root_domain, 0, 0);
 	for (halinv = trapnr = 0; trapnr < HAL_NR_EVENTS; trapnr++) {
-		if (hal_root_domain->hal_event_handler_fun(trapnr)) {
+		if (hal_root_domain->legacy.handlers[trapnr] && hal_root_domain->legacy.handlers[trapnr] != hal_root_domain->legacy.handlers[0]) {
 			halinv = 1;
 			printk("EVENT %d INVALID.\n", trapnr);
 		}

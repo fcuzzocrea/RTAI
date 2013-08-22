@@ -606,19 +606,7 @@ void rt_end_irq (unsigned irq)
 
 void rt_eoi_irq (unsigned irq)
 {
-	if (
-#ifdef CONFIG_X86_IO_APIC
-	    !IO_APIC_IRQ(irq) ||
-#endif /* CONFIG_X86_IO_APIC */
-            !(rtai_irq_desc(irq).status_use_accessors & (IRQD_IRQ_DISABLED | IRQD_IRQ_INPROGRESS))) {
-        }
-#if defined(CONFIG_X86_IO_APIC) && LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,19)
 	rtai_irq_desc_chip(irq)->rtai_irq_endis_fun(eoi, irq);
-#else /* !(CONFIG_X86_IO_APIC && LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,19))
-*/
-//	rtai_irq_desc_chip(irq)->end(irq);
-	rtai_irq_desc_chip(irq)->rtai_irq_endis_fun(end, irq);
-#endif
 }
 
 /**
@@ -1154,7 +1142,12 @@ int rt_request_timer (void (*handler)(void), unsigned tick, int use_apic)
 			outb(tick & 0xff, 0x40);
 			outb(tick >> 8, 0x40);
 			rt_release_irq(RTAI_TIMER_8254_IRQ);
-		    	retval = rt_request_irq(RTAI_TIMER_8254_IRQ, (rt_irq_handler_t)handler, NULL, 0);
+/* Do not make this request, it is done by the patch already; so if you install
+ * the timer handler in advance the following rtai_request_tickdev will get an
+ * error and the related 8254 stuff will not be initialized. Since X86_64 has
+ * an APIC always, this is likley not an issue in this case.
+ * NOT TO BE MADE       retval = rt_request_irq(RTAI_TIMER_8254_IRQ, (rt_irq_handler_t)handler, NULL, 0);
+ */
 		}
 	} else {
 		rt_times.linux_tick = rtai_imuldiv(LATCH,rtai_tunables.cpu_freq,RTAI_FREQ_8254);
@@ -1172,7 +1165,12 @@ int rt_request_timer (void (*handler)(void), unsigned tick, int use_apic)
 			outb(LATCH & 0xff, 0x40);
 			outb(LATCH >> 8, 0x40);
 			rt_release_irq(RTAI_TIMER_8254_IRQ);
-			retval = rt_request_irq(RTAI_TIMER_8254_IRQ, (rt_irq_handler_t)handler, NULL, 0);
+/* Do not make this request, it is done by the patch already; so if you install
+ * the timer handler in advance the following rtai_request_tickdev will get an
+ * error and the related 8254 stuff will not be initialized. Since X86_64 has
+ * an APIC always, this is likley not an issue in this case.
+ * NOT TO BE MADE       retval = rt_request_irq(RTAI_TIMER_8254_IRQ, (rt_irq_handler_t)handler, NULL, 0);
+ */
 		}
 	}
 	rtai_request_tickdev(handler);

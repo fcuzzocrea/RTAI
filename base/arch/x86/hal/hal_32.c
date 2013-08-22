@@ -1111,7 +1111,7 @@ int rt_request_timer (void (*handler)(void), unsigned tick, int use_apic)
 			outb(tick & 0xff, 0x40);
 			outb(tick >> 8, 0x40);
 			rt_release_irq(RTAI_TIMER_8254_IRQ);
-/* do not make this request, it is done by the patch already; so if you install  * the timer handler in advance the following rtai_request_tickdev will get an
+/* Do not make this request, it is done by the patch already; so if you install  * the timer handler in advance the following rtai_request_tickdev will get an
  * error and the related 8254 stuff will not be initialized.
  * NOT TO BE MADE    	retval = rt_request_irq(RTAI_TIMER_8254_IRQ, (rt_irq_handler_t)handler, NULL, 0);
  */
@@ -1132,7 +1132,7 @@ int rt_request_timer (void (*handler)(void), unsigned tick, int use_apic)
 			outb(LATCH & 0xff, 0x40);
 			outb(LATCH >> 8, 0x40);
 			rt_release_irq(RTAI_TIMER_8254_IRQ);
-/* do not make this request, it is done by the patch already; so if you install  * the timer handler in advance the following rtai_request_tickdev will get an
+/* Do not make this request, it is done by the patch already; so if you install  * the timer handler in advance the following rtai_request_tickdev will get an
  * error and the related 8254 stuff will not be initialized.
  * NOT TO BE MADE    	retval = rt_request_irq(RTAI_TIMER_8254_IRQ, (rt_irq_handler_t)handler, NULL, 0);
  */

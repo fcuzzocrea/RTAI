@@ -1111,14 +1111,13 @@ int rt_request_timer (void (*handler)(void), unsigned tick, int use_apic)
 			outb(tick & 0xff, 0x40);
 			outb(tick >> 8, 0x40);
 			rt_release_irq(RTAI_TIMER_8254_IRQ);
-/* This request should not be made, it is done by the patch already, see 
- * ipipe_timer_start; so if you install the timer handler in advance the 
+ 		    	retval = rt_request_irq(RTAI_TIMER_8254_IRQ, (rt_irq_handler_t)handler, NULL, 0);
+/* The above rt_request_irq should not be made, it is done by the patch already, * see ipipe_timer_start; so if you install the timer handler in advance the 
  * following rtai_request_tickdev will get an error and the related 8254 stuff 
  * will not be initialized.
  * NOT TO BE MADE    	retval = rt_request_irq(RTAI_TIMER_8254_IRQ, (rt_irq_handler_t)handler, NULL, 0);
  * ... unless we change the patch, as we did. SO LET'S KEEP:
  */
- 		    	retval = rt_request_irq(RTAI_TIMER_8254_IRQ, (rt_irq_handler_t)handler, NULL, 0);
 		}
 	} else {
 		rt_times.linux_tick = rtai_imuldiv(LATCH,rtai_tunables.cpu_freq,RTAI_FREQ_8254);
@@ -1136,14 +1135,13 @@ int rt_request_timer (void (*handler)(void), unsigned tick, int use_apic)
 			outb(LATCH & 0xff, 0x40);
 			outb(LATCH >> 8, 0x40);
 			rt_release_irq(RTAI_TIMER_8254_IRQ);
-/* This request should not be made, it is done by the patch already, see 
- * ipipe_timer_start; so if you install the timer handler in advance the 
+ 		    	retval = rt_request_irq(RTAI_TIMER_8254_IRQ, (rt_irq_handler_t)handler, NULL, 0);
+/* The above rt_request_irq should not be made, it is done by the patch already, * see ipipe_timer_start; so if you install the timer handler in advance the 
  * following rtai_request_tickdev will get an error and the related 8254 stuff 
  * will not be initialized.
  * NOT TO BE MADE    	retval = rt_request_irq(RTAI_TIMER_8254_IRQ, (rt_irq_handler_t)handler, NULL, 0);
- * ... unless we change the patch, as wei did. SO LET'S KEEP:
+ * ... unless we change the patch, as we did. SO LET'S KEEP:
  */
-			retval = rt_request_irq(RTAI_TIMER_8254_IRQ, (rt_irq_handler_t)handler, NULL, 0);
 		}
 	}
 	rtai_request_tickdev(handler);

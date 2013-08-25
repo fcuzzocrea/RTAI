@@ -1,3 +1,12 @@
+2013-08-25 Paolo Mantegazza <mantegazza@aero.polimi.it>
+
+	* base/arch/x86/hal/hal_32.c: return to requesting the 8254-PIT 
+	  interrupt in rt_timer_request, we care of the related issue,
+	  alrady solved in the way of the explanation below, by modifying 
+	  the patch.
+	* base/arch/x86/hal/hal_64.c: same as above, but, once more, since 
+	  X86_64 has an APIC always, it is likely non an issue in this case.
+
 2013-08-22 Paolo Mantegazza <mantegazza@aero.polimi.it>
 
 	* base/arch/x86/hal/hal_32.c: do not request the 8254-PIT interrupt, 

@@ -9,10 +9,11 @@
 
 2013-08-22 Paolo Mantegazza <mantegazza@aero.polimi.it>
 
-	* base/arch/x86/hal/hal_32.c: do not request the 8254-PIT interrupt, 
-	  it is done by the patch already; so if the related timer handler 
-	  is installed in advance the following rtai_request_tickdev will 
-	  get an error and the related 8254 stuff will not be initialized.
+	* base/arch/x86/hal/hal_32.c: do not request the 8254-PIT interrupt 
+	  in rt_timer_request, it is done by the patch already; so if the 
+	  related timer handler is installed in advance the following 
+	  rtai_request_tickdev will get an error and the related 8254 stuff 
+	  will not be initialized.
 	* base/arch/x86/hal/hal_64.c: same as above, since X86_64 has an APIC
 	  always, it is likely non an issue in this case.
 

@@ -1,3 +1,8 @@
+2013-08-26 Ian Abbott <abbotti@mev.co.uk>
+
+	* configure.in: Some AC_CONFIG_LINKS() go wrong when building
+	  outside the source tree.
+
 2013-08-25 Paolo Mantegazza <mantegazza@aero.polimi.it>
 
 	* base/arch/x86/hal/hal_32.c: return to requesting the 8254-PIT 

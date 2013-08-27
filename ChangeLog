@@ -1,3 +1,9 @@
+2013-08-27 Paolo Mantegazza <mantegazza@aero.polimi.it>
+
+	* configure.in, base/arch/x86/Kconfig: enable hard-soft toggling,
+	  by automatically installing a SIGUSR1 Linux signal & handler,
+	  using standard Linux KILL support
+
 2013-08-26 Ian Abbott <abbotti@mev.co.uk>
 
 	* configure.in: Some AC_CONFIG_LINKS() go wrong when building

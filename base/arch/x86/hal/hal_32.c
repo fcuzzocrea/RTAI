@@ -7,8 +7,8 @@
  *
  *   Original RTAI/x86 layer implementation: \n
  *   Copyright &copy; 2000-2013 Paolo Mantegazza, \n
- *   Copyright &copy; 2000 Steve Papacharalambous, \n
- *   Copyright &copy; 2000 Stuart Hughes, \n
+ *   Copyright &copy; 2000      Steve Papacharalambous, \n
+ *   Copyright &copy; 2000      Stuart Hughes, \n
  *   and others.
  *
  *   RTAI/x86 rewrite over Adeos: \n

@@ -1441,7 +1441,7 @@ EXPORT_SYMBOL(rtai_usrq_dispatcher);
 static int intercept_syscall_prologue(unsigned long event, struct pt_regs *regs)
 {
 	if (likely(regs->LINUX_SYSCALL_NR >= RTAI_SYSCALL_NR)) {
-		unsigned long srq  = regs->LINUX_SYSCALL_REG1;
+		unsigned long srq = regs->LINUX_SYSCALL_REG1;
 		IF_IS_A_USI_SRQ_CALL_IT(srq, regs->LINUX_SYSCALL_REG2, (long long *)regs->LINUX_SYSCALL_REG3, regs->LINUX_SYSCALL_FLAGS, 1);
 		*((long long *)regs->LINUX_SYSCALL_REG3) = rtai_usrq_dispatcher(srq, regs->LINUX_SYSCALL_REG2);
 		hal_test_and_fast_flush_pipeline(rtai_cpuid());
@@ -1644,7 +1644,7 @@ static int rtai_proc_register (void)
 		printk(KERN_ERR "Unable to initialize /proc/rtai/hal.\n");
 		return -1;
         }
-	ent->read_proc  = rtai_read_proc;
+	ent->read_proc = rtai_read_proc;
 
 	return 0;
 }

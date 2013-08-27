@@ -142,7 +142,7 @@ static struct {
 
 static unsigned rtai_sysreq_virq;
 
-static unsigned long rtai_sysreq_map = 3; /* srqs #[0-1] are reserved */
+static unsigned long rtai_sysreq_map = 1; /* srq 0 is reserved */
 
 static unsigned long rtai_sysreq_pending;
 
@@ -246,9 +246,6 @@ void rt_set_irq_retmode (unsigned irq, int retmode)
 	}
 }
 
-//extern unsigned long io_apic_irqs;
-
-
 
 // A bunch of macros to support Linux developers moods in relation to
 // interrupt handling across various releases.
@@ -288,54 +285,6 @@ void rt_set_irq_retmode (unsigned irq, int retmode)
 #define rtai_irq_endis_fun(fun, irq) fun(irq)
 #else
 #define rtai_irq_endis_fun(fun, irq) irq_##fun(&(rtai_irq_desc(irq).irq_data))
-#endif
-
-
-
-#if 0
-#if LINUX_VERSION_CODE > KERNEL_VERSION(2,6,11)
-
-#if LINUX_VERSION_CODE < KERNEL_VERSION(2,6,18)
-#define rtai_irq_desc_chip(irq) (irq_desc[irq].handler)
-#define rtai_irq_desc(irq) irq_desc[irq]
-#else
-#if defined(__IPIPE_2LEVEL_IRQMAP) || defined(__IPIPE_3LEVEL_IRQMAP)
-#define rtai_irq_desc_chip(irq) (irq_to_desc(irq)->chip)
-#define rtai_irq_desc(irq) (irq_to_desc(irq))[0]
-#else
-#define rtai_irq_desc_chip(irq) (irq_desc[irq].chip)
-#define rtai_irq_desc(irq) irq_desc[irq]
-#endif
-#endif
-
-#define BEGIN_PIC()
-#define END_PIC()
-#undef hal_lock_irq
-#undef hal_unlock_irq
-#define hal_lock_irq(x, y, z)
-#define hal_unlock_irq(x, y)
-
-#else /* LINUX_VERSION_CODE < KERNEL_VERSION(2,6,11) */
-
-extern struct hw_interrupt_type hal_std_irq_dtype[];
-#define rtai_irq_desc_chip(irq) (&hal_std_irq_dtype[irq])
-#define rtai_irq_desc(irq) irq_desc[irq]
-
-#define BEGIN_PIC() \
-do { \
-        unsigned long flags, pflags, cpuid; \
-	rtai_save_flags_and_cli(flags); \
-	cpuid = rtai_cpuid(); \
-	pflags = xchg(ROOT_STATUS_ADR(cpuid), 1 << IPIPE_STALL_FLAG); \
-	rtai_save_and_lock_preempt_count()
-
-#define END_PIC() \
-	rtai_restore_preempt_count(); \
-	ROOT_STATUS_VAL(cpuid) = pflags; \
-	rtai_restore_flags(flags); \
-} while (0)
-
-#endif /* LINUX_VERSION_CODE < KERNEL_VERSION(2,6,11) */
 #endif
 
 /**
@@ -406,7 +355,11 @@ void rt_shutdown_irq (unsigned irq)
 
 static inline void _rt_enable_irq (unsigned irq)
 {
-	rtai_irq_desc_chip(irq)->rtai_irq_endis_fun(enable, irq);
+	if (rtai_irq_desc_chip(irq)->irq_enable) {
+		rtai_irq_desc_chip(irq)->rtai_irq_endis_fun(enable, irq);
+	} else {
+		rtai_irq_desc_chip(irq)->rtai_irq_endis_fun(unmask, irq);
+	}
 }
 
 /**
@@ -470,7 +423,11 @@ void rt_enable_irq (unsigned irq)
  */
 void rt_disable_irq (unsigned irq)
 {
-	rtai_irq_desc_chip(irq)->rtai_irq_endis_fun(disable, irq);
+	if (rtai_irq_desc_chip(irq)->irq_disable) {
+		rtai_irq_desc_chip(irq)->rtai_irq_endis_fun(disable, irq);
+	} else {
+		rtai_irq_desc_chip(irq)->rtai_irq_endis_fun(mask, irq);
+	}
 }
 
 /**
@@ -506,22 +463,18 @@ void rt_disable_irq (unsigned irq)
  */
 void rt_mask_and_ack_irq (unsigned irq)
 {
-	rtai_irq_desc_chip(irq)->rtai_irq_endis_fun(ack, irq);
+	rtai_irq_desc_chip(irq)->rtai_irq_endis_fun(mask_ack, irq);
 }
-
 #if 0
 static inline void _rt_end_irq (unsigned irq)
 {
-	BEGIN_PIC();
 	if (
 #ifdef CONFIG_X86_IO_APIC
 	    !IO_APIC_IRQ(irq) ||
 #endif /* CONFIG_X86_IO_APIC */
 	    !(rtai_irq_desc(irq).status & (IRQ_DISABLED | IRQ_INPROGRESS))) {
-		hal_unlock_irq(hal_root_domain, irq);
 	}
-	rtai_irq_desc_chip(irq)->end(irq);
-	END_PIC();
+	rtai_irq_desc_chip(irq)->rtai_irq_endis_fun(end, irq);
 }
 #endif
 
@@ -555,9 +508,14 @@ static inline void _rt_end_irq (unsigned irq)
  * have done it right, and interrupts do not show up, it is likely you have just
  * to rt_enable_irq() your irq.
  */
+void rt_mask_irq (unsigned irq)
+{
+	rtai_irq_desc_chip(irq)->rtai_irq_endis_fun(mask, irq);
+}
+
 void rt_unmask_irq (unsigned irq)
 {
-//	_rt_end_irq(irq);
+	rtai_irq_desc_chip(irq)->rtai_irq_endis_fun(unmask, irq);
 }
 
 /**
@@ -597,7 +555,8 @@ void rt_ack_irq (unsigned irq)
 
 void rt_end_irq (unsigned irq)
 {
-//	_rt_end_irq(irq);
+//      rtai_irq_desc_chip(irq)->rtai_irq_endis_fun(unmask, irq);
+	_rt_enable_irq(irq);
 }
 
 void rt_eoi_irq (unsigned irq)
@@ -672,7 +631,7 @@ int rt_free_linux_irq (unsigned irq, void *dev_id)
 	}
 
 	rtai_save_flags_and_cli(flags);
-	free_irq(irq,dev_id);
+	free_irq(irq, dev_id);
 	spin_lock(&rtai_irq_desc(irq).lock);
 	if (--rtai_linux_irq[irq].count == 0 && rtai_irq_desc(irq).action) {
 		rtai_irq_desc(irq).action->flags = rtai_linux_irq[irq].flags;
@@ -850,7 +809,7 @@ irqreturn_t rtai_broadcast_to_local_timers (int irq, void *dev_id, struct pt_reg
 #ifdef CONFIG_SMP
 
 static unsigned long rtai_old_irq_affinity[IPIPE_NR_XIRQS];
-static int rtai_orig_irq_affinity[IPIPE_NR_XIRQS];
+static unsigned long rtai_orig_irq_affinity[IPIPE_NR_XIRQS];
 
 //static spinlock_t rtai_iset_lock = SPIN_LOCK_UNLOCKED;
 static DEFINE_SPINLOCK(rtai_iset_lock);
@@ -1026,7 +985,6 @@ unsigned long rt_assign_irq_to_cpu (int irq, unsigned long cpumask)
         }
 }
 
-
 /**
  * reset IRQ->CPU assignment
  *
@@ -1086,12 +1044,12 @@ void rt_free_apic_timers(void)
 	rt_free_timer();
 }
 
-int rt_assign_irq_to_cpu (int irq, unsigned long cpus_mask)
+unsigned long rt_assign_irq_to_cpu (int irq, unsigned long cpus_mask)
 {
 	return 0;
 }
 
-int rt_reset_irq_to_sym_mode (int irq)
+unsigned long rt_reset_irq_to_sym_mode (int irq)
 {
 	return 0;
 }
@@ -1288,11 +1246,10 @@ static int rtai_hirq_dispatcher (int irq)
                         return 0;
                 }
         }
-//      rtai_sti();
-        hal_fast_flush_pipeline(cpuid);
-        return 0;
+	rtai_sti();
+	hal_fast_flush_pipeline(cpuid);
+	return 0;
 }
-
 
 //#define HINT_DIAG_ECHO
 //#define HINT_DIAG_TRAPS
@@ -1781,6 +1738,7 @@ EXPORT_SYMBOL(rt_shutdown_irq);
 EXPORT_SYMBOL(rt_enable_irq);
 EXPORT_SYMBOL(rt_disable_irq);
 EXPORT_SYMBOL(rt_mask_and_ack_irq);
+EXPORT_SYMBOL(rt_mask_irq);
 EXPORT_SYMBOL(rt_unmask_irq);
 EXPORT_SYMBOL(rt_ack_irq);
 EXPORT_SYMBOL(rt_end_irq);
@@ -1788,10 +1746,10 @@ EXPORT_SYMBOL(rt_eoi_irq);
 EXPORT_SYMBOL(rt_request_linux_irq);
 EXPORT_SYMBOL(rt_free_linux_irq);
 EXPORT_SYMBOL(rt_pend_linux_irq);
+EXPORT_SYMBOL(usr_rt_pend_linux_irq);
 EXPORT_SYMBOL(rt_request_srq);
 EXPORT_SYMBOL(rt_free_srq);
 EXPORT_SYMBOL(rt_pend_linux_srq);
-EXPORT_SYMBOL(usr_rt_pend_linux_irq);
 EXPORT_SYMBOL(rt_assign_irq_to_cpu);
 EXPORT_SYMBOL(rt_reset_irq_to_sym_mode);
 EXPORT_SYMBOL(rt_request_apic_timers);
@@ -1834,8 +1792,8 @@ EXPORT_SYMBOL(IsolCpusMask);
 
 #if defined(CONFIG_GENERIC_CLOCKEVENTS) && CONFIG_RTAI_RTC_FREQ == 0
 
-#include <linux/clockchips.h>
-#include <linux/ipipe_tickdev.h>
+//#include <linux/clockchips.h>
+//#include <linux/ipipe_tickdev.h>
 
 void (*rt_linux_hrt_set_mode)(enum clock_event_mode, struct clock_event_device *);
 int (*rt_linux_hrt_next_shot)(unsigned long, struct clock_event_device *);

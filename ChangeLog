@@ -1,4 +1,5 @@
-2013-08-27 Paolo Mantegazza <mantegazza@aero.polimi.it>
+2013-08-27 Pierangelo Masarati <masarati@aero.polimi.it>
+           Paolo Mantegazza <mantegazza@aero.polimi.it>
 
 	* configure.in, base/arch/x86/Kconfig: enable hard-soft toggling,
 	  by automatically installing a SIGUSR1 Linux signal & handler,

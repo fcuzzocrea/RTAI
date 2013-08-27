@@ -82,7 +82,7 @@ MODULE_LICENSE("GPL");
 static unsigned long rtai_cpufreq_arg = RTAI_CALIBRATED_CPU_FREQ;
 RTAI_MODULE_PARM(rtai_cpufreq_arg, ulong);
 
-#define RTAI_NR_IRQS  IPIPE_NR_XIRQS
+#define RTAI_NR_IRQS  IPIPE_NR_IRQS
 
 #ifdef CONFIG_X86_LOCAL_APIC
 
@@ -1279,6 +1279,7 @@ static int rtai_trap_fault (unsigned event, void *evdata)
                 }
         } while (0);
 #endif
+
 	static const int trap2sig[] = {
     		SIGFPE,         //  0 - Divide error
 		SIGTRAP,        //  1 - Debug
@@ -1373,7 +1374,7 @@ EXPORT_SYMBOL(rtai_usrq_dispatcher);
 static int intercept_syscall_prologue(unsigned long event, struct pt_regs *regs)
 {
         if (likely(regs->LINUX_SYSCALL_NR >= RTAI_SYSCALL_NR)) {
-                unsigned long srq  = regs->LINUX_SYSCALL_REG1;
+                unsigned long srq = regs->LINUX_SYSCALL_REG1;
 		IF_IS_A_USI_SRQ_CALL_IT(srq, regs->LINUX_SYSCALL_REG2, (long long *)regs->LINUX_SYSCALL_REG3, regs->LINUX_SYSCALL_FLAGS, 1);
 		*((long long *)regs->LINUX_SYSCALL_REG3) = rtai_usrq_dispatcher(srq, regs->LINUX_SYSCALL_REG2);
 		hal_test_and_fast_flush_pipeline(rtai_cpuid());
@@ -1456,7 +1457,6 @@ void rtai_set_linux_task_priority (struct task_struct *task, int policy, int pri
         if (task->rt_priority != prio || task->policy != policy) {
                 printk("RTAI[hal]: sched_setscheduler(policy = %d, prio = %d) failed, (%s -- pid = %d)\n", policy, prio, task->comm, task->pid);
         }
-
 }
 
 #ifdef CONFIG_PROC_FS

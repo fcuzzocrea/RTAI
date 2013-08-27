@@ -820,7 +820,6 @@ irqreturn_t rtai_broadcast_to_local_timers (int irq, void *dev_id, struct pt_reg
 
 #endif
 
-
 #ifdef CONFIG_SMP
 
 static unsigned long rtai_old_irq_affinity[IPIPE_NR_XIRQS];
@@ -1979,7 +1978,7 @@ static int _rt_linux_hrt_next_shot(unsigned long delay, struct clock_event_devic
 #define  IPIPE_REQUEST_TICKDEV(a, b, c, d, e)  ipipe_request_tickdev(a, b, c, d)
 #endif
 
-static int rtai_request_tickdev(void* handler)
+static int rtai_request_tickdev(void *handler)
 {
 	int mode, cpuid;
 	for (cpuid = 0; cpuid < num_online_cpus(); cpuid++) {

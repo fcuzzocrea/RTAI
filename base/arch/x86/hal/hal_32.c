@@ -938,8 +938,8 @@ void rt_request_apic_timers (void (*handler)(void), struct apic_timer_setup_data
 		}
 	}
 
-	rtai_request_tickdev(handler);
 	rtai_critical_exit(flags);
+	rtai_request_tickdev(handler);
 }
 
 /**
@@ -956,8 +956,8 @@ void rt_free_apic_timers(void)
 	rtai_release_tickdev();
 	rtai_sync_level = 3;
 	rtai_setup_periodic_apic(RTAI_APIC_ICOUNT,LOCAL_TIMER_VECTOR);
-	rt_release_irq(RTAI_APIC_TIMER_IPI);
 	rtai_critical_exit(flags);
+	rt_release_irq(RTAI_APIC_TIMER_IPI);
 }
 
 /**

@@ -718,7 +718,7 @@ int rt_request_srq (unsigned label, void (*k_handler)(void), long long (*u_handl
  */
 int rt_free_srq (unsigned srq)
 {
-	return  (srq < 2 || srq >= RTAI_NR_SRQS || !test_and_clear_bit(srq, &rtai_sysreq_map)) ? -EINVAL : 0;
+	return  (srq < 1 || srq >= RTAI_NR_SRQS || !test_and_clear_bit(srq, &rtai_sysreq_map)) ? -EINVAL : 0;
 }
 
 /**
@@ -1358,7 +1358,7 @@ long long rtai_usrq_dispatcher (unsigned long srq, unsigned long label)
 	if (srq > 0 && srq < RTAI_NR_SRQS && test_bit(srq, &rtai_sysreq_map) && rtai_sysreq_table[srq].u_handler) {
 		return rtai_sysreq_table[srq].u_handler(label);
 	} else {
-		for (srq = 2; srq < RTAI_NR_SRQS; srq++) {
+		for (srq = 1; srq < RTAI_NR_SRQS; srq++) {
 			if (test_bit(srq, &rtai_sysreq_map) && rtai_sysreq_table[srq].label == label) {
 				return (long long)srq;
 			}

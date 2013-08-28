@@ -1,3 +1,8 @@
+2013-08-28 Paolo Mantegazza <mantegazza@aero.polimi.it>
+
+	* base/arch/x86/hal/hal_64.c: aligned to work with Linux-3.x,
+	  it is much as its hal_32.c counterpart.
+
 2013-08-27 Pierangelo Masarati <masarati@aero.polimi.it>
            Paolo Mantegazza <mantegazza@aero.polimi.it>
 

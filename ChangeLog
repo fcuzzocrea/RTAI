@@ -1,3 +1,10 @@
+2013-08-30 Pierangelo Masarati <masarati@aero.polimi.it>
+           Paolo Mantegazza <mantegazza@aero.polimi.it>
+
+	* addons/comedi/GNUmakefile.am: no kernel headers in user space
+	* addons/comedi/rtai_comedi.h: do not include linux/compiler.h
+	  in user space
+
 2013-08-28 Paolo Mantegazza <mantegazza@aero.polimi.it>
 
 	* base/arch/x86/hal/hal_64.c: aligned to work with Linux-3.x,

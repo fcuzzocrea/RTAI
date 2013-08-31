@@ -1,3 +1,7 @@
+2013-08-31 Paolo Mantegazza <mantegazza@aero.polimi.it>
+
+	* addons/rtdm/module.c: aligned the intr part to its latest sibling.
+
 2013-08-30 Pierangelo Masarati <masarati@aero.polimi.it>
            Paolo Mantegazza <mantegazza@aero.polimi.it>
 

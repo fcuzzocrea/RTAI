@@ -1948,12 +1948,20 @@ void rt_daemonize(void)
 	spin_unlock_irq(&(current->sighand)->siglock);
 #endif
 }
+EXPORT_SYMBOL(rt_daemonize);
 
+#else
+
+#if LINUX_VERSION_CODE > KERNEL_VERSION(3,0,0)
+
+void rt_daemonize(void) { }
 EXPORT_SYMBOL(rt_daemonize);
 
 #else
 
 extern void rt_daemonize(void);
+
+#endif
 
 #endif
 

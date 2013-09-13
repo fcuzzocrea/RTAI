@@ -1,3 +1,7 @@
+2013-09-13 Paolo Mantegazza <mantegazza@aero.polimi.it>
+
+	* sched/sched.c: provide a do nothing rt_daemonize for linux > 3.0.
+
 2013-08-31 Paolo Mantegazza <mantegazza@aero.polimi.it>
 
 	* addons/rtdm/module.c: aligned the intr part to its latest sibling.

@@ -2074,7 +2074,7 @@ void give_back_to_linux(RT_TASK *rt_task, int keeprio)
 static void wake_up_srq_handler(unsigned srq)
 {
 #ifdef CONFIG_SMP
-	int cpuid = srq - wake_up_srq[0].srq;
+	int cpuid = rtai_cpuid(); // srq - wake_up_srq[0].srq;
 #else
 	int cpuid = 0; // optimises, ok for x86_64-2.6.10, which can be UP only.
 #endif

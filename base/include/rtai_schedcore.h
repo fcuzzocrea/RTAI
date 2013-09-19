@@ -82,6 +82,8 @@
 #define NON_RTAI_TASK_RESUME(ready_task) \
 	do { pend_wake_up_srq(ready_task->lnxtsk, rtai_cpuid()); } while (0)
 
+#ifdef __i386__
+
 #define REQUEST_RESUME_SRQs_STUFF() \
 do { \
 	int cpuid; \
@@ -108,6 +110,28 @@ do { \
 	} \
 } while (0)
 
+#else
+
+#define REQUEST_RESUME_SRQs_STUFF() \
+do { \
+	int cpuid; \
+       	if (!(wake_up_srq[0].srq = hal_alloc_irq())) { \
+		printk("*** NO WAKE UP SRQs AVAILABLE, ABORTING ***\n"); \
+		/*return -1;*/ \
+	} \
+       	hal_virtualize_irq(hal_root_domain, wake_up_srq[0].srq, wake_up_srq_handler, NULL, IPIPE_HANDLE_FLAG); \
+	for (cpuid = 1; cpuid < num_online_cpus(); cpuid++) { \
+        	wake_up_srq[cpuid].srq = wake_up_srq[0].srq; \
+	} \
+} while (0)
+
+#define RELEASE_RESUME_SRQs_STUFF() \
+do { \
+	hal_virtualize_irq(hal_root_domain, wake_up_srq[0].srq, NULL, NULL, 0); \
+	hal_free_irq(wake_up_srq[0].srq); \
+} while (0)
+
+#endif
 
 extern RT_TASK rt_smp_linux_task[];
 

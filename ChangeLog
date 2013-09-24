@@ -1,6 +1,16 @@
+2013-09-24 Paolo Mantegazza <mantegazza@aero.polimi.it>
+
+	* base/include/rtai_schedcore.h: use just one wake up srq handler, 
+	  keeping a per cpu list of tasks to be woken up.
+	* base/sched/sched.c: omit the CONFIG_SMP ifdef in wake up srq 
+          handler.
+	* base/arch/x86/hal/hal_32.c, hal_64.c: use cpu_active_mask in 
+	  selecting hard timers.
+
 2013-09-13 Paolo Mantegazza <mantegazza@aero.polimi.it>
 
-	* sched/sched.c: provide a do nothing rt_daemonize for linux > 3.0.
+	* base/sched/sched.c: provide a do nothing rt_daemonize for 
+	  linux > 3.0.
 
 2013-08-31 Paolo Mantegazza <mantegazza@aero.polimi.it>
 

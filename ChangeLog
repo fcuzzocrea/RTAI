@@ -1,3 +1,14 @@
+2013-09-29 Paolo Mantegazza <mantegazza@aero.polimi.it>
+
+	* base/sched/sched.c: calibrate the hard timers at the scheduler 
+	  insmoding, care of avoiding null timer delays programming.
+	* base/sched/sys.c: add the support for an easier determination of 
+	  the scheduling latencies of RTAI own kernel tasks.
+	* base/arch/x86/hal/hal.c: put the determination of the hardtimers 
+	  programming delay in the common hal part.
+	* base/arch/x86/calibration/calibration_helper.c: simplify the 
+	  calibration of user and kernel space scheduling latencies.
+
 2013-09-24 Paolo Mantegazza <mantegazza@aero.polimi.it>
 
 	* base/include/rtai_schedcore.h: use just one wake up srq handler, 

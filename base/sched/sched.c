@@ -2549,12 +2549,14 @@ static int __rtai_lxrt_init(void)
 		rt_linux_task.resq.task = NULL;
 	}
 	tuned.latency = imuldiv(Latency, tuned.cpu_freq, 1000000000);
-	tuned.setup_time_TIMER_CPUNIT = imuldiv( SetupTimeTIMER, 
-						 tuned.cpu_freq, 
-						 1000000000);
-	tuned.setup_time_TIMER_UNIT   = imuldiv( SetupTimeTIMER, 
-						 TIMER_FREQ, 
-						 1000000000);
+	SetupTimeTIMER = rtai_calibrate_hard_timer();
+	tuned.setup_time_TIMER_UNIT = imuldiv(SetupTimeTIMER, TIMER_FREQ, 1000000000);
+	if (tuned.setup_time_TIMER_UNIT < 1) {
+		tuned.setup_time_TIMER_UNIT = 1;
+		tuned.setup_time_TIMER_CPUNIT = (tuned.cpu_freq + TIMER_FREQ/2)/TIMER_FREQ;
+	} else {
+		tuned.setup_time_TIMER_CPUNIT = imuldiv(SetupTimeTIMER, tuned.cpu_freq, 1000000000);
+	}
 	tuned.timers_tol[0] = 0;
 	oneshot_span = ONESHOT_SPAN;
 	satdlay = oneshot_span - tuned.latency;

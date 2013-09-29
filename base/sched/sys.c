@@ -817,13 +817,15 @@ static void kernel_calibrator(struct kern_cal_arg *calpar)
 {
 	RTIME expected;
 	int average = 0;
+	double s = 0;
 
 	expected = rt_get_time() + 10*calpar->period;
 	rt_task_make_periodic(NULL, expected, calpar->period);
 	while (calpar->loops--) {
 		expected += calpar->period;
 		rt_task_wait_period();
-		average += (int)count2nano(rt_get_time() - expected);
+		average += rt_get_time() - expected;
+		s += 3.14;
         }
 	calpar->period = average;
 	rt_task_resume(calpar->task);
@@ -836,7 +838,7 @@ long kernel_calibrator_spv(long period, long loops, RT_TASK *task)
 			struct calsup *calsup;
 			calsup = kmalloc(sizeof(struct calsup), GFP_KERNEL);
 			calsup->calpar = (struct kern_cal_arg) { period, loops, task };
-			rt_task_init_cpuid(&calsup->rtask, (void *)kernel_calibrator, (long)&calsup->calpar, 4096, 0, 0, 0, rtai_cpuid());
+			rt_task_init_cpuid(&calsup->rtask, (void *)kernel_calibrator, (long)&calsup->calpar, 4096, 0, 1, 0, rtai_cpuid());
 			rt_task_resume(&calsup->rtask);
 			task->fun_args[0] = (long)task;
 			((struct fun_args *)task->fun_args)->fun = (void *)rt_task_suspend;

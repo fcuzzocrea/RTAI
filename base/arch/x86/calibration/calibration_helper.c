@@ -51,6 +51,7 @@ static RT_TASK *calmng;
 int user_calibrator(long loops)
 {
 	RTIME expected;
+	double s = 0;
 
  	if (!rt_thread_init(nam2num("USRCAL"), 0, 0, SCHED_FIFO, 0xF)) {
 		printf("*** CANNOT INIT USER LATENCY CALIBRATOR TASK ***\n");
@@ -64,13 +65,14 @@ int user_calibrator(long loops)
 	while(loops--) {
 		expected += period;
 		rt_task_wait_period();
-		user_latency += (int)count2nano(rt_get_time() - expected);
+		user_latency += rt_get_time() - expected;
+		s += 3.14;
 	}
 	rt_make_soft_real_time();
 	rt_task_resume(calmng);
 
 	rt_thread_delete(NULL);
-	return 0;
+	return s;
 }
 
 int main(int argc, char *argv[])
@@ -106,10 +108,10 @@ int main(int argc, char *argv[])
 
 	kern_latency = (kern_latency + loops/2)/loops;
 	kern_latency = sign(kern_latency)*count2nano(abs(kern_latency));
-	printf("* KERN SPACE LATENCY (or RETURN DELAY) %d, ADD IT TO THE ONE CONFIGURED. *\n", kern_latency);
+	printf("* KERN SPACE LATENCY (or RETURN DELAY) %d (ns), ADD TO THE ONE CONFIGURED. *\n", kern_latency);
 	user_latency = (user_latency + loops/2)/loops;
 	user_latency = sign(user_latency)*count2nano(abs(user_latency));
-	printf("* USER SPACE LATENCY (or RETURN DELAY) %d, ADD IT TO THE ONE CONFIGURED. *\n", user_latency);
+	printf("* USER SPACE LATENCY (or RETURN DELAY) %d (ns), ADD TO THE ONE CONFIGURED. *\n", user_latency);
 	rt_thread_delete(NULL);
 	return 0;
 }

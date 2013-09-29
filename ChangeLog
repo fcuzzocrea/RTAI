@@ -1,3 +1,20 @@
+2013-09-30 Paolo Mantegazza <mantegazza@aero.polimi.it>
+
+	* base/sched/sched.c: take into account the newly settable return
+	  delay in busy wait alignment.
+	* base/sched/sys.c: added floating point operations to the kernel
+	  calibrator.
+	* base/include/asm-x86/rtai_hal.h, rtai_hal_32.h, rtai_hal_64.h: 
+	  remove struct calibration_data the 32/64 bits hal parts and define 
+	  a unique one in the common hal.
+	* base/include/rtai_lxrt.h: add the call to the kernel calibrator.
+	* base/arch/x86/Kconfig: fixed a few spelling errors and added a new 
+	  configuration option.
+	* base/arch/x86/calibration/calibration_helper.c: added floating point
+	  operations to the user calibrator.
+	* base/arch/x86/calibration/runinfo: added the command line to launch 
+	  the new calibration way.
+
 2013-09-29 Paolo Mantegazza <mantegazza@aero.polimi.it>
 
 	* base/sched/sched.c: calibrate the hard timers at the scheduler 

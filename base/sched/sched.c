@@ -963,12 +963,6 @@ static void rt_schedule_on_schedule_ipi(void)
 	}
 sched_exit:
 	CALL_TIMER_HANDLER();
-#if CONFIG_RTAI_BUSY_TIME_ALIGN
-	if (rt_current->busy_time_align) {
-		rt_current->busy_time_align = 0;
-		while(rtai_rdtsc() < rt_current->resume_time);
-	}
-#endif
 }
 #endif
 
@@ -1068,8 +1062,9 @@ sched_exit:
 	CALL_TIMER_HANDLER();
 #if CONFIG_RTAI_BUSY_TIME_ALIGN
 	if (rt_current->busy_time_align) {
+		RTIME resume_time = rt_current->resume_time - tuned.latency_busy_align_ret_delay;
 		rt_current->busy_time_align = 0;
-		while(rtai_rdtsc() < rt_current->resume_time);
+		while(rtai_rdtsc() < resume_time);
 	}
 #endif
 	sched_get_global_lock(cpuid);
@@ -2549,6 +2544,7 @@ static int __rtai_lxrt_init(void)
 		rt_linux_task.resq.task = NULL;
 	}
 	tuned.latency = imuldiv(Latency, tuned.cpu_freq, 1000000000);
+	tuned.latency_busy_align_ret_delay = imuldiv(RTAI_BUSY_ALIGN_RET_DELAY, tuned.cpu_freq, 1000000000);
 	SetupTimeTIMER = rtai_calibrate_hard_timer();
 	tuned.setup_time_TIMER_UNIT = imuldiv(SetupTimeTIMER, TIMER_FREQ, 1000000000);
 	if (tuned.setup_time_TIMER_UNIT < 1) {
@@ -2556,6 +2552,9 @@ static int __rtai_lxrt_init(void)
 		tuned.setup_time_TIMER_CPUNIT = (tuned.cpu_freq + TIMER_FREQ/2)/TIMER_FREQ;
 	} else {
 		tuned.setup_time_TIMER_CPUNIT = imuldiv(SetupTimeTIMER, tuned.cpu_freq, 1000000000);
+	}
+	if (tuned.latency < tuned.setup_time_TIMER_CPUNIT) {
+		tuned.latency = tuned.setup_time_TIMER_CPUNIT;
 	}
 	tuned.timers_tol[0] = 0;
 	oneshot_span = ONESHOT_SPAN;

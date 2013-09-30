@@ -48,6 +48,19 @@ static inline int sign(int v) { return v > 0 ? 1 : (v < 0 ? -1 : 0); }
 static int period = 200 /* us */, loops = 1 /* s */, user_latency;
 static RT_TASK *calmng;
 
+static inline RTIME rt_get_time_usrspc(void)
+{
+#ifdef __i386__
+        unsigned long long t;
+        __asm__ __volatile__ ("rdtsc" : "=A" (t));
+       return t;
+#else
+        union { unsigned int __ad[2]; RTIME t; } t;
+        __asm__ __volatile__ ("rdtsc" : "=a" (t.__ad[0]), "=d" (t.__ad[1]));
+        return t.t;
+#endif
+}
+
 int user_calibrator(long loops)
 {
 	RTIME expected;
@@ -65,11 +78,12 @@ int user_calibrator(long loops)
 	while(loops--) {
 		expected += period;
 		rt_task_wait_period();
-		user_latency += rt_get_time() - expected;
+		user_latency += rt_get_time_usrspc() - expected;
 		s += 3.14;
 	}
 	rt_make_soft_real_time();
 	rt_task_resume(calmng);
+
 
 	rt_thread_delete(NULL);
 	return s;

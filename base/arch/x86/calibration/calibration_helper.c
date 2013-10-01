@@ -91,7 +91,7 @@ int user_calibrator(long loops)
 
 int main(int argc, char *argv[])
 {
-	int kern_latency;
+	int kern_latency, Latency = 0;
 
         while (1) {
 		int c;
@@ -115,10 +115,10 @@ int main(int argc, char *argv[])
 
 	start_rt_timer(0);
 	period = nano2count(1000*period);
-	kern_latency = kernel_calibrator(period, loops);
+do {
+	kern_latency = kernel_calibrator(period, loops, Latency);
 	rt_thread_create((void *)user_calibrator, (void *)loops, 0);
 	rt_task_suspend(calmng);
-	stop_rt_timer();
 
 	kern_latency = (kern_latency + loops/2)/loops;
 	kern_latency = sign(kern_latency)*count2nano(abs(kern_latency));
@@ -126,6 +126,10 @@ int main(int argc, char *argv[])
 	user_latency = (user_latency + loops/2)/loops;
 	user_latency = sign(user_latency)*count2nano(abs(user_latency));
 	printf("* USER SPACE LATENCY (or RETURN DELAY) %d (ns), ADD TO THE ONE CONFIGURED. *\n", user_latency);
+	Latency += user_latency;
+	printf("* LATENCY: %d. *\n", Latency);
+}	while (abs(user_latency) > 100);
+	stop_rt_timer();
 	rt_thread_delete(NULL);
 	return 0;
 }

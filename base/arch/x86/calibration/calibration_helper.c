@@ -48,7 +48,7 @@ static inline int sign(int v) { return v > 0 ? 1 : (v < 0 ? -1 : 0); }
 static int period = 200 /* us */, loops = 1 /* s */, user_latency;
 static RT_TASK *calmng;
 
-static inline RTIME rt_get_time_usrspc(void)
+static inline RTIME rt_get_time_from_usrspc(void)
 {
 #ifdef __i386__
         unsigned long long t;
@@ -78,7 +78,7 @@ int user_calibrator(long loops)
 	while(loops--) {
 		expected += period;
 		rt_task_wait_period();
-		user_latency += rt_get_time_usrspc() - expected;
+		user_latency += rt_get_time_from_usrspc() - expected;
 		s += 3.14;
 	}
 	rt_make_soft_real_time();

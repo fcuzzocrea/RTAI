@@ -25,8 +25,6 @@ struct option options[] = {
 	{ "help",       0, 0, 'h' },
 	{ "period",     1, 0, 'p' },
 	{ "time",       1, 0, 't' },
-	{ "kern",       1, 0, 'k' },
-	{ "user",       1, 0, 'u' },
 	{ NULL,         0, 0,  0  }
 };
 
@@ -42,10 +40,6 @@ void print_usage(void)
 	 "      the period of the hard real time calibrator tasks, default 200 (us)\n"
 	 "  -t <duration (s)>, --time <duration (s)>\n"
 	 "      the duration of the requested calibration, default 1 (s)\n"
-	 "  -u, --user\n"
-	 "      calibration driven by user space latency, default\n"
-	 "  -k, --kern\n"
-	 "      calibration driven by kernel space latency, default is u\n"
 	 "\n")
 	, stderr);
 }
@@ -54,7 +48,7 @@ static inline int sign(int v) { return v > 0 ? 1 : (v < 0 ? -1 : 0); }
 static int period = 200 /* us */, loops = 1 /* s */, user_latency;
 static RT_TASK *calmng;
 
-static inline RTIME rt_get_time_from_usrspc(void)
+static inline RTIME rt_get_time_in_usrspc(void)
 {
 #ifdef __i386__
         unsigned long long t;
@@ -84,7 +78,7 @@ int user_calibrator(long loops)
 	while(loops--) {
 		expected += period;
 		rt_task_wait_period();
-		user_latency += rt_get_time_from_usrspc() - expected;
+		user_latency += rt_get_time_in_usrspc() - expected;
 		s += 3.14;
 	}
 	rt_make_soft_real_time();
@@ -97,19 +91,17 @@ int user_calibrator(long loops)
 
 int main(int argc, char *argv[])
 {
-	int i, kern_latency, uk = 1, UserLatency = 0, KernLatency = 0;
+	int kern_latency, UserLatency = 0, KernLatency = 0;
 
         while (1) {
 		int c;
-		if ((c = getopt_long(argc, argv, "hp:t:ku", options, NULL)) < 0) {
+		if ((c = getopt_long(argc, argv, "hp:t:", options, NULL)) < 0) {
 			break;
 		}
 		switch(c) {
 			case 'h': { print_usage();         return 0; } 
 			case 'p': { period = atoi(optarg);    break; }
 			case 't': { loops  = atoi(optarg);    break; }
-			case 'k': { uk = 0;                   break; }
-			case 'u': { uk = 1;                   break; }
 		}
 	}
 
@@ -117,32 +109,48 @@ int main(int argc, char *argv[])
 		printf("*** CANNOT INIT CALIBRATION TASK ***\n");
 		return 1;
 	}
-	printf("* CALIBRATING SCHEDULING LATENCIES FOR %d (s):", loops);
+	printf("\n* CALIBRATING SCHEDULING LATENCIES FOR %d (s):", loops);
 	loops  = (loops*1000000 + period/2)/period;
 	printf(" PERIOD %d (us), LOOPS %d. *\n", period, loops);
 
 	start_rt_timer(0);
 	period = nano2count(1000*period);
+
+	printf("\n* KERNEL SPACE. *\n");
 do {
-	kern_latency = kernel_calibrator(period, loops, uk ? UserLatency : KernLatency);
-	rt_thread_create((void *)user_calibrator, (void *)loops, 0);
-	rt_task_suspend(calmng);
+	kern_latency = kernel_calibrator(period, loops, KernLatency);
 
 	kern_latency = (kern_latency + loops/2)/loops;
 	kern_latency = sign(kern_latency)*count2nano(abs(kern_latency));
-	printf("* KERN SPACE LATENCY (or RETURN DELAY) %d (ns), ADD TO THE ONE CONFIGURED. *\n", kern_latency);
+#if CONFIG_RTAI_BUSY_TIME_ALIGN
+	printf("* KERNEL SPACE RETURN DELAY: %d (ns), ADD TO THE ONE CONFIGURED. *\n", kern_latency);
+#else
+	printf("* KERNEL SPACE SCHED LATENCY: %d (ns), ADD TO THE ONE CONFIGURED. *\n", kern_latency);
+#endif
+
+	KernLatency += kern_latency;
+	printf("* KERNEL SPACE LATENCY: %d. *\n", KernLatency);
+}	while (abs(kern_latency) > 100 && !CONFIG_RTAI_BUSY_TIME_ALIGN);
+
+	printf("\n* USER SPACE. *\n");
+do {
+	kernel_calibrator(period, loops, -UserLatency);
+	rt_thread_create((void *)user_calibrator, (void *)loops, 0);
+	rt_task_suspend(calmng);
+
 	user_latency = (user_latency + loops/2)/loops;
 	user_latency = sign(user_latency)*count2nano(abs(user_latency));
-	printf("* USER SPACE LATENCY (or RETURN DELAY) %d (ns), ADD TO THE ONE CONFIGURED. *\n", user_latency);
+#if CONFIG_RTAI_BUSY_TIME_ALIGN
+	printf("* USER SPACE RETURN DELAY: %d (ns), ADD TO THE ONE CONFIGURED. *\n", user_latency);
+#else
+	printf("* USER SPACE SCHED LATENCY: %d (ns), ADD TO THE ONE CONFIGURED. *\n", user_latency);
+#endif
 	UserLatency += user_latency;
-	KernLatency += kern_latency;
-	if (uk) {
-		printf("* USER LATENCY: %d. *\n", UserLatency);
-	} else {
-		printf("* KERN LATENCY: %d. *\n", KernLatency);
-	}
-}	while (abs(uk ? user_latency : kern_latency) > 100);
+	printf("* USER SPACE LATENCY: %d. *\n", UserLatency);
+}	while (abs(user_latency) > 100 && !CONFIG_RTAI_BUSY_TIME_ALIGN);
+
 	stop_rt_timer();
 	rt_thread_delete(NULL);
+	printf("\n");
 	return 0;
 }

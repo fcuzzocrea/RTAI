@@ -676,13 +676,13 @@ static inline long long handle_lxrt_request (unsigned int lxsrq, long *arg, RT_T
 			struct arg { long period, loops, Latency; };
 			stop_rt_timer();
 #if !CONFIG_RTAI_BUSY_TIME_ALIGN
-			tuned.latency = imuldiv((int)larg->Latency, tuned.cpu_freq, 1000000000);
+			tuned.latency = imuldiv(abs((int)larg->Latency), tuned.cpu_freq, 1000000000);
 			if (tuned.latency < tuned.setup_time_TIMER_CPUNIT) {
 				tuned.latency = tuned.setup_time_TIMER_CPUNIT;
 			}
 #endif
 			start_rt_timer(0);
-			return kernel_calibrator_spv(larg->period, larg->loops, task);
+			return larg->Latency < 0 ? 0 : kernel_calibrator_spv(larg->period, larg->loops, task);
 		}
 
 	        default: {

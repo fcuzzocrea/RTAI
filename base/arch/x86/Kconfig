@@ -317,34 +317,28 @@ config RTAI_BUSY_TIME_ALIGN
 	set latency is calibrated for user space tasks.
 
 config RTAI_USER_BUSY_ALIGN_RET_DELAY
-	string "Average time to return to the timing call function after a task switch (ns)"
+	string "Delay to resume a timing call after a user task switch (ns)"
 	default 0
 	depends on RTAI_BUSY_TIME_ALIGN
 	help
-	FIXME
-	The average time to return to the timing call function after a task 
-	switch. It is subtracted from the resume time of a timed task to avoid 
+	The average time to return to the timing call function after a user 
+	space task switch. 
+	It is subtracted from the resume time of a timed task to avoid 
 	a delayed return when a busy wait to align the resume time is requested.
-	As for the scheduling latency a single compromise value is used for
-	both kernel and user space.
-	To calibrate it enable this option and set the specific user and space 
-	kernel alignment value to zero, the run the calibration helper available
-	in RTAI.
+	To calibrate it enable RTAI_BUSY_TIME_ALIGN and set it to zero, then
+	run the calibration helper available in RTAI.
 
-config RTAI_KERNEL_BUSY_ALIGN_RET_DELAY
-	string "Average time to return to the timing call function after a task switch (ns)"
+config RTAI_KERN_BUSY_ALIGN_RET_DELAY
+	string "Delay to resume a timing call after a user task switch (ns)"
 	default 0
 	depends on RTAI_BUSY_TIME_ALIGN
 	help
-	FIXME
-	The average time to return to the timing call function after a task 
-	switch. It is subtracted from the resume time of a timed task to avoid 
+	The average time to return to the timing call function after a kernel
+	space task switch. 
+	It is subtracted from the resume time of a timed task to avoid 
 	a delayed return when a busy wait to align the resume time is requested.
-	As for the scheduling latency a single compromise value is used for
-	both kernel and user space.
-	To calibrate it enable this option and set the specific user and space 
-	kernel alignment value to zero, the run the calibration helper available
-	in RTAI.
+	To calibrate it enable RTAI_BUSY_TIME_ALIGN and set it to zero, then
+	run the calibration helper available in RTAI.
 
 config RTAI_SCHED_LXRT_NUMSLOTS
 	string "Number of registrable RTAI objects"

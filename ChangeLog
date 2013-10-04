@@ -6,6 +6,12 @@
 	  calibration way.
 	* base/arch/x86/Kconfig: added BUSY_ALIGN_RET_DELAY parameters for 
 	  kernel and user space.
+	* base/include/rtai_posix.h: fixed the return values of user space 
+	  to better comply with the related specs.
+	* base/include/asm-x86/rtai_hal.h: added various definition related to 
+	  the setting and declaration of busy aligns in the calibrate struct.
+	* base/sched/sched.c: reordered the one shot firing macros and enabled
+	  the newest busy wait align stuff.
 
 2013-10-04 Pierangelo Masarati <masarati@aero.polimi.it>
 

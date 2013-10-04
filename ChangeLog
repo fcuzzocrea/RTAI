@@ -2,6 +2,8 @@
 
 	* base/arch/x86/calibration/README: rewritten according to the new 
 	  calibration way.
+	* base/arch/x86/Kconfig: added BUSY_ALIGN_RET_DELAY parameters for 
+	  kernel and user space.
 
 2013-10-04 Pierangelo Masarati <masarati@aero.polimi.it>
 

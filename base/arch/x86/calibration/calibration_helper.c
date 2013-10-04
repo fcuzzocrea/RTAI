@@ -41,8 +41,8 @@ void print_usage(void)
 	 "      the period of the hard real time calibrator task, default 200 (us)\n"
 	 "  -t <duration (s)>, --time <duration (s)>\n"
 	 "      the duration of the requested calibration, default 1 (s)\n"
-	 "  -l <conv. tol.>, --time <conv. tol.>\n"
-	 "      the accettable limit within which the latency must stay, default 100 (ns)\n"
+	 "  -l <conv. tol. (ns)>, --time <conv. tol. (ns)>\n"
+	 "      the acceptable limit within which the latency must stay, default 100 (ns)\n"
 	 "\n")
 	, stderr);
 }
@@ -98,7 +98,7 @@ int main(int argc, char *argv[])
 
         while (1) {
 		int c;
-		if ((c = getopt_long(argc, argv, "hp:t:", options, NULL)) < 0) {
+		if ((c = getopt_long(argc, argv, "hp:t:l:", options, NULL)) < 0) {
 			break;
 		}
 		switch(c) {

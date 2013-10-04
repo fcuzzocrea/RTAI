@@ -16208,17 +16208,17 @@ $as_echo_n "checking for kernel busy align ret delay... " >&6; }
 # Check whether --enable-kernel-busy-align-ret-delay was given.
 if test "${enable_kernel_busy_align_ret_delay+set}" = set; then :
   enableval=$enable_kernel_busy_align_ret_delay; case "$enableval" in
- 	[0-9]*) CONFIG_RTAI_KERNEL_BUSY_ALIGN_RET_DELAY=$enableval ;;
+ 	[0-9]*) CONFIG_RTAI_KERN_BUSY_ALIGN_RET_DELAY=$enableval ;;
  	*) as_fn_error $? "Bad argument to option: --kernel-busy-align-ret-delay=<nanoseconds>" "$LINENO" 5 ;;
 	esac
 fi
 
-if test x$CONFIG_RTAI_KERNEL_BUSY_ALIGN_RET_DELAY = x ; then
+if test x$CONFIG_RTAI_KERN_BUSY_ALIGN_RET_DELAY = x ; then
   # Use a reasonable default if unset
-  CONFIG_RTAI_KERNEL_BUSY_ALIGN_RET_DELAY=0
+  CONFIG_RTAI_KERN_BUSY_ALIGN_RET_DELAY=0
 fi
-{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $CONFIG_RTAI_KERNEL_BUSY_ALIGN_RET_DELAY" >&5
-$as_echo "$CONFIG_RTAI_KERNEL_BUSY_ALIGN_RET_DELAY" >&6; }
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $CONFIG_RTAI_KERN_BUSY_ALIGN_RET_DELAY" >&5
+$as_echo "$CONFIG_RTAI_KERN_BUSY_ALIGN_RET_DELAY" >&6; }
 
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking for maximum number of LXRT slots" >&5
 $as_echo_n "checking for maximum number of LXRT slots... " >&6; }
@@ -18858,7 +18858,7 @@ _ACEOF
 
 
 cat >>confdefs.h <<_ACEOF
-#define CONFIG_RTAI_KERNEL_BUSY_ALIGN_RET_DELAY $CONFIG_RTAI_KERNEL_BUSY_ALIGN_RET_DELAY
+#define CONFIG_RTAI_KERN_BUSY_ALIGN_RET_DELAY $CONFIG_RTAI_KERN_BUSY_ALIGN_RET_DELAY
 _ACEOF
 
 

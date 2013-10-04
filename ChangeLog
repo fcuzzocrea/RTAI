@@ -1,5 +1,7 @@
 2013-10-05 Paolo Mantegazza <mantegazza@aero.polimi.it>
 
+	* base/arch/x86/calibration/calibration_helper.c: restructured in a, 
+	  hopefully, better way, with respect to its first commit.
 	* base/arch/x86/calibration/README: rewritten according to the new 
 	  calibration way.
 	* base/arch/x86/Kconfig: added BUSY_ALIGN_RET_DELAY parameters for 

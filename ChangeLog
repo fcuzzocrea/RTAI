@@ -1,3 +1,8 @@
+2013-10-05 Paolo Mantegazza <mantegazza@aero.polimi.it>
+
+	* base/arch/x86/calibration/README: rewritten according to the new 
+	  calibration way.
+
 2013-10-04 Pierangelo Masarati <masarati@aero.polimi.it>
 
 	* configure.in, base/arch/x86/Kconfig: add support for 

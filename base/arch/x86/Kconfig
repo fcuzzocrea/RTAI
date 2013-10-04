@@ -309,12 +309,13 @@ config RTAI_BUSY_TIME_ALIGN
 	possible to anticipate the scheduling by setting a slightly larger than 
 	needed anticipation. In such cases with this option one can be sure to
 	achieve the desired scheduling time at the expense of waisting some
-	processor time. Useful when there is enough computational power to 
-	waist in favour of more precise scheduled deadlines.
+	processor time. Useful to achieve both more precise scheduled deadlines
+	and non negative latency values.
 	Do not set it if a hard periodic timer is to be used.
 	Since a user space task has a higher scheduling latency, it can be
-	usefully set to allow a better a kernel task to its deadline when the
-	set latency is calibrated for user space tasks.
+	usefully set to allow achieving better deadlines for kernel tasks, when
+	the scheduling latency is calibrated for user space tasks.
+	For more precise results see the following options.
 
 config RTAI_USER_BUSY_ALIGN_RET_DELAY
 	string "Delay to resume a timing call after a user task switch (ns)"
@@ -325,8 +326,8 @@ config RTAI_USER_BUSY_ALIGN_RET_DELAY
 	space task switch. 
 	It is subtracted from the resume time of a timed task to avoid 
 	a delayed return when a busy wait to align the resume time is requested.
-	To calibrate it enable RTAI_BUSY_TIME_ALIGN and set it to zero, then
-	run the calibration helper available in RTAI.
+	To calibrate it enable RTAI_BUSY_TIME_ALIGN and set this option to zero,
+	then run the calibration helper available in RTAI.
 
 config RTAI_KERN_BUSY_ALIGN_RET_DELAY
 	string "Delay to resume a timing call after a user task switch (ns)"
@@ -337,8 +338,8 @@ config RTAI_KERN_BUSY_ALIGN_RET_DELAY
 	space task switch. 
 	It is subtracted from the resume time of a timed task to avoid 
 	a delayed return when a busy wait to align the resume time is requested.
-	To calibrate it enable RTAI_BUSY_TIME_ALIGN and set it to zero, then
-	run the calibration helper available in RTAI.
+	To calibrate it enable RTAI_BUSY_TIME_ALIGN and set this option to zero,
+	then run the calibration helper available in RTAI.
 
 config RTAI_SCHED_LXRT_NUMSLOTS
 	string "Number of registrable RTAI objects"

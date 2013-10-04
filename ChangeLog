@@ -1,3 +1,10 @@
+2013-10-04 Pierangelo Masarati <masarati@aero.polimi.it>
+
+	* configure.in, base/arch/x86/Kconfig: add support for 
+	  configurable user/kernel busy align delay
+	* base/arch/x86/calibration/calibration_helper.c, GNUmakefile.am:
+	  insert/remove modules directly from within helper
+
 2013-09-30 Paolo Mantegazza <mantegazza@aero.polimi.it>
 
 	* base/sched/sched.c: take into account the newly settable return

@@ -859,20 +859,30 @@ if (fire_shot) { \
 	int delay; \
 	ONESHOT_DELAY(SHOT_FIRED); \
 	if (delay > tuned.setup_time_TIMER_CPUNIT) { \
-		rt_set_timer_delay(imuldiv(delay, TIMER_FREQ, tuned.cpu_freq));\
 		timer_shot_fired = 1; \
+		rt_set_timer_delay(imuldiv(delay, TIMER_FREQ, tuned.cpu_freq));\
 	} else { \
-		rt_times.intr_time = rt_time_h + tuned.setup_time_TIMER_CPUNIT;\
 		timer_shot_fired = -1;\
+		rt_times.intr_time = rt_time_h + tuned.setup_time_TIMER_CPUNIT;\
 	} \
 } \
 } while (0)
 
 #define CALL_TIMER_HANDLER() \
-	do { if (timer_shot_fired < 0) rt_timer_handler(); } while (0)
+	do { \
+		if (timer_shot_fired < 0) { \
+			timer_shot_fired = 1; \
+			rt_timer_handler(); \
+		} \
+	} while (0)
 
 #define REDO_TIMER_HANDLER() \
-	do { if (timer_shot_fired < 0) goto redo_timer_handler; } while (0)
+	do { \
+		if (timer_shot_fired < 0) { \
+			timer_shot_fired = 1; \
+			goto redo_timer_handler; \
+		} \
+	} while (0)
 
 #define FIRE_IMMEDIATE_LINUX_TIMER_SHOT() \
 do { \
@@ -997,7 +1007,14 @@ void rt_schedule(void)
 		}
 		if (/*USE_RTAI_TASKS && */(!new_task->lnxtsk || !rt_current->lnxtsk)) {
 			if (!(new_task = switch_rtai_tasks(rt_current, new_task, cpuid))) {
-				goto sched_exit;
+#if CONFIG_RTAI_BUSY_TIME_ALIGN && RTAI_KERN_BUSY_ALIGN_RET_DELAY > 0
+			if (rt_current->busy_time_align) {
+				RTIME resume_time = rt_current->resume_time - tuned.kern_latency_busy_align_ret_delay;
+				rt_current->busy_time_align = 0;
+				while(rtai_rdtsc() < resume_time);
+			}
+#endif
+				goto ksched_exit;
 			}
 		}
 		rt_smp_current[cpuid] = new_task;
@@ -1059,14 +1076,15 @@ sched_soft:
 		}
 	}
 sched_exit:
-	CALL_TIMER_HANDLER();
-#if CONFIG_RTAI_BUSY_TIME_ALIGN
+#if CONFIG_RTAI_BUSY_TIME_ALIGN && RTAI_USER_BUSY_ALIGN_RET_DELAY > 0
 	if (rt_current->busy_time_align) {
-		RTIME resume_time = rt_current->resume_time - tuned.latency_busy_align_ret_delay;
+		RTIME resume_time = rt_current->resume_time - tuned.user_latency_busy_align_ret_delay;
 		rt_current->busy_time_align = 0;
 		while(rtai_rdtsc() < resume_time);
 	}
 #endif
+ksched_exit:
+	CALL_TIMER_HANDLER();
 	sched_get_global_lock(cpuid);
 }
 
@@ -2544,7 +2562,8 @@ static int __rtai_lxrt_init(void)
 		rt_linux_task.resq.task = NULL;
 	}
 	tuned.latency = imuldiv(Latency, tuned.cpu_freq, 1000000000);
-	tuned.latency_busy_align_ret_delay = imuldiv(RTAI_BUSY_ALIGN_RET_DELAY, tuned.cpu_freq, 1000000000);
+	tuned.kern_latency_busy_align_ret_delay = imuldiv(RTAI_KERN_BUSY_ALIGN_RET_DELAY, tuned.cpu_freq, 1000000000);
+	tuned.user_latency_busy_align_ret_delay = imuldiv(RTAI_USER_BUSY_ALIGN_RET_DELAY, tuned.cpu_freq, 1000000000);
 	SetupTimeTIMER = rtai_calibrate_hard_timer();
 	tuned.setup_time_TIMER_UNIT = imuldiv(SetupTimeTIMER, TIMER_FREQ, 1000000000);
 	if (tuned.setup_time_TIMER_UNIT < 1) {

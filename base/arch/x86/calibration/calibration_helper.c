@@ -109,6 +109,9 @@ int main(int argc, char *argv[])
 		}
 	}
 
+	system("/sbin/insmod " HAL_SCHED_PATH "/rtai_hal" HAL_SCHED_MODEXT " >/dev/null 2>&1");
+	system("/sbin/insmod " HAL_SCHED_PATH "/rtai_sched" HAL_SCHED_MODEXT " >/dev/null 2>&1");
+
  	if (!(calmng = rt_thread_init(nam2num("CALMNG"), 10, 0, SCHED_FIFO, 0xF)) ) {
 		printf("*** CANNOT INIT CALIBRATION TASK ***\n");
 		return 1;
@@ -156,5 +159,9 @@ int main(int argc, char *argv[])
 	stop_rt_timer();
 	rt_thread_delete(NULL);
 	printf("\n");
+
+	system("/sbin/rmmod rtai_sched >/dev/null 2>&1");
+	system("/sbin/rmmod rtai_hal >/dev/null 2>&1");
+
 	return 0;
 }

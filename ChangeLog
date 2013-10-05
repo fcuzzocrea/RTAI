@@ -138,7 +138,7 @@
 	  32-64 specific versions; GNUmakefile.am GNUmakefile.in also 
 	  modified accordingly.
 
-2012-08-17 Mark Fortescue <mark@mtfhpc.demon.co.uk>
+2013-08-17 Mark Fortescue <mark@mtfhpc.demon.co.uk>
 
 	* base/addons/rtdm/module.c: split the loop initializing the timers
 	  into two parts, fixes possible SMP preemption issues.
@@ -305,9 +305,9 @@
 
 2013-02-28 John Morris <john@zultron.com>
 
-	* base/sched/sched.c: changed set_cpu_allowed to set_cpu_allowed_ptr and 
-	  to cpumask_of_cpu to cpumask_of, to allow compilation against kernels 
-	  that have CONFIG_CPUMASK_OFFSTACK=y
+	* base/sched/sched.c: changed set_cpu_allowed to set_cpu_allowed_ptr 
+ 	  and to cpumask_of_cpu to cpumask_of, to allow compilation against 
+	  kernels that have CONFIG_CPUMASK_OFFSTACK=y
 
 2013-02-28 Shahbaz Youssefi <ShabbyX@gmail.com>
 

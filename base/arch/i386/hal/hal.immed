@@ -1310,7 +1310,7 @@ void rt_free_apic_timers(void)
  */
 int rt_assign_irq_to_cpu (int irq, unsigned long cpumask)
 {
-	if (irq >= IPIPE_NR_XIRQS) {
+	if (irq >= IPIPE_NR_XIRQS || &rtai_irq_desc(irq) == NULL || rtai_irq_desc_chip(irq) == NULL) {
 		return -EINVAL;
 	} else {
 		unsigned long oldmask, flags;

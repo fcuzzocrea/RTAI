@@ -47,8 +47,10 @@ void print_usage(void)
 	, stderr);
 }
 
+static int period = 200 /* us */, loops = 1 /* s */, tol = 100 /* ns */;
+
 static inline int sign(int v) { return v > 0 ? 1 : (v < 0 ? -1 : 0); }
-static int period = 200 /* us */, loops = 1 /* s */, user_latency;
+static int user_latency;
 static RT_TASK *calmng;
 
 static inline RTIME rt_get_time_in_usrspc(void)

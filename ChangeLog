@@ -15,7 +15,8 @@
 	* base/arch/i386/hal/hal.immed and base/arch/x86_646/hal/hal.immed:
 	  check irq desc and chip addr to avoid invalid pointers when used
 	  in a brute mode to divert all Linux interrupts belonging to 
-	  IsolCpuMask; return a null cpumask in case of failure.
+	  IsolCpuMask; return a null cpumask in case of failure an irq 
+	  affinity assignment.
 
 2013-10-04 Pierangelo Masarati <masarati@aero.polimi.it>
 

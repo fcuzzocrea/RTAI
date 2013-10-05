@@ -12,6 +12,10 @@
 	  the setting and declaration of busy aligns in the calibrate struct.
 	* base/sched/sched.c: reordered the one shot firing macros and enabled
 	  the newest busy wait align stuff.
+	* base/arch/i386/hal/hal.immed and base/arch/x86_646/hal/hal.immed:
+	  check irq desc and chip addr to avoid invalid pointers when used
+	  in a brute mode to divert all Linux interrupts belonging to 
+	  IsolCpuMask.
 
 2013-10-04 Pierangelo Masarati <masarati@aero.polimi.it>
 

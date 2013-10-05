@@ -24,8 +24,8 @@
 struct option options[] = {
 	{ "help",       0, 0, 'h' },
 	{ "period",     1, 0, 'p' },
-	{ "time",       1, 0, 't' },
-	{ "tol",        1, 0, 'l' },
+	{ "spantime",   1, 0, 's' },
+	{ "tol",        1, 0, 't' },
 	{ NULL,         0, 0,  0  }
 };
 
@@ -38,11 +38,11 @@ void print_usage(void)
 	 "  -h, --help\n"
 	 "      print usage\n"
 	 "  -p <period (us)>, --period <period (us)>\n"
-	 "      the period of the hard real time calibrator task, default 200 (us)\n"
-	 "  -t <duration (s)>, --time <duration (s)>\n"
-	 "      the duration of the requested calibration, default 1 (s)\n"
-	 "  -l <conv. tol. (ns)>, --time <conv. tol. (ns)>\n"
-	 "      the acceptable limit within which the latency must stay, default 100 (ns)\n"
+	 "      the period, in microseconds, of the hard real time calibrator task, default 200 (us)\n"
+	 "  -s <spantime (s)>, --spantime <spantime (s)>\n"
+	 "      the duration, in seconds, of the requested calibration, default 1 (s)\n"
+	 "  -t <conv. tol. (ns)>, --tol <conv. tol. (ns)>\n"
+	 "      the acceptable tolerance, in nanoseconds, within which the latency must stay, default 100 (ns)\n"
 	 "\n")
 	, stderr);
 }

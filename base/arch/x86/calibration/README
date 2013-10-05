@@ -25,13 +25,13 @@ The related values can be obtained by configuring RTAI with the RTAI_BUSY_TIME_A
 within the installed "calibration" directory or from the RTAI build directory.
 The following option and the related defaults are available:
 -h, --help: prints a synthetic usage of what described here;
--p <period (us)>, --period <period (us)>: assigns the task period to be used 
-	for calibrating the scheduling latencies, defaulting to 200 (us) if 
-	this option is not set;
--t <duration (s)>, --time <duration (s)>: the duration of the requested 
-	calibration, a 1 (s) default value being assumed;
--l <conv. tol.>, --time <conv. tol.>: the acceptable tolerance, in ns, within 
-	which the latency must stay for a converged calibration, default 
+-p <period (us)>, --period <period (us)>: assigns the task period, in
+	micorseconds, to be used for calibrating the scheduling latencies, 
+	defaulting to 200 (us) if this option is not set;
+-s <spantime (s)>, --spantime <duration (s)>: the duration, in seconds, of the 
+	requested calibration, a 1 (s) default value being assumed;
+-t <conv. tol.>, --tol <conv. tol.>: the acceptable tolerance, in nanoseconds, 
+	within which the latency must stay for a converged calibration, default 
 	100 (ns).
 In case type "./calibration_helperc -h" for a prompt reminder of what above. 
 As it can be seen from the related code, it could be useful to notice that 

@@ -318,7 +318,7 @@ config RTAI_BUSY_TIME_ALIGN
 	For more precise results see the following options.
 
 config RTAI_KERN_BUSY_ALIGN_RET_DELAY
-	string "Delay to return to a switched in timed kernel task (ns)"
+	string "  Delay to return to a switched in timed kernel task (ns)"
 	default 0
 	depends on RTAI_BUSY_TIME_ALIGN
 	help
@@ -338,7 +338,7 @@ config RTAI_KERN_BUSY_ALIGN_RET_DELAY
 	below will allow applying the busy wait just to the former.
 
 config RTAI_USER_BUSY_ALIGN_RET_DELAY
-	string "Delay to return to a switched in timed user task (ns)"
+	string "  Delay to return to a switched in timed user task (ns)"
 	default 0
 	depends on RTAI_BUSY_TIME_ALIGN
 	help

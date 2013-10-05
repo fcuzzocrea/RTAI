@@ -1,3 +1,10 @@
+2013-10-05 Paolo Mantegazza <mantegazza@aero.polimi.it>
+
+	* base/arch/i386/hal/hal.immed and base/arch/x86_646/hal/hal.immed:
+	  check irq desc and chip addr to avoid invalid pointers when used 
+	  in a brute mode to divert all Linux interrupts belonging to 
+	  IsolCpuMask.
+
 2013-08-17 Paolo Mantegazza <mantegazza@aero.polimi.it>
         * base/sched/sched.c: rt_signal_wake_up wakes up on Linux signals 
 	  hanyhow.

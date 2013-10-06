@@ -587,7 +587,7 @@ config RTAI_MSG
 	tristate "Message"
 	default m
 	help
-	Direct synchronization by direct interask messaging, either as fast
+	Direct synchronization by direct intertask messaging, either as fast
 	single unsigned long messages or as extended arbitrarily sized
 	messages. Both async and sync messages with replies can be used.
 	QNX styled APIs are also available. Blocking messages exploit priority 
@@ -621,7 +621,7 @@ config RTAI_TBX
 	help
 	RTAI message queues (msgq) are intertask processor messages that allow 
 	exchanging prioritised messages of any size. Broadcasting of messages
-	to all the waiing tasks is also possible.
+	to all the waiting tasks is also possible.
 	Legacy typed mailbox (TBX) services are recovered by using RTAI msgqs
 	and afford a pre canned example of their use offering:
 	1 - message broadcasting allowing to send a message to all the tasks 

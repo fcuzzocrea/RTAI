@@ -1007,7 +1007,7 @@ void rt_schedule(void)
 		}
 		if (/*USE_RTAI_TASKS && */(!new_task->lnxtsk || !rt_current->lnxtsk)) {
 			if (!(new_task = switch_rtai_tasks(rt_current, new_task, cpuid))) {
-#if CONFIG_RTAI_BUSY_TIME_ALIGN && RTAI_KERN_BUSY_ALIGN_RET_DELAY > 0
+#if CONFIG_RTAI_BUSY_TIME_ALIGN && (RTAI_KERN_BUSY_ALIGN_RET_DELAY > 0)
 			if (rt_current->busy_time_align) {
 				RTIME resume_time = rt_current->resume_time - tuned.kern_latency_busy_align_ret_delay;
 				rt_current->busy_time_align = 0;
@@ -1076,7 +1076,7 @@ sched_soft:
 		}
 	}
 sched_exit:
-#if CONFIG_RTAI_BUSY_TIME_ALIGN && RTAI_USER_BUSY_ALIGN_RET_DELAY > 0
+#if CONFIG_RTAI_BUSY_TIME_ALIGN && (RTAI_USER_BUSY_ALIGN_RET_DELAY > 0)
 	if (rt_current->busy_time_align) {
 		RTIME resume_time = rt_current->resume_time - tuned.user_latency_busy_align_ret_delay;
 		rt_current->busy_time_align = 0;

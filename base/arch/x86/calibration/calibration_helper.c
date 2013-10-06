@@ -78,7 +78,7 @@ int user_calibrator(long loops)
 	mlockall(MCL_CURRENT | MCL_FUTURE);
 
 	rt_make_hard_real_time();
-	expected = rt_get_time() + 10*period;
+	expected = rt_get_time_in_usrspc() + 10*period;
 	rt_task_make_periodic(NULL, expected, period);
 	while(loops--) {
 		expected += period;

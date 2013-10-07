@@ -41,7 +41,7 @@ above explained convergence tolerance.
 It should be noticed also that, for sake of simplicity, the calibrator provides 
 different latencies for kernel and user space tasks, while only a single one 
 can be set when configuring RTAI. So it is up to the user to choose the right 
-compromise between the twos, possibly resorting to followin busy wait 
+compromise between the twos, possibly resorting to following busy wait 
 explanation for a more precise match.
 Moreover if any available latency test is run after calibrating, one could see 
 a slightly higher then expected result, especially in user space. That is due 
@@ -61,7 +61,8 @@ return path, i.e. till the exiting of the calling timing function. Therefore,
 after enabling RTAI_BUSY_TIME_ALIGN, there is the possibility of setting such 
 completion values with the options RTAI_KERN_BUSY_ALIGN_RET_DELAY and 
 RTAI_USER_BUSY_ALIGN_RET_DELAY, whose default value is zero. The required 
-times can be calibrated by rerunning the calibrator task with RTAI made with:
+times can be calibrated by rerunning the calibrator task with RTAI configured 
+with:
 - the previously found calibrated latency value,
 - RTAI_BUSY_TIME_ALIGN enabled;
 - RTAI_KERN_BUSY_ALIGN_RET_DELAY and RTAI_USER_BUSY_ALIGN_RET_DELAY set to one.

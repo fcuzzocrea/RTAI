@@ -3,11 +3,12 @@
 	  *****************************************************	
 
 Let's recall that scheduling latency calibrations are required only for  
-hard timers oneshot mode. Nothing can be done for periodic hard timers, but 
-choosing their ticking frequency.
+hard timers in oneshot mode. Nothing can be done for periodic hard timers, 
+but choosing their ticking frequency.
 That said, there are two calibrations to be cared of: hard timers, APIC 
-and 8254, shots programming and scheduling latencies, which are to be 
-compensated by anticipating the required timer shots appropriately.
+and 8254, shot programming and scheduling latencies, which are to be 
+compensated by anticipating appropriately the required timer shots 
+programming.
 
 	Calibration of hard timers shot, APIC and 8254, programming
 	===========================================================
@@ -19,8 +20,8 @@ insmoding. So there is no need to care for it.
 		      ================================
 
 Two different scheduling latency calibrations are required, one for user and 
-one for kernel space tasks. In fact there is a sizeable difference, kernel 
-space latencies being less the those in user space.
+one for kernel space tasks. In fact there is a sizeable latency difference, 
+kernel space latencies being less the those in user space.
 The related values can be obtained by configuring RTAI with the RTAI_BUSY_TIME_ALIGN option disabled and then running the "calibration_helper", either 
 within the installed "calibration" directory or from the RTAI build directory.
 The following options, with the related defaults, are available:
@@ -28,21 +29,21 @@ The following options, with the related defaults, are available:
 -p <period (us)>, --period <period (us)>: assigns the task period, in
 	microseconds, to be used for calibrating the scheduling latencies, 
 	defaulting to 200 (us) if this option is not set;
--s <spantime (s)>, --spantime <duration (s)>: the duration, in seconds, of the 
+-s <spantime (s)>, --spantime <spantime (s)>: the duration, in seconds, of the 
 	requested calibration, a 1 (s) default value being assumed;
 -t <conv. tol. (ns)>, --tol <conv. tol. (ns)>: the acceptable tolerance, in 
 	nanoseconds, within which the latency must stay for a converged 
 	calibration, default 100 (ns).
-For a prompt reminder of what above simply type "./calibration_helperc -h".
+For a prompt reminder of what above simply type "./calibration_helper -h".
 It could be useful to remark that the scheduling latencies are somewhat 
-depending on their assigned values. So, as it can be seen from the related code,
-the calibrator iterates the calibration procedure till convergence within the 
-above explained convergence tolerance.
+dependent on their assigned values. So, as it can be seen from the related 
+code, the calibrator iterates the calibration procedure till convergence 
+within the above explained convergence tolerance.
 It should be noticed also that, for sake of simplicity, the calibrator provides 
 different latencies for kernel and user space tasks, while only a single one 
 can be set when configuring RTAI. So it is up to the user to choose the right 
-compromise between the twos, possibly resorting to following busy wait 
-explanation for a more precise match.
+compromise between the twos, possibly resorting to the following busy wait 
+option explanation for a more precise match.
 Moreover if any available latency test is run after calibrating, one could see 
 a slightly higher then expected result, especially in user space. That is due 
 to the somewhat higher overhead of the latency tests. Nevertheless, generally, 
@@ -68,12 +69,13 @@ with:
 - RTAI_KERN_BUSY_ALIGN_RET_DELAY and RTAI_USER_BUSY_ALIGN_RET_DELAY set to one.
 By reconfiguring RTAI with the thus obtained return delay values it should be 
 possible to verify the previously claimed sharper timing. To be sure to engage 
-the busy wait, sometimes a user might use such an option in combination with a 
-marginally longer than needed latency calibration value. It should be noticed 
-that such a longer than needed value comes by nature for kernel space tasks 
-when the calibrated latency is configured with the one of user space tasks.
-Since a zero value for RTAI_KERN_BUSY_ALIGN_RET_DELAY and RTAI_USER_BUSY_ALIGN_RET_DELAY disables the busy wait, even if RTAI_BUSY_TIME_ALIGN is enabled, such 
-an option can be used selectively for kernel and user space alone. 
+the busy wait, sometimes a user might use such an option in combination with 
+a marginally longer than needed latency value. It should be noticed also that 
+such a longer than needed value comes by nature for kernel space tasks when 
+the calibrated latency is configured with the one of user space tasks.
+Since a zero value for RTAI_KERN_BUSY_ALIGN_RET_DELAY and RTAI_USER_BUSY_ALIGN_RET_DELAY disables the related busy wait, even if RTAI_BUSY_TIME_ALIGN is 
+enabled, such an option can be used selectively for kernel and user space 
+alone. 
 So, as hinted already, one could apply the calibrated user space latency, set 
 RTAI_USER_BUSY_ALIGN_RET_DELAY to zero and RTAI_KERN_BUSY_ALIGN_RET_DELAY to 
 its calibrated value, thus obtaining similar sharp results in both spaces.
@@ -84,7 +86,7 @@ verified on a "quiet" machine. In fact the calibration can be significantly
 affected by any on going relatively heavy processing load. The inevitable 
 discrepancies that will be met in any actual application are difficult to cure, 
 as verified by quite a few trials with different sorts of adaptive 
-latency identification filters.
-So a quiet calibration might not be the achievable best, while remaining a 
-viable effective solution. Here they say that sometimes the best can be the 
-enemy of the good.
+latency identification filtersi, which provided no better result.
+Soi, even if a quiet calibration might not be the achievable best, it is 
+likely that it is better to assume that sometimes the best can be the enemy 
+of the good.

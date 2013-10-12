@@ -7,7 +7,8 @@
 	* base/arch/i386/hal/hal.immed and base/arch/x86_646/hal/hal.immed:
 	  check irq desc and chip addr to avoid invalid pointers when used 
 	  in a brute mode to divert all Linux interrupts belonging to 
-	  IsolCpuMask.
+	  IsolCpuMask. Fixed related long standing incongruencies in patches 
+	  for Linux 2.6.37.6 and 2.6.38.8.
 
 2013-08-17 Paolo Mantegazza <mantegazza@aero.polimi.it>
         * base/sched/sched.c: rt_signal_wake_up wakes up on Linux signals 

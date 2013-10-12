@@ -4,20 +4,20 @@
 
 2013-10-10 Paolo Mantegazza <mantegazza@aero.polimi.it>
 
-	* base/include/rtai_posix.h: inherited anticipately from magma the 
-	  fix for improper return values in the nanosleeps.
+	* base/include/rtai_posix.h: inherited from magma a fix for improper
+	  return values in the nanosleep functions.
 
 2013-10-05 Paolo Mantegazza <mantegazza@aero.polimi.it>
 
 	* base/arch/i386/hal/hal.immed and base/arch/x86_646/hal/hal.immed:
 	  check irq desc and chip addr to avoid invalid pointers when used 
 	  in a brute mode to divert all Linux interrupts belonging to 
-	  IsolCpuMask. Fixed related long standing incongruencies in patches 
+	  IsolCpuMask. Fixed related long standing incongruities in patches 
 	  for Linux 2.6.37.6 and 2.6.38.8.
 
 2013-08-17 Paolo Mantegazza <mantegazza@aero.polimi.it>
         * base/sched/sched.c: rt_signal_wake_up wakes up on Linux signals 
-	  hanyhow.
+	  anyhow.
 
 2013-08-08 Paolo Mantegazza <mantegazza@aero.polimi.it>
 
@@ -30,7 +30,7 @@
 
 2013-04-07 Paolo Mantegazza <mantegazza@aero.polimi.it>
 
-        * base/sched/sched.c: make the setting of linux shot atomic a bit 
+        * base/sched/sched.c: make the setting of Linux shot atomic a bit 
 	  more, so to avoid undue hard timers shots.
 
 2013-02-28 Shahbaz Youssefi <ShabbyX@gmail.com>

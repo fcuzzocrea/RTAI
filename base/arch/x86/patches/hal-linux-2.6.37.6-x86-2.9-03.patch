@@ -3101,7 +3101,7 @@ new file mode 100644
 index 0000000..cd63d02
 --- /dev/null
 +++ b/arch/x86/kernel/ipipe.c
-@@ -0,0 +1,881 @@
+@@ -0,0 +1,884 @@
 +/*   -*- linux-c -*-
 + *   linux/arch/x86/kernel/ipipe.c
 + *
@@ -3179,6 +3179,9 @@ index 0000000..cd63d02
 +EXPORT_SYMBOL(__ipipe_sync_stage);
 +EXPORT_SYMBOL(kill_proc_info);
 +EXPORT_SYMBOL(find_task_by_pid_ns);
++#ifndef CONFIG_SPARSE_IRQ
++EXPORT_SYMBOL(irq_desc);
++#endif
 +
 +int __ipipe_tick_irq = 0;	/* Legacy timer */
 +
@@ -3475,7 +3478,7 @@ index 0000000..cd63d02
 +{
 +	cpumask_t oldmask;
 +
-+	if (irq_to_desc(irq)->chip->set_affinity == NULL)
++	if (irq_to_desc(irq)->chip->irq_set_affinity == NULL)
 +		return CPU_MASK_NONE;
 +
 +	if (cpus_empty(cpumask))
@@ -3486,7 +3489,7 @@ index 0000000..cd63d02
 +		return CPU_MASK_NONE;	/* Error -- bad mask value or non-routable IRQ. */
 +
 +	cpumask_copy(&oldmask, irq_to_desc(irq)->affinity);
-+	irq_to_desc(irq)->chip->set_affinity(irq, &cpumask);
++	irq_to_desc(irq)->chip->irq_set_affinity(&irq_to_desc(irq)->irq_data, &cpumask, false);
 +
 +	return oldmask;
 +}
@@ -6700,7 +6703,7 @@ index c972899..6fc1103 100644
  
  config LOCALVERSION
  	string "Local version - append to kernel release"
-+	default "-ipipe"
++	default "-rtai"
  	help
  	  Append an extra string to the end of your kernel version.
  	  This will show up when you type uname, for example.

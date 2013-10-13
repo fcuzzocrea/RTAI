@@ -2,12 +2,11 @@
 
 	* RTAI 3.9.2
 
+2013-10-13 Paolo Mantegazza <mantegazza@aero.polimi.it>
+
+	* base/ipc/msg/msg.c: better sender/receiver task magic checks. 
+
 2013-10-12 Paolo Mantegazza <mantegazza@aero.polimi.it>
-
-	* base/include/rtai_posix.h: inherited from magma a fix for improper
-	  return values in the nanosleep functions.
-
-2013-10-05 Paolo Mantegazza <mantegazza@aero.polimi.it>
 
 	* base/arch/i386/hal/hal.immed and base/arch/x86_646/hal/hal.immed:
 	  check irq desc and chip addr to avoid invalid pointers when used 

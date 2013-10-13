@@ -1,8 +1,8 @@
-2013-10-10 Pierangelo Masarati <masarati@aero.polimi.it>
+2013-10-14 Pierangelo Masarati <masarati@aero.polimi.it>
 
 	* RTAI 3.9.2
 
-2013-10-10 Paolo Mantegazza <mantegazza@aero.polimi.it>
+2013-10-12 Paolo Mantegazza <mantegazza@aero.polimi.it>
 
 	* base/include/rtai_posix.h: inherited from magma a fix for improper
 	  return values in the nanosleep functions.

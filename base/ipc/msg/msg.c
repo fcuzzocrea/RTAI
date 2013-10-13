@@ -94,10 +94,10 @@ do { \
 /* ++++++++++++++++++++++++++ TASK POINTERS CHECKS +++++++++++++++++++++++++ */
 
 #define CHECK_SENDER_MAGIC(task) \
-do { if ((unsigned long)task > RTE_HIGERR && task->magic != RT_TASK_MAGIC) return TASK_INVAL; } while (0)
+do { if ((unsigned long)task <= RTE_HIGERR || task->magic != RT_TASK_MAGIC) return TASK_INVAL; } while (0)
 
 #define CHECK_RECEIVER_MAGIC(task) \
-do { if ((unsigned long)task > RTE_HIGERR && task->magic != RT_TASK_MAGIC) return TASK_INVAL; } while (0)
+do { if (task && task->magic != RT_TASK_MAGIC) return TASK_INVAL; } while (0)
 
 /* +++++++++++++++++++++++++++++ ASYNC SENDS ++++++++++++++++++++++++++++++++ */
 

@@ -96,7 +96,7 @@ static unsigned long rt_smp_linux_cr0[NR_RT_CPUS];
 
 static RT_TASK *rt_smp_fpu_task[NR_RT_CPUS];
 
-static int rt_smp_half_tick[NR_RT_CPUS];
+int rt_smp_half_tick[NR_RT_CPUS];
 
 static int rt_smp_oneshot_running[NR_RT_CPUS];
 
@@ -1978,18 +1978,6 @@ extern void rt_daemonize(void);
 
 #endif
 
-
-#define WAKE_UP_TASKs(klist) \
-do { \
-	struct klist_t *p = &klist[cpuid]; \
-	struct task_struct *task; \
-	while (p->out != p->in) { \
-		task = p->task[p->out++ & (MAX_WAKEUP_SRQ - 1)]; \
-		wake_up_process(task); \
-	} \
-} while (0)
-
-
 void steal_from_linux(RT_TASK *rt_task)
 {
 	struct klist_t *klistp;
@@ -2083,12 +2071,23 @@ void give_back_to_linux(RT_TASK *rt_task, int keeprio)
 	return;
 }
 
+#define WAKE_UP_TASKs(klist) \
+do { \
+	struct klist_t *p = &klist[cpuid]; \
+	struct task_struct *task; \
+	while (p->out != p->in) { \
+		task = p->task[p->out++ & (MAX_WAKEUP_SRQ - 1)]; \
+		wake_up_process(task); \
+	} \
+} while (0)
 
 static void wake_up_srq_handler(unsigned srq)
 {
-	int cpuid = rtai_cpuid();
-	WAKE_UP_TASKs(wake_up_hts);
-	WAKE_UP_TASKs(wake_up_srq);
+	int cpuid;
+	for (cpuid = 0; cpuid < num_online_cpus(); cpuid++) {
+		WAKE_UP_TASKs(wake_up_hts);
+		WAKE_UP_TASKs(wake_up_srq);
+	}
 	set_need_resched();
 }
 

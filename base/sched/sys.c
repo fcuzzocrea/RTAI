@@ -675,12 +675,15 @@ static inline long long handle_lxrt_request (unsigned int lxsrq, long *arg, RT_T
 		case KERNEL_CALIBRATOR: {
 			struct arg { long period, loops, Latency; };
 #if !CONFIG_RTAI_BUSY_TIME_ALIGN
-			stop_rt_timer();
+			extern int rt_smp_half_tick[];
+			int cpu;
 			tuned.latency = imuldiv(abs((int)larg->Latency), tuned.cpu_freq, 1000000000);
 			if (tuned.latency < tuned.setup_time_TIMER_CPUNIT) {
 				tuned.latency = tuned.setup_time_TIMER_CPUNIT;
 			}
-			start_rt_timer(0);
+			for (cpu = 0; cpu < NR_RT_CPUS; cpu++) {
+				rt_smp_half_tick[cpu] = tuned.latency/2;
+			}
 #endif
 			return larg->Latency < 0 ? 0 : kernel_calibrator_spv(larg->period, larg->loops, task);
 		}

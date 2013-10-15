@@ -20,7 +20,7 @@
 
 2013-08-08 Paolo Mantegazza <mantegazza@aero.polimi.it>
 
-        * base/isched/sys.c: check msg pointer before copying it from user
+        * base/sched/sys.c: check msg pointer before copying it from user
 	  space.
 
 2013-04-08 Pierangelo Masarati <masarati@aero.polimi.it>

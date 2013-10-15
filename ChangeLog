@@ -1,3 +1,11 @@
+2013-10-15 Paolo Mantegazza <mantegazza@aero.polimi.it>
+
+	* base/sched/sched.c: make rt_smp_half_tick available to the whole 
+	  module files, have wake_up_srq_handler loop over all pending 
+	  cpu task lists.
+	* base/sched/sys.c: avoid stopping/starting the hard oneshot timer by
+	  setting rt_smp_haf_tick accordingly to the just update latency.
+
 2013-10-05 Paolo Mantegazza <mantegazza@aero.polimi.it>
 
 	* base/arch/x86/calibration/calibration_helper.c: restructured in a, 

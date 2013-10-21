@@ -2083,11 +2083,9 @@ do { \
 
 static void wake_up_srq_handler(unsigned srq)
 {
-	int cpuid;
-	for (cpuid = 0; cpuid < num_online_cpus(); cpuid++) {
-		WAKE_UP_TASKs(wake_up_hts);
-		WAKE_UP_TASKs(wake_up_srq);
-	}
+	int cpuid = rtai_cpuid();
+	WAKE_UP_TASKs(wake_up_hts);
+	WAKE_UP_TASKs(wake_up_srq);
 	set_need_resched();
 }
 

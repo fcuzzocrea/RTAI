@@ -2075,8 +2075,7 @@ void give_back_to_linux(RT_TASK *rt_task, int keeprio)
 do { \
 	struct klist_t *p = &klist[cpuid]; \
 	while (p->out != p->in) { \
-		wake_up_process(p->task[p->out & (MAX_WAKEUP_SRQ - 1)]); \
-		p->out++; \
+		wake_up_process(p->task[p->out++ & (MAX_WAKEUP_SRQ - 1)]); \
 	} \
 } while (0)
 

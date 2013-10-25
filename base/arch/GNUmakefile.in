@@ -62,7 +62,7 @@ AM_RECURSIVE_TARGETS = $(RECURSIVE_TARGETS:-recursive=) \
 	distdir
 ETAGS = etags
 CTAGS = ctags
-DIST_SUBDIRS = arm i386 m68k ppc x86_64 x86
+DIST_SUBDIRS = arm m68k ppc x86
 DISTFILES = $(DIST_COMMON) $(DIST_SOURCES) $(TEXINFOS) $(EXTRA_DIST)
 am__relativize = \
   dir0=`pwd`; \
@@ -266,12 +266,18 @@ target_alias = @target_alias@
 top_build_prefix = @top_build_prefix@
 top_builddir = @top_builddir@
 top_srcdir = @top_srcdir@
+
+#if CONFIG_I386
+#ARCHDIR = i386
+#endif
+
+#if CONFIG_X86_64
+#ARCHDIR = x86_64
+#endif
 @CONFIG_ARM_TRUE@ARCHDIR = arm
-@CONFIG_I386_TRUE@ARCHDIR = i386
 @CONFIG_M68KNOMMU_TRUE@ARCHDIR = m68k
 @CONFIG_M68K_TRUE@ARCHDIR = m68k
 @CONFIG_PPC_TRUE@ARCHDIR = ppc
-@CONFIG_X86_64_TRUE@ARCHDIR = x86_64
 @CONFIG_X86_TRUE@ARCHDIR = x86
 SUBDIRS = $(ARCHDIR)
 modext = @RTAI_MODULE_EXT@

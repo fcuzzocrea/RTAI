@@ -1,5 +1,9 @@
 2013-10-25 Paolo Mantegazza <mantegazza@aero.polimi.it>
 
+	* configure.in, configure: propagate TSC detection to user space
+
+2013-10-25 Paolo Mantegazza <mantegazza@aero.polimi.it>
+
 	* base/include/rtai_schedcore.h: assign and use only 
           wake_up_srq[0].srq.
 	* base/sched/sched.c: pend hard to soft task transitions to 

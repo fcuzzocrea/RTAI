@@ -1,3 +1,10 @@
+2013-10-25 Paolo Mantegazza <mantegazza@aero.polimi.it>
+
+	* base/include/rtai_schedcore.h: assign and use only 
+          wake_up_srq[0].srq.
+	* base/sched/sched.c: pend hard to soft task transitions to 
+          wake_up_srq[0].srq, make WAKE_UP_TASKs macro more easily readable.
+
 2013-10-15 Pierangelo Masarati <masarati@aero.polimi.it>
 
 	* RTAI 3.9.2

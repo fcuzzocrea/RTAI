@@ -7,7 +7,7 @@
 	* base/include/rtai_schedcore.h: assign and use only 
           wake_up_srq[0].srq.
 	* base/sched/sched.c: pend hard to soft task transitions to 
-          wake_up_srq[0].srq, make WAKE_UP_TASKs macro more easily readable.
+          wake_up_srq[0].srq.
 
 2013-10-15 Pierangelo Masarati <masarati@aero.polimi.it>
 

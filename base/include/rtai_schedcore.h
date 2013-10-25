@@ -84,15 +84,11 @@
 
 #define REQUEST_RESUME_SRQs_STUFF() \
 do { \
-	int cpuid; \
        	if (!(wake_up_srq[0].srq = hal_alloc_irq())) { \
-		printk("*** NO WAKE UP SRQ AVAILABLE, ABORTING ***\n"); \
+		printk("*** ABORT, NO VIRQ AVAILABLE FOR THE WAKING UP SRQ. ***\n"); \
 		return -1; \
 	} \
        	hal_virtualize_irq(hal_root_domain, wake_up_srq[0].srq, wake_up_srq_handler, NULL, IPIPE_HANDLE_FLAG); \
-	for (cpuid = 1; cpuid < num_online_cpus(); cpuid++) { \
-        	wake_up_srq[cpuid].srq = wake_up_srq[0].srq; \
-	} \
 } while (0)
 
 #define RELEASE_RESUME_SRQs_STUFF() \
@@ -258,7 +254,7 @@ extern struct klist_t wake_up_srq[];
 #define pend_wake_up_srq(lnxtsk, cpuid) \
 do { \
 	wake_up_srq[cpuid].task[wake_up_srq[cpuid].in++ & (MAX_WAKEUP_SRQ - 1)] = lnxtsk; \
-	hal_pend_uncond(wake_up_srq[cpuid].srq, cpuid); \
+	hal_pend_uncond(wake_up_srq[0].srq, cpuid); \
 } while (0)
 
 static inline void enq_ready_task(RT_TASK *ready_task)

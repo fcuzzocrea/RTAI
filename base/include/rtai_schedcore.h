@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 1999-2008 Paolo Mantegazza <mantegazza@aero.polimi.it>
+ * Copyright (C) 1999-2013 Paolo Mantegazza <mantegazza@aero.polimi.it>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License as
@@ -84,11 +84,11 @@
 
 #define REQUEST_RESUME_SRQs_STUFF() \
 do { \
-       	if (!(wake_up_srq[0].srq = hal_alloc_irq())) { \
+	if (!(wake_up_srq[0].srq = hal_alloc_irq())) { \
 		printk("*** ABORT, NO VIRQ AVAILABLE FOR THE WAKING UP SRQ. ***\n"); \
 		return -1; \
 	} \
-       	hal_virtualize_irq(hal_root_domain, wake_up_srq[0].srq, wake_up_srq_handler, NULL, IPIPE_HANDLE_FLAG); \
+	hal_virtualize_irq(hal_root_domain, wake_up_srq[0].srq, wake_up_srq_handler, NULL, IPIPE_HANDLE_FLAG); \
 } while (0)
 
 #define RELEASE_RESUME_SRQs_STUFF() \
@@ -246,7 +246,7 @@ struct epoch_struct { spinlock_t lock; volatile int touse; volatile RTIME time[2
 #define REALTIME2COUNT(rtime)
 #endif
 
-#define MAX_WAKEUP_SRQ (1 << 7)
+#define MAX_WAKEUP_SRQ (1 << 6)
 
 struct klist_t { int srq; volatile unsigned long in, out; void *task[MAX_WAKEUP_SRQ]; };
 extern struct klist_t wake_up_srq[];

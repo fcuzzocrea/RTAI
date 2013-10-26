@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 1999-2008 Paolo Mantegazza <mantegazza@aero.polimi.it>
+ * Copyright (C) 1999-2013 Paolo Mantegazza <mantegazza@aero.polimi.it>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License as
@@ -76,23 +76,13 @@
 #define RTAI_OOM_DISABLE()
 #endif
 
-#define NON_RTAI_TASK_SUSPEND(task) \
-	do { (task->lnxtsk)->state = TASK_SOFTREALTIME; } while (0)
-
-#define NON_RTAI_TASK_RESUME(ready_task) \
-	do { pend_wake_up_srq(ready_task->lnxtsk, rtai_cpuid()); } while (0)
-
 #define REQUEST_RESUME_SRQs_STUFF() \
 do { \
-	int cpuid; \
-       	if (!(wake_up_srq[0].srq = hal_alloc_irq())) { \
-		printk("*** NO WAKE UP SRQ AVAILABLE, ABORTING ***\n"); \
+	if (!(wake_up_srq[0].srq = hal_alloc_irq())) { \
+		printk("*** ABORT, NO VIRQ AVAILABLE FOR wake_up_srq. ***\n"); \
 		return -1; \
 	} \
        	hal_virtualize_irq(hal_root_domain, wake_up_srq[0].srq, wake_up_srq_handler, NULL, IPIPE_HANDLE_FLAG); \
-	for (cpuid = 1; cpuid < num_online_cpus(); cpuid++) { \
-        	wake_up_srq[cpuid].srq = wake_up_srq[0].srq; \
-	} \
 } while (0)
 
 #define RELEASE_RESUME_SRQs_STUFF() \
@@ -250,7 +240,7 @@ struct epoch_struct { spinlock_t lock; volatile int touse; volatile RTIME time[2
 #define REALTIME2COUNT(rtime)
 #endif
 
-#define MAX_WAKEUP_SRQ (1 << 7)
+#define MAX_WAKEUP_SRQ (1 << 6)
 
 struct klist_t { int srq; volatile unsigned long in, out; void *task[MAX_WAKEUP_SRQ]; };
 extern struct klist_t wake_up_srq[];
@@ -258,7 +248,7 @@ extern struct klist_t wake_up_srq[];
 #define pend_wake_up_srq(lnxtsk, cpuid) \
 do { \
 	wake_up_srq[cpuid].task[wake_up_srq[cpuid].in++ & (MAX_WAKEUP_SRQ - 1)] = lnxtsk; \
-	hal_pend_uncond(wake_up_srq[cpuid].srq, cpuid); \
+	hal_pend_uncond(wake_up_srq[0].srq, cpuid); \
 } while (0)
 
 static inline void enq_ready_task(RT_TASK *ready_task)
@@ -277,7 +267,7 @@ static inline void enq_ready_task(RT_TASK *ready_task)
 		ready_task->rnext = task;
 	} else {
 		ready_task->state |= RT_SCHED_SFTRDY;
-		NON_RTAI_TASK_RESUME(ready_task);
+		pend_wake_up_srq(ready_task->lnxtsk, rtai_cpuid());
 	}
 }
 
@@ -299,9 +289,8 @@ static inline void rem_ready_task(RT_TASK *task)
 {
 	if (task->state == RT_SCHED_READY) {
 		if (!task->is_hard) {
-			NON_RTAI_TASK_SUSPEND(task);
+			(task->lnxtsk)->state = TASK_SOFTREALTIME;
 		}
-//		task->unblocked = 0;
 		(task->rprev)->rnext = task->rnext;
 		(task->rnext)->rprev = task->rprev;
 	}
@@ -310,9 +299,8 @@ static inline void rem_ready_task(RT_TASK *task)
 static inline void rem_ready_current(RT_TASK *rt_current)
 {
 	if (!rt_current->is_hard) {
-		NON_RTAI_TASK_SUSPEND(rt_current);
+		(rt_current->lnxtsk)->state = TASK_SOFTREALTIME;
 	}
-//	rt_current->unblocked = 0;
 	(rt_current->rprev)->rnext = rt_current->rnext;
 	(rt_current->rnext)->rprev = rt_current->rprev;
 }

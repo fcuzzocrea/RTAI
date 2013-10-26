@@ -76,13 +76,19 @@
 #define RTAI_OOM_DISABLE()
 #endif
 
+#define NON_RTAI_TASK_SUSPEND(task) \
+	do { (task->lnxtsk)->state = TASK_SOFTREALTIME; } while (0)
+
+#define NON_RTAI_TASK_RESUME(ready_task) \
+	do { pend_wake_up_srq(ready_task->lnxtsk, rtai_cpuid()); } while (0)
+
 #define REQUEST_RESUME_SRQs_STUFF() \
 do { \
 	if (!(wake_up_srq[0].srq = hal_alloc_irq())) { \
-		printk("*** ABORT, NO VIRQ AVAILABLE FOR wake_up_srq. ***\n"); \
+		printk("*** ABORT, NO VIRQ AVAILABLE FOR THE WAKING UP SRQ. ***\n"); \
 		return -1; \
 	} \
-       	hal_virtualize_irq(hal_root_domain, wake_up_srq[0].srq, wake_up_srq_handler, NULL, IPIPE_HANDLE_FLAG); \
+	hal_virtualize_irq(hal_root_domain, wake_up_srq[0].srq, wake_up_srq_handler, NULL, IPIPE_HANDLE_FLAG); \
 } while (0)
 
 #define RELEASE_RESUME_SRQs_STUFF() \
@@ -267,7 +273,7 @@ static inline void enq_ready_task(RT_TASK *ready_task)
 		ready_task->rnext = task;
 	} else {
 		ready_task->state |= RT_SCHED_SFTRDY;
-		pend_wake_up_srq(ready_task->lnxtsk, rtai_cpuid());
+		NON_RTAI_TASK_RESUME(ready_task);
 	}
 }
 
@@ -289,8 +295,9 @@ static inline void rem_ready_task(RT_TASK *task)
 {
 	if (task->state == RT_SCHED_READY) {
 		if (!task->is_hard) {
-			(task->lnxtsk)->state = TASK_SOFTREALTIME;
+			NON_RTAI_TASK_SUSPEND(task);
 		}
+//		task->unblocked = 0;
 		(task->rprev)->rnext = task->rnext;
 		(task->rnext)->rprev = task->rprev;
 	}
@@ -299,8 +306,9 @@ static inline void rem_ready_task(RT_TASK *task)
 static inline void rem_ready_current(RT_TASK *rt_current)
 {
 	if (!rt_current->is_hard) {
-		(rt_current->lnxtsk)->state = TASK_SOFTREALTIME;
+		NON_RTAI_TASK_SUSPEND(rt_current);
 	}
+//	rt_current->unblocked = 0;
 	(rt_current->rprev)->rnext = rt_current->rnext;
 	(rt_current->rnext)->rprev = rt_current->rprev;
 }

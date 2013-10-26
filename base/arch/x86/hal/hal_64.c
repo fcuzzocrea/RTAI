@@ -1475,11 +1475,10 @@ static int rtai_read_proc (char *page, char **start, off_t off, int count, int *
 	int i, none;
 
 	PROC_PRINT("\n** RTAI/x86:\n\n");
-#ifdef CONFIG_X86_LOCAL_APIC
-	PROC_PRINT("    APIC Frequency: %lu\n",rtai_tunables.apic_freq);
-	PROC_PRINT("    APIC Latency: %d ns\n",RTAI_LATENCY_APIC);
-	PROC_PRINT("    APIC Setup: %d ns\n",RTAI_SETUP_TIME_APIC);
-#endif /* CONFIG_X86_LOCAL_APIC */
+	PROC_PRINT("    CPU   Frequency: %lu (Hz)\n", rtai_tunables.cpu_freq);
+	PROC_PRINT("    TIMER Frequency: %lu (Hz)\n", TIMER_FREQ);
+	PROC_PRINT("    TIMER Latency: %d (ns)\n", rtai_imuldiv(rtai_tunables.latency, 1000000000, rtai_tunables.cpu_freq));
+	PROC_PRINT("    TIMER Setup: %d (ns)\n", rtai_imuldiv(rtai_tunables.setup_time_TIMER_CPUNIT, 1000000000, rtai_tunables.cpu_freq));
     
 	none = 1;
 	PROC_PRINT("\n** Real-time IRQs used by RTAI: ");

@@ -1103,10 +1103,14 @@ RTAI_PROTO(void, rt_release_rtc,(void))
 	rtai_lxrt(BIDX, SIZARG, RELEASE_RTC, &arg);
 }
 
-RTAI_PROTO(RTIME,rt_get_time,(void))
+RTAI_PROTO(RTIME, rt_get_time, (void))
 {
+#ifdef CONFIG_RTAI_TSC
+	return rt_get_tscnt();
+#else
 	struct { unsigned long dummy; } arg;
 	return rtai_lxrt(BIDX, SIZARG, GET_TIME, &arg).rt;
+#endif
 }
 
 RTAI_PROTO(RTIME, rt_get_real_time, (void))

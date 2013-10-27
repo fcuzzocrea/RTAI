@@ -113,4 +113,4 @@ install-exec-local: $(schedulers)
 # liblxrt is always built
 SUBDIRS = liblxrt
 
-EXTRA_DIST = Makefile.kbuild sched.piped sched.immed
+EXTRA_DIST = Makefile.kbuild

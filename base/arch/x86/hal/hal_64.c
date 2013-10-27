@@ -1512,12 +1512,16 @@ static int rtai_read_proc (char *page, char **start, off_t off, int count, int *
 	}
     	PROC_PRINT("\n\n");
 
-#if defined(CONFIG_SMP) && defined(CONFIG_RTAI_DIAG_TSC_SYNC)
+#ifdef CONFIG_SMP
+#ifdef CONFIG_RTAI_DIAG_TSC_SYNC
 	PROC_PRINT("** RTAI TSC OFFSETs (TSC units, 0 ref. CPU): ");
 	for (i = 0; i < num_online_cpus(); i++) {
 		PROC_PRINT("CPU#%d: %ld; ", i, rtai_tsc_ofst[i]);
 	}
         PROC_PRINT("\n\n");
+#endif
+	PROC_PRINT("** MASK OF CPUs ISOLATED FOR RTAI: 0x%lx.", IsolCpusMask);
+    	PROC_PRINT("\n\n");
 #endif
 
 	PROC_PRINT_DONE;

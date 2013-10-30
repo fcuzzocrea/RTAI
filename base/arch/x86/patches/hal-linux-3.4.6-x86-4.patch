@@ -12473,7 +12473,7 @@ index 3914c1e..cef1e78 100644
  
  #include <trace/events/irq.h>
  
-@@ -166,8 +167,10 @@ int irq_startup(struct irq_desc *desc, bool resend)
+@@ -166,8 +167,10 @@ int irq_startup(struct irq_desc *desc, b
  	desc->depth = 0;
  
  	if (desc->irq_data.chip->irq_startup) {
@@ -12537,7 +12537,7 @@ index 3914c1e..cef1e78 100644
  
  	if (unlikely(irqd_irq_inprogress(&desc->irq_data)))
  		if (!irq_check_poll(desc))
-@@ -433,17 +446,26 @@ handle_fasteoi_irq(unsigned int irq, struct irq_desc *desc)
+@@ -433,17 +446,26 @@ handle_fasteoi_irq(unsigned int irq, str
  		goto out;
  	}
  
@@ -12564,7 +12564,7 @@ index 3914c1e..cef1e78 100644
  out_unlock:
  	raw_spin_unlock(&desc->lock);
  	return;
-@@ -491,7 +513,9 @@ handle_edge_irq(unsigned int irq, struct irq_desc *desc)
+@@ -491,7 +513,9 @@ handle_edge_irq(unsigned int irq, struct
  	kstat_incr_irqs_this_cpu(irq, desc);
  
  	/* Start handling the irq */
@@ -12574,7 +12574,7 @@ index 3914c1e..cef1e78 100644
  
  	do {
  		if (unlikely(!desc->action)) {
-@@ -579,6 +603,12 @@ handle_percpu_irq(unsigned int irq, struct irq_desc *desc)
+@@ -579,6 +603,12 @@ handle_percpu_irq(unsigned int irq, stru
  
  	kstat_incr_irqs_this_cpu(irq, desc);
  
@@ -12587,7 +12587,7 @@ index 3914c1e..cef1e78 100644
  	if (chip->irq_ack)
  		chip->irq_ack(&desc->irq_data);
  
-@@ -586,6 +616,7 @@ handle_percpu_irq(unsigned int irq, struct irq_desc *desc)
+@@ -586,6 +616,7 @@ handle_percpu_irq(unsigned int irq, stru
  
  	if (chip->irq_eoi)
  		chip->irq_eoi(&desc->irq_data);
@@ -12595,7 +12595,7 @@ index 3914c1e..cef1e78 100644
  }
  
  /**
-@@ -609,17 +640,133 @@ void handle_percpu_devid_irq(unsigned int irq, struct irq_desc *desc)
+@@ -609,17 +640,135 @@ void handle_percpu_devid_irq(unsigned in
  
  	kstat_incr_irqs_this_cpu(irq, desc);
  
@@ -12617,8 +12617,8 @@ index 3914c1e..cef1e78 100644
 +	if (chip->irq_eoi && !irqd_irq_masked(&desc->irq_data))
 +		chip->irq_unmask(&desc->irq_data);
 +#endif
- }
- 
++}
++
 +#ifdef CONFIG_IPIPE
 +
 +void __ipipe_ack_level_irq(unsigned irq, struct irq_desc *desc)
@@ -12672,8 +12672,8 @@ index 3914c1e..cef1e78 100644
 +{
 +	handle_bad_irq(irq, desc);
 +	WARN_ON_ONCE(1);
-+}
-+
+ }
+ 
 +irq_flow_handler_t
 +__fixup_irq_handler(struct irq_desc *desc, irq_flow_handler_t handle, int is_chained)
 +{
@@ -12726,10 +12726,12 @@ index 3914c1e..cef1e78 100644
 +
 +#endif /* !CONFIG_IPIPE */
 +
++EXPORT_SYMBOL_GPL(__fixup_irq_handler);
++
  void
  __irq_set_handler(unsigned int irq, irq_flow_handler_t handle, int is_chained,
  		  const char *name)
-@@ -637,6 +784,8 @@ __irq_set_handler(unsigned int irq, irq_flow_handler_t handle, int is_chained,
+@@ -637,6 +786,8 @@ __irq_set_handler(unsigned int irq, irq_
  			goto out;
  	}
  

@@ -1688,6 +1688,7 @@ void ack_bad_irq(unsigned int irq)
 }
 
 extern struct ipipe_domain ipipe_root;
+void free_isolcpus_from_linux(void *);
 
 int __rtai_hal_init (void)
 {
@@ -1767,6 +1768,7 @@ int __rtai_hal_init (void)
 		for (trapnr = 0; trapnr < IPIPE_NR_XIRQS; trapnr++) {
 			rtai_orig_irq_affinity[trapnr] = rt_assign_irq_to_cpu(trapnr, ~IsolCpusMask);
 		}
+		free_isolcpus_from_linux(&IsolCpusMask);
 	}
 #else
 	IsolCpusMask = 0;

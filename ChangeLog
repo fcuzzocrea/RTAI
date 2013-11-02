@@ -1,6 +1,6 @@
 2013-11-03 Paolo Mantegazza <mantegazza@aero.polimi.it>
 
-	* base/include/rtai_lxrt.h: added rt_get_cpu_freq and static 
+	* base/include/rtai_lxrt.h: added rt_get_cpu_freq and static
 	  inlines for an easier converion of tsc counts from/to nanos, 
 	  directly in user space.
 	* base/sched/sys.c: implemented the above rt_get_cpu_freq.
@@ -8,15 +8,16 @@
 	  that no Linux task will be on the CPUs isolated for RTAI.
 	* base/arch/x86/hal/hal_32.c and hal_64.c: when initting RTAI hal call
 	  the function removing Linux tasks from the CPUs isolated for RTAI.
-	* README.ISOLCPUS: add a short explanation of what newly added above.	  
+	* README.ISOLCPUS: add a short explanation of what newly added above.
+
 2013-11-02 Paolo Mantegazza <mantegazza@aero.polimi.it>
 
-	* base/arch/x86/hal/hal_32.c and hal_64.c: check irq_set_affinity 
+	* base/arch/x86/hal/hal_32.c and hal_64.c: check irq_set_affinity
 	  in desc, to avoid an unharmful but annoying Linux WARN_ONCE.
 
 2013-10-27 Paolo Mantegazza <mantegazza@aero.polimi.it>
 
-	* base/include/asm-x86/hal/hal_32.c and hal_64.c: let hal proc file 
+	* base/include/asm-x86/hal/hal_32.c and hal_64.c: let hal proc file
 	  display IsolCpusMask.
 
 2013-10-26 Paolo Mantegazza <mantegazza@aero.polimi.it>

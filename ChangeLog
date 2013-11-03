@@ -2,7 +2,8 @@
 
 	* base/include/rtai_lxrt.h: added rt_get_cpu_freq and static
 	  inlines for an easier converion of tsc counts from/to nanos, 
-	  directly in user space.
+	  directly in user space; simple inlined conversion functions 
+	  provided in rtai_lxrt.h.
 	* base/sched/sys.c: implemented the above rt_get_cpu_freq.
 	* base/arch/x86/hal/hal.c: added a function to be called for ensuring
 	  that no Linux task will be on the CPUs isolated for RTAI.

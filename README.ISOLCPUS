@@ -67,7 +67,7 @@ anyhow. It would also be possible to block such dynamic creations, an action
 that is postponed till more experience is gathered with the use of what above.
 To easily check if any following dynamic insertion of something within the
 isolated cpus has happened the following might be of help:
-cat /proc/*/task/*/status |grep "Cpus_allowed:" |grep <mask>,
+cat /proc/*/task/*/status |grep "allowed:" |grep <mask>,
 where mask is the mask of what you want either to see not or see. 
 
 With what above only Linux rescheduling interrupts should appear on the

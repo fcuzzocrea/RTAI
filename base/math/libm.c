@@ -46,7 +46,7 @@ int *__errno_location(void)
 
 void __assert_fail(const char *assertion, const char *file, int line, const char *function)
 {
-	printk("An __assert_fail assertion has been called.\n");
+	printk("An '__assert_fail' assertion has been called.\n");
 }
 
 int fputs(const char *s, void *stream)

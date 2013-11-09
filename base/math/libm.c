@@ -37,7 +37,7 @@ MODULE_LICENSE("GPL");
 
 /***** Begin of entries needed by glibc-libm *****/
 
-int stderr;
+int stderr = 2;
 
 int *__errno_location(void)
 {

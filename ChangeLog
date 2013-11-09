@@ -1,3 +1,13 @@
+2013-11-09 Paolo Mantegazza <mantegazza@aero.polimi.it>
+
+	* base/math/libm.c: uses just the standard GPLed glibc, added the
+	  possibility of calling both the float and double version of 
+	  glibc-libm functions.
+	* base/include/rtai_sched.h: a added kerrno to RT_TASK, to support 
+	  a per kernel task errno management with the refurbished libm.c
+	* base/include/rtai_kerrno.h: new header to support the management 
+	  of per kernel tasks errno.
+
 2013-11-03 Paolo Mantegazza <mantegazza@aero.polimi.it>
 
 	* base/include/rtai_lxrt.h: added rt_get_cpu_freq and static

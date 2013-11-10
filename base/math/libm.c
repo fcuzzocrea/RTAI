@@ -79,7 +79,7 @@ void d2str(double d, int dgt, char *str)
 {
 	const int MAXDGT = 17;
 	int e, i;
-	long long l;
+	unsigned long long l;
 	double p;
 
 	if (d < 0) {
@@ -106,7 +106,7 @@ void d2str(double d, int dgt, char *str)
 	e = log10(d);
 	p = pow(10, MAXDGT - e);
 	l = d*p + 0.5*pow(10, MAXDGT - dgt + (d >= 1));
-	sprintf(&str[3], "%lld", l);
+	sprintf(&str[3], "%llu", l);
 	i = dgt + 3;
 	str[i] = 'e';
 	if (e < 0) {

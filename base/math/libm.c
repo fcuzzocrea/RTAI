@@ -92,7 +92,10 @@ void d2str(double d, int dgt, char *str)
 	str[2] = '.';
 	if (d < 1.0e-46) {
 		memset(&str[3], '0', dgt);
-		str[dgt + 3] = 0;
+		str[dgt + 3] = 'e';
+		str[dgt + 4] = '+';
+		str[dgt + 5] = '0';
+		str[dgt + 6] =  0;
 		return;
 	}
 	if (dgt <= 0) {

@@ -82,17 +82,18 @@ void d2str(double d, int dgt, char *str)
 	long long l;
 	double p;
 
-	str[0] = '+';
 	str[1] = '0';
 	str[2] = '.';
+	if (d < 0) {
+		str[0] = '-';
+		d = -d;
+	} else {
+		str[0] = '+';
+	}
 	if (d < 1.0e-46) {
 		memset(&str[3], '0', dgt);
 		str[dgt + 3] = 0;
 		return;
-	}
-	if (d < 0) {
-		str[0] = '-';
-		d = -d;
 	}
 	e = log10(d);
 	if (dgt <= 0) {
@@ -113,7 +114,7 @@ void d2str(double d, int dgt, char *str)
 	i = i + sprintf(&str[i + 3], "%d", e + (l/p >= 1));
 	str[i + 3] = 0;
 }
-EXPORT_SYMBOL(d2a);
+EXPORT_SYMBOL(d2str);
 
 int __rtai_math_init(void)
 {

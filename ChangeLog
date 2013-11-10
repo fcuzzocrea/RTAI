@@ -1,3 +1,8 @@
+2013-11-11 Paolo Mantegazza <mantegazza@aero.polimi.it>
+
+	* base/math/libm.c: added a trivial d2str (double to string).
+	* base/include/rtai_kerrno.h: added the declaration of d2str.
+
 2013-11-09 Paolo Mantegazza <mantegazza@aero.polimi.it>
 
 	* base/math/libm.c: uses just the standard GPLed glibc, added the

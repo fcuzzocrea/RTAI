@@ -77,42 +77,43 @@ ssize_t write(int fildes, const void *buf, size_t nbytes)
 
 void d2str(double d, int dgt, char *str)
 {
-	const int MAXDGT = 16;
+	const int MAXDGT = 17;
 	int e, i;
 	long long l;
 	double p;
 
-	str[1] = '0';
-	str[2] = '.';
 	if (d < 0) {
-		str[0] = '-';
 		d = -d;
+		str[0] = '-';
 	} else {
 		str[0] = '+';
 	}
+	str[1] = '0';
+	str[2] = '.';
 	if (d < 1.0e-46) {
 		memset(&str[3], '0', dgt);
 		str[dgt + 3] = 0;
 		return;
 	}
-	e = log10(d);
 	if (dgt <= 0) {
 		dgt = 1;
 	} else if (dgt > MAXDGT) {
 		dgt = MAXDGT;
 	}
+	e = log10(d);
 	p = pow(10, MAXDGT - e);
 	l = d*p + 0.5*pow(10, MAXDGT - dgt + (d >= 1));
 	sprintf(&str[3], "%lld", l);
-	i = dgt + 1;
+	i = dgt + 3;
+	str[i] = 'e';
 	if (e < 0) {
-		str[i + 2] = '-';
 		e = -e;
+		str[i + 1] = '-';
 	} else {
-		str[i + 2] = '+';
+		str[i + 1] = '+';
 	}
-	i = i + sprintf(&str[i + 3], "%d", e + (l/p >= 1));
-	str[i + 3] = 0;
+	i = i + sprintf(&str[i + 2], "%d", e + (l/p >= 1));
+	str[i + 2] = 0;
 }
 EXPORT_SYMBOL(d2str);
 

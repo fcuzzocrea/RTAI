@@ -75,6 +75,46 @@ ssize_t write(int fildes, const void *buf, size_t nbytes)
 /***** End of entries needed by glibc-libm *****/
 
 
+void d2str(double d, int dgt, char *str)
+{
+	const int MAXDGT = 16;
+	int e, i;
+	long long l;
+	double p;
+
+	str[0] = '+';
+	str[1] = '0';
+	str[2] = '.';
+	if (d < 1.0e-46) {
+		memset(&str[3], '0', dgt);
+		str[dgt + 3] = 0;
+		return;
+	}
+	if (d < 0) {
+		str[0] = '-';
+		d = -d;
+	}
+	e = log10(d);
+	if (dgt <= 0) {
+		dgt = 1;
+	} else if (dgt > MAXDGT) {
+		dgt = MAXDGT;
+	}
+	p = pow(10, MAXDGT - e);
+	l = d*p + 0.5*pow(10, MAXDGT - dgt + (d >= 1));
+	sprintf(&str[3], "%lld", l);
+	i = dgt + 1;
+	if (e < 0) {
+		str[i + 2] = '-';
+		e = -e;
+	} else {
+		str[i + 2] = '+';
+	}
+	i = i + sprintf(&str[i + 3], "%d", e + (l/p >= 1));
+	str[i + 3] = 0;
+}
+EXPORT_SYMBOL(d2a);
+
 int __rtai_math_init(void)
 {
 	printk(KERN_INFO "RTAI[math]: loaded.\n");
@@ -128,11 +168,17 @@ EXPORT_SYMBOL(scalbn);
 
 EXPORT_SYMBOL(cabsf);
 EXPORT_SYMBOL(cabs);
+EXPORT_SYMBOL(sinhf);
 EXPORT_SYMBOL(sinh);
+EXPORT_SYMBOL(coshf);
 EXPORT_SYMBOL(cosh);
+EXPORT_SYMBOL(tanhf);
 EXPORT_SYMBOL(tanh);
+EXPORT_SYMBOL(asinhf);
 EXPORT_SYMBOL(asinh);
+EXPORT_SYMBOL(acoshf);
 EXPORT_SYMBOL(acosh);
+EXPORT_SYMBOL(atanhf);
 EXPORT_SYMBOL(atanh);
 EXPORT_SYMBOL(cbrt);
 EXPORT_SYMBOL(drem);

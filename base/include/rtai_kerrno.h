@@ -25,7 +25,7 @@
 
 #define kerrno (_rt_whoami()->kerrno)
 
-void d2str(double d, int dgt, char *str);
+char *d2str(double d, int dgt, char *str);
 
 #endif /* __KERNEL__ */
 

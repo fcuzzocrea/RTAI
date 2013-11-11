@@ -75,7 +75,7 @@ ssize_t write(int fildes, const void *buf, size_t nbytes)
 /***** End of entries needed by glibc-libm *****/
 
 
-void d2str(double d, int dgt, char *str)
+char *d2str(double d, int dgt, char *str)
 {
 	const int MAXDGT = 17;
 	int e, i;
@@ -96,7 +96,7 @@ void d2str(double d, int dgt, char *str)
 		str[dgt + 4] = '+';
 		str[dgt + 5] = '0';
 		str[dgt + 6] =  0;
-		return;
+		return str;
 	}
 	if (dgt <= 0) {
 		dgt = 1;
@@ -117,6 +117,7 @@ void d2str(double d, int dgt, char *str)
 	}
 	i = i + sprintf(&str[i + 2], "%d", e + (l/p >= 1));
 	str[i + 2] = 0;
+	return str;
 }
 EXPORT_SYMBOL(d2str);
 

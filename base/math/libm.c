@@ -1,4 +1,4 @@
-#if 1 
+#if 0
 
 /*
  *  rtai/libm/libm.c - module wrapper for SunSoft/FreeBSD/MacOX/uclibc libm

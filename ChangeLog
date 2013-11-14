@@ -1,3 +1,8 @@
+2013-11-14 Paolo Mantegazza <mantegazza@aero.polimi.it>
+
+	* base/arch/x86/hal/hal.c: do not make available rtai_sched_affinity 
+	  and free_isolcpus_from_linux under UP.
+
 2013-11-05 Pierangelo Masarati <masarati@aero.polimi.it>
 
 	* RTAI 4.0-test2

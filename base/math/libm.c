@@ -39,9 +39,26 @@ MODULE_LICENSE("GPL");
 
 int stderr = 2;
 
+#define kerrno_adr (&(_rt_whoami()->kerrno))
+
+int *__errno(void)
+{
+	return kerrno_adr;
+}
+
+int *__getreent(void)
+{
+	return kerrno_adr;
+}
+
+int *__impure_ptr(void)
+{
+	return kerrno_adr;
+}
+
 int *__errno_location(void)
 {
-	return &(_rt_whoami()->kerrno);
+	return kerrno_adr;
 }
 
 void __assert_fail(const char *assertion, const char *file, int line, const char *function)

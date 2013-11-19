@@ -1,8 +1,18 @@
+2013-11-19 Paolo Mantegazza <mantegazza@aero.polimi.it> and 
+	   Marco Morandini <morandini@aero.polimi.it>
+
+	* base/math/libm.c: updated to use complex functions and glibc-libm.a,
+	  i386 only, newlib-libm.a and uClibi-libm.a
+	* base/math/export_glibc, export_newlib.h and export_uclibc.h: private
+	  headers exporting what is specific to each of the supported libm.a.
+	* base/math/README.KLIBM: explanation of what the new way math support
+	  in kernel space is.
+	* base/include/rtai_math.h: new self contained header.
+
 2013-11-14 Paolo Mantegazza <mantegazza@aero.polimi.it>
 
 	* base/arch/x86/hal/hal.c: do not make available rtai_sched_affinity
 	  and free_isolcpus_from_linux under UP.
-
 
 2013-11-11 Paolo Mantegazza <mantegazza@aero.polimi.it>
 

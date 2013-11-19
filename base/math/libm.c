@@ -28,10 +28,7 @@
 #include <linux/module.h>
 #include <linux/init.h>
 
-#include <math.h>
-#include <complex.h>
-
-#include <rtai_schedcore.h>
+#include "rtai_math.h"
 
 MODULE_LICENSE("GPL");
 
@@ -39,19 +36,19 @@ MODULE_LICENSE("GPL");
 
 int stderr = 2;
 
-#define kerrno_adr (&(_rt_whoami()->kerrno))
-
-int *__errno(void)
-{
-	return kerrno_adr;
-}
+#define kerrno_adr (&kerrno)
 
 int *__getreent(void)
 {
 	return kerrno_adr;
 }
 
-int *__impure_ptr(void)
+int *_impure_ptr(void)
+{
+	return kerrno_adr;
+}
+
+int *__errno(void)
 {
 	return kerrno_adr;
 }
@@ -88,6 +85,10 @@ ssize_t write(int fildes, const void *buf, size_t nbytes)
 {
 	generic_echo(buf, nbytes);
 }
+
+void strtod(void) { }
+
+void strtof(void) { }
 
 /***** End of entries needed by glibc-libm *****/
 
@@ -138,9 +139,24 @@ char *d2str(double d, int dgt, char *str)
 }
 EXPORT_SYMBOL(d2str);
 
+int signgam;
+
+#ifdef CONFIG_RTAI_GLIBC
+#include "export_glibc.h"
+char using[7] = "GLIBC";
+#endif
+#ifdef CONFIG_RTAI_NEWLIB
+#include "export_newlib.h"
+char using[7] = "NEWLIB";
+#endif
+#ifdef CONFIG_RTAI_UCLIBC
+#include "export_uclibc.h"
+char using[7] = "UCLIBC";
+#endif
+
 int __rtai_math_init(void)
 {
-	printk(KERN_INFO "RTAI[math]: loaded.\n");
+	printk(KERN_INFO "RTAI[math]: loaded, using %s.\n", using);
 	return 0;
 }
 
@@ -151,97 +167,318 @@ void __rtai_math_exit(void)
 
 module_init(__rtai_math_init);
 module_exit(__rtai_math_exit);
+  
+EXPORT_SYMBOL(__fpclassify);
+EXPORT_SYMBOL(__fpclassifyf);
+EXPORT_SYMBOL(__signbit);
+EXPORT_SYMBOL(__signbitf);
 
-EXPORT_SYMBOL(sinf);
-EXPORT_SYMBOL(sin);
-EXPORT_SYMBOL(cosf);
-EXPORT_SYMBOL(cos);
-EXPORT_SYMBOL(tanf);
-EXPORT_SYMBOL(tan);
-EXPORT_SYMBOL(fabsf);
-EXPORT_SYMBOL(fabs);
-EXPORT_SYMBOL(sqrtf);
-EXPORT_SYMBOL(sqrt);
-EXPORT_SYMBOL(expf);
-EXPORT_SYMBOL(exp);
-EXPORT_SYMBOL(expm1f);
-EXPORT_SYMBOL(expm1);
-EXPORT_SYMBOL(logf);
-EXPORT_SYMBOL(log);
-EXPORT_SYMBOL(log10f);
-EXPORT_SYMBOL(log10);
-EXPORT_SYMBOL(asinf);
-EXPORT_SYMBOL(asin);
-EXPORT_SYMBOL(acosf);
-EXPORT_SYMBOL(acos);
-EXPORT_SYMBOL(atanf);
-EXPORT_SYMBOL(atan);
-EXPORT_SYMBOL(atan2f);
-EXPORT_SYMBOL(atan2);
-EXPORT_SYMBOL(powf);
-EXPORT_SYMBOL(pow);
+#if defined(CONFIG_RTAI_KCOMPLEX) && (defined(_RTAI_EXPORT_GLIBC_H) || defined(_RTAI_EXPORT_NEWLIB_H))
 
-EXPORT_SYMBOL(ceil);
-EXPORT_SYMBOL(copysign);
-EXPORT_SYMBOL(floor);
-EXPORT_SYMBOL(fmod);
-EXPORT_SYMBOL(frexp);
-EXPORT_SYMBOL(modf);
-EXPORT_SYMBOL(scalbn);
+#ifdef CONFIG_RTAI_GLIBC
+// Hopefully a provisional fix for glibc only. Till it is understood
+// why a plain call of glibc cpow and cpowf does not work
+asmlinkage double _Complex __cexp(double _Complex x);
+asmlinkage double _Complex __clog(double _Complex x);
+asmlinkage double _Complex cpow(double _Complex x, double _Complex y)
+{
+	return __cexp(y*__clog(x));
+}
+asmlinkage float _Complex __cexpf(float _Complex x);
+asmlinkage float _Complex __clogf(float _Complex x);
+asmlinkage float _Complex cpowf(float _Complex x, float _Complex y)
+{
+	return __cexpf(y*__clogf(x));
+}
+#endif
 
-EXPORT_SYMBOL(cabsf);
 EXPORT_SYMBOL(cabs);
-EXPORT_SYMBOL(sinhf);
-EXPORT_SYMBOL(sinh);
-EXPORT_SYMBOL(coshf);
-EXPORT_SYMBOL(cosh);
-EXPORT_SYMBOL(tanhf);
-EXPORT_SYMBOL(tanh);
-EXPORT_SYMBOL(asinhf);
-EXPORT_SYMBOL(asinh);
-EXPORT_SYMBOL(acoshf);
-EXPORT_SYMBOL(acosh);
-EXPORT_SYMBOL(atanhf);
-EXPORT_SYMBOL(atanh);
-EXPORT_SYMBOL(cbrt);
-EXPORT_SYMBOL(drem);
-EXPORT_SYMBOL(erf);
-EXPORT_SYMBOL(erfc);
-EXPORT_SYMBOL(hypot);
-EXPORT_SYMBOL(ilogb);
-EXPORT_SYMBOL(j0);
-EXPORT_SYMBOL(j1);
-EXPORT_SYMBOL(jn);
-EXPORT_SYMBOL(ldexp);
-EXPORT_SYMBOL(log1p);
-EXPORT_SYMBOL(logb);
-EXPORT_SYMBOL(matherr);
-EXPORT_SYMBOL(nearbyint);
-EXPORT_SYMBOL(nextafter);
-EXPORT_SYMBOL(remainder);
-EXPORT_SYMBOL(rint);
-EXPORT_SYMBOL(round);
-EXPORT_SYMBOL(scalb);
-EXPORT_SYMBOL(significand);
-EXPORT_SYMBOL(trunc);
-EXPORT_SYMBOL(y0);
-EXPORT_SYMBOL(y1);
-EXPORT_SYMBOL(yn);
-EXPORT_SYMBOL(gamma);
-EXPORT_SYMBOL(lgamma);
-EXPORT_SYMBOL(lgamma_r);
-EXPORT_SYMBOL(lrint);
-EXPORT_SYMBOL(lround);
+EXPORT_SYMBOL(cabsf);
+EXPORT_SYMBOL(cacos);
+EXPORT_SYMBOL(cacosf);
+EXPORT_SYMBOL(cacosh);
+EXPORT_SYMBOL(cacoshf);
+EXPORT_SYMBOL(carg);
+EXPORT_SYMBOL(cargf);
+EXPORT_SYMBOL(casin);
+EXPORT_SYMBOL(casinf);
+EXPORT_SYMBOL(casinh);
+EXPORT_SYMBOL(casinhf);
+EXPORT_SYMBOL(catan);
+EXPORT_SYMBOL(catanf);
+EXPORT_SYMBOL(catanh);
+EXPORT_SYMBOL(catanhf);
+EXPORT_SYMBOL(ccos);
+EXPORT_SYMBOL(ccosf);
+EXPORT_SYMBOL(ccosh);
+EXPORT_SYMBOL(ccoshf);
+EXPORT_SYMBOL(cexp);
+EXPORT_SYMBOL(cexpf);
+EXPORT_SYMBOL(cimag);
+EXPORT_SYMBOL(cimagf);
+EXPORT_SYMBOL(clog);
+EXPORT_SYMBOL(clogf);
+EXPORT_SYMBOL(conj);
+EXPORT_SYMBOL(conjf);
+EXPORT_SYMBOL(cpow);
+EXPORT_SYMBOL(cpowf);
+EXPORT_SYMBOL(cproj);
+EXPORT_SYMBOL(cprojf);
+EXPORT_SYMBOL(creal);
+EXPORT_SYMBOL(crealf);
+EXPORT_SYMBOL(csin);
+EXPORT_SYMBOL(csinf);
+EXPORT_SYMBOL(csinh);
+EXPORT_SYMBOL(csinhf);
+EXPORT_SYMBOL(csqrt);
+EXPORT_SYMBOL(csqrtf);
+EXPORT_SYMBOL(ctan);
+EXPORT_SYMBOL(ctanf);
+EXPORT_SYMBOL(ctanh);
+EXPORT_SYMBOL(ctanhf);
 
-int signgam;
-EXPORT_SYMBOL(signgam);
+#if 0
 
-long int rinttol(double x) { return lrint(x); }
-EXPORT_SYMBOL(rinttol);
+/*
+ *                     The LLVM Compiler Infrastructure
+ *
+ * This file is dual licensed under the MIT and the University of Illinois Open
+ * Source Licenses. See LICENSE.TXT for details.
+ *
+ */
 
-long int roundtol(double x) { return lround(x); }
-EXPORT_SYMBOL(roundtol);
+/* Returns: the product of a + ib and c + id */
 
+double _Complex
+__muldc3(double __a, double __b, double __c, double __d)
+{
+    double __ac = __a * __c;
+    double __bd = __b * __d;
+    double __ad = __a * __d;
+    double __bc = __b * __c;
+    double _Complex z;
+    __real__ z = __ac - __bd;
+    __imag__ z = __ad + __bc;
+    if (isnan(__real__ z) && isnan(__imag__ z))
+    {
+        int __recalc = 0;
+        if (isinf(__a) || isinf(__b))
+        {
+            __a = copysign(isinf(__a) ? 1 : 0, __a);
+            __b = copysign(isinf(__b) ? 1 : 0, __b);
+            if (isnan(__c))
+                __c = copysign(0, __c);
+            if (isnan(__d))
+                __d = copysign(0, __d);
+            __recalc = 1;
+        }
+        if (isinf(__c) || isinf(__d))
+        {
+            __c = copysign(isinf(__c) ? 1 : 0, __c);
+            __d = copysign(isinf(__d) ? 1 : 0, __d);
+            if (isnan(__a))
+                __a = copysign(0, __a);
+            if (isnan(__b))
+                __b = copysign(0, __b);
+            __recalc = 1;
+        }
+        if (!__recalc && (isinf(__ac) || isinf(__bd) ||
+                          isinf(__ad) || isinf(__bc)))
+        {
+            if (isnan(__a))
+                __a = copysign(0, __a);
+            if (isnan(__b))
+                __b = copysign(0, __b);
+            if (isnan(__c))
+                __c = copysign(0, __c);
+            if (isnan(__d))
+                __d = copysign(0, __d);
+            __recalc = 1;
+        }
+        if (__recalc)
+        {
+            __real__ z = INFINITY * (__a * __c - __b * __d);
+            __imag__ z = INFINITY * (__a * __d + __b * __c);
+        }
+    }
+    return z;
+}
+
+float _Complex
+__mulsc3(float __a, float __b, float __c, float __d)
+{
+    float __ac = __a * __c;
+    float __bd = __b * __d;
+    float __ad = __a * __d;
+    float __bc = __b * __c;
+    float _Complex z;
+    __real__ z = __ac - __bd;
+    __imag__ z = __ad + __bc;
+    if (isnan(__real__ z) && isnan(__imag__ z))
+    {
+        int __recalc = 0;
+        if (isinf(__a) || isinf(__b))
+        {
+            __a = copysignf(isinf(__a) ? 1 : 0, __a);
+            __b = copysignf(isinf(__b) ? 1 : 0, __b);
+            if (isnan(__c))
+                __c = copysignf(0, __c);
+            if (isnan(__d))
+                __d = copysignf(0, __d);
+            __recalc = 1;
+        }
+        if (isinf(__c) || isinf(__d))
+        {
+            __c = copysignf(isinf(__c) ? 1 : 0, __c);
+            __d = copysignf(isinf(__d) ? 1 : 0, __d);
+            if (isnan(__a))
+                __a = copysignf(0, __a);
+            if (isnan(__b))
+                __b = copysignf(0, __b);
+            __recalc = 1;
+        }
+        if (!__recalc && (isinf(__ac) || isinf(__bd) ||
+                          isinf(__ad) || isinf(__bc)))
+        {
+            if (isnan(__a))
+                __a = copysignf(0, __a);
+            if (isnan(__b))
+                __b = copysignf(0, __b);
+            if (isnan(__c))
+                __c = copysignf(0, __c);
+            if (isnan(__d))
+                __d = copysignf(0, __d);
+            __recalc = 1;
+        }
+        if (__recalc)
+        {
+            __real__ z = INFINITY * (__a * __c - __b * __d);
+            __imag__ z = INFINITY * (__a * __d + __b * __c);
+        }
+    }
+    return z;
+}
+
+double _Complex
+__divdc3(double __a, double __b, double __c, double __d)
+{
+    int __ilogbw = 0;
+    double __logbw = logb(fmax(fabs(__c), fabs(__d)));
+    double __denom = __c * __c + __d * __d;
+    double _Complex z;
+    if (isfinite(__logbw))
+    {
+        __ilogbw = (int)__logbw;
+        __c = scalbn(__c, -__ilogbw);
+        __d = scalbn(__d, -__ilogbw);
+    }
+    __real__ z = scalbn((__a * __c + __b * __d) / __denom, -__ilogbw);
+    __imag__ z = scalbn((__b * __c - __a * __d) / __denom, -__ilogbw);
+    if (isnan(__real__ z) && isnan(__imag__ z))
+    {
+        if ((__denom == 0.0) && (!isnan(__a) || !isnan(__b)))
+        {
+            __real__ z = copysign(INFINITY, __c) * __a;
+            __imag__ z = copysign(INFINITY, __c) * __b;
+        }
+        else if ((isinf(__a) || isinf(__b)) && isfinite(__c) && isfinite(__d))
+        {
+            __a = copysign(isinf(__a) ? 1.0 : 0.0, __a);
+            __b = copysign(isinf(__b) ? 1.0 : 0.0, __b);
+            __real__ z = INFINITY * (__a * __c + __b * __d);
+            __imag__ z = INFINITY * (__b * __c - __a * __d);
+        }
+        else if (isinf(__logbw) && __logbw > 0.0 && isfinite(__a) && isfinite(__b))
+        {
+            __c = copysign(isinf(__c) ? 1.0 : 0.0, __c);
+            __d = copysign(isinf(__d) ? 1.0 : 0.0, __d);
+            __real__ z = 0.0 * (__a * __c + __b * __d);
+            __imag__ z = 0.0 * (__b * __c - __a * __d);
+        }
+    }
+    return z;
+}
+
+
+float _Complex
+__divsc3(float __a, float __b, float __c, float __d)
+{
+    int __ilogbw = 0;
+    float __logbw = logbf(fmaxf(fabsf(__c), fabsf(__d)));
+    float __denom = __c * __c + __d * __d;
+    float _Complex z;
+    if (isfinite(__logbw))
+    {
+        __ilogbw = (int)__logbw;
+        __c = scalbnf(__c, -__ilogbw);
+        __d = scalbnf(__d, -__ilogbw);
+    }
+    __real__ z = scalbnf((__a * __c + __b * __d) / __denom, -__ilogbw);
+    __imag__ z = scalbnf((__b * __c - __a * __d) / __denom, -__ilogbw);
+    if (isnan(__real__ z) && isnan(__imag__ z))
+    {
+        if ((__denom == 0) && (!isnan(__a) || !isnan(__b)))
+        {
+            __real__ z = copysignf(INFINITY, __c) * __a;
+            __imag__ z = copysignf(INFINITY, __c) * __b;
+        }
+        else if ((isinf(__a) || isinf(__b)) && isfinite(__c) && isfinite(__d))
+        {
+            __a = copysignf(isinf(__a) ? 1 : 0, __a);
+            __b = copysignf(isinf(__b) ? 1 : 0, __b);
+            __real__ z = INFINITY * (__a * __c + __b * __d);
+            __imag__ z = INFINITY * (__b * __c - __a * __d);
+        }
+        else if (isinf(__logbw) && __logbw > 0 && isfinite(__a) && isfinite(__b))
+        {
+            __c = copysignf(isinf(__c) ? 1 : 0, __c);
+            __d = copysignf(isinf(__d) ? 1 : 0, __d);
+            __real__ z = 0 * (__a * __c + __b * __d);
+            __imag__ z = 0 * (__b * __c - __a * __d);
+        }
+    }
+    return z;
+}
+
+#else
+
+double _Complex __muldc3(double a, double b, double c, double d)
+{
+	double _Complex z;
+	__real__ z = a*c - b*d; 
+	__imag__ z = a*d + b*c; 
+	return z;
+}
+
+float _Complex __mulsc3(float a, float b, float c, float d)
+{
+	float _Complex z;
+	__real__ z = a*c - b*d; 
+	__imag__ z = a*d + b*c; 
+	return z;
+}
+
+double _Complex __divdc3(double a, double b, double c, double d)
+{
+	double _Complex z;
+	double dn = c*c + d*d;
+	__real__ z = (a*c + b*d)/dn; 
+	__imag__ z = (-a*d + b*c)/dn; 
+	return z;
+}
+
+float _Complex __divsc3(float a, float b, float c, float d)
+{
+	float _Complex z;
+	float dn = c*c + d*d;
+	__real__ z = (a*c + b*d)/dn; 
+	__imag__ z = (-a*d + b*c)/dn; 
+	return z;
+}
+
+#endif
+
+#endif
 #else 
 
 /*

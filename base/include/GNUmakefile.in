@@ -335,8 +335,7 @@ nobase_include_HEADERS = \
 		rtai_usi.h \
 		rtai_version.h \
 		rtai_wd.h \
-		rtai_wrappers.h \
-		rtai_kerrno.h
+		rtai_wrappers.h
 
 SUBDIRS = $(ARCHDIR)
 DISTCLEANFILES = asm

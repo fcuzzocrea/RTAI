@@ -63,8 +63,7 @@ nobase_include_HEADERS = \
 		rtai_usi.h \
 		rtai_version.h \
 		rtai_wd.h \
-		rtai_wrappers.h \
-		rtai_kerrno.h
+		rtai_wrappers.h
 
 install-data-local:
 	$(INSTALL_HEADER) $(CONFIG_HEADER) $(DESTDIR)$(includedir)/rtai_config.h

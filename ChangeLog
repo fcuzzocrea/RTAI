@@ -8,6 +8,8 @@
 	* base/math/README.KLIBM: explanation of what the new way math support
 	  in kernel space is.
 	* base/include/rtai_math.h: new self contained header.
+	* base/arch/x86/Kconfig: add parameters to configure the refurbished 
+	  math support in kernel space.
 
 2013-11-14 Paolo Mantegazza <mantegazza@aero.polimi.it>
 

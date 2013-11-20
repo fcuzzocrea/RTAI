@@ -754,6 +754,11 @@ config RTAI_MATH_KCOMPLEX
 	help
 	This parameter allows the inclusion of complex support functions,		ignored for uClibc.
 
+config RTAI_MATH_C99
+	bool "C99 standard support"
+	depends on RTAI_MATH
+	default n
+
 config RTAI_MALLOC
 	tristate "Real-time malloc support"
 	default y

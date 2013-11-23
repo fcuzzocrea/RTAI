@@ -108,20 +108,20 @@ char *d2str(double d, int dgt, char *str)
 	}
 	str[1] = '0';
 	str[2] = '.';
-        i = fpclassify(d);
-        if (i == FP_ZERO || i == FP_SUBNORMAL) {
-                memset(&str[3], '0', dgt);
-                strcpy(&str[dgt + 3], "e+00");
-                return str;
-        }
-        if (i == FP_NAN) {
-                strcpy(str, "NaN");
-                return str;
-        }
-        if (i == FP_INFINITE) {
-                strcpy(str, "Inf");
-                return str;
-        }
+	i = fpclassify(d);
+	if (i == FP_ZERO || i == FP_SUBNORMAL) {
+		memset(&str[3], '0', dgt);
+		strcpy(&str[dgt + 3], "e+00");
+		return str;
+	}
+	if (i == FP_NAN) {
+		strcpy(str, "NaN");
+		return str;
+	}
+	if (i == FP_INFINITE) {
+		strcpy(str, "Inf");
+		return str;
+	}
 	if (dgt <= 0) {
 		dgt = 1;
 	} else if (dgt > MAXDGT) {
@@ -197,7 +197,6 @@ char *cd2str(complex double cd, int dgt, char *str)
 	d2str(__imag__ cd, dgt, &str[i + 1]);
 	str[i = strlen(str)] = 'j';
 	str[i + 1] = 0;
-
 #endif
 	return str;
 }

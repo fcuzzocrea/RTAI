@@ -183,21 +183,23 @@ EXPORT_SYMBOL(__signbitf);
 
 char *cd2str(complex double cd, int dgt, char *str)
 {
-        int i;
-        d2str(__real__ cd, dgt, str);
-        i = strlen(str);
-        str[i] = ' ';
-#if 1
-        d2str(__imag__ cd, dgt, &str[i + 4]);
-        str[i + 1] = str[i + 4];
-        str[i + 2] = ' ';
-        str[i + 3] = 'j';
-        str[i + 4] = '*';
+	int i;
+	d2str(__real__ cd, dgt, str);
+	i = strlen(str);
+	str[i] = ' ';
+#if 0
+	d2str(__imag__ cd, dgt, &str[i + 4]);
+	str[i + 1] = str[i + 4];
+	str[i + 2] = ' ';
+	str[i + 3] = 'j';
+	str[i + 4] = '*';
 #else
-        d2str(__imag__ cd, dgt, &str[i + 1]);
-        strcpy(&str[strlen(str)], "*j");
+	d2str(__imag__ cd, dgt, &str[i + 1]);
+	str[i = strlen(str)] = 'j';
+	str[i + 1] = 0;
+
 #endif
-        return str;
+	return str;
 }
 EXPORT_SYMBOL(cd2str);
 

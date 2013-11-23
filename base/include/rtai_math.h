@@ -269,6 +269,8 @@ float truncf(float x);
 #undef I
 #define I _Complex_I
 
+#define cfperr(x) (!isnormal(__real__ x) || !isnormal(__imag__ x))
+
 double cabs(double _Complex z);
 float cabsf(float _Complex z);
 asmlinkage double _Complex cacos(double _Complex z);

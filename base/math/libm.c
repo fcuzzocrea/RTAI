@@ -108,14 +108,20 @@ char *d2str(double d, int dgt, char *str)
 	}
 	str[1] = '0';
 	str[2] = '.';
-	if (d < 1.0e-46) {
-		memset(&str[3], '0', dgt);
-		str[dgt + 3] = 'e';
-		str[dgt + 4] = '+';
-		str[dgt + 5] = '0';
-		str[dgt + 6] =  0;
-		return str;
-	}
+        i = fpclassify(d);
+        if (i == FP_ZERO || i == FP_SUBNORMAL) {
+                memset(&str[3], '0', dgt);
+                strcpy(&str[dgt + 3], "e+00");
+                return str;
+        }
+        if (i == FP_NAN) {
+                strcpy(str, "NaN");
+                return str;
+        }
+        if (i == FP_INFINITE) {
+                strcpy(str, "Inf");
+                return str;
+        }
 	if (dgt <= 0) {
 		dgt = 1;
 	} else if (dgt > MAXDGT) {
@@ -174,6 +180,26 @@ EXPORT_SYMBOL(__signbit);
 EXPORT_SYMBOL(__signbitf);
 
 #if defined(CONFIG_RTAI_KCOMPLEX) && (defined(_RTAI_EXPORT_GLIBC_H) || defined(_RTAI_EXPORT_NEWLIB_H))
+
+char *cd2str(complex double cd, int dgt, char *str)
+{
+        int i;
+        d2str(__real__ cd, dgt, str);
+        i = strlen(str);
+        str[i] = ' ';
+#if 1
+        d2str(__imag__ cd, dgt, &str[i + 4]);
+        str[i + 1] = str[i + 4];
+        str[i + 2] = ' ';
+        str[i + 3] = 'j';
+        str[i + 4] = '*';
+#else
+        d2str(__imag__ cd, dgt, &str[i + 1]);
+        strcpy(&str[strlen(str)], "*j");
+#endif
+        return str;
+}
+EXPORT_SYMBOL(cd2str);
 
 #ifdef CONFIG_RTAI_GLIBC
 // Hopefully a provisional fix for glibc only. Till it is understood

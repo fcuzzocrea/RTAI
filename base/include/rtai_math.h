@@ -127,7 +127,7 @@ int __signbitd(double x);
 
 /***************** END MACROS TAKEN AND ADAPTED FROM NEWLIB *****************/
 
-#define fperr(x) (!isnormal(x))
+#define fpkerr(x) (!isnormal(x))
 
 int matherr(void);
 
@@ -269,7 +269,9 @@ float truncf(float x);
 #undef I
 #define I _Complex_I
 
-#define cfperr(x) (!isnormal(__real__ x) || !isnormal(__imag__ x))
+char *cd2str(complex double d, int dgt, char *str);
+ 
+#define cfpkerr(x) (!isnormal(__real__ x) || !isnormal(__imag__ x))
 
 double cabs(double _Complex z);
 float cabsf(float _Complex z);

@@ -1,3 +1,8 @@
+2013-11-23 Paolo Mantegazza <mantegazza@aero.polimi.it> and 
+
+	* base/math/libm.c: added function cd2str, i.e. compex double to 
+	  string.
+
 2013-11-19 Paolo Mantegazza <mantegazza@aero.polimi.it> and 
 	   Marco Morandini <morandini@aero.polimi.it>
 

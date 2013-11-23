@@ -299,6 +299,8 @@ double cimag(double _Complex z);
 float cimagf(float _Complex z);
 asmlinkage double _Complex clog(double _Complex z);
 asmlinkage float _Complex clogf(float _Complex z);
+asmlinkage double _Complex clog10(double _Complex z);
+asmlinkage float _Complex clog10f(float _Complex z);
 asmlinkage double _Complex conj(double _Complex z);
 asmlinkage float _Complex conjf(float _Complex z);
 asmlinkage double complex cpow(double complex x, double complex y);

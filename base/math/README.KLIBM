@@ -31,7 +31,7 @@ two options "-fPIC" and -mcmodel=kernel" being incompatible, so we decided
 to resort to something else.
 
 Such a chosen else is basically NEWLIB, but it should also be possible to 
-use uClib and, of course, glibc-libm.s on i386. 
+use uClib and, of course, glibc-libm.a on i386. 
 At the moment uClib has been tested for 32 bits only, for which any of 
 glibc-libm.a, newlib-libm.a and uClib-libm.a can be used.
 
@@ -48,12 +48,24 @@ The new implementation provides an extension to the float version of libm
 functions, which should be of help in enhancing the performances of 32 bits 
 applications.
 
-A further extension, that can be selected at configure time, provides a new 
-support for complex functions in kernel space. It has required the coding 
-of a few missing links more, related to double and float complex multiply 
-and divide, taken from the LLVM compiler infrastructure, which is released 
+A further extension, which can be selected at configure time, provides a new 
+support for complex functions in kernel space. It has required a simplified
+coding of a few missing links more, related to double and float complex 
+multiply and divide, but a more serious implementation is also available. 
+The latter is taken from the LLVM compiler infrastructure, which is released 
 under the permissive free(dom) dual MIT and University of Illinois Open 
 Source Licenses.
+
+Also available are a couple of functions helpers, to print floating point 
+numbers in kernel space, i.e.:
+- char *d2str(double d, int dgt, char *str), to convert a double to a string,
+float types have to use it too;
+- char *cd2str(complex double d, int dgt, char *str), to convert a double 
+complex to a string, in the form "real + j*imag", float complex types have 
+to use it too.
+It should be noticed that numbers can be formatted only as: +/-0.xxxxxxe+yy,
+where the number of xes is equal to the argument "dgt" used in calling any
+of them.
 
 Summing up:
 * i386 can use:

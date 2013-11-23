@@ -237,7 +237,43 @@ EXPORT_SYMBOL(ctanf);
 EXPORT_SYMBOL(ctanh);
 EXPORT_SYMBOL(ctanhf);
 
-#if 0
+#if 1
+
+double _Complex __muldc3(double a, double b, double c, double d)
+{
+	double _Complex z;
+	__real__ z = a*c - b*d; 
+	__imag__ z = a*d + b*c; 
+	return z;
+}
+
+float _Complex __mulsc3(float a, float b, float c, float d)
+{
+	float _Complex z;
+	__real__ z = a*c - b*d; 
+	__imag__ z = a*d + b*c; 
+	return z;
+}
+
+double _Complex __divdc3(double a, double b, double c, double d)
+{
+	double _Complex z;
+	double dn = c*c + d*d;
+	__real__ z = (a*c + b*d)/dn; 
+	__imag__ z = (-a*d + b*c)/dn; 
+	return z;
+}
+
+float _Complex __divsc3(float a, float b, float c, float d)
+{
+	float _Complex z;
+	float dn = c*c + d*d;
+	__real__ z = (a*c + b*d)/dn; 
+	__imag__ z = (-a*d + b*c)/dn; 
+	return z;
+}
+
+#else
 
 /*
  *                     The LLVM Compiler Infrastructure
@@ -438,42 +474,6 @@ __divsc3(float __a, float __b, float __c, float __d)
         }
     }
     return z;
-}
-
-#else
-
-double _Complex __muldc3(double a, double b, double c, double d)
-{
-	double _Complex z;
-	__real__ z = a*c - b*d; 
-	__imag__ z = a*d + b*c; 
-	return z;
-}
-
-float _Complex __mulsc3(float a, float b, float c, float d)
-{
-	float _Complex z;
-	__real__ z = a*c - b*d; 
-	__imag__ z = a*d + b*c; 
-	return z;
-}
-
-double _Complex __divdc3(double a, double b, double c, double d)
-{
-	double _Complex z;
-	double dn = c*c + d*d;
-	__real__ z = (a*c + b*d)/dn; 
-	__imag__ z = (-a*d + b*c)/dn; 
-	return z;
-}
-
-float _Complex __divsc3(float a, float b, float c, float d)
-{
-	float _Complex z;
-	float dn = c*c + d*d;
-	__real__ z = (a*c + b*d)/dn; 
-	__imag__ z = (-a*d + b*c)/dn; 
-	return z;
 }
 
 #endif

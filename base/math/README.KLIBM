@@ -56,16 +56,16 @@ The latter is taken from the LLVM compiler infrastructure, which is released
 under the permissive free(dom) dual MIT and University of Illinois Open 
 Source Licenses.
 
-Also available are a couple of functions helpers, to print floating point 
-numbers in kernel space, i.e.:
+Also available are a couple of functions helpers, to print double and 
+floating point numbers in kernel space, i.e.:
 - char *d2str(double d, int dgt, char *str), to convert a double to a string,
 float types have to use it too;
 - char *cd2str(complex double d, int dgt, char *str), to convert a double 
 complex to a string, in the form "real + j*imag", float complex types have 
 to use it too.
 It should be noticed that numbers can be formatted only as: +/-0.xxxxxxe+yy,
-where the number of xes is equal to the argument "dgt" used in calling any
-of them.
+where the number of "x"es is equal to the number set for the argument "dgt" 
+used in calling any of them.
 
 Summing up:
 * i386 can use:

@@ -223,13 +223,13 @@ asmlinkage float _Complex cpowf(float _Complex x, float _Complex y)
 asmlinkage double _Complex clog(double _Complex x);
 asmlinkage double _Complex clog10(double _Complex x)
 {
-	const double one_over_lnof10 = 1.0/2.3025850929940459011;
+	const double one_over_lnof10 = 0.4342944819032518276454794132;
 	return clog(x)*one_over_lnof10;
 }
 asmlinkage float _Complex clogf(float _Complex x);
 asmlinkage float _Complex clog10f(float _Complex x)
 {
-	const float one_over_lnof10 = 1.0/2.3025850929940459011;
+	const float one_over_lnof10 = 0.4342944819032518276454794132;
 	return clogf(x)*one_over_lnof10;
 }
 #endif

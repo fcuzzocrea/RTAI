@@ -745,7 +745,7 @@ config RTAI_MATH_LIBM_TO_USE
 config RTAI_MATH_LIBM_DIR
 	depends on RTAI_MATH
 	string "The installation directory of your chosen libm.a"
-	default "/usr/newlib"
+	default "/usr/lib"
 
 config RTAI_MATH_KCOMPLEX
 	bool "Include complex support"
@@ -754,10 +754,10 @@ config RTAI_MATH_KCOMPLEX
 	help
 	This parameter allows the inclusion of complex support functions,		ignored for uClibc.
 
-config RTAI_MATH_C99
-	bool "C99 standard support"
-	depends on RTAI_MATH
-	default n
+#config RTAI_MATH_C99
+#	bool "C99 standard support"
+#	depends on RTAI_MATH
+#	default n
 
 config RTAI_MALLOC
 	tristate "Real-time malloc support"

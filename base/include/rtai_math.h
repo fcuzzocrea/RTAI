@@ -22,11 +22,11 @@
 #ifndef _RTAI_MATH_H
 #define _RTAI_MATH_H
 
-#define CONFIG_RTAI_GLIBC
+//#define CONFIG_RTAI_GLIBC
 //#define CONFIG_RTAI_NEWLIB
 //#define CONFIG_RTAI_UCLIBC
 
-#define CONFIG_RTAI_KCOMPLEX
+//#define CONFIG_RTAI_KCOMPLEX
 
 #ifdef __KERNEL__
 
@@ -262,7 +262,7 @@ float tanhf(float x);
 double trunc(double x);
 float truncf(float x);
 
-#ifdef CONFIG_RTAI_KCOMPLEX
+#ifdef CONFIG_RTAI_MATH_KCOMPLEX
 
 #define complex _Complex
 #define _Complex_I (__extension__ 1.0iF)

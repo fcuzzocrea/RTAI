@@ -86,12 +86,7 @@ ssize_t write(int fildes, const void *buf, size_t nbytes)
 	generic_echo(buf, nbytes);
 }
 
-void strtod(void) { }
-
-void strtof(void) { }
-
 /***** End of entries needed by glibc-libm *****/
-
 
 char *d2str(double d, int dgt, char *str)
 {
@@ -147,17 +142,17 @@ EXPORT_SYMBOL(d2str);
 
 int signgam;
 
-#ifdef CONFIG_RTAI_GLIBC
-#include "export_glibc.h"
-char using[7] = "GLIBC";
-#endif
-#ifdef CONFIG_RTAI_NEWLIB
+#if CONFIG_RTAI_MATH_LIBM_TO_USE == 1
 #include "export_newlib.h"
 char using[7] = "NEWLIB";
 #endif
-#ifdef CONFIG_RTAI_UCLIBC
+#if CONFIG_RTAI_MATH_LIBM_TO_USE == 2
 #include "export_uclibc.h"
 char using[7] = "UCLIBC";
+#endif
+#if CONFIG_RTAI_MATH_LIBM_TO_USE == 3
+#include "export_glibc.h"
+char using[7] = "GLIBC";
 #endif
 
 int __rtai_math_init(void)
@@ -179,7 +174,7 @@ EXPORT_SYMBOL(__fpclassifyf);
 EXPORT_SYMBOL(__signbit);
 EXPORT_SYMBOL(__signbitf);
 
-#if defined(CONFIG_RTAI_KCOMPLEX) && (defined(_RTAI_EXPORT_GLIBC_H) || defined(_RTAI_EXPORT_NEWLIB_H))
+#if defined(CONFIG_RTAI_MATH_KCOMPLEX) && (defined(_RTAI_EXPORT_GLIBC_H) || defined(_RTAI_EXPORT_NEWLIB_H))
 
 char *cd2str(complex double cd, int dgt, char *str)
 {
@@ -202,7 +197,7 @@ char *cd2str(complex double cd, int dgt, char *str)
 }
 EXPORT_SYMBOL(cd2str);
 
-#ifdef CONFIG_RTAI_GLIBC
+#if CONFIG_RTAI_MATH_LIBM_TO_USE == 3
 // Hopefully a provisional fix for glibc only. Till it is understood
 // why a plain call of glibc cpow and cpowf does not work
 asmlinkage double _Complex __cexp(double _Complex x);
@@ -219,7 +214,7 @@ asmlinkage float _Complex cpowf(float _Complex x, float _Complex y)
 }
 #endif
 
-#ifdef CONFIG_RTAI_NEWLIB
+#if CONFIG_RTAI_MATH_LIBM_TO_USE == 1
 asmlinkage double _Complex clog(double _Complex x);
 asmlinkage double _Complex clog10(double _Complex x)
 {
@@ -233,6 +228,10 @@ asmlinkage float _Complex clog10f(float _Complex x)
 	return clogf(x)*one_over_lnof10;
 }
 #endif
+
+double strtod(void) { return 0.0; }
+
+float strtof(void)  { return 0.0; }
 
 EXPORT_SYMBOL(cabs);
 EXPORT_SYMBOL(cabsf);

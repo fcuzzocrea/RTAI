@@ -71,7 +71,7 @@ int __fpclassifyf(float x);
 int __signbit(double x);
 int __signbitf(float x);
 
-#ifdef CONFIG_RTAI_NEWLIB
+#if CONFIG_RTAI_MATH_LIBM_TO_USE == 1
 int __fpclassifyd(double x);
 #define __fpclassify __fpclassifyd
 int __signbitd(double x);

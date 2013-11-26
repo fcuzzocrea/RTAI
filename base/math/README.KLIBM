@@ -30,8 +30,8 @@ of the value of the (re)settable CFLAGS and LDFLAGS. That results in the
 two options "-fPIC" and -mcmodel=kernel" being incompatible, so we decided 
 to resort to something else.
 
-Such a chosen else is basically NEWLIB, but it should also be possible to 
-use uClib and, of course, glibc-libm.a on i386. 
+Such a chosen else is basically NEWLIB-libm.a, but it should also be 
+possible to use uClib-libm.a and, of course, glibc-libm.a on i386. 
 At the moment uClib has been tested for 32 bits only, for which any of 
 glibc-libm.a, newlib-libm.a and uClib-libm.a can be used.
 
@@ -82,5 +82,10 @@ Summing up:
   --host=x86_64-pc-none CFLAGS="-O2 -mcmodel=kernel",
 - uClibc with: make menuconfig, disable PIC, enable static making;
   multithreads and C99 support, make.
+
+Libraries home site:
+- http://sourceware.org/newlib/
+- http://www.uclibc.org/
+- http://www.gnu.org/software/libc/
 
 Marco Morandini and Paolo Mantegazza.

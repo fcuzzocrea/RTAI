@@ -16,6 +16,10 @@
 	* base/arch/x86/Kconfig: add parameters to configure the refurbished 
 	  math support in kernel space.
 
+2013-12-06 Pierangelo Masarati <masarati@aero.polimi.it>
+
+	* RTAI 4.0
+
 2013-11-14 Paolo Mantegazza <mantegazza@aero.polimi.it>
 
 	* base/arch/x86/hal/hal.c: do not make available rtai_sched_affinity
@@ -36,6 +40,10 @@
 	* base/include/rtai_kerrno.h: new header to support the management 
 	  of per kernel tasks errno.
 
+2013-11-05 Pierangelo Masarati <masarati@aero.polimi.it>
+
+	* RTAI 4.0-test2
+
 2013-11-03 Paolo Mantegazza <mantegazza@aero.polimi.it>
 
 	* base/include/rtai_lxrt.h: added rt_get_cpu_freq and static
@@ -53,6 +61,10 @@
 
 	* base/arch/x86/hal/hal_32.c and hal_64.c: check irq_set_affinity
 	  in desc, to avoid an unharmful but annoying Linux WARN_ONCE.
+
+2013-10-28 Pierangelo Masarati <masarati@aero.polimi.it>
+
+	* RTAI 4.0-test1
 
 2013-10-27 Paolo Mantegazza <mantegazza@aero.polimi.it>
 

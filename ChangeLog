@@ -1,3 +1,18 @@
+2013-02-16 Paolo Mantegazza <mantegazza@aero.polimi.it> and 
+
+	* base/include/rtai_proc_fs.h: added support for changes of proc files 
+	  usage for Linux >= 3.10.
+	* base/arch/x86/hal/hal_32.c and hal_64.c: modified support of proc 
+	  files for Linux >= 3.10.
+	* base/sched/sched.c and api.c: modified support of proc files for 
+	  Linux >= 3.10.
+	* base/ipi/fifos/fifos.c: modified support of proc files for 
+	  Linux >= 3.10.
+	* base/ipi/mq/mq.c: modified support of proc files for Linux >= 3.10.
+	* base/wd/wd.c: modified support of proc files for Linux >= 3.10.
+	* testsuite/kern/latency/latency-module.c: modified support of proc 
+	  files for Linux >= 3.10.
+
 2013-11-23 Paolo Mantegazza <mantegazza@aero.polimi.it> and 
 
 	* base/math/libm.c: added function cd2str, i.e. compex double to 

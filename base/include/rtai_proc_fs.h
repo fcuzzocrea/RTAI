@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 1999-2003 Paolo Mantegazza <mantegazza@aero.polimi.it>
+ * Copyright (C) 1999-2014 Paolo Mantegazza <mantegazza@aero.polimi.it>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License as
@@ -21,16 +21,17 @@
 
 extern struct proc_dir_entry *rtai_proc_root;
 
-#if 0
+#if LINUX_VERSION_CODE > KERNEL_VERSION(2,9,0)
 
 #include <linux/seq_file.h>
 
-#define PROC_READ_FUN(read_fun_name) read_fun_name(struct seq_file *pf, void *v)
+#define PROC_READ_FUN(read_fun_name) \
+	read_fun_name(struct seq_file *pf, void *v)
 
 #define PROC_READ_OPEN_OPS(rtai_proc_fops, read_fun_name) \
 \
-static int rtai_proc_open(struct inode *inode, struct  file *file) { \
-  return single_open(file, read_fun_name, NULL); \
+static int rtai_proc_open(struct inode *inode, struct file *file) { \
+	return single_open(file, read_fun_name, NULL); \
 } \
 \
 static const struct file_operations rtai_proc_fops = { \
@@ -57,7 +58,7 @@ static inline void *CREATE_PROC_ENTRY(const char *name, umode_t mode, void *pare
 
 #define PROC_PRINT_RETURN
 
-#else
+#else /* LINUX_VERSION_CODE <= KERNEL_VERSION(2,9,0) */
 
 #define PROC_READ_FUN \
 	static int rtai_read_proc (char *page, char **start, off_t off, int count, int *eof, void *data)
@@ -121,7 +122,8 @@ do {	\
         return len; \
 } while(0)
 
-#endif
+#endif /* LINUX_VERSION_CODE > KERNEL_VERSION(2,9,0) */
+
 // End of proc print macros
 
 #endif  /* !_RTAI_PROC_FS_H */

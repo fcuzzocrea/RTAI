@@ -47,23 +47,28 @@ static inline void *CREATE_PROC_ENTRY(const char *name, umode_t mode, void *pare
 	return !parent ? proc_mkdir(name, NULL) : proc_create(name, mode, parent, proc_fops);
 }
 
-#define PROC_READ_ENTRY(entry, read_fun)  do { } while(0)
+#define SET_PROC_READ_ENTRY(entry, read_fun)  do { } while(0)
 
 #define PROC_PRINT_VARS 
-
-#define PROC_PRINT_DONE do { return 0; } while(0)
 
 #define PROC_PRINT(fmt, args...)  \
 	do { seq_printf(pf, fmt, ##args); } while(0)
 
-#define PROC_PRINT_RETURN
+#define PROC_PRINT_RETURN do { goto done; } while(0)
+
+#define PROC_PRINT_DONE do { return 0; } while(0)
 
 #else /* LINUX_VERSION_CODE <= KERNEL_VERSION(2,9,0) */
 
 #define PROC_READ_FUN \
 	static int rtai_read_proc (char *page, char **start, off_t off, int count, int *eof, void *data)
 
-#define PROC_READ_ENTRY(entry, read_fun)  \
+static inline void *CREATE_PROC_ENTRY(const char *name, umode_t mode, void *parent, const struct file_operations *proc_fops)
+{
+	return create_proc_entry(name, mode, parent);
+}
+
+#define SET_PROC_READ_ENTRY(entry, read_fun)  \
 	do { entry->read_proc = read_fun; } while(0)
 
 #define LIMIT (PAGE_SIZE - 80)

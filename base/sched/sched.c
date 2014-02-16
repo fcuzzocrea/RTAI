@@ -2331,7 +2331,7 @@ static int rtai_proc_sched_register(void)
                 printk("Unable to initialize /proc/rtai/scheduler\n");
                 return(-1);
         }
-        SET_PROC_READ_ENTRY(proc_sched_ent, rtai_read_sched);
+	SET_PROC_READ_ENTRY(proc_sched_ent, rtai_read_sched);
         return(0);
 }  /* End function - rtai_proc_sched_register */
 

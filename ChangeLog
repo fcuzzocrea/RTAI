@@ -1,3 +1,12 @@
+2013-02-19 Paolo Mantegazza <mantegazza@aero.polimi.it> and 
+
+	* addons/rtdm/vfile.h, vfile.c and proc.c: updated for Linux >= 3.10.0,
+	  lifted from native nucleus and rtdm.
+	* addons/rtdm/rtdm_driver.h: added declaration to support the new proc 
+	  file system.
+	* addons/rtdm/module.c: provisional quick and dirty inclusion of 
+	  vfile.c for a preliminary test.
+
 2013-02-16 Paolo Mantegazza <mantegazza@aero.polimi.it> and 
 
 	* base/include/rtai_proc_fs.h: added support for changes of proc files 

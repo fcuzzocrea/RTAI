@@ -34,6 +34,8 @@
 #include <linux/proc_fs.h>
 #include <linux/seq_file.h>
 
+#include <rtdm/xn.h>
+
 #if LINUX_VERSION_CODE < KERNEL_VERSION(3,10,0)
 
 #define PDE_DATA(inode) PDE(inode)->data

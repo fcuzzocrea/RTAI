@@ -1,4 +1,10 @@
-2013-02-19 Paolo Mantegazza <mantegazza@aero.polimi.it> and 
+2014-02-19 Pierangelo Masarati <masarati@aero.polimi.it>
+
+	* addons/rdtm/GNUmakefile.*: updated for Linux >= 3.10.0.
+	* addons/rtdm/module.c: removed provisional quick and dirty 
+	  inclusion of vfile.c.
+
+2013-02-19 Paolo Mantegazza <mantegazza@aero.polimi.it>
 
 	* addons/rtdm/vfile.h, vfile.c and proc.c: updated for Linux >= 3.10.0,
 	  lifted from native nucleus and rtdm.
@@ -7,7 +13,7 @@
 	* addons/rtdm/module.c: provisional quick and dirty inclusion of 
 	  vfile.c for a preliminary test.
 
-2013-02-16 Paolo Mantegazza <mantegazza@aero.polimi.it> and 
+2014-02-16 Paolo Mantegazza <mantegazza@aero.polimi.it>
 
 	* base/include/rtai_proc_fs.h: added support for changes of proc files 
 	  usage for Linux >= 3.10.
@@ -22,7 +28,7 @@
 	* testsuite/kern/latency/latency-module.c: modified support of proc 
 	  files for Linux >= 3.10.
 
-2013-11-23 Paolo Mantegazza <mantegazza@aero.polimi.it> and 
+2013-11-23 Paolo Mantegazza <mantegazza@aero.polimi.it>
 
 	* base/math/libm.c: added function cd2str, i.e. compex double to 
 	  string.

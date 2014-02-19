@@ -53,8 +53,6 @@ MODULE_DESCRIPTION("Real-Time Driver Model");
 MODULE_AUTHOR("jan.kiszka@web.de");
 MODULE_LICENSE("GPL");
 
-#include "vfile.c"
-
 static RTAI_SYSCALL_MODE int sys_rtdm_fdcount(void)
 {
 	return RTDM_FD_MAX;

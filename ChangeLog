@@ -4,7 +4,7 @@
 	* addons/rtdm/module.c: removed provisional quick and dirty 
 	  inclusion of vfile.c.
 
-2013-02-19 Paolo Mantegazza <mantegazza@aero.polimi.it>
+2014-02-19 Paolo Mantegazza <mantegazza@aero.polimi.it>
 
 	* addons/rtdm/vfile.h, vfile.c and proc.c: updated for Linux >= 3.10.0,
 	  lifted from native nucleus and rtdm.

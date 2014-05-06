@@ -1,6 +1,7 @@
 2014-05-06 Pierangelo Masarati <masarati@aero.polimi.it>
 	* configure.in: fix linux source dir extraction, thanks to
 	  Lukas Anzinger <lukas@lukasanzinger.at>
+	* configure: rebuild
 
 2013-12-06 Pierangelo Masarati <masarati@aero.polimi.it>
 

@@ -846,8 +846,6 @@ do { \
 	} \
 } while (0)
 
-#if 1
-
 static void rt_timer_handler(void);
 
 #define FIRE_NEXT_TIMER_SHOT(SHOT_FIRED) \
@@ -857,7 +855,7 @@ if (fire_shot) { \
 	ONESHOT_DELAY(SHOT_FIRED); \
 	if (delay > tuned.setup_time_TIMER_CPUNIT) { \
 		timer_shot_fired = 1; \
-		rt_set_timer_delay(imuldiv(delay, TIMER_FREQ, tuned.cpu_freq));\
+		rt_set_timer_delay(delay);\
 	} else { \
 		timer_shot_fired = -1;\
 		rt_times.intr_time = rt_time_h + tuned.setup_time_TIMER_CPUNIT;\
@@ -887,29 +885,6 @@ do { \
 	rt_timer_handler(); \
 	UNLOCK_LINUX(cpuid); \
 } while (0)
-
-#else
-
-#define FIRE_NEXT_TIMER_SHOT(CHECK_SPAN) \
-do { \
-if (fire_shot) { \
-	int delay; \
-	ONESHOT_DELAY(CHECK_SPAN); \
-	if (delay > tuned.setup_time_TIMER_CPUNIT) { \
-		rt_set_timer_delay(imuldiv(delay, TIMER_FREQ, tuned.cpu_freq));\
-	} else { \
-		rt_set_timer_delay(tuned.setup_time_TIMER_UNIT); \
-		rt_times.intr_time = rt_time_h + tuned.setup_time_TIMER_CPUNIT;\
-	} \
-	timer_shot_fired = 1; \
-} \
-} while (0)
-
-#define CALL_TIMER_HANDLER()
-
-#define REDO_TIMER_HANDLER()
-
-#endif
 
 #ifdef CONFIG_SMP
 static void rt_schedule_on_schedule_ipi(void)
@@ -1406,7 +1381,7 @@ static int _rt_linux_hrt_next_shot(unsigned long deltat, void *hrt_dev) // ??? s
 	RTIME linux_time;
 
 	deltat = nano2count_cpuid(deltat, cpuid);
-	deltas = deltat > (tuned.setup_time_TIMER_CPUNIT + tuned.latency) ? imuldiv(deltat - tuned.latency, TIMER_FREQ, tuned.cpu_freq) : 0;
+	deltas = deltat > (tuned.setup_time_TIMER_CPUNIT + tuned.latency) ? (deltat - tuned.latency) : 0;
 
 	rtai_cli();
 	rt_times.linux_time = linux_time = rt_get_time_cpuid(cpuid) + deltat;

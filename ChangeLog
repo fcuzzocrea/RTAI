@@ -1,3 +1,11 @@
+2015-01-07 Paolo Mantegazza <mantegazza@aero.polimi.it>
+
+	* base/include/asm-x86/rtai_hal_32.h and rtai_hal_64.h: reworked 
+	  rt_set_timer_delay.
+	* base/include/asm-x86/rtai_hal.h: reorder a set of declarations.
+	* base/sched/sched.c: avoid multiple oneshot delay units conversion,
+	  unified in rt_set_timer_delay.
+
 2015-01-05 Paolo Mantegazza <mantegazza@aero.polimi.it>
 
 	* base/include/asm-x86/rtai_lxrt_32.h and rtai_lxrt_64.h: update 

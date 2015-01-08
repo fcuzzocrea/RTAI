@@ -99,18 +99,22 @@ RTAI_MODULE_PARM(rtai_apicfreq_arg, ulong);
 
 static inline void rtai_setup_periodic_apic (unsigned count, unsigned vector)
 {
+if (!this_cpu_has(X86_FEATURE_TSC_DEADLINE_TIMER)) {
 	apic_read(APIC_LVTT);
 	apic_write(APIC_LVTT, APIC_INTEGRATED(GET_APIC_VERSION(apic_read(APIC_LVR))) ? SET_APIC_TIMER_BASE(APIC_TIMER_BASE_DIV) | APIC_LVT_TIMER_PERIODIC | vector : APIC_LVT_TIMER_PERIODIC | vector);
 	apic_read(APIC_TMICT);
 	apic_write(APIC_TMICT, count);
 }
+}
 
 static inline void rtai_setup_oneshot_apic (unsigned count, unsigned vector)
 {
+if (!this_cpu_has(X86_FEATURE_TSC_DEADLINE_TIMER)) {
 	apic_read(APIC_LVTT);
 	apic_write(APIC_LVTT, APIC_INTEGRATED(GET_APIC_VERSION(apic_read(APIC_LVR))) ? SET_APIC_TIMER_BASE(APIC_TIMER_BASE_DIV) | vector : vector);
 	apic_read(APIC_TMICT);
 	apic_write(APIC_TMICT, count);
+}
 }
 
 #if LINUX_VERSION_CODE < KERNEL_VERSION(2,4,32) || (LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,0) && LINUX_VERSION_CODE < KERNEL_VERSION(2,6,9))

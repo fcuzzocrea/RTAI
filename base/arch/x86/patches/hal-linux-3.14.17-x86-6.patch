@@ -14235,7 +14235,7 @@ index 515e212..8328320 100644
   * thread's register state.
   */
 -static inline void
-+int
++static int
  context_switch(struct rq *rq, struct task_struct *prev,
  	       struct task_struct *next)
  {
@@ -14390,8 +14390,8 @@ index 515e212..8328320 100644
   * call is not atomic; no spinlocks may be held.
   */
 +
-+int rtai_sched_affinity;
-+EXPORT_SYMBOL_GPL(rtai_sched_affinity);
++
++
  int set_cpus_allowed_ptr(struct task_struct *p, const struct cpumask *new_mask)
  {
  	unsigned long flags;
@@ -14451,7 +14451,7 @@ index 515e212..8328320 100644
 +	sched_preempt_enable_no_resched();
 +}
 +EXPORT_SYMBOL_GPL(__ipipe_reenter_root);
-+
++EXPORT_SYMBOL_GPL(cpu_isolated_map);
 +#endif /* CONFIG_IPIPE */
 diff --git a/kernel/sched/wait.c b/kernel/sched/wait.c
 index 7d50f79..78cdd0f 100644

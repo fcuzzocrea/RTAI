@@ -1,7 +1,7 @@
 2015-01-09 Paolo Mantegazza <mantegazza@aero.polimi.it>
 
 	* base/arch/x86/hal/hal, hal_32.c and hal_64.c : if IsolCpusMask is 
-          null use that of Linux, so that there is nomore the need to set it
+	  null use that of Linux, so that there is nomore the need to set it
 	  in RTAI.
 
 2015-01-08 Paolo Mantegazza <mantegazza@aero.polimi.it>

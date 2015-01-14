@@ -1,3 +1,7 @@
+2015-01-14 Pierangelo Masarati <pierangelo.masarati@polimi.it>
+
+	* RTAI 4.0.1 (4.0 closure release)
+
 2014-05-06 Pierangelo Masarati <masarati@aero.polimi.it>
 
 	* configure.in: fix linux source dir extraction when further args

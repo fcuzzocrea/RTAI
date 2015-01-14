@@ -69,9 +69,6 @@ void rtai_proc_lxrt_unregister(void);
 
 MODULE_LICENSE("GPL");
 
-int ppp;
-EXPORT_SYMBOL(ppp);
-
 /* +++++++++++++++++ WHAT MUST BE AVAILABLE EVERYWHERE ++++++++++++++++++++++ */
 
 RT_TASK rt_smp_linux_task[NR_RT_CPUS];
@@ -849,8 +846,6 @@ do { \
 	} \
 } while (0)
 
-#if 1
-
 static void rt_timer_handler(void);
 
 #define FIRE_NEXT_TIMER_SHOT(SHOT_FIRED) \
@@ -860,7 +855,7 @@ if (fire_shot) { \
 	ONESHOT_DELAY(SHOT_FIRED); \
 	if (delay > tuned.setup_time_TIMER_CPUNIT) { \
 		timer_shot_fired = 1; \
-		rt_set_timer_delay(imuldiv(delay, TIMER_FREQ, tuned.cpu_freq));\
+		rt_set_timer_delay(delay);\
 	} else { \
 		timer_shot_fired = -1;\
 		rt_times.intr_time = rt_time_h + tuned.setup_time_TIMER_CPUNIT;\
@@ -890,29 +885,6 @@ do { \
 	rt_timer_handler(); \
 	UNLOCK_LINUX(cpuid); \
 } while (0)
-
-#else
-
-#define FIRE_NEXT_TIMER_SHOT(CHECK_SPAN) \
-do { \
-if (fire_shot) { \
-	int delay; \
-	ONESHOT_DELAY(CHECK_SPAN); \
-	if (delay > tuned.setup_time_TIMER_CPUNIT) { \
-		rt_set_timer_delay(imuldiv(delay, TIMER_FREQ, tuned.cpu_freq));\
-	} else { \
-		rt_set_timer_delay(tuned.setup_time_TIMER_UNIT); \
-		rt_times.intr_time = rt_time_h + tuned.setup_time_TIMER_CPUNIT;\
-	} \
-	timer_shot_fired = 1; \
-} \
-} while (0)
-
-#define CALL_TIMER_HANDLER()
-
-#define REDO_TIMER_HANDLER()
-
-#endif
 
 #ifdef CONFIG_SMP
 static void rt_schedule_on_schedule_ipi(void)
@@ -1409,7 +1381,7 @@ static int _rt_linux_hrt_next_shot(unsigned long deltat, void *hrt_dev) // ??? s
 	RTIME linux_time;
 
 	deltat = nano2count_cpuid(deltat, cpuid);
-	deltas = deltat > (tuned.setup_time_TIMER_CPUNIT + tuned.latency) ? imuldiv(deltat - tuned.latency, TIMER_FREQ, tuned.cpu_freq) : 0;
+	deltas = deltat > (tuned.setup_time_TIMER_CPUNIT + tuned.latency) ? (deltat - tuned.latency) : 0;
 
 	rtai_cli();
 	rt_times.linux_time = linux_time = rt_get_time_cpuid(cpuid) + deltat;
@@ -2084,7 +2056,11 @@ static void wake_up_srq_handler(unsigned srq)
 	int cpuid = rtai_cpuid();
 	WAKE_UP_TASKs(wake_up_hts);
 	WAKE_UP_TASKs(wake_up_srq);
+#if LINUX_VERSION_CODE > KERNEL_VERSION(3,13,0)
+	set_tsk_need_resched(current);
+#else
 	set_need_resched();
+#endif
 }
 
 static unsigned long traptrans, systrans;
@@ -2245,13 +2221,12 @@ extern unsigned long tlsf_get_used_size(rtheap_t *);
 #define rt_get_heap_mem_used(heap)  rtheap_used_mem(heap)
 #endif
 
-static int rtai_read_sched(char *page, char **start, off_t off, int count,
-                           int *eof, void *data)
+static int PROC_READ_FUN(rtai_read_sched)
 {
-	PROC_PRINT_VARS;
         int cpuid, i = 1;
 	unsigned long t;
 	RT_TASK *task;
+	PROC_PRINT_VARS;
 
 	PROC_PRINT("\nRTAI LXRT Real Time Task Scheduler.\n\n");
 	PROC_PRINT("    Calibrated Time Base Frequency: %lu Hz\n", tuned.cpu_freq);
@@ -2323,18 +2298,19 @@ static int rtai_read_sched(char *page, char **start, off_t off, int count,
 
 }  /* End function - rtai_read_sched */
 
+PROC_READ_OPEN_OPS(rtai_sched_proc_fops, rtai_read_sched);
 
 static int rtai_proc_sched_register(void) 
 {
         struct proc_dir_entry *proc_sched_ent;
 
 
-        proc_sched_ent = create_proc_entry("scheduler", S_IFREG|S_IRUGO|S_IWUSR, rtai_proc_root);
+        proc_sched_ent = CREATE_PROC_ENTRY("scheduler", S_IFREG|S_IRUGO|S_IWUSR, rtai_proc_root, &rtai_sched_proc_fops);
         if (!proc_sched_ent) {
                 printk("Unable to initialize /proc/rtai/scheduler\n");
                 return(-1);
         }
-        proc_sched_ent->read_proc = rtai_read_sched;
+	SET_PROC_READ_ENTRY(proc_sched_ent, rtai_read_sched);
         return(0);
 }  /* End function - rtai_proc_sched_register */
 
@@ -2700,6 +2676,12 @@ module_exit(__rtai_lxrt_exit);
 #endif
 
 #ifdef CONFIG_KBUILD
+
+MODULE_ALIAS("rtai_up");
+MODULE_ALIAS("rtai_mup");
+MODULE_ALIAS("rtai_smp");
+MODULE_ALIAS("rtai_ksched");
+MODULE_ALIAS("rtai_lxrt");
 
 EXPORT_SYMBOL(rt_fun_lxrt);
 EXPORT_SYMBOL(clr_rtext);

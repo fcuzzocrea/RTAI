@@ -26,6 +26,27 @@
 #define RTAI_KERN_BUSY_ALIGN_RET_DELAY  CONFIG_RTAI_KERN_BUSY_ALIGN_RET_DELAY
 #define RTAI_USER_BUSY_ALIGN_RET_DELAY  CONFIG_RTAI_USER_BUSY_ALIGN_RET_DELAY
 
+#include <rtai_types.h>
+
+#ifdef CONFIG_SMP
+#define RTAI_NR_CPUS  CONFIG_RTAI_CPUS
+#else /* !CONFIG_SMP */
+#define RTAI_NR_CPUS  1
+#endif /* CONFIG_SMP */
+
+struct calibration_data {
+	unsigned long cpu_freq;
+	unsigned long apic_freq;
+	int latency;
+	int kern_latency_busy_align_ret_delay;
+	int user_latency_busy_align_ret_delay;
+	int setup_time_TIMER_CPUNIT;
+	int setup_time_TIMER_UNIT;
+	int timers_tol[RTAI_NR_CPUS];
+};
+
+int rtai_calibrate_hard_timer(void);
+
 #ifdef __i386__
 #include "rtai_hal_32.h"
 #else
@@ -48,18 +69,5 @@ static inline RTIME rt_get_tscnt(void)
 #else
 #define rt_get_tscnt  rt_get_time
 #endif
-
-struct calibration_data {
-	unsigned long cpu_freq;
-	unsigned long apic_freq;
-	int latency;
-	int kern_latency_busy_align_ret_delay;
-	int user_latency_busy_align_ret_delay;
-	int setup_time_TIMER_CPUNIT;
-	int setup_time_TIMER_UNIT;
-	int timers_tol[RTAI_NR_CPUS];
-};
-
-int rtai_calibrate_hard_timer(void);
 
 #endif /* !_RTAI_ASM_X86_HAL_H */

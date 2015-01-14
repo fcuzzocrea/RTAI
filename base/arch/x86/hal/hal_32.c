@@ -99,18 +99,22 @@ RTAI_MODULE_PARM(rtai_apicfreq_arg, ulong);
 
 static inline void rtai_setup_periodic_apic (unsigned count, unsigned vector)
 {
+if (!this_cpu_has(X86_FEATURE_TSC_DEADLINE_TIMER)) {
 	apic_read(APIC_LVTT);
 	apic_write(APIC_LVTT, APIC_INTEGRATED(GET_APIC_VERSION(apic_read(APIC_LVR))) ? SET_APIC_TIMER_BASE(APIC_TIMER_BASE_DIV) | APIC_LVT_TIMER_PERIODIC | vector : APIC_LVT_TIMER_PERIODIC | vector);
 	apic_read(APIC_TMICT);
 	apic_write(APIC_TMICT, count);
 }
+}
 
 static inline void rtai_setup_oneshot_apic (unsigned count, unsigned vector)
 {
+if (!this_cpu_has(X86_FEATURE_TSC_DEADLINE_TIMER)) {
 	apic_read(APIC_LVTT);
 	apic_write(APIC_LVTT, APIC_INTEGRATED(GET_APIC_VERSION(apic_read(APIC_LVR))) ? SET_APIC_TIMER_BASE(APIC_TIMER_BASE_DIV) | vector : vector);
 	apic_read(APIC_TMICT);
 	apic_write(APIC_TMICT, count);
+}
 }
 
 #if LINUX_VERSION_CODE < KERNEL_VERSION(2,4,32) || (LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,0) && LINUX_VERSION_CODE < KERNEL_VERSION(2,6,9))
@@ -1571,10 +1575,10 @@ extern void cleanup_tsc_sync(void);
 extern volatile long rtai_tsc_ofst[];
 #endif
 
-static int rtai_read_proc (char *page, char **start, off_t off, int count, int *eof, void *data)
+static int PROC_READ_FUN(rtai_read_proc)
 {
-	PROC_PRINT_VARS;
 	int i, none;
+	PROC_PRINT_VARS;
 
 	PROC_PRINT("\n** RTAI/x86:\n\n");
 	PROC_PRINT("    CPU   Frequency: %lu (Hz)\n", rtai_tunables.cpu_freq);
@@ -1629,11 +1633,13 @@ static int rtai_read_proc (char *page, char **start, off_t off, int count, int *
 	PROC_PRINT_DONE;
 }
 
+PROC_READ_OPEN_OPS(rtai_hal_proc_fops, rtai_read_proc);
+
 static int rtai_proc_register (void)
 {
 	struct proc_dir_entry *ent;
 
-	rtai_proc_root = create_proc_entry("rtai",S_IFDIR, 0);
+	rtai_proc_root = CREATE_PROC_ENTRY("rtai", S_IFDIR, NULL, &rtai_hal_proc_fops);
 	if (!rtai_proc_root) {
 		printk(KERN_ERR "Unable to initialize /proc/rtai.\n");
 		return -1;
@@ -1641,20 +1647,21 @@ static int rtai_proc_register (void)
 #if LINUX_VERSION_CODE < KERNEL_VERSION(2,6,30)
 	rtai_proc_root->owner = THIS_MODULE;
 #endif
-	ent = create_proc_entry("hal",S_IFREG|S_IRUGO|S_IWUSR,rtai_proc_root);
+	ent = CREATE_PROC_ENTRY("hal", S_IFREG|S_IRUGO|S_IWUSR, rtai_proc_root,
+&rtai_hal_proc_fops);
 	if (!ent) {
 		printk(KERN_ERR "Unable to initialize /proc/rtai/hal.\n");
 		return -1;
         }
-	ent->read_proc = rtai_read_proc;
+	SET_PROC_READ_ENTRY(ent, rtai_read_proc);
 
 	return 0;
 }
 
 static void rtai_proc_unregister (void)
 {
-	remove_proc_entry("hal",rtai_proc_root);
-	remove_proc_entry("rtai",0);
+	remove_proc_entry("hal", rtai_proc_root);
+	remove_proc_entry("rtai", 0);
 }
 
 #endif /* CONFIG_PROC_FS */
@@ -1689,6 +1696,7 @@ void ack_bad_irq(unsigned int irq)
 
 extern struct ipipe_domain ipipe_root;
 void free_isolcpus_from_linux(void *);
+extern unsigned long cpu_isolated_map; 
 
 int __rtai_hal_init (void)
 {
@@ -1764,11 +1772,14 @@ int __rtai_hal_init (void)
 	rtai_init_taskpri_irqs();
 
 #ifdef CONFIG_SMP
+	if (!IsolCpusMask) {
+		IsolCpusMask = cpu_isolated_map;
+	}
 	if (IsolCpusMask) {
 		for (trapnr = 0; trapnr < IPIPE_NR_XIRQS; trapnr++) {
 			rtai_orig_irq_affinity[trapnr] = rt_assign_irq_to_cpu(trapnr, ~IsolCpusMask);
 		}
-		free_isolcpus_from_linux(&IsolCpusMask);
+//		free_isolcpus_from_linux(&IsolCpusMask);
 	}
 #else
 	IsolCpusMask = 0;

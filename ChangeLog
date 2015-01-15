@@ -91,6 +91,10 @@
 
 	* RTAI 4.0.1 (4.0 closure release)
 
+2015-01-14 Pierangelo Masarati <pierangelo.masarati@polimi.it>
+
+	* base/arch/x86/defconfig: comedi making defaults to NO
+
 2013-12-06 Pierangelo Masarati <masarati@aero.polimi.it>
 
 	* RTAI 4.0

@@ -288,6 +288,7 @@ RTAI_KMOD_CXXFLAGS = @RTAI_KMOD_CXXFLAGS@
 RTAI_LINUX_DIR = @RTAI_LINUX_DIR@
 RTAI_LINUX_VERSION = @RTAI_LINUX_VERSION@
 RTAI_LXRT_LDADD = @RTAI_LXRT_LDADD@
+RTAI_MATH_LIBM = @RTAI_MATH_LIBM@
 RTAI_MAYBE_DOCDIR = @RTAI_MAYBE_DOCDIR@
 RTAI_MAYBE_SIMDIR = @RTAI_MAYBE_SIMDIR@
 RTAI_MODULE_DIR = @RTAI_MODULE_DIR@
@@ -726,8 +727,8 @@ distclean-generic:
 maintainer-clean-generic:
 	@echo "This command is intended for maintainers to use"
 	@echo "it deletes files that may require special tools to rebuild."
-@CONFIG_KBUILD_FALSE@clean-local:
 @CONFIG_KBUILD_FALSE@distclean-local:
+@CONFIG_KBUILD_FALSE@clean-local:
 clean: clean-am
 
 clean-am: clean-calibrationPROGRAMS clean-generic clean-libtool \

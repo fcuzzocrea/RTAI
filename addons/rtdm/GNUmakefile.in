@@ -104,7 +104,7 @@ am__v_AR_1 =
 librtdm_a_LIBADD =
 am_librtdm_a_OBJECTS = core.$(OBJEXT) device.$(OBJEXT) \
 	drvlib.$(OBJEXT) module.$(OBJEXT) proc.$(OBJEXT) \
-	rtai_taskq.$(OBJEXT) select.$(OBJEXT)
+	rtai_taskq.$(OBJEXT) select.$(OBJEXT) vfile.$(OBJEXT)
 librtdm_a_OBJECTS = $(am_librtdm_a_OBJECTS)
 AM_V_P = $(am__v_P_@AM_V@)
 am__v_P_ = $(am__v_P_@AM_DEFAULT_V@)
@@ -345,6 +345,7 @@ RTAI_KMOD_CXXFLAGS = @RTAI_KMOD_CXXFLAGS@
 RTAI_LINUX_DIR = @RTAI_LINUX_DIR@
 RTAI_LINUX_VERSION = @RTAI_LINUX_VERSION@
 RTAI_LXRT_LDADD = @RTAI_LXRT_LDADD@
+RTAI_MATH_LIBM = @RTAI_MATH_LIBM@
 RTAI_MAYBE_DOCDIR = @RTAI_MAYBE_DOCDIR@
 RTAI_MAYBE_SIMDIR = @RTAI_MAYBE_SIMDIR@
 RTAI_MODULE_DIR = @RTAI_MODULE_DIR@
@@ -429,7 +430,8 @@ librtdm_a_SOURCES = \
 	module.c \
 	proc.c \
 	rtai_taskq.c \
-	select.c
+	select.c \
+	vfile.c
 
 include_HEADERS = \
 	rtdm.h \
@@ -437,7 +439,8 @@ include_HEADERS = \
 	rtserial.h \
 	xn.h \
 	rtai_taskq.h \
-	select.h
+	select.h \
+	vfile.h
 
 @CONFIG_KBUILD_FALSE@noinst_LIBRARIES = librtdm.a
 @CONFIG_KBUILD_FALSE@librtdm_a_AR = $(CROSS_COMPILE)ar cru
@@ -512,6 +515,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/proc.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/rtai_taskq.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/select.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/vfile.Po@am__quote@
 
 .c.o:
 @am__fastdepCC_TRUE@	$(AM_V_CC)$(COMPILE) -MT $@ -MD -MP -MF $(DEPDIR)/$*.Tpo -c -o $@ $<
@@ -753,8 +757,8 @@ distclean-generic:
 maintainer-clean-generic:
 	@echo "This command is intended for maintainers to use"
 	@echo "it deletes files that may require special tools to rebuild."
-@CONFIG_KBUILD_FALSE@distclean-local:
 @CONFIG_KBUILD_FALSE@clean-local:
+@CONFIG_KBUILD_FALSE@distclean-local:
 clean: clean-recursive
 
 clean-am: clean-generic clean-libtool clean-local \

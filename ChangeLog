@@ -1,19 +1,15 @@
-2015-01-14 Pierangelo Masarati <pierangelo.masarati@polimi.it>
-
-	* RTAI 4.0.1 (4.0 closure release)
-
-2015-01-09 Paolo Mantegazza <mantegazza@aero.polimi.it>
+2015-01-14 Paolo Mantegazza <mantegazza@aero.polimi.it>
 
 	* base/arch/x86/hal/hal.c, hal_32.c and hal_64.c: if IsolCpusMask is 
 	  null use that of Linux, so that there is nomore the need to set it
 	  in RTAI.
 
-2015-01-08 Paolo Mantegazza <mantegazza@aero.polimi.it>
+2015-01-14 Paolo Mantegazza <mantegazza@aero.polimi.it>
 
 	* base/arch/x86/hal/hal_32.c and hal_64.c : avoid reprogramming the 
           apic timer mode when tsc-deadline is available.
 
-2015-01-07 Paolo Mantegazza <mantegazza@aero.polimi.it>
+2015-01-14 Paolo Mantegazza <mantegazza@aero.polimi.it>
 
 	* base/include/asm-x86/rtai_hal_32.h and rtai_hal_64.h: reworked 
 	  rt_set_timer_delay.
@@ -21,44 +17,44 @@
 	* base/sched/sched.c: avoid multiple oneshot delay units conversion,
 	  unified in rt_set_timer_delay.
 
-2015-01-05 Paolo Mantegazza <mantegazza@aero.polimi.it>
+2015-01-14 Paolo Mantegazza <mantegazza@aero.polimi.it>
 
 	* base/include/asm-x86/rtai_lxrt_32.h and rtai_lxrt_64.h: update 
 	  caring of the Linux version when manupulating the fpu_counter in
 	  context switches.
 	* base/sched/sched.c: care of Linux version in setting need_resched.
 
-2014-05-06 Pierangelo Masarati <masarati@aero.polimi.it>
+2015-01-14 Pierangelo Masarati <masarati@aero.polimi.it>
 
 	* configure.in: fix linux source dir extraction when further args
 	  follow -C, thanks to Lukas Anzinger <lukas@lukasanzinger.at>
 	* configure: rebuild
 
-2014-05-13 Pierangelo Masarati <masarati@aero.polimi.it>
+2015-01-14 Pierangelo Masarati <masarati@aero.polimi.it>
 
 	* base/sched/{GNUmakefile.am,sched.c}: use MODULE_ALIAS()
 	  instead of manual symlinks for legacy schedulers,
 	  thanks to Lukas Anzinger <lukas@lukasanzinger.at>
 	* base/sched/GNUmakefile.in: regenerate
 
-2014-05-06 Pierangelo Masarati <masarati@aero.polimi.it>
+2015-01-14 Pierangelo Masarati <masarati@aero.polimi.it>
 
 	* configure.in: fix linux source dir extraction when further args
 	  follow -C, thanks to Lukas Anzinger <lukas@lukasanzinger.at>
 	* configure: rebuild
 
-2014-02-19 Pierangelo Masarati <masarati@aero.polimi.it>
+2015-01-14 Pierangelo Masarati <masarati@aero.polimi.it>
 
 	* addons/rdtm/GNUmakefile.*: updated for Linux >= 3.10.0.
 
-2014-02-19 Paolo Mantegazza <mantegazza@aero.polimi.it>
+2015-01-14 Paolo Mantegazza <mantegazza@aero.polimi.it>
 
 	* addons/rtdm/vfile.h, vfile.c and proc.c: updated for Linux >= 3.10.0,
 	  lifted from native nucleus and rtdm.
 	* addons/rtdm/rtdm_driver.h: added declaration to support the new proc 
 	  file system.
 
-2014-02-16 Paolo Mantegazza <mantegazza@aero.polimi.it>
+2015-01-14 Paolo Mantegazza <mantegazza@aero.polimi.it>
 
 	* base/include/rtai_proc_fs.h: added support for changes of proc files 
 	  usage for Linux >= 3.10.
@@ -73,12 +69,12 @@
 	* testsuite/kern/latency/latency-module.c: modified support of proc 
 	  files for Linux >= 3.10.
 
-2013-11-23 Paolo Mantegazza <mantegazza@aero.polimi.it>
+2015-01-14 Paolo Mantegazza <mantegazza@aero.polimi.it>
 
 	* base/math/libm.c: added function cd2str, i.e. compex double to 
 	  string.
 
-2013-11-19 Paolo Mantegazza <mantegazza@aero.polimi.it> and 
+2015-01-14 Paolo Mantegazza <mantegazza@aero.polimi.it> and 
 	   Marco Morandini <morandini@aero.polimi.it>
 
 	* base/math/libm.c: updated to use complex functions and glibc-libm.a,
@@ -90,6 +86,10 @@
 	* base/include/rtai_math.h: new self contained header.
 	* base/arch/x86/Kconfig: add parameters to configure the refurbished 
 	  math support in kernel space.
+
+2015-01-14 Pierangelo Masarati <pierangelo.masarati@polimi.it>
+
+	* RTAI 4.0.1 (4.0 closure release)
 
 2013-12-06 Pierangelo Masarati <masarati@aero.polimi.it>
 

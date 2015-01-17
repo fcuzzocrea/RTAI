@@ -970,7 +970,7 @@ index 0000000..3ebadc1
 +
 +#endif /* !CONFIG_SMP */
 +
-+#ifdef CONFIG_IPIPE_LEGACY
++#if 0 // def CONFIG_IPIPE_LEGACY
 +#define __ipipe_tick_irq	__ipipe_hrtimer_irq
 +/*
 + * The current Linux task is read from the PDA on x86, so this is
@@ -6619,7 +6619,7 @@ index 0000000..ea01dd6
 +#define hard_cond_local_irq_save()		hard_local_irq_save()
 +#define hard_cond_local_irq_restore(flags)	hard_local_irq_restore(flags)
 +
-+#ifdef CONFIG_IPIPE_LEGACY
++#if 1 // def CONFIG_IPIPE_LEGACY
 +
 +#define IPIPE_FIRST_EVENT	IPIPE_NR_FAULTS
 +#define IPIPE_EVENT_SCHEDULE	IPIPE_FIRST_EVENT
@@ -6759,7 +6759,7 @@ index 0000000..6521852
 +#error "Do not include this file directly, use linux/ipipe.h instead"
 +#endif
 +
-+#ifdef CONFIG_IPIPE_LEGACY
++#if 0 // def CONFIG_IPIPE_LEGACY
 +
 +#define IPIPE_HEAD_PRIORITY	(-1)
 +#define IPIPE_ROOT_PRIO		100
@@ -9493,7 +9493,7 @@ index 0000000..c5b022b
 +int __ipipe_printk_bypass;
 +#endif /* CONFIG_PRINTK */
 +
-+#ifdef CONFIG_IPIPE_LEGACY
++#if 0 // def CONFIG_IPIPE_LEGACY
 +
 +#define __IPIPE_SYSCALL_R (8 << __IPIPE_SYSCALL_P)
 +#define __IPIPE_TRAP_R	  (8 << __IPIPE_TRAP_P)

@@ -5808,10 +5808,10 @@ index 0000000..1f6e9c3
 + * domains.
 + */
 +
-+struct ipipe_threadinfo {
++struct ipipe_threadinfo { void *ptd[4];
 +};
 +
-+static inline void __ipipe_init_threadinfo(struct ipipe_threadinfo *p) { }
++static inline void __ipipe_init_threadinfo(struct ipipe_threadinfo *p) { p->ptd[0] = p->ptd[1] = p->ptd[2] = p->ptd[3] = 0; }
 +
 +#endif /* !_IPIPE_THREAD_INFO_H */
 diff --git a/include/linux/clockchips.h b/include/linux/clockchips.h
@@ -10346,7 +10346,7 @@ index 0000000..c5b022b
 +		p->coflags |= enables;
 +	}
 +
-+#if 1 // def CONFIG_IPIPE_LEGACY
++#if 0 // def CONFIG_IPIPE_LEGACY
 +	/*
 +	 * In legacy mode, clients may assume that ipipe_set_hooks()
 +	 * is a synchronization barrier with respect to callout

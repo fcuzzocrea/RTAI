@@ -10384,14 +10384,15 @@ index 0000000..c5b022b
 +}
 +EXPORT_SYMBOL_GPL(ipipe_set_hooks);
 +
-+int __weak ipipe_fastcall_hook(struct pt_regs *regs)
++int ipipe_fastcall_hook(struct pt_regs *regs)
 +{
 +	return rtai_syscall_hook ? rtai_syscall_hook(regs) : -1;
-+//	return -1;	/* i.e. fall back to slow path. */
++	return -1;	/* i.e. fall back to slow path. */
 +}
 +
-+int __weak ipipe_syscall_hook(struct ipipe_domain *ipd, struct pt_regs *regs)
++int __ipipe_notify_syscall(struct pt_regs *regs)
 +{
++	return rtai_syscall_hook ? rtai_syscall_hook(regs) : 0;
 +	return 0;
 +}
 +
@@ -10409,9 +10410,8 @@ index 0000000..c5b022b
 +	hard_local_irq_restore(flags);
 +}
 +
-+int __ipipe_notify_syscall(struct pt_regs *regs)
++int nu__ipipe_notify_syscall(struct pt_regs *regs)
 +{
-+{ return rtai_syscall_hook ? rtai_syscall_hook(regs) : 0; } {
 +	struct ipipe_domain *caller_domain, *this_domain, *ipd;
 +	struct ipipe_percpu_domain_data *p;
 +	unsigned long flags;
@@ -10431,7 +10431,7 @@ index 0000000..c5b022b
 +		__ipipe_set_current_context(p);
 +		enter_callout(p, __IPIPE_SYSCALL_R);
 +		hard_local_irq_restore(flags);
-+		ret = ipipe_syscall_hook(caller_domain, regs);
++//		ret = ipipe_syscall_hook(caller_domain, regs);
 +		flags = hard_local_irq_save();
 +		leave_callout(p, __IPIPE_SYSCALL_R);
 +		if (__ipipe_current_domain != ipd)
@@ -10459,16 +10459,16 @@ index 0000000..c5b022b
 +	hard_local_irq_restore(flags);
 +
 +	return ret;
-+} }
-+
-+int __weak ipipe_trap_hook(struct ipipe_trap_data *data)
-+{
-+	return 0;
 +}
 +
 +int __ipipe_notify_trap(int exception, struct pt_regs *regs)
 +{
-+{ return rtai_trap_hook ? rtai_trap_hook(exception, regs) : 0; } {
++	return rtai_trap_hook ? rtai_trap_hook(exception, regs) : 0;
++	return 0;
++}
++
++int nu__ipipe_notify_trap(int exception, struct pt_regs *regs)
++{
 +	struct ipipe_percpu_domain_data *p;
 +	struct ipipe_trap_data data;
 +	unsigned long flags;
@@ -10489,7 +10489,7 @@ index 0000000..c5b022b
 +		hard_local_irq_restore(flags);
 +		data.exception = exception;
 +		data.regs = regs;
-+		ret = ipipe_trap_hook(&data);
++//		ret = ipipe_trap_hook(&data);
 +		flags = hard_local_irq_save();
 +		leave_callout(p, __IPIPE_TRAP_R);
 +	}
@@ -10497,16 +10497,16 @@ index 0000000..c5b022b
 +	hard_local_irq_restore(flags);
 +
 +	return ret;
-+} }
-+
-+int __weak ipipe_kevent_hook(int kevent, void *data)
-+{
-+	return 0;
 +}
 +
 +int __ipipe_notify_kevent(int kevent, void *data)
 +{
-+{ return rtai_kevent_hook ? rtai_kevent_hook(kevent, data) : 0; } {
++	return rtai_kevent_hook ? rtai_kevent_hook(kevent, data) : 0;
++	return 0;
++}
++
++int nu__ipipe_notify_kevent(int kevent, void *data)
++{
 +	struct ipipe_percpu_domain_data *p;
 +	unsigned long flags;
 +	int ret = 0;
@@ -10519,7 +10519,7 @@ index 0000000..c5b022b
 +	if (likely(p->coflags & __IPIPE_KEVENT_E)) {
 +		enter_callout(p, __IPIPE_KEVENT_R);
 +		hard_local_irq_restore(flags);
-+		ret = ipipe_kevent_hook(kevent, data);
++//		ret = ipipe_kevent_hook(kevent, data);
 +		flags = hard_local_irq_save();
 +		leave_callout(p, __IPIPE_KEVENT_R);
 +	}
@@ -10527,7 +10527,7 @@ index 0000000..c5b022b
 +	hard_local_irq_restore(flags);
 +
 +	return ret;
-+} }
++}
 +
 +void __weak ipipe_migration_hook(struct task_struct *p)
 +{
@@ -10669,7 +10669,7 @@ index 0000000..c5b022b
 +	__ipipe_do_sync_pipeline(head);
 +}
 +
-+void __ipipe_dispatch_irq(unsigned int irq, int flags) /* hw interrupts off */
++void nu__ipipe_dispatch_irq(unsigned int irq, int flags) /* hw interrupts off */
 +{
 +	struct ipipe_domain *ipd;
 +	struct irq_desc *desc;

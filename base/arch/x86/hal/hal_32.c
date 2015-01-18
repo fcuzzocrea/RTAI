@@ -1520,18 +1520,6 @@ static int errno;
 static inline _syscall3(int, sched_setscheduler, pid_t,pid, int,policy, struct sched_param *,param)
 #endif
 
-#if LINUX_VERSION_CODE < KERNEL_VERSION(2,4,32)
-
-void rtai_set_linux_task_priority (struct task_struct *task, int policy, int prio)
-{
-	task->rt_priority = prio;
-	task->policy = policy;
-	set_tsk_need_resched(current);
-}
-
-#else /* KERNEL_VERSION >= 2.6.0 */
-
-#if 1
 void rtai_set_linux_task_priority (struct task_struct *task, int policy, int prio)
 {
 	struct sched_param param = { .sched_priority = prio };
@@ -1540,32 +1528,6 @@ void rtai_set_linux_task_priority (struct task_struct *task, int policy, int pri
 		printk("RTAI[hal]: sched_setscheduler(policy = %d, prio = %d) failed, (%s -- pid = %d)\n", policy, prio, task->comm, task->pid);
 	}
 }
-
-#else  //keep for a while as a memo of what we did
-void rtai_set_linux_task_priority (struct task_struct *task, int policy, int prio)
-{
-	int rc;
-#if LINUX_VERSION_CODE < KERNEL_VERSION(2,6,11)
-	struct sched_param __user param;
-	mm_segment_t old_fs;
-
-	param.sched_priority = prio;
-	old_fs = get_fs();
-	set_fs(KERNEL_DS);
-	rc = sched_setscheduler(task->pid, policy, &param);
-	set_fs(old_fs);
-#else
-	struct sched_param param = { prio };
-	rc = sched_setscheduler(task, policy, &param);
-#endif
-
-	if (rc) {
-//		printk("RTAI[hal]: sched_setscheduler(policy=%d,prio=%d) failed, code %d (%s -- pid=%d)\n", policy, prio, rc, task->comm, task->pid);
-	}
-}
-#endif
-
-#endif  /* KERNEL_VERSION < 2.6.0 */
 
 #ifdef CONFIG_PROC_FS
 
@@ -1873,8 +1835,6 @@ EXPORT_SYMBOL(rt_smp_times);
 
 EXPORT_SYMBOL(rt_printk);
 EXPORT_SYMBOL(rt_sync_printk);
-
-//EXPORT_SYMBOL(rtai_catch_event);
 
 EXPORT_SYMBOL(rt_scheduling);
 #if LINUX_VERSION_CODE < RTAI_LT_KERNEL_VERSION_FOR_NONPERCPU

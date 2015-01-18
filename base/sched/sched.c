@@ -1949,7 +1949,8 @@ extern void rt_daemonize(void);
 #endif
 
 #endif
-
+  
+extern struct ipipe_percpu_data ipipe_percpu;
 void steal_from_linux(RT_TASK *rt_task)
 {
 	struct klist_t *klistp;
@@ -1969,16 +1970,11 @@ void steal_from_linux(RT_TASK *rt_task)
 		rt_task->priority -= BASE_SOFT_PRIORITY;
 	}
 	rt_task->is_hard = 1;
-#if defined(TASK_ATOMICSWITCH) && TASK_ATOMICSWITCH && defined(CONFIG_PREEMPT)
-	preempt_disable();
-	(lnxtsk = rt_task->lnxtsk)->state = (TASK_HARDREALTIME | TASK_ATOMICSWITCH);
 	rtai_sti();
-#else
-	(lnxtsk = rt_task->lnxtsk)->state = TASK_HARDREALTIME;
-#endif
 	do {
-		schedule();
-	} while (rt_task->state != RT_SCHED_READY);
+		__ipipe_migrate_head();
+	} while (rt_task->state != RT_SCHED_READY);		
+	lnxtsk = rt_task->lnxtsk;
 #if CONFIG_RTAI_MONITOR_EXECTIME
 	if (!rt_task->exectime[1]) {
 		rt_task->exectime[1] = rtai_rdtsc();
@@ -2103,21 +2099,19 @@ static inline void rt_signal_wake_up(RT_TASK *task)
 }
 
 
-static int lxrt_intercept_schedule_tail (unsigned event, void *nothing)
+static void lxrt_intercept_schedule_tail (struct task_struct *task)
 {
+{
+	fast_schedule(task->rtai_tskext(TSKEXT0), current, rtai_cpuid());
+	return;
+} {
 	int cpuid = rtai_cpuid();
-#if LINUX_VERSION_CODE < KERNEL_VERSION(2,6,11)
-	if (in_hrt_mode(cpuid)) {
-		return 1;
-	} else 
-#endif
-	{
-		struct klist_t *klistp = &wake_up_sth[cpuid];
-		while (klistp->out != klistp->in) {
-			fast_schedule(klistp->task[klistp->out++ & (MAX_WAKEUP_SRQ - 1)], current, cpuid);
-		}
+	struct klist_t *klistp = &wake_up_sth[cpuid];
+	while (klistp->out != klistp->in) {
+		fast_schedule(klistp->task[klistp->out++ & (MAX_WAKEUP_SRQ - 1)], current, cpuid);
 	}
-	return 0;
+	return;
+}
 }
 
 struct sig_wakeup_t { struct task_struct *task; };
@@ -2144,9 +2138,28 @@ static int lxrt_intercept_exit (unsigned long event, struct task_struct *lnx_tas
 	return 0;
 }
 
-extern long long rtai_lxrt_invoke (unsigned long, void *);
-extern int (*sys_call_table[])(struct pt_regs);
+static int lxrt_intercept_kevents(int kevent, void *data)
+{
+	switch (kevent) {
+		case IPIPE_KEVT_SCHEDULE:
+			return 0;
+		case IPIPE_KEVT_SIGWAKE:
+                	return lxrt_intercept_sig_wakeup(kevent, data);
+		case IPIPE_KEVT_SETSCHED:
+		case IPIPE_KEVT_SETAFFINITY:
+			return 0;
+		case IPIPE_KEVT_EXIT:
+			return lxrt_intercept_exit(kevent, data);
+		case IPIPE_KEVT_CLEANUP:
+		case IPIPE_KEVT_HOSTRT:
+		default:
+			return 0;
+        }
+	return 0;
+}
 
+extern long long rtai_lxrt_invoke (unsigned long, void *);
+//extern int (*sys_call_table[])(struct pt_regs);
 
 static int lxrt_intercept_syscall_prologue(struct pt_regs *regs)
 {
@@ -2172,7 +2185,7 @@ static int lxrt_intercept_syscall_prologue(struct pt_regs *regs)
 
 extern long long rtai_usrq_dispatcher (unsigned long, unsigned long);
 
-static int lxrt_intercept_syscall(unsigned long event, struct pt_regs *regs){
+static int lxrt_intercept_syscall(struct pt_regs *regs){
 	if (likely(regs->LINUX_SYSCALL_NR >= RTAI_SYSCALL_NR)) {
 		unsigned long srq  = regs->LINUX_SYSCALL_REG1;
 		IF_IS_A_USI_SRQ_CALL_IT(srq, regs->LINUX_SYSCALL_REG2, (long long *)regs->LINUX_SYSCALL_REG3, regs->LINUX_SYSCALL_FLAGS, 1);
@@ -2186,6 +2199,7 @@ static int lxrt_intercept_syscall(unsigned long event, struct pt_regs *regs){
 	return lxrt_intercept_syscall_prologue(regs);
 }
 
+#if 0
 static int lxrt_intercept_syscall_epilogue(unsigned long event, void *nothing)
 {
 	RT_TASK *task;
@@ -2204,6 +2218,7 @@ static int lxrt_intercept_syscall_epilogue(unsigned long event, void *nothing)
 	}
 	return 0;
 }
+#endif
 
 /* ++++++++++++++++++++++++++ SCHEDULER PROC FILE +++++++++++++++++++++++++++ */
 
@@ -2404,8 +2419,6 @@ static struct rt_native_fun_entry rt_sched_entries[] = {
 	{ { 0, 0 },			            000 }
 };
 
-static void *saved_syscall_prologue;
-
 #ifdef CONFIG_RTAI_SCHED_ISR_LOCK
 extern void *rtai_isr_sched;
 #endif /* CONFIG_RTAI_SCHED_ISR_LOCK */
@@ -2414,6 +2427,11 @@ static void rtai_isr_sched_handle(int cpuid) /* Called with interrupts off */
 	SCHED_UNLOCK_SCHEDULE(cpuid);
 }
 EXPORT_SYMBOL(rtai_isr_sched_handle);
+
+void *saved_rtai_syscall_hook;
+extern int (*rtai_syscall_hook)(struct pt_regs *);
+extern void (*rtai_migration_hook)(struct task_struct *);
+extern int (*rtai_kevent_hook)(int kevent, void *);
 
 static int lxrt_init(void)
 {
@@ -2436,12 +2454,11 @@ static int lxrt_init(void)
 #ifdef CONFIG_PROC_FS
 	rtai_proc_lxrt_register();
 #endif
-
-	rtai_catch_event(hal_root_domain, HAL_SCHEDULE_TAIL, (void *)lxrt_intercept_schedule_tail);
-	saved_syscall_prologue = hal_catch_event(hal_root_domain, HAL_SYSCALL_PROLOGUE, (void *)lxrt_intercept_syscall);
-	rtai_catch_event(hal_root_domain, HAL_SYSCALL_EPILOGUE, (void *)lxrt_intercept_syscall_epilogue);
-	rtai_catch_event(hal_root_domain, HAL_EXIT_PROCESS, (void *)lxrt_intercept_exit);
-	rtai_catch_event(hal_root_domain, HAL_KICK_PROCESS, (void *)lxrt_intercept_sig_wakeup);
+	
+	saved_rtai_syscall_hook = rtai_syscall_hook;
+	rtai_syscall_hook = lxrt_intercept_syscall;
+	rtai_kevent_hook = lxrt_intercept_kevents;
+	rtai_migration_hook = lxrt_intercept_schedule_tail;
 
 	return 0;
 }
@@ -2456,11 +2473,9 @@ static void lxrt_exit(void)
 
 	RELEASE_RESUME_SRQs_STUFF();
 
-	rtai_catch_event(hal_root_domain, HAL_SCHEDULE_TAIL, NULL);
-	rtai_catch_event(hal_root_domain, HAL_SYSCALL_PROLOGUE, saved_syscall_prologue);
-	rtai_catch_event(hal_root_domain, HAL_SYSCALL_EPILOGUE, NULL);
-	rtai_catch_event(hal_root_domain, HAL_EXIT_PROCESS, NULL);
-	rtai_catch_event(hal_root_domain, HAL_KICK_PROCESS, NULL);
+	rtai_syscall_hook = saved_rtai_syscall_hook;
+	rtai_migration_hook = NULL;
+	rtai_kevent_hook = NULL;
     
 	reset_rt_fun_entries(rt_sched_entries);
 }
@@ -2483,10 +2498,6 @@ static int __rtai_lxrt_init(void)
 {
 	int cpuid, retval;
 	
-#ifdef IPIPE_NOSTACK_FLAG
-//	ipipe_set_foreign_stack(&rtai_domain);
-#endif
-
 #ifdef CONFIG_RTAI_MALLOC
 	rtai_kstack_heap_size = (rtai_kstack_heap_size + PAGE_SIZE - 1) & ~(PAGE_SIZE - 1);
 	if (rtheap_init(&rtai_kstack_heap, NULL, rtai_kstack_heap_size, PAGE_SIZE, GFP_KERNEL)) {

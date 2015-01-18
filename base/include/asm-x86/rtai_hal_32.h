@@ -302,18 +302,18 @@ struct rtai_realtime_irq_s {
 #define rtai_tskext(idx)  hal_tskext[idx]
 
 /* Use these to grant atomic protection when accessing the hardware */
-#define rtai_hw_cli()                  hal_hw_cli()
-#define rtai_hw_sti()                  hal_hw_sti()
-#define rtai_hw_save_flags_and_cli(x)  hal_hw_local_irq_save(x)
-#define rtai_hw_restore_flags(x)       hal_hw_local_irq_restore(x)
-#define rtai_hw_save_flags(x)          hal_hw_local_irq_flags(x)
+#define rtai_hw_cli()                  hard_local_irq_disable_notrace()
+#define rtai_hw_sti()                  hard_local_irq_enable_notrace()
+#define rtai_hw_save_flags_and_cli(x)  do { x = hard_local_irq_save_notrace(); } while(0)
+#define rtai_hw_restore_flags(x)       hard_local_irq_restore_notrace(x)
+#define rtai_hw_save_flags(x)          do { x = hard_local_save_flags(); } while(0)
 
 /* Use these to grant atomic protection in hard real time code */
-#define rtai_cli()                  hal_hw_cli()
-#define rtai_sti()                  hal_hw_sti()
-#define rtai_save_flags_and_cli(x)  hal_hw_local_irq_save(x)
-#define rtai_restore_flags(x)       hal_hw_local_irq_restore(x)
-#define rtai_save_flags(x)          hal_hw_local_irq_flags(x)
+#define rtai_cli()                  hard_local_irq_disable_notrace()
+#define rtai_sti()                  hard_local_irq_enable_notrace()
+#define rtai_save_flags_and_cli(x)  do { x = hard_local_irq_save_notrace(); } while(0)
+#define rtai_restore_flags(x)       hard_local_irq_restore_notrace(x)
+#define rtai_save_flags(x)          do { x = hard_local_save_flags(); } while(0)
 
 #define RTAI_LT_KERNEL_VERSION_FOR_NONPERCPU  KERNEL_VERSION(2,6,20)
 

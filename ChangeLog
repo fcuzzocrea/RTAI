@@ -2,8 +2,8 @@
 
 	* addons/rtdm/rtdm_driver.h and xn.h: a few changes to work also
 	  without legacy constraints.
-	* base/arch/x86/hal/hal_32.c: a series of changes to work also without 
-	  legacy constraints and some cleaning.
+	* base/arch/x86/hal/hal_32.c and hal_64.c: a series of changes to work 
+	  also without legacy constraints and some cleaning.
 	* base/include/rtai_hal_names.h: cleaned up, also in relation to a few 
 	  changes to work also without legacy constraints.
 	* base/include/rtai_hal_schecore.h: a few changes to work also without

@@ -23,6 +23,7 @@
 #ifndef _RTAI_XNSTUFF_H
 #define _RTAI_XNSTUFF_H
 
+#include <linux/compat.h>
 #include <linux/version.h>
 #include <linux/proc_fs.h>
 #include <asm/uaccess.h>
@@ -64,7 +65,7 @@
 ({                                                              \
         unsigned long __flags, __ret;                           \
         local_irq_save_hw_smp(__flags);                         \
-        __ret = ipipe_test_pipeline_from(&rthal_domain);        \
+        __ret = ipipe_test_head();			        \
         local_irq_restore_hw_smp(__flags);                      \
         __ret;                                                  \
 })
@@ -110,8 +111,8 @@ typedef struct { volatile unsigned long lock[2]; } xnlock_t;
 
 #ifndef local_irq_save_hw_smp
 #ifdef CONFIG_SMP
-#define local_irq_save_hw_smp(flags)    local_irq_save_hw(flags)
-#define local_irq_restore_hw_smp(flags) local_irq_restore_hw(flags)
+#define local_irq_save_hw_smp(flags)    do { (flags) = hard_local_irq_save(); } while(0)
+#define local_irq_restore_hw_smp(flags) hard_local_irq_restore(flags)
 #else /* !CONFIG_SMP */
 #define local_irq_save_hw_smp(flags)    do { (void)(flags); } while (0)
 #define local_irq_restore_hw_smp(flags) do { } while (0)

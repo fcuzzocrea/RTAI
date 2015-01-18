@@ -242,6 +242,7 @@ static inline RT_TASK* __task_init(unsigned long name, int prio, int stack_size,
 	    } else {
 			cpus_allowed = rtai_cpuid();
 	    }
+		memset(current->ptd, 0, sizeof(current->ptd));
 	    if (!set_rtext(rt_task, prio, 0, 0, cpus_allowed, 0)) {
 	        rt_task->fun_args = (long *)((struct fun_args *)(rt_task + 1));
 		rt_task->msg_buf[0] = msg_buf0;
@@ -253,7 +254,7 @@ static inline RT_TASK* __task_init(unsigned long name, int prio, int stack_size,
 #ifdef __IPIPE_FEATURE_ENABLE_NOTIFIER
 			ipipe_enable_notifier(current);
 #else
-			current->flags |= PF_EVNOTIFY;
+			ipipe_enable_notifier(current);
 #endif
 #if (defined VM_PINNED) && (defined CONFIG_MMU)
 			ipipe_disable_ondemand_mappings(current);

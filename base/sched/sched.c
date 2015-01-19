@@ -2101,17 +2101,16 @@ static inline void rt_signal_wake_up(RT_TASK *task)
 
 static void lxrt_intercept_schedule_tail (struct task_struct *task)
 {
-{
-	fast_schedule(task->rtai_tskext(TSKEXT0), current, rtai_cpuid());
-	return;
-} {
-	int cpuid = rtai_cpuid();
-	struct klist_t *klistp = &wake_up_sth[cpuid];
-	while (klistp->out != klistp->in) {
-		fast_schedule(klistp->task[klistp->out++ & (MAX_WAKEUP_SRQ - 1)], current, cpuid);
+	if (task) {
+		fast_schedule(task->rtai_tskext(TSKEXT0), current, rtai_cpuid());
+	} else {
+		int cpuid = rtai_cpuid();
+		struct klist_t *klistp = &wake_up_sth[cpuid];
+		while (klistp->out != klistp->in) {
+			fast_schedule(klistp->task[klistp->out++ & (MAX_WAKEUP_SRQ - 1)], current, cpuid);
+		}
 	}
 	return;
-}
 }
 
 struct sig_wakeup_t { struct task_struct *task; };

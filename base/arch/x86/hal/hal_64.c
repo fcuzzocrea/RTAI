@@ -1657,7 +1657,7 @@ int __rtai_hal_init (void)
 
 #ifdef CONFIG_SMP
 	if (IsolCpusMask && (IsolCpusMask != cpu_isolated_map)) {
-		printk("\nWARNING: IsolCpusMask does not match what set at boot. \n");
+		printk("\nWARNING: IsolCpusMask does not match what set at boot time. \n");
 	}
 	if (!IsolCpusMask) {
 		IsolCpusMask = cpu_isolated_map;

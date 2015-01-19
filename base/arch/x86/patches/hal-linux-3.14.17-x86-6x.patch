@@ -10626,7 +10626,7 @@ index 0000000..c5b022b
 +EXPORT_SYMBOL_GPL(__ipipe_notify_vm_preemption);
 +#endif /* CONFIG_IPIPE_HAVE_VM_NOTIFIER */
 +
-+static void dispatch_irq_head(unsigned int irq) /* hw interrupts off */
++static void nu_dispatch_irq_head(unsigned int irq) /* hw interrupts off */
 +{
 +	struct ipipe_percpu_domain_data *p = ipipe_this_cpu_head_context(), *old;
 +	struct ipipe_domain *head = p->domain;
@@ -10669,7 +10669,7 @@ index 0000000..c5b022b
 +	__ipipe_do_sync_pipeline(head);
 +}
 +
-+void nu__ipipe_dispatch_irq(unsigned int irq, int flags) /* hw interrupts off */
++void __ipipe_dispatch_irq(unsigned int irq, int flags) /* hw interrupts off */
 +{
 +	struct ipipe_domain *ipd;
 +	struct irq_desc *desc;

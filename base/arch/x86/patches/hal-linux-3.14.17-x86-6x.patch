@@ -9094,7 +9094,7 @@ new file mode 100644
 index 0000000..da3183f
 --- /dev/null
 +++ b/kernel/ipipe/compat.c
-@@ -0,0 +1,273 @@
+@@ -0,0 +1,275 @@
 +/* -*- linux-c -*-
 + * linux/kernel/ipipe/compat.c
 + *
@@ -9117,6 +9117,7 @@ index 0000000..da3183f
 + *
 + * I-pipe legacy interface.
 + */
++#if 0
 +#include <linux/version.h>
 +#include <linux/module.h>
 +#include <linux/init.h>
@@ -9368,6 +9369,7 @@ index 0000000..da3183f
 +{
 +	return __ipipe_root_p;
 +}
++#endif
 diff --git a/kernel/ipipe/core.c b/kernel/ipipe/core.c
 new file mode 100644
 index 0000000..c5b022b

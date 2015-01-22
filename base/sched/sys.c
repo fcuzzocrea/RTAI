@@ -866,7 +866,6 @@ long kernel_calibrator_spv(long period, long loops, RT_TASK *task)
 }
 
 #if 0
-void rt_daemonize(void);
 
 struct thread_args { void *fun; long data; int priority; int policy; int cpus_allowed; RT_TASK *task; struct semaphore *sem; };
 
@@ -874,7 +873,6 @@ static void kthread_fun(struct thread_args *args)
 {
 	int linux_rt_priority;
 
-	rt_daemonize();
         if (args->policy == SCHED_NORMAL) {
                 linux_rt_priority = 0;
         } else if ((linux_rt_priority = MAX_RT_PRIO - 1 - args->priority) < 1) {
@@ -932,7 +930,6 @@ RT_TASK *rt_thread_init(unsigned long name, int priority, int max_msg_size, int 
                 linux_rt_priority = 1;
 	}
 	rtai_set_linux_task_priority(current, policy, linux_rt_priority);
-//	rt_daemonize();
 	if ((task = __task_init(name ? name : rt_get_name(NULL), priority, 0, max_msg_size, cpus_allowed))) {
 		rt_make_hard_real_time(task);
 	} 

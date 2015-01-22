@@ -1899,63 +1899,19 @@ static inline void fast_schedule(struct task_struct *task)
 	rtai_sti();
 }
 
+static struct sthsem { struct rt_queue queue; int count; } sthsems[NR_RT_CPUS];
 
-/* detach the kernel thread from user space; not fully, only:
-   session, process-group, tty. */ 
-
-#if LINUX_VERSION_CODE < KERNEL_VERSION(2,6,24)
-
-void rt_daemonize(void)
+static void rtai_init_sthsems(void)
 {
-#if LINUX_VERSION_CODE < KERNEL_VERSION(2,6,0)
-	current->session = 1;
-	current->pgrp    = 1;
-	current->tty     = NULL;
-	spin_lock_irq(&current->sigmask_lock);
-	sigfillset(&current->blocked);
-	recalc_sigpending(current);
-	spin_unlock_irq(&current->sigmask_lock);
-#else
-#if LINUX_VERSION_CODE > KERNEL_VERSION(2,6,19)
-	(current->signal)->__session = 1;
-#else
-	(current->signal)->session   = 1;
-#endif
-	(current->signal)->pgrp    = 1;
-	(current->signal)->tty     = NULL;
-#endif
-#if LINUX_VERSION_CODE < KERNEL_VERSION(2,6,0)
-	spin_lock_irq(&current->sigmask_lock);
-	sigfillset(&current->blocked);
-	recalc_sigpending(current);
-	spin_unlock_irq(&current->sigmask_lock);
-#else
-	spin_lock_irq(&(current->sighand)->siglock);
-	sigfillset(&current->blocked);
-	recalc_sigpending();
-	spin_unlock_irq(&(current->sighand)->siglock);
-#endif
+	int i;
+	for (i = 0; i < NR_RT_CPUS; i++) {
+		sthsems[i].count = 1;
+        	sthsems[i].queue.task = NULL;
+	        sthsems[i].queue.prev = sthsems[i].queue.next = &sthsems[i].queue;
+	}
 }
-EXPORT_SYMBOL(rt_daemonize);
 
-#else
-
-#if LINUX_VERSION_CODE > KERNEL_VERSION(3,0,0)
-
-void rt_daemonize(void) { }
-EXPORT_SYMBOL(rt_daemonize);
-
-#else
-
-extern void rt_daemonize(void);
-
-#endif
-
-#endif
-  
-struct sthsem { struct rt_queue queue; int count; } sthsems[NR_RT_CPUS];
-
-RTAI_SYSCALL_MODE void __sthsem_wait(RT_TASK *task, struct sthsem *sem)
+static RTAI_SYSCALL_MODE void __sthsem_wait(RT_TASK *task, struct sthsem *sem)
 {
 	unsigned long flags;
 
@@ -2000,7 +1956,6 @@ static inline void sthsem_signal(struct sthsem *sem)
 	rt_global_sti();
 }
 
-extern struct ipipe_percpu_data ipipe_percpu;
 void steal_from_linux(RT_TASK *rt_task)
 {
 	struct task_struct *lnxtsk;
@@ -2081,7 +2036,6 @@ void give_back_to_linux(RT_TASK *rt_task, int keeprio)
 		}
 	}
 #endif
-
 	return;
 }
 
@@ -2502,12 +2456,7 @@ static int lxrt_init(void)
 	rtai_proc_lxrt_register();
 #endif
 	
-	for (cpuid = 0; cpuid < NR_RT_CPUS; cpuid++) {
-		sthsems[cpuid].count = 1;
-        	sthsems[cpuid].queue.task = NULL;
-	        sthsems[cpuid].queue.prev =  sthsems[cpuid].queue.next = &sthsems[cpuid].queue;
-	}
-
+	rtai_init_sthsems();
 	saved_rtai_syscall_hook = rtai_syscall_hook;
 	rtai_syscall_hook = lxrt_intercept_syscall;
 	rtai_kevent_hook = lxrt_intercept_kevents;

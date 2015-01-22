@@ -2,7 +2,8 @@
 
 	* base/sched/sched.c: serialize symultaneous uses of steal_from_linux
 	  on the same cpu, directly pass fast_schedule as a migration_hook for
-	  the patch. 
+	  the patch; removed rt_daemonize stuff.
+	* base/sched/sys.c: removed rt_daemonize stuff.
 
 2015-01-18 Paolo Mantegazza <mantegazza@aero.polimi.it>
 

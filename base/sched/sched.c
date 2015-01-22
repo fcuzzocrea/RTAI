@@ -81,7 +81,6 @@ int rt_smp_oneshot_timer[NR_RT_CPUS];
 
 volatile int rt_sched_timed;
 
-static struct klist_t wake_up_sth[NR_RT_CPUS];
 struct klist_t wake_up_hts[NR_RT_CPUS];
 struct klist_t wake_up_srq[NR_RT_CPUS];
 
@@ -1878,8 +1877,12 @@ void rt_schedule_soft_tail(RT_TASK *rt_task, int cpuid)
 	_rt_schedule_soft_tail(rt_task, cpuid);
 }
 
-static inline void fast_schedule(RT_TASK *new_task, struct task_struct *lnxtsk, int cpuid)
+//static inline void fast_schedule(RT_TASK *new_task, struct task_struct *lnxtsk, int cpuid)
+static inline void fast_schedule(struct task_struct *task)
 {
+	RT_TASK *new_task = task->rtai_tskext(TSKEXT0);
+	struct task_struct *lnxtsk = current;
+	int cpuid = new_task->runnable_on_cpus;
 	RT_TASK *rt_current;
 	rt_global_cli();
 	new_task->state |= RT_SCHED_READY;
@@ -1950,19 +1953,64 @@ extern void rt_daemonize(void);
 
 #endif
   
+struct sthsem { struct rt_queue queue; int count; } sthsems[NR_RT_CPUS];
+
+RTAI_SYSCALL_MODE void __sthsem_wait(RT_TASK *task, struct sthsem *sem)
+{
+	unsigned long flags;
+
+	flags = rt_global_save_flags_and_cli();
+	if (--sem->count < 0) {
+		task->state |= RT_SCHED_SEMAPHORE;
+		NON_RTAI_TASK_SUSPEND(task);
+		(task->rprev)->rnext = task->rnext;
+		(task->rnext)->rprev = task->rprev;
+		enqueue_blocked(task, &sem->queue, 0);
+		rt_schedule();
+	}
+	rt_global_restore_flags(flags);
+	return;
+}
+
+static inline void sthsem_wait(RT_TASK *task, struct sthsem *sem)
+{
+	task->fun_args[0] = (unsigned long)task;
+	task->fun_args[1] = (unsigned long)sem;
+	((struct fun_args *)task->fun_args)->fun = (void *)__sthsem_wait;
+	rt_schedule_soft(task);
+	return;
+}
+
+static inline void sthsem_signal(struct sthsem *sem)
+{
+	RT_TASK *task;
+
+	rt_global_cli();
+	if ((task = (sem->queue.next)->task)) {
+		sem->count++;
+		dequeue_blocked(task);
+		if (task->state != RT_SCHED_READY && (task->state &= ~RT_SCHED_SEMAPHORE) == RT_SCHED_READY) {
+			task->state |= RT_SCHED_SFTRDY;
+			NON_RTAI_TASK_RESUME(task);
+			rt_schedule();
+		}
+	} else {
+		sem->count = 1;
+	}
+	rt_global_sti();
+}
+
 extern struct ipipe_percpu_data ipipe_percpu;
 void steal_from_linux(RT_TASK *rt_task)
 {
-	struct klist_t *klistp;
 	struct task_struct *lnxtsk;
+	struct sthsem *sem = &sthsems[rt_task->runnable_on_cpus];
 
+	sthsem_wait(rt_task, sem);
 	if (signal_pending(rt_task->lnxtsk)) {
 		rt_task->is_hard = -1;
 		return;
 	}
-	klistp = &wake_up_sth[rt_task->runnable_on_cpus];
-	rtai_cli();
-	klistp->task[klistp->in++ & (MAX_WAKEUP_SRQ - 1)] = rt_task;
 	if (rt_task->base_priority >= BASE_SOFT_PRIORITY) {
 		rt_task->base_priority -= BASE_SOFT_PRIORITY;
 	}
@@ -1970,21 +2018,19 @@ void steal_from_linux(RT_TASK *rt_task)
 		rt_task->priority -= BASE_SOFT_PRIORITY;
 	}
 	rt_task->is_hard = 1;
-	rtai_sti();
-	do {
-		__ipipe_migrate_head();
-	} while (rt_task->state != RT_SCHED_READY);		
-	lnxtsk = rt_task->lnxtsk;
+	__ipipe_migrate_head();
 #if CONFIG_RTAI_MONITOR_EXECTIME
 	if (!rt_task->exectime[1]) {
 		rt_task->exectime[1] = rtai_rdtsc();
 	}
 #endif
+	lnxtsk = rt_task->lnxtsk;
 	if (lnxtsk_uses_fpu(lnxtsk)) {
 		rtai_cli();
 		restore_fpu(lnxtsk);
 	}
 	rtai_sti();
+	sthsem_signal(sem);
 }
 
 void give_back_to_linux(RT_TASK *rt_task, int keeprio)
@@ -2099,6 +2145,7 @@ static inline void rt_signal_wake_up(RT_TASK *task)
 }
 
 
+#if 0
 static void lxrt_intercept_schedule_tail (struct task_struct *task)
 {
 	if (task) {
@@ -2112,6 +2159,7 @@ static void lxrt_intercept_schedule_tail (struct task_struct *task)
 	}
 	return;
 }
+#endif
 
 struct sig_wakeup_t { struct task_struct *task; };
 static int lxrt_intercept_sig_wakeup (long event, void *data)
@@ -2454,10 +2502,16 @@ static int lxrt_init(void)
 	rtai_proc_lxrt_register();
 #endif
 	
+	for (cpuid = 0; cpuid < NR_RT_CPUS; cpuid++) {
+		sthsems[cpuid].count = 1;
+        	sthsems[cpuid].queue.task = NULL;
+	        sthsems[cpuid].queue.prev =  sthsems[cpuid].queue.next = &sthsems[cpuid].queue;
+	}
+
 	saved_rtai_syscall_hook = rtai_syscall_hook;
 	rtai_syscall_hook = lxrt_intercept_syscall;
 	rtai_kevent_hook = lxrt_intercept_kevents;
-	rtai_migration_hook = lxrt_intercept_schedule_tail;
+	rtai_migration_hook = fast_schedule; //lxrt_intercept_schedule_tail;
 
 	return 0;
 }

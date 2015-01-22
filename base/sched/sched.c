@@ -1913,9 +1913,7 @@ static void rtai_init_sthsems(void)
 
 static RTAI_SYSCALL_MODE void __sthsem_wait(RT_TASK *task, struct sthsem *sem)
 {
-	unsigned long flags;
-
-	flags = rt_global_save_flags_and_cli();
+	rt_global_cli();
 	if (--sem->count < 0) {
 		task->state |= RT_SCHED_SEMAPHORE;
 		NON_RTAI_TASK_SUSPEND(task);
@@ -1924,7 +1922,7 @@ static RTAI_SYSCALL_MODE void __sthsem_wait(RT_TASK *task, struct sthsem *sem)
 		enqueue_blocked(task, &sem->queue, 0);
 		rt_schedule();
 	}
-	rt_global_restore_flags(flags);
+	rt_global_sti();
 	return;
 }
 

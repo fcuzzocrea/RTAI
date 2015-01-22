@@ -251,16 +251,11 @@ static inline RT_TASK* __task_init(unsigned long name, int prio, int stack_size,
 		rt_task->max_msg_size[1] = max_msg_size;
 		if (rt_register(name, rt_task, IS_TASK, 0)) {
 			rt_task->state = 0;
-#ifdef __IPIPE_FEATURE_ENABLE_NOTIFIER
 			ipipe_enable_notifier(current);
-#else
-			ipipe_enable_notifier(current);
-#endif
-#if (defined VM_PINNED) && (defined CONFIG_MMU)
-			ipipe_disable_ondemand_mappings(current);
+#ifdef CONFIG_MMU
+			__ipipe_disable_ondemand_mappings(current);
 #endif
 			RTAI_OOM_DISABLE();
-
 			rt_set_task_pid(rt_task);
 			return rt_task;
 		} else {

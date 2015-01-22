@@ -10531,7 +10531,7 @@ index 0000000..c5b022b
 +	return ret;
 +}
 +
-+void __weak ipipe_migration_hook(struct task_struct *p)
++static inline ipipe_migration_hook(struct task_struct *p)
 +{
 +	if (rtai_migration_hook) rtai_migration_hook(p);
 +}
@@ -14284,7 +14284,7 @@ index 515e212..8328320 100644
 +
 +if (unlikely(rq)) {
 +	if (unlikely(__ipipe_switch_tail()))
-+		return 1; // __ipipe_notify_kevent(-2, NULL);
++		return 1;
  	/*
  	 * this_rq must be evaluated again because prev may have moved
  	 * CPUs since it called schedule(), thus the 'rq' on its stack

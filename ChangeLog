@@ -1,3 +1,13 @@
+2015-01-24 Paolo Mantegazza <mantegazza@aero.polimi.it>
+
+	* base/arch/x86/hal/hal_32.c: exploit oneshot hardware timing setting 
+	  from the modified patch, working but still to be finished along with
+	  some cleaning more.
+	* base/include/asm-x86/rtai_hal_32.h: optionally set the oneshot delay 
+	  by optionally using ipipe_timer_set if X86_FEATURE_TSC_DEADLINE_TIMER.
+	* base/sched/sched.c: do not provide rt_linux_hrt_set_mode any more, 
+	  use the one found of rtai_hal.c.
+
 2015-01-22 Paolo Mantegazza <mantegazza@aero.polimi.it>
 
 	* base/sched/sched.c: serialize symultaneous uses of steal_from_linux

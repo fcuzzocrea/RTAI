@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 1999-2013 Paolo Mantegazza <mantegazza@aero.polimi.it>
+ * Copyright (C) 1999-2015 Paolo Mantegazza <mantegazza@aero.polimi.it>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License as
@@ -1359,19 +1359,7 @@ void rt_set_oneshot_mode(void)
 #include <linux/clockchips.h>
 #include <linux/ipipe_tickdev.h>
 
-extern void *rt_linux_hrt_set_mode;
 extern void *rt_linux_hrt_next_shot;
-
-static void _rt_linux_hrt_set_mode(enum clock_event_mode mode, void * hrt_dev) // ??? struct ipipe_tick_device *hrt_dev)
-{
-	int cpuid = rtai_cpuid();
-
-	if (mode == CLOCK_EVT_MODE_ONESHOT || mode == CLOCK_EVT_MODE_SHUTDOWN) {
-		rt_times.linux_tick = 0;
-	} else if (mode == CLOCK_EVT_MODE_PERIODIC) {
-		rt_times.linux_tick = nano2count_cpuid((1000000000 + HZ/2)/HZ, cpuid);
-	}
-}
 
 static int _rt_linux_hrt_next_shot(unsigned long deltat, void *hrt_dev) // ??? struct ipipe_tick_device *hrt_dev)
 {
@@ -2117,7 +2105,7 @@ struct sig_wakeup_t { struct task_struct *task; };
 static int lxrt_intercept_sig_wakeup (long event, void *data)
 {
 	RT_TASK *task;
-	if ((task = INTERCEPT_WAKE_UP_TASK(data)->rtai_tskext(TSKEXT0))) {
+	if ((task = INTERCEPT_WAKE_UP_TASK(data)->rtai_tskext(TSKEXT0)) && task->is_hard > 0) {
 		rt_signal_wake_up(task);
 		return 1;
 	}
@@ -2611,7 +2599,6 @@ static int __rtai_lxrt_init(void)
 
 exit:
 #if defined(CONFIG_GENERIC_CLOCKEVENTS) && CONFIG_RTAI_RTC_FREQ == 0
-	rt_linux_hrt_set_mode  = _rt_linux_hrt_set_mode;
 	rt_linux_hrt_next_shot = _rt_linux_hrt_next_shot;
 #endif
 	return retval;
@@ -2637,7 +2624,6 @@ static void __rtai_lxrt_exit(void)
 	unregister_reboot_notifier(&lxrt_reboot_notifier);
 
 #if defined(CONFIG_GENERIC_CLOCKEVENTS) && CONFIG_RTAI_RTC_FREQ == 0
-	rt_linux_hrt_set_mode  = NULL;
 	rt_linux_hrt_next_shot = NULL;
 #endif
 

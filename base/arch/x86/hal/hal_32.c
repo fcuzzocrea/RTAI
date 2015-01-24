@@ -1644,7 +1644,7 @@ void ack_bad_irq(unsigned int irq)
 extern struct ipipe_domain ipipe_root;
 void free_isolcpus_from_linux(void *);
 extern unsigned long cpu_isolated_map; 
-extern void (*rtai_irq_handler)(int);
+extern void (*dispatch_irq_head)(unsigned int);
 extern int (*rtai_trap_hook)(unsigned, struct pt_regs *);
 
 int __rtai_hal_init (void)
@@ -1684,7 +1684,7 @@ int __rtai_hal_init (void)
 	}
 
 	ipipe_request_irq(hal_root_domain, rtai_sysreq_virq, (void *)rtai_lsrq_dispatcher, NULL, NULL);
-	rtai_irq_handler = (void *)rtai_hirq_dispatcher;
+	dispatch_irq_head = (void *)rtai_hirq_dispatcher;
 
 	rtai_install_archdep();
 
@@ -1738,7 +1738,7 @@ void __rtai_hal_exit (void)
 	rtai_proc_unregister();
 #endif
 	ipipe_unregister_head(&rtai_domain);
-	rtai_irq_handler = NULL;
+	dispatch_irq_head = NULL;
 	rtai_trap_hook = NULL;
 	ipipe_free_irq(hal_root_domain, rtai_sysreq_virq);
 	ipipe_free_virq(rtai_sysreq_virq);

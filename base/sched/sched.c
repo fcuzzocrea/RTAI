@@ -1977,7 +1977,7 @@ void steal_from_linux(RT_TASK *rt_task)
 		rt_task->exectime[1] = rtai_rdtsc();
 	}
 #endif
-	lnxtsk = rt_task->lnxtsk;
+	(lnxtsk = rt_task->lnxtsk)->state = TASK_HARDREALTIME;
 	if (lnxtsk_uses_fpu(lnxtsk)) {
 		rtai_cli();
 		restore_fpu(lnxtsk);

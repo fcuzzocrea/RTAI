@@ -3945,15 +3945,15 @@ index 0000000..ac71e70
 +
 +void ipipe_send_ipi(unsigned int ipi, cpumask_t cpumask)
 +{
-+	unsigned long flags;
++//	unsigned long flags;
 +
-+	flags = hard_local_irq_save();
++//	flags = hard_local_irq_save();
 +
 +	cpu_clear(ipipe_processor_id(), cpumask);
 +	if (likely(!cpus_empty(cpumask)))
 +		apic->send_IPI_mask(&cpumask, ipipe_apic_irq_vector(ipi));
 +
-+	hard_local_irq_restore(flags);
++//	hard_local_irq_restore(flags);
 +}
 +EXPORT_SYMBOL_GPL(ipipe_send_ipi);
 +
@@ -9423,8 +9423,8 @@ index 0000000..c5b022b
 +EXPORT_SYMBOL(rtai_kevent_hook);
 +void (*rtai_migration_hook)(struct task_struct *) = NULL;
 +EXPORT_SYMBOL(rtai_migration_hook);
-+void (*rtai_irq_handler)(int) = NULL;
-+EXPORT_SYMBOL(rtai_irq_handler);
++void (*dispatch_irq_head)(unsigned int) = NULL;
++EXPORT_SYMBOL(dispatch_irq_head);
 +
 +struct ipipe_domain ipipe_root;
 +EXPORT_SYMBOL_GPL(ipipe_root);
@@ -10770,7 +10770,7 @@ index 0000000..c5b022b
 +		if (unlikely(flags & IPIPE_IRQF_NOSYNC))
 +			__ipipe_set_irq_pending(ipd, irq);
 +		else
-+			rtai_irq_handler(irq); // dispatch_irq_head(irq);
++			dispatch_irq_head(irq);
 +		return;
 +	}
 +

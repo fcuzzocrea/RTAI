@@ -11783,7 +11783,7 @@ index 0000000..0c9b908
 +	if (t->c2t_frac)
 +		tdelay += ((unsigned long long)cdelay * t->c2t_frac) >> 32;
 +
-+	if (tdelay < t->min_delay_ticks
++	t->set(tdelay, t->timer_set); return; if (tdelay < t->min_delay_ticks
 +	    || t->set(tdelay, t->timer_set) < 0)
 +		ipipe_raise_irq(t->irq);
 +}

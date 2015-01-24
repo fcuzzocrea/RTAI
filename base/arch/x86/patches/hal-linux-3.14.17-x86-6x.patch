@@ -11683,9 +11683,9 @@ index 0000000..0c9b908
 +
 +	flags = ipipe_critical_enter(NULL);
 +
-+	ret = 0; /* ipipe_request_irq(ipipe_head_domain, timer->irq,
++	ret = ipipe_request_irq(ipipe_head_domain, timer->irq,
 +				(ipipe_irq_handler_t)tick_handler,
-+				NULL, __ipipe_ack_hrtimer_irq); */
++				NULL, __ipipe_ack_hrtimer_irq);
 +	if (ret < 0 && ret != -EBUSY) {
 +		ipipe_critical_exit(flags);
 +		return ret;

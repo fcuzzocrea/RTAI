@@ -429,11 +429,18 @@ static inline unsigned long long _rtai_hidden_rdtsc (void) {
 #else
 
 //#define CONFIG_RTAI_DIAG_TSC_SYNC
-#if defined(CONFIG_SMP) && defined(CONFIG_RTAI_DIAG_TSC_SYNC) && defined(CONFIG_RTAI_TUNE_TSC_SYNC)
+#if 0 //defined(CONFIG_SMP) && defined(CONFIG_RTAI_DIAG_TSC_SYNC) && defined(CONFIG_RTAI_TUNE_TSC_SYNC)
 extern volatile long rtai_tsc_ofst[];
 #define rtai_rdtsc() ({ unsigned long long t; __asm__ __volatile__( "rdtsc" : "=A" (t)); t - rtai_tsc_ofst[rtai_cpuid()]; })
-#else
+//#else
 #define rtai_rdtsc() ({ unsigned long long t; __asm__ __volatile__( "rdtsc" : "=A" (t)); t; })
+#endif
+
+#if defined(CONFIG_SMP) && defined(CONFIG_RTAI_DIAG_TSC_SYNC) && defined(CONFIG_RTAI_TUNE_TSC_SYNC)
+extern volatile long rtai_tsc_ofst[];
+#define rtai_rdtsc() ({ unsigned long long t; ipipe_read_tsc(t); t - rtai_tsc_ofst[rtai_cpuid()]; })
+#else
+#define rtai_rdtsc() ({ unsigned long long t; ipipe_read_tsc(t); t; })
 #endif
 
 #endif
@@ -495,12 +502,17 @@ static inline unsigned long rtai_save_flags_irqbit_and_cli(void)
 #define SCHED_VECTOR  RTAI_SMP_NOTIFY_VECTOR
 #define SCHED_IPI     RTAI_SMP_NOTIFY_IPI
 
+#if 0
 #define _send_sched_ipi(dest) \
 do { \
 	apic_wait_icr_idle(); \
 	apic_write_around(APIC_ICR2, SET_APIC_DEST_FIELD(dest)); \
 	apic_write_around(APIC_ICR, APIC_DEST_LOGICAL | SCHED_VECTOR); \
 } while (0)
+#else
+#define _send_sched_ipi(dest) \
+	do { ipipe_send_ipi(SCHED_IPI, *((cpumask_t *)&dest)); } while (0)
+#endif
 
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,0)
 #if LINUX_VERSION_CODE < KERNEL_VERSION(2,6,33)

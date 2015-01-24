@@ -6,7 +6,7 @@
  *   the original RTAI layer for x86.
  *
  *   Original RTAI/x86 layer implementation: \n
- *   Copyright &copy; 2000-2013 Paolo Mantegazza, \n
+ *   Copyright &copy; 2000-2015 Paolo Mantegazza, \n
  *   Copyright &copy; 2000 Steve Papacharalambous, \n
  *   Copyright &copy; 2000 Stuart Hughes, \n
  *   and others.
@@ -851,24 +851,30 @@ static inline unsigned long save_and_set_taskpri(unsigned long taskpri)
 	do { apic_write_around(APIC_TASKPRI, taskpri); } while (0)
 #endif
 
+#include <linux/ipipe_tickdev.h>
 static inline void rt_set_timer_delay(int delay)
 {
 	if (delay) {
-		unsigned long flags;
-		rtai_hw_save_flags_and_cli(flags);
-#ifdef CONFIG_X86_LOCAL_APIC
-		if (this_cpu_has(X86_FEATURE_TSC_DEADLINE_TIMER)) {
-			wrmsrl(MSR_IA32_TSC_DEADLINE, rtai_rdtsc() + delay);
+		if (1 || this_cpu_has(X86_FEATURE_TSC_DEADLINE_TIMER)) {
+			ipipe_timer_set(delay); 
+			return;
 		} else {
-			delay = rtai_imuldiv(delay, rtai_tunables.apic_freq, rtai_tunables.cpu_freq);
-			apic_write_around(APIC_TMICT, delay);
-		}
+			unsigned long flags;
+			rtai_hw_save_flags_and_cli(flags);
+#ifdef CONFIG_X86_LOCAL_APIC
+			if (this_cpu_has(X86_FEATURE_TSC_DEADLINE_TIMER)) {
+				wrmsrl(MSR_IA32_TSC_DEADLINE, rtai_rdtsc() + delay);
+			} else {
+				delay = rtai_imuldiv(delay, rtai_tunables.apic_freq, rtai_tunables.cpu_freq);
+				apic_write_around(APIC_TMICT, delay);
+			}
 #else /* !CONFIG_X86_LOCAL_APIC */
-		delay = rtai_imuldiv(delay, RTAI_FREQ_8254, rtai_tunables.cpu_freq);
-		outb(delay & 0xff,0x40);
-		outb(delay >> 8,0x40);
+			delay = rtai_imuldiv(delay, RTAI_FREQ_8254, rtai_tunables.cpu_freq);
+			outb(delay & 0xff,0x40);
+			outb(delay >> 8,0x40);
 #endif /* CONFIG_X86_LOCAL_APIC */
-		rtai_hw_restore_flags(flags);
+			rtai_hw_restore_flags(flags);
+		}
 	}
 }
 

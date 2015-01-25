@@ -171,10 +171,6 @@ struct rt_times rt_smp_times[RTAI_NR_CPUS];
 
 struct rtai_switch_data rtai_linux_context[RTAI_NR_CPUS];
 
-#if LINUX_VERSION_CODE < RTAI_LT_KERNEL_VERSION_FOR_NONPERCPU
-volatile unsigned long *ipipe_root_status[RTAI_NR_CPUS];
-#endif
-
 struct calibration_data rtai_tunables;
 
 volatile unsigned long rtai_cpu_realtime;
@@ -1890,9 +1886,6 @@ EXPORT_SYMBOL(rt_printk);
 EXPORT_SYMBOL(rt_sync_printk);
 
 EXPORT_SYMBOL(rt_scheduling);
-#if LINUX_VERSION_CODE < RTAI_LT_KERNEL_VERSION_FOR_NONPERCPU
-EXPORT_SYMBOL(ipipe_root_status);
-#endif
 
 EXPORT_SYMBOL(IsolCpusMask);
 

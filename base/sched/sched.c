@@ -2102,21 +2102,21 @@ static void lxrt_intercept_schedule_tail (struct task_struct *task)
 #endif
 
 struct sig_wakeup_t { struct task_struct *task; };
-static int lxrt_intercept_sig_wakeup (long event, void *data)
+static int lxrt_intercept_sig_wakeup(struct task_struct *lnxtsk)
 {
 	RT_TASK *task;
-	if ((task = INTERCEPT_WAKE_UP_TASK(data)->rtai_tskext(TSKEXT0)) && task->is_hard > 0) {
+	if ((task = lnxtsk->rtai_tskext(TSKEXT0)) && task->is_hard > 0) {
 		rt_signal_wake_up(task);
 		return 1;
 	}
 	return 0;
 }
 
-static int lxrt_intercept_exit (unsigned long event, struct task_struct *lnx_task)
+static int lxrt_intercept_exit(struct task_struct *lnxtsk)
 {
 	extern void linux_process_termination(void);
 	RT_TASK *task;
-	if ((task = lnx_task->rtai_tskext(TSKEXT0))) {
+	if ((task = lnxtsk->rtai_tskext(TSKEXT0))) {
 		if (task->is_hard > 0) {
 			give_back_to_linux(task, 0);
 		}
@@ -2131,12 +2131,12 @@ static int lxrt_intercept_kevents(int kevent, void *data)
 		case IPIPE_KEVT_SCHEDULE:
 			return 0;
 		case IPIPE_KEVT_SIGWAKE:
-                	return lxrt_intercept_sig_wakeup(kevent, data);
+                	return lxrt_intercept_sig_wakeup(data);
 		case IPIPE_KEVT_SETSCHED:
 		case IPIPE_KEVT_SETAFFINITY:
 			return 0;
 		case IPIPE_KEVT_EXIT:
-			return lxrt_intercept_exit(kevent, data);
+			return lxrt_intercept_exit(data);
 		case IPIPE_KEVT_CLEANUP:
 		case IPIPE_KEVT_HOSTRT:
 		default:

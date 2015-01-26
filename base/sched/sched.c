@@ -1887,6 +1887,10 @@ static inline void fast_schedule(struct task_struct *task)
 	rtai_sti();
 }
 
+#define SERIALIZE_STEAL_FROM_LINUX
+
+#ifdef SERIALIZE_STEAL_FROM_LINUX
+
 static struct sthsem { struct rt_queue queue; int count; } sthsems[NR_RT_CPUS];
 
 static void rtai_init_sthsems(void)
@@ -1942,12 +1946,20 @@ static inline void sthsem_signal(struct sthsem *sem)
 	rt_global_sti();
 }
 
+#else
+
+static void rtai_init_sthsems(void) { }
+
+#endif
+
 void steal_from_linux(RT_TASK *rt_task)
 {
 	struct task_struct *lnxtsk;
+#ifdef SERIALIZE_STEAL_FROM_LINUX
 	struct sthsem *sem = &sthsems[rt_task->runnable_on_cpus];
 
 	sthsem_wait(rt_task, sem);
+#endif
 	if (signal_pending(rt_task->lnxtsk)) {
 		rt_task->is_hard = -1;
 		return;
@@ -1971,7 +1983,9 @@ void steal_from_linux(RT_TASK *rt_task)
 		restore_fpu(lnxtsk);
 	}
 	rtai_sti();
+#ifdef SERIALIZE_STEAL_FROM_LINUX
 	sthsem_signal(sem);
+#endif
 }
 
 void give_back_to_linux(RT_TASK *rt_task, int keeprio)

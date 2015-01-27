@@ -1,3 +1,16 @@
+2015-01-27 Paolo Mantegazza <mantegazza@aero.polimi.it>
+
+	* base/include/rtai.h: move the random numbers generator into 
+	  asm-x86/rtai.h.
+	* base/include/asm/rtai_hal.h: unify 32-64 bits independent code here
+	  and revise real time spin locks and global lock.
+	* base/include/asm/rtai_hal_32.h and rtai_hal_64.h: left with only 
+	  32-64 bits arch specific code.
+	* base/sched/sched.c: use non rtai_cli protected global lock get and 
+	  release from rtai_hal.h.
+	* base/arch/x86/hal/hal_32.c: redefine rtai_cpu_lock according to the 
+	  global lock structure.
+
 2015-01-24 Paolo Mantegazza <mantegazza@aero.polimi.it>
 
 	* base/arch/x86/hal/hal_32.c: exploit oneshot hardware timing setting 

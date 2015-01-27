@@ -156,20 +156,12 @@ static inline void rt_free_sched_ipi(void)
 
 static inline void sched_get_global_lock(int cpuid)
 {
-	barrier(); 
-	if (!test_and_set_bit(cpuid, &rtai_cpu_lock[0])) { 
-		rtai_spin_glock(&rtai_cpu_lock[0]);
-	}
-	barrier();
+	__rt_get_global_lock();
 }
 
 static inline void sched_release_global_lock(int cpuid)
 {
-	barrier();
-	if (test_and_clear_bit(cpuid, &rtai_cpu_lock[0])) {
-		rtai_spin_gunlock(&rtai_cpu_lock[0]);
-	} 
-	barrier(); 
+	__rt_release_global_lock();
 }
 
 #else /* !CONFIG_SMP */

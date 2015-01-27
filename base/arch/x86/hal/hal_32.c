@@ -773,14 +773,14 @@ irqreturn_t rtai_broadcast_to_local_timers (int irq, void *dev_id, struct pt_reg
 {
 	unsigned long flags;
 
-	rtai_hw_save_flags_and_cli(flags);
+	rtai_save_flags_and_cli(flags);
 #ifdef CONFIG_SMP
 	apic_wait_icr_idle();
 //	apic_write_around(APIC_ICR,APIC_DM_FIXED|APIC_DEST_ALLINC|LOCAL_TIMER_VECTOR);
 	apic_write_around(APIC_ICR,APIC_DM_FIXED|APIC_DEST_ALLBUT|LOCAL_TIMER_VECTOR);
 #endif
 	hal_pend_uncond(LOCAL_TIMER_IPI, rtai_cpuid());
-	rtai_hw_restore_flags(flags);
+	rtai_restore_flags(flags);
 
 	return RTAI_LINUX_IRQ_HANDLED;
 } 
@@ -1239,13 +1239,13 @@ RTIME rd_8254_ts (void)
 	int inc, c2;
 	RTIME t;
 
-	rtai_hw_save_flags_and_cli(flags);
+	rtai_save_flags_and_cli(flags);
 	outb(0xD8, 0x43);
 	c2 = inb(0x42);
 	inc = rtai_last_8254_counter2 - (c2 |= (inb(0x42) << 8));
 	rtai_last_8254_counter2 = c2;
 	t = (rtai_ts_8254 += (inc > 0 ? inc : inc + RTAI_COUNTER_2_LATCH));
-	rtai_hw_restore_flags(flags);
+	rtai_restore_flags(flags);
 
 	return t;
 }
@@ -1404,7 +1404,7 @@ static int rtai_trap_fault (unsigned event, struct pt_regs *evdata)
 	   does in math_state_restore anyhow, to stay on the safe side. 
 	   In any case we this we keep it now mostly as a diagnostic and so
 	   let inform the user always. */
-		rtai_hw_cli(); /* in task context, so we can be preempted */
+		rtai_cli(); /* in task context, so we can be preempted */
 		if (lnxtsk_uses_fpu(linux_task)) {
 			restore_fpu(linux_task);
 			if (PrintFpuTrap) {
@@ -1416,7 +1416,7 @@ static int rtai_trap_fault (unsigned event, struct pt_regs *evdata)
 				rt_printk("\nWARNING: FPU INITIALIZATION FROM HARD PID = %d\n", linux_task->pid);
 			}
 		}
-		rtai_hw_sti();
+		rtai_sti();
 		goto endtrap;
 	}
 
@@ -1431,14 +1431,14 @@ static int rtai_trap_fault (unsigned event, struct pt_regs *evdata)
 	   know that it is context-agnostic and does not wreck the
 	   determinism. Any other case would lead us to panicking. */
 
-		rtai_hw_cli();
+		rtai_cli();
 		__asm__("movl %%cr2,%0":"=r" (address));
 		if (address >= TASK_SIZE && !(regs->orig_eax & 5)) { /* i.e. trap error code. */
 			asmlinkage void do_page_fault(struct pt_regs *regs, unsigned long error_code);
 			do_page_fault(regs,regs->orig_eax);
 			goto endtrap;
 		}
-		 rtai_hw_sti();
+		 rtai_sti();
 	}
 #endif /* ADEOS_RELEASE_NUMBER >= 0x02060601 */
 

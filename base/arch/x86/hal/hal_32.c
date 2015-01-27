@@ -175,7 +175,7 @@ struct calibration_data rtai_tunables;
 
 volatile unsigned long rtai_cpu_realtime;
 
-volatile unsigned long rtai_cpu_lock[2];
+struct global_lock rtai_cpu_lock[1];
 
 unsigned long rtai_critical_enter (void (*synch)(void))
 {

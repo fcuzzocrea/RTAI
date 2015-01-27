@@ -99,10 +99,10 @@ typedef unsigned long phys_addr_t;
 
 #define nklock (*((xnlock_t *)rtai_cpu_lock))
 
-#define XNARCH_LOCK_UNLOCKED  (xnlock_t) { { 0, 0 } }
+#define XNARCH_LOCK_UNLOCKED  { { { 0, __ARCH_SPIN_LOCK_UNLOCKED } } }
 
 typedef unsigned long spl_t;
-typedef struct { volatile unsigned long lock[2]; } xnlock_t;
+typedef struct { struct global_lock lock[1]; } xnlock_t;
 
 #ifndef list_first_entry
 #define list_first_entry(ptr, type, member) \
@@ -128,15 +128,17 @@ typedef struct { volatile unsigned long lock[2]; } xnlock_t;
 
 static inline void xnlock_init(xnlock_t *lock)
 {
-	*lock = XNARCH_LOCK_UNLOCKED;
+//	lock->lock[0].mask = 0;
+//	lock->lock[0].lock = (arch_spinlock_t)__ARCH_SPIN_LOCK_UNLOCKED;
+	lock->lock[0] = (struct global_lock) { 0, __ARCH_SPIN_LOCK_UNLOCKED };
 }
 
 static inline void xnlock_get(xnlock_t *lock)
 {
 	barrier();
 	rtai_cli();
-	if (!test_and_set_bit(hal_processor_id(), &lock->lock[0])) {
-		rtai_spin_glock(&lock->lock[0]);
+	if (!test_and_set_bit(hal_processor_id(), &lock->lock[0].mask)) {
+		rt_spin_lock(&lock->lock[0].lock);
 	}
 	barrier();
 }
@@ -145,8 +147,8 @@ static inline void xnlock_put(xnlock_t *lock)
 {
 	barrier();
 	rtai_cli();
-	if (test_and_clear_bit(hal_processor_id(), &lock->lock[0])) {
-		rtai_spin_gunlock(&lock->lock[0]);
+	if (test_and_clear_bit(hal_processor_id(), &lock->lock[0].mask)) {
+		rt_spin_unlock(&lock->lock[0].lock);
 	}
 	barrier();
 }
@@ -157,8 +159,8 @@ static inline spl_t __xnlock_get_irqsave(xnlock_t *lock)
 
 	barrier();
 	flags = rtai_save_flags_irqbit_and_cli();
-	if (!test_and_set_bit(hal_processor_id(), &lock->lock[0])) {
-		rtai_spin_glock(&lock->lock[0]);
+	if (!test_and_set_bit(hal_processor_id(), &lock->lock[0].mask)) {
+		rt_spin_lock(&lock->lock[0].lock);
 		barrier();
 		return flags | 1;
 	}

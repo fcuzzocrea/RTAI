@@ -10,6 +10,8 @@
 	  release from rtai_hal.h.
 	* base/arch/x86/hal/hal_32.c: redefine rtai_cpu_lock according to the 
 	  global lock structure.
+	* addons/rtdm/xn.h: make xnlock_t comply with the new global_lock 
+	  structure declaration.
 
 2015-01-24 Paolo Mantegazza <mantegazza@aero.polimi.it>
 

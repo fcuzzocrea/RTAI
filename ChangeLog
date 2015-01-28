@@ -1,7 +1,5 @@
 2015-01-27 Paolo Mantegazza <mantegazza@aero.polimi.it>
 
-	* base/include/rtai.h: move the random numbers generator into 
-	  asm-x86/rtai.h.
 	* base/include/asm/rtai_hal.h: unify 32-64 bits independent code here
 	  and revise real time spin locks and global lock.
 	* base/include/asm/rtai_hal_32.h and rtai_hal_64.h: left with only 

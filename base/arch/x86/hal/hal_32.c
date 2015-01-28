@@ -939,13 +939,13 @@ void rt_free_timers(void)
  */
 void rt_request_apic_timers (void (*handler)(void), struct apic_timer_setup_data *tmdata)
 {
-	rt_request_timers(handler);
-	return;
 	volatile struct rt_times *rtimes;
 	struct apic_timer_setup_data *p;
 	unsigned long flags;
 	int cpuid;
 
+	rt_request_timers(handler);
+	return;
 	TRACE_RTAI_TIMER(TRACE_RTAI_EV_TIMER_REQUEST_APIC,handler,0);
 
 	flags = rtai_critical_enter(rtai_critical_sync);
@@ -1001,8 +1001,9 @@ void rt_request_apic_timers (void (*handler)(void), struct apic_timer_setup_data
  */
 void rt_free_apic_timers(void)
 {
-	return rt_free_timers();
 	unsigned long flags;
+
+	return rt_free_timers();
 
 	TRACE_RTAI_TIMER(TRACE_RTAI_EV_TIMER_APIC_FREE,0,0);
 

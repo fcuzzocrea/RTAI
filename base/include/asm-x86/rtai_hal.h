@@ -130,6 +130,8 @@ static inline unsigned long rtai_save_flags_irqbit_and_cli(void)
         return flags & (1 << RTAI_IFLAG);
 }
 
+struct global_lock { unsigned long mask; arch_spinlock_t lock; };
+
 #ifdef CONFIG_SMP
 
 #if 0
@@ -175,7 +177,6 @@ static inline void rt_spin_unlock_irqrestore(unsigned long flags, spinlock_t *lo
 #define rt_spin_unlock_hw_irqrestore  rt_spin_unlock_irqrestore
 #endif
 
-struct global_lock { unsigned long mask; arch_spinlock_t lock; };
 extern struct global_lock rtai_cpu_lock[];
 
 #if 0

@@ -11578,8 +11578,8 @@ index 0000000..ed5df5c
 +	 * extra call to the tick handler would simply occur after 4
 +	 * billions ticks.
 +	 */
-+	if (cdelay > UINT_MAX)
-+		cdelay = UINT_MAX;
++//	if (cdelay > UINT_MAX)
++//		cdelay = UINT_MAX;
 +
 +	tdelay = cdelay;
 +	if (t->c2t_integ != 1)

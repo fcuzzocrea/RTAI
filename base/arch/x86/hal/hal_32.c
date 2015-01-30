@@ -40,6 +40,7 @@
  *@{*/
 
 
+#if 0
 #if 0	/* defined & set in rtai_config.h */
 #define CONFIG_RTAI_DONT_DISPATCH_CORE_IRQS  1
 #endif
@@ -1898,4 +1899,4 @@ static unsigned long hal_request_apic_freq(void)
 		hal_get_sysinfo(&sysinfo);
 		return sysinfo.sys_hrtimer_freq;
 }
-
+#endif

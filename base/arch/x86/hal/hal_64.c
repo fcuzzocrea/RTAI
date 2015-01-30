@@ -42,7 +42,7 @@
  *
  *@{*/
 
-
+#if 0
 #include <linux/version.h>
 #include <linux/slab.h>
 #include <linux/errno.h>
@@ -1874,3 +1874,4 @@ static void hal_request_apic_freq(unsigned long *apic_freq) { return; }
 
 EXPORT_SYMBOL(rt_linux_hrt_set_mode);
 EXPORT_SYMBOL(rt_linux_hrt_next_shot);
+#endif

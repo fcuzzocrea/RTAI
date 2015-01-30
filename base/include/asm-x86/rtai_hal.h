@@ -665,27 +665,28 @@ static inline int rt_free_global_irq(unsigned irq)
 #include <linux/ipipe_tickdev.h>
 static inline void rt_set_timer_delay(int delay)
 {
+	if (delay) ipipe_timer_set(delay); 
+	return;
+}
+
+static inline void previous_rt_set_timer_delay(int delay)
+{
 	if (delay) {
-		if (1 || this_cpu_has(X86_FEATURE_TSC_DEADLINE_TIMER)) { //  *** Let's try it for whatever setup ***
-			ipipe_timer_set(delay); 
-			return;
-		} else {
-			unsigned long flags;
-			rtai_save_flags_and_cli(flags);
+		unsigned long flags;
+		rtai_save_flags_and_cli(flags);
 #ifdef CONFIG_X86_LOCAL_APIC
-			if (this_cpu_has(X86_FEATURE_TSC_DEADLINE_TIMER)) {
-				wrmsrl(MSR_IA32_TSC_DEADLINE, rtai_rdtsc() + delay);
-			} else {
-				delay = rtai_imuldiv(delay, rtai_tunables.apic_freq, rtai_tunables.cpu_freq);
-				apic_write(APIC_TMICT, delay);
-			}
-#else /* !CONFIG_X86_LOCAL_APIC */
-			delay = rtai_imuldiv(delay, RTAI_FREQ_8254, rtai_tunables.cpu_freq);
-			outb(delay & 0xff,0x40);
-			outb(delay >> 8,0x40);
-#endif /* CONFIG_X86_LOCAL_APIC */
-			rtai_restore_flags(flags);
+		if (this_cpu_has(X86_FEATURE_TSC_DEADLINE_TIMER)) {
+			wrmsrl(MSR_IA32_TSC_DEADLINE, rtai_rdtsc() + delay);
+		} else {
+			delay = rtai_imuldiv(delay, rtai_tunables.apic_freq, rtai_tunables.cpu_freq);
+			apic_write(APIC_TMICT, delay);
 		}
+#else /* !CONFIG_X86_LOCAL_APIC */
+		delay = rtai_imuldiv(delay, RTAI_FREQ_8254, rtai_tunables.cpu_freq);
+		outb(delay & 0xff,0x40);
+		outb(delay >> 8,0x40);
+#endif /* CONFIG_X86_LOCAL_APIC */
+		rtai_restore_flags(flags);
 	}
 }
 

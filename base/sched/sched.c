@@ -1359,11 +1359,11 @@ static int _rt_linux_hrt_next_shot(unsigned long deltat, void *hrt_dev) // ??? s
 	unsigned long deltas;
 	RTIME linux_time;
 
-	deltat = nano2count_cpuid(deltat, cpuid);
+	deltat = nano2count(deltat);
 	deltas = deltat > (tuned.setup_time_TIMER_CPUNIT + tuned.latency) ? (deltat - tuned.latency) : 0;
 
 	rtai_cli();
-	rt_times.linux_time = linux_time = rt_get_time_cpuid(cpuid) + deltat;
+	rt_times.linux_time = linux_time = rtai_rdtsc() + deltat;
 	if (oneshot_running) {
 		if (linux_time < rt_times.intr_time) {
 			if (deltas > 0) {

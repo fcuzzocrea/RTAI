@@ -1,3 +1,9 @@
+2015-01-31 Paolo Mantegazza <mantegazza@aero.polimi.it>
+
+	* base/arch/x86/hal/hal.c: significantly refurbished, x86-32-64 
+	  unified, patch's hard timers services; from now on only the oneshot
+	  mode must be used.
+
 2015-01-27 Paolo Mantegazza <mantegazza@aero.polimi.it>
 
 	* base/include/asm/rtai_hal.h: unify 32-64 bits independent code here

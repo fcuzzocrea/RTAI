@@ -1,5 +1,15 @@
 2015-01-31 Paolo Mantegazza <mantegazza@aero.polimi.it>
 
+	* base/include/asm-x86/rtai_lxrt.h: gather the common parts of 32-64 
+	  bits archs, unify the definition of union union rtai_lxrt_t.
+	* base/include/asm-x86/rtai_lxrt_32.h: keap only the 32 bits specific 
+	  definitions and services, required copying __do_strncpy_from_user 
+	  from LINUX, as for 64 bits.
+	* base/include/asm-x86/rtai_lxrt_64.h: keap only the 64 bits specific
+          definitions and services.
+
+2015-01-31 Paolo Mantegazza <mantegazza@aero.polimi.it>
+
 	* base/arch/x86/hal/hal.c: significantly refurbished, x86-32-64 
 	  unified, patch's hard timers services; from now on only the oneshot
 	  mode must be used.

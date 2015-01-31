@@ -81,7 +81,7 @@ struct rtai_realtime_irq_s {
 #define RTAI_SMP_NOTIFY_IPI       RTAI_APIC_LOW_IPI
 
 #define RTAI_TIMER_8254_IRQ       0
-#define RTAI_FREQ_8254            1193180
+#define RTAI_FREQ_8254            1193182UL
 #define RTAI_APIC_ICOUNT          ((RTAI_FREQ_APIC + HZ/2)/HZ)
 #define RTAI_COUNTER_2_LATCH      0xfffe
 #define RTAI_LATENCY_8254         CONFIG_RTAI_SCHED_8254_LATENCY

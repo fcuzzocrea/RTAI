@@ -960,7 +960,7 @@ index 0000000..f940d4b
 +
 +#endif /* !CONFIG_SMP */
 +
-+#if 0 // def CONFIG_IPIPE_LEGACY
++#ifdef CONFIG_IPIPE_LEGACY
 +#define __ipipe_tick_irq	__ipipe_hrtimer_irq
 +/*
 + * The current Linux task is read from the PDA on x86, so this is
@@ -2575,7 +2575,7 @@ index 0d0c9d4..6e6b88a 100644
  	GET_THREAD_INFO(%ebp)
 -
 +#ifdef CONFIG_IPIPE
-+#if 1 //ndef CONFIG_IPIPE_LEGACY
++#ifndef CONFIG_IPIPE_LEGACY
 +	cmpl $(NR_syscalls),%eax
 +	jb slow_path
 +	testl $_TIP_HEAD,TI_ipipe(%ebp) /* implies that TIP_NOTIFY if set */
@@ -2864,7 +2864,7 @@ index c844f08..40157fd 100644
  	movq  %rcx,RIP-ARGOFFSET(%rsp)
  	CFI_REL_OFFSET rip,RIP-ARGOFFSET
 +#ifdef CONFIG_IPIPE
-+#if 1 // ndef CONFIG_IPIPE_LEGACY
++#ifndef CONFIG_IPIPE_LEGACY
 +	test_syscall_nr ax
 +	jb slow_path
 +	testl $_TIP_HEAD,TI_ipipe+THREAD_INFO(%rsp,RIP-ARGOFFSET)
@@ -6480,7 +6480,7 @@ index 0000000..ea01dd6
 +#define hard_cond_local_irq_save()		hard_local_irq_save()
 +#define hard_cond_local_irq_restore(flags)	hard_local_irq_restore(flags)
 +
-+#if 1 // def CONFIG_IPIPE_LEGACY
++#ifdef CONFIG_IPIPE_LEGACY
 +
 +#define IPIPE_FIRST_EVENT	IPIPE_NR_FAULTS
 +#define IPIPE_EVENT_SCHEDULE	IPIPE_FIRST_EVENT
@@ -6504,17 +6504,17 @@ index 0000000..ea01dd6
 +	ipipe_event_handler_t handlers[IPIPE_NR_EVENTS];
 +};
 +
++#else /* !CONFIG_IPIPE_LEGACY */
++
 +#define __ipipe_init_taskinfo(p)			\
 +	do {						\
 +		memset(p->ptd, 0, sizeof(p->ptd));	\
 +	} while (0)
 +
-+#else /* !CONFIG_IPIPE_LEGACY */
-+
 +struct ipipe_legacy_context {
 +};
 +
-+static inline void __ipipe_init_taskinfo(struct task_struct *p) { }
++//static inline void __ipipe_init_taskinfo(struct task_struct *p) { }
 +
 +#endif /* !CONFIG_IPIPE_LEGACY */
 +
@@ -6620,7 +6620,7 @@ index 0000000..6521852
 +#error "Do not include this file directly, use linux/ipipe.h instead"
 +#endif
 +
-+#if 0 // def CONFIG_IPIPE_LEGACY
++#ifdef CONFIG_IPIPE_LEGACY
 +
 +#define IPIPE_HEAD_PRIORITY	(-1)
 +#define IPIPE_ROOT_PRIO		100
@@ -8783,7 +8783,7 @@ index 0000000..da17b04
 +config IPIPE_LEGACY
 +	bool "I-pipe legacy interface"
 +	depends on IPIPE
-+	default y
++	default n
 +	---help---
 +	  Activate this option if you want to control the interrupt
 +	  pipeline via the legacy interface.
@@ -10098,7 +10098,7 @@ index 0000000..164e19c
 +	unsigned long flags;
 +	int ret = 0;
 +
-+#if 1 // ndef CONFIG_IPIPE_LEGACY
++#ifndef CONFIG_IPIPE_LEGACY
 +	ipipe_root_only();
 +#endif /* CONFIG_IPIPE_LEGACY */
 +
@@ -10135,7 +10135,7 @@ index 0000000..164e19c
 +{
 +	unsigned long flags;
 +
-+#if 1 // ndef CONFIG_IPIPE_LEGACY
++#ifndef CONFIG_IPIPE_LEGACY
 +	ipipe_root_only();
 +#endif /* CONFIG_IPIPE_LEGACY */
 +
@@ -10349,7 +10349,7 @@ index 0000000..164e19c
 +{	if (rtai_migration_hook) rtai_migration_hook(p);
 +}
 +
-+#if 0 // def CONFIG_IPIPE_LEGACY
++#ifdef CONFIG_IPIPE_LEGACY
 +
 +static inline void complete_domain_migration(void) /* hw IRQs off */
 +{
@@ -10413,7 +10413,7 @@ index 0000000..164e19c
 +	hard_local_irq_disable();
 +#endif
 +	x = __ipipe_root_p;
-+#if 1 // ndef CONFIG_IPIPE_LEGACY
++#ifndef CONFIG_IPIPE_LEGACY
 +	if (x)
 +#endif
 +		complete_domain_migration();

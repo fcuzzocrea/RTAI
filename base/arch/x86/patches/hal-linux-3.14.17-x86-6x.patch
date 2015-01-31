@@ -970,7 +970,7 @@ index 0000000..3ebadc1
 +
 +#endif /* !CONFIG_SMP */
 +
-+#if 0 // def CONFIG_IPIPE_LEGACY
++#ifdef CONFIG_IPIPE_LEGACY
 +#define __ipipe_tick_irq	__ipipe_hrtimer_irq
 +/*
 + * The current Linux task is read from the PDA on x86, so this is
@@ -2530,7 +2530,7 @@ index c5a9cb9..1a8704f 100644
  	GET_THREAD_INFO(%ebp)
 -
 +#ifdef CONFIG_IPIPE
-+#if 1 // ndef CONFIG_IPIPE_LEGACY
++#ifndef CONFIG_IPIPE_LEGACY
 +	cmpl $(NR_syscalls),%eax
 +	jb slow_path
 +	testl $_TIP_HEAD,TI_ipipe(%ebp) /* implies that TIP_NOTIFY if set */
@@ -2976,7 +2976,7 @@ index 03cd2a8..728146f 100644
  	movq  %rcx,RIP-ARGOFFSET(%rsp)
  	CFI_REL_OFFSET rip,RIP-ARGOFFSET
 +#ifdef CONFIG_IPIPE
-+#if 1 // ndef CONFIG_IPIPE_LEGACY
++#ifndef CONFIG_IPIPE_LEGACY
 +	test_syscall_nr ax
 +	jb slow_path
 +	testl $_TIP_HEAD,TI_ipipe+THREAD_INFO(%rsp,RIP-ARGOFFSET)
@@ -6619,7 +6619,7 @@ index 0000000..ea01dd6
 +#define hard_cond_local_irq_save()		hard_local_irq_save()
 +#define hard_cond_local_irq_restore(flags)	hard_local_irq_restore(flags)
 +
-+#if 1 // def CONFIG_IPIPE_LEGACY
++#ifdef CONFIG_IPIPE_LEGACY
 +
 +#define IPIPE_FIRST_EVENT	IPIPE_NR_FAULTS
 +#define IPIPE_EVENT_SCHEDULE	IPIPE_FIRST_EVENT
@@ -6643,17 +6643,17 @@ index 0000000..ea01dd6
 +	ipipe_event_handler_t handlers[IPIPE_NR_EVENTS];
 +};
 +
++#else /* !CONFIG_IPIPE_LEGACY */
++
 +#define __ipipe_init_taskinfo(p)			\
 +	do {						\
 +		memset(p->ptd, 0, sizeof(p->ptd));	\
 +	} while (0)
 +
-+#else /* !CONFIG_IPIPE_LEGACY */
-+
 +struct ipipe_legacy_context {
 +};
 +
-+static inline void __ipipe_init_taskinfo(struct task_struct *p) { }
++//static inline void __ipipe_init_taskinfo(struct task_struct *p) { }
 +
 +#endif /* !CONFIG_IPIPE_LEGACY */
 +
@@ -6759,7 +6759,7 @@ index 0000000..6521852
 +#error "Do not include this file directly, use linux/ipipe.h instead"
 +#endif
 +
-+#if 0 // def CONFIG_IPIPE_LEGACY
++#ifdef CONFIG_IPIPE_LEGACY
 +
 +#define IPIPE_HEAD_PRIORITY	(-1)
 +#define IPIPE_ROOT_PRIO		100
@@ -9495,7 +9495,7 @@ index 0000000..c5b022b
 +int __ipipe_printk_bypass;
 +#endif /* CONFIG_PRINTK */
 +
-+#if 0 // def CONFIG_IPIPE_LEGACY
++#ifdef CONFIG_IPIPE_LEGACY
 +
 +#define __IPIPE_SYSCALL_R (8 << __IPIPE_SYSCALL_P)
 +#define __IPIPE_TRAP_R	  (8 << __IPIPE_TRAP_P)
@@ -10268,7 +10268,7 @@ index 0000000..c5b022b
 +	unsigned long flags;
 +	int ret = 0;
 +
-+#if 1 // ndef CONFIG_IPIPE_LEGACY
++#ifndef CONFIG_IPIPE_LEGACY
 +	ipipe_root_only();
 +#endif /* CONFIG_IPIPE_LEGACY */
 +
@@ -10305,7 +10305,7 @@ index 0000000..c5b022b
 +{
 +	unsigned long flags;
 +
-+#if 1 // ndef CONFIG_IPIPE_LEGACY
++#ifndef CONFIG_IPIPE_LEGACY
 +	ipipe_root_only();
 +#endif /* CONFIG_IPIPE_LEGACY */
 +
@@ -10348,7 +10348,7 @@ index 0000000..c5b022b
 +		p->coflags |= enables;
 +	}
 +
-+#if 0 // def CONFIG_IPIPE_LEGACY
++#ifdef CONFIG_IPIPE_LEGACY
 +	/*
 +	 * In legacy mode, clients may assume that ipipe_set_hooks()
 +	 * is a synchronization barrier with respect to callout
@@ -10536,7 +10536,7 @@ index 0000000..c5b022b
 +	if (rtai_migration_hook) rtai_migration_hook(p);
 +}
 +
-+#if 0 // def CONFIG_IPIPE_LEGACY
++#ifdef CONFIG_IPIPE_LEGACY
 +
 +static inline void complete_domain_migration(void) /* hw IRQs off */
 +{
@@ -10600,7 +10600,7 @@ index 0000000..c5b022b
 +	hard_local_irq_disable();
 +#endif
 +	x = __ipipe_root_p;
-+#if 1 // ndef CONFIG_IPIPE_LEGACY
++#ifndef CONFIG_IPIPE_LEGACY
 +	if (x)
 +#endif
 +		complete_domain_migration();

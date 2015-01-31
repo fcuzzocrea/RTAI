@@ -432,7 +432,7 @@ int rt_request_timers(void *rtai_time_handler)
 		rtimes->periodic_tick = rtimes->linux_tick;
 	}
 	rt_times = rt_smp_times[0];
-#if 0 // #ifndef CONFIG_X86_LOCAL_APIC 
+#if 0 // #ifndef CONFIG_X86_LOCAL_APIC, for calibrating 8254 with our set delay
 	rtai_cli();
 	outb(0x30, 0x43);
 	rt_set_timer_delay(rtai_tunables.cpu_freq/50000);
@@ -622,7 +622,7 @@ RTAI_MODULE_PARM(PrintFpuTrap, int);
 static int PrintFpuInit = 0;
 RTAI_MODULE_PARM(PrintFpuInit, int);
 
-static int rtai_trap_fault (unsigned event, struct pt_regs *evdata)
+static int rtai_trap_fault (unsigned trap, struct pt_regs *regs)
 {
 #ifdef HINT_DIAG_TRAPS
 	static unsigned long traps_in_hard_intr = 0;
@@ -630,13 +630,12 @@ static int rtai_trap_fault (unsigned event, struct pt_regs *evdata)
                 unsigned long flags;
                 rtai_save_flags_and_cli(flags);
                 if (!test_bit(RTAI_IFLAG, &flags)) {
-                        if (!test_and_set_bit(event, &traps_in_hard_intr)) {
-                                HINT_DIAG_MSG(rt_printk("TRAP %d HAS INTERRUPT DISABLED (TRAPS PICTURE %lx).\n", event, traps_in_hard_intr););
+                        if (!test_and_set_bit(trap, &traps_in_hard_intr)) {
+                                HINT_DIAG_MSG(rt_printk("TRAP %d HAS INTERRUPT DISABLED (TRAPS PICTURE %lx).\n", trap, traps_in_hard_intr););
                         }
                 }
         } while (0);
 #endif
-
 	static const int trap2sig[] = {
     		SIGFPE,         //  0 - Divide error
 		SIGTRAP,        //  1 - Debug
@@ -660,12 +659,10 @@ static int rtai_trap_fault (unsigned event, struct pt_regs *evdata)
 		SIGFPE,         // 19 - XMM fault
 		0,0,0,0,0,0,0,0,0,0,0,0
 	};
-
 	if (!in_hrt_mode(rtai_cpuid())) {
 		goto propagate;
 	}
-
-	if (event == 7)	{
+	if (trap == 7)	{
 		struct task_struct *linux_task = current;
 		rtai_cli();
 		if (lnxtsk_uses_fpu(linux_task)) {
@@ -680,16 +677,13 @@ static int rtai_trap_fault (unsigned event, struct pt_regs *evdata)
 			}
 		}
 		rtai_sti();
-		goto endtrap;
+		return 1;
 	}
-
-	if (rtai_trap_handler && rtai_trap_handler(event, trap2sig[event], (struct pt_regs *)evdata, NULL)) {
-		goto endtrap;
+	if (rtai_trap_handler && rtai_trap_handler(trap, trap2sig[trap], regs, NULL)) {
+		return 1;
 	}
 propagate:
 	return 0;
-endtrap:
-	return 1;
 }
 
 static void rtai_lsrq_dispatcher (unsigned virq)
@@ -742,10 +736,6 @@ static int hal_intercept_syscall(struct pt_regs *regs)
 }
 
 void rtai_uvec_handler(void);
-
-#ifdef CONFIG_X86_LOCAL_APIC
-static unsigned long hal_request_apic_freq(void);
-#endif
 
 #include <linux/clockchips.h>
 #include <linux/ipipe_tickdev.h>
@@ -805,7 +795,6 @@ static int PROC_READ_FUN(rtai_read_proc)
 	PROC_PRINT("\n\n");
 
 	PROC_PRINT("** RTAI extension traps: \n\n");
-//	PROC_PRINT("    SYSREQ=0x%x\n\n", RTAI_SYS_VECTOR);
 
 	none = 1;
 	PROC_PRINT("** RTAI SYSREQs in use: ");
@@ -884,10 +873,8 @@ int __rtai_hal_init (void)
 	}
 
 #ifndef CONFIG_X86_TSC
-	if (num_online_cpus() > 1) {
-		printk("RTAI[hal]: MULTI PROCESSOR SEEN AS A 486, WONT WORK; CONFIGURE LINUX APPROPRIATELY. %d \n", rtai_cpufreq_arg);
-		ret = 1;
-	}
+	printk("RTAI[hal]: TIME STAMP CLOCK (TSC) NEEDED FOR THIS RTAI VERSION\n.");
+	ret = 1;
 #endif
 
 #ifdef CONFIG_X86_LOCAL_APIC

@@ -457,10 +457,6 @@ static unsigned long rtai_orig_irq_affinity[IPIPE_NR_XIRQS];
 
 static DEFINE_SPINLOCK(rtai_iset_lock);  // SPIN_LOCK_UNLOCKED
 
-static long long rtai_timers_sync_time;
-
-static struct apic_timer_setup_data rtai_timer_mode[RTAI_NR_CPUS];
-
 void rt_request_apic_timers (void (*handler)(void), struct apic_timer_setup_data *tmdata)
 {
 	rt_request_timers(handler);
@@ -1005,6 +1001,27 @@ asmlinkage int rt_sync_printk(const char *fmt, ...)
 	return printk("%s", buf);
 }
 
+extern struct calibration_data rtai_tunables;
+#define CAL_LOOPS 200
+int rtai_calibrate_hard_timer(void)
+{
+        unsigned long flags;
+        RTIME t;
+	int i, delay, dt;
+
+	delay = rtai_tunables.cpu_freq/50000;
+        flags = rtai_critical_enter(NULL);
+	rt_set_timer_delay(delay);
+        t = rtai_rdtsc();
+        for (i = 0; i < CAL_LOOPS; i++) {
+		rt_set_timer_delay(delay);
+        }
+	dt = (int)(rtai_rdtsc() - t);
+	rtai_critical_exit(flags);
+	return rtai_imuldiv((dt + CAL_LOOPS/2)/CAL_LOOPS, 1000000000, rtai_tunables.cpu_freq);
+}
+
+EXPORT_SYMBOL(rtai_calibrate_hard_timer);
 EXPORT_SYMBOL(rtai_realtime_irq);
 EXPORT_SYMBOL(rt_request_irq);
 EXPORT_SYMBOL(rt_release_irq);
@@ -1055,6 +1072,8 @@ EXPORT_SYMBOL(rt_sync_printk);
 EXPORT_SYMBOL(rt_scheduling);
 
 EXPORT_SYMBOL(IsolCpusMask);
+
+#ifdef __i386__
 
 #if defined(CONFIG_SMP) && defined(CONFIG_RTAI_DIAG_TSC_SYNC)
 
@@ -1233,23 +1252,5 @@ void cleanup_tsc_sync(void)
 
 #endif /* defined(CONFIG_SMP) && defined(CONFIG_RTAI_DIAG_TSC_SYNC) */
 
-extern struct calibration_data rtai_tunables;
-#define CAL_LOOPS 200
-int rtai_calibrate_hard_timer(void)
-{
-        unsigned long flags;
-        RTIME t;
-	int i, delay, dt;
+#endif
 
-	delay = rtai_tunables.cpu_freq/50000;
-        flags = rtai_critical_enter(NULL);
-	rt_set_timer_delay(delay);
-        t = rtai_rdtsc();
-        for (i = 0; i < CAL_LOOPS; i++) {
-		rt_set_timer_delay(delay);
-        }
-	dt = (int)(rtai_rdtsc() - t);
-	rtai_critical_exit(flags);
-	return rtai_imuldiv((dt + CAL_LOOPS/2)/CAL_LOOPS, 1000000000, rtai_tunables.cpu_freq);
-}
-EXPORT_SYMBOL(rtai_calibrate_hard_timer);

@@ -7,6 +7,9 @@
 	  from LINUX, as for 64 bits.
 	* base/include/asm-x86/rtai_lxrt_64.h: keap only the 64 bits specific
           definitions and services.
+	* base/include/asm-x86/rtai_fpu.h: gather the common parts of 32-64 
+	* base/include/asm-x86/rtai_fpu_32.h and rtai_fpu_64.h: keap only the 
+	  32-64 bits specific bits archs.
 
 2015-01-31 Paolo Mantegazza <mantegazza@aero.polimi.it>
 

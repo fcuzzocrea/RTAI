@@ -22,7 +22,7 @@
  * original idea of an RTAI own header file for the FPU stuff:
  * Copyright (C) 2000 Pierre Cloutier <pcloutier@PoseidonControls.com>,
  * this final rewrite and cleanup:
- * Copyright (C) 2005 Paolo Mantegazza <mantegazza@aero.polimi.it>.
+ * Copyright (C) 2005-2015 Paolo Mantegazza <mantegazza@aero.polimi.it>.
  */
 
 #ifndef _RTAI_ASM_I386_FPU_H

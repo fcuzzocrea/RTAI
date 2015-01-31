@@ -52,7 +52,6 @@ MODULE_LICENSE("GPL");
 #include <linux/interrupt.h>
 #include <linux/irq.h>
 #include <linux/console.h>
-//#include <asm/system.h>
 #include <asm/hw_irq.h>
 #include <asm/irq.h>
 #include <asm/desc.h>

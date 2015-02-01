@@ -1326,22 +1326,25 @@ int rt_is_hard_timer_running(void)
 }
 
 
-void rt_set_periodic_mode(void) 
-{ 
-	int cpuid;
-	stop_rt_timer();
-	for (cpuid = 0; cpuid < NR_RT_CPUS; cpuid++) {
-		oneshot_timer = oneshot_running = 0;
-	}
-}
-
-
 void rt_set_oneshot_mode(void)
 { 
 	int cpuid;
 	stop_rt_timer();
 	for (cpuid = 0; cpuid < NR_RT_CPUS; cpuid++) {
+		oneshot_running = 0;
 		oneshot_timer = 1;
+	}
+}
+
+
+void rt_set_periodic_mode(void) 
+{ 
+	int cpuid;
+	rt_set_oneshot_mode();
+	return;
+	stop_rt_timer();
+	for (cpuid = 0; cpuid < NR_RT_CPUS; cpuid++) {
+		oneshot_timer = oneshot_running = 0;
 	}
 }
 
@@ -1391,7 +1394,7 @@ RTAI_SYSCALL_MODE void start_rt_apic_timers(struct apic_timer_setup_data *setup_
 	rt_request_apic_timers(rt_timer_handler, setup_data);
 	flags = rt_global_save_flags_and_cli();
 	for (cpuid = 0; cpuid < NR_RT_CPUS; cpuid++) {
-		if (setup_data[cpuid].mode > 0) {
+		if (0 && setup_data[cpuid].mode > 0) {
 			oneshot_timer = oneshot_running = 0;
 			tuned.timers_tol[cpuid] = rt_half_tick = (rt_times.periodic_tick + 1)>>1;
 		} else {
@@ -1409,9 +1412,10 @@ RTAI_SYSCALL_MODE void start_rt_apic_timers(struct apic_timer_setup_data *setup_
 
 RTAI_SYSCALL_MODE RTIME start_rt_timer(int period)
 {
+	RTIME ret = period;
 	int cpuid;
 	struct apic_timer_setup_data setup_data[NR_RT_CPUS];
-	if (period <= 0) {
+	if (1 || period <= 0) {
 		period = 0;
 		rt_set_oneshot_mode();
 	}
@@ -1421,7 +1425,7 @@ RTAI_SYSCALL_MODE RTIME start_rt_timer(int period)
 	}
 	start_rt_apic_timers(setup_data, rtai_cpuid());
 	rt_gettimeorig(NULL);
-	return setup_data[0].mode ? setup_data[0].count : period;
+	return ret; // setup_data[0].mode ? setup_data[0].count : period;
 }
 
 
@@ -1449,8 +1453,9 @@ RTAI_SYSCALL_MODE RTIME start_rt_timer(int period)
 #define cpuid 0
 #undef rt_times
 
+	RTIME ret = period;
         unsigned long flags;
-	if (period <= 0) {
+	if (1 || period <= 0) {
 		period = 0;
 		rt_set_oneshot_mode();
 	}
@@ -1474,7 +1479,7 @@ RTAI_SYSCALL_MODE RTIME start_rt_timer(int period)
         rt_global_restore_flags(flags);
 	REQUEST_RECOVER_JIFFIES();
 	rt_gettimeorig(NULL);
-        return period;
+        return ret; // period;
 
 #undef cpuid
 #define rt_times (rt_smp_times[cpuid])
@@ -1487,7 +1492,7 @@ RTAI_SYSCALL_MODE void start_rt_apic_timers(struct apic_timer_setup_data *setup_
 
 	period = 0;
 	for (cpuid = 0; cpuid < NR_RT_CPUS; cpuid++) {
-		period += setup_mode[cpuid].mode;
+//		period += setup_mode[cpuid].mode;
 	}
 	if (period == NR_RT_CPUS) {
 		period = 2000000000;
@@ -1549,7 +1554,7 @@ RT_TRAP_HANDLER rt_set_task_trap_handler( RT_TASK *task, unsigned int vec, RT_TR
 	return old_handler;
 }
 
-static int OneShot = CONFIG_RTAI_ONE_SHOT;
+static int OneShot = 1; // CONFIG_RTAI_ONE_SHOT;
 RTAI_MODULE_PARM(OneShot, int);
 
 static int Latency = TIMER_LATENCY;
@@ -2531,7 +2536,7 @@ static int __rtai_lxrt_init(void)
 		rt_linux_task.lnxtsk = current;
 		rt_smp_current[cpuid] = &rt_linux_task;
 		rt_smp_fpu_task[cpuid] = &rt_linux_task;
-		oneshot_timer = OneShot ? 1 : 0;
+		oneshot_timer = 1; // OneShot ? 1 : 0;
 		oneshot_running = 0;
 		linux_cr0 = 0;
 		rt_linux_task.resq.prev = rt_linux_task.resq.next = &rt_linux_task.resq;
@@ -2588,7 +2593,7 @@ static int __rtai_lxrt_init(void)
 	printk(", kstacks pool size = %d bytes", rtai_kstack_heap_size);
 #endif
 	printk(".\n");
-	printk(KERN_INFO "RTAI[sched]: hard timer type/freq = %s/%d(Hz); default timing: %s; ", TIMER_NAME, (int)TIMER_FREQ, OneShot ? "oneshot" : "periodic");
+	printk(KERN_INFO "RTAI[sched]: hard timer type/freq = %s/%d(Hz); timing: %s; ", TIMER_NAME, (int)TIMER_FREQ, OneShot ? "oneshot" : "periodic");
 #ifdef CONFIG_RTAI_LONG_TIMED_LIST
 	printk("black/red timed lists.\n");
 #else

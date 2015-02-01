@@ -2116,7 +2116,7 @@ struct sig_wakeup_t { struct task_struct *task; };
 static int lxrt_intercept_sig_wakeup(struct task_struct *lnxtsk)
 {
 	RT_TASK *task;
-	if ((task = lnxtsk->rtai_tskext(TSKEXT0)) && task->is_hard > 0) {
+	if ((task = lnxtsk->rtai_tskext(TSKEXT0))) {
 		rt_signal_wake_up(task);
 		return 1;
 	}

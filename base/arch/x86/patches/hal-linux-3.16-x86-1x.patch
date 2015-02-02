@@ -3396,7 +3396,7 @@ new file mode 100644
 index 0000000..1cb98be
 --- /dev/null
 +++ b/arch/x86/kernel/ipipe.c
-@@ -0,0 +1,521 @@
+@@ -0,0 +1,512 @@
 +/*   -*- linux-c -*-
 + *   linux/arch/x86/kernel/ipipe.c
 + *
@@ -3455,15 +3455,6 @@ index 0000000..1cb98be
 +#include <asm/i387.h>
 +#include <asm/fpu-internal.h>
 +#include <asm/mce.h>
-+
-+EXPORT_SYMBOL(io_apic_irqs);
-+EXPORT_SYMBOL(find_task_by_pid_ns);
-+extern void *sys_call_table;
-+EXPORT_SYMBOL(sys_call_table);
-+#ifdef CONFIG_X86_32
-+extern spinlock_t i8259A_lock;
-+EXPORT_SYMBOL(i8259A_lock);
-+#endif
 +
 +DEFINE_PER_CPU(unsigned long, __ipipe_cr2);
 +EXPORT_PER_CPU_SYMBOL_GPL(__ipipe_cr2);
@@ -6504,17 +6495,17 @@ index 0000000..ea01dd6
 +	ipipe_event_handler_t handlers[IPIPE_NR_EVENTS];
 +};
 +
-+#else /* !CONFIG_IPIPE_LEGACY */
-+
 +#define __ipipe_init_taskinfo(p)			\
 +	do {						\
 +		memset(p->ptd, 0, sizeof(p->ptd));	\
 +	} while (0)
 +
++#else /* !CONFIG_IPIPE_LEGACY */
++
 +struct ipipe_legacy_context {
 +};
 +
-+//static inline void __ipipe_init_taskinfo(struct task_struct *p) { }
++static inline void __ipipe_init_taskinfo(struct task_struct *p) { }
 +
 +#endif /* !CONFIG_IPIPE_LEGACY */
 +
@@ -8159,8 +8150,8 @@ index 0376b05..82b6b3e 100644
  #endif /* CONFIG_NUMA_BALANCING */
  
  	struct rcu_head rcu;
-+#if 1 // def CONFIG_IPIPE_LEGACY
-+	void *ptd[4 /*IPIPE_ROOT_NPTDKEYS*/];
++#ifdef CONFIG_IPIPE_LEGACY
++	void *ptd[IPIPE_ROOT_NPTDKEYS];
 +#endif
  
  	/*
@@ -8783,7 +8774,7 @@ index 0000000..da17b04
 +config IPIPE_LEGACY
 +	bool "I-pipe legacy interface"
 +	depends on IPIPE
-+	default n
++	default y
 +	---help---
 +	  Activate this option if you want to control the interrupt
 +	  pipeline via the legacy interface.

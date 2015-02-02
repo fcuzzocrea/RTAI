@@ -1,3 +1,14 @@
+2015-02-02 Paolo Mantegazza <mantegazza@aero.polimi.it>
+
+	* base/include/asm-x86/rtai_hal.h: macro rtai_tskext modified so to 
+	  include the related LINUX task, and to use either ptd in task_struct
+	  and thread_info.
+	* base/ipc/msg/msg.c; 
+	  base/ipc/shm/shm.c; 
+	  addons/rtdm/xn.h;
+	  base/sched/api.c, sched.c, sys.c: use the new macro rtai_tskext, 
+	  modified so to include the related LINUX task.
+
 2015-02-01 Paolo Mantegazza <mantegazza@aero.polimi.it>
 
 	* base/sched/sched.c: force oneshot mode ALWAYS, through a bad, but 

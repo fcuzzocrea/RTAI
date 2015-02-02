@@ -101,8 +101,11 @@ struct rtai_realtime_irq_s {
 
 #define rtai_cpuid()      ipipe_processor_id()
 
-//#define rtai_tskext(tsk, i)   ((tsk)->ptd[i])
+#if 0
+#define rtai_tskext(tsk, i)   ((tsk)->ptd[i])
+#else
 #define rtai_tskext(tsk, i)   ((&task_thread_info(tsk)->ipipe_data)->ptd[i])
+#endif
 #define rtai_tskext_t(tsk, i) ((RT_TASK *)(rtai_tskext((tsk), (i))))
 
 #define rtai_cli()                  hard_local_irq_disable_notrace()

@@ -209,7 +209,7 @@ static inline RT_TASK* __task_init(unsigned long name, int prio, int stack_size,
 	void *msg_buf0, *msg_buf1;
 	RT_TASK *rt_task;
 
-	if ((rt_task = current->rtai_tskext(TSKEXT0))) {
+	if ((rt_task = rtai_tskext_t(current, TSKEXT0))) {
 		if (num_online_cpus() > 1 && cpus_allowed) {
 	    		cpus_allowed = hweight32(cpus_allowed) > 1 ? get_min_tasks_cpuid() : ffnz(cpus_allowed);
 		} else {
@@ -242,7 +242,6 @@ static inline RT_TASK* __task_init(unsigned long name, int prio, int stack_size,
 	    } else {
 			cpus_allowed = rtai_cpuid();
 	    }
-		memset(current->ptd, 0, sizeof(current->ptd));
 	    if (!set_rtext(rt_task, prio, 0, 0, cpus_allowed, 0)) {
 	        rt_task->fun_args = (long *)((struct fun_args *)(rt_task + 1));
 		rt_task->msg_buf[0] = msg_buf0;
@@ -277,7 +276,7 @@ static int __task_delete(RT_TASK *rt_task)
 	if (current != (lnxtsk = rt_task->lnxtsk)) {
 		return -EPERM;
 	}
-	lnxtsk->rtai_tskext(TSKEXT0) = lnxtsk->rtai_tskext(TSKEXT1) = 0;
+	rtai_tskext(lnxtsk, TSKEXT0) = rtai_tskext(lnxtsk, TSKEXT1) = 0;
 	if (rt_task->is_hard > 0) {
 		give_back_to_linux(rt_task, 0);
 	}
@@ -545,7 +544,7 @@ static inline long long handle_lxrt_request (unsigned int lxsrq, long *arg, RT_T
 		}
 
 		case RT_BUDDY: {
-			arg0.rt_task = task && current->rtai_tskext(TSKEXT1) == current ? task : NULL;
+			arg0.rt_task = task && rtai_tskext(current, TSKEXT1) == current ? task : NULL;
 			return arg0.ll;
 		}
 
@@ -600,7 +599,7 @@ static inline long long handle_lxrt_request (unsigned int lxsrq, long *arg, RT_T
                 }
 
 		case IS_HARD: {
-			arg0.i = arg0.rt_task || (arg0.rt_task = current->rtai_tskext(TSKEXT0)) ? arg0.rt_task->is_hard : 0;
+			arg0.i = arg0.rt_task || (arg0.rt_task = rtai_tskext_t(current, TSKEXT0)) ? arg0.rt_task->is_hard : 0;
 			return arg0.ll;
 		}
 		case GET_EXECTIME: {
@@ -709,7 +708,7 @@ long long rtai_lxrt_invoke (unsigned int lxsrq, void *arg)
 {
 	RT_TASK *task;
 
-	if (likely((task = current->rtai_tskext(TSKEXT0)) != NULL)) {
+	if (likely((task = rtai_tskext_t(current, TSKEXT0)) != NULL)) {
 		long long retval;
 		check_to_soften_harden(task);
 		retval = handle_lxrt_request(lxsrq, arg, task);
@@ -789,14 +788,14 @@ void linux_process_termination(void)
 				break;
 		}
 	}
-	if ((task2delete = current->rtai_tskext(TSKEXT0))) {
+	if ((task2delete = rtai_tskext_t(current, TSKEXT0))) {
 		if (!clr_rtext(task2delete)) {
 			rt_drg_on_adr(task2delete); 
 			rt_printk("LXRT releases PID %d (ID: %s).\n", current->pid, current->comm);
 			rt_free(task2delete->msg_buf[0]);
 			rt_free(task2delete->msg_buf[1]);
 			rt_free(task2delete);
-			current->rtai_tskext(TSKEXT0) = current->rtai_tskext(TSKEXT1) = 0;
+			rtai_tskext(current, TSKEXT0) = rtai_tskext(current, TSKEXT0) = 0;
 		}
 	}
 }

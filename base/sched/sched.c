@@ -217,7 +217,7 @@ void put_current_on_cpu(int cpuid)
 	}
 #else /* KERNEL_VERSION >= 2.6.0 */
 	if (set_cpus_allowed_ptr(task, cpumask_of(cpuid))) {
-		set_cpus_allowed_ptr(current, cpumask_of(((RT_TASK *)(task->rtai_tskext(TSKEXT0)))->runnable_on_cpus = rtai_cpuid()));
+		set_cpus_allowed_ptr(current, cpumask_of(rtai_tskext_t(task, TSKEXT0)->runnable_on_cpus = rtai_cpuid()));
 	}
 #endif  /* KERNEL_VERSION < 2.6.0 */
 #endif /* CONFIG_SMP */
@@ -276,14 +276,14 @@ int set_rtext(RT_TASK *task, int priority, int uses_fpu, void(*signal)(void), un
 		task->priority = task->base_priority = priority;
 		task->suspdepth = task->is_hard = 1;
 		task->state = RT_SCHED_READY | RT_SCHED_SUSPENDED;
-		relink->rtai_tskext(TSKEXT0) = task;
+		rtai_tskext(relink, TSKEXT0) = task;
 		task->lnxtsk = relink;
 	} else {
 		task->priority = task->base_priority = BASE_SOFT_PRIORITY + priority;
 		task->suspdepth = task->is_hard = 0;
 		task->state = RT_SCHED_READY;
-		current->rtai_tskext(TSKEXT0) = task;
-		current->rtai_tskext(TSKEXT1) = task->lnxtsk = current;
+		rtai_tskext(current, TSKEXT0) = task;
+		rtai_tskext(current, TSKEXT1) = task->lnxtsk = current;
 		put_current_on_cpu(cpuid);
 	}
 	flags = rt_global_save_flags_and_cli();
@@ -1014,9 +1014,9 @@ sched_soft:
 			rtai_sti();
 
 #ifdef CONFIG_RTAI_ALIGN_LINUX_PRIORITY
-			if (current->rtai_tskext(TSKEXT0) && (current->policy == SCHED_FIFO || current->policy == SCHED_RR)) {
+			if (rtai_tskext(current, TSKEXT0) && (current->policy == SCHED_FIFO || current->policy == SCHED_RR)) {
 				int rt_priority;
-				if ((rt_priority = ((RT_TASK *)current->rtai_tskext(TSKEXT0))->priority) >= BASE_SOFT_PRIORITY) {
+				if ((rt_priority = rtai_tskext_t(current, TSKEXT0)->priority) >= BASE_SOFT_PRIORITY) {
 					rt_priority -= BASE_SOFT_PRIORITY;
 				}
 				if ((rt_priority = (MAX_LINUX_RTPRIO - rt_priority)) < 1) {
@@ -1865,7 +1865,7 @@ void rt_schedule_soft_tail(RT_TASK *rt_task, int cpuid)
 //static inline void fast_schedule(RT_TASK *new_task, struct task_struct *lnxtsk, int cpuid)
 static inline void fast_schedule(struct task_struct *task)
 {
-	RT_TASK *new_task = task->rtai_tskext(TSKEXT0);
+	RT_TASK *new_task = rtai_tskext_t(task, TSKEXT0);
 	struct task_struct *lnxtsk = current;
 	int cpuid = new_task->runnable_on_cpus;
 	RT_TASK *rt_current;
@@ -2116,7 +2116,7 @@ struct sig_wakeup_t { struct task_struct *task; };
 static int lxrt_intercept_sig_wakeup(struct task_struct *lnxtsk)
 {
 	RT_TASK *task;
-	if ((task = lnxtsk->rtai_tskext(TSKEXT0))) {
+	if ((task = rtai_tskext_t(lnxtsk, TSKEXT0))) {
 		rt_signal_wake_up(task);
 		return 1;
 	}
@@ -2127,7 +2127,7 @@ static int lxrt_intercept_exit(struct task_struct *lnxtsk)
 {
 	extern void linux_process_termination(void);
 	RT_TASK *task;
-	if ((task = lnxtsk->rtai_tskext(TSKEXT0))) {
+	if ((task = rtai_tskext_t(lnxtsk, TSKEXT0))) {
 		if (task->is_hard > 0) {
 			give_back_to_linux(task, 0);
 		}
@@ -2163,7 +2163,7 @@ static int lxrt_intercept_syscall_prologue(struct pt_regs *regs)
 {
 	RT_TASK *task;
 
-	if ((task = current->rtai_tskext(TSKEXT0))) { // ???	if (regs->LINUX_SYSCALL_NR < NR_syscalls && (task = current->rtai_tskext(TSKEXT0))) {
+	if ((task = rtai_tskext_t(current, TSKEXT0))) { // ???	if (regs->LINUX_SYSCALL_NR < NR_syscalls && (task = current->rtai_tskext(TSKEXT0))) {
 		if (task->is_hard > 0) {
 			if (task->linux_syscall_server) {
 				rt_exec_linux_syscall(task, ((RT_TASK *)task->linux_syscall_server)->linux_syscall_server, regs);

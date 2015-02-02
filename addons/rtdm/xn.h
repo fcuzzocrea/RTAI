@@ -56,8 +56,8 @@
   of specific assertions we care of.
  */
 
-#define xnpod_root_p()          (!current->rtai_tskext(TSKEXT0) || !((RT_TASK *)(current->rtai_tskext(TSKEXT0)))->is_hard)
-#define xnshadow_thread(t)      ((xnthread_t *)current->rtai_tskext(TSKEXT0))
+#define xnpod_root_p()          (!rtai_tskext(current, TSKEXT0) || !rtai_tskext_t(current, TSKEXT0)->is_hard)
+#define xnshadow_thread(t)      ((xnthread_t *)rtai_tskext(current, TSKEXT0))
 #define rthal_local_irq_test()  (!rtai_save_flags_irqbit())
 #define rthal_local_irq_enable  rtai_sti 
 #define rthal_domain rtai_domain

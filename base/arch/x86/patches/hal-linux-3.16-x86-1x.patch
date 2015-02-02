@@ -9223,7 +9223,7 @@ new file mode 100644
 index 0000000..164e19c
 --- /dev/null
 +++ b/kernel/ipipe/core.c
-@@ -0,0 +1,1902 @@
+@@ -0,0 +1,1904 @@
 +/* -*- linux-c -*-
 + * linux/kernel/ipipe/core.c
 + *
@@ -9263,6 +9263,8 @@ index 0000000..164e19c
 +#include <linux/ipipe.h>
 +#include <ipipe/setup.h>
 +
++extern void *sys_call_table;
++EXPORT_SYMBOL(sys_call_table);
 +int (*rtai_syscall_hook)(struct pt_regs *) = NULL;
 +EXPORT_SYMBOL(rtai_syscall_hook);
 +int (*rtai_trap_hook)(int exception, struct pt_regs *) = NULL;

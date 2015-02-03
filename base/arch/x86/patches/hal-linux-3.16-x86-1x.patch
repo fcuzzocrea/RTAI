@@ -9223,7 +9223,7 @@ new file mode 100644
 index 0000000..164e19c
 --- /dev/null
 +++ b/kernel/ipipe/core.c
-@@ -0,0 +1,1904 @@
+@@ -0,0 +1,1906 @@
 +/* -*- linux-c -*-
 + * linux/kernel/ipipe/core.c
 + *
@@ -9265,6 +9265,8 @@ index 0000000..164e19c
 +
 +extern void *sys_call_table;
 +EXPORT_SYMBOL(sys_call_table);
++int (*rtai_fastcall_hook)(struct pt_regs *) = NULL;
++EXPORT_SYMBOL(rtai_fastcall_hook);
 +int (*rtai_syscall_hook)(struct pt_regs *) = NULL;
 +EXPORT_SYMBOL(rtai_syscall_hook);
 +int (*rtai_trap_hook)(int exception, struct pt_regs *) = NULL;
@@ -10199,7 +10201,7 @@ index 0000000..164e19c
 +
 +int ipipe_fastcall_hook(struct pt_regs *regs)
 +{
-+	return rtai_syscall_hook ? rtai_syscall_hook(regs) : -1;
++	return rtai_fastcall_hook ? rtai_fastcall_hook(regs) : -1;
 +}
 +
 +int __ipipe_notify_syscall(struct pt_regs *regs)

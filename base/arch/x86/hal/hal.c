@@ -439,6 +439,7 @@ int rt_request_timers(void *rtai_time_handler)
 #endif
 	return 0;
 }
+EXPORT_SYMBOL(rt_request_timers);
 
 void rt_free_timers(void)
 {
@@ -448,6 +449,7 @@ void rt_free_timers(void)
 	}
 	rt_linux_hrt_next_shot = NULL;
 }
+EXPORT_SYMBOL(rt_free_timers);
 
 #ifdef CONFIG_SMP
 
@@ -455,17 +457,6 @@ static unsigned long rtai_old_irq_affinity[IPIPE_NR_XIRQS];
 static unsigned long rtai_orig_irq_affinity[IPIPE_NR_XIRQS];
 
 static DEFINE_SPINLOCK(rtai_iset_lock);  // SPIN_LOCK_UNLOCKED
-
-void rt_request_apic_timers (void (*handler)(void), struct apic_timer_setup_data *tmdata)
-{
-	rt_request_timers(handler);
-	return;
-}
-
-void rt_free_apic_timers(void)
-{
-	return rt_free_timers();
-}
 
 unsigned long rt_assign_irq_to_cpu (int irq, unsigned long cpumask)
 {
@@ -516,16 +507,6 @@ unsigned long rt_reset_irq_to_sym_mode (int irq)
 
 #else  /* !CONFIG_SMP */
 
-void rt_request_apic_timers (void (*handler)(void), struct apic_timer_setup_data *tmdata)
-{
-	return;
-}
-
-void rt_free_apic_timers(void)
-{
-	rt_free_timer();
-}
-
 unsigned long rt_assign_irq_to_cpu (int irq, unsigned long cpus_mask)
 {
 	return 0;
@@ -537,17 +518,6 @@ unsigned long rt_reset_irq_to_sym_mode (int irq)
 }
 
 #endif /* CONFIG_SMP */
-
-int rt_request_timer(void (*handler)(void), unsigned tick, int use_apic)
-{
-	rt_request_timers(handler);
-	return 0;
-}
-
-void rt_free_timer(void)
-{
-	rt_free_timers();
-}
 
 RT_TRAP_HANDLER rt_set_trap_handler (RT_TRAP_HANDLER handler)
 {
@@ -1045,10 +1015,6 @@ EXPORT_SYMBOL(rt_free_srq);
 EXPORT_SYMBOL(rt_pend_linux_srq);
 EXPORT_SYMBOL(rt_assign_irq_to_cpu);
 EXPORT_SYMBOL(rt_reset_irq_to_sym_mode);
-EXPORT_SYMBOL(rt_request_apic_timers);
-EXPORT_SYMBOL(rt_free_apic_timers);
-EXPORT_SYMBOL(rt_request_timer);
-EXPORT_SYMBOL(rt_free_timer);
 EXPORT_SYMBOL(rt_set_trap_handler);
 EXPORT_SYMBOL(rt_set_irq_ack);
 

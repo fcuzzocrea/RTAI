@@ -611,6 +611,10 @@ void rt_request_timer_cpuid(void (*handler)(void),
                             unsigned tick,
                             int cpuid);
 
+int rt_request_timers(void *handler);
+
+void rt_free_timers(void);
+
 void rt_request_apic_timers(void (*handler)(void),
                             struct apic_timer_setup_data *tmdata);
 

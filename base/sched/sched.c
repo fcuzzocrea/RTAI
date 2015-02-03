@@ -98,8 +98,6 @@ static int rt_smp_oneshot_running[NR_RT_CPUS];
 
 static volatile int rt_smp_timer_shot_fired[NR_RT_CPUS];
 
-static struct rt_times *linux_times;
-
 static RT_TASK *lxrt_wdog_task[NR_RT_CPUS];
 
 RT_TASK *lxrt_prev_task[NR_RT_CPUS];
@@ -1294,32 +1292,6 @@ sched_exit:
 }
 
 
-#if defined(USE_LINUX_TIMER) && !defined(CONFIG_GENERIC_CLOCKEVENTS)
-
-static irqreturn_t recover_jiffies(int irq, void *dev_id, struct pt_regs *regs) 
-{
-	rt_global_cli();
-	if (linux_times->tick_time >= linux_times->linux_time) {
-		linux_times->linux_time += linux_times->linux_tick;
-		update_linux_timer(rtai_cpuid());
-	}
-	rt_global_sti();
-	return RTAI_LINUX_IRQ_HANDLED;
-} 
-
-#define REQUEST_RECOVER_JIFFIES()  rt_request_linux_irq(TIMER_8254_IRQ, recover_jiffies, "rtai_jif_chk", recover_jiffies)
-
-#define RELEASE_RECOVER_JIFFIES(timer)  rt_free_linux_irq(TIMER_8254_IRQ, recover_jiffies)
-
-#else 
-
-#define REQUEST_RECOVER_JIFFIES()
-
-#define RELEASE_RECOVER_JIFFIES()
-
-#endif
-
-
 int rt_is_hard_timer_running(void) 
 { 
 	return rt_sched_timed;
@@ -1339,13 +1311,8 @@ void rt_set_oneshot_mode(void)
 
 void rt_set_periodic_mode(void) 
 { 
-	int cpuid;
 	rt_set_oneshot_mode();
 	return;
-	stop_rt_timer();
-	for (cpuid = 0; cpuid < NR_RT_CPUS; cpuid++) {
-		oneshot_timer = oneshot_running = 0;
-	}
 }
 
 
@@ -1385,56 +1352,29 @@ static int _rt_linux_hrt_next_shot(unsigned long deltat, void *hrt_dev) // ??? s
 
 #endif /* CONFIG_GENERIC_CLOCKEVENTS */
 
-#ifdef CONFIG_SMP
-
-RTAI_SYSCALL_MODE void start_rt_apic_timers(struct apic_timer_setup_data *setup_data, unsigned int rcvr_jiffies_cpuid)
+static void start_rt_timers(void)
 {
 	unsigned long flags, cpuid;
 
-	rt_request_apic_timers(rt_timer_handler, setup_data);
+	rt_request_timers(rt_timer_handler);
 	flags = rt_global_save_flags_and_cli();
 	for (cpuid = 0; cpuid < NR_RT_CPUS; cpuid++) {
-		if (0 && setup_data[cpuid].mode > 0) {
-			oneshot_timer = oneshot_running = 0;
-			tuned.timers_tol[cpuid] = rt_half_tick = (rt_times.periodic_tick + 1)>>1;
-		} else {
-			oneshot_timer = oneshot_running = 1;
-			tuned.timers_tol[cpuid] = rt_half_tick = (tuned.latency + 1)>>1;
-		}
+		oneshot_timer = oneshot_running = 1;
+		tuned.timers_tol[cpuid] = rt_half_tick = tuned.latency/2;
 		rt_time_h = rt_times.tick_time + rt_half_tick;
 		timer_shot_fired = 1;
 	}
 	rt_sched_timed = 1;
-	linux_times = rt_smp_times + (rcvr_jiffies_cpuid < NR_RT_CPUS ? rcvr_jiffies_cpuid : 0);
 	rt_global_restore_flags(flags);
 }
 
 
-RTAI_SYSCALL_MODE RTIME start_rt_timer(int period)
+static void stop_rt_timers(void)
 {
-	RTIME ret = period;
-	int cpuid;
-	struct apic_timer_setup_data setup_data[NR_RT_CPUS];
-	if (1 || period <= 0) {
-		period = 0;
-		rt_set_oneshot_mode();
-	}
-	for (cpuid = 0; cpuid < NR_RT_CPUS; cpuid++) {
-		setup_data[cpuid].mode = oneshot_timer ? 0 : 1;
-		setup_data[cpuid].count = count2nano(period);
-	}
-	start_rt_apic_timers(setup_data, rtai_cpuid());
-	rt_gettimeorig(NULL);
-	return ret; // setup_data[0].mode ? setup_data[0].count : period;
-}
-
-
-void stop_rt_timer(void)
-{
+	int cpuid; 
 	if (rt_sched_timed) {
-		int cpuid; 
 		rt_sched_timed = 0;
-		rt_free_apic_timers();
+		rt_free_timers();
 		for (cpuid = 0; cpuid < NR_RT_CPUS; cpuid++) {
 			rt_time_h = RT_TIME_END;
 			oneshot_running = 0;
@@ -1442,85 +1382,26 @@ void stop_rt_timer(void)
 	}
 }
 
-#else /* !CONFIG_SMP */
 
-#ifndef TIMER_TYPE
-#define TIMER_TYPE  1
-#endif
-
-RTAI_SYSCALL_MODE RTIME start_rt_timer(int period)
+RTAI_SYSCALL_MODE void start_rt_apic_timers(struct apic_timer_setup_data *setup_data, unsigned int rcvr_jiffies_cpuid)
 {
-#define cpuid 0
-#undef rt_times
-
-	RTIME ret = period;
-        unsigned long flags;
-	if (1 || period <= 0) {
-		period = 0;
-		rt_set_oneshot_mode();
-	}
-        flags = rt_global_save_flags_and_cli();
-        if (oneshot_timer) {
-		rt_request_timer(rt_timer_handler, 0, TIMER_TYPE);
-                tuned.timers_tol[0] = rt_half_tick = (tuned.latency + 1)>>1;
-                oneshot_running = timer_shot_fired = 1;
-        } else {
-		rt_request_timer(rt_timer_handler, !TIMER_TYPE && period > LATCH ? LATCH: period, TIMER_TYPE);
-                tuned.timers_tol[0] = rt_half_tick = (rt_times.periodic_tick + 1)>>1;
-        }
-	rt_sched_timed = 1;
-	rt_smp_times[cpuid].linux_tick    = rt_times.linux_tick;
-	rt_smp_times[cpuid].tick_time     = rt_times.tick_time;
-	rt_smp_times[cpuid].intr_time     = rt_times.intr_time;
-	rt_smp_times[cpuid].linux_time    = rt_times.linux_time;
-	rt_smp_times[cpuid].periodic_tick = rt_times.periodic_tick;
-        rt_time_h = rt_times.tick_time + rt_half_tick;
-	linux_times = rt_smp_times;
-        rt_global_restore_flags(flags);
-	REQUEST_RECOVER_JIFFIES();
-	rt_gettimeorig(NULL);
-        return ret; // period;
-
-#undef cpuid
-#define rt_times (rt_smp_times[cpuid])
+	start_rt_timers();
+	return;
 }
 
 
-RTAI_SYSCALL_MODE void start_rt_apic_timers(struct apic_timer_setup_data *setup_mode, unsigned int rcvr_jiffies_cpuid)
+RTAI_SYSCALL_MODE RTIME start_rt_timer(int period)
 {
-	int cpuid, period;
-
-	period = 0;
-	for (cpuid = 0; cpuid < NR_RT_CPUS; cpuid++) {
-//		period += setup_mode[cpuid].mode;
-	}
-	if (period == NR_RT_CPUS) {
-		period = 2000000000;
-		for (cpuid = 0; cpuid < NR_RT_CPUS; cpuid++) {
-			if (setup_mode[cpuid].count < period) {
-				period = setup_mode[cpuid].count;
-			}
-		}
-		start_rt_timer(nano2count(period));
-	} else {
-		rt_set_oneshot_mode();
-		start_rt_timer(0);
-	}
+	start_rt_timers();
+	return period;
 }
 
 
 void stop_rt_timer(void)
 {
-	if (rt_sched_timed) {
-		rt_sched_timed = 0;
-		RELEASE_RECOVER_JIFFIES();
-		rt_free_timer();
-		rt_time_h = RT_TIME_END;
-		rt_smp_oneshot_timer[0] = 0;
-	}
+	stop_rt_timers();
+	return;
 }
-
-#endif /* CONFIG_SMP */
 
 
 RTAI_SYSCALL_MODE int rt_hard_timer_tick_count(void)
@@ -2183,7 +2064,8 @@ static int lxrt_intercept_syscall_prologue(struct pt_regs *regs)
 
 extern long long rtai_usrq_dispatcher (unsigned long, unsigned long);
 
-static int lxrt_intercept_syscall(struct pt_regs *regs){
+static int lxrt_intercept_syscall(struct pt_regs *regs)
+{
 	if (likely(regs->LINUX_SYSCALL_NR >= RTAI_SYSCALL_NR)) {
 		unsigned long srq  = regs->LINUX_SYSCALL_REG1;
 		IF_IS_A_USI_SRQ_CALL_IT(srq, regs->LINUX_SYSCALL_REG2, (long long *)regs->LINUX_SYSCALL_REG3, regs->LINUX_SYSCALL_FLAGS, 1);
@@ -2195,6 +2077,18 @@ static int lxrt_intercept_syscall(struct pt_regs *regs){
 		return 1;
 	}
 	return lxrt_intercept_syscall_prologue(regs);
+}
+
+static int lxrt_intercept_fastcall(struct pt_regs *regs)
+{
+	unsigned long srq  = regs->LINUX_SYSCALL_REG1;
+	IF_IS_A_USI_SRQ_CALL_IT(srq, regs->LINUX_SYSCALL_REG2, (long long *)regs->LINUX_SYSCALL_REG3, regs->LINUX_SYSCALL_FLAGS, 1);
+	*((long long *)regs->LINUX_SYSCALL_REG3) = srq > RTAI_NR_SRQS ?  rtai_lxrt_invoke(srq, (void *)regs->LINUX_SYSCALL_REG2) : rtai_usrq_dispatcher(srq, regs->LINUX_SYSCALL_REG2);
+	if (!in_hrt_mode(srq = rtai_cpuid())) {
+		hal_test_and_fast_flush_pipeline(srq);
+		return 0;
+	}
+	return 1;
 }
 
 #if 0
@@ -2427,6 +2321,7 @@ static void rtai_isr_sched_handle(int cpuid) /* Called with interrupts off */
 EXPORT_SYMBOL(rtai_isr_sched_handle);
 
 void *saved_rtai_syscall_hook;
+extern int (*rtai_fastcall_hook)(struct pt_regs *);
 extern int (*rtai_syscall_hook)(struct pt_regs *);
 extern void (*rtai_migration_hook)(struct task_struct *);
 extern int (*rtai_kevent_hook)(int kevent, void *);
@@ -2455,6 +2350,7 @@ static int lxrt_init(void)
 	
 	rtai_init_sthsems();
 	saved_rtai_syscall_hook = rtai_syscall_hook;
+	rtai_fastcall_hook = lxrt_intercept_fastcall;
 	rtai_syscall_hook = lxrt_intercept_syscall;
 	rtai_kevent_hook = lxrt_intercept_kevents;
 	rtai_migration_hook = fast_schedule; //lxrt_intercept_schedule_tail;
@@ -2472,6 +2368,7 @@ static void lxrt_exit(void)
 
 	RELEASE_RESUME_SRQs_STUFF();
 
+	rtai_fastcall_hook = NULL;
 	rtai_syscall_hook = saved_rtai_syscall_hook;
 	rtai_migration_hook = NULL;
 	rtai_kevent_hook = NULL;

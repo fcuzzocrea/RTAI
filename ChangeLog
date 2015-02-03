@@ -1,3 +1,9 @@
+2015-02-04 Paolo Mantegazza <mantegazza@aero.polimi.it>
+
+	* base/arch/x86/hal/hal.c: got rid of all old timer request/free.
+	  base/sched/sched.c: got rid of all old start/stop_rt_timer and
+	  likes. Added fastcall hook.
+
 2015-02-02 Paolo Mantegazza <mantegazza@aero.polimi.it>
 
 	* base/include/asm-x86/rtai_hal.h: macro rtai_tskext modified so to 

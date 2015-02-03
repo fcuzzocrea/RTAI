@@ -8774,7 +8774,7 @@ index 0000000..da17b04
 +config IPIPE_LEGACY
 +	bool "I-pipe legacy interface"
 +	depends on IPIPE
-+	default y
++	default n
 +	---help---
 +	  Activate this option if you want to control the interrupt
 +	  pipeline via the legacy interface.

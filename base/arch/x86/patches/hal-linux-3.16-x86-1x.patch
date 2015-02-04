@@ -10276,7 +10276,7 @@ index 0000000..164e19c
 +
 +int __ipipe_notify_trap(int exception, struct pt_regs *regs)
 +{
-+	return rtai_trap_hook ? rtai_trap_hook(exception, regs) : 0;
++	return (!__ipipe_root_p && rtai_trap_hook) ? rtai_trap_hook(exception, regs) : 0;
 +}
 +
 +int __Ipipe_notify_trap(int exception, struct pt_regs *regs)
@@ -10313,7 +10313,7 @@ index 0000000..164e19c
 +
 +int __ipipe_notify_kevent(int kevent, void *data)
 +{
-+	return rtai_kevent_hook ? rtai_kevent_hook(kevent, data) : 0;
++	ipipe_root_only(); return rtai_kevent_hook ? rtai_kevent_hook(kevent, data) : 0;
 +}
 +
 +int __Ipipe_notify_kevent(int kevent, void *data)

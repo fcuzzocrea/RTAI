@@ -4,7 +4,7 @@
 	  rt_kthread_init, hiding the old one. Still to be cleaned a bit.
 	* base/include/rtai_schedcore.h: hided the old declaration of 
 	  rt_kthread_init. Awaiting some cleaning.
-	* base/sched/sched.c: made fastschedule support hard transitions 
+	* base/sched/sched.c: made fast_schedule support hard transitions 
           for kernel threads, without touching the context switch in use.
 	* base/sched/sys.c: reinstated support for hard-soft kernel threads, 
 	  emulating the scheme used in kernel space. Beware of the way of 

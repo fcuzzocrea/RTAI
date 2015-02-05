@@ -32,6 +32,7 @@ Nov. 2001, Jan Kiszka (Jan.Kiszka@web.de) fix a tiny bug in __task_init.
 #include <linux/mman.h>
 #include <linux/sched.h>
 #include <linux/delay.h>
+#include <linux/semaphore.h>
 #include <asm/uaccess.h>
 
 #include <rtai_sched.h>
@@ -204,7 +205,8 @@ static inline void lxrt_fun_call_wbuf(RT_TASK *rt_task, void *fun, int narg, lon
 void put_current_on_cpu(int cpuid);
 void rt_set_task_pid(RT_TASK *);
 
-static inline RT_TASK* __task_init(unsigned long name, int prio, int stack_size, int max_msg_size, int cpus_allowed)
+//static inline RT_TASK* __task_init(unsigned long name, int prio, int stack_size, int max_msg_size, int cpus_allowed)
+RT_TASK* __task_init(unsigned long name, int prio, int stack_size, int max_msg_size, int cpus_allowed)
 {
 	void *msg_buf0, *msg_buf1;
 	RT_TASK *rt_task;
@@ -250,6 +252,7 @@ static inline RT_TASK* __task_init(unsigned long name, int prio, int stack_size,
 		rt_task->max_msg_size[1] = max_msg_size;
 		if (rt_register(name, rt_task, IS_TASK, 0)) {
 			rt_task->state = 0;
+			__ipipe_share_current(0);
 			ipipe_enable_notifier(current);
 #ifdef CONFIG_MMU
 			__ipipe_disable_ondemand_mappings(current);
@@ -267,6 +270,7 @@ static inline RT_TASK* __task_init(unsigned long name, int prio, int stack_size,
 	rt_free(msg_buf1);
 	return 0;
 }
+EXPORT_SYMBOL(__task_init);
 
 static int __task_delete(RT_TASK *rt_task)
 {
@@ -881,44 +885,53 @@ RT_TASK *rt_kthread_create(void *fun, long data, int priority, int linux_policy,
 	msleep(100);
 	return args.task;
 }
+#endif
 	
 #include <linux/kthread.h>
-long rt_thread_create(void *fun, void *args, int stack_size)
+
+#ifndef MAX_RT_PRIO
+#define MAX_RT_PRIO 99
+#endif 
+
+long rt_kthread_create(void *fun, void *args, int stack_size)
 {
-	long retval;
 	RT_TASK *task;
-	if ((task = current->rtai_tskext(TSKEXT0)) && task->is_hard > 0) {
+	long retval;
+
+	if ((task = rtai_tskext_t(current, TSKEXT0)) && task->is_hard > 0) {
 		rt_make_soft_real_time(task);
 	}
-//	retval = kernel_thread(fun, args, 0);
 	retval = (long)kthread_run(fun, args, "RTAI");
 	if (task && !task->is_hard) {
 		rt_make_hard_real_time(task);
 	}
 	return retval;
 }
-EXPORT_SYMBOL(rt_thread_create);
+EXPORT_SYMBOL(rt_kthread_create);
 	
-RT_TASK *rt_thread_init(unsigned long name, int priority, int max_msg_size, int policy, int cpus_allowed)
+RT_TASK *rt_kthread_init(unsigned long name, int priority, int hard, int policy, int cpus_allowed)
 {
 	int linux_rt_priority;
 	RT_TASK *task;
+	char namestr[10];
+
         if (policy == SCHED_NORMAL) {
                 linux_rt_priority = 0;
         } else if ((linux_rt_priority = MAX_RT_PRIO - 1 - priority) < 1) {
                 linux_rt_priority = 1;
 	}
 	rtai_set_linux_task_priority(current, policy, linux_rt_priority);
-	if ((task = __task_init(name ? name : rt_get_name(NULL), priority, 0, max_msg_size, cpus_allowed))) {
+	if ((task = __task_init(name ? name : rt_get_name(NULL), priority, 0, hard, cpus_allowed)) && hard > 0) {
 		rt_make_hard_real_time(task);
 	} 
+	num2nam(name, namestr);
+	strcpy(current->comm, namestr); 
 	return task;
 }
-EXPORT_SYMBOL(rt_thread_init);
+EXPORT_SYMBOL(rt_kthread_init);
 
-int rt_thread_delete(RT_TASK *rt_task)
+int rt_kthread_delete(RT_TASK *rt_task)
 {
 	return __task_delete(rt_task);
 }
-EXPORT_SYMBOL(rt_thread_delete);
-#endif
+EXPORT_SYMBOL(rt_kthread_delete);

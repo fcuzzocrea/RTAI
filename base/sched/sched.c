@@ -297,7 +297,7 @@ int set_rtext(RT_TASK *task, int priority, int uses_fpu, void(*signal)(void), un
 	return 0;
 }
 
-
+#if 0
 int rt_kthread_init_cpuid(RT_TASK *task, void (*rt_thread)(long), long data,
 			int stack_size, int priority, int uses_fpu,
 			void(*signal)(void), unsigned int cpuid)
@@ -314,6 +314,7 @@ int rt_kthread_init(RT_TASK *task, void (*rt_thread)(long), long data,
 	return rt_task_init_cpuid(task, rt_thread, data, stack_size, priority, uses_fpu, signal, get_min_tasks_cpuid());
 }
 EXPORT_SYMBOL(rt_kthread_init);
+#endif
 
 
 asmlinkage static void rt_startup(void(*rt_thread)(long), long data)
@@ -1759,6 +1760,7 @@ static inline void fast_schedule(struct task_struct *task)
 	(rt_current = &rt_linux_task)->lnxtsk = lnxtsk;
 	SET_EXEC_TIME();
 	rt_smp_current[cpuid] = new_task;
+	if (!(new_task->lnxtsk)->mm) (new_task->lnxtsk)->active_mm = current->active_mm;
 	lxrt_context_switch(lnxtsk, new_task->lnxtsk, cpuid);
 	CALL_TIMER_HANDLER();
 	UNLOCK_LINUX(cpuid);

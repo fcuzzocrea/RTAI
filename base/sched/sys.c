@@ -921,6 +921,8 @@ RT_TASK *rt_kthread_init(unsigned long name, int priority, int hard, int policy,
                 linux_rt_priority = 1;
 	}
 	rtai_set_linux_task_priority(current, policy, linux_rt_priority);
+	init_fpu(current);
+	
 	if ((task = __task_init(name ? name : rt_get_name(NULL), priority, 0, hard, cpus_allowed)) && hard > 0) {
 		rt_make_hard_real_time(task);
 	} 

@@ -1,7 +1,21 @@
+2015-02-05 Paolo Mantegazza <mantegazza@aero.polimi.it>
+	
+	* base/include/rtai_sched.h: added the new declaration for 
+	  rt_kthread_init, hiding the old one. Still to be cleaned a bit.
+	* base/include/rtai_schedcore.h: hided the old declaration of 
+	  rt_kthread_init. Awaiting some cleaning.
+	* base/sched/sched.c: made fastschedule support hard transitions 
+          for kernel threads, without touching the context switch in use.
+	* base/sched/sys.c: reinstated support for hard-soft kernel threads, 
+	  emulating the scheme used in kernel space. Beware of the way of 
+	  calling RTAI services in the case of soft threads. See 
+	  soft calling functions. The legacy RESERVOIR option awaits a new 
+	  helper module. TBD: the releated testsuite.
+
 2015-02-04 Paolo Mantegazza <mantegazza@aero.polimi.it>
 
 	* base/arch/x86/hal/hal.c: got rid of all old timer request/free.
-	  base/sched/sched.c: got rid of all old start/stop_rt_timer and
+	* base/sched/sched.c: got rid of all old start/stop_rt_timer and
 	  likes. Added fastcall hook.
 
 2015-02-02 Paolo Mantegazza <mantegazza@aero.polimi.it>

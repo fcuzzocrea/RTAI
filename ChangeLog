@@ -1,3 +1,10 @@
+2015-02-06 Paolo Mantegazza <mantegazza@aero.polimi.it>
+
+	* base/sched/sched.c: avoid loosing the active_mm stolen for kernel
+	  threads working in hard real time, by incrementing its mm_count 
+	  when it is acquired in fast_schedule, then mmdrop active_mm any 
+	  time they are returned to soft mode in give_back_to_linux.
+
 2015-02-05 Paolo Mantegazza <mantegazza@aero.polimi.it>
 	
 	* base/include/rtai_sched.h: added the new declaration for 

@@ -2048,7 +2048,6 @@ static int lxrt_intercept_kevents(int kevent, void *data)
 }
 
 extern long long rtai_lxrt_invoke (unsigned long, void *);
-//extern int (*sys_call_table[])(struct pt_regs);
 
 static int lxrt_intercept_syscall_prologue(struct pt_regs *regs)
 {

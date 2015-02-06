@@ -848,52 +848,13 @@ long kernel_calibrator_spv(long period, long loops, RT_TASK *task)
 	return period;
 }
 
-#if 0
-
-struct thread_args { void *fun; long data; int priority; int policy; int cpus_allowed; RT_TASK *task; struct semaphore *sem; };
-
-static void kthread_fun(struct thread_args *args) 
-{
-	int linux_rt_priority;
-
-        if (args->policy == SCHED_NORMAL) {
-                linux_rt_priority = 0;
-        } else if ((linux_rt_priority = MAX_RT_PRIO - 1 - args->priority) < 1) {
-                linux_rt_priority = 1;
-	}
-	rtai_set_linux_task_priority(current, args->policy, linux_rt_priority);
-	
-	if ((args->task = __task_init(rt_get_name(NULL), args->priority, 0, 0, args->cpus_allowed))) {
-		RT_TASK *task = args->task;
-		void (*fun)(long) = args->fun;
-		long data = args->data;
-		up(args->sem);
-		rt_make_hard_real_time(task);
-		fun(data);
-		rt_thread_delete(task);
-	} 
-	return;
-}
-
-RT_TASK *rt_kthread_create(void *fun, long data, int priority, int linux_policy, int cpus_allowed)
-{
-	struct semaphore sem;
-	struct thread_args args = { fun, data, priority, linux_policy, cpus_allowed, NULL, &sem };
-	init_MUTEX_LOCKED(&sem);
-	kernel_thread((void *)kthread_fun, &args, 0);
-	down(&sem);
-	msleep(100);
-	return args.task;
-}
-#endif
-	
 #include <linux/kthread.h>
 
 #ifndef MAX_RT_PRIO
 #define MAX_RT_PRIO 99
 #endif 
 
-long rt_kthread_create(void *fun, void *args, int stack_size)
+long rt_thread_create(void *fun, void *args, int stack_size)
 {
 	RT_TASK *task;
 	long retval;
@@ -907,9 +868,9 @@ long rt_kthread_create(void *fun, void *args, int stack_size)
 	}
 	return retval;
 }
-EXPORT_SYMBOL(rt_kthread_create);
+EXPORT_SYMBOL(rt_thread_create);
 	
-RT_TASK *rt_kthread_init(unsigned long name, int priority, int hard, int policy, int cpus_allowed)
+RT_TASK *rt_thread_init(unsigned long name, int priority, int hard, int policy, int cpus_allowed)
 {
 	int linux_rt_priority;
 	RT_TASK *task;
@@ -930,10 +891,10 @@ RT_TASK *rt_kthread_init(unsigned long name, int priority, int hard, int policy,
 	strcpy(current->comm, namestr); 
 	return task;
 }
-EXPORT_SYMBOL(rt_kthread_init);
+EXPORT_SYMBOL(rt_thread_init);
 
-int rt_kthread_delete(RT_TASK *rt_task)
+int rt_thread_delete(RT_TASK *rt_task)
 {
 	return __task_delete(rt_task);
 }
-EXPORT_SYMBOL(rt_kthread_delete);
+EXPORT_SYMBOL(rt_thread_delete);

@@ -261,9 +261,14 @@ int rt_task_init_cpuid(struct rt_task_struct *task,
 		       void(*signal)(void),
 		       unsigned run_on_cpu);
 
-RT_TASK *rt_kthread_init(unsigned long name, int priority, int hard, int policy, int cpus_allowed);
+long rt_thread_create(void *fun, void *args, int stack_size);
 
-int rt_kthread_init_old(struct rt_task_struct *task,
+RT_TASK *rt_thread_init(unsigned long name, int priority, int hard, int policy, int cpus_allowed);
+
+int rt_thread_delete(RT_TASK *rt_task);
+
+
+int rt_kthread_init(struct rt_task_struct *task,
 		    void (*rt_thread)(long),
 		    long data,
 		    int stack_size,

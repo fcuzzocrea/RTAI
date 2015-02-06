@@ -1744,13 +1744,13 @@ void rt_schedule_soft_tail(RT_TASK *rt_task, int cpuid)
 	_rt_schedule_soft_tail(rt_task, cpuid);
 }
 
-//static inline void fast_schedule(RT_TASK *new_task, struct task_struct *lnxtsk, int cpuid)
 static inline void fast_schedule(struct task_struct *task)
 {
 	RT_TASK *new_task = rtai_tskext_t(task, TSKEXT0);
 	struct task_struct *lnxtsk = current;
 	int cpuid = new_task->runnable_on_cpus;
 	RT_TASK *rt_current;
+
 	rt_global_cli();
 	new_task->state |= RT_SCHED_READY;
 	enq_soft_ready_task(new_task);
@@ -1760,8 +1760,11 @@ static inline void fast_schedule(struct task_struct *task)
 	(rt_current = &rt_linux_task)->lnxtsk = lnxtsk;
 	SET_EXEC_TIME();
 	rt_smp_current[cpuid] = new_task;
-	if (!(new_task->lnxtsk)->mm) (new_task->lnxtsk)->active_mm = current->active_mm;
-	lxrt_context_switch(lnxtsk, new_task->lnxtsk, cpuid);
+	if (!task->mm) {
+		task->active_mm = lnxtsk->active_mm;
+		atomic_inc(&task->active_mm->mm_count);
+	}
+	lxrt_context_switch(lnxtsk, task, cpuid);
 	CALL_TIMER_HANDLER();
 	UNLOCK_LINUX(cpuid);
 	rtai_sti();
@@ -1871,6 +1874,7 @@ void steal_from_linux(RT_TASK *rt_task)
 void give_back_to_linux(RT_TASK *rt_task, int keeprio)
 {
 	struct task_struct *lnxtsk;
+	struct mm_struct *active_mm;
 	int rt_priority;
 
 	rt_global_cli();
@@ -1878,9 +1882,10 @@ void give_back_to_linux(RT_TASK *rt_task, int keeprio)
 	(rt_task->rnext)->rprev = rt_task->rprev;
 	rt_task->state = 0;
 	pend_wake_up_hts(lnxtsk = rt_task->lnxtsk, rt_task->runnable_on_cpus);
+	active_mm = lnxtsk->active_mm;
 #ifdef TASK_NOWAKEUP
 	set_task_state(lnxtsk, lnxtsk->state & ~TASK_NOWAKEUP);
-#endif
+#endif 
 	rt_schedule();
 	if (!(rt_task->is_hard = keeprio)) {
 		if (rt_task->priority < BASE_SOFT_PRIORITY) {
@@ -1905,6 +1910,9 @@ void give_back_to_linux(RT_TASK *rt_task, int keeprio)
 	/* Perform Linux's scheduling tail now since we woke up
 	   outside the regular schedule() point. */
 	hal_schedule_back_root(lnxtsk);
+	if (!lnxtsk->mm) {
+		mmdrop(active_mm);
+	}
 
 #ifdef CONFIG_RTAI_ALIGN_LINUX_PRIORITY
 	if (lnxtsk->policy == SCHED_FIFO || lnxtsk->policy == SCHED_RR) {

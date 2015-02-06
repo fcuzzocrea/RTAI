@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2001-2013  Paolo Mantegazza <mantegazza@aero.polimi.it>,
+ * Copyright (C) 2001-2015  Paolo Mantegazza <mantegazza@aero.polimi.it>,
  *		            Pierre Cloutier <pcloutier@poseidoncontrols.com>,
  *		            Steve Papacharalambous <stevep@zentropix.com>.
  *

@@ -1734,7 +1734,7 @@ void rt_schedule_soft_tail(RT_TASK *rt_task, int cpuid)
 
 #include <linux/kthread.h>
 
-#define PERCPU_ACTIVE_MM
+//#define PERCPU_ACTIVE_MM
 #ifdef PERCPU_ACTIVE_MM
 struct mm_struct *rtai_active_mm[NR_RT_CPUS];
 
@@ -1791,7 +1791,7 @@ struct mm_struct *rtai_active_mm;
 	do { } while (0)
 #endif
 
-//#define ONTHEFLY_ACTIVE_MM
+#define ONTHEFLY_ACTIVE_MM
 #ifdef ONTHEFLY_ACTIVE_MM
 #define rtai_set_active_mm() \
 	do { } while (0)

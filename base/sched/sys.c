@@ -888,7 +888,7 @@ RT_TASK *rt_thread_init(unsigned long name, int priority, int hard, int policy, 
 		rt_make_hard_real_time(task);
 	} 
 	num2nam(name, namestr);
-	strcpy(current->comm, namestr); 
+	strlcpy(current->comm, namestr, sizeof(current->comm)); // race chances?
 	return task;
 }
 EXPORT_SYMBOL(rt_thread_init);

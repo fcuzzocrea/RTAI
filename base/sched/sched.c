@@ -140,16 +140,12 @@ static void rt_schedule_on_schedule_ipi(void);
 
 static inline int rt_request_sched_ipi(void)
 {
-        int retval;
-        retval = rt_request_irq(SCHED_IPI, (void *)rt_schedule_on_schedule_ipi, NULL, 0);
-//        rt_set_sched_ipi_gate();
-        return retval;
+        return rt_request_irq(SCHED_IPI, (void *)rt_schedule_on_schedule_ipi, NULL, 0);
 }
 
 static inline void rt_free_sched_ipi(void)
 {
         rt_release_irq(SCHED_IPI);
-// 	rt_reset_sched_ipi_gate();
 }
 
 static inline void sched_get_global_lock(int cpuid)
@@ -207,17 +203,9 @@ void put_current_on_cpu(int cpuid)
 {
 #ifdef CONFIG_SMP
 	struct task_struct *task = current;
-#if LINUX_VERSION_CODE < KERNEL_VERSION(2,6,0)
-	task->cpus_allowed = 1 << cpuid;
-	while (cpuid != rtai_cpuid()) {
-		task->state = TASK_INTERRUPTIBLE;
-		schedule_timeout(2);
-	}
-#else /* KERNEL_VERSION >= 2.6.0 */
 	if (set_cpus_allowed_ptr(task, cpumask_of(cpuid))) {
-		set_cpus_allowed_ptr(current, cpumask_of(rtai_tskext_t(task, TSKEXT0)->runnable_on_cpus = rtai_cpuid()));
+		set_cpus_allowed_ptr(task, cpumask_of(rtai_tskext_t(task, TSKEXT0)->runnable_on_cpus = rtai_cpuid()));
 	}
-#endif  /* KERNEL_VERSION < 2.6.0 */
 #endif /* CONFIG_SMP */
 }
 
@@ -1744,6 +1732,85 @@ void rt_schedule_soft_tail(RT_TASK *rt_task, int cpuid)
 	_rt_schedule_soft_tail(rt_task, cpuid);
 }
 
+#include <linux/kthread.h>
+
+#define PERCPU_ACTIVE_MM
+#ifdef PERCPU_ACTIVE_MM
+struct mm_struct *rtai_active_mm[NR_RT_CPUS];
+
+static void rtai_fun_set_active_mm(int cpuid)
+{
+        put_current_on_cpu(cpuid);
+        atomic_inc(&current->active_mm->mm_count);
+        rtai_active_mm[cpuid] = current->active_mm;
+}
+
+#define rtai_set_active_mm() \
+	do { \
+		for (cpuid = 0; cpuid < NR_RT_CPUS; cpuid++) { \
+			kthread_run((void *)rtai_fun_set_active_mm, (void *)cpuid, "RTAI_ACTIVE_MM"); \
+		} \
+	} while (0)	
+
+#define rtai_drop_active_mm() \
+	do { \
+		int cpuid; \
+		for (cpuid = 0; cpuid < NR_RT_CPUS; cpuid++) { \
+			mmdrop(rtai_active_mm[cpuid]); \
+		} \
+	} while (0)
+
+#define rt_set_active_mm() \
+	do { \
+		if (!task->mm) task->active_mm = rtai_active_mm[cpuid]; \
+	} while (0)
+
+#define rt_drop_active_mm() \
+	do { } while (0)
+#endif
+
+//#define SINGLE_ACTIVE_MM
+#ifdef SINGLE_ACTIVE_MM
+struct mm_struct *rtai_active_mm;
+
+#define rtai_set_active_mm() \
+	do { \
+	        atomic_inc(&current->active_mm->mm_count); \
+        	rtai_active_mm = current->active_mm; \
+	} while (0)
+
+#define rtai_drop_active_mm() \
+	do { mmdrop(rtai_active_mm); } while (0)
+
+#define rt_set_active_mm() \
+	do { \
+		if (!task->mm) task->active_mm = rtai_active_mm; \
+	} while (0)
+
+#define rt_drop_active_mm() \
+	do { } while (0)
+#endif
+
+//#define ONTHEFLY_ACTIVE_MM
+#ifdef ONTHEFLY_ACTIVE_MM
+#define rtai_set_active_mm() \
+	do { } while (0)
+
+#define rtai_drop_active_mm() \
+	do { } while (0)
+
+#define rt_set_active_mm() \
+	do { \
+		if (!task->mm) { \
+			atomic_inc(&lnxtsk->active_mm->mm_count); \
+			task->active_mm = lnxtsk->active_mm; \
+		} \
+	} while (0)
+
+#define rt_drop_active_mm() \
+	do { if (!lnxtsk->mm) mmdrop(active_mm); } while (0)
+#endif
+
 static inline void fast_schedule(struct task_struct *task)
 {
 	RT_TASK *new_task = rtai_tskext_t(task, TSKEXT0);
@@ -1760,10 +1827,7 @@ static inline void fast_schedule(struct task_struct *task)
 	(rt_current = &rt_linux_task)->lnxtsk = lnxtsk;
 	SET_EXEC_TIME();
 	rt_smp_current[cpuid] = new_task;
-	if (!task->mm) {
-		task->active_mm = lnxtsk->active_mm;
-		atomic_inc(&task->active_mm->mm_count);
-	}
+	rt_set_active_mm();
 	lxrt_context_switch(lnxtsk, task, cpuid);
 	CALL_TIMER_HANDLER();
 	UNLOCK_LINUX(cpuid);
@@ -1910,9 +1974,7 @@ void give_back_to_linux(RT_TASK *rt_task, int keeprio)
 	/* Perform Linux's scheduling tail now since we woke up
 	   outside the regular schedule() point. */
 	hal_schedule_back_root(lnxtsk);
-	if (!lnxtsk->mm) {
-		mmdrop(active_mm);
-	}
+	rt_drop_active_mm();
 
 #ifdef CONFIG_RTAI_ALIGN_LINUX_PRIORITY
 	if (lnxtsk->policy == SCHED_FIFO || lnxtsk->policy == SCHED_RR) {
@@ -2364,6 +2426,8 @@ static int lxrt_init(void)
 	rtai_kevent_hook = lxrt_intercept_kevents;
 	rtai_migration_hook = fast_schedule; //lxrt_intercept_schedule_tail;
 
+	rtai_set_active_mm();
+
 	return 0;
 }
 
@@ -2383,6 +2447,7 @@ static void lxrt_exit(void)
 	rtai_kevent_hook = NULL;
     
 	reset_rt_fun_entries(rt_sched_entries);
+	rtai_drop_active_mm();
 }
 
 #ifdef DECLR_8254_TSC_EMULATION

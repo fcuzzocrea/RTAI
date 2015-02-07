@@ -1,3 +1,8 @@
+2015-02-07 Paolo Mantegazza <mantegazza@aero.polimi.it>
+
+	* base/sched/sched.c: added the possibility of testing different ways
+	  to set active_mm for kernel threads.
+
 2015-02-06 Paolo Mantegazza <mantegazza@aero.polimi.it>
 
 	* base/sched/sched.c: avoid loosing the active_mm stolen for kernel

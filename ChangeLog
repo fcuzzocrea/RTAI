@@ -1,3 +1,8 @@
+2015-02-08 Paolo Mantegazza <mantegazza@aero.polimi.it>
+
+	* base/sched/sys.c: rt_thread_create poll waits till the created 
+	  thread is rtai enabled.
+
 2015-02-07 Paolo Mantegazza <mantegazza@aero.polimi.it>
 
 	* base/sched/sched.c: added the possibility of testing different ways

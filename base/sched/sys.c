@@ -857,16 +857,17 @@ long kernel_calibrator_spv(long period, long loops, RT_TASK *task)
 long rt_thread_create(void *fun, void *args, int stack_size)
 {
 	RT_TASK *task;
-	long retval;
+	struct task_struct *lnxkthrd;
 
 	if ((task = rtai_tskext_t(current, TSKEXT0)) && task->is_hard > 0) {
 		rt_make_soft_real_time(task);
 	}
-	retval = (long)kthread_run(fun, args, "RTAI_KTHREAD");
+	lnxkthrd = kthread_run(fun, args, "RTAI_KTHREAD");
 	if (task && !task->is_hard) {
 		rt_make_hard_real_time(task);
 	}
-	return retval;
+	while (!rtai_tskext(lnxkthrd, TSKEXT0)) msleep(1);
+	return (long)lnxkthrd;
 }
 EXPORT_SYMBOL(rt_thread_create);
 	

@@ -134,18 +134,16 @@ static struct { int srq; volatile unsigned long in, out; void *mp[MAX_FRESTK_SRQ
 
 #ifdef CONFIG_SMP
 
-extern void rt_set_sched_ipi_gate(void);
-extern void rt_reset_sched_ipi_gate(void);
 static void rt_schedule_on_schedule_ipi(void);
 
 static inline int rt_request_sched_ipi(void)
 {
-        return rt_request_irq(SCHED_IPI, (void *)rt_schedule_on_schedule_ipi, NULL, 0);
+	return rt_request_irq(SCHED_IPI, (void *)rt_schedule_on_schedule_ipi, NULL, 0);
 }
 
 static inline void rt_free_sched_ipi(void)
 {
-        rt_release_irq(SCHED_IPI);
+	rt_release_irq(SCHED_IPI);
 }
 
 static inline void sched_get_global_lock(int cpuid)

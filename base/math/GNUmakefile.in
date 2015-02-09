@@ -349,7 +349,7 @@ top_builddir = @top_builddir@
 top_srcdir = @top_srcdir@
 moduledir = @RTAI_MODULE_DIR@
 modext = @RTAI_MODULE_EXT@
-libmath_a_SOURCES = libm.c
+libmath_a_SOURCES = libm.c export_glibc.h
 @CONFIG_KBUILD_FALSE@noinst_LIBRARIES = libmath.a
 @CONFIG_KBUILD_FALSE@libmath_a_AR = $(CROSS_COMPILE)ar cru
 @CONFIG_KBUILD_FALSE@INCLUDES = \
@@ -359,7 +359,7 @@ libmath_a_SOURCES = libm.c
 @CONFIG_KBUILD_FALSE@	-I$(top_srcdir)/base/include \
 @CONFIG_KBUILD_FALSE@	-I../include
 
-EXTRA_DIST = Makefile.kbuild
+EXTRA_DIST = Makefile.kbuild README.KLIBM
 all: all-am
 
 .SUFFIXES:

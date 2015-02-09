@@ -1,3 +1,7 @@
+2015-01-28 Pierangelo Masarati <pierangelo.masarati@polimi.it>
+
+	* RTAI 4.1-test1
+
 2015-01-18 Paolo Mantegazza <mantegazza@aero.polimi.it>
 
 	* base/arch/x86/hal/hal_32.c and hal_64.c: warn for the incosistency: 

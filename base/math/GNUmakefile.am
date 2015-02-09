@@ -50,4 +50,4 @@ install-exec-local: rtai_math$(modext)
 	$(INSTALL_DATA) $< $(DESTDIR)$(moduledir)
 endif
 
-EXTRA_DIST = Makefile.kbuild
+EXTRA_DIST = Makefile.kbuild README.KLIBM

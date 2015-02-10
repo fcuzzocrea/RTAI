@@ -910,7 +910,7 @@ int __rtai_hal_init (void)
 	init_tsc_sync();
 #endif
 
-	printk("SYSINFO - # CPUs: %d, TIMER NAME: '%s', TIMER IRQ: %d, TIMER FREQ: %llu, CLOCK NAME: '%s', CLOCK FREQ: %llu, CPU FREQ: %llu.\n", sysinfo.sys_nr_cpus, ipipe_timer_name(), sysinfo.sys_hrtimer_irq, sysinfo.sys_hrtimer_freq, ipipe_clock_name(), sysinfo.sys_hrclock_freq, sysinfo.sys_cpu_freq); 
+	printk("SYSINFO - # CPUs: %d, TIMER NAME: '%s', TIMER IRQ: %d, TIMER FREQ: %llu, CLOCK NAME: '%s', CLOCK FREQ: %llu, CPU FREQ: %llu, LINUX TIMER IRQ: %d.\n", sysinfo.sys_nr_cpus, ipipe_timer_name(), sysinfo.sys_hrtimer_irq, sysinfo.sys_hrtimer_freq, ipipe_clock_name(), sysinfo.sys_hrclock_freq, sysinfo.sys_cpu_freq, __ipipe_hrtimer_irq); 
 
 	return 0;
 }

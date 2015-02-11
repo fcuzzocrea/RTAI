@@ -1,3 +1,8 @@
+2015-02-11 Paolo Mantegazza <mantegazza@aero.polimi.it>
+
+	* base/arch/x86/hal/hal.c: got rid of rt_times variable, beware
+	  just the variable, not of the structure with the same name.
+
 2015-02-08 Paolo Mantegazza <mantegazza@aero.polimi.it>
 
 	* base/sched/sys.c: rt_thread_create poll waits till the created 

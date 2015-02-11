@@ -41,7 +41,7 @@ MODULE_AUTHOR("Paolo Mantegazza <mantegazza@aero.polimi.it>, Robert Schwebel <ro
 #if defined(CONFIG_UCLINUX) || defined(CONFIG_ARM) || defined(CONFIG_COLDFIRE)
 #define DEFAULT_PERIOD 1000000
 #else
-#define DEFAULT_PERIOD 100000
+#define DEFAULT_PERIOD 25000
 #endif
 int period = DEFAULT_PERIOD;
 RTAI_MODULE_PARM(period, int);

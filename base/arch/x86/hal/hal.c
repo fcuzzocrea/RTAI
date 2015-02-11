@@ -126,8 +126,6 @@ static atomic_t rtai_sync_count = ATOMIC_INIT(1);
 
 static RT_TRAP_HANDLER rtai_trap_handler;
 
-struct rt_times rt_times;
-
 struct rt_times rt_smp_times[RTAI_NR_CPUS];
 
 struct rtai_switch_data rtai_linux_context[RTAI_NR_CPUS];
@@ -386,9 +384,9 @@ void rt_pend_linux_srq (unsigned srq)
 void rt_linux_hrt_set_mode(enum clock_event_mode mode, struct clock_event_device *hrt_dev)
 {
 	if (mode == CLOCK_EVT_MODE_ONESHOT || mode == CLOCK_EVT_MODE_SHUTDOWN) {
-		rt_times.linux_tick = 0;
+		rt_smp_times[0].linux_tick = 0;
 	} else if (mode == CLOCK_EVT_MODE_PERIODIC) {
-		rt_times.linux_tick = rtai_llimd((1000000000 + HZ/2)/HZ, rtai_tunables.cpu_freq, 1000000000);
+		rt_smp_times[0].linux_tick = rtai_llimd((1000000000 + HZ/2)/HZ, rtai_tunables.cpu_freq, 1000000000);
 	}
 }
 
@@ -397,7 +395,7 @@ EXPORT_SYMBOL(rt_linux_hrt_next_shot);
 
 int _rt_linux_hrt_next_shot(unsigned long delay, struct clock_event_device *hrt_dev)
 {
-	rt_times.linux_time = rt_times.tick_time + rtai_llimd(delay, TIMER_FREQ, 1000000000);
+	rt_smp_times[0].linux_time = rt_smp_times[0].tick_time + rtai_llimd(delay, TIMER_FREQ, 1000000000);
 	return 0;
 }
 
@@ -423,14 +421,13 @@ int rt_request_timers(void *rtai_time_handler)
 		if (ret == CLOCK_EVT_MODE_ONESHOT || ret == CLOCK_EVT_MODE_UNUSED) {
 			rtimes->linux_tick = 0;
 		} else {
-			rt_times.linux_tick = rtai_llimd((1000000000 + HZ/2)/HZ, rtai_tunables.cpu_freq, 1000000000);
+			rt_smp_times[0].linux_tick = rtai_llimd((1000000000 + HZ/2)/HZ, rtai_tunables.cpu_freq, 1000000000);
 		}			
 		rtimes->tick_time  = rtai_rdtsc();
                 rtimes->intr_time  = rtimes->tick_time + rtimes->linux_tick;
                 rtimes->linux_time = rtimes->tick_time + rtimes->linux_tick;
 		rtimes->periodic_tick = rtimes->linux_tick;
 	}
-	rt_times = rt_smp_times[0];
 #if 0 // #ifndef CONFIG_X86_LOCAL_APIC, for calibrating 8254 with our set delay
 	rtai_cli();
 	outb(0x30, 0x43);
@@ -1028,7 +1025,6 @@ EXPORT_SYMBOL(rtai_proc_root);
 EXPORT_SYMBOL(rtai_tunables);
 EXPORT_SYMBOL(rtai_cpu_lock);
 EXPORT_SYMBOL(rtai_cpu_realtime);
-EXPORT_SYMBOL(rt_times);
 EXPORT_SYMBOL(rt_smp_times);
 
 EXPORT_SYMBOL(rt_printk);

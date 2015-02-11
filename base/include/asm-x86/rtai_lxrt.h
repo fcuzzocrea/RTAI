@@ -34,6 +34,10 @@ union rtai_lxrt_t { RTIME rt; long i[2]; void *v[2]; };
 
 #ifdef CONFIG_X86_LOCAL_APIC
 
+#define TIMER_FREQ        RTAI_FREQ_APIC
+#define TIMER_LATENCY     RTAI_LATENCY_APIC
+#define TIMER_SETUP_TIME  RTAI_SETUP_TIME_APIC
+#if 0
 #define TIMER_NAME        "APIC"
 #define TIMER_TYPE  1
 #define HRT_LINUX_TIMER_NAME  "lapic"
@@ -41,11 +45,12 @@ union rtai_lxrt_t { RTIME rt; long i[2]; void *v[2]; };
 #define TIMER_FREQ        RTAI_FREQ_APIC
 #define TIMER_LATENCY     RTAI_LATENCY_APIC
 #define TIMER_SETUP_TIME  RTAI_SETUP_TIME_APIC
+#endif
 #define ONESHOT_SPAN      (CPU_FREQ/(CONFIG_RTAI_CAL_FREQS_FACT + 2)) //(0x7FFFFFFFLL*(CPU_FREQ/TIMER_FREQ))
 #ifdef CONFIG_GENERIC_CLOCKEVENTS
 #define USE_LINUX_TIMER
-#define update_linux_timer(cpuid) \
-        do { hal_pend_uncond(LOCAL_TIMER_IPI, cpuid); } while (0)
+/*#define update_linux_timer(cpuid) \
+        do { hal_pend_uncond(LOCAL_TIMER_IPI, cpuid); } while (0) */
 #else /* !CONFIG_GENERIC_CLOCKEVENTS */
 #define update_linux_timer(cpuid)
 #endif /* CONFIG_GENERIC_CLOCKEVENTS */
@@ -60,10 +65,12 @@ union rtai_lxrt_t { RTIME rt; long i[2]; void *v[2]; };
 #define TIMER_LATENCY     RTAI_LATENCY_8254
 #define TIMER_SETUP_TIME  RTAI_SETUP_TIME_8254
 #define ONESHOT_SPAN      ((0x7FFF*(CPU_FREQ/TIMER_FREQ))/(CONFIG_RTAI_CAL_FREQS_FACT + 1)) //(0x7FFF*(CPU_FREQ/TIMER_FREQ))
-#define update_linux_timer(cpuid) \
-        do { hal_pend_uncond(TIMER_8254_IRQ, cpuid); } while (0)
+/* #define update_linux_timer(cpuid) \
+        do { hal_pend_uncond(TIMER_8254_IRQ, cpuid); } while (0) */
 
 #endif /* CONFIG_X86_LOCAL_APIC */
+#define update_linux_timer(cpuid) \
+        do { hal_pend_uncond(__ipipe_hrtimer_irq, cpuid); } while (0)
 
 #ifdef __KERNEL__
 

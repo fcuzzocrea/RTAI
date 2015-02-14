@@ -1,3 +1,39 @@
+2015-02-14 Paolo Mantegazza <mantegazza@aero.polimi.it>
+
+	* addons/drivers/serial/serial.c and serialP.h: cleaned legacy
+	  oldnames.
+	* addons/rtdm/drvlib.c, module.c, rtdm_driver.h and xn.h: cleaned 
+	  legacy oldnames, aligned with renewed variable and structure names.
+	* base/arch/x86/Kconfig: prepared for a few next config changes.
+	* base/arch/x86/hal/hal/c: cleaned legacy oldnames and macros, aligned
+	  with renewed variable and structure names.
+	* base/include/rtai_hal_names.h: reduced to what is still needed with 
+	  the latest patches and a more direct use of its raw names.
+	* base/include/asm-x86/rtai_hal.h: redefined struct calibration_data,
+	  cleaned legacy oldnames, messy redundant macros and unused parts of 
+	  code; defined new macros, aligned with renewed variable and structure 
+	  names.	  
+	* base/include/asm-x86/rtai_lxrt.h: cleaned legacy oldnames, messy
+	  redundant macros and unused parts of code; defined new macros, 
+	  aligned with renewed variable and structure names.
+	* base/include/asm-x86/rtai_vectors.h: cleaned of vectors and ipis
+	  macros definition, introduced a reminder of what in use now.
+	* base/sched/api.c: cleaned legacy oldnames and cared of the no more 
+	  used rt_times tunables, now rt_smp_times[0].
+	* base/sched/sched.c: cleaned legacy oldnames, messy redundant macros; 
+	  aligned with renewed variable, macros and structure names; cared of
+	  the no more used rt_times tunables, now rt_smp_times[0].
+	* base/sched/sys.c: cleaned legacy oldnames, aligned with renewed
+	  variable and structure names. 
+	* base/tasklets/tasklets.c: cleaned legacy oldnames, aligned with 
+	  renewed variable and structure names.
+	* base/wd/wd.c: cleaned legacy oldnames, aligned with renewed variable 
+	  and structure names.
+	* testsuite/kern/latency/latency-module.c, 
+	  testsuite/kern/preempt/preempt-module.c,
+	  testsuite/kern/switches/switches-module.c: cleaned legacy oldnames,
+	  aligned with renewed variable and structure names.
+	
 2015-02-11 Paolo Mantegazza <mantegazza@aero.polimi.it>
 
 	* base/arch/x86/hal/hal.c: got rid of rt_times variable, beware

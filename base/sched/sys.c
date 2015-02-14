@@ -661,12 +661,12 @@ static inline long long handle_lxrt_request (unsigned int lxsrq, long *arg, RT_T
 #if !CONFIG_RTAI_BUSY_TIME_ALIGN
 			extern int rt_smp_half_tick[];
 			int cpu;
-			tuned.latency = imuldiv(abs((int)larg->Latency), tuned.cpu_freq, 1000000000);
-			if (tuned.latency < tuned.setup_time_TIMER_CPUNIT) {
-				tuned.latency = tuned.setup_time_TIMER_CPUNIT;
+			rtai_tunables.sched_latency = rtai_imuldiv(abs((int)larg->Latency), rtai_tunables.clock_freq, 1000000000);
+			if (rtai_tunables.sched_latency < rtai_tunables.setup_time_TIMER_CPUNIT) {
+				rtai_tunables.sched_latency = rtai_tunables.setup_time_TIMER_CPUNIT;
 			}
-			for (cpu = 0; cpu < NR_RT_CPUS; cpu++) {
-				rt_smp_half_tick[cpu] = tuned.latency/2;
+			for (cpu = 0; cpu < RTAI_NR_CPUS; cpu++) {
+				rt_smp_half_tick[cpu] = rtai_tunables.sched_latency/2;
 			}
 #endif
 			return larg->Latency < 0 ? 0 : kernel_calibrator_spv(larg->period, larg->loops, task);
@@ -674,7 +674,7 @@ static inline long long handle_lxrt_request (unsigned int lxsrq, long *arg, RT_T
 
 		case GET_CPU_FREQ: {
 			extern struct calibration_data rtai_tunables;
-			return rtai_tunables.cpu_freq;
+			return rtai_tunables.clock_freq;
 		}
 
 	        default: {

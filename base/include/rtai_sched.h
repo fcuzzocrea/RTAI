@@ -204,7 +204,7 @@ typedef struct rt_task_struct {
 	void *system_data_ptr;
 	struct rt_task_struct *nextp, *prevp;
 
-	RT_TRAP_HANDLER task_trap_handler[HAL_NR_FAULTS];
+	RT_TRAP_HANDLER task_trap_handler[RTAI_NR_TRAPS];
 
 	long unblocked;
 	void *rt_signals;

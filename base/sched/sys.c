@@ -848,25 +848,55 @@ long kernel_calibrator_spv(long period, long loops, RT_TASK *task)
 	return period;
 }
 
+/* SUPPORT FOR KERNEL THREADS, TO BE USED THE SAME WAY AS IN USER SPACE */
+
 #include <linux/kthread.h>
 
 #ifndef MAX_RT_PRIO
 #define MAX_RT_PRIO 99
 #endif 
 
+struct kthread_fun_args { void *fun; void *args; struct semaphore *sem; };
+
+static int kthread_fun(struct kthread_fun_args *args)
+{
+	int (*fun)(void *) = args->fun;
+	void *fun_args     = args->args;
+	RT_TASK *task;
+
+	up(args->sem);
+	fun(fun_args);
+	if ((task = rtai_tskext_t(current, TSKEXT0))) {
+		rt_make_soft_real_time(task);
+		__task_delete(task);
+	}
+        return 0;
+}
+
 long rt_thread_create(void *fun, void *args, int stack_size)
 {
 	RT_TASK *task;
 	struct task_struct *lnxkthrd;
+	struct semaphore sem;
+	int make_hard = 0;
+	struct kthread_fun_args fun_args = { fun, args, &sem };
 
-	if ((task = rtai_tskext_t(current, TSKEXT0)) && task->is_hard > 0) {
-		rt_make_soft_real_time(task);
+	init_MUTEX_LOCKED(&sem);	
+	task = rtai_tskext_t(current, TSKEXT0);
+	if (task) {
+		if (!task->lnxtsk) {
+			return (long)-EPERM;
+		}
+		if ((make_hard = task->is_hard) > 0) {
+			rt_make_soft_real_time(task);
+		}
 	}
-	lnxkthrd = kthread_run(fun, args, "RTAI_KTHREAD");
-	if (task && !task->is_hard) {
+// wrapper kthread_fun and kernel sem grant new kthread is running at return
+	lnxkthrd = kthread_run((void *)kthread_fun, &fun_args, "RTAI_KTHREAD");
+	down(&sem);
+	if (make_hard) {
 		rt_make_hard_real_time(task);
 	}
-	while (!rtai_tskext(lnxkthrd, TSKEXT0)) msleep(1);
 	return (long)lnxkthrd;
 }
 EXPORT_SYMBOL(rt_thread_create);

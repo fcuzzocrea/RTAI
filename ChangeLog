@@ -1,3 +1,10 @@
+2015-02-19 Paolo Mantegazza <mantegazza@aero.polimi.it>
+
+	* base/arch/x86/calibrate/calibrate.c: do not self calibrate if 
+	  SCHED_LATENCY is set already.
+	* base/sched/sched.c: do not convert negative kern-user busy waits.
+	* base/arch/x86/Kconfig: display kern busy wait again.
+
 2015-02-18 Paolo Mantegazza <mantegazza@aero.polimi.it>
 
 	* base/sched/sched.c and sys.c: busy timed sync waits only if there 

@@ -2514,8 +2514,12 @@ static int __rtai_lxrt_init(void)
 		rt_linux_task.resq.task = NULL;
 	}
 	tuned.sched_latency = rtai_imuldiv(Latency, tuned.clock_freq, 1000000000);
+#if RTAI_KERN_BUSY_ALIGN_RET_DELAY > 0
 	tuned.kern_latency_busy_align_ret_delay = rtai_imuldiv(RTAI_KERN_BUSY_ALIGN_RET_DELAY, tuned.clock_freq, 1000000000);
+#endif
+#if RTAI_USER_BUSY_ALIGN_RET_DELAY > 0
 	tuned.user_latency_busy_align_ret_delay = rtai_imuldiv(RTAI_USER_BUSY_ALIGN_RET_DELAY, tuned.clock_freq, 1000000000);
+#endif
 	SetupTimeTIMER = rtai_calibrate_hard_timer();
 	tuned.setup_time_TIMER_UNIT = rtai_imuldiv(SetupTimeTIMER, TIMER_FREQ, 1000000000);
 	if (tuned.setup_time_TIMER_UNIT < 1) {

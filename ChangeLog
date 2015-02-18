@@ -1,6 +1,16 @@
+2015-02-18 Paolo Mantegazza <mantegazza@aero.polimi.it>
+
+	* base/sched/sched.c and sys.c: busy timed sync waits only if there 
+	  is a sched_latency.
+	* base/sched/sys.c: set sched_latency also when sched_latency is zero.
+	* base/include/rtai_schedcore.h: enable timed sync busy waits at wake
+	  up only if there is a sched_latency. 
+	* base/arch/x86/calibrate/calibrate.c: recoded for use within the 
+          make self tuning.
+
 2015-02-16 Paolo Mantegazza <mantegazza@aero.polimi.it>
 
-	* base/include/asm-x86/rtai_ifpu_64.h: cleaned legacy oldnames. 
+	* base/include/asm-x86/rtai_fpu_64.h: cleaned legacy oldnames. 
 
 2015-02-15 Paolo Mantegazza <mantegazza@aero.polimi.it>
 

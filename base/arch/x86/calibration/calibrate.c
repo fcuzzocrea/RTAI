@@ -42,15 +42,40 @@ static inline RTIME rt_get_time_in_usrspc(void)
 #endif
 }
 
+#define RTAI_CONFIG_PATH  "/home/rtai-cvs/magma/rtai_config.h"
+
+static void latency_calibrated(void)
+{
+	FILE *si;
+	char *line = NULL;
+	size_t len = 0;
+
+	si = fopen(RTAI_CONFIG_PATH, "r");
+
+	while (getline(&line, &len, si) > 0) {
+		if (!strncmp(line, "#define CONFIG_RTAI_SCHED_APIC_LATENCY", sizeof("#define CONFIG_RTAI_SCHED_APIC_LATENCY") - 1)) {
+			int sched_latency = atoi(line + sizeof("#define CONFIG_RTAI_SCHED_APIC_LATENCY"));
+			if (sched_latency) {
+				printf("* SCHED_LATENCY IS CALIBRATED: %d (ns). *\n",sched_latency); 
+				exit(1);
+			}
+		}  
+		free(line);
+		line = NULL;
+	}
+
+	fclose(si);
+	return;
+}
+
 static void set_calibrated_macros(int sched_latency, int ret_time)
 {
 	FILE *si, *so;
 	char *line = NULL;
 	size_t len = 0;
 
-	system("mv ../../../../rtai_config.h tmp");
-	si = fopen("tmp", "r");
-	so = fopen("../../../../rtai_config.h", "w+");
+	si = fopen(RTAI_CONFIG_PATH, "r");
+	so = fopen("tmp", "w+");
 
 	while (getline(&line, &len, si) > 0) {
 		if (!strncmp(line, "#define CONFIG_RTAI_SCHED_APIC_LATENCY", sizeof("#define CONFIG_RTAI_SCHED_APIC_LATENCY") - 1)) {
@@ -77,7 +102,7 @@ cont:
 
 	fclose(si);
 	fclose(so);
-	system("rm tmp");
+	system("mv tmp "RTAI_CONFIG_PATH);
 	return;
 }
 
@@ -117,6 +142,8 @@ int main(int argc, char *argv[])
 	int loops, UserLatency = cal_tol;
 	RTIME tret, t = 0;
 
+	latency_calibrated();
+
 	system("/sbin/insmod \"" HAL_SCHED_PATH "\"/rtai_hal" HAL_SCHED_MODEXT " >/dev/null 2>&1");
 	system("/sbin/insmod \"" HAL_SCHED_PATH "\"/rtai_sched" HAL_SCHED_MODEXT " >/dev/null 2>&1");
 
@@ -138,7 +165,7 @@ int main(int argc, char *argv[])
 		user_latency = (user_latency + loops/2)/loops;
 		user_latency = sign(user_latency)*count2nano(abs(user_latency));
 		UserLatency += user_latency;
-		printf("* SCHED LATENCY - VARIATION: %d (ns), TOTAL: %d (ns). *\n", user_latency, UserLatency);
+		printf("* %d <> SCHED LATENCY - VARIATION: %d (ns), TOTAL: %d (ns). *\n", max_cal_iterations, user_latency, UserLatency);
 	} while (abs(user_latency) > cal_tol && --max_cal_iterations > 0);
 
 	UserLatency += 100;

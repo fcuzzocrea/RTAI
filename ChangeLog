@@ -1,7 +1,7 @@
 2015-02-19 Paolo Mantegazza <mantegazza@aero.polimi.it>
 
 	* base/arch/x86/calibrate/calibrate.c: do not self calibrate if 
-	  SCHED_LATENCY is set already.
+	  SCHED_LATENCY is set already; update also .rtai-config.
 	* base/sched/sched.c: do not convert negative kern-user busy waits.
 	* base/arch/x86/Kconfig: display kern busy wait again.
 

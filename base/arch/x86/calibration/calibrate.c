@@ -68,11 +68,15 @@ static void latency_calibrated(void)
 	return;
 }
 
+#define DOT_RTAI_CONFIG_PATH  "/home/rtai-cvs/magma/.rtai_config"
+
 static void set_calibrated_macros(int sched_latency, int ret_time)
 {
 	FILE *si, *so;
 	char *line = NULL;
 	size_t len = 0;
+
+// brute force, rtai_config.h comes first .....
 
 	si = fopen(RTAI_CONFIG_PATH, "r");
 	so = fopen("tmp", "w+");
@@ -80,22 +84,22 @@ static void set_calibrated_macros(int sched_latency, int ret_time)
 	while (getline(&line, &len, si) > 0) {
 		if (!strncmp(line, "#define CONFIG_RTAI_SCHED_APIC_LATENCY", sizeof("#define CONFIG_RTAI_SCHED_APIC_LATENCY") - 1)) {
 			fprintf(so, "#define CONFIG_RTAI_SCHED_APIC_LATENCY %d\n", sched_latency);
-			goto cont;
+			goto cont1;
 		}  
 		if (!strncmp(line, "#define CONFIG_RTAI_BUSY_TIME_ALIGN", sizeof("#define CONFIG_RTAI_BUSY_TIME_ALIGN") - 1)) {
 			fprintf(so, "#define CONFIG_RTAI_BUSY_TIME_ALIGN 1\n");
-			goto cont;
+			goto cont1;
 		}  
 		if (!strncmp(line, "#define CONFIG_RTAI_KERN_BUSY_ALIGN_RET_DELAY", sizeof("#define CONFIG_RTAI_KERN_BUSY_ALIGN_RET_DELAY") - 1)) {
 			fprintf(so, "#define CONFIG_RTAI_KERN_BUSY_ALIGN_RET_DELAY %d\n", ret_time/2);
-			goto cont;
+			goto cont1;
 		}  
 		if (!strncmp(line, "#define CONFIG_RTAI_USER_BUSY_ALIGN_RET_DELAY", sizeof("#define CONFIG_RTAI_USER_BUSY_ALIGN_RET_DELAY") - 1)) {
 			fprintf(so, "#define CONFIG_RTAI_USER_BUSY_ALIGN_RET_DELAY %d\n", -ret_time);
-			goto cont;
+			goto cont1;
 		}  
 		fprintf(so, "%s", line);
-cont:
+cont1:
 		free(line);
 		line = NULL;
 	}
@@ -103,6 +107,39 @@ cont:
 	fclose(si);
 	fclose(so);
 	system("mv tmp "RTAI_CONFIG_PATH);
+
+// ..... then .rtai_config.
+
+	si = fopen(DOT_RTAI_CONFIG_PATH, "r");
+	so = fopen("tmp", "w+");
+
+	while (getline(&line, &len, si) > 0) {
+		if (!strncmp(line, "CONFIG_RTAI_SCHED_APIC_LATENCY", sizeof("CONFIG_RTAI_SCHED_APIC_LATENCY") - 1)) {
+			fprintf(so, "CONFIG_RTAI_SCHED_APIC_LATENCY=\"%d\"\n", sched_latency);
+			goto cont2;
+		}  
+		if (!strncmp(line, "CONFIG_RTAI_BUSY_TIME_ALIGN", sizeof("CONFIG_RTAI_BUSY_TIME_ALIGN") - 1)) {
+			fprintf(so, "CONFIG_RTAI_BUSY_TIME_ALIGN=y\n");
+			goto cont2;
+		}  
+		if (!strncmp(line, "CONFIG_RTAI_KERN_BUSY_ALIGN_RET_DELAY", sizeof("CONFIG_RTAI_KERN_BUSY_ALIGN_RET_DELAY") - 1)) {
+			fprintf(so, "CONFIG_RTAI_KERN_BUSY_ALIGN_RET_DELAY=\"%d\"\n", ret_time/2);
+			goto cont2;
+		}  
+		if (!strncmp(line, "CONFIG_RTAI_USER_BUSY_ALIGN_RET_DELAY", sizeof("CONFIG_RTAI_USER_BUSY_ALIGN_RET_DELAY") - 1)) {
+			fprintf(so, "CONFIG_RTAI_USER_BUSY_ALIGN_RET_DELAY=\"%d\"\n", -ret_time);
+			goto cont2;
+		}  
+		fprintf(so, "%s", line);
+cont2:
+		free(line);
+		line = NULL;
+	}
+
+	fclose(si);
+	fclose(so);
+	system("mv tmp "DOT_RTAI_CONFIG_PATH);
+
 	return;
 }
 
@@ -182,7 +219,7 @@ int main(int argc, char *argv[])
 	printf("\n* CALIBRATED RETURN TIME FOR %d CYCLES: %lld (ns). *\n", ret_time_loops, tret);
 	tret += 100;
 	tret -= tret%100;
-	printf("\n* CALIBRATED RETURN TIME USED: %lld (ns). *\n", tret);
+	printf("* CALIBRATED RETURN TIME - USED: %lld (ns). *\n", tret);
 
 	stop_rt_timer();
 	rt_thread_delete(NULL);
@@ -194,5 +231,6 @@ int main(int argc, char *argv[])
 	if (max_cal_iterations > 1) {
 		set_calibrated_macros(UserLatency, tret);
 	}
+
 	return 0;
 }

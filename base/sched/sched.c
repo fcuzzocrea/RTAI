@@ -2448,6 +2448,7 @@ static void lxrt_exit(void)
     
 	reset_rt_fun_entries(rt_sched_entries);
 	rtai_drop_active_mm();
+
 }
 
 #ifdef DECLR_8254_TSC_EMULATION
@@ -2463,6 +2464,8 @@ static void timer_fun(unsigned long none)
 
 extern int rt_registry_alloc(void);
 extern void rt_registry_free(void);
+extern int kthread_server(void *);
+static struct task_struct *kthread_server_thread;
 
 static int __rtai_lxrt_init(void)
 {
@@ -2581,6 +2584,8 @@ static int __rtai_lxrt_init(void)
 	SETUP_8254_TSC_EMULATION;
 #endif
 
+	kthread_server_thread = kthread_run(kthread_server, NULL, "KTHREAD_SERVER");
+
 	retval = rtai_init_features(); /* see rtai_schedcore.h */
 
 exit:
@@ -2612,6 +2617,9 @@ static void __rtai_lxrt_exit(void)
 #if defined(CONFIG_GENERIC_CLOCKEVENTS) && CONFIG_RTAI_RTC_FREQ == 0
 	rt_linux_hrt_next_shot = NULL;
 #endif
+
+	rtai_tskext(kthread_server_thread, TSKEXT3) = (void *)1;
+	rt_task_resume(rtai_tskext_t(kthread_server_thread, TSKEXT0));
 
 	lxrt_killall();
 

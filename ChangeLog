@@ -1,3 +1,16 @@
+2015-02-21 Paolo Mantegazza <mantegazza@aero.polimi.it>
+
+	* testsuite/kthreads/latency/display.c and latency-module.c,
+	  testsuite/kthreads/preempt/display.c and preempt-module.c,
+	  testsuite/kthreads/switches/switches-module.c: set of examples
+	  showing the usage of RTAI enabled soft-hardened Linux kthreads.
+	* base/sched/sys.c: added a Linux kthread server, to allow creating 
+	  hadr-soft RTAI Linux kernel threads from RTAI own kernel tasks and
+	  Linux real time hardened kernel thread, without loosing hard real
+	  time execution.
+	* base/sched/sched.c: run and termininate, at init-exiting the Linux
+	  kthread server.
+
 2015-02-19 Paolo Mantegazza <mantegazza@aero.polimi.it>
 
 	* base/arch/x86/calibrate/calibrate.c: do not self calibrate if 

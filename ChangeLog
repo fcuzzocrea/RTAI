@@ -7,7 +7,7 @@
 	* base/sched/sys.c: added a Linux kthread server, to allow creating 
 	  hadr-soft RTAI Linux kernel threads from RTAI own kernel tasks and
 	  Linux real time hardened kernel thread, without loosing hard real
-	  time execution.
+	  time execution; it implies a revision of what prviously committed.
 	* base/sched/sched.c: run and termininate, at init-exiting the Linux
 	  kthread server.
 
@@ -136,7 +136,7 @@
 2015-01-31 Paolo Mantegazza <mantegazza@aero.polimi.it>
 
 	* base/include/asm-x86/rtai_lxrt.h: gather the common parts of 32-64 
-	  bits archs, unify the definition of union union rtai_lxrt_t.
+	  bits archs, unify the definition of union rtai_lxrt_t.
 	* base/include/asm-x86/rtai_lxrt_32.h: keap only the 32 bits specific 
 	  definitions and services, required copying __do_strncpy_from_user 
 	  from LINUX, as for 64 bits.

@@ -848,13 +848,100 @@ long kernel_calibrator_spv(long period, long loops, RT_TASK *task)
 	return period;
 }
 
-/* SUPPORT FOR KERNEL THREADS, TO BE USED THE SAME WAY AS IN USER SPACE */
+/* SUPPORT FOR KERNEL THREADS, IN SOFT-HARD REAL TIME 
+ * MODE, TO BE USED THE SAME WAY AS IN USER SPACED.              
+ */
 
 #include <linux/kthread.h>
 
 #ifndef MAX_RT_PRIO
 #define MAX_RT_PRIO 99
 #endif 
+
+struct kthread_fun_args { void *fun; void *args; struct semaphore *sem; };
+struct klist_t kthread_to_create;
+static RT_TASK *kthread_server_task;
+static spinlock_t kthread_server_spinlock;
+
+long rt_thread_create(void *fun, void *args, int stack_size)
+{
+	struct task_struct *lnxkthrd;
+
+	if (!RT_CURRENT->is_hard) {
+		lnxkthrd = kthread_run((void *)fun, args, "RTAI_KTHREAD");
+		return (long)lnxkthrd;
+	} else {
+		struct semaphore sem;
+		struct kthread_fun_args fun_args = { fun, args, &sem };
+		init_MUTEX_LOCKED(&sem);	
+		rt_spin_lock_irq(&kthread_server_spinlock);
+		kthread_to_create.task[kthread_to_create.in++ & (MAX_WAKEUP_SRQ - 1)] = &fun_args;
+		rt_spin_unlock_irq(&kthread_server_spinlock);
+		rt_task_resume(kthread_server_task);
+		down(&sem);
+		lnxkthrd = fun;
+	}
+	return (long)lnxkthrd;
+}
+EXPORT_SYMBOL(rt_thread_create);
+	
+RT_TASK *rt_thread_init(unsigned long name, int priority, int hard, int policy, int cpus_allowed)
+{
+	int linux_rt_priority;
+	RT_TASK *task;
+	char namestr[10];
+
+        if (policy == SCHED_NORMAL) {
+                linux_rt_priority = 0;
+        } else if ((linux_rt_priority = MAX_RT_PRIO - 1 - priority) < 1) {
+                linux_rt_priority = 1;
+	}
+	rtai_set_linux_task_priority(current, policy, linux_rt_priority);
+	init_fpu(current);
+	
+	if ((task = __task_init(name ? name : rt_get_name(NULL), priority, 0, hard, cpus_allowed)) && hard > 0) {
+		rt_make_hard_real_time(task);
+	} 
+	num2nam(name, namestr);
+	strlcpy(current->comm, namestr, sizeof(current->comm)); // race chances?
+	return task;
+}
+EXPORT_SYMBOL(rt_thread_init);
+
+int rt_thread_delete(RT_TASK *rt_task)
+{
+	return __task_delete(rt_task);
+}
+EXPORT_SYMBOL(rt_thread_delete);
+
+static inline void soft_kthread_server_suspend(RT_TASK *task)
+{
+	task->fun_args[0] = (unsigned long)task;
+	((struct fun_args *)task->fun_args)->fun = (void *)rt_task_suspend;
+	rt_schedule_soft(task);
+	return;
+}
+
+int kthread_server(void *args)
+{
+	struct kthread_fun_args *fun_args;
+
+	kthread_server_task = rt_thread_init(nam2num("THRSRV"), 0, 0, SCHED_FIFO, 0xF);
+	strlcpy(current->comm, "RTAI_KTHRD_SRVR", sizeof(current->comm));
+	do {
+		soft_kthread_server_suspend(kthread_server_task);
+		while (kthread_to_create.out != kthread_to_create.in) {
+			fun_args = kthread_to_create.task[kthread_to_create.out++ & (MAX_WAKEUP_SRQ - 1)];
+			fun_args->fun = kthread_run(fun_args->fun, fun_args->args, "RTAI_KTHREAD");
+			up(fun_args->sem);
+		
+		}
+	} while (!rtai_tskext(current, TSKEXT3));
+	__task_delete(kthread_server_task);
+        return 0;
+}
+
+#if 0
 
 struct kthread_fun_args { void *fun; void *args; struct semaphore *sem; };
 
@@ -929,3 +1016,5 @@ int rt_thread_delete(RT_TASK *rt_task)
 	return __task_delete(rt_task);
 }
 EXPORT_SYMBOL(rt_thread_delete);
+
+#endif

@@ -1,3 +1,9 @@
+2015-02-22 Paolo Mantegazza <mantegazza@aero.polimi.it>
+
+	* base/sched/sys.c: avoid waiting on a Linux sem when a kthread 
+	  creation is requested from hard real; the Linux task structure 
+	  address is returned through a call argument.
+
 2015-02-21 Paolo Mantegazza <mantegazza@aero.polimi.it>
 
 	* testsuite/kthreads/latency/display.c and latency-module.c,

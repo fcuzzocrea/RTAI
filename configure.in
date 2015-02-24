@@ -1963,6 +1963,9 @@ if test x$CONFIG_KBUILD = xy; then
    AC_CONFIG_LINKS(testsuite/kern/latency/Makefile:testsuite/kern/latency/Makefile.kbuild)
    AC_CONFIG_LINKS(testsuite/kern/preempt/Makefile:testsuite/kern/preempt/Makefile.kbuild)
    AC_CONFIG_LINKS(testsuite/kern/switches/Makefile:testsuite/kern/switches/Makefile.kbuild)
+   AC_CONFIG_LINKS(testsuite/kthreads/latency/Makefile:testsuite/kern/latency/Makefile.kbuild)
+   AC_CONFIG_LINKS(testsuite/kthreads/preempt/Makefile:testsuite/kern/preempt/Makefile.kbuild)
+   AC_CONFIG_LINKS(testsuite/kthreads/switches/Makefile:testsuite/kern/switches/Makefile.kbuild)
 fi
 
 dnl

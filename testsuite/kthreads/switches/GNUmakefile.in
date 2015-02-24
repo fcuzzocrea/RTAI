@@ -81,6 +81,7 @@ host_triplet = @host@
 subdir = testsuite/kthreads/switches
 DIST_COMMON = $(srcdir)/GNUmakefile.in $(srcdir)/GNUmakefile.am \
 	$(top_srcdir)/base/config/autoconf/mkinstalldirs \
+	$(srcdir)/Makefile.kbuild \
 	$(top_srcdir)/base/config/autoconf/depcomp
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
 am__aclocal_m4_deps = $(top_srcdir)/base/config/autoconf/acinclude.m4 \

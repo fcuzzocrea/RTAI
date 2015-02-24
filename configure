@@ -20027,11 +20027,11 @@ if test x$CONFIG_KBUILD = xy; then
 
    ac_config_links="$ac_config_links testsuite/kern/switches/Makefile:testsuite/kern/switches/Makefile.kbuild"
 
-   ac_config_links="$ac_config_links testsuite/kthreads/latency/Makefile:testsuite/kern/latency/Makefile.kbuild"
+   ac_config_links="$ac_config_links testsuite/kthreads/latency/Makefile:testsuite/kthreads/latency/Makefile.kbuild"
 
-   ac_config_links="$ac_config_links testsuite/kthreads/preempt/Makefile:testsuite/kern/preempt/Makefile.kbuild"
+   ac_config_links="$ac_config_links testsuite/kthreads/preempt/Makefile:testsuite/kthreads/preempt/Makefile.kbuild"
 
-   ac_config_links="$ac_config_links testsuite/kthreads/switches/Makefile:testsuite/kern/switches/Makefile.kbuild"
+   ac_config_links="$ac_config_links testsuite/kthreads/switches/Makefile:testsuite/kthreads/switches/Makefile.kbuild"
 
 fi
 
@@ -21566,9 +21566,9 @@ do
     "testsuite/kern/latency/Makefile") CONFIG_LINKS="$CONFIG_LINKS testsuite/kern/latency/Makefile:testsuite/kern/latency/Makefile.kbuild" ;;
     "testsuite/kern/preempt/Makefile") CONFIG_LINKS="$CONFIG_LINKS testsuite/kern/preempt/Makefile:testsuite/kern/preempt/Makefile.kbuild" ;;
     "testsuite/kern/switches/Makefile") CONFIG_LINKS="$CONFIG_LINKS testsuite/kern/switches/Makefile:testsuite/kern/switches/Makefile.kbuild" ;;
-    "testsuite/kthreads/latency/Makefile") CONFIG_LINKS="$CONFIG_LINKS testsuite/kthreads/latency/Makefile:testsuite/kern/latency/Makefile.kbuild" ;;
-    "testsuite/kthreads/preempt/Makefile") CONFIG_LINKS="$CONFIG_LINKS testsuite/kthreads/preempt/Makefile:testsuite/kern/preempt/Makefile.kbuild" ;;
-    "testsuite/kthreads/switches/Makefile") CONFIG_LINKS="$CONFIG_LINKS testsuite/kthreads/switches/Makefile:testsuite/kern/switches/Makefile.kbuild" ;;
+    "testsuite/kthreads/latency/Makefile") CONFIG_LINKS="$CONFIG_LINKS testsuite/kthreads/latency/Makefile:testsuite/kthreads/latency/Makefile.kbuild" ;;
+    "testsuite/kthreads/preempt/Makefile") CONFIG_LINKS="$CONFIG_LINKS testsuite/kthreads/preempt/Makefile:testsuite/kthreads/preempt/Makefile.kbuild" ;;
+    "testsuite/kthreads/switches/Makefile") CONFIG_LINKS="$CONFIG_LINKS testsuite/kthreads/switches/Makefile:testsuite/kthreads/switches/Makefile.kbuild" ;;
     "GNUmakefile") CONFIG_FILES="$CONFIG_FILES GNUmakefile" ;;
     "base/GNUmakefile") CONFIG_FILES="$CONFIG_FILES base/GNUmakefile" ;;
     "base/arch/GNUmakefile") CONFIG_FILES="$CONFIG_FILES base/arch/GNUmakefile" ;;

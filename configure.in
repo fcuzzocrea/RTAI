@@ -2111,6 +2111,10 @@ if test -d $srcdir/testsuite; then
 	testsuite/kern/latency/GNUmakefile \
 	testsuite/kern/preempt/GNUmakefile \
 	testsuite/kern/switches/GNUmakefile \
+	testsuite/kthreads/GNUmakefile \
+	testsuite/kthreads/latency/GNUmakefile \
+	testsuite/kthreads/preempt/GNUmakefile \
+	testsuite/kthreads/switches/GNUmakefile \
 	testsuite/user/GNUmakefile \
 	testsuite/user/latency/GNUmakefile \
 	testsuite/user/preempt/GNUmakefile \

@@ -758,7 +758,7 @@ all-local: preempt_rt$(modext)
 
 install-exec-local: preempt_rt$(modext)
 	$(mkinstalldirs) $(DESTDIR)$(moduledir)
-	$(INSTALL_DATA) $^ $(DESTDIR)$(moduledir)
+	$(INSTALL_DATA) $^ $(DESTDIR)$(moduledir)/kthreads_$^
 
 install-data-local:
 	$(mkinstalldirs) $(DESTDIR)$(testdir)

@@ -742,8 +742,8 @@ uninstall-am: uninstall-testPROGRAMS
 	tags tags-am uninstall uninstall-am uninstall-testPROGRAMS
 
 
-@CONFIG_KBUILD_TRUE@preempt_rt.ko: @RTAI_KBUILD_ENV@
-@CONFIG_KBUILD_TRUE@preempt_rt.ko: $(libpreempt_rt_a_SOURCES)
+@CONFIG_KBUILD_TRUE@kthreads_preempt_rt.ko: @RTAI_KBUILD_ENV@
+@CONFIG_KBUILD_TRUE@kthreads_preempt_rt.ko: $(libpreempt_rt_a_SOURCES)
 @CONFIG_KBUILD_TRUE@	@RTAI_KBUILD_TOP@ \
 @CONFIG_KBUILD_TRUE@	@RTAI_KBUILD_CMD@ rtai_extradef="@RTAI_FP_CFLAGS@" \
 @CONFIG_KBUILD_TRUE@	@RTAI_KBUILD_BOTTOM@
@@ -751,14 +751,14 @@ uninstall-am: uninstall-testPROGRAMS
 @CONFIG_KBUILD_TRUE@clean-local:
 @CONFIG_KBUILD_TRUE@	@RTAI_KBUILD_CLEAN@
 
-@CONFIG_KBUILD_FALSE@preempt_rt.o: libpreempt_rt.a
+@CONFIG_KBUILD_FALSE@kthreads_preempt_rt.o: libpreempt_rt.a
 @CONFIG_KBUILD_FALSE@	$(CROSS_COMPILE)ld --whole-archive $< -r -o $@
 
-all-local: preempt_rt$(modext)
+all-local: kthreads_preempt_rt$(modext)
 
-install-exec-local: preempt_rt$(modext)
+install-exec-local: kthreads_preempt_rt$(modext)
 	$(mkinstalldirs) $(DESTDIR)$(moduledir)
-	$(INSTALL_DATA) $^ $(DESTDIR)$(moduledir)/kthreads_$^
+	$(INSTALL_DATA) $^ $(DESTDIR)$(moduledir)
 
 install-data-local:
 	$(mkinstalldirs) $(DESTDIR)$(testdir)

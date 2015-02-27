@@ -743,8 +743,8 @@ uninstall-am: uninstall-testPROGRAMS
 	tags tags-am uninstall uninstall-am uninstall-testPROGRAMS
 
 
-@CONFIG_KBUILD_TRUE@latency_rt.ko: @RTAI_KBUILD_ENV@
-@CONFIG_KBUILD_TRUE@latency_rt.ko: $(liblatency_rt_a_SOURCES)
+@CONFIG_KBUILD_TRUE@kthreads_latency_rt.ko: @RTAI_KBUILD_ENV@
+@CONFIG_KBUILD_TRUE@kthreads_latency_rt.ko: $(liblatency_rt_a_SOURCES)
 @CONFIG_KBUILD_TRUE@	@RTAI_KBUILD_TOP@ \
 @CONFIG_KBUILD_TRUE@	@RTAI_KBUILD_CMD@ rtai_extradef="@RTAI_FP_CFLAGS@" rtai_extraopt="@RTAI_TARGET_ARCH_OPTS@" \
 @CONFIG_KBUILD_TRUE@	@RTAI_KBUILD_BOTTOM@
@@ -752,14 +752,14 @@ uninstall-am: uninstall-testPROGRAMS
 @CONFIG_KBUILD_TRUE@clean-local:
 @CONFIG_KBUILD_TRUE@	@RTAI_KBUILD_CLEAN@
 
-@CONFIG_KBUILD_FALSE@latency_rt.o: liblatency_rt.a
+@CONFIG_KBUILD_FALSE@kthreads_latency_rt.o: liblatency_rt.a
 @CONFIG_KBUILD_FALSE@	$(CROSS_COMPILE)ld --whole-archive $< -r -o $@
 
-all-local: latency_rt$(modext)
+all-local: kthreads_latency_rt$(modext)
 
-install-exec-local: latency_rt$(modext)
+install-exec-local: kthreads_latency_rt$(modext)
 	$(mkinstalldirs) $(DESTDIR)$(moduledir)
-	$(INSTALL_DATA) $^ $(DESTDIR)$(moduledir)/kthreads_$^
+	$(INSTALL_DATA) $^ $(DESTDIR)$(moduledir)
 
 install-data-local:
 	$(mkinstalldirs) $(DESTDIR)$(testdir)

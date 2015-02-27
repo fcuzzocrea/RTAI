@@ -42,7 +42,7 @@ static inline RTIME rt_get_time_in_usrspc(void)
 #endif
 }
 
-#define RTAI_CONFIG_PATH  "/home/rtai-cvs/magma/rtai_config.h"
+#define RTAI_CONFIG_PATH  "../../../../rtai_config.h"
 
 static void latency_calibrated(void)
 {
@@ -68,7 +68,7 @@ static void latency_calibrated(void)
 	return;
 }
 
-#define DOT_RTAI_CONFIG_PATH  "/home/rtai-cvs/magma/.rtai_config"
+#define DOT_RTAI_CONFIG_PATH  "../../../../.rtai_config"
 
 static void set_calibrated_macros(int sched_latency, int ret_time)
 {

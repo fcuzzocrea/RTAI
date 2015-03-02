@@ -12,7 +12,7 @@ OLD_LATENCY=`grep 'CONFIG_RTAI_SCHED_LATENCY' ../../rtai_config.h | sed -e 's/.*
 # echo "arch:$ARCH latency:$OLD_LATENCY"
 
 if test $OLD_LATENCY -eq 0 ; then
-	OUTPUT=`../arch/"$ARCH"/calibration/calibrate -x | grep 'SUMMARY'`
+	OUTPUT=`../arch/"$ARCH"/calibration/calibrate ../arch/"$ARCH"/hal | grep 'SUMMARY'`
 	RC=$?
 	if test $RC != 0 ; then
 		exit $RC
@@ -43,8 +43,8 @@ if test $OLD_LATENCY -eq 0 ; then
 }' $OLD > $NEW
 
 	touch -r $OLD $NEW
-	#rm -f $OLD
-	#mv $NEW $OLD
+	rm -f $OLD
+	mv $NEW $OLD
 
 	# .rtai_config
 	OLD=../../.rtai_config
@@ -66,7 +66,7 @@ if test $OLD_LATENCY -eq 0 ; then
 }' $OLD > $NEW
 
 	touch -r $OLD $NEW
-	#rm -f $OLD
-	#mv $NEW $OLD
+	rm -f $OLD
+	mv $NEW $OLD
 fi
 

@@ -19,6 +19,9 @@
 #define _GNU_SOURCE
 #include <stdio.h>
 #include <getopt.h>
+#include <sys/types.h>
+#include <sys/stat.h>
+#include <unistd.h>
 
 #include <rtai_sem.h>
 #include <rtai_lxrt.h>
@@ -72,7 +75,7 @@ static void latency_calibrated(void)
 
 static void set_calibrated_macros(int sched_latency, int ret_time, int argc)
 {
-if (argc != 2) {
+if (argc == 1) {
 	FILE *si, *so;
 	char *line = NULL;
 	size_t len = 0;
@@ -187,8 +190,25 @@ int main(int argc, char *argv[])
 
 	latency_calibrated();
 
-	system("/sbin/insmod \"" HAL_SCHED_PATH "\"/rtai_hal" HAL_SCHED_MODEXT " >/dev/null 2>&1");
-	system("/sbin/insmod \"" HAL_SCHED_PATH "\"/" SCHED_MODULE HAL_SCHED_MODEXT " >/dev/null 2>&1");
+	if (argc > 1) {
+		int len;
+		char *cmd;
+		const char *module_path = argv[1];
+		// struct stat st;
+		// stat(argv[1], &st);
+		// by now, we assume it's alright
+
+		len = sizeof("/sbin/insmod \"\"/rtai_hal" HAL_SCHED_MODEXT " >/dev/null 2>&1") + strlen(module_path);
+		cmd = malloc(len + 1);
+		snprintf(cmd, len, "/sbin/insmod \"%s\"/rtai_hal" HAL_SCHED_MODEXT " >/dev/null 2>&1", module_path);
+		system(cmd);
+		free(cmd);
+		system("/sbin/insmod ./" SCHED_MODULE HAL_SCHED_MODEXT " >/dev/null 2>&1");
+
+	} else {
+		system("/sbin/insmod \"" HAL_SCHED_PATH "\"/rtai_hal" HAL_SCHED_MODEXT " >/dev/null 2>&1");
+		system("/sbin/insmod \"" HAL_SCHED_PATH "\"/" SCHED_MODULE HAL_SCHED_MODEXT " >/dev/null 2>&1");
+	}
 
  	if (!(calmng = rt_thread_init(nam2num("CALMNG"), 10, 0, SCHED_FIFO, 0xF)) ) {
 		printf("*** CANNOT INIT CALIBRATION TASK ***\n");

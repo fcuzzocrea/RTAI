@@ -181,14 +181,11 @@ static int user_calibrator(long loops)
 
 static inline int sign(int v) { return v > 0 ? 1 : (v < 0 ? -1 : 0); }
 
-#define SCHED_MODULE "rtai_tmpsched"
-
 int main(int argc, char *argv[])
 {
 	int loops, UserLatency = cal_tol;
 	RTIME tret, t = 0;
 
-	latency_calibrated();
 
 	if (argc > 1) {
 		int len;
@@ -197,17 +194,17 @@ int main(int argc, char *argv[])
 		// struct stat st;
 		// stat(argv[1], &st);
 		// by now, we assume it's alright
-
-		len = sizeof("/sbin/insmod \"\"/rtai_hal" HAL_SCHED_MODEXT " >/dev/null 2>&1") + strlen(module_path);
+		len = sizeof("/sbin/insmod /rtai_hal" HAL_SCHED_MODEXT " >/dev/null 2>&1") + strlen(module_path);
 		cmd = malloc(len + 1);
-		snprintf(cmd, len, "/sbin/insmod \"%s\"/rtai_hal" HAL_SCHED_MODEXT " >/dev/null 2>&1", module_path);
+		snprintf(cmd, len + 1, "/sbin/insmod %s/rtai_hal" HAL_SCHED_MODEXT " >/dev/null 2>&1", module_path);
 		system(cmd);
 		free(cmd);
-		system("/sbin/insmod ./" SCHED_MODULE HAL_SCHED_MODEXT " >/dev/null 2>&1");
+		system("/sbin/insmod ./rtai_tmpsched" HAL_SCHED_MODEXT " >/dev/null 2>&1");
 
 	} else {
+	latency_calibrated();
 		system("/sbin/insmod \"" HAL_SCHED_PATH "\"/rtai_hal" HAL_SCHED_MODEXT " >/dev/null 2>&1");
-		system("/sbin/insmod \"" HAL_SCHED_PATH "\"/" SCHED_MODULE HAL_SCHED_MODEXT " >/dev/null 2>&1");
+		system("/sbin/insmod \"" HAL_SCHED_PATH "\"/rtai_sched" HAL_SCHED_MODEXT " >/dev/null 2>&1");
 	}
 
  	if (!(calmng = rt_thread_init(nam2num("CALMNG"), 10, 0, SCHED_FIFO, 0xF)) ) {
@@ -251,7 +248,11 @@ int main(int argc, char *argv[])
 	rt_thread_delete(NULL);
 	printf("\n");
 
-	system("/sbin/rmmod " SCHED_MODULE " >/dev/null 2>&1");
+	if (argc > 1) {
+		system("/sbin/rmmod rtai_tmpsched >/dev/null 2>&1");
+	} else {
+		system("/sbin/rmmod rtai_sched >/dev/null 2>&1");
+	}
 	system("/sbin/rmmod rtai_hal >/dev/null 2>&1");
 
 	if (max_cal_iterations > 1) {

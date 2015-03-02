@@ -423,7 +423,7 @@ rtai_sched_extradef = -DUSE_RTAI_TASKS=1
 
 # liblxrt is always built
 SUBDIRS = liblxrt
-EXTRA_DIST = Makefile.kbuild
+EXTRA_DIST = Makefile.kbuild selfcalibrate.sh
 all: all-recursive
 
 .SUFFIXES:

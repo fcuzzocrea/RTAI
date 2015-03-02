@@ -186,7 +186,6 @@ int main(int argc, char *argv[])
 	int loops, UserLatency = cal_tol;
 	RTIME tret, t = 0;
 
-
 	if (argc > 1) {
 		int len;
 		char *cmd;
@@ -194,6 +193,7 @@ int main(int argc, char *argv[])
 		// struct stat st;
 		// stat(argv[1], &st);
 		// by now, we assume it's alright
+
 		len = sizeof("/sbin/insmod /rtai_hal" HAL_SCHED_MODEXT " >/dev/null 2>&1") + strlen(module_path);
 		cmd = malloc(len + 1);
 		snprintf(cmd, len + 1, "/sbin/insmod %s/rtai_hal" HAL_SCHED_MODEXT " >/dev/null 2>&1", module_path);
@@ -202,7 +202,8 @@ int main(int argc, char *argv[])
 		system("/sbin/insmod ./rtai_tmpsched" HAL_SCHED_MODEXT " >/dev/null 2>&1");
 
 	} else {
-	latency_calibrated();
+		latency_calibrated();
+
 		system("/sbin/insmod \"" HAL_SCHED_PATH "\"/rtai_hal" HAL_SCHED_MODEXT " >/dev/null 2>&1");
 		system("/sbin/insmod \"" HAL_SCHED_PATH "\"/rtai_sched" HAL_SCHED_MODEXT " >/dev/null 2>&1");
 	}

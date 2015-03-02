@@ -72,7 +72,7 @@ static void latency_calibrated(void)
 
 static void set_calibrated_macros(int sched_latency, int ret_time, int argc)
 {
-if (argc == 2) {
+if (argc != 2) {
 	FILE *si, *so;
 	char *line = NULL;
 	size_t len = 0;
@@ -236,6 +236,8 @@ int main(int argc, char *argv[])
 
 	if (max_cal_iterations > 1) {
 		set_calibrated_macros(UserLatency, tret, argc);
+	} else {
+		exit(1);
 	}
 
 	return 0;

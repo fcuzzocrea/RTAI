@@ -402,6 +402,7 @@ schedulers = rtai_sched$(modext)
 noinst_LIBRARIES = $(am__append_1)
 builtins = @RTAI_BUILTIN_MODLIST@
 @CONFIG_KBUILD_TRUE@builtins_srclist = $(wildcard $(foreach mod,$(builtins),$(patsubst %,$(top_srcdir)/base/%/*.[chS],$(mod))))
+@CONFIG_KBUILD_TRUE@CLEANFILES = calibration_placeholder.c tmp_*
 @CONFIG_KBUILD_FALSE@builtins_objlist = $(foreach mod,$(builtins),$(patsubst %,../%/rtai_$(notdir $(mod)).o,$(mod)))
 
 # SCHED
@@ -756,6 +757,7 @@ install-strip:
 mostlyclean-generic:
 
 clean-generic:
+	-test -z "$(CLEANFILES)" || rm -f $(CLEANFILES)
 
 distclean-generic:
 	-test -z "$(CONFIG_CLEAN_FILES)" || rm -f $(CONFIG_CLEAN_FILES)
@@ -853,10 +855,9 @@ uninstall-am:
 	mostlyclean-generic mostlyclean-libtool pdf pdf-am ps ps-am \
 	tags tags-am uninstall uninstall-am
 
-
 @CONFIG_KBUILD_TRUE@clean-local:
 @CONFIG_KBUILD_TRUE@	@RTAI_KBUILD_CLEAN@
-@CONFIG_KBUILD_TRUE@	@$(RM) -f $(foreach src,$(builtins_srclist),$(notdir $(src))) calibration_placeholder.c
+@CONFIG_KBUILD_TRUE@	@$(RM) -f $(foreach src,$(builtins_srclist),$(notdir $(src))) 
 
 @CONFIG_KBUILD_TRUE@calibration_placeholder.c: rtai_tmpsched$(modext)
 

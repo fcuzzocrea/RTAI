@@ -12,9 +12,10 @@ builtins = @RTAI_BUILTIN_MODLIST@
 if CONFIG_KBUILD
 builtins_srclist = $(wildcard $(foreach mod,$(builtins),$(patsubst %,$(top_srcdir)/base/%/*.[chS],$(mod))))
 
+CLEANFILES = calibration_placeholder.c tmp_*
 clean-local:
 	@RTAI_KBUILD_CLEAN@
-	@$(RM) -f $(foreach src,$(builtins_srclist),$(notdir $(src))) calibration_placeholder.c
+	@$(RM) -f $(foreach src,$(builtins_srclist),$(notdir $(src))) 
 
 else # CONFIG_KBUILD
 builtins_objlist = $(foreach mod,$(builtins),$(patsubst %,../%/rtai_$(notdir $(mod)).o,$(mod)))

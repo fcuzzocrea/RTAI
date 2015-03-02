@@ -24,8 +24,8 @@ if test $OLD_LATENCY -eq 0 ; then
 	USER_BARD=`echo $OUTPUT | cut -d ' ' -f 4`
 
 	# rtai_config.h
-	OLD=../../rtai_config.h
-	NEW=tmp_rtai_config.h
+	OLD1=../../rtai_config.h
+	NEW1=tmp_rtai_config.h
 	awk \
 		-v NEW_LATENCY=$NEW_LATENCY -v BUSY_TIME_ALIGN=1 -v KERN_BARD=$KERN_BARD -v USER_BARD=$USER_BARD \
 '{
@@ -40,15 +40,18 @@ if test $OLD_LATENCY -eq 0 ; then
 	} else {
 		print $0;
 	}
-}' $OLD > $NEW
+}' $OLD1 > $NEW1
+	RC=$?
+	if test $RC != 0 ; then
+		echo "rewrite of '$OLD1' failed"
+		exit $RC
+	fi
 
-	touch -r $OLD $NEW
-	rm -f $OLD
-	mv $NEW $OLD
+	touch -r $OLD1 $NEW1
 
 	# .rtai_config
-	OLD=../../.rtai_config
-	NEW=tmp_rtai_config
+	OLD2=../../.rtai_config
+	NEW2=tmp_rtai_config
 	awk -F '=' \
 		-v NEW_LATENCY=$NEW_LATENCY -v BUSY_TIME_ALIGN="y" -v KERN_BARD=$KERN_BARD -v USER_BARD=$USER_BARD \
 '{
@@ -63,10 +66,18 @@ if test $OLD_LATENCY -eq 0 ; then
 	} else {
 		print $0;
 	}
-}' $OLD > $NEW
+}' $OLD2 > $NEW2
+	RC=$?
+	if test $RC != 0 ; then
+		echo "rewrite of '$OLD2' failed"
+		exit $RC
+	fi
 
-	touch -r $OLD $NEW
-	rm -f $OLD
-	mv $NEW $OLD
+	touch -r $OLD2 $NEW2
+
+	rm -f $OLD1
+	mv $NEW1 $OLD1
+	rm -f $OLD2
+	mv $NEW2 $OLD2
 fi
 

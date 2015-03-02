@@ -49,7 +49,7 @@ if test $OLD_LATENCY -eq 0 ; then
 	# .rtai_config
 	OLD=../../.rtai_config
 	NEW=tmp_rtai_config
-	awk --field-separator='=' \
+	awk -F '=' \
 		-v NEW_LATENCY=$NEW_LATENCY -v BUSY_TIME_ALIGN="y" -v KERN_BARD=$KERN_BARD -v USER_BARD=$USER_BARD \
 '{
 	if ($1 == "CONFIG_RTAI_SCHED_LATENCY") {

@@ -53,8 +53,8 @@ static void latency_calibrated(void)
 	si = fopen(RTAI_CONFIG_PATH, "r");
 
 	while (getline(&line, &len, si) > 0) {
-		if (!strncmp(line, "#define CONFIG_RTAI_SCHED_APIC_LATENCY", sizeof("#define CONFIG_RTAI_SCHED_APIC_LATENCY") - 1)) {
-			int sched_latency = atoi(line + sizeof("#define CONFIG_RTAI_SCHED_APIC_LATENCY"));
+		if (!strncmp(line, "#define CONFIG_RTAI_SCHED_LATENCY", sizeof("#define CONFIG_RTAI_SCHED_LATENCY") - 1)) {
+			int sched_latency = atoi(line + sizeof("#define CONFIG_RTAI_SCHED_LATENCY"));
 			if (sched_latency) {
 				printf("* SCHED_LATENCY IS CALIBRATED: %d (ns). *\n",sched_latency); 
 				exit(1);
@@ -83,8 +83,8 @@ if (argc == 2) {
 	so = fopen("tmp", "w+");
 
 	while (getline(&line, &len, si) > 0) {
-		if (!strncmp(line, "#define CONFIG_RTAI_SCHED_APIC_LATENCY", sizeof("#define CONFIG_RTAI_SCHED_APIC_LATENCY") - 1)) {
-			fprintf(so, "#define CONFIG_RTAI_SCHED_APIC_LATENCY %d\n", sched_latency);
+		if (!strncmp(line, "#define CONFIG_RTAI_SCHED_LATENCY", sizeof("#define CONFIG_RTAI_SCHED_LATENCY") - 1)) {
+			fprintf(so, "#define CONFIG_RTAI_SCHED_LATENCY %d\n", sched_latency);
 			goto cont1;
 		}  
 		if (!strncmp(line, "#define CONFIG_RTAI_BUSY_TIME_ALIGN", sizeof("#define CONFIG_RTAI_BUSY_TIME_ALIGN") - 1)) {
@@ -115,8 +115,8 @@ cont1:
 	so = fopen("tmp", "w+");
 
 	while (getline(&line, &len, si) > 0) {
-		if (!strncmp(line, "CONFIG_RTAI_SCHED_APIC_LATENCY", sizeof("CONFIG_RTAI_SCHED_APIC_LATENCY") - 1)) {
-			fprintf(so, "CONFIG_RTAI_SCHED_APIC_LATENCY=\"%d\"\n", sched_latency);
+		if (!strncmp(line, "CONFIG_RTAI_SCHED_LATENCY", sizeof("CONFIG_RTAI_SCHED_LATENCY") - 1)) {
+			fprintf(so, "CONFIG_RTAI_SCHED_LATENCY=\"%d\"\n", sched_latency);
 			goto cont2;
 		}  
 		if (!strncmp(line, "CONFIG_RTAI_BUSY_TIME_ALIGN", sizeof("CONFIG_RTAI_BUSY_TIME_ALIGN") - 1)) {
@@ -178,6 +178,8 @@ static int user_calibrator(long loops)
 
 static inline int sign(int v) { return v > 0 ? 1 : (v < 0 ? -1 : 0); }
 
+#define SCHED_MODULE "rtai_tmpsched"
+
 int main(int argc, char *argv[])
 {
 	int loops, UserLatency = cal_tol;
@@ -186,7 +188,7 @@ int main(int argc, char *argv[])
 	latency_calibrated();
 
 	system("/sbin/insmod \"" HAL_SCHED_PATH "\"/rtai_hal" HAL_SCHED_MODEXT " >/dev/null 2>&1");
-	system("/sbin/insmod \"" HAL_SCHED_PATH "\"/rtai_sched" HAL_SCHED_MODEXT " >/dev/null 2>&1");
+	system("/sbin/insmod \"" HAL_SCHED_PATH "\"/" SCHED_MODULE HAL_SCHED_MODEXT " >/dev/null 2>&1");
 
  	if (!(calmng = rt_thread_init(nam2num("CALMNG"), 10, 0, SCHED_FIFO, 0xF)) ) {
 		printf("*** CANNOT INIT CALIBRATION TASK ***\n");
@@ -229,7 +231,7 @@ int main(int argc, char *argv[])
 	rt_thread_delete(NULL);
 	printf("\n");
 
-	system("/sbin/rmmod rtai_sched >/dev/null 2>&1");
+	system("/sbin/rmmod " SCHED_MODULE " >/dev/null 2>&1");
 	system("/sbin/rmmod rtai_hal >/dev/null 2>&1");
 
 	if (max_cal_iterations > 1) {

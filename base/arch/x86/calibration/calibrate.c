@@ -70,8 +70,9 @@ static void latency_calibrated(void)
 
 #define DOT_RTAI_CONFIG_PATH  "../../../../.rtai_config"
 
-static void set_calibrated_macros(int sched_latency, int ret_time)
+static void set_calibrated_macros(int sched_latency, int ret_time, int argc)
 {
+if (argc == 2) {
 	FILE *si, *so;
 	char *line = NULL;
 	size_t len = 0;
@@ -89,7 +90,7 @@ static void set_calibrated_macros(int sched_latency, int ret_time)
 		if (!strncmp(line, "#define CONFIG_RTAI_BUSY_TIME_ALIGN", sizeof("#define CONFIG_RTAI_BUSY_TIME_ALIGN") - 1)) {
 			fprintf(so, "#define CONFIG_RTAI_BUSY_TIME_ALIGN 1\n");
 			goto cont1;
-		}  
+		}
 		if (!strncmp(line, "#define CONFIG_RTAI_KERN_BUSY_ALIGN_RET_DELAY", sizeof("#define CONFIG_RTAI_KERN_BUSY_ALIGN_RET_DELAY") - 1)) {
 			fprintf(so, "#define CONFIG_RTAI_KERN_BUSY_ALIGN_RET_DELAY %d\n", ret_time/2);
 			goto cont1;
@@ -139,6 +140,9 @@ cont2:
 	fclose(si);
 	fclose(so);
 	system("mv tmp "DOT_RTAI_CONFIG_PATH);
+} else {
+	printf("SUMMARY %d %d %d\n", sched_latency, ret_time/2, -ret_time);
+}
 
 	return;
 }
@@ -229,7 +233,7 @@ int main(int argc, char *argv[])
 	system("/sbin/rmmod rtai_hal >/dev/null 2>&1");
 
 	if (max_cal_iterations > 1) {
-		set_calibrated_macros(UserLatency, tret);
+		set_calibrated_macros(UserLatency, tret, argc);
 	}
 
 	return 0;

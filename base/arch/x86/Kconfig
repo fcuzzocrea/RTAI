@@ -323,11 +323,11 @@ config RTAI_KERN_BUSY_ALIGN_RET_DELAY
 	switching back to a kernel space task. 
 	It is subtracted from the resume time of a timed task to avoid 
 	a delayed return when a busy wait to align to the resume time is 
-	assigned.
-	A <= 0 value will skip the busy alignment, as if RTAI_BUSY_TIME_ALIGN
-	was not set. Useful to allow the alignment application just for kernel 
-	tasks. For example when a precise calibration for user space is used, 
-	a kernel task will anticipate its timed resumption; so setting a 
+	assigned by setting this parameter to a values > 0.
+	A <= 0 value will skip the busy alignment. 
+	Useful to allow the alignment application just for kernel tasks. 
+	For example when a precise calibration for user space is used, a 
+	kernel task will anticipate its timed resumption; so setting a 
 	positive value here and a <= 0 busy wait time for the corresponding 
 	user space option will allow applying the busy wait just to kernel 
 	tasks.
@@ -340,10 +340,8 @@ config RTAI_USER_BUSY_ALIGN_RET_DELAY
 	back to a user space task. 
 	It is subtracted from the resume time of a timed task to avoid 
 	a delayed return when a busy wait to align to the resume time is
-	requested.
-	A <= 0 value will skip the busy alignment, as if RTAI_BUSY_TIME_ALIGN
-	was not set. Useful to allow the alignment application just to kernel
-	space tasks.
+	by setting this parameter to a values > 0.
+	A <= 0 value will skip the busy alignment.
 
 config RTAI_SCHED_LXRT_NUMSLOTS
 	string "Number of registrable RTAI objects"

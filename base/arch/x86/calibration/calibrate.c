@@ -58,7 +58,7 @@ static void latency_calibrated(void)
 	while (getline(&line, &len, si) > 0) {
 		if (!strncmp(line, "#define CONFIG_RTAI_SCHED_LATENCY", sizeof("#define CONFIG_RTAI_SCHED_LATENCY") - 1)) {
 			int sched_latency = atoi(line + sizeof("#define CONFIG_RTAI_SCHED_LATENCY"));
-			if (sched_latency) {
+			if (sched_latency > 1) {
 				printf("* SCHED_LATENCY IS CALIBRATED: %d (ns). *\n",sched_latency); 
 				exit(1);
 			}
@@ -122,7 +122,8 @@ cont1:
 			fprintf(so, "CONFIG_RTAI_SCHED_LATENCY=\"%d\"\n", sched_latency);
 			goto cont2;
 		}  
-		if (!strncmp(line, "CONFIG_RTAI_BUSY_TIME_ALIGN", sizeof("CONFIG_RTAI_BUSY_TIME_ALIGN") - 1)) {
+//		if (!strncmp(line, "CONFIG_RTAI_BUSY_TIME_ALIGN", sizeof("CONFIG_RTAI_BUSY_TIME_ALIGN") - 1)) {
+		if (strstr(line, "CONFIG_RTAI_BUSY_TIME_ALIGN")) {
 			fprintf(so, "CONFIG_RTAI_BUSY_TIME_ALIGN=y\n");
 			goto cont2;
 		}  

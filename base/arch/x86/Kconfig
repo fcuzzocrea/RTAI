@@ -315,32 +315,9 @@ config RTAI_SCHED_LATENCY
 	  because of the calibration in user space, there should be no need
 	  to align. 
 
-config RTAI_BUSY_TIME_ALIGN
-	bool "Busy wait to ensure resume time alignment"
-	default n
-	help
-	As explained for the scheduling latency parameter, RTAI has a 
-	calibrated anticipation of the timer firing, to compensate for
-	the time overhead consumed in scheduling. 
-	Sometimes, either because of a bad calibration or purposely, it is
-	possible to anticipate the scheduling by setting a slightly larger 
-	than needed anticipation, followed by a busy wait of the right 
-	syncronized time. In such cases, with this option, one can be sure to
-	achieve the desired scheduling time at the expense of wasting a 
-	negligeable processor time. Useful to achieve more precise scheduling
-	deadlines and non negative latency values.
-	Usually, since a user space calibration is preferred, the latency 
-	value will results in being higher than needed for RTAI kernel tasks.
-	Then setting this option will allow to achieve sharper deadlines 
-	for kernel tasks, avoiding their anticipated schedules.
-	Enabling this parameter will have no effect if the specific 
-	kernel/user space alignment time is not set to a positive value.
-	See the related parameters help.
-
 config RTAI_KERN_BUSY_ALIGN_RET_DELAY
 	string "  Delay to return to a switched in timed kernel task (ns)"
 	default 0
-	depends on RTAI_BUSY_TIME_ALIGN
 	help
 	The average time to return to the timed calling function after 
 	switching back to a kernel space task. 
@@ -358,7 +335,6 @@ config RTAI_KERN_BUSY_ALIGN_RET_DELAY
 config RTAI_USER_BUSY_ALIGN_RET_DELAY
 	string "  Delay to return to a switched in timed user task (ns)"
 	default 0
-	depends on RTAI_BUSY_TIME_ALIGN
 	help
 	The average time to return to the timed call function after switching 
 	back to a user space task. 

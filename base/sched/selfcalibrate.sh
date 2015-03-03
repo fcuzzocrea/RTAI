@@ -12,13 +12,13 @@ OLD_LATENCY=`grep 'CONFIG_RTAI_SCHED_LATENCY' ../../rtai_config.h | sed -e 's/.*
 # echo "arch:$ARCH latency:$OLD_LATENCY"
 
 if test $OLD_LATENCY -eq 0 ; then
-	OUTPUT=`../arch/"$ARCH"/calibration/calibrate ../arch/"$ARCH"/hal | grep 'SUMMARY'`
+	../arch/"$ARCH"/calibration/calibrate ../arch/"$ARCH"/hal | tee tmp_output
 	RC=$?
 	if test $RC != 0 ; then
 		exit $RC
 	fi
 
-	#OUTPUT="1111 3333 4444"
+	OUTPUT=`grep 'SUMMARY' tmp_output`
 	NEW_LATENCY=`echo $OUTPUT | cut -d ' ' -f 2`
 	KERN_BARD=`echo $OUTPUT | cut -d ' ' -f 3`
 	USER_BARD=`echo $OUTPUT | cut -d ' ' -f 4`

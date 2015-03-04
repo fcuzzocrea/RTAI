@@ -873,7 +873,7 @@ uninstall-am:
 
 @CONFIG_KBUILD_TRUE@rtai_sched$(modext): @RTAI_KBUILD_ENV@
 @CONFIG_KBUILD_TRUE@rtai_sched$(modext): $(libsched_sched_a_SOURCES) $(nodist_libsched_sched_a_SOURCES) $(builtins_srclist)
-@CONFIG_KBUILD_TRUE@	@(cd ../arch && $(MAKE) rtai_hal$(modext) calibrate)
+@CONFIG_KBUILD_TRUE@	@(cd ../arch && $(MAKE) rtai_hal$(modext))
 @CONFIG_KBUILD_TRUE@	@RTAI_KBUILD_TOP@ \
 @CONFIG_KBUILD_TRUE@	@RTAI_KBUILD_CMD@ rtai_extradef="$(rtai_sched_extradef)" \
 @CONFIG_KBUILD_TRUE@	@RTAI_KBUILD_BOTTOM@

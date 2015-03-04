@@ -297,18 +297,17 @@ config RTAI_SCHED_LATENCY
 	overhead spent to set the right firing time.
 	It could be determined with the calibration support provided by RTAI, 
 	starting from a tentative configuration. 
-	When it is set to zero at the very first making, which is the default 
-	value available, it will trigger a self calibrating procedure. 
+	When it is set to zero and RTAI_SCHED_LATENCY_SELFCALIBRATE is enabled
+	which is the default value available at the very first making, it will 
+	trigger a self calibrating procedure when RTAI is made. 
 	The same value is used for both kernel and user space tasks. Which
 	means that, for an appropriate on time user space task, there could be 
 	some anticipation for a kernel space task, i.e. a negative latency. 
 	In such a case, the busy alignment options could be used to provide a 
 	compromised on time scheduling for both spaces, albeit at a negligible 
 	added cost for kernel tasks.
-	It is remarked again that if such a value is left to zero at the very 
-	first config, RTAI will self calibrate in user space, resetting the 
-	related configuration files with the new values. 
-	In such a vew the self calibration will:
+	When RTAI_SCHED_LATENCY_SELFCALIBRATE is enabled and RTAI_SCHED_LATENCY 
+	is 0, the self calibration will:
 	- set the scheduler latency;
 	- set an appropriate busy wait anticipation for kernel space; see 
 	  the related config parameter;

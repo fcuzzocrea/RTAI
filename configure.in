@@ -714,29 +714,14 @@ AC_ARG_ENABLE(long-timed-lists,
 	esac])
 AC_MSG_RESULT(${CONFIG_RTAI_LONG_TIMED_LIST:-no})
 
-AC_MSG_CHECKING(for 8254 tuning latency)
-AC_ARG_ENABLE(sched-8254-latency,
-	[ --enable-sched-8254-latency	Set 8254 tuning latency],
-	[case "$enableval" in
- changequote(,)dnl
-	[0-9]*) CONFIG_RTAI_SCHED_8254_LATENCY=$enableval ;;
- changequote([,])dnl
-	*) AC_MSG_ERROR([Bad argument to option: --enable-8254-latency=<nanoseconds>]) ;;
-	esac])
-if test x$CONFIG_RTAI_SCHED_8254_LATENCY = x ; then
-  # Use a reasonable default if unset
-  CONFIG_RTAI_SCHED_8254_LATENCY=4700
-fi
-AC_MSG_RESULT($CONFIG_RTAI_SCHED_8254_LATENCY)
-
-AC_MSG_CHECKING(for APIC tuning latency)
-AC_ARG_ENABLE(sched-apic-latency,
-	[ --enable-sched-apic-latency	Set APIC tuning latency],
+AC_MSG_CHECKING(for tuning latency)
+AC_ARG_ENABLE(sched-latency,
+	[ --enable-sched-latency	Set tuning latency],
 	[case "$enableval" in
  changequote(,)dnl
 	[0-9]*) CONFIG_RTAI_SCHED_LATENCY=$enableval ;;
  changequote([,])dnl
-	*) AC_MSG_ERROR([Bad argument to option: --enable-sched-apic-latency=<nanoseconds>]) ;;
+	*) AC_MSG_ERROR([Bad argument to option: --enable-sched-latency=<nanoseconds>]) ;;
 	esac])
 if test x$CONFIG_RTAI_SCHED_LATENCY = x ; then
   # Use a reasonable default if unset
@@ -1710,6 +1695,9 @@ AM_CONDITIONAL(CONFIG_RTAI_MAINTAINER,[test "$CONFIG_RTAI_MAINTAINER" = y])
 AM_CONDITIONAL(CONFIG_RTAI_MAINTAINER_PMA,[test "$CONFIG_RTAI_MAINTAINER_PMA" = y])
 AM_CONDITIONAL(CONFIG_RTAI_MAINTAINER_PGM,[test "$CONFIG_RTAI_MAINTAINER_PGM" = y])
 AM_CONDITIONAL(CONFIG_RTAI_OLD_FASHIONED_BUILD,[test "$CONFIG_RTAI_OLD_FASHIONED_BUILD" = y])
+
+dnl self-calibrate latency
+AM_CONDITIONAL(CONFIG_RTAI_SCHED_LATENCY_SELFCALIBRATE,[test "$CONFIG_RTAI_SCHED_LATENCY_SELFCALIBRATE" = y])
 
 dnl
 dnl Define arch-specific CFLAGS and links

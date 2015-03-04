@@ -281,6 +281,13 @@ config RTAI_LONG_TIMED_LIST
 #	provide a compromised on time scheduling for both, albeit at a 
 #	negligible added cost.
 
+config RTAI_SCHED_LATENCY_SELFCALIBRATE
+	bool "Latency self calibration"
+	default y
+	help
+	Enable self calibration of scheduling latency when RTAI_SCHED_LATENCY
+	is set to 0
+
 config RTAI_SCHED_LATENCY
 	string "Scheduling latency (ns)"
 	default 0

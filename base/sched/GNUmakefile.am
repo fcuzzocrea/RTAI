@@ -24,7 +24,10 @@ endif # CONFIG_KBUILD
 # SCHED
 #if !CONFIG_X86_64
 libsched_sched_a_SOURCES = sched.c sys.c api.c signal.c
-nodist_libsched_sched_a_SOURCES = calibration_placeholder.c
+nodist_libsched_sched_a_SOURCES = 
+if CONFIG_RTAI_SCHED_LATENCY_SELFCALIBRATE
+nodist_libsched_sched_a_SOURCES += calibration_placeholder.c
+endif
 rtai_sched_extradef = -DUSE_RTAI_TASKS=1
 
 if CONFIG_KBUILD

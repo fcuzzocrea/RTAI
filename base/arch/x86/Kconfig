@@ -325,7 +325,7 @@ config RTAI_SCHED_LATENCY
 	calibration-helper. 
 
 config RTAI_KERN_BUSY_ALIGN_RET_DELAY
-	string "  Delay to return to a switched in timed kernel task (ns)"
+	string "Delay to return to a switched in timed kernel task (ns)"
 	default 0
 	help
 	The average time to return to the timed calling function after 
@@ -342,7 +342,7 @@ config RTAI_KERN_BUSY_ALIGN_RET_DELAY
 	tasks.
 
 config RTAI_USER_BUSY_ALIGN_RET_DELAY
-	string "  Delay to return to a switched in timed user task (ns)"
+	string "Delay to return to a switched in timed user task (ns)"
 	default 0
 	help
 	The average time to return to the timed call function after switching 

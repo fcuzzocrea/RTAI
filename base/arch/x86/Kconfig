@@ -285,8 +285,10 @@ config RTAI_SCHED_LATENCY_SELFCALIBRATE
 	bool "Latency self calibration"
 	default y
 	help
-	Enable self calibration of scheduling latency when RTAI_SCHED_LATENCY
-	is set to 0
+	Enable the self calibration of the scheduling latency when the RTAI
+	scheduler is compiled with RTAI_SCHED_LATENCY set to 0.ù
+	See also: RTAI_SCHED_LATENCY, RTAI_KERN_BUSY_ALIGN_RET_DELAY, 
+	          RTAI_USER_BUSY_ALIGN_RET_DELAY.
 
 config RTAI_SCHED_LATENCY
 	string "Scheduling latency (ns)"
@@ -298,8 +300,9 @@ config RTAI_SCHED_LATENCY
 	It could be determined with the calibration support provided by RTAI, 
 	starting from a tentative configuration. 
 	When it is set to zero and RTAI_SCHED_LATENCY_SELFCALIBRATE is enabled
-	which is the default value available at the very first making, it will 
-	trigger a self calibrating procedure when RTAI is made. 
+	which are the default values available at the very first making, it 
+	will trigger a self calibrating procedure when the RTAI scheduler is 
+	made. 
 	The same value is used for both kernel and user space tasks. Which
 	means that, for an appropriate on time user space task, there could be 
 	some anticipation for a kernel space task, i.e. a negative latency. 
@@ -308,10 +311,10 @@ config RTAI_SCHED_LATENCY
 	added cost for kernel tasks.
 	When RTAI_SCHED_LATENCY_SELFCALIBRATE is enabled and RTAI_SCHED_LATENCY 
 	is 0, the self calibration will:
-	- set the scheduler latency;
+	- evaluate the scheduler latency;
 	- set an appropriate busy wait anticipation for kernel space; see 
 	  the related config parameter;
-	- set a negative appropriate busy wait anticipation for user space, 
+	- set a negative appropriate busy wait anticipation for user space; 
 	  the adoption of a negative value will impede any alignment, while
 	  its absolute value will be an appropriate indication of what 
 	  should be used if also a user space alignment is desired; see the 

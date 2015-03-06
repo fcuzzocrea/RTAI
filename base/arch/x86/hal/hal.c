@@ -543,10 +543,7 @@ EXPORT_SYMBOL(rtai_isr_sched);
 	do {                       } while (0)
 #endif /* CONFIG_RTAI_SCHED_ISR_LOCK */
 
-void (*pippopippo)(void);
-EXPORT_SYMBOL(pippopippo);
-
-static int rtai_hirq_dispatcher(int irq)
+static void rtai_hirq_dispatcher(int irq)
 {
 	unsigned long cpuid;
 	if (rtai_domain.irqs[irq].handler) {
@@ -557,13 +554,12 @@ static int rtai_hirq_dispatcher(int irq)
 		RTAI_SCHED_ISR_UNLOCK();
 		HAL_UNLOCK_LINUX();
 		if (rtai_realtime_irq[irq].retmode || test_bit(IPIPE_STALL_FLAG, ROOT_STATUS_ADR(cpuid))) {
-if (pippopippo) pippopippo();
-			return 0;
+			return;
 		}
 	}
 	rtai_sti();
 	hal_fast_flush_pipeline(cpuid);
-	return 0;
+	return;
 }
 
 //#define HINT_DIAG_ECHO

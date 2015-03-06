@@ -1,3 +1,11 @@
+2015-03-06 Paolo Mantegazza <mantegazza@aero.polimi.it>
+
+	* base/arch/x86/hal/hal.c: type rtai_hirq_dispatcher as void, no
+	  return value used by the function calling it.
+	* base/sched/sched.c: removed the unused code related to the old way
+	  of using a list of tasks to transition to hardmode
+	  (lxrt_intercept_schedule_tail).
+
 2015-03-04 Pierangelo Masarati <pierangelo.masarati@polimi.it>
 
 	* configure.in, configure: revised to support self calibration and

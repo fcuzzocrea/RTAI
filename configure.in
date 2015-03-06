@@ -1,7 +1,7 @@
 dnl Process this file with autoconf to produce a configure script.
 AC_PREREQ(2.59)
 
-AC_INIT(rtai,4.1-test1,rtai@rtai.org)
+AC_INIT(rtai,4.1,rtai@rtai.org)
 
 CONFIG_RTAI_VERSION_MAJOR=4
 CONFIG_RTAI_VERSION_MINOR=1
@@ -1818,8 +1818,9 @@ case $RTAI_TARGET_ARCH in
 	# 2009-03-23
 	# `-msse2' temporarily removed by Pierangelo Masarati
 	# as suggested by Paul <paul_c AT tuxcnc DOT org>
-	RTAI_TARGET_ARCH_OPTS="$RTAI_TARGET_ARCH_OPTS -msse"
-	dnl RTAI_TARGET_ARCH_OPTS="$RTAI_TARGET_ARCH_OPTS -msse -mpreferred-stack-boundary=4"
+	dnl RTAI_TARGET_ARCH_OPTS="$RTAI_TARGET_ARCH_OPTS -msse"
+	# force stack boundary to 4 (2^4 = 16 bytes, the default on x86_64)
+	RTAI_TARGET_ARCH_OPTS="$RTAI_TARGET_ARCH_OPTS -msse -mpreferred-stack-boundary=4"
         ;;
    esac
    ;;

@@ -6,7 +6,7 @@ config MODULES
 
 config RTAI_VERSION
 	string
-	default "magma"
+	default "4.1 (vulcano)"
 
 menu "General"
 

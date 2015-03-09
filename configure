@@ -1016,7 +1016,6 @@ enable_rtdm_shirq
 enable_rtdm_select
 enable_debug_rtdm
 enable_task_switch_signal
-enable_hard_soft_toggler
 enable_align_priority
 enable_cplusplus
 enable_cal_freq_fact
@@ -1738,7 +1737,6 @@ Optional Features:
  --enable-rtdm-select	Enable select support in RTDM
  --enable-debug-rtdm		Enable RTDM debug
  --enable-task-switch-signal		Enable RTAI task switch signal
- --enable-hard-soft-toggler		Enable RTAI hard-soft toggler
  --enable-align-priority		Keep Linux task priority aligned to RTAI
  --enable-cplusplus	Build in-kernel C++ support
  --enable-cal-freq-fact      	Set calibration frequency factor
@@ -16561,18 +16559,6 @@ fi
 { $as_echo "$as_me:${as_lineno-$LINENO}: result: ${CONFIG_RTAI_TASK_SWITCH_SIGNAL:-no}" >&5
 $as_echo "${CONFIG_RTAI_TASK_SWITCH_SIGNAL:-no}" >&6; }
 
-{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for hard-soft toggler" >&5
-$as_echo_n "checking for hard-soft toggler... " >&6; }
-# Check whether --enable-hard-soft-toggler was given.
-if test "${enable_hard_soft_toggler+set}" = set; then :
-  enableval=$enable_hard_soft_toggler; case "$enableval" in
-	y | yes) CONFIG_RTAI_HARD_SOFT_TOGGLER=y ;;
-	*) unset CONFIG_RTAI_HARD_SOFT_TOGGLER ;;
-	esac
-fi
-
-{ $as_echo "$as_me:${as_lineno-$LINENO}: result: ${CONFIG_RTAI_HARD_SOFT_TOGGLER:-no}" >&5
-$as_echo "${CONFIG_RTAI_HARD_SOFT_TOGGLER:-no}" >&6; }
 
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking for Linux task priority alignment to RTAI" >&5
 $as_echo_n "checking for Linux task priority alignment to RTAI... " >&6; }
@@ -18927,9 +18913,6 @@ $as_echo "#define CONFIG_RTAI_ALIGN_LINUX_PRIORITY 1" >>confdefs.h
 
 test \! x$CONFIG_RTAI_TASK_SWITCH_SIGNAL = x &&
 $as_echo "#define CONFIG_RTAI_TASK_SWITCH_SIGNAL 1" >>confdefs.h
-
-test \! x$CONFIG_RTAI_HARD_SOFT_TOGGLER = x &&
-$as_echo "#define CONFIG_RTAI_HARD_SOFT_TOGGLER 1" >>confdefs.h
 
 
 test x$CONFIG_RTAI_MATH = xy &&

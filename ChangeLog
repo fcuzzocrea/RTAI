@@ -1,3 +1,16 @@
+2015-03-19 Paolo Mantegazza <mantegazza@aero.polimi.it>
+
+	* base/arch/x86/hal/hal.c: omit argument in macros 
+	  "...fast_flush_pipeline", not needed any more and return though linux
+	  after intercepting syscalls, theu can never be in hard real time
+	  without the scheduler.
+	* base/include/rtai_schedcore.h: make TASK_HARDREALTIME and 
+	  TASK_RTAISRVSLEEP as TASK_INTERRUPTIBLE.
+	* base/include/asm-x86/rtai_lxrt.h: experiment with the possibility of 
+	* base/sched/api.c: split the function rt_task_masked_unblock in a
+	  basic unprotected function, to be used in specifically protected 
+	  forms, both in api.c and wherever it is needed.
+
 2015-03-17 Paolo Mantegazza <mantegazza@aero.polimi.it>
 
 	* base/ipc/msg/msg.c: improve the check of the sending task in

@@ -1,3 +1,10 @@
+2015-03-22 Paolo Mantegazza <mantegazza@aero.polimi.it>
+
+	* base/sched/sys.c: revised lxrt_invoke, argument list and catching 
+	  Linux signal at entering moved to syscall interception in sched.c.
+	* base/sched/sched.c: revised linux signal wakeup and RTAI-Linux
+	  syscalls intercpting.
+
 2015-03-19 Paolo Mantegazza <mantegazza@aero.polimi.it>
 
 	* base/arch/x86/hal/hal.c: omit argument in macros 

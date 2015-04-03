@@ -22,4 +22,7 @@
 #include <rtai_config.h>
 #include <asm/rtai_hal.h>
 
+#define rt_mount_rtai()   do { } while (0)
+#define rt_umount_rtai()  do { } while (0)
+
 #endif /* !_RTAI_ASM_RTAI_H */

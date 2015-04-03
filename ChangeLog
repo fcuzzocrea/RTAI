@@ -1,3 +1,8 @@
+2015-04-03 Paolo Mantegazza <mantegazza@aero.polimi.it>
+
+	* base/include/asm-x86/rtai.h: insert dummy rt_mount_rtai and 
+	  rt_umount_rtai to make comedi making happy.
+
 2015-03-25 Shahbaz Youssefi <shabbyx@gmail.com>
 
         * rtai-py/rtai_lxrt.py: fixed nam2num and num2nam typos, argstype

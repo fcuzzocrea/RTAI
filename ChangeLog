@@ -1,3 +1,8 @@
+2015-04-03 Pierangelo Masarati <pierangelo.masarati@polimi.it>
+
+	* base/include/GNUmakefile.am: make selfcalibration work also
+	  for VPATH builds
+
 2015-04-03 Paolo Mantegazza <mantegazza@aero.polimi.it>
 
 	* base/include/rtai.h: insert dummy rt_mount_rtai and rt_umount_rtai 

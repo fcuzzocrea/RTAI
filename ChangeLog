@@ -1,4 +1,9 @@
-2015-04-03 Pierangelo Masarati <pierangelo.masarati@polimi.it>
+2015-04-13 Paolo Mantegazza <mantegazza@aero.polimi.it>
+
+	* base/arch/x86/hal/hal.c: if CONFIG_SMP is not defined set up an
+	  internal declaration for it.
+
+2015-04-07 Pierangelo Masarati <pierangelo.masarati@polimi.it>
 
 	* base/include/GNUmakefile.am: make selfcalibration work also
 	  for VPATH builds

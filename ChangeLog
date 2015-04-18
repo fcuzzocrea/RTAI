@@ -1,6 +1,7 @@
 2015-04-18 Paul Corner <paul_c@tuxcnc.org>
 
-	* base/scripts/rtai-config.in: added datarootdir
+	* base/scripts/rtai-config.in: added datarootdir; applied and checked 
+	  by Pierangelo (Masarati).
 
 2015-03-25 Shahbaz Youssefi <shabbyx@gmail.com>
 

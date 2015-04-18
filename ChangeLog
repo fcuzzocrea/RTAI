@@ -1,3 +1,8 @@
+2015-04-18 Pierangelo Masarati <pierangelo.masarati@polimi.it>
+
+	* base/scripts/rtai-config.in: added datarootdir, as noted
+	  by Paul
+
 2015-03-25 Shahbaz Youssefi <shabbyx@gmail.com>
 
         * rtai-py/rtai_lxrt.py: fixed nam2num and num2nam typos, argstype

@@ -1,3 +1,9 @@
+2015-04-30 Pierangelo Masarati <pierangelo.masarati@polimi.it>
+
+	* base/math/export_newlib.h, base/math/export_uclibc.h: added
+	  missing files
+	* base/math/GNUmakefile.am: added missing dependences
+
 2015-04-18 Paul Corner <paul_c@tuxcnc.org>
 
 	* base/scripts/rtai-config.in: added datarootdir; applied and checked 

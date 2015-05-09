@@ -1,3 +1,8 @@
+2015-05-09 Paolo Mantegazza <mantegazza@aero.polimi.it>
+
+	* base/addons/rtdm/rtdm_driver.h, xn.h: support changing, deprecated 
+	  and not, smp_mb__before_atomic versions.
+
 2015-04-18 Paul Corner <paul_c@tuxcnc.org>
 
 	* base/scripts/rtai-config.in: added datarootdir; applied and checked 

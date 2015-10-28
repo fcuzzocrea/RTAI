@@ -110,7 +110,7 @@ am_xrtailab_OBJECTS = xrtailab-Fl_Led.$(OBJEXT) \
 	xrtailab-Fl_Synchs_Manager.$(OBJEXT) \
 	xrtailab-xrtailab.$(OBJEXT)
 xrtailab_OBJECTS = $(am_xrtailab_OBJECTS)
-xrtailab_LDADD = $(LDADD)
+xrtailab_DEPENDENCIES = $(top_srcdir)/base/sched/liblxrt/liblxrt.la
 AM_V_lt = $(am__v_lt_@AM_V@)
 am__v_lt_ = $(am__v_lt_@AM_DEFAULT_V@)
 am__v_lt_0 = --silent
@@ -464,6 +464,9 @@ xrtailab_CPPFLAGS = \
 xrtailab_LDFLAGS = \
 	$(efltk_ldflags) \
 	@GL_LIBS@
+
+xrtailab_LDADD = \
+	$(top_srcdir)/base/sched/liblxrt/liblxrt.la
 
 SUBDIRS = matlab matrixx scilab scicoslab
 EXTRA_DIST = icons INSTALL scilab5 scicoslab README README.scilab README_X64

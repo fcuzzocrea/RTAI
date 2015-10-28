@@ -53,6 +53,19 @@ static inline int sign(int v) { return v > 0 ? 1 : (v < 0 ? -1 : 0); }
 static int user_latency;
 static RT_TASK *calmng;
 
+static inline RTIME rt_get_time_in_usrspc(void)
+{
+#ifdef __i386__
+        unsigned long long t;
+        __asm__ __volatile__ ("rdtsc" : "=A" (t));
+       return t;
+#else
+        union { unsigned int __ad[2]; RTIME t; } t;
+        __asm__ __volatile__ ("rdtsc" : "=a" (t.__ad[0]), "=d" (t.__ad[1]));
+        return t.t;
+#endif
+}
+
 int user_calibrator(long loops)
 {
 	RTIME expected;
@@ -65,12 +78,12 @@ int user_calibrator(long loops)
 	mlockall(MCL_CURRENT | MCL_FUTURE);
 
 	rt_make_hard_real_time();
-	expected = rt_get_tscnt() + 10*period;
+	expected = rt_get_time_in_usrspc() + 10*period;
 	rt_task_make_periodic(NULL, expected, period);
 	while(loops--) {
 		expected += period;
 		rt_task_wait_period();
-		user_latency += rt_get_tscnt() - expected;
+		user_latency += rt_get_time_in_usrspc() - expected;
 		s += 3.14;
 	}
 	rt_make_soft_real_time();
@@ -118,7 +131,7 @@ int main(int argc, char *argv[])
 
 		kern_latency = (kern_latency + loops/2)/loops;
 		kern_latency = sign(kern_latency)*count2nano(abs(kern_latency));
-#if CONFIG_RTAI_BUSY_TIME_ALIGN
+#if (CONFIG_RTAI_USER_BUSY_ALIGN_RET_DELAY > 0 || CONFIG_RTAI_KERN_BUSY_ALIGN_RET_DELAY > 0)
 		printf("* KERNEL SPACE RETURN DELAY: %d (ns), ADD TO THE ONE CONFIGURED. *\n", kern_latency);
 #else
 		printf("* KERNEL SPACE SCHED LATENCY: %d (ns), ADD TO THE ONE CONFIGURED. *\n", kern_latency);
@@ -126,7 +139,7 @@ int main(int argc, char *argv[])
 
 		KernLatency += kern_latency;
 		printf("* KERNEL SPACE LATENCY: %d. *\n", KernLatency);
-	}	while (abs(kern_latency) > tol && !CONFIG_RTAI_BUSY_TIME_ALIGN);
+	}	while (abs(kern_latency) > tol && (CONFIG_RTAI_USER_BUSY_ALIGN_RET_DELAY == 0 && CONFIG_RTAI_KERN_BUSY_ALIGN_RET_DELAY == 0));
 
 	printf("\n* USER SPACE. *\n");
 	do {
@@ -143,7 +156,7 @@ int main(int argc, char *argv[])
 #endif
 		UserLatency += user_latency;
 		printf("* USER SPACE LATENCY: %d. *\n", UserLatency);
-	}	while (abs(user_latency) > tol && !CONFIG_RTAI_BUSY_TIME_ALIGN);
+	}	while (abs(user_latency) > tol && (CONFIG_RTAI_USER_BUSY_ALIGN_RET_DELAY == 0 && CONFIG_RTAI_KERN_BUSY_ALIGN_RET_DELAY == 0));
 
 	stop_rt_timer();
 	rt_thread_delete(NULL);

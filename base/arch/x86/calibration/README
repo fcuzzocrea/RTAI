@@ -45,6 +45,10 @@ different latencies for kernel and user space tasks, while only a single one
 can be set when configuring RTAI. So it is up to the user to choose the right 
 compromise between the twos, possibly resorting to the following busy wait 
 option explanation for a more precise match.
+Moreover if any available latency test is run after calibrating, one could see 
+a slightly higher then expected result, especially in user space. That is due 
+to the somewhat higher overhead of the latency tests. Nevertheless, generally, 
+it should be better to correct not the result of the calibrator.
 
 	Busy wait looping for a sharper on time latency calibration
 	===========================================================

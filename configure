@@ -677,6 +677,8 @@ LATEX_MODE
 LATEX_BATCHMODE
 DOXYGEN_SHOW_INCLUDE_FILES
 CROSS_COMPILE
+CONFIG_RTAI_SCHED_LATENCY_SELFCALIBRATE_FALSE
+CONFIG_RTAI_SCHED_LATENCY_SELFCALIBRATE_TRUE
 CONFIG_RTAI_OLD_FASHIONED_BUILD_FALSE
 CONFIG_RTAI_OLD_FASHIONED_BUILD_TRUE
 CONFIG_RTAI_MAINTAINER_PGM_FALSE
@@ -1004,8 +1006,7 @@ enable_ktasks_sched_lxrt
 enable_sched_lock_isr
 enable_rtc_freq
 enable_long_timed_lists
-enable_sched_8254_latency
-enable_sched_apic_latency
+enable_sched_latency
 enable_user_busy_align_ret_delay
 enable_kernel_busy_align_ret_delay
 enable_sched_lxrt_numslots
@@ -1015,7 +1016,6 @@ enable_rtdm_shirq
 enable_rtdm_select
 enable_debug_rtdm
 enable_task_switch_signal
-enable_hard_soft_toggler
 enable_align_priority
 enable_cplusplus
 enable_cal_freq_fact
@@ -1727,8 +1727,7 @@ Optional Features:
  --enable-sched-lock-isr	Enable scheduler lock in ISRs
  --enable-rtc-freq	Enable RTC freq
  --enable-long-timed-lists	Enable long timed lists
- --enable-sched-8254-latency	Set 8254 tuning latency
- --enable-sched-apic-latency	Set APIC tuning latency
+ --enable-sched-latency	Set tuning latency
  --user-busy-align-ret-delay	Set user busy align ret delay
  --kernel-busy-align-ret-delay	Set kernel busy align ret delay
  --enable-sched-lxrt-numslots	Set maximum number of LXRT slots
@@ -1738,7 +1737,6 @@ Optional Features:
  --enable-rtdm-select	Enable select support in RTDM
  --enable-debug-rtdm		Enable RTDM debug
  --enable-task-switch-signal		Enable RTAI task switch signal
- --enable-hard-soft-toggler		Enable RTAI hard-soft toggler
  --enable-align-priority		Keep Linux task priority aligned to RTAI
  --enable-cplusplus	Build in-kernel C++ support
  --enable-cal-freq-fact      	Set calibration frequency factor
@@ -16405,39 +16403,22 @@ fi
 { $as_echo "$as_me:${as_lineno-$LINENO}: result: ${CONFIG_RTAI_LONG_TIMED_LIST:-no}" >&5
 $as_echo "${CONFIG_RTAI_LONG_TIMED_LIST:-no}" >&6; }
 
-{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for 8254 tuning latency" >&5
-$as_echo_n "checking for 8254 tuning latency... " >&6; }
-# Check whether --enable-sched-8254-latency was given.
-if test "${enable_sched_8254_latency+set}" = set; then :
-  enableval=$enable_sched_8254_latency; case "$enableval" in
- 	[0-9]*) CONFIG_RTAI_SCHED_8254_LATENCY=$enableval ;;
- 	*) as_fn_error $? "Bad argument to option: --enable-8254-latency=<nanoseconds>" "$LINENO" 5 ;;
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for tuning latency" >&5
+$as_echo_n "checking for tuning latency... " >&6; }
+# Check whether --enable-sched-latency was given.
+if test "${enable_sched_latency+set}" = set; then :
+  enableval=$enable_sched_latency; case "$enableval" in
+ 	[0-9]*) CONFIG_RTAI_SCHED_LATENCY=$enableval ;;
+ 	*) as_fn_error $? "Bad argument to option: --enable-sched-latency=<nanoseconds>" "$LINENO" 5 ;;
 	esac
 fi
 
-if test x$CONFIG_RTAI_SCHED_8254_LATENCY = x ; then
+if test x$CONFIG_RTAI_SCHED_LATENCY = x ; then
   # Use a reasonable default if unset
-  CONFIG_RTAI_SCHED_8254_LATENCY=4700
+  CONFIG_RTAI_SCHED_LATENCY=0
 fi
-{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $CONFIG_RTAI_SCHED_8254_LATENCY" >&5
-$as_echo "$CONFIG_RTAI_SCHED_8254_LATENCY" >&6; }
-
-{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for APIC tuning latency" >&5
-$as_echo_n "checking for APIC tuning latency... " >&6; }
-# Check whether --enable-sched-apic-latency was given.
-if test "${enable_sched_apic_latency+set}" = set; then :
-  enableval=$enable_sched_apic_latency; case "$enableval" in
- 	[0-9]*) CONFIG_RTAI_SCHED_APIC_LATENCY=$enableval ;;
- 	*) as_fn_error $? "Bad argument to option: --enable-sched-apic-latency=<nanoseconds>" "$LINENO" 5 ;;
-	esac
-fi
-
-if test x$CONFIG_RTAI_SCHED_APIC_LATENCY = x ; then
-  # Use a reasonable default if unset
-  CONFIG_RTAI_SCHED_APIC_LATENCY=3944
-fi
-{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $CONFIG_RTAI_SCHED_APIC_LATENCY" >&5
-$as_echo "$CONFIG_RTAI_SCHED_APIC_LATENCY" >&6; }
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $CONFIG_RTAI_SCHED_LATENCY" >&5
+$as_echo "$CONFIG_RTAI_SCHED_LATENCY" >&6; }
 
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking for user busy align ret delay" >&5
 $as_echo_n "checking for user busy align ret delay... " >&6; }
@@ -16578,18 +16559,6 @@ fi
 { $as_echo "$as_me:${as_lineno-$LINENO}: result: ${CONFIG_RTAI_TASK_SWITCH_SIGNAL:-no}" >&5
 $as_echo "${CONFIG_RTAI_TASK_SWITCH_SIGNAL:-no}" >&6; }
 
-{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for hard-soft toggler" >&5
-$as_echo_n "checking for hard-soft toggler... " >&6; }
-# Check whether --enable-hard-soft-toggler was given.
-if test "${enable_hard_soft_toggler+set}" = set; then :
-  enableval=$enable_hard_soft_toggler; case "$enableval" in
-	y | yes) CONFIG_RTAI_HARD_SOFT_TOGGLER=y ;;
-	*) unset CONFIG_RTAI_HARD_SOFT_TOGGLER ;;
-	esac
-fi
-
-{ $as_echo "$as_me:${as_lineno-$LINENO}: result: ${CONFIG_RTAI_HARD_SOFT_TOGGLER:-no}" >&5
-$as_echo "${CONFIG_RTAI_HARD_SOFT_TOGGLER:-no}" >&6; }
 
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking for Linux task priority alignment to RTAI" >&5
 $as_echo_n "checking for Linux task priority alignment to RTAI... " >&6; }
@@ -18945,9 +18914,6 @@ $as_echo "#define CONFIG_RTAI_ALIGN_LINUX_PRIORITY 1" >>confdefs.h
 test \! x$CONFIG_RTAI_TASK_SWITCH_SIGNAL = x &&
 $as_echo "#define CONFIG_RTAI_TASK_SWITCH_SIGNAL 1" >>confdefs.h
 
-test \! x$CONFIG_RTAI_HARD_SOFT_TOGGLER = x &&
-$as_echo "#define CONFIG_RTAI_HARD_SOFT_TOGGLER 1" >>confdefs.h
-
 
 test x$CONFIG_RTAI_MATH = xy &&
 $as_echo "#define CONFIG_RTAI_MATH_BUILTIN 1" >>confdefs.h
@@ -19010,7 +18976,7 @@ _ACEOF
 
 
 cat >>confdefs.h <<_ACEOF
-#define CONFIG_RTAI_SCHED_APIC_LATENCY $CONFIG_RTAI_SCHED_APIC_LATENCY
+#define CONFIG_RTAI_SCHED_LATENCY $CONFIG_RTAI_SCHED_LATENCY
 _ACEOF
 
 
@@ -19109,15 +19075,6 @@ _ACEOF
 test x$CONFIG_RTAI_MATH_KCOMPLEX = xy &&
 $as_echo "#define CONFIG_RTAI_MATH_KCOMPLEX 1" >>confdefs.h
 
-
-case $CONFIG_RTAI_BUSY_TIME_ALIGN in
-	y) CONFIG_RTAI_BUSY_TIME_ALIGN=1 ;;
-	n|*) CONFIG_RTAI_BUSY_TIME_ALIGN=0 ;;
-esac
-
-cat >>confdefs.h <<_ACEOF
-#define CONFIG_RTAI_BUSY_TIME_ALIGN $CONFIG_RTAI_BUSY_TIME_ALIGN
-_ACEOF
 
 
 cat >>confdefs.h <<_ACEOF
@@ -19738,6 +19695,15 @@ else
 fi
 
 
+ if test "$CONFIG_RTAI_SCHED_LATENCY_SELFCALIBRATE" = y; then
+  CONFIG_RTAI_SCHED_LATENCY_SELFCALIBRATE_TRUE=
+  CONFIG_RTAI_SCHED_LATENCY_SELFCALIBRATE_FALSE='#'
+else
+  CONFIG_RTAI_SCHED_LATENCY_SELFCALIBRATE_TRUE='#'
+  CONFIG_RTAI_SCHED_LATENCY_SELFCALIBRATE_FALSE=
+fi
+
+
 
 if test x$CONFIG_KBUILD = x; then
                   { $as_echo "$as_me:${as_lineno-$LINENO}: checking for module compilation flags" >&5
@@ -19819,7 +19785,16 @@ if [ $ac_cv_gcc33 = no ]; then
   { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
 $as_echo "no" >&6; }
 else
-  RTAI_FP_CFLAGS="-D_FORTIFY_SOURCE=0"
+  if test x"$CONFIG_RTAI_FORTIFY_SOURCE" != x ; then
+  case "$CONFIG_RTAI_FORTIFY_SOURCE" in
+    0|1|2)
+            RTAI_FP_CFLAGS="-U_FORTIFY_SOURCE -D_FORTIFY_SOURCE=$CONFIG_RTAI_FORTIFY_SOURCE"
+      ;;
+    *)
+      as_fn_error $? "invalid _FORTIFY_SOURCE value $RTAI_FORTIFY_SOURCE" "$LINENO" 5
+      ;;
+  esac
+    fi
   { $as_echo "$as_me:${as_lineno-$LINENO}: result: ok" >&5
 $as_echo "ok" >&6; }
 fi
@@ -19860,7 +19835,7 @@ case $RTAI_TARGET_ARCH in
 	# 2009-03-23
 	# `-msse2' temporarily removed by Pierangelo Masarati
 	# as suggested by Paul <paul_c AT tuxcnc DOT org>
-		# force stack boundary to 4 (2^4 = 16 bytes, the default on x86_64)
+	# RTAI_TARGET_ARCH_OPTS="$RTAI_TARGET_ARCH_OPTS -msse"
 	RTAI_TARGET_ARCH_OPTS="$RTAI_TARGET_ARCH_OPTS -msse -mpreferred-stack-boundary=4"
         ;;
    esac
@@ -20027,6 +20002,12 @@ if test x$CONFIG_KBUILD = xy; then
 
    ac_config_links="$ac_config_links testsuite/kern/switches/Makefile:testsuite/kern/switches/Makefile.kbuild"
 
+   ac_config_links="$ac_config_links testsuite/kthreads/latency/Makefile:testsuite/kthreads/latency/Makefile.kbuild"
+
+   ac_config_links="$ac_config_links testsuite/kthreads/preempt/Makefile:testsuite/kthreads/preempt/Makefile.kbuild"
+
+   ac_config_links="$ac_config_links testsuite/kthreads/switches/Makefile:testsuite/kthreads/switches/Makefile.kbuild"
+
 fi
 
 RTAI_POSIX_WRAP=`for f in \`cat "${srcdir}/base/posix/POSIX_WRAPS"\`; do echo -n " -Wl,--wrap -Wl,$f" ; done`
@@ -20106,7 +20087,7 @@ elif test \! x$CONFIG_RTAI_LAB = x; then
 fi
 
 if test -d $srcdir/testsuite; then
-   ac_config_files="$ac_config_files testsuite/GNUmakefile testsuite/kern/GNUmakefile testsuite/kern/latency/GNUmakefile testsuite/kern/preempt/GNUmakefile testsuite/kern/switches/GNUmakefile testsuite/user/GNUmakefile testsuite/user/latency/GNUmakefile testsuite/user/preempt/GNUmakefile testsuite/user/switches/GNUmakefile"
+   ac_config_files="$ac_config_files testsuite/GNUmakefile testsuite/kern/GNUmakefile testsuite/kern/latency/GNUmakefile testsuite/kern/preempt/GNUmakefile testsuite/kern/switches/GNUmakefile testsuite/kthreads/GNUmakefile testsuite/kthreads/latency/GNUmakefile testsuite/kthreads/preempt/GNUmakefile testsuite/kthreads/switches/GNUmakefile testsuite/user/GNUmakefile testsuite/user/latency/GNUmakefile testsuite/user/preempt/GNUmakefile testsuite/user/switches/GNUmakefile"
 
 elif test \! x$CONFIG_RTAI_TESTSUITE = x; then
      as_fn_error $? "testsuite package is missing" "$LINENO" 5
@@ -20551,6 +20532,10 @@ Usually this means the macro was only invoked conditionally." "$LINENO" 5
 fi
 if test -z "${CONFIG_RTAI_OLD_FASHIONED_BUILD_TRUE}" && test -z "${CONFIG_RTAI_OLD_FASHIONED_BUILD_FALSE}"; then
   as_fn_error $? "conditional \"CONFIG_RTAI_OLD_FASHIONED_BUILD\" was never defined.
+Usually this means the macro was only invoked conditionally." "$LINENO" 5
+fi
+if test -z "${CONFIG_RTAI_SCHED_LATENCY_SELFCALIBRATE_TRUE}" && test -z "${CONFIG_RTAI_SCHED_LATENCY_SELFCALIBRATE_FALSE}"; then
+  as_fn_error $? "conditional \"CONFIG_RTAI_SCHED_LATENCY_SELFCALIBRATE\" was never defined.
 Usually this means the macro was only invoked conditionally." "$LINENO" 5
 fi
 if test -z "${CONFIG_RTAI_ADDONS_TRUE}" && test -z "${CONFIG_RTAI_ADDONS_FALSE}"; then
@@ -21560,6 +21545,9 @@ do
     "testsuite/kern/latency/Makefile") CONFIG_LINKS="$CONFIG_LINKS testsuite/kern/latency/Makefile:testsuite/kern/latency/Makefile.kbuild" ;;
     "testsuite/kern/preempt/Makefile") CONFIG_LINKS="$CONFIG_LINKS testsuite/kern/preempt/Makefile:testsuite/kern/preempt/Makefile.kbuild" ;;
     "testsuite/kern/switches/Makefile") CONFIG_LINKS="$CONFIG_LINKS testsuite/kern/switches/Makefile:testsuite/kern/switches/Makefile.kbuild" ;;
+    "testsuite/kthreads/latency/Makefile") CONFIG_LINKS="$CONFIG_LINKS testsuite/kthreads/latency/Makefile:testsuite/kthreads/latency/Makefile.kbuild" ;;
+    "testsuite/kthreads/preempt/Makefile") CONFIG_LINKS="$CONFIG_LINKS testsuite/kthreads/preempt/Makefile:testsuite/kthreads/preempt/Makefile.kbuild" ;;
+    "testsuite/kthreads/switches/Makefile") CONFIG_LINKS="$CONFIG_LINKS testsuite/kthreads/switches/Makefile:testsuite/kthreads/switches/Makefile.kbuild" ;;
     "GNUmakefile") CONFIG_FILES="$CONFIG_FILES GNUmakefile" ;;
     "base/GNUmakefile") CONFIG_FILES="$CONFIG_FILES base/GNUmakefile" ;;
     "base/arch/GNUmakefile") CONFIG_FILES="$CONFIG_FILES base/arch/GNUmakefile" ;;
@@ -21620,6 +21608,10 @@ do
     "testsuite/kern/latency/GNUmakefile") CONFIG_FILES="$CONFIG_FILES testsuite/kern/latency/GNUmakefile" ;;
     "testsuite/kern/preempt/GNUmakefile") CONFIG_FILES="$CONFIG_FILES testsuite/kern/preempt/GNUmakefile" ;;
     "testsuite/kern/switches/GNUmakefile") CONFIG_FILES="$CONFIG_FILES testsuite/kern/switches/GNUmakefile" ;;
+    "testsuite/kthreads/GNUmakefile") CONFIG_FILES="$CONFIG_FILES testsuite/kthreads/GNUmakefile" ;;
+    "testsuite/kthreads/latency/GNUmakefile") CONFIG_FILES="$CONFIG_FILES testsuite/kthreads/latency/GNUmakefile" ;;
+    "testsuite/kthreads/preempt/GNUmakefile") CONFIG_FILES="$CONFIG_FILES testsuite/kthreads/preempt/GNUmakefile" ;;
+    "testsuite/kthreads/switches/GNUmakefile") CONFIG_FILES="$CONFIG_FILES testsuite/kthreads/switches/GNUmakefile" ;;
     "testsuite/user/GNUmakefile") CONFIG_FILES="$CONFIG_FILES testsuite/user/GNUmakefile" ;;
     "testsuite/user/latency/GNUmakefile") CONFIG_FILES="$CONFIG_FILES testsuite/user/latency/GNUmakefile" ;;
     "testsuite/user/preempt/GNUmakefile") CONFIG_FILES="$CONFIG_FILES testsuite/user/preempt/GNUmakefile" ;;

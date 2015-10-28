@@ -125,9 +125,9 @@ am__uninstall_files_from_dir = { \
 am__installdirs = "$(DESTDIR)$(libdir)"
 LTLIBRARIES = $(lib_LTLIBRARIES)
 liblxrt_la_LIBADD =
-am__liblxrt_la_SOURCES_DIST = init.c services.c touchall.c
+am__liblxrt_la_SOURCES_DIST = services.c touchall.c
 @CONFIG_M68KNOMMU_FALSE@am__objects_1 = touchall.lo
-am_liblxrt_la_OBJECTS = init.lo services.lo $(am__objects_1)
+am_liblxrt_la_OBJECTS = services.lo $(am__objects_1)
 liblxrt_la_OBJECTS = $(am_liblxrt_la_OBJECTS)
 AM_V_lt = $(am__v_lt_@AM_V@)
 am__v_lt_ = $(am__v_lt_@AM_DEFAULT_V@)
@@ -377,7 +377,7 @@ top_build_prefix = @top_build_prefix@
 top_builddir = @top_builddir@
 top_srcdir = @top_srcdir@
 lib_LTLIBRARIES = liblxrt.la
-liblxrt_la_SOURCES = init.c services.c $(am__append_1)
+liblxrt_la_SOURCES = services.c $(am__append_1)
 liblxrt_la_LDFLAGS = -module -version-info 1:0:0
 INCLUDES = @RTAI_REAL_USER_CFLAGS@ -D_GNU_SOURCE -fno-inline \
 	-I$(top_srcdir)/base/include -I../../include $(am__append_2)
@@ -460,7 +460,6 @@ mostlyclean-compile:
 distclean-compile:
 	-rm -f *.tab.c
 
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/init.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/services.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/touchall.Plo@am__quote@
 

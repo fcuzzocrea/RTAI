@@ -6,6 +6,11 @@
 
 	* RTAI 4.1.1 (4.1 closure release)
 
+2015-05-09 Paolo Mantegazza <mantegazza@aero.polimi.it>
+
+	* base/addons/rtdm/rtdm_driver.h, xn.h: support changing, deprecated
+	  and not, smp_mb__before_atomic versions.
+
 2015-04-30 Pierangelo Masarati <pierangelo.masarati@polimi.it>
 
 	* base/math/export_newlib.h, base/math/export_uclibc.h: added
@@ -17,18 +22,292 @@
 	* base/scripts/rtai-config.in: added datarootdir; applied and checked 
 	  by Pierangelo (Masarati).
 
+2015-04-13 Paolo Mantegazza <mantegazza@aero.polimi.it>
+
+	* base/arch/x86/hal/hal.c: if CONFIG_SMP is not defined set up an
+	  internal declaration for it.
+
+2015-04-07 Pierangelo Masarati <pierangelo.masarati@polimi.it>
+
+	* base/include/GNUmakefile.am: make selfcalibration work also
+	  for VPATH builds
+
+2015-04-03 Paolo Mantegazza <mantegazza@aero.polimi.it>
+
+	* base/include/rtai.h: insert dummy rt_mount_rtai and rt_umount_rtai
+	  to make comedi making happy.
+
 2015-03-25 Shahbaz Youssefi <shabbyx@gmail.com>
 
-        * rtai-py/rtai_lxrt.py: fixed nam2num and num2nam typos, argstype
-          used in place argtypes.
+	* rtai-py/rtai_lxrt.py: fixed nam2num and num2nam typos, argstype
+	  used in place argtypes.
+
+2015-03-22 Paolo Mantegazza <mantegazza@aero.polimi.it>
+
+	* base/sched/sys.c: revised lxrt_invoke, argument list and catching
+	  Linux signal at entering moved to syscall interception in sched.c.
+	* base/sched/sched.c: revised linux signal wakeup and RTAI-Linux
+	  syscalls intercpting.
+
+2015-03-19 Paolo Mantegazza <mantegazza@aero.polimi.it>
+
+	* base/arch/x86/hal/hal.c: omit argument in macros
+	  "...fast_flush_pipeline", not needed any more and return though linux
+	  after intercepting syscalls, theu can never be in hard real time
+	  without the scheduler.
+	* base/include/rtai_schedcore.h: make TASK_HARDREALTIME and
+	  TASK_RTAISRVSLEEP as TASK_INTERRUPTIBLE.
+	* base/include/asm-x86/rtai_lxrt.h: experiment with the possibility of
+	* base/sched/api.c: split the function rt_task_masked_unblock in a
+	  basic unprotected function, to be used in specifically protected
+	  forms, both in api.c and wherever it is needed.
+
+2015-03-17 Paolo Mantegazza <mantegazza@aero.polimi.it>
+
+	* base/ipc/msg/msg.c: improve the check of the sending task in
+	  rt_Receive.
+
+2015-03-06 Paolo Mantegazza <mantegazza@aero.polimi.it>
+
+	* base/arch/x86/hal/hal.c: type rtai_hirq_dispatcher as void, no
+	  return value used by the function calling it.
+	* base/sched/sched.c: removed the unused code related to the old way
+	  of using a list of tasks to transition to hardmode
+	  (lxrt_intercept_schedule_tail).
 
 2015-03-06 Pierangelo Masarati <pierangelo.masarati@polimi.it>
 
 	* RTAI 4.1
 
+2015-03-04 Pierangelo Masarati <pierangelo.masarati@polimi.it>
+
+	* configure.in, configure: revised to support self calibration and
+	  revised configuration paraeters.
+	* base/sched/selfcalibrate.sh: added to support self calibration.
+	* base/arch/x86/Kconfig: restructured calibration parameters structure
+	  names and help, both to clean no more used names and to support self
+	  calibration.
+	* base/arch/x86/calibration/calibrate.c: modified to be usable both
+	  for self and user guided calibrations.
+
+2015-02-27 Pierangelo Masarati <pierangelo.masarati@polimi.it>
+
+	* configure.in, configure, testsuite/kthreads/*/GNUmakefile.*,
+	  testsuite/kthreads/*/Makefile.kbuild: add prefix kthreads_ to
+	  modules testsuite/kthreads, showing the use of hardened Linux
+	  kernel threads in the same way as user space threads.
+	* base/arch/x86/calibration/GNUmakefile.*: module rtai_calibrate.ko
+	  no longer built; build calibrate instead.
+
+2015-02-22 Paolo Mantegazza <mantegazza@aero.polimi.it>
+
+	* base/sched/sys.c: avoid waiting on a Linux sem when a kthread
+	  creation is requested from hard real; the Linux task structure
+	  address is returned through a call argument.
+
+2015-02-21 Paolo Mantegazza <mantegazza@aero.polimi.it>
+
+	* testsuite/kthreads/latency/display.c and latency-module.c,
+	  testsuite/kthreads/preempt/display.c and preempt-module.c,
+	  testsuite/kthreads/switches/switches-module.c: set of examples
+	  showing the usage of RTAI enabled soft-hardened Linux kthreads.
+	* base/sched/sys.c: added a Linux kthread server, to allow creating
+	  hadr-soft RTAI Linux kernel threads from RTAI own kernel tasks and
+	  Linux real time hardened kernel thread, without loosing hard real
+	  time execution; it implies a revision of what prviously committed.
+	* base/sched/sched.c: run and termininate, at init-exiting the Linux
+	  kthread server.
+
+2015-02-19 Paolo Mantegazza <mantegazza@aero.polimi.it>
+
+	* base/arch/x86/calibrate/calibrate.c: do not self calibrate if
+	  SCHED_LATENCY is set already; update also .rtai-config.
+	* base/sched/sched.c: do not convert negative kern-user busy waits.
+	* base/arch/x86/Kconfig: display kern busy wait again.
+
+2015-02-18 Paolo Mantegazza <mantegazza@aero.polimi.it>
+
+	* base/sched/sched.c and sys.c: busy timed sync waits only if there
+	  is a sched_latency.
+	* base/sched/sys.c: set sched_latency also when sched_latency is zero.
+	* base/include/rtai_schedcore.h: enable timed sync busy waits at wake
+	  up only if there is a sched_latency.
+	* base/arch/x86/calibrate/calibrate.c: recoded for use within the
+	  make self tuning.
+
+2015-02-16 Paolo Mantegazza <mantegazza@aero.polimi.it>
+
+	* base/include/asm-x86/rtai_fpu_64.h: cleaned legacy oldnames.
+
+2015-02-15 Paolo Mantegazza <mantegazza@aero.polimi.it>
+
+	* base/sched/sys.c: rt_thread_create returns an error when called from
+	  an RTAI own kernel task; use a wrapper function and a LINUX kernel
+	  sem to grant the new kthread is running before retunring,
+	  substitutes the previous polled wait for an RTAI enabled new khread.
+
+2015-02-14 Paolo Mantegazza <mantegazza@aero.polimi.it>
+
+	* addons/drivers/serial/serial.c and serialP.h: cleaned legacy
+	  oldnames.
+	* addons/rtdm/drvlib.c, module.c, rtdm_driver.h and xn.h: cleaned
+	  legacy oldnames, aligned with renewed variable and structure names.
+	* base/arch/x86/Kconfig: prepared for a few next config changes.
+	* base/arch/x86/hal/hal/c: cleaned legacy oldnames and macros, aligned
+	  with renewed variable and structure names.
+	* base/include/rtai_hal_names.h: reduced to what is still needed with
+	  the latest patches and a more direct use of its raw names.
+	* base/include/asm-x86/rtai_hal.h: redefined struct calibration_data,
+	  cleaned legacy oldnames, messy redundant macros and unused parts of
+	  code; defined new macros, aligned with renewed variable and structure
+	  names.
+	* base/include/asm-x86/rtai_lxrt.h: cleaned legacy oldnames, messy
+	  redundant macros and unused parts of code; defined new macros,
+	  aligned with renewed variable and structure names.
+	* base/include/asm-x86/rtai_vectors.h: cleaned of vectors and ipis
+	  macros definition, introduced a reminder of what in use now.
+	* base/sched/api.c: cleaned legacy oldnames and cared of the no more
+	  used rt_times tunables, now rt_smp_times[0].
+	* base/sched/sched.c: cleaned legacy oldnames, messy redundant macros;
+	  aligned with renewed variable, macros and structure names; cared of
+	  the no more used rt_times tunables, now rt_smp_times[0].
+	* base/sched/sys.c: cleaned legacy oldnames, aligned with renewed
+	  variable and structure names.
+	* base/tasklets/tasklets.c: cleaned legacy oldnames, aligned with
+	  renewed variable and structure names.
+	* base/wd/wd.c: cleaned legacy oldnames, aligned with renewed variable
+	  and structure names.
+	* testsuite/kern/latency/latency-module.c,
+	  testsuite/kern/preempt/preempt-module.c,
+	  testsuite/kern/switches/switches-module.c: cleaned legacy oldnames,
+	  aligned with renewed variable and structure names.
+
+2015-02-11 Paolo Mantegazza <mantegazza@aero.polimi.it>
+
+	* base/arch/x86/hal/hal.c: got rid of rt_times variable, beware
+	  just the variable, not of the structure with the same name.
+
+2015-02-08 Paolo Mantegazza <mantegazza@aero.polimi.it>
+
+	* base/sched/sys.c: rt_thread_create poll waits till the created
+	  thread is rtai enabled.
+
+2015-02-07 Paolo Mantegazza <mantegazza@aero.polimi.it>
+
+	* base/sched/sched.c: added the possibility of testing different ways
+	  to set active_mm for kernel threads.
+
+2015-02-06 Paolo Mantegazza <mantegazza@aero.polimi.it>
+
+	* base/sched/sched.c: avoid loosing the active_mm stolen for kernel
+	  threads working in hard real time, by incrementing its mm_count
+	  when it is acquired in fast_schedule, then mmdrop active_mm any
+	  time they are returned to soft mode in give_back_to_linux.
+
+2015-02-05 Paolo Mantegazza <mantegazza@aero.polimi.it>
+
+	* base/include/rtai_sched.h: added the new declaration for
+	  rt_kthread_init, hiding the old one. Still to be cleaned a bit.
+	* base/include/rtai_schedcore.h: hided the old declaration of
+	  rt_kthread_init. Awaiting some cleaning.
+	* base/sched/sched.c: made fast_schedule support hard transitions
+	  for kernel threads, without touching the context switch in use.
+	* base/sched/sys.c: reinstated support for hard-soft kernel threads,
+	  emulating the scheme used in kernel space. Beware of the way of
+	  calling RTAI services in the case of soft threads. See
+	  soft calling functions. The legacy RESERVOIR option awaits a new
+	  helper module. TBD: the releated testsuite.
+
+2015-02-04 Paolo Mantegazza <mantegazza@aero.polimi.it>
+
+	* base/arch/x86/hal/hal.c: got rid of all old timer request/free.
+	* base/sched/sched.c: got rid of all old start/stop_rt_timer and
+	  likes. Added fastcall hook.
+
+2015-02-02 Paolo Mantegazza <mantegazza@aero.polimi.it>
+
+	* base/include/asm-x86/rtai_hal.h: macro rtai_tskext modified so to
+	  include the related LINUX task, and to use either ptd in task_struct
+	  and thread_info.
+	* base/ipc/msg/msg.c;
+	  base/ipc/shm/shm.c;
+	  addons/rtdm/xn.h;
+	  base/sched/api.c, sched.c, sys.c: use the new macro rtai_tskext,
+	  modified so to include the related LINUX task.
+
+2015-02-01 Paolo Mantegazza <mantegazza@aero.polimi.it>
+
+	* base/sched/sched.c: force oneshot mode ALWAYS, through a bad, but
+	  temporary, hack.
+
+2015-01-31 Paolo Mantegazza <mantegazza@aero.polimi.it>
+
+	* base/include/asm-x86/rtai_lxrt.h: gather the common parts of 32-64
+	  bits archs, unify the definition of union rtai_lxrt_t.
+	* base/include/asm-x86/rtai_lxrt_32.h: keap only the 32 bits specific
+	  definitions and services, required copying __do_strncpy_from_user
+	  from LINUX, as for 64 bits.
+	* base/include/asm-x86/rtai_lxrt_64.h: keap only the 64 bits specific
+	  definitions and services.
+	* base/include/asm-x86/rtai_fpu.h: gather the common parts of 32-64
+	* base/include/asm-x86/rtai_fpu_32.h and rtai_fpu_64.h: keap only the
+	  32-64 bits specific bits archs.
+
+2015-01-31 Paolo Mantegazza <mantegazza@aero.polimi.it>
+
+	* base/arch/x86/hal/hal.c: significantly refurbished, x86-32-64
+	  unified, patch's hard timers services; from now on only the oneshot
+	  mode must be used.
+
 2015-01-28 Pierangelo Masarati <pierangelo.masarati@polimi.it>
 
 	* RTAI 4.1-test1
+
+2015-01-27 Paolo Mantegazza <mantegazza@aero.polimi.it>
+
+	* base/include/asm/rtai_hal.h: unify 32-64 bits independent code here
+	  and revise real time spin locks and global lock.
+	* base/include/asm/rtai_hal_32.h and rtai_hal_64.h: left with only
+	  32-64 bits arch specific code.
+	* base/sched/sched.c: use non rtai_cli protected global lock get and
+	  release from rtai_hal.h.
+	* base/arch/x86/hal/hal_32.c: redefine rtai_cpu_lock according to the
+	  global lock structure.
+	* addons/rtdm/xn.h: make xnlock_t comply with the new global_lock
+	  structure declaration.
+
+2015-01-24 Paolo Mantegazza <mantegazza@aero.polimi.it>
+
+	* base/arch/x86/hal/hal_32.c: exploit oneshot hardware timing setting
+	  from the modified patch, working but still to be finished along with
+	  some cleaning more.
+	* base/include/asm-x86/rtai_hal_32.h: optionally set the oneshot delay
+	  by optionally using ipipe_timer_set if X86_FEATURE_TSC_DEADLINE_TIMER.
+	* base/sched/sched.c: do not provide rt_linux_hrt_set_mode any more,
+	  use the one found of rtai_hal.c.
+
+2015-01-22 Paolo Mantegazza <mantegazza@aero.polimi.it>
+
+	* base/sched/sched.c: serialize symultaneous uses of steal_from_linux
+	  on the same cpu, directly pass fast_schedule as a migration_hook for
+	  the patch; removed rt_daemonize stuff.
+	* base/sched/sys.c: removed rt_daemonize stuff.
+
+2015-01-18 Paolo Mantegazza <mantegazza@aero.polimi.it>
+
+	* addons/rtdm/rtdm_driver.h and xn.h: a few changes to work also
+	  without legacy constraints.
+	* base/arch/x86/hal/hal_32.c and hal_64.c: a series of changes to work
+	  also without legacy constraints and some cleaning.
+	* base/include/rtai_hal_names.h: cleaned up, also in relation to a few
+	  changes to work also without legacy constraints.
+	* base/include/rtai_hal_schecore.h: a few changes to work also without
+	  legacy constraints.
+	* base/include/asm-x86/rtai_hal_32.h: a few changes to work also without
+	  legacy constraints.
+	* base/sched/sys.c: grant zeroing of ptd and use the patch support
+	* base/sched/sched.c: some cleaning and changes to work also without
+	  legacy constraints.
 
 2015-01-18 Paolo Mantegazza <mantegazza@aero.polimi.it>
 
@@ -132,6 +411,106 @@
 
 	* base/arch/x86/defconfig: comedi making defaults to NO
 
+2015-01-09 Paolo Mantegazza <mantegazza@aero.polimi.it>
+
+	* base/arch/x86/hal/hal, hal_32.c and hal_64.c : if IsolCpusMask is
+	  null use that of Linux, so that there is nomore the need to set it
+	  in RTAI.
+
+2015-01-08 Paolo Mantegazza <mantegazza@aero.polimi.it>
+
+	* base/arch/x86/hal/hal_32.c and hal_64.c : avoid reprogramming the
+	  apic timer mode when tsc-deadline is available.
+
+2015-01-07 Paolo Mantegazza <mantegazza@aero.polimi.it>
+
+	* base/include/asm-x86/rtai_hal_32.h and rtai_hal_64.h: reworked
+	  rt_set_timer_delay.
+	* base/include/asm-x86/rtai_hal.h: reorder a set of declarations.
+	* base/sched/sched.c: avoid multiple oneshot delay units conversion,
+	  unified in rt_set_timer_delay.
+
+2015-01-05 Paolo Mantegazza <mantegazza@aero.polimi.it>
+
+	* base/include/asm-x86/rtai_lxrt_32.h and rtai_lxrt_64.h: update
+	  caring of the Linux version when manupulating the fpu_counter in
+	  contet switches.
+	* base/sched/sched.c: care of Linux version in setting need_resched.
+
+2014-05-13 Pierangelo Masarati <masarati@aero.polimi.it>
+
+	* base/sched/{GNUmakefile.am,sched.c}: use MODULE_ALIAS()
+	  instead of manual symlinks for legacy schedulers,
+	  thanks to Lukas Anzinger <lukas@lukasanzinger.at>
+	* base/sched/GNUmakefile.in: regenerate
+
+2014-05-06 Pierangelo Masarati <masarati@aero.polimi.it>
+
+	* configure.in: fix linux source dir extraction when further args
+	  follow -C, thanks to Lukas Anzinger <lukas@lukasanzinger.at>
+	* configure: rebuild
+
+2014-05-13 Pierangelo Masarati <masarati@aero.polimi.it>
+
+	* base/sched/{GNUmakefile.am,sched.c}: use MODULE_ALIAS()
+	  instead of manual symlinks for legacy schedulers,
+	  thanks to Lukas Anzinger <lukas@lukasanzinger.at>
+	* base/sched/GNUmakefile.in: regenerate
+
+2014-05-06 Pierangelo Masarati <masarati@aero.polimi.it>
+
+	* configure.in: fix linux source dir extraction when further args
+	  follow -C, thanks to Lukas Anzinger <lukas@lukasanzinger.at>
+	* configure: rebuild
+
+2014-02-19 Pierangelo Masarati <masarati@aero.polimi.it>
+
+	* addons/rdtm/GNUmakefile.*: updated for Linux >= 3.10.0.
+	* addons/rtdm/module.c: removed provisional quick and dirty
+	  inclusion of vfile.c.
+
+2014-02-19 Paolo Mantegazza <mantegazza@aero.polimi.it>
+
+	* addons/rtdm/vfile.h, vfile.c and proc.c: updated for Linux >= 3.10.0,
+	  lifted from native nucleus and rtdm.
+	* addons/rtdm/rtdm_driver.h: added declaration to support the new proc
+	  file system.
+	* addons/rtdm/module.c: provisional quick and dirty inclusion of
+	  vfile.c for a preliminary test.
+
+2014-02-16 Paolo Mantegazza <mantegazza@aero.polimi.it>
+
+	* base/include/rtai_proc_fs.h: added support for changes of proc files
+	  usage for Linux >= 3.10.
+	* base/arch/x86/hal/hal_32.c and hal_64.c: modified support of proc
+	  files for Linux >= 3.10.
+	* base/sched/sched.c and api.c: modified support of proc files for
+	  Linux >= 3.10.
+	* base/ipi/fifos/fifos.c: modified support of proc files for
+	  Linux >= 3.10.
+	* base/ipi/mq/mq.c: modified support of proc files for Linux >= 3.10.
+	* base/wd/wd.c: modified support of proc files for Linux >= 3.10.
+	* testsuite/kern/latency/latency-module.c: modified support of proc
+	  files for Linux >= 3.10.
+
+2013-11-23 Paolo Mantegazza <mantegazza@aero.polimi.it>
+
+	* base/math/libm.c: added function cd2str, i.e. compex double to
+	  string.
+
+2013-11-19 Paolo Mantegazza <mantegazza@aero.polimi.it> and
+           Marco Morandini <morandini@aero.polimi.it>
+
+	* base/math/libm.c: updated to use complex functions and glibc-libm.a,
+	  i386 only, newlib-libm.a and uClibi-libm.a
+	* base/math/export_glibc, export_newlib.h and export_uclibc.h: private
+	  headers exporting what is specific to each of the supported libm.a.
+	* base/math/README.KLIBM: explanation of what the new way math support
+	  in kernel space is.
+	* base/include/rtai_math.h: new self contained header.
+	* base/arch/x86/Kconfig: add parameters to configure the refurbished
+	  math support in kernel space.
+
 2013-12-06 Pierangelo Masarati <masarati@aero.polimi.it>
 
 	* RTAI 4.0
@@ -140,6 +519,21 @@
 
 	* base/arch/x86/hal/hal.c: do not make available rtai_sched_affinity 
 	  and free_isolcpus_from_linux under UP.
+
+2013-11-11 Paolo Mantegazza <mantegazza@aero.polimi.it>
+
+	* base/math/libm.c: added a trivial d2str (double to string).
+	* base/include/rtai_kerrno.h: added the declaration of d2str.
+
+2013-11-09 Paolo Mantegazza <mantegazza@aero.polimi.it>
+
+	* base/math/libm.c: uses just the standard GPLed glibc, added the
+	  possibility of calling both the float and double version of
+	  glibc-libm functions.
+	* base/include/rtai_sched.h: a added kerrno to RT_TASK, to support
+	  a per kernel task errno management with the refurbished libm.c
+	* base/include/rtai_kerrno.h: new header to support the management
+	  of per kernel tasks errno.
 
 2013-11-05 Pierangelo Masarati <masarati@aero.polimi.it>
 

@@ -767,7 +767,8 @@ config RTAI_MATH_KCOMPLEX
 	depends on RTAI_MATH
 	default n
 	help
-	This parameter allows the inclusion of complex support functions,		ignored for uClibc.
+	This parameter allows the inclusion of complex support functions,
+	ignored for uClibc.
 
 #config RTAI_MATH_C99
 #	bool "C99 standard support"

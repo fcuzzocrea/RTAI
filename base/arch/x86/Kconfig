@@ -753,9 +753,9 @@ config RTAI_MATH_LIBM_TO_USE
 	default 1
 	help
 	Your libm.a of choice. GLIBC works as it is for x86_32, so it 
-	should be preferred for such an arch. NEWLIB and uCLIB works 
-	for x86_64 and the choice of which one to use is up to you.
-	See ./base/math/README.KLIBM for a few make suggestions.
+	should be preferred for such an arch. NEWLIB and uCLIB are to
+	be used for x86_64 and the choice of which one to use is up 
+	to you. See ./base/math/README.KLIBM for a few make suggestions.
 
 config RTAI_MATH_LIBM_DIR
 	depends on RTAI_MATH

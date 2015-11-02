@@ -78,8 +78,7 @@ Summing up:
 
 * x86_64 can use:
 - no glibc-libm.a, unless you are willing to patch its making;
-- newlib with, e.g: ./configure --prefix=/myinstalldir --disable-shared 
-  --host=x86_64-pc-none CFLAGS="-O2 -mcmodel=kernel",
+- newlib with, e.g: ./configure --prefix=/myinstalldir --disable-shared --disable-multilib --host=x86_64-pc-none CFLAGS="-O2 -mcmodel=kernel",
 - uClibc with: make menuconfig, disable PIC, enable static making;
   multithreads and C99 support, make.
 

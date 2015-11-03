@@ -198,7 +198,7 @@ char *cd2str(complex double cd, int dgt, char *str)
 EXPORT_SYMBOL(cd2str);
 
 #if CONFIG_RTAI_MATH_LIBM_TO_USE == 3
-a=
+
 // Hopefully a provisional fix for glibc only. Till it is understood
 // why a plain call of glibc cpow and cpowf does not work
 asmlinkage double _Complex __cexp(double _Complex x);

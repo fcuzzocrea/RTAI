@@ -894,6 +894,7 @@ int rtdm_irq_request(rtdm_irq_t *irq_handle, unsigned int irq_no,
 #ifndef DOXYGEN_CPP /* Avoid static inline tags for RTDM in doxygen */
 static inline int rtdm_irq_free(rtdm_irq_t *irq_handle)
 {
+	RTAI_ASSERT(RTDM, xnpod_root_p(), return -EPERM;);
 	return xnintr_detach(irq_handle);
 }
 
@@ -940,6 +941,7 @@ static inline int rtdm_nrtsig_init(rtdm_nrtsig_t *nrt_sig,
 		return -EAGAIN;
 
 	ipipe_request_irq(hal_root_domain, *nrt_sig, handler, arg, NULL);
+
 	return 0;
 }
 
@@ -1270,6 +1272,37 @@ static inline void rtdm_mutex_destroy(rtdm_mutex_t *mutex)
 
 #define rtdm_printk(format, ...)	printk(format, ##__VA_ARGS__)
 
+struct rtdm_ratelimit_state {
+        rtdm_lock_t     lock;           /* protect the state */
+        nanosecs_abs_t  interval;
+        int             burst;
+        int             printed;
+        int             missed;
+        nanosecs_abs_t  begin;
+};
+
+int rtdm_ratelimit(struct rtdm_ratelimit_state *rs, const char *func);
+
+#define DEFINE_RTDM_RATELIMIT_STATE(name, interval_init, burst_init)    \
+        struct rtdm_ratelimit_state name = {                            \
+                .lock           = RTDM_LOCK_UNLOCKED,                   \
+                .interval       = interval_init,                        \
+                .burst          = burst_init,                           \
+        }
+
+/* We use the Linux defaults */
+#define DEF_RTDM_RATELIMIT_INTERVAL     5000000000LL
+#define DEF_RTDM_RATELIMIT_BURST        10
+
+#define rtdm_printk_ratelimited(fmt, ...)  ({                           \
+        static DEFINE_RTDM_RATELIMIT_STATE(_rs,                         \
+                                           DEF_RTDM_RATELIMIT_INTERVAL, \
+                                           DEF_RTDM_RATELIMIT_BURST);   \
+                                                                        \
+        if (rtdm_ratelimit(&_rs, __func__))                             \
+                printk(fmt, ##__VA_ARGS__);                             \
+})
+
 #ifndef DOXYGEN_CPP /* Avoid static inline tags for RTDM in doxygen */
 static inline void *rtdm_malloc(size_t size)
 {
@@ -1355,19 +1388,19 @@ static inline int rtdm_strncpy_from_user(rtdm_user_info_t *user_info,
 #define rtdm_copy_to_user(...)		({ -ENOSYS; })
 #define rtdm_safe_copy_to_user(...)	({ -ENOSYS; })
 #define rtdm_strncpy_from_user(...)	({ -ENOSYS; })
+
+static inline int rtdm_rt_capable(rtdm_user_info_t *user_info)
+{
+	RTAI_ASSERT(RTDM, !xnpod_asynch_p(), return 0;);
+        return (user_info ? xnshadow_thread(user_info) != NULL
+                          : !xnpod_root_p());
+}
+
 #endif /* CONFIG_RTAI_OPT_PERVASIVE */
 
 static inline int rtdm_in_rt_context(void)
 {
 	return (_rt_whoami()->is_hard > 0);
-}
-
-static inline int rtdm_rt_capable(rtdm_user_info_t *user_info)
-{
-
-
-        return (user_info ? xnshadow_thread(user_info) != NULL
-                          : !xnpod_root_p());
 }
 
 #endif /* !DOXYGEN_CPP */

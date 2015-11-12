@@ -1,3 +1,10 @@
+2015-11-11 John Wilkes <John.Wilkes@Renishaw.com>
+2015-11-11 Paolo Mantegazza <mantegazza@aero.polimi.it>
+
+	* addons/rtdm/drvlib.c: fixed map/unmapping to work with Linux 3, 
+	  updated with a few services more.
+	* addons/rtdm/rtdm_drvlib.h:  updated with a few needed declarations.
+
 2015-10-28 Pierangelo Masarati <pierangelo.masarati@polimi.it>
 
 	* RTAI 5.0

@@ -681,7 +681,7 @@ void rtai_set_linux_task_priority (struct task_struct *task, int policy, int pri
 
 struct proc_dir_entry *rtai_proc_root = NULL;
 
-#if defined(CONFIG_SMP) && defined(CONFIG_RTAI_DIAG_TSC_SYNC)
+#if defined(__i386__) && defined(CONFIG_SMP) && defined(CONFIG_RTAI_DIAG_TSC_SYNC)
 extern void init_tsc_sync(void);
 extern void cleanup_tsc_sync(void);
 extern volatile long rtai_tsc_ofst[];
@@ -695,8 +695,8 @@ static int PROC_READ_FUN(rtai_read_proc)
 	PROC_PRINT("\n** RTAI/x86:\n\n");
 	PROC_PRINT("    CPU   Frequency: %lu (Hz)\n", rtai_tunables.clock_freq);
 	PROC_PRINT("    TIMER Frequency: %lu (Hz)\n", TIMER_FREQ);
-	PROC_PRINT("    TIMER Latency: %d (ns)\n", rtai_imuldiv(rtai_tunables.sched_latency, 1000000000, rtai_tunables.clock_freq));
-	PROC_PRINT("    TIMER Setup: %d (ns)\n", rtai_imuldiv(rtai_tunables.setup_time_TIMER_CPUNIT, 1000000000, rtai_tunables.clock_freq));
+	PROC_PRINT("    TIMER Latency: %ld (ns)\n", rtai_imuldiv(rtai_tunables.sched_latency, 1000000000, rtai_tunables.clock_freq));
+	PROC_PRINT("    TIMER Setup: %ld (ns)\n", rtai_imuldiv(rtai_tunables.setup_time_TIMER_CPUNIT, 1000000000, rtai_tunables.clock_freq));
     
 	none = 1;
 	PROC_PRINT("\n** Real-time IRQs used by RTAI: ");
@@ -730,7 +730,7 @@ static int PROC_READ_FUN(rtai_read_proc)
     	PROC_PRINT("\n\n");
 
 #ifdef CONFIG_SMP
-#ifdef CONFIG_RTAI_DIAG_TSC_SYNC
+#if defined(__i386__) && defined(CONFIG_RTAI_DIAG_TSC_SYNC)
 	PROC_PRINT("** RTAI TSC OFFSETs (TSC units, 0 ref. CPU): ");
     	for (i = 0; i < num_online_cpus(); i++) {
 		PROC_PRINT("CPU#%d: %ld; ", i, rtai_tsc_ofst[i]);
@@ -858,7 +858,7 @@ int __rtai_hal_init (void)
 
 	printk(KERN_INFO "RTAI[hal]: mounted. ISOL_CPUS_MASK: %lx, LINUX CPU ISOLATED MAP: %lx).\n", IsolCpusMask, cpu_isolated_map);
 
-#if defined(CONFIG_SMP) && defined(CONFIG_RTAI_DIAG_TSC_SYNC)
+#if defined(__i386__) && defined(CONFIG_SMP) && defined(CONFIG_RTAI_DIAG_TSC_SYNC)
 	init_tsc_sync();
 #endif
 
@@ -888,7 +888,7 @@ void __rtai_hal_exit (void)
 		}
 	}
 
-#if defined(CONFIG_SMP) && defined(CONFIG_RTAI_DIAG_TSC_SYNC)
+#if defined(__i386__) && defined(CONFIG_SMP) && defined(CONFIG_RTAI_DIAG_TSC_SYNC)
 	cleanup_tsc_sync();
 #endif
 
@@ -987,9 +987,7 @@ EXPORT_SYMBOL(rt_sync_printk);
 
 EXPORT_SYMBOL(IsolCpusMask);
 
-#ifdef __i386__
-
-#if defined(CONFIG_SMP) && defined(CONFIG_RTAI_DIAG_TSC_SYNC)
+#if defined(__i386__) && defined(CONFIG_SMP) && defined(CONFIG_RTAI_DIAG_TSC_SYNC)
 
 /*
 	Hacked from arch/ia64/kernel/smpboot.c.
@@ -1165,6 +1163,3 @@ void cleanup_tsc_sync(void)
 }
 
 #endif /* defined(CONFIG_SMP) && defined(CONFIG_RTAI_DIAG_TSC_SYNC) */
-
-#endif
-

@@ -85,8 +85,6 @@ MODULE_LICENSE("GPL");
 
 #define RTAI_NR_IRQS  IPIPE_NR_IRQS
 
-struct { volatile int locked, rqsted; } rt_scheduling[RTAI_NR_CPUS];
-
 struct hal_domain_struct rtai_domain;
 
 struct rtai_realtime_irq_s rtai_realtime_irq[RTAI_NR_IRQS];
@@ -513,47 +511,16 @@ RT_TRAP_HANDLER rt_set_trap_handler (RT_TRAP_HANDLER handler)
 	return (RT_TRAP_HANDLER)xchg(&rtai_trap_handler, handler);
 }
 
-#define HAL_LOCK_LINUX() \
-do { sflags = rt_save_switch_to_real_time(cpuid = rtai_cpuid()); } while (0)
-#define HAL_UNLOCK_LINUX() \
-do { rtai_cli(); rt_restore_switch_to_linux(sflags, cpuid); } while (0)
-
-#ifdef CONFIG_RTAI_SCHED_ISR_LOCK
-void (*rtai_isr_sched)(int cpuid);
-EXPORT_SYMBOL(rtai_isr_sched);
-#define RTAI_SCHED_ISR_LOCK() \
-	do { \
-		if (!rt_scheduling[cpuid].locked++) { \
-			rt_scheduling[cpuid].rqsted = 0; \
-		} \
-	} while (0)
-#define RTAI_SCHED_ISR_UNLOCK() \
-	do { \
-		if (rt_scheduling[cpuid].locked && !(--rt_scheduling[cpuid].locked)) { \
-			if (rt_scheduling[cpuid].rqsted > 0 && rtai_isr_sched) { \
-				rtai_isr_sched(cpuid); \
-        		} \
-		} \
-	} while (0)
-#else  /* !CONFIG_RTAI_SCHED_ISR_LOCK */
-#define RTAI_SCHED_ISR_LOCK() \
-	do {                       } while (0)
-//	do { cpuid = rtai_cpuid(); } while (0)
-#define RTAI_SCHED_ISR_UNLOCK() \
-	do {                       } while (0)
-#endif /* CONFIG_RTAI_SCHED_ISR_LOCK */
-
-static void rtai_hirq_dispatcher(int irq)
+static void rtai_hirq_dispatcher(unsigned int irq)
 {
 	unsigned long cpuid;
 	if (rtai_domain.irqs[irq].handler) {
 		unsigned long sflags;
-		HAL_LOCK_LINUX();
-		RTAI_SCHED_ISR_LOCK();
+		sflags = rt_save_switch_to_real_time(cpuid = rtai_cpuid());
 		rtai_domain.irqs[irq].handler(irq, rtai_domain.irqs[irq].cookie);
-		RTAI_SCHED_ISR_UNLOCK();
-		HAL_UNLOCK_LINUX();
-		if (rtai_realtime_irq[irq].retmode || test_bit(IPIPE_STALL_FLAG, ROOT_STATUS_ADR(cpuid))) {
+		rtai_cli();
+		rt_restore_switch_to_linux(sflags, cpuid);
+		if (test_bit(IPIPE_STALL_FLAG, ROOT_STATUS_ADR(cpuid))) {
 			return;
 		}
 	}
@@ -855,7 +822,7 @@ int __rtai_hal_init (void)
 	}
 
 	ipipe_request_irq(hal_root_domain, rtai_sysreq_virq, (void *)rtai_lsrq_dispatcher, NULL, NULL);
-	dispatch_irq_head = (void *)rtai_hirq_dispatcher;
+	dispatch_irq_head = rtai_hirq_dispatcher;
 
 	ipipe_select_timers(cpu_active_mask);
 	rtai_syscall_hook = hal_intercept_syscall;
@@ -1017,8 +984,6 @@ EXPORT_SYMBOL(rt_smp_times);
 
 EXPORT_SYMBOL(rt_printk);
 EXPORT_SYMBOL(rt_sync_printk);
-
-EXPORT_SYMBOL(rt_scheduling);
 
 EXPORT_SYMBOL(IsolCpusMask);
 

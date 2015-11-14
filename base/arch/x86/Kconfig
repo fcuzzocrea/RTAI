@@ -220,7 +220,8 @@ config RTAI_DIAG_TSC_SYNC
 	default n
 	help
 	Check alignment of MP-TSCs, against a master CPU, and show them in
-	the RTAI HAL proc file system (in TSC count units).
+	the RTAI HAL proc file system (in TSC count units). It is for x86_32
+	only; ignored on x86_64.
 
 config RTAI_MASTER_TSC_CPU
 	depends on RTAI_DIAG_TSC_SYNC

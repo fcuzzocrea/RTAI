@@ -86,7 +86,8 @@ struct klist_t wake_up_srq[RTAI_NR_CPUS];
 
 /* +++++++++++++++ END OF WHAT MUST BE AVAILABLE EVERYWHERE +++++++++++++++++ */
 
-extern struct { volatile int locked, rqsted; } rt_scheduling[];
+static struct { volatile int locked, rqsted; } rt_scheduling[RTAI_NR_CPUS];
+EXPORT_SYMBOL(rt_scheduling);  // to allow RTDM its preferred deferred sched in intr
 
 static unsigned long rt_smp_linux_cr0[RTAI_NR_CPUS];
 
@@ -2348,20 +2349,51 @@ static struct rt_native_fun_entry rt_sched_entries[] = {
 	{ { 0, 0 },			            000 }
 };
 
-#ifdef CONFIG_RTAI_SCHED_ISR_LOCK
-extern void *rtai_isr_sched;
-#endif /* CONFIG_RTAI_SCHED_ISR_LOCK */
 static void rtai_isr_sched_handle(int cpuid) /* Called with interrupts off */
 {
 	SCHED_UNLOCK_SCHEDULE(cpuid);
 }
 EXPORT_SYMBOL(rtai_isr_sched_handle);
 
-void *saved_rtai_syscall_hook;
+extern struct rtai_realtime_irq_s rtai_realtime_irq[];
+static void rtai_hirq_dispatcher(unsigned int irq)
+{
+	unsigned long cpuid;
+	if (rtai_domain.irqs[irq].handler) {
+		unsigned long sflags;
+		sflags = rt_save_switch_to_real_time(cpuid = rtai_cpuid());
+#ifdef CONFIG_RTAI_SCHED_ISR_LOCK
+                if (!rt_scheduling[cpuid].locked++) { 
+                        rt_scheduling[cpuid].rqsted = 0; 
+                } 
+#endif
+		rtai_domain.irqs[irq].handler(irq, rtai_domain.irqs[irq].cookie);
+#ifdef CONFIG_RTAI_SCHED_ISR_LOCK
+		if (rt_scheduling[cpuid].locked && !(--rt_scheduling[cpuid].locked)) {
+			if (rt_scheduling[cpuid].rqsted > 0) {
+				rtai_isr_sched_handle(cpuid);
+			}
+		} 
+#endif
+		rtai_cli();
+		rt_restore_switch_to_linux(sflags, cpuid);
+		if (test_bit(IPIPE_STALL_FLAG, ROOT_STATUS_ADR(cpuid))) {
+			return;
+		}
+	}
+	rtai_sti();
+	hal_fast_flush_pipeline();
+	return;
+}
+
+int (*saved_rtai_syscall_hook)(struct pt_regs *);
 extern int (*rtai_fastcall_hook)(struct pt_regs *);
 extern int (*rtai_syscall_hook)(struct pt_regs *);
 extern void (*rtai_migration_hook)(struct task_struct *);
 extern int (*rtai_kevent_hook)(int kevent, void *);
+
+void (*saved_dispatch_irq_head)(unsigned int);
+extern void (*dispatch_irq_head)(unsigned int);
 
 static int lxrt_init(void)
 {
@@ -2392,6 +2424,9 @@ static int lxrt_init(void)
 	rtai_kevent_hook = lxrt_intercept_kevents;
 	rtai_migration_hook = fast_schedule; //lxrt_intercept_schedule_tail;
 
+	saved_dispatch_irq_head = dispatch_irq_head;
+	dispatch_irq_head = rtai_hirq_dispatcher;
+
 	rtai_set_active_mm();
 
 	return 0;
@@ -2411,6 +2446,8 @@ static void lxrt_exit(void)
 	rtai_syscall_hook = saved_rtai_syscall_hook;
 	rtai_migration_hook = NULL;
 	rtai_kevent_hook = NULL;
+
+	dispatch_irq_head = saved_dispatch_irq_head;
     
 	reset_rt_fun_entries(rt_sched_entries);
 	rtai_drop_active_mm();
@@ -2524,10 +2561,6 @@ static int __rtai_lxrt_init(void)
 	if ((retval = lxrt_init()) != 0)
 		goto free_sched_ipi;
 
-#ifdef CONFIG_RTAI_SCHED_ISR_LOCK
-	rtai_isr_sched = rtai_isr_sched_handle;
-#endif /* CONFIG_RTAI_SCHED_ISR_LOCK */
-
 	register_reboot_notifier(&lxrt_reboot_notifier);
 
 #ifdef CONFIG_RTAI_LXRT_USE_LINUX_SYSCALL
@@ -2610,9 +2643,6 @@ static void __rtai_lxrt_exit(void)
 	rt_registry_free();
 	current->state = TASK_INTERRUPTIBLE;
 	schedule_timeout(HZ/10);
-#ifdef CONFIG_RTAI_SCHED_ISR_LOCK
-	rtai_isr_sched = NULL;
-#endif /* CONFIG_RTAI_SCHED_ISR_LOCK */
 
 #ifdef DECLR_8254_TSC_EMULATION
 	CLEAR_8254_TSC_EMULATION;
@@ -2655,4 +2685,3 @@ EXPORT_SYMBOL(switch_time);
 EXPORT_SYMBOL(lxrt_prev_task);
 
 #endif /* CONFIG_KBUILD */
-

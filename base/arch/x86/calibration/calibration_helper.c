@@ -47,7 +47,7 @@ void print_usage(void)
 	, stderr);
 }
 
-static int period = 200 /* us */, loops = 1 /* s */, tol = 100 /* ns */;
+static int period = 200 /* us */, loops = 1 /* s */, use_tol = 100 /* ns */;
 
 static inline int sign(int v) { return v > 0 ? 1 : (v < 0 ? -1 : 0); }
 static int user_latency;
@@ -96,7 +96,7 @@ int user_calibrator(long loops)
 
 int main(int argc, char *argv[])
 {
-	int kern_latency, UserLatency = 0, KernLatency = 0, tol = 100;
+	int kern_latency, UserLatency = 0, KernLatency = 0, tol = use_tol;
 
         while (1) {
 		int c;
@@ -144,7 +144,7 @@ int main(int argc, char *argv[])
 	printf("\n* USER SPACE. *\n");
 	do {
 		kernel_calibrator(period, loops, -UserLatency);
-		rt_thread_create((void *)user_calibrator, (void *)loops, 0);
+		rt_thread_create((void *)user_calibrator, (void *)(long)loops, 0);
 		rt_task_suspend(calmng);
 
 		user_latency = (user_latency + loops/2)/loops;

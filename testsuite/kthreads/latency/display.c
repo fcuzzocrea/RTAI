@@ -38,9 +38,7 @@ static void endme(int dummy) { end = 1;}
 int main(int argc, char *argv[])
 {
 	int fd0;
-	char line[256];
 	char nm[RTF_NAMELEN+1];
-	FILE *procfile;
 	long long max = -1000000000, min = 1000000000;
 	struct sample { long long min; long long max; int index, ovrn; } samp;
 	int n = 0, period, avrgtime;

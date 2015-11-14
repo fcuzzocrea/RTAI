@@ -152,12 +152,12 @@ static int __switches_init(void)
 
 	for (i = 0; i < ntasks; i++) {
 #ifdef DISTRIBUTE
-		rt_thread_create(pend_task, (void *)(2*i + i%2), 0);
+		rt_thread_create(pend_task, (void *)(long)(2*i + i%2), 0);
 #else
-		rt_thread_create(pend_task, (void *)(2*i + rtai_cpuid()), 0);
+		rt_thread_create(pend_task, (void *)(long)(2*i + rtai_cpuid()), 0);
 #endif
 	}
-	rt_thread_create(sched_task, (void *)(ntasks + 1), 0);
+	rt_thread_create(sched_task, (void *)(long)(ntasks + 1), 0);
 
 	return 0;
 }

@@ -234,7 +234,7 @@ int main(int argc, char *argv[])
 
 	do {
 		kernel_calibrator(task_period, loops, -UserLatency);
-		rt_thread_create((void *)user_calibrator, (void *)loops, 0);
+		rt_thread_create((void *)user_calibrator, (void *)(long)loops, 0);
 		rt_task_suspend(calmng);
 
 		user_latency = (user_latency + loops/2)/loops;

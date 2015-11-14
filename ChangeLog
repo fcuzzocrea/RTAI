@@ -6,6 +6,9 @@
 	* base/arch/x86/hal/hal.c: simplify rtai_hirq_dispatch for non 
 	  scheduling times, sched.c will take it. Ensure that no TSC syncing 
 	  is undertaken on x86_64.
+	* base/ipc/fifos/fifos.c: to avoide an annoying warning, fixed a not 
+	  needed initialization of struct rt_fifo_get_info_structr at 
+	  RTF_GET_FIFO_INFO.
 
 2015-11-11 John Wilkes <John.Wilkes@Renishaw.com>
 2015-11-11 Paolo Mantegazza <mantegazza@aero.polimi.it>

@@ -1,3 +1,11 @@
+2015-11-14 Paolo Mantegazza <mantegazza@aero.polimi.it>
+
+	* base/sched/sched.c: brought rtai_hirq_dispatcher here, where the 
+	  possible deferred sched in intr belongs; see the related item
+	  at RTAI config time.
+	* base/arch/x86/hal/hal.c: simplify rtai_hirq_dispatch for non 
+	  scheduling times, sched.c will take it.
+
 2015-11-11 John Wilkes <John.Wilkes@Renishaw.com>
 2015-11-11 Paolo Mantegazza <mantegazza@aero.polimi.it>
 

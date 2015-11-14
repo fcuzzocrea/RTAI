@@ -1586,7 +1586,7 @@ static int rtf_ioctl(struct inode *inode, struct file *filp, unsigned int cmd, u
 			return MAX_FIFOS;
 		}
 		case RTF_GET_FIFO_INFO: {
-			struct rt_fifo_get_info_struct req;
+			struct rt_fifo_get_info_struct req = { 0, 0, NULL };
 			int i, n;
 
 			rt_copy_from_user(&req, (void *)arg, sizeof(req));

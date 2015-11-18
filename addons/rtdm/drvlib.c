@@ -1934,10 +1934,10 @@ static int rtdm_do_mmap(rtdm_user_info_t *user_info,
 
 	filp_close(filp, user_info->files);
 
-        if (IS_ERR_VALUE(u_addr))
-                return (int)u_addr;
+	if (IS_ERR_VALUE(u_addr))
+		return (int)u_addr;
 
-        *pptr = (void *)u_addr;
+	*pptr = (void *)u_addr;
 
 	return 0;
 }
@@ -2070,12 +2070,12 @@ int rtdm_iomap_to_user(rtdm_user_info_t *user_info,
 		       struct vm_operations_struct *vm_ops,
 		       void *vm_private_data)
 {
-        struct rtdm_mmap_data mmap_data = {
-                .src_vaddr = NULL,
-                .src_paddr = src_addr,
-                .vm_ops = vm_ops,
-                .vm_private_data = vm_private_data
-        };
+	struct rtdm_mmap_data mmap_data = {
+		.src_vaddr = NULL,
+		.src_paddr = src_addr,
+		.vm_ops = vm_ops,
+		.vm_private_data = vm_private_data
+	};
 
 	return rtdm_do_mmap(user_info, &mmap_data, len, prot, pptr);
 }

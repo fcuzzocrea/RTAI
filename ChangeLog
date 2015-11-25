@@ -1,3 +1,8 @@
+2015-11-25 Paolo Mantegazza <mantegazza@aero.polimi.it>
+
+	* base/sched/sys.c: fix the setting of the return value of the 
+	  IS_HARD enquiry so that it cannot return wrong values.
+
 2015-11-14 Paolo Mantegazza <mantegazza@aero.polimi.it>
 
 	* base/sched/sched.c: brought rtai_hirq_dispatcher here, where the 

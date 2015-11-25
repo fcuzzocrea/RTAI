@@ -603,7 +603,7 @@ static inline long long handle_lxrt_request (unsigned int lxsrq, long *arg, RT_T
                 }
 
 		case IS_HARD: {
-			arg0.i = arg0.rt_task || (arg0.rt_task = rtai_tskext_t(current, TSKEXT0)) ? arg0.rt_task->is_hard : 0;
+			arg0.ll = arg0.rt_task || (arg0.rt_task = rtai_tskext_t(current, TSKEXT0)) ? arg0.rt_task->is_hard : 0;
 			return arg0.ll;
 		}
 		case GET_EXECTIME: {

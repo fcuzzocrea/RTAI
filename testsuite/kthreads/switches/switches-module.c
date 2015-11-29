@@ -29,9 +29,8 @@ MODULE_DESCRIPTION("Measures task switching times");
 MODULE_AUTHOR("Paolo Mantegazza <mantegazza@aero.polimi.it>");
 MODULE_LICENSE("GPL");
 
-#define DISTRIBUTE
+//#define DISTRIBUTE
 #define SEM_TYPE (CNT_SEM | FIFO_Q)
-#define RESUME_DELAY 3000
 
 static int ntasks = 10;
 static int loops  = 2000;
@@ -71,15 +70,13 @@ static void sched_task(long id)
 {
 	int i, k;
 	unsigned long msg;
-	RTIME t, slp = nano2count(RESUME_DELAY);
-#if 0
+	RTIME t;
 	do {
 		for (i = k = 0; i < ntasks; i++) {
 			if (thread[i]) k++;
 		}
 		msleep(10);
 	} while (k != ntasks);
-#endif
 
 	task = rt_thread_init(0xcacca + id, 1, 1, SCHED_FIFO, rtai_cpuid() ? 2 : 1);
 
@@ -87,10 +84,9 @@ static void sched_task(long id)
 	for (i = 0; i < loops; i++) {
 		for (k = 0; k < ntasks; k++) {
 			rt_task_resume(thread[k]);
-			rt_sleep(slp);
 		}
 	}
-	t = rtai_rdtsc() - t - loops*ntasks*slp;
+	t = rtai_rdtsc() - t;
 	
 	rt_printk("\n\nFOR %d TASKS: ", ntasks);
 	rt_printk("TIME %d (ms), SUSP/RES SWITCHES %d, ", (int)rtai_llimd(t, 1000, RTAI_CLOCK_FREQ), 2*ntasks*loops);
@@ -99,16 +95,14 @@ static void sched_task(long id)
 	change = 1;
 	for (k = 0; k < ntasks; k++) {
 		rt_task_resume(thread[k]);
-		rt_sleep(slp);
 	}
 	t = rtai_rdtsc();
 	for (i = 0; i < loops; i++) {
 		for (k = 0; k < ntasks; k++) {
 			rt_sem_signal(&sem);
-			rt_sleep(slp);
 		}
 	}
-	t = rtai_rdtsc() - t - loops*ntasks*slp;
+	t = rtai_rdtsc() - t;
 
 	rt_printk("\nFOR %d TASKS: ", ntasks);
 	rt_printk("TIME %d (ms), SEM SIG/WAIT SWITCHES %d, ", (int)rtai_llimd(t, 1000, RTAI_CLOCK_FREQ), 2*ntasks*loops);
@@ -117,16 +111,14 @@ static void sched_task(long id)
 	change = 2;
 	for (k = 0; k < ntasks; k++) {
 		rt_sem_signal(&sem);
-		rt_sleep(slp);
 	}
 	t = rtai_rdtsc();
 	for (i = 0; i < loops; i++) {
 		for (k = 0; k < ntasks; k++) {
 			rt_rpc(thread[k], 0, &msg);
-			rt_sleep(slp);
 		}
 	}
-	t = rtai_rdtsc() - t - loops*ntasks*slp;
+	t = rtai_rdtsc() - t;
 
 	rt_printk("\nFOR %d TASKS: ", ntasks);
 	rt_printk("TIME %d (ms), RPC/RCV-RET SWITCHES %d, ", (int)rtai_llimd(t, 1000, RTAI_CLOCK_FREQ), 2*ntasks*loops);
@@ -135,7 +127,6 @@ static void sched_task(long id)
 	change = 3;
 	for (k = 0; k < ntasks; k++) {
 		rt_rpc(thread[k], 0, &msg);
-		rt_sleep(slp);
 	}
 	rt_make_soft_real_time(task);
 }
@@ -144,7 +135,6 @@ static int __switches_init(void)
 {
 	int i;
 
-	start_rt_timer(0);
 	rt_typed_sem_init(&sem, 1, SEM_TYPE);
 	printk("\nWait for it ...\n");
         thread = (void *)kmalloc(ntasks*sizeof(RT_TASK *), GFP_KERNEL);

@@ -1,4 +1,5 @@
 ************************ libm support in kernel space ************************
+Text to be improved
 
 This is a rework of Dave's (David Schleef) idea of making available libm
 in kernel space as a module exporting a subset of its functions.

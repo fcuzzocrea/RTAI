@@ -146,13 +146,40 @@ int signgam;
 #include "export_newlib.h"
 char using[7] = "NEWLIB";
 #endif
+
 #if CONFIG_RTAI_MATH_LIBM_TO_USE == 2
 #include "export_uclibc.h"
 char using[7] = "UCLIBC";
 #endif
+
 #if CONFIG_RTAI_MATH_LIBM_TO_USE == 3
 #include "export_glibc.h"
 char using[7] = "GLIBC";
+#endif
+
+#if CONFIG_RTAI_MATH_LIBM_TO_USE == 4
+#include "export_musl.h"
+char using[7] = "MUSL";
+
+double gamma_r(double x, int *signgamp)
+{
+	return lgamma_r(x, signgamp);
+}
+
+double gamma(double x)
+{
+	return lgamma(x);
+}
+
+float gammaf_r(float x, int *signgamp)
+{
+	return lgammaf_r(x, signgamp);
+}
+
+float gammaf(float x)
+{
+	return lgammaf(x);
+}
 #endif
 
 int __rtai_math_init(void)
@@ -214,7 +241,7 @@ asmlinkage float _Complex cpowf(float _Complex x, float _Complex y)
 }
 #endif
 
-#if CONFIG_RTAI_MATH_LIBM_TO_USE == 1
+#if CONFIG_RTAI_MATH_LIBM_TO_USE == 1 || CONFIG_RTAI_MATH_LIBM_TO_USE == 4
 asmlinkage double _Complex clog(double _Complex x);
 asmlinkage double _Complex clog10(double _Complex x)
 {

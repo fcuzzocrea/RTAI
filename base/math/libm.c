@@ -201,7 +201,7 @@ EXPORT_SYMBOL(__fpclassifyf);
 EXPORT_SYMBOL(__signbit);
 EXPORT_SYMBOL(__signbitf);
 
-#if defined(CONFIG_RTAI_MATH_KCOMPLEX) && (defined(_RTAI_EXPORT_GLIBC_H) || defined(_RTAI_EXPORT_NEWLIB_H))
+#if defined(CONFIG_RTAI_MATH_KCOMPLEX) && (defined(_RTAI_EXPORT_GLIBC_H) || defined(_RTAI_EXPORT_NEWLIB_H) || defined(_RTAI_EXPORT_MUSL_H))
 
 char *cd2str(complex double cd, int dgt, char *str)
 {
@@ -307,7 +307,16 @@ EXPORT_SYMBOL(ctanf);
 EXPORT_SYMBOL(ctanh);
 EXPORT_SYMBOL(ctanhf);
 
-#if 1
+//#define USE_COMPILER_QUALITY_CODE
+
+#ifndef USE_COMPILER_QUALITY_CODE
+/* 
+ * This is the naive, but faster, approach.
+ * No checks and readjustments for NAN and INFINITE
+ * results.
+ * If you want something closer to what a compiler
+ * does, use the LLVM compiler infrastructure below.
+ */
 
 double _Complex __muldc3(double a, double b, double c, double d)
 {
@@ -344,6 +353,11 @@ float _Complex __divsc3(float a, float b, float c, float d)
 }
 
 #else
+/* 
+ * This is the LLVM compiler infrastructure.
+ * It is an undeniably more serious, compiler quality, 
+ * code, though it has some more overhead.
+ */
 
 /*
  *                     The LLVM Compiler Infrastructure

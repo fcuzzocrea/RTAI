@@ -1,3 +1,14 @@
+2015-11-29 Paolo Mantegazza <mantegazza@aero.polimi.it>
+	   Marco Morandini  <marco.morandini@polimi.it>
+
+	* base/math/libm.c: added support for linking to MUSL libc.a, which 
+	  embeds libm.a. 
+	* base/math/export_musl.h: adds export math entries supported through 
+	  MUSL libc.a.
+	* base/math/README.KLIBM: updated with explanations for using MUSL libc.a.
+	* base/arch/x86/Kconfig: updated to allow configuring math support 
+	  for MUSL.
+
 2015-11-25 Paolo Mantegazza <mantegazza@aero.polimi.it>
 
 	* base/sched/sys.c: fix the setting of the return value of the 

@@ -1,5 +1,11 @@
 2015-11-30 Paolo Mantegazza <mantegazza@aero.polimi.it>
 
+	* base/math/libm.c: added code to satisfy missing links for 32 bits MUSL:
+	  __umoddi3 and __udivdi3, the related code has been taken from LLVM
+	  compiler infrastructure.
+
+2015-11-30 Paolo Mantegazza <mantegazza@aero.polimi.it>
+
 	* base/math/libm.c: adjusted a missing macro in the test enabling the use
 	  of complex numbers support; added comments about the complex mul/div 
 	  supported codes.

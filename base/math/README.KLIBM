@@ -103,17 +103,19 @@ README-INSTALL.
 Before configuring and make execute the following script lines, from within 
 its base directory:
 - sed 's/-fPIC//' <Makefile >Makefile.tmp; mv Makefile.tmp Makefile
-  needed  to disable -fPIC, set by default in the Makefile
-- sed -e 's/fwrite(/Fwrite(/' -e 's/(fwrite/(Fwrite/' <src/stdio/fwrite.c >fwrite.c.tmp; mv fwrite.c.tmp src/stdio/fwrite.c
-  needed to avoid the use of fwrite in kernel space and a lnking conflict; 
-  it is a MUSL specific item, due to the fact that its libc.s contains libm.a also.
+  needed  to disable -fPIC, set by default in the MUSL Makefile
 For 32 bits:
 - ./configure --disable-shared CFLAGS="-fno-common", 
 For 64 bits:
   ./configure --disable-shared CFLAGS="-mcmodel=kernel -fno-common", 
 - make,
-- cp lib/libc.a lib/libm.a. See its README-INSTALL for more,
-  to have a non empty libm.a, required by RTAI make.
+- ar -d lib/libc.a fwrite.o sprintf.o strcpy.o
+  needed to avoid the use of the above functions in kernel space, so using those
+  provided by the kernel and a lnking conflict; it is a MUSL specific item, 
+  due to the fact that its libm.a is embedded in libc.a, leaving libm.a as a
+  just a link containing nothing.
+- cp lib/libc.a lib/libm.a.
+  as said above, to have a non empty libm.a required by RTAI make.
 
 uLIBC
 uClibc has a handy menuconfig which make the configuration setting somewhat friendlier.

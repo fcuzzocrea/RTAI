@@ -2,90 +2,87 @@
 
 This is a rework of Dave's (David Schleef) idea of making available libm
 in kernel space as a module exporting a subset of its functions.
-Such a rework is due to a few reasons. Among them one is the need 
+Such a rework is due to a few reasons. Among them, one is the need 
 to avoid user space headers, which may require a distribution proper 
 special include path; another one is that the previous implementation 
 used a few source files with a dubious free software license. 
 So it has been decided to have something different and completely self 
 contained within RTAI. 
 
-In such a view our new make machinery currently does not care of importing 
-and compiling the needed math functions into RTAI. Instead, it statically 
-links an existing libm.a library into an RTAI module, without the need of 
-compiling anything but a wrapper module, containing appropriate symbol 
-exports and a few functions missed at the linking. Moreover it now correctly 
-handles errno (kerrno in RTAI), which was not exploited in a thread safe way 
-in the previous RTAI implementation.
+In such a view the new kernel math support make machinery currently does not 
+care of importing and compiling the needed math functions into RTAI. 
+Instead, it statically links an existing libm.a library into an RTAI module, 
+without the need of compiling anything but a wrapper module, containing 
+appropriate symbol exports and a few functions missed at the linking. 
+Moreover it now correctly handles errno (kerrno in RTAI), which was not 
+exploited in a thread safe way in the previous RTAI implementation.
 
-The idea is simple and under i386 has proven itself valid simply by using 
+The idea is simple and under i386 has proven itself valid by simply using 
 glibc-libm.a directly.
 
-Unfortunately glibc-libm.a does not work for x86_64, because glibc-libm.a is
-not compiled with the option "-mcmodel=kernel", required for a kernel module.
+Unfortunately glibc-libm.a does not work for x86_64, because it is not
+compiled with the option "-mcmodel=kernel", required for a kernel module.
 Recompiling x86_64 glibc-libm.a with such an option would entail 
 patching its configure-make scripts. As a matter of fact, glibc configure 
 script forces also the use of "-fPIC" in some of his tests. Thus, regardless 
 of the the fact that CFLAGS-LDFLAGS contain "-mcmodel=kernel", it will fail
 working in a module. In fact, that results in the two compiler options "-fPIC" 
 and "-mcmodel=kernel" being incompatible. 
-Moreover a fresh recompilation of glibc may not a light task. So it has been 
-decided to look for something else.
+Moreover a fresh recompilation of glibc-libm.a may not a light task. So it 
+has been decided to look for something else.
 
 Such a chosen else is basically resorting to a few known and lighter-embeddable 
-libraries: NEWLIB-libm.a, uClib-libm.a, MUSL-libm.a, plus, as said, glibc-libm.a 
-for i386.
+libraries: NEWLIB-libm.a, uClib-libm.a, MUSL-libc.a (MUSL-libc.a embedds libm.a),
+plus, as said, glibc-libm.a for i386.
 At the moment uClib has been tested for 32 bits only, for which any of 
 glibc-libm.a, newlib-libm.a, uClib-libm.a and musl-libm.a can be used.
 
-Libraries home site:
-- http://sourceware.org/newlib/
-- http://www.uclibc.org/
-- http://www.musl-libc.org/
-- http://www.gnu.org/software/libc/ (recall that it is likely you have it already)
-
-The new implementation provides also an extension to both the double/float version 
-of most of the libm functions, which should be of help in enhancing the possibility
-of setting up complex numerical applications in kernel space.
+The new implementation provides also an extension to both the double and float
+versions of most of the libm functions, which should be of help in enhancing 
+the possibility of setting up complex numerical applications in kernel space.
 
 A further extension, which can be selected at configure time, provides a new 
 support for complex functions in kernel space. It has required a simplified
-coding of a few missing links more, related to double and float complex 
+coding of a few missing basic functions, related to double and float complex 
 multiply and divide, but a more serious implementation is also available. 
 The latter is taken from the LLVM compiler infrastructure, which is released 
 under the permissive free(dom) dual MIT and University of Illinois Open 
 Source Licenses.
 
-Also available are a couple of functions helpers, to print double and 
+Also available are a couple of helper functions, to print double and 
 floating point numbers in kernel space, i.e.:
 - char *d2str(double d, int dgt, char *str), to convert a double to a string,
 float types have to use it too;
 - char *cd2str(complex double d, int dgt, char *str), to convert a double 
 complex to a string, in the form "real + j*imag", float complex types have 
 to use it too.
-They should be useful for quick checks and debugging. 
+They should be useful for quick checks and debugging in kernel space. 
 As such they are based on a somewhat naive implementation, whereas numbers 
 are formatted only as: +/-0.xxxxxxe+yy, where the number of "x"es is equal 
 to the number set for the argument "dgt" used in calling any of them.
+The printable number is returned in both str and as a pointer.
 
 We will now provide specific hints for each library to be used. As a general
 remark, if you are using the mentioned libraries just for RTAI kernel 
-applications, configure and make will be the only operation reaquired.
+applications, configure and make will be the main required commands.
 No need to "make install", just configure RTAI to point to their original
 directory. That means that you will have not to care of the installation
 directory. 
-Have a lokk at README-INSTALL for general configuration options you may need.
+Have a look at their README-INSTALLs files for general configuration options 
+you may need.
 Notice also that below we will assume no cross development. If that is the 
-case you should read the installation instructions to hest the host-targe 
-architecture appropriatly. Moreover the following configuration suggestions
-are to be intended as possible adds on needed for RTAI.
+case, you should read the installation instructions to define the host-targe 
+architectures appropriatly. Moreover the following configuration suggestions
+are required for working in kernel space with RTAI.
 
-GLIBC
+GLIBC, http://www.gnu.org/software/libc/ (recall that it is likely you have 
+it already).
 Little to say, you'll likely have libm.a already installed. So you have just to 
 configure RTAI for using it. As already said, there are chances that it will 
 work just for 32 bit archs.
 
-NEWLIB
-Get a tarball and expand it or clone its git and have a look at its README. 
+NEWLIB, http://sourceware.org/newlib/.
+Get its tarball and expand it, or clone its git and have a look at its README. 
 For 32 bits:
 - ./configure --disable-shared --disable-multilib
 - make
@@ -94,16 +91,16 @@ the only thing to care.
 For 64 bits:
 - ./configure --disable-shared --disable-multilib CFLAGS="-mcmodel=kernel"
 - make
-Newlib does not activate the -fPIC option so --disable-shared should be
-the only thing to care.
+Newlib does not activate the -fPIC option so --disable-shared and 
+-mcmodel=kernel should be the only thing to care.
 
-MUSL
-Get a tarball and expand it or clone its git and have a look at its 
+MUSL, http://www.musl-libc.org/.
+Get a tarball and expand it, or clone its git and have a look at its 
 README-INSTALL. 
-Before configuring and make execute the following script lines, from within 
-its base directory:
+Before configuring and making execute the following script lines, from 
+within its base directory:
 - cp Makefile Makefile.saved 
-  for a possible non RTAI reuse
+  for a possible following non RTAI reuse
 - sed 's/-fPIC//' <Makefile >Makefile.tmp; mv Makefile.tmp Makefile
   needed  to disable -fPIC, set by default in the MUSL Makefile
 For 32 bits:
@@ -112,17 +109,17 @@ For 64 bits:
   ./configure --disable-shared CFLAGS="-mcmodel=kernel -fno-common", 
 - make,
 - ar -d lib/libc.a fwrite.o write.o fputs.o sprintf.o strcpy.o strlen.o memcpy.o memset.o
-  needed to avoid the use of the above functions in kernel space, so using those
-  provided by the kernel and a lnking conflict; it is a MUSL specific item, 
-  due to the fact that its libm.a is embedded in libc.a, leaving libm.a as a
-  just a link containing nothing.
+  needed to avoid having the above functions linked in kernel space, so using those
+  provided by the kernel and a linking conflict; it is a MUSL specific item, 
+  due to the fact that its libm.a is embedded in libc.a, leaving libm.a as just a
+  link containing nothing.
 - cp lib/libc.a lib/libm.a.
-  as said above, to have a non empty libm.a required by RTAI make.
+  as said above, to have the non empty libm.a required by RTAI make.
 
-uLIBC
-uClibc has a handy menuconfig which make the configuration setting somewhat friendlier.
+uLIBC, http://www.uclibc.org/.
+uClibc has a handy menuconfig which makes its configuration setting somewhat friendlier.
 Set anything you need, then be sure to:
-- disable PICù
+- disable PIC
 - enable static making; 
 - enable  multithreads
 - enable C99 support

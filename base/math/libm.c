@@ -91,7 +91,7 @@ ssize_t write(int fildes, const void *buf, size_t nbytes)
 char *d2str(double d, int dgt, char *str)
 {
 	const int MAXDGT = 17;
-	int e, i;
+	int e, i, k;
 	unsigned long long l;
 	double p;
 
@@ -134,6 +134,7 @@ char *d2str(double d, int dgt, char *str)
 	} else {
 		str[i + 1] = '+';
 	}
+	
 	i = i + sprintf(&str[i + 2], "%d", e + (l/p >= 1));
 	str[i + 2] = 0;
 	return str;
@@ -307,7 +308,7 @@ EXPORT_SYMBOL(ctanf);
 EXPORT_SYMBOL(ctanh);
 EXPORT_SYMBOL(ctanhf);
 
-#if ULONG_MAX == UINT_MAX
+#if 0 //ULONG_MAX == UINT_MAX
 /*
  *                     The LLVM Compiler Infrastructure
  *

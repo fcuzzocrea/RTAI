@@ -102,6 +102,8 @@ Get a tarball and expand it or clone its git and have a look at its
 README-INSTALL. 
 Before configuring and make execute the following script lines, from within 
 its base directory:
+- cp Makefile Makefile.saved 
+  for a possible non RTAI reuse
 - sed 's/-fPIC//' <Makefile >Makefile.tmp; mv Makefile.tmp Makefile
   needed  to disable -fPIC, set by default in the MUSL Makefile
 For 32 bits:

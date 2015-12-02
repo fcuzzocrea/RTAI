@@ -111,7 +111,7 @@ For 32 bits:
 For 64 bits:
   ./configure --disable-shared CFLAGS="-mcmodel=kernel -fno-common", 
 - make,
-- ar -d lib/libc.a fwrite.o sprintf.o strcpy.o
+- ar -d lib/libc.a fwrite.o write.o fputs.o sprintf.o strcpy.o strlen.o memcpy.o memset.o
   needed to avoid the use of the above functions in kernel space, so using those
   provided by the kernel and a lnking conflict; it is a MUSL specific item, 
   due to the fact that its libm.a is embedded in libc.a, leaving libm.a as a

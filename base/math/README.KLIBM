@@ -80,7 +80,7 @@ architecture appropriatly. Moreover the following configuration suggestions
 are to be intended as possible adds on needed for RTAI.
 
 GLIBC
-Little to say, you'll likely have it already installed. So you have just to 
+Little to say, you'll likely have libm.a already installed. So you have just to 
 configure RTAI for using it. As already said, there are chances that it will 
 work just for 32 bit archs.
 

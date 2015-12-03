@@ -162,11 +162,14 @@ char using[7] = "GLIBC";
 #include "export_musl.h"
 char using[7] = "MUSL";
 
+// Hopefully a provisional fix. Till it is understood why a plain call of 
+// the one in MUSL libc.a segfaults for 32 bits
 asmlinkage double _Complex cpow(double _Complex x, double _Complex y)
 {
 	return cexp(y*clog(x));
 }
 
+// Export gamma function not found in MUSL libc.a 
 double gamma(double x)
 {
 	return lgamma(x);

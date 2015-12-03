@@ -162,25 +162,34 @@ char using[7] = "GLIBC";
 #include "export_musl.h"
 char using[7] = "MUSL";
 
-double gamma_r(double x, int *signgamp)
+asmlinkage double _Complex cpow(double _Complex x, double _Complex y)
 {
-	return lgamma_r(x, signgamp);
+	return cexp(y*clog(x));
 }
 
 double gamma(double x)
 {
 	return lgamma(x);
 }
+EXPORT_SYMBOL(gamma);
 
-float gammaf_r(float x, int *signgamp)
+double gamma_r(double x, int *signgamp)
 {
-	return lgammaf_r(x, signgamp);
+	return lgamma_r(x, signgamp);
 }
+EXPORT_SYMBOL(gamma_r);
 
 float gammaf(float x)
 {
 	return lgammaf(x);
 }
+EXPORT_SYMBOL(gammaf);
+
+float gammaf_r(float x, int *signgamp)
+{
+	return lgammaf_r(x, signgamp);
+}
+EXPORT_SYMBOL(gammaf_r);
 #endif
 
 int __rtai_math_init(void)

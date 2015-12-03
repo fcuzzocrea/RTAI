@@ -1,14 +1,16 @@
+2015-12-03 Paolo Mantegazza <mantegazza@aero.polimi.it>
+
+	* base/math/libm.c: added an internal implementation of cpow for MUSL,
+	  it fixes a segfault when the MUSL one is used for 32 bits; added
+	  an internal MUSL implementation of: gamma_r, gamma, gammaf_r,
+	  gammaf, whose sources are available in MUSL while the related entries
+	  do not appear libc.a.
+
 2015-11-30 Paolo Mantegazza <mantegazza@aero.polimi.it>
 
-	* base/math/libm.c: added code to satisfy missing links for 32 bits MUSL:
-	  __umoddi3 and __udivdi3, the related code has been taken from LLVM
-	  compiler infrastructure.
-
-2015-11-30 Paolo Mantegazza <mantegazza@aero.polimi.it>
-
-	* base/math/libm.c: adjusted a missing macro in the test enabling the use
-	  of complex numbers support; added comments about the complex mul/div 
-	  supported codes.
+	* base/math/libm.c: adjusted a missing macro in the test enabling the 
+	  use of complex numbers support; added comments about the complex 
+	  mul/div supported codes.
 
 2015-11-29 Paolo Mantegazza <mantegazza@aero.polimi.it>
 	   Marco Morandini  <marco.morandini@polimi.it>
@@ -17,7 +19,8 @@
 	  embeds libm.a. 
 	* base/math/export_musl.h: adds export math entries supported through 
 	  MUSL libc.a.
-	* base/math/README.KLIBM: updated with explanations for using MUSL libc.a.
+	* base/math/README.KLIBM: updated with explanations for using MUSL
+	  libc.a.
 	* base/arch/x86/Kconfig: updated to allow configuring math support 
 	  for MUSL.
 

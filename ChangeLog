@@ -1,3 +1,7 @@
+2015-12-04 Pierangelo Masarati <pierangelo.masarati@polimi.it>
+
+	* RTAI 5.0
+
 2015-12-03 Paolo Mantegazza <mantegazza@aero.polimi.it>
 
 	* base/math/libm.c: added an internal implementation of cpow for MUSL,

@@ -9,26 +9,28 @@ used a few source files with a dubious free software license.
 So it has been decided to have something different and completely self 
 contained within RTAI. 
 
-In such a view the new kernel math support make machinery currently does not 
+In such a view the new kernel math support make machinery does not 
 care of importing and compiling the needed math functions into RTAI. 
-Instead, it statically links an existing libm.a library into an RTAI module, 
-without the need of compiling anything but a wrapper module, containing 
-appropriate symbol exports and a few functions missed at the linking. 
+Instead, it statically links an existing libm.a library into an RTAI 
+module, without the need of compiling anything but a wrapper module 
+containing appropriate symbol exports and a few functions missed at 
+the linking. 
 Moreover it now correctly handles errno (kerrno in RTAI), which was not 
 exploited in a thread safe way in the previous RTAI implementation.
 
-The idea is simple and under i386 has proven itself valid by simply using 
-glibc-libm.a directly.
+The idea is simple and under i386, so likely for any 32 bits arch, has 
+proven itself valid by simply using glibc-libm.a directly.
 
-Unfortunately glibc-libm.a does not work for x86_64, because it is not
-compiled with the option "-mcmodel=kernel", required for a kernel module.
-Recompiling x86_64 glibc-libm.a with such an option would entail 
-patching its configure-make scripts. As a matter of fact, glibc configure 
-script forces also the use of "-fPIC" in some of his tests. Thus, regardless 
-of the the fact that CFLAGS-LDFLAGS contain "-mcmodel=kernel", it will fail
-working in a module. In fact, that results in the two compiler options "-fPIC" 
-and "-mcmodel=kernel" being incompatible. 
-Moreover a fresh recompilation of glibc-libm.a may not a light task. So it 
+Unfortunately glibc-libm.a does not work for x86_64, so likely for x86 archs 
+in general, because it is not compiled with the option "-mcmodel=kernel", 
+required for a kernel module.
+Recompiling x86_64 glibc-libm.a with such an option would entail patching its 
+configure-make scripts. As a matter of fact, glibc configure script forces
+also the use of "-fPIC" in some of his tests. Thus, regardless of the the fact 
+that CFLAGS-LDFLAGS contain "-mcmodel=kernel", it will fail working in a module. 
+In fact, that results in the two compiler options "-fPIC" and "-mcmodel=kernel" 
+being incompatible. 
+Moreover a fresh recompilation of glibc-libm.a may not be a light task. So it 
 has been decided to look for something else.
 
 Such a chosen else is basically resorting to a few known and lighter-embeddable 
@@ -66,41 +68,41 @@ We will now provide specific hints for each library to be used. As a general
 remark, if you are using the mentioned libraries just for RTAI kernel 
 applications, configure and make will be the main required commands.
 No need to "make install", just configure RTAI to point to their original
-directory. That means that you will have not to care of the installation
+lib directory. That means that you will not have to care of the installation
 directory. 
-Have a look at their README-INSTALLs files for general configuration options 
-you may need.
+Have a look at their README-INSTALL files for any  configuration option you 
+may need.
 Notice also that below we will assume no cross development. If that is the 
-case, you should read the installation instructions to define the host-targe 
-architectures appropriatly. Moreover the following configuration suggestions
-are required for working in kernel space with RTAI.
+case, you should read their installation instructions to define the host-targe 
+architectures appropriatly. The the following configuration suggestions
+are those to be added for having libm.a work in kernel space with RTAI.
 
 GLIBC, http://www.gnu.org/software/libc/ (recall that it is likely you have 
 it already).
-Little to say, you'll likely have libm.a already installed. So you have just to 
-configure RTAI for using it. As already said, there are chances that it will 
-work just for 32 bit archs.
+Little to say, you'll likely have libm.a already installed. So you have just
+to configure RTAI for using it. As already said, there are chances that it 
+will work just for 32 bit archs.
 
 NEWLIB, http://sourceware.org/newlib/.
 Get its tarball and expand it, or clone its git and have a look at its README. 
 For 32 bits:
 - ./configure --disable-shared --disable-multilib
+  Newlib does not activate the -fPIC option so --disable-shared should be
+  the only thing to care.
 - make
-Newlib does not activate the -fPIC option so --disable-shared should be
-the only thing to care.
 For 64 bits:
 - ./configure --disable-shared --disable-multilib CFLAGS="-mcmodel=kernel"
+  Newlib does not activate the -fPIC option so --disable-shared and 
+  mcmodel=kernel should be the only thing more to care.
 - make
-Newlib does not activate the -fPIC option so --disable-shared and 
--mcmodel=kernel should be the only thing to care.
 
 MUSL, http://www.musl-libc.org/.
 Get a tarball and expand it, or clone its git and have a look at its 
 README-INSTALL. 
-Before configuring and making execute the following script lines, from 
+Before configuring and making, execute the following script lines, from 
 within its base directory:
 - cp Makefile Makefile.saved 
-  for a possible following non RTAI reuse
+  for a following possible non RTAI reuse
 - sed 's/-fPIC//' <Makefile >Makefile.tmp; mv Makefile.tmp Makefile
   needed  to disable -fPIC, set by default in the MUSL Makefile
 For 32 bits:
@@ -110,11 +112,11 @@ For 64 bits:
 - make,
 - ar -d lib/libc.a fwrite.o write.o fputs.o sprintf.o strcpy.o strlen.o memcpy.o memset.o
   needed to avoid having the above functions linked in kernel space, so using those
-  provided by the kernel and a linking conflict; it is a MUSL specific item, 
+  provided by the kernel and to avoid a linking conflict; it is a MUSL specific item, 
   due to the fact that its libm.a is embedded in libc.a, leaving libm.a as just a
   link containing nothing.
 - cp lib/libc.a lib/libm.a.
-  as said above, to have the non empty libm.a required by RTAI make.
+  as said above, to have a non empty libm.a link, as required by RTAI make.
 
 uLIBC, http://www.uclibc.org/.
 uClibc has a handy menuconfig which makes its configuration setting somewhat friendlier.
@@ -125,7 +127,7 @@ Set anything you need, then be sure to:
 - enable C99 support
 - make.
 There should be no difference bewtween 32 and 64 bits configurations.
-As a side notice it should be remarked that at the uLibc home site arch x86_64 is
-lacking a maintainer.  That does not mean it will not work on such an arch.
+As a side notice, it should be remarked that at the uLibc home site arch x86_64 is
+lacking a maintainer. That does not mean it will not work on such an arch.
 
 Marco Morandini and Paolo Mantegazza.

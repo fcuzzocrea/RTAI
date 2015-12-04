@@ -20057,7 +20057,8 @@ RTAI_USER_CFLAGS="-I$LINUX_KERNELSRC/include $RTAI_REAL_USER_CFLAGS"
 
 
 
-ac_config_files="$ac_config_files GNUmakefile base/GNUmakefile base/arch/GNUmakefile base/include/GNUmakefile base/ipc/GNUmakefile base/sched/GNUmakefile base/sched/liblxrt/GNUmakefile base/scripts/GNUmakefile base/scripts/rtai-config base/scripts/rtai-load base/arch/x86/GNUmakefile base/arch/x86/hal/GNUmakefile base/arch/x86/calibration/GNUmakefile base/arch/x86/calibration/setsmi base/include/asm-x86/GNUmakefile base/arch/arm/GNUmakefile base/arch/arm/hal/GNUmakefile base/include/asm-arm/GNUmakefile base/arch/ppc/GNUmakefile base/arch/ppc/hal/GNUmakefile base/include/asm-ppc/GNUmakefile base/arch/m68k/GNUmakefile base/arch/m68k/hal/GNUmakefile base/include/asm-m68k/GNUmakefile base/ipc/bits/GNUmakefile base/ipc/fifos/GNUmakefile base/ipc/netrpc/GNUmakefile base/ipc/shm/GNUmakefile base/ipc/sem/GNUmakefile base/ipc/msg/GNUmakefile base/ipc/mbx/GNUmakefile base/ipc/tbx/GNUmakefile base/ipc/mq/GNUmakefile base/math/GNUmakefile base/malloc/GNUmakefile base/tasklets/GNUmakefile base/trace/GNUmakefile base/wd/GNUmakefile base/usi/GNUmakefile base/leds/GNUmakefile base/posix/GNUmakefile"
+ac_config_files="$ac_config_files GNUmakefile base/GNUmakefile base/arch/GNUmakefile base/include/GNUmakefile base/ipc/GNUmakefile base/sched/GNUmakefile base/sched/liblxrt/GNUmakefile base/scripts/GNUmakefile base/scripts/rtai-config base/scripts/rtai-load base/arch/x86/GNUmakefile base/arch/x86/hal/GNUmakefile base/arch/x86/calibration/GNUmakefile base/arch/x86/calibration/setsmi base/include/asm-x86/GNUmakefile base/arch/arm/GNUmakefile base/arch/arm/hal/GNUmakefile base/include/asm-arm/GNUmakefile base/ipc/bits/GNUmakefile base/ipc/fifos/GNUmakefile base/ipc/netrpc/GNUmakefile base/ipc/shm/GNUmakefile base/ipc/sem/GNUmakefile base/ipc/msg/GNUmakefile base/ipc/mbx/GNUmakefile base/ipc/tbx/GNUmakefile base/ipc/mq/GNUmakefile base/math/GNUmakefile base/malloc/GNUmakefile base/tasklets/GNUmakefile base/trace/GNUmakefile base/wd/GNUmakefile base/usi/GNUmakefile base/leds/GNUmakefile base/posix/GNUmakefile"
+
 
 
 build_drivers=$CONFIG_RTAI_DRIVERS_SERIAL$CONFIG_RTAI_DRIVERS_16550A
@@ -21566,12 +21567,6 @@ do
     "base/arch/arm/GNUmakefile") CONFIG_FILES="$CONFIG_FILES base/arch/arm/GNUmakefile" ;;
     "base/arch/arm/hal/GNUmakefile") CONFIG_FILES="$CONFIG_FILES base/arch/arm/hal/GNUmakefile" ;;
     "base/include/asm-arm/GNUmakefile") CONFIG_FILES="$CONFIG_FILES base/include/asm-arm/GNUmakefile" ;;
-    "base/arch/ppc/GNUmakefile") CONFIG_FILES="$CONFIG_FILES base/arch/ppc/GNUmakefile" ;;
-    "base/arch/ppc/hal/GNUmakefile") CONFIG_FILES="$CONFIG_FILES base/arch/ppc/hal/GNUmakefile" ;;
-    "base/include/asm-ppc/GNUmakefile") CONFIG_FILES="$CONFIG_FILES base/include/asm-ppc/GNUmakefile" ;;
-    "base/arch/m68k/GNUmakefile") CONFIG_FILES="$CONFIG_FILES base/arch/m68k/GNUmakefile" ;;
-    "base/arch/m68k/hal/GNUmakefile") CONFIG_FILES="$CONFIG_FILES base/arch/m68k/hal/GNUmakefile" ;;
-    "base/include/asm-m68k/GNUmakefile") CONFIG_FILES="$CONFIG_FILES base/include/asm-m68k/GNUmakefile" ;;
     "base/ipc/bits/GNUmakefile") CONFIG_FILES="$CONFIG_FILES base/ipc/bits/GNUmakefile" ;;
     "base/ipc/fifos/GNUmakefile") CONFIG_FILES="$CONFIG_FILES base/ipc/fifos/GNUmakefile" ;;
     "base/ipc/netrpc/GNUmakefile") CONFIG_FILES="$CONFIG_FILES base/ipc/netrpc/GNUmakefile" ;;

@@ -4,7 +4,7 @@
 	  it fixes a segfault when the MUSL one is used for 32 bits; added
 	  an internal MUSL implementation of: gamma_r, gamma, gammaf_r,
 	  gammaf, whose sources are available in MUSL while the related entries
-	  do not appear libc.a.
+	  do not appear in libc.a.
 
 2015-11-30 Paolo Mantegazza <mantegazza@aero.polimi.it>
 

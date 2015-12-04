@@ -145,7 +145,7 @@ am__define_uniq_tagged_files = \
   done | $(am__uniquify_input)`
 ETAGS = etags
 CTAGS = ctags
-DIST_SUBDIRS = arm m68k ppc x86
+DIST_SUBDIRS = arm x86
 DISTFILES = $(DIST_COMMON) $(DIST_SOURCES) $(TEXINFOS) $(EXTRA_DIST)
 am__relativize = \
   dir0=`pwd`; \
@@ -360,10 +360,19 @@ top_srcdir = @top_srcdir@
 #ARCHDIR = x86_64
 #endif
 @CONFIG_ARM_TRUE@ARCHDIR = arm
-@CONFIG_M68KNOMMU_TRUE@ARCHDIR = m68k
-@CONFIG_M68K_TRUE@ARCHDIR = m68k
-@CONFIG_PPC_TRUE@ARCHDIR = ppc
 @CONFIG_X86_TRUE@ARCHDIR = x86
+
+#if CONFIG_PPC
+#ARCHDIR = ppc
+#endif
+
+#if CONFIG_M68KNOMMU
+#ARCHDIR = m68k
+#endif
+
+#if CONFIG_M68K
+#ARCHDIR = m68k
+#endif
 SUBDIRS = $(ARCHDIR)
 modext = @RTAI_MODULE_EXT@
 all: all-recursive

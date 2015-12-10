@@ -176,7 +176,7 @@ am__define_uniq_tagged_files = \
   done | $(am__uniquify_input)`
 ETAGS = etags
 CTAGS = ctags
-DIST_SUBDIRS = asm-arm asm-m68k asm-ppc asm-x86
+DIST_SUBDIRS = asm-arm asm-x86
 DISTFILES = $(DIST_COMMON) $(DIST_SOURCES) $(TEXINFOS) $(EXTRA_DIST)
 am__relativize = \
   dir0=`pwd`; \
@@ -391,10 +391,19 @@ top_srcdir = @top_srcdir@
 #ARCHDIR = asm-x86_64
 #endif
 @CONFIG_ARM_TRUE@ARCHDIR = asm-arm
-@CONFIG_M68KNOMMU_TRUE@ARCHDIR = asm-m68k
-@CONFIG_M68K_TRUE@ARCHDIR = asm-m68k
-@CONFIG_PPC_TRUE@ARCHDIR = asm-ppc
 @CONFIG_X86_TRUE@ARCHDIR = asm-x86
+
+#if CONFIG_PPC
+#ARCHDIR = asm-ppc
+#endif
+
+#if CONFIG_M68KNOMMU
+#ARCHDIR = asm-m68k
+#endif
+
+#if CONFIG_M68K
+#ARCHDIR = asm-m68k
+#endif
 nobase_include_HEADERS = \
 		rtai.h \
 		rtai_hal_names.h \

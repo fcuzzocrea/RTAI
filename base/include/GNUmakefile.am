@@ -14,17 +14,17 @@ if CONFIG_ARM
 ARCHDIR = asm-arm
 endif
 
-if CONFIG_PPC
-ARCHDIR = asm-ppc
-endif
+#if CONFIG_PPC
+#ARCHDIR = asm-ppc
+#endif
 
-if CONFIG_M68KNOMMU
-ARCHDIR = asm-m68k
-endif
+#if CONFIG_M68KNOMMU
+#ARCHDIR = asm-m68k
+#endif
 
-if CONFIG_M68K
-ARCHDIR = asm-m68k
-endif
+#if CONFIG_M68K
+#ARCHDIR = asm-m68k
+#endif
 
 nobase_include_HEADERS = \
 		rtai.h \

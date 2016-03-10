@@ -35,7 +35,6 @@
 MODULE_LICENSE("GPL");
 
 #define COMPILE_ANYHOW  // RTNet is not available but we want to compile anyhow
-#include <rtdm.h>
 #include "rtnetP.h"
 
 /* ethernet support(s) we want to use: 1 -> DO, 0 -> DO NOT */
@@ -44,6 +43,7 @@ MODULE_LICENSE("GPL");
 
 #ifdef CONFIG_RTAI_NETRPC_RTNET
 #define HARD_RTNET  1
+#include <rtdm.h>
 #else
 #define HARD_RTNET  0
 #endif

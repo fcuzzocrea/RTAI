@@ -2,7 +2,10 @@
 
 	* base/ipc/fifos/fifos.c: recover the macro defining f_dentry from 
 	  < LINUX 4.0.0 kernels, to avoid recoding.
-	* base/arch/x86/hal/hal.c: treat cpu_isolated map according to the 		  kernel version, changed with LINUX 4.x.x.
+	* base/arch/x86/hal/hal.c: treat cpu_isolated map according to the
+	  kernel version, changed with LINUX 4.x.x.
+	* base/ipc/netrpc/netrpc.c: move rtdm.h inclusion where HARD_NET is
+	  to be used.
 
 2015-12-10 Paolo Mantegazza <mantegazza@aero.polimi.it>
 

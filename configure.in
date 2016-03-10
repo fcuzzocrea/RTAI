@@ -311,16 +311,19 @@ else
 fi
 
 case "$RTAI_LINUX_VERSION" in
-  2.4.*)
-	dnl by design, only RTAI Adeos-oldgen HAL is available with 2.4
-	unset CONFIG_KBUILD
-    ;;
-  2.6.*)
-	dnl by design, RTAI Adeos-oldgen HAL is supported up to 2.6.12 included,
-	dnl and RTAI Adeos-newgen HAL is supported since 2.6.13 included
+dnl  2.4.*)
+dnl	dnl by design, only RTAI Adeos-oldgen HAL is available with 2.4
+dnl	unset CONFIG_KBUILD
+dnl    ;;
+dnl  2.6.*)
+dnl	dnl by design, RTAI Adeos-oldgen HAL is supported up to 2.6.12 included,
+dnl	dnl and RTAI Adeos-newgen HAL is supported since 2.6.13 included
+dnl	CONFIG_KBUILD=y
+dnl    ;;
+  3.*)
 	CONFIG_KBUILD=y
     ;;
-  3.*)
+  4.*)
 	CONFIG_KBUILD=y
     ;;
   *) 

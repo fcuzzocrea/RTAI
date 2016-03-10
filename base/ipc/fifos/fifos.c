@@ -168,6 +168,10 @@ MODULE_LICENSE("GPL");
 #define rtf_free_srq(x)			rt_free_srq((x))
 #define rtf_pend_srq(x)			rt_pend_linux_srq((x))
 
+#if LINUX_VERSION_CODE > KERNEL_VERSION(4,0,0)
+#define f_dentry  f_path.dentry
+#endif
+
 #ifdef CONFIG_PROC_FS
 static int rtai_proc_fifo_register(void);
 static void rtai_proc_fifo_unregister(void);

@@ -778,7 +778,11 @@ static void rtai_proc_unregister (void)
 #endif /* CONFIG_PROC_FS */
 
 #ifdef CONFIG_SMP
-extern unsigned long cpu_isolated_map; 
+#if LINUX_VERSION_CODE < KERNEL_VERSION(4,0,0)
+	extern unsigned long cpu_isolated_map; 
+#else
+	extern cpumask_var_t cpu_isolated_map;
+#endif
 #else
 static unsigned long cpu_isolated_map; 
 #endif
@@ -790,6 +794,7 @@ int __rtai_hal_init (void)
 {
 	int i, ret = 0;
 	struct hal_sysinfo_struct sysinfo;
+	unsigned long CpuIsolatedMap;
 
 	if (num_online_cpus() > RTAI_NR_CPUS) {
 		printk("RTAI[hal]: RTAI CONFIGURED WITH LESS THAN NUM ONLINE CPUS.\n");
@@ -841,11 +846,21 @@ int __rtai_hal_init (void)
 	rtai_trap_hook = rtai_trap_fault;
 
 #ifdef CONFIG_SMP
-	if (IsolCpusMask && (IsolCpusMask != cpu_isolated_map)) {
-		printk("\nWARNING: IsolCpusMask (%lx) does not match cpu_isolated_map (%lx) set at boot time.\n", IsolCpusMask, cpu_isolated_map);
+#if LINUX_VERSION_CODE < KERNEL_VERSION(4,0,0)
+	CpuIsolatedMap = 0;
+	for (i = 0; i < RTAI_NR_CPUS; i++) {
+		if (cpumask_test_cpu(i, &cpu_isolated_map)) {
+			set_bit(i, &CpuIsolatedMap);
+		}
+	}
+#else
+	CpuIsolatedMap = cpu_isolated_map;
+#endif
+	if (IsolCpusMask && (IsolCpusMask != CpuIsolatedMap)) {
+		printk("\nWARNING: IsolCpusMask (%lx) does not match cpu_isolated_map (%lx) set at boot time.\n", IsolCpusMask, CpuIsolatedMap);
 	}
 	if (!IsolCpusMask) {
-		IsolCpusMask = cpu_isolated_map;
+		IsolCpusMask = CpuIsolatedMap;
 	}
 	if (IsolCpusMask) {
 		for (i = 0; i < IPIPE_NR_XIRQS; i++) {

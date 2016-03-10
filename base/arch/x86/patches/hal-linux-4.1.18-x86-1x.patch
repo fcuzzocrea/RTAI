@@ -14362,7 +14362,15 @@ diff --git a/kernel/sched/core.c b/kernel/sched/core.c
 index 4d870eb..fa7217c 100644
 --- a/kernel/sched/core.c
 +++ b/kernel/sched/core.c
-@@ -1565,7 +1565,9 @@ void scheduler_ipi(void)
+@@ -308,6 +308,7 @@ int sysctl_sched_rt_runtime = 950000;
+ 
+ /* cpus with isolated domains */
+ cpumask_var_t cpu_isolated_map;
++EXPORT_SYMBOL(cpu_isolated_map);
+ 
+ /*
+  * this_rq_lock - lock this runqueue and disable interrupts.
+@@ -1565,7 +1566,9 @@ void scheduler_ipi(void)
  	 * however a fair share of IPIs are still resched only so this would
  	 * somewhat pessimize the simple resched case.
  	 */
@@ -14372,7 +14380,7 @@ index 4d870eb..fa7217c 100644
  	sched_ttwu_pending();
  
  	/*
-@@ -1575,7 +1577,9 @@ void scheduler_ipi(void)
+@@ -1575,7 +1578,9 @@ void scheduler_ipi(void)
  		this_rq()->idle_balance = 1;
  		raise_softirq_irqoff(SCHED_SOFTIRQ);
  	}
@@ -14382,7 +14390,7 @@ index 4d870eb..fa7217c 100644
  }
  
  static void ttwu_queue_remote(struct task_struct *p, int cpu)
-@@ -1666,7 +1670,8 @@ try_to_wake_up(struct task_struct *p, unsigned int state, int wake_flags)
+@@ -1666,7 +1671,8 @@ try_to_wake_up(struct task_struct *p, un
  	 */
  	smp_mb__before_spinlock();
  	raw_spin_lock_irqsave(&p->pi_lock, flags);
@@ -14392,7 +14400,7 @@ index 4d870eb..fa7217c 100644
  		goto out;
  
  	success = 1; /* we're going to change ->state */
-@@ -2283,6 +2288,8 @@ asmlinkage __visible void schedule_tail(struct task_struct *prev)
+@@ -2283,6 +2289,8 @@ asmlinkage __visible void schedule_tail(
  {
  	struct rq *rq;
  
@@ -14401,17 +14409,56 @@ index 4d870eb..fa7217c 100644
  	/* finish_task_switch() drops rq->lock and enables preemtion */
  	preempt_disable();
  	rq = finish_task_switch(prev);
-@@ -2337,6 +2344,9 @@ context_switch(struct rq *rq, struct task_struct *prev,
+@@ -2296,16 +2304,21 @@ asmlinkage __visible void schedule_tail(
+ /*
+  * context_switch - switch to the new MM and the new thread's register state.
+  */
+-static inline struct rq *
++static struct rq *
+ context_switch(struct rq *rq, struct task_struct *prev,
+ 	       struct task_struct *next)
+ {
+ 	struct mm_struct *mm, *oldmm;
+ 
+-	prepare_task_switch(rq, prev, next);
+-
+ 	mm = next->mm;
+ 	oldmm = prev->active_mm;
++
++if (!rq) {
++	__switch_mm(oldmm, next->active_mm, next);
++	if (!mm) enter_lazy_tlb(oldmm, next);
++} else {
++	prepare_task_switch(rq, prev, next);
++
+ 	/*
+ 	 * For paravirt, this is coupled with an exit in switch_to to
+ 	 * combine the page table reload and the switch backend into
+@@ -2331,14 +2344,22 @@ context_switch(struct rq *rq, struct tas
+ 	 * do an early lockdep release here:
+ 	 */
+ 	spin_release(&rq->lock.dep_map, 1, _THIS_IP_);
+-
++}
+ 	context_tracking_task_switch(prev, next);
+ 	/* Here we just switch the register state and the stack. */
  	switch_to(prev, next, prev);
++
  	barrier();
  
++if (unlikely(rq)) {
 +	if (unlikely(__ipipe_switch_tail()))
 +		return NULL;
 +
  	return finish_task_switch(prev);
  }
++	return NULL;
++}
++EXPORT_SYMBOL(context_switch);
  
-@@ -2558,6 +2568,7 @@ notrace unsigned long get_parent_ip(unsigned long addr)
+ /*
+  * nr_running and nr_context_switches:
+@@ -2558,6 +2579,7 @@ notrace unsigned long get_parent_ip(unsi
  
  void preempt_count_add(int val)
  {
@@ -14419,7 +14466,7 @@ index 4d870eb..fa7217c 100644
  #ifdef CONFIG_DEBUG_PREEMPT
  	/*
  	 * Underflow?
-@@ -2586,6 +2597,7 @@ NOKPROBE_SYMBOL(preempt_count_add);
+@@ -2586,6 +2608,7 @@ NOKPROBE_SYMBOL(preempt_count_add);
  
  void preempt_count_sub(int val)
  {
@@ -14427,7 +14474,7 @@ index 4d870eb..fa7217c 100644
  #ifdef CONFIG_DEBUG_PREEMPT
  	/*
  	 * Underflow?
-@@ -2640,6 +2652,7 @@ static noinline void __schedule_bug(struct task_struct *prev)
+@@ -2640,6 +2663,7 @@ static noinline void __schedule_bug(stru
   */
  static inline void schedule_debug(struct task_struct *prev)
  {
@@ -14435,7 +14482,7 @@ index 4d870eb..fa7217c 100644
  #ifdef CONFIG_SCHED_STACK_END_CHECK
  	BUG_ON(unlikely(task_stack_end_corrupted(prev)));
  #endif
-@@ -2737,7 +2750,7 @@ again:
+@@ -2737,7 +2761,7 @@ again:
   * accordingly in case an event triggered the need for rescheduling (such as
   * an interrupt waking up a task) while preemption was disabled in __schedule().
   */
@@ -14444,7 +14491,7 @@ index 4d870eb..fa7217c 100644
  {
  	struct task_struct *prev, *next;
  	unsigned long *switch_count;
-@@ -2750,6 +2763,10 @@ static void __sched __schedule(void)
+@@ -2750,6 +2774,10 @@ static void __sched __schedule(void)
  	rcu_note_context_switch();
  	prev = rq->curr;
  
@@ -14455,7 +14502,7 @@ index 4d870eb..fa7217c 100644
  	schedule_debug(prev);
  
  	if (sched_feat(HRTICK))
-@@ -2803,13 +2820,19 @@ static void __sched __schedule(void)
+@@ -2803,13 +2831,19 @@ static void __sched __schedule(void)
  		++*switch_count;
  
  		rq = context_switch(rq, prev, next); /* unlocks the rq */
@@ -14476,7 +14523,7 @@ index 4d870eb..fa7217c 100644
  }
  
  static inline void sched_submit_work(struct task_struct *tsk)
-@@ -2830,7 +2853,8 @@ asmlinkage __visible void __sched schedule(void)
+@@ -2830,7 +2864,8 @@ asmlinkage __visible void __sched schedu
  
  	sched_submit_work(tsk);
  	do {
@@ -14486,7 +14533,7 @@ index 4d870eb..fa7217c 100644
  	} while (need_resched());
  }
  EXPORT_SYMBOL(schedule);
-@@ -2870,7 +2894,8 @@ static void __sched notrace preempt_schedule_common(void)
+@@ -2870,7 +2905,8 @@ static void __sched notrace preempt_sche
  {
  	do {
  		__preempt_count_add(PREEMPT_ACTIVE);
@@ -14496,7 +14543,7 @@ index 4d870eb..fa7217c 100644
  		__preempt_count_sub(PREEMPT_ACTIVE);
  
  		/*
-@@ -2893,7 +2918,7 @@ asmlinkage __visible void __sched notrace preempt_schedule(void)
+@@ -2893,7 +2929,7 @@ asmlinkage __visible void __sched notrac
  	 * If there is a non-zero preempt_count or interrupts are disabled,
  	 * we do not want to preempt the current task. Just return..
  	 */
@@ -14505,7 +14552,7 @@ index 4d870eb..fa7217c 100644
  		return;
  
  	preempt_schedule_common();
-@@ -3622,6 +3647,7 @@ change:
+@@ -3622,6 +3658,7 @@ change:
  
  	prev_class = p->sched_class;
  	__setscheduler(rq, p, attr, true);
@@ -14513,7 +14560,7 @@ index 4d870eb..fa7217c 100644
  
  	if (running)
  		p->sched_class->set_curr_task(rq);
-@@ -4805,10 +4831,13 @@ int set_cpus_allowed_ptr(struct task_struct *p, const struct cpumask *new_mask)
+@@ -4805,10 +4842,13 @@ int set_cpus_allowed_ptr(struct task_str
  	do_set_cpus_allowed(p, new_mask);
  
  	/* Can the task run on the task's current CPU? If so, we're done */
@@ -14528,7 +14575,7 @@ index 4d870eb..fa7217c 100644
  	if (task_running(rq, p) || p->state == TASK_WAKING) {
  		struct migration_arg arg = { p, dest_cpu };
  		/* Need help from migration thread: drop lock and wait. */
-@@ -8394,3 +8423,42 @@ void dump_cpu_task(int cpu)
+@@ -8394,3 +8434,42 @@ void dump_cpu_task(int cpu)
  	pr_info("Task dump for CPU %d:\n", cpu);
  	sched_show_task(cpu_curr(cpu));
  }

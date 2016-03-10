@@ -15916,13 +15916,10 @@ else
 fi
 
 case "$RTAI_LINUX_VERSION" in
-  2.4.*)
-		unset CONFIG_KBUILD
-    ;;
-  2.6.*)
-			CONFIG_KBUILD=y
-    ;;
   3.*)
+	CONFIG_KBUILD=y
+    ;;
+  4.*)
 	CONFIG_KBUILD=y
     ;;
   *)

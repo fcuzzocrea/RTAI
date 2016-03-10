@@ -1,3 +1,8 @@
+2016-03-10 Paolo Mantegazza <mantegazza@aero.polimi.it>
+
+	* base/ipc/fifos/fifos.c: recover the macro defining f_dentry from 
+	  < LINUX 4.0.0 kernels, to avoid recoding.
+
 2015-12-10 Paolo Mantegazza <mantegazza@aero.polimi.it>
 
 	* base/arch/x86/defconfig: set the use of new error retirn code by 

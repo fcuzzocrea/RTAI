@@ -1,3 +1,10 @@
+2016-03-12 Emmanuel Pacaud <emmanuel.pacaud@lapp.in2p3.fr>
+	   Paolo Mantegazza <mantegazza@aero.polimi.it>
+
+	* base/sched/sched.c and sys.c: fix the wrong placement of a task
+	  always on all available CPUs when more than 1 is allowed, without
+	  carying of the allowed mask.
+
 2016-03-10 Paolo Mantegazza <mantegazza@aero.polimi.it>
 
 	* base/ipc/fifos/fifos.c: recover the macro defining f_dentry from 

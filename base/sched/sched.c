@@ -188,12 +188,14 @@ static rtheap_t rtai_kstack_heap;
 
 static int tasks_per_cpu[RTAI_NR_CPUS] = { 0, };
 
-int get_min_tasks_cpuid(void)
+#define CPUS_ALLOWED_ALL 0xFF
+
+int get_min_tasks_cpuid(unsigned long cpus_allowed)
 {
 	int i, cpuid, min;
 	min =  tasks_per_cpu[cpuid = 0];
 	for (i = 1; i < num_online_cpus(); i++) {
-		if (tasks_per_cpu[i] < min) {
+		if (test_bit(i, &cpus_allowed) && tasks_per_cpu[i] < min) {
 			min = tasks_per_cpu[cpuid = i];
 		}
 	}
@@ -300,7 +302,7 @@ int rt_kthread_init(RT_TASK *task, void (*rt_thread)(long), long data,
 			int stack_size, int priority, int uses_fpu,
 			void(*signal)(void))
 {
-	return rt_task_init_cpuid(task, rt_thread, data, stack_size, priority, uses_fpu, signal, get_min_tasks_cpuid());
+	return rt_task_init_cpuid(task, rt_thread, data, stack_size, priority, uses_fpu, signal, get_min_tasks_cpuid(CPUS_ALLOWED_ALL));
 }
 EXPORT_SYMBOL(rt_kthread_init);
 #endif
@@ -436,7 +438,7 @@ int rt_task_init(RT_TASK *task, void (*rt_thread)(long), long data,
 			void(*signal)(void))
 {
 	return rt_task_init_cpuid(task, rt_thread, data, stack_size, priority, 
-				 uses_fpu, signal, get_min_tasks_cpuid());
+				 uses_fpu, signal, get_min_tasks_cpuid(CPUS_ALLOWED_ALL));
 }
 
 
@@ -450,7 +452,7 @@ RTAI_SYSCALL_MODE void rt_set_runnable_on_cpuid(RT_TASK *task, unsigned int cpui
 	}
 
 	if (cpuid >= RTAI_NR_CPUS) {
-		cpuid = get_min_tasks_cpuid();
+		cpuid = get_min_tasks_cpuid(CPUS_ALLOWED_ALL);
 	} 
 	flags = rt_global_save_flags_and_cli();
 	switch (rt_smp_oneshot_timer[task->runnable_on_cpus] | 
@@ -499,7 +501,7 @@ RTAI_SYSCALL_MODE void rt_set_runnable_on_cpus(RT_TASK *task, unsigned long run_
 #else
 	run_on_cpus = 1;
 #endif
-	cpuid = get_min_tasks_cpuid();
+	cpuid = get_min_tasks_cpuid(CPUS_ALLOWED_ALL);
 	if (!test_bit(cpuid, &run_on_cpus)) {
 		cpuid = ffnz(run_on_cpus);
 	}

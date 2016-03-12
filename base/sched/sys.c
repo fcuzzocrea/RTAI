@@ -57,7 +57,7 @@ EXPORT_SYMBOL(rt_fun_ext);
  */
 #define USRLAND_MAX_MSG_SIZE  128  // Default max message size, used here only.
 
-int get_min_tasks_cpuid(void);
+int get_min_tasks_cpuid(unsigned long cpus_allowed);
 
 int set_rtext(RT_TASK *task,
 	      int priority,
@@ -213,7 +213,7 @@ RT_TASK* __task_init(unsigned long name, int prio, int stack_size, int max_msg_s
 
 	if ((rt_task = rtai_tskext_t(current, TSKEXT0))) {
 		if (num_online_cpus() > 1 && cpus_allowed) {
-	    		cpus_allowed = hweight32(cpus_allowed) > 1 ? get_min_tasks_cpuid() : ffnz(cpus_allowed);
+	    		cpus_allowed = hweight32(cpus_allowed) > 1 ? get_min_tasks_cpuid(cpus_allowed) : ffnz(cpus_allowed);
 		} else {
 			cpus_allowed = rtai_cpuid();
 		}
@@ -240,7 +240,7 @@ RT_TASK* __task_init(unsigned long name, int prio, int stack_size, int max_msg_s
 	if (rt_task) {
 	    rt_task->magic = 0;
 	    if (num_online_cpus() > 1 && cpus_allowed) {
-			cpus_allowed = hweight32(cpus_allowed) > 1 ? get_min_tasks_cpuid() : ffnz(cpus_allowed);
+			cpus_allowed = hweight32(cpus_allowed) > 1 ? get_min_tasks_cpuid(cpus_allowed) : ffnz(cpus_allowed);
 	    } else {
 			cpus_allowed = rtai_cpuid();
 	    }

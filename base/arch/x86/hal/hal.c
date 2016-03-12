@@ -847,14 +847,14 @@ int __rtai_hal_init (void)
 
 #ifdef CONFIG_SMP
 #if LINUX_VERSION_CODE < KERNEL_VERSION(4,0,0)
+	CpuIsolatedMap = cpu_isolated_map;
+#else
 	CpuIsolatedMap = 0;
 	for (i = 0; i < RTAI_NR_CPUS; i++) {
 		if (cpumask_test_cpu(i, &cpu_isolated_map)) {
 			set_bit(i, &CpuIsolatedMap);
 		}
 	}
-#else
-	CpuIsolatedMap = cpu_isolated_map;
 #endif
 	if (IsolCpusMask && (IsolCpusMask != CpuIsolatedMap)) {
 		printk("\nWARNING: IsolCpusMask (%lx) does not match cpu_isolated_map (%lx) set at boot time.\n", IsolCpusMask, CpuIsolatedMap);

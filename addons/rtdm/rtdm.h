@@ -301,7 +301,11 @@ static inline ssize_t rt_dev_recvfrom(int fd, void *buf, size_t len, int flags,
 				      socklen_t *fromlen)
 {
 	struct iovec iov;
+#if LINUX_VERSION_CODE < KERNEL_VERSION(4,0,0)
 	struct msghdr msg;
+#else
+	struct user_msghdr msg;
+#endif
 	int ret;
 
 	iov.iov_base = buf;
@@ -314,7 +318,11 @@ static inline ssize_t rt_dev_recvfrom(int fd, void *buf, size_t len, int flags,
 	msg.msg_control = NULL;
 	msg.msg_controllen = 0;
 
+#if LINUX_VERSION_CODE < KERNEL_VERSION(4,0,0)
 	ret = rt_dev_recvmsg(fd, &msg, flags);
+#else
+	ret = rt_dev_recvmsg(fd, (void *)&msg, flags);
+#endif
 	if (ret >= 0 && from)
 		*fromlen = msg.msg_namelen;
 	return ret;
@@ -473,7 +481,11 @@ static inline ssize_t rt_dev_sendto(int fd, const void *buf, size_t len,
 				    socklen_t tolen)
 {
 	struct iovec iov;
+#if LINUX_VERSION_CODE < KERNEL_VERSION(4,0,0)
 	struct msghdr msg;
+#else
+	struct user_msghdr msg;
+#endif
 
 	iov.iov_base = (void *)buf;
 	iov.iov_len = len;
@@ -485,7 +497,11 @@ static inline ssize_t rt_dev_sendto(int fd, const void *buf, size_t len,
 	msg.msg_control = NULL;
 	msg.msg_controllen = 0;
 
+#if LINUX_VERSION_CODE < KERNEL_VERSION(4,0,0)
 	return rt_dev_sendmsg(fd, &msg, flags);
+#else
+	return rt_dev_sendmsg(fd, (void *)&msg, flags);
+#endif
 }
 
 static inline ssize_t rt_dev_send(int fd, const void *buf, size_t len,

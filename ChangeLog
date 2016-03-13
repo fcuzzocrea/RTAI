@@ -1,4 +1,9 @@
 2016-03-12 Emmanuel Pacaud <emmanuel.pacaud@lapp.in2p3.fr>
+
+	* addons/rtdm/rtdm.h: a, likely provisional, fix to support 
+	  Linux-4.x.x.
+
+2016-03-12 Emmanuel Pacaud <emmanuel.pacaud@lapp.in2p3.fr>
 	   Paolo Mantegazza <mantegazza@aero.polimi.it>
 
 	* base/sched/sched.c and sys.c: fix the wrong placement of a task

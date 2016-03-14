@@ -938,7 +938,7 @@ config RTAI_COMEDI_DIR
 	here. Notice that RTAI support for COMEDI is based on 
 	the comedi.git repository found at "www.comedi.org". 
 	RTAI requires also comedilib.h found in the comedilib.git 
-	repository at the sime site.
+	repository at the same site.
 
 config RTAI_USE_COMEDI_LOCK
 	depends on RTAI_COMEDI_LXRT

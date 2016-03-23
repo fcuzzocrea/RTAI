@@ -1293,9 +1293,8 @@ int rt_is_hard_timer_running(void)
 void rt_set_oneshot_mode(void)
 { 
 	int cpuid;
-	stop_rt_timer();
 	for (cpuid = 0; cpuid < RTAI_NR_CPUS; cpuid++) {
-		oneshot_running = 0;
+		oneshot_running = 1;
 		oneshot_timer = 1;
 	}
 }
@@ -1344,7 +1343,7 @@ static int _rt_linux_hrt_next_shot(unsigned long deltat, void *hrt_dev) // ??? s
 
 #endif /* CONFIG_GENERIC_CLOCKEVENTS */
 
-static void start_rt_timers(void)
+static void _start_rt_timers(void)
 {
 	unsigned long flags, cpuid;
 
@@ -1361,7 +1360,7 @@ static void start_rt_timers(void)
 }
 
 
-static void stop_rt_timers(void)
+static void _stop_rt_timers(void)
 {
 	int cpuid; 
 	if (rt_sched_timed) {
@@ -1374,6 +1373,9 @@ static void stop_rt_timers(void)
 	}
 }
 
+static void start_rt_timers(void) { }
+
+static void stop_rt_timers(void)  { }
 
 RTAI_SYSCALL_MODE void start_rt_apic_timers(struct apic_timer_setup_data *setup_data, unsigned int rcvr_jiffies_cpuid)
 {
@@ -1490,7 +1492,7 @@ static void lxrt_killall (void)
 {
 	int cpuid;
 	
-	stop_rt_timer();
+	_stop_rt_timers();
 	for (cpuid = 0; cpuid < RTAI_NR_CPUS; cpuid++) {
 		while (rt_linux_task.next) {
 			rt_task_delete(rt_linux_task.next);
@@ -2593,6 +2595,7 @@ exit:
 #if defined(CONFIG_GENERIC_CLOCKEVENTS) && CONFIG_RTAI_RTC_FREQ == 0
 	rt_linux_hrt_next_shot = _rt_linux_hrt_next_shot;
 #endif
+	_start_rt_timers();
 	return retval;
 free_sched_ipi:
 	rt_free_sched_ipi();

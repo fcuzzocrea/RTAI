@@ -1,3 +1,8 @@
+2016-03-23 Paolo Mantegazza <mantegazza@aero.polimi.it>
+
+	* base/sched/sched.c: hard timers started-stopped in the scheduler,
+	  oneshot only, related user calls emptied.
+
 2016-03-12 Paolo Mantegazza <mantegazza@aero.polimi.it>
 
 	* addons/rtdm/rtdm.h: a, likely provisional, fix to support 

@@ -65,6 +65,7 @@ int main(int argc, char *argv[])
 	int min_diff;
 	int max_diff;
 	int period;
+	int warmedup;
 	int i;
 	RTIME t, svt;
 	RTIME expected, exectime[3];
@@ -88,13 +89,9 @@ int main(int argc, char *argv[])
 		exit(1);
 	}
 
-	printf("\n## RTAI latency calibration tool ##\n");
-	printf("# period = %i (ns) \n", PERIOD);
-	printf("# average time = %i (s)\n", (int)AVRGTIME);
-	printf("# use the FPU\n");
-	printf("#%sstart the timer\n", argc == 1 ? " " : " do not ");
-	printf("# timer_mode is %s\n", TIMER_MODE ? "periodic" : "oneshot");
-	printf("\n");
+	printf("RTAI Testsuite - USER space latency test (output data in nanoseconds)\n");
+	printf("\n*** latency verification tool with real time hardened user space processes/threads ***\n");
+	printf("***    period = %i (ns),  avrgtime = %i (s)    ***\n\n", PERIOD, AVRGTIME);
 
 	if (argc == 1) {
 		if (TIMER_MODE) {
@@ -118,7 +115,7 @@ int main(int argc, char *argv[])
 	rt_task_make_periodic(task, expected = rt_get_tscnt() + 10*period, period);
 
 	svt = rt_get_cpu_time_ns();
-	samp.ovrn = i = 0;
+	warmedup = samp.ovrn = i = 0;
 	while (!end) {
 		min_diff = 1000000000;
 		max_diff = -1000000000;
@@ -150,10 +147,13 @@ int main(int argc, char *argv[])
 			average += diff;
 			s = dot(a, b, MAXDIM);
 		}
-		samp.min = min_diff;
-		samp.max = max_diff;
-		samp.index = average/SKIP;
-		rt_mbx_send_if(mbx, &samp, sizeof(samp));
+		if (warmedup) {
+			samp.min = min_diff;
+			samp.max = max_diff;
+			samp.index = average/SKIP;
+			rt_mbx_send_if(mbx, &samp, sizeof(samp));
+		}
+		warmedup = 1;
 		if ((latchk = rt_get_adr(nam2num("LATCHK"))) && (rt_receive_if(latchk, (unsigned long *)&average) || end)) {
 			rt_return(latchk, (unsigned long)average);
 			break;

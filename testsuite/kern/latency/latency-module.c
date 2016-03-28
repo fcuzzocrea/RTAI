@@ -20,29 +20,26 @@
 #include <linux/module.h>
 #include <linux/init.h>
 #include <linux/kernel.h>
-#include <linux/proc_fs.h>
 #include <linux/stringify.h>
 #include <asm/io.h>
 
 #include <asm/rtai.h>
 #include <rtai_sched.h>
 #include <rtai_fifos.h>
-#include <rtai_proc_fs.h>
 
 MODULE_LICENSE("GPL");
 MODULE_DESCRIPTION("Latency measurement tool for RTAI");
 MODULE_AUTHOR("Paolo Mantegazza <mantegazza@aero.polimi.it>, Robert Schwebel <robert@schwebel.de>");
 
 
-/*
- *	command line parameters
- */
+/* command line parameters */
 
 #if defined(CONFIG_UCLINUX) || defined(CONFIG_ARM) || defined(CONFIG_COLDFIRE)
 #define DEFAULT_PERIOD 1000000
 #else
 #define DEFAULT_PERIOD 100000
 #endif
+
 int period = DEFAULT_PERIOD;
 RTAI_MODULE_PARM(period, int);
 MODULE_PARM_DESC(period, "period in ns (default: " __stringify(DEFAULT_PERIOD) ")");
@@ -103,32 +100,9 @@ static double dot(double *a, double *b, int n)
 }
 #endif
 
-/* 
- *	/proc/rtai/latency_calibrate entry
- */
-
-#ifdef CONFIG_PROC_FS
-static int PROC_READ_FUN(proc_read)
-{
-	PROC_PRINT_VARS;
-	PROC_PRINT("\n## RTAI latency calibration tool ##\n");
-	PROC_PRINT("# period = %i (ns) \n", period);
-	PROC_PRINT("# avrgtime = %i (s)\n", avrgtime);
-	PROC_PRINT("#%suse the FPU\n", use_fpu ? " " : " do not " );
-	PROC_PRINT("#%sstart the timer\n", start_timer ? " " : " do not ");
-	PROC_PRINT("# timer_mode is %s\n", timer_mode ? "periodic" : "oneshot");
-	PROC_PRINT("\n");
-	PROC_PRINT_DONE;
-}
-#endif
-
-
-/*
- *	Periodic realtime thread 
- */
+/* Periodic realtime thread */
  
-void
-fun(long thread)
+void fun(long thread)
 {
 
 	int diff = 0;
@@ -136,7 +110,11 @@ fun(long thread)
 	int average;
 	int min_diff = 0;
 	int max_diff = 0;
+	int warmedup;
 	RTIME t, svt;
+
+	rtf_put(DEBUG_FIFO, &period, sizeof(period));
+	rtf_put(DEBUG_FIFO, &avrgtime, sizeof(avrgtime));
 
 #ifdef CONFIG_RTAI_FPU_SUPPORT
 	if (use_fpu) {
@@ -147,7 +125,7 @@ fun(long thread)
 #endif
 
 	svt = rt_get_cpu_time_ns();
-	samp.ovrn = 0;
+	warmedup = samp.ovrn = 0;
 	while (1) {
 
 		min_diff =  1000000000;
@@ -183,34 +161,23 @@ fun(long thread)
 			}
 #endif
 		}
-		samp.min = min_diff;
-		samp.max = max_diff;
-		samp.index = average / loops;
-		rtf_put(DEBUG_FIFO, &samp, sizeof (samp));
+		if (warmedup) {
+			samp.min = min_diff;
+			samp.max = max_diff;
+			samp.index = average / loops;
+			rtf_put(DEBUG_FIFO, &samp, sizeof (samp));
+		}
+		warmedup = 1;
 	}
 	rt_printk("\nDOT PRODUCT RESULT = %lu\n", (unsigned long)dotres);
 }
 
 
-/*
- *	Initialisation. We have to select the scheduling mode and start 
- *      our periodical measurement task.  
- */
+/* Initialisation. */
 
-PROC_READ_OPEN_OPS(rtai_kern_lat_fops, proc_read);
-
-static int
-__latency_init(void)
+static int __latency_init(void)
 {
-	static struct proc_dir_entry *proc_rtai_kern_lat;
-
 	/* XXX check option ranges here */
-
-	/* register a proc entry */
-#ifdef CONFIG_PROC_FS
-	proc_rtai_kern_lat = CREATE_PROC_ENTRY("kern_latency_calibrate", 0, rtai_proc_root, &rtai_kern_lat_fops);
-	SET_PROC_READ_ENTRY(proc_rtai_kern_lat, proc_read);
-#endif
 
 	rtf_create(DEBUG_FIFO, 16000);	/* create a fifo length: 16000 bytes */
 	rt_linux_use_fpu(use_fpu);	/* declare if we use the FPU         */
@@ -253,9 +220,7 @@ __latency_init(void)
 }
 
 
-/*
- *	Cleanup 
- */
+/* Cleanup */
 
 static void
 __latency_exit(void)
@@ -264,18 +229,12 @@ __latency_exit(void)
 
 	/* If we started the timer we have to revert this now. */
 	if (start_timer) {
-//		rt_reset_irq_to_sym_mode(TIMER_8254_IRQ);
 		stop_rt_timer();
 	}
 
 	/* Now delete our task and remove the FIFO. */
 	rt_task_delete(&thread);
 	rtf_destroy(DEBUG_FIFO);
-
-	/* Remove proc dir entry */
-#ifdef CONFIG_PROC_FS
-	remove_proc_entry("kern_latency_calibrate", rtai_proc_root);
-#endif
 
 	/* Output some statistics about CPU usage */
 	printk("\n\nCPU USE SUMMARY\n");

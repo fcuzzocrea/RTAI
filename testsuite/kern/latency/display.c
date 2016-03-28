@@ -38,31 +38,25 @@ static void endme(int dummy) { end = 1;}
 int main(int argc, char *argv[])
 {
 	int fd0;
-	char line[256];
 	char nm[RTF_NAMELEN+1];
-	FILE *procfile;
 	long long max = -1000000000, min = 1000000000;
 	struct sample { long long min; long long max; int index, ovrn; } samp;
-	int n = 0;
+	int n = 0, period, avrgtime;
 
 	setlinebuf(stdout);
 
 	signal(SIGINT, endme);
 
-	if ((procfile = fopen("/proc/rtai/latency_calibrate", "r")) == NULL) {
-		printf("Warning: Error opening /proc/rtai/latency_calibrate\n");
-		printf("         Couldn't get infos about the module's state.\n");
-	} else {
-		while (fgets(line,256,procfile) != NULL) {printf("%s",line);}
-		fclose(procfile);
-	}
-
-	if ((fd0 = open(rtf_getfifobyminor(3,nm,sizeof(nm)), O_RDONLY)) < 0) {
+	if ((fd0 = open(rtf_getfifobyminor(3, nm, sizeof(nm)), O_RDONLY)) < 0) {
 		fprintf(stderr, "Error opening %s\n",nm);
 		exit(1);
 	}
+	read(fd0, &period, sizeof(period));
+	read(fd0, &avrgtime, sizeof(avrgtime));
 
-	printf("RTAI Testsuite - KERNEL latency (all data in nanoseconds)\n");
+	printf("RTAI Testsuite - KERNEL space latency test (output data in nanoseconds)\n");
+	printf("\n*** latency verification tool with RTAI own real time kernel tasks ***\n");
+	printf("***    period = %i (ns),  avrgtime = %i (s)    ***\n\n", period, avrgtime);
 
 	while (!end) {
 		if ((n++ % 21)==0) {

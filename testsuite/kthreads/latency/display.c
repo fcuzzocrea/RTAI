@@ -52,8 +52,8 @@ int main(int argc, char *argv[])
 	read(fd0, &period, sizeof(period));
 	read(fd0, &avrgtime, sizeof(avrgtime));
 
-	printf("RTAI Testsuite - KERNEL threads latency (all data in nanoseconds)\n");
-        printf("\n*** latency verification tool with kernel threads ***\n");
+	printf("RTAI Testsuite - KERNEL space latency test (output data in nanoseconds)\n");
+        printf("\n*** latency verification tool with real time hardened LINUX kernel threads ***\n");
         printf("***    period = %i (ns),  avrgtime = %i (s)    ***\n\n", period, avrgtime);
 
 	while (!end) {

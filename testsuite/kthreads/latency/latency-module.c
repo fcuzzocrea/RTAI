@@ -56,7 +56,7 @@ static int endme;
 
 void fun(long dummy)
 {
-	int i, loops, average, period_counts, period = PERIOD, avrgtime = AVRGTIME;
+	int warmedup, i, loops, average, period_counts, period = PERIOD, avrgtime = AVRGTIME;
 	int diff = 0, min_diff = 0, max_diff = 0;
 	RT_TASK *thread;
 	RTIME expected;
@@ -79,7 +79,7 @@ void fun(long dummy)
 	rt_task_make_periodic(thread, expected, period_counts);
 
 	svt = rt_get_cpu_time_ns();
-	samp.ovrn = 0;
+	warmedup = samp.ovrn = 0;
 	while (!endme) {
 
 		min_diff =  1000000000;
@@ -102,10 +102,13 @@ void fun(long dummy)
 			dotres = dot(a, b, MAXDIM);
 			do_some_io();
 		}
-		samp.min   = min_diff;
-		samp.max   = max_diff;
-		samp.index = average/loops;
-		rtf_put(ECHO_FIFO, &samp, sizeof (samp));
+		if (warmedup) {
+			samp.min   = min_diff;
+			samp.max   = max_diff;
+			samp.index = average/loops;
+			rtf_put(ECHO_FIFO, &samp, sizeof (samp));
+		}
+		warmedup = 1;
 	}
 	rt_printk("\nDOT PRODUCT RESULT = %lu\n", (unsigned long)dotres);
 	endme = 0;

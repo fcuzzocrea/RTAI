@@ -127,7 +127,7 @@ int main(int argc, char *argv[])
 
 	printf("\n* KERNEL SPACE. *\n");
 	do {
-		kern_latency = kernel_calibrator(period, loops, KernLatency);
+		kern_latency = rt_sched_latencies(period, loops, KernLatency);
 
 		kern_latency = (kern_latency + loops/2)/loops;
 		kern_latency = sign(kern_latency)*count2nano(abs(kern_latency));
@@ -143,7 +143,7 @@ int main(int argc, char *argv[])
 
 	printf("\n* USER SPACE. *\n");
 	do {
-		kernel_calibrator(period, loops, -UserLatency);
+		rt_sched_latencies(period, loops, -UserLatency);
 		rt_thread_create((void *)user_calibrator, (void *)(long)loops, 0);
 		rt_task_suspend(calmng);
 

@@ -290,22 +290,56 @@ config RTAI_LONG_TIMED_LIST
 #	provide a compromised on time scheduling for both, albeit at a 
 #	negligible added cost.
 
-config RTAI_SCHED_LATENCY_SELFCALIBRATE
-	bool "Latency self calibration"
-	default y
-	help
-	Enable the self calibration of the scheduling latency when the RTAI
-	scheduler is compiled with RTAI_SCHED_LATENCY set to 0.
+#config RTAI_SCHED_LATENCY_SELFCALIBRATE
+#	bool "Latency self calibration"
+#	default y
+#	help
+#	Enable the self calibration of the scheduling latency when the RTAI
+#	scheduler is compiled with RTAI_SCHED_LATENCY set to 0.
+#
+#	NOTE: you must run make as the superuser, as this option loads
+#	modules and tries to execute tasks.
+#
+#	See also: RTAI_SCHED_LATENCY, RTAI_KERN_BUSY_ALIGN_RET_DELAY, 
+#	          RTAI_USER_BUSY_ALIGN_RET_DELAY.
 
-	NOTE: you must run make as the superuser, as this option loads
-	modules and tries to execute tasks.
+#config RTAI_SCHED_LATENCY
+#	string "Scheduling latency (ns)"
+#	default 0
+#        help
+#        The anticipation time to be used to program the hard timer mode for
+#	the next scheduling shot, in order to compensate for the programming
+#	overhead spent to set the right firing time.
+#	It could be determined with the calibration support provided by RTAI, 
+#	starting from a tentative configuration. 
+#	When it is set to zero and RTAI_SCHED_LATENCY_SELFCALIBRATE is enabled
+#	which are the default values available at the very first making, it 
+#	will trigger a self calibrating procedure when the RTAI scheduler is 
+#	made. 
+#	The same value is used for both kernel and user space tasks. Which
+#	means that, for an appropriate on time user space task, there could be 
+#	some anticipation for a kernel space task, i.e. a negative latency. 
+#	In such a case, the busy alignment options could be used to provide a 
+#	compromised on time scheduling for both spaces, albeit at a negligible 
+#	added cost for kernel tasks.
+#	When RTAI_SCHED_LATENCY_SELFCALIBRATE is enabled and RTAI_SCHED_LATENCY 
+#	is 0, the self calibration will:
+#	- evaluate the scheduler latency;
+#	- set an appropriate busy wait anticipation for kernel space; see 
+#	  the related config parameter;
+#	- set a negative appropriate busy wait anticipation for user space; 
+#	  the adoption of a negative value will impede any alignment, while
+#	  its absolute value will be an appropriate indication of what 
+#	  should be used if also a user space alignment is desired; see the 
+#	  related config parameter. It should nonetheless be remarked that,
+#	  because of the calibration being carried out in user space, there 
+#	  should be no alignement need there. 
+#	A user can then further tune such values at will, e.g. using the 
+#	calibration-helper. 
 
-	See also: RTAI_SCHED_LATENCY, RTAI_KERN_BUSY_ALIGN_RET_DELAY, 
-	          RTAI_USER_BUSY_ALIGN_RET_DELAY.
-
-config RTAI_SCHED_LATENCY
-	string "Scheduling latency (ns)"
-	default 0
+config RTAI_LATENCY_SELF_CALIBRATION_PERIOD
+	string "Latency self calibration period (ns)"
+	default 200000
         help
         The anticipation time to be used to program the hard timer mode for
 	the next scheduling shot, in order to compensate for the programming
@@ -336,6 +370,20 @@ config RTAI_SCHED_LATENCY
 	  should be no alignement need there. 
 	A user can then further tune such values at will, e.g. using the 
 	calibration-helper. 
+
+config RTAI_LATENCY_SELF_CALIBRATION_TIME
+	string "Latency self calibration time (s)"
+	default 1
+	help
+	Enable the self calibration of the scheduling latency when the RTAI
+	scheduler is compiled with RTAI_SCHED_LATENCY set to 0.
+
+	NOTE: you must run make as the superuser, as this option loads
+	modules and tries to execute tasks.
+
+	See also: RTAI_SCHED_LATENCY, RTAI_KERN_BUSY_ALIGN_RET_DELAY, 
+	          RTAI_USER_BUSY_ALIGN_RET_DELAY.
+
 
 config RTAI_KERN_BUSY_ALIGN_RET_DELAY
 	string "Delay to return to a switched in timed kernel task (ns)"

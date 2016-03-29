@@ -678,8 +678,6 @@ LATEX_MODE
 LATEX_BATCHMODE
 DOXYGEN_SHOW_INCLUDE_FILES
 CROSS_COMPILE
-CONFIG_RTAI_SCHED_LATENCY_SELFCALIBRATE_FALSE
-CONFIG_RTAI_SCHED_LATENCY_SELFCALIBRATE_TRUE
 CONFIG_RTAI_OLD_FASHIONED_BUILD_FALSE
 CONFIG_RTAI_OLD_FASHIONED_BUILD_TRUE
 CONFIG_RTAI_MAINTAINER_PGM_FALSE
@@ -1007,7 +1005,8 @@ enable_ktasks_sched_lxrt
 enable_sched_lock_isr
 enable_rtc_freq
 enable_long_timed_lists
-enable_sched_latency
+enable_latency_self_calibration_period
+enable_latency_self_calibration_time
 enable_user_busy_align_ret_delay
 enable_kernel_busy_align_ret_delay
 enable_sched_lxrt_numslots
@@ -1728,7 +1727,8 @@ Optional Features:
  --enable-sched-lock-isr	Enable scheduler lock in ISRs
  --enable-rtc-freq	Enable RTC freq
  --enable-long-timed-lists	Enable long timed lists
- --enable-sched-latency	Set tuning latency
+ --enable-latency-self-calibration-period	Set latency self calibration period
+ --enable-latency-self-calibration-time	Set latency self calibration time
  --user-busy-align-ret-delay	Set user busy align ret delay
  --kernel-busy-align-ret-delay	Set kernel busy align ret delay
  --enable-sched-lxrt-numslots	Set maximum number of LXRT slots
@@ -16403,22 +16403,39 @@ fi
 { $as_echo "$as_me:${as_lineno-$LINENO}: result: ${CONFIG_RTAI_LONG_TIMED_LIST:-no}" >&5
 $as_echo "${CONFIG_RTAI_LONG_TIMED_LIST:-no}" >&6; }
 
-{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for tuning latency" >&5
-$as_echo_n "checking for tuning latency... " >&6; }
-# Check whether --enable-sched-latency was given.
-if test "${enable_sched_latency+set}" = set; then :
-  enableval=$enable_sched_latency; case "$enableval" in
- 	[0-9]*) CONFIG_RTAI_SCHED_LATENCY=$enableval ;;
- 	*) as_fn_error $? "Bad argument to option: --enable-sched-latency=<nanoseconds>" "$LINENO" 5 ;;
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for latency self calibration period" >&5
+$as_echo_n "checking for latency self calibration period... " >&6; }
+# Check whether --enable-latency-self-calibration-period was given.
+if test "${enable_latency_self_calibration_period+set}" = set; then :
+  enableval=$enable_latency_self_calibration_period; case "$enableval" in
+ 	[0-9]*) CONFIG_RTAI_LATENCY_SELF_CALIBRATION_PERIOD=$enableval ;;
+ 	*) as_fn_error $? "Bad argument to option: --enable-latency-self-calibration-period=<nanoseconds>" "$LINENO" 5 ;;
 	esac
 fi
 
-if test x$CONFIG_RTAI_SCHED_LATENCY = x ; then
+if test x$CONFIG_RTAI_LATENCY_SELF_CALIBRATION_PERIOD = x ; then
   # Use a reasonable default if unset
-  CONFIG_RTAI_SCHED_LATENCY=0
+  CONFIG_RTAI_LATENCY_SELF_CALIBRATION_PERIOD=200000
 fi
-{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $CONFIG_RTAI_SCHED_LATENCY" >&5
-$as_echo "$CONFIG_RTAI_SCHED_LATENCY" >&6; }
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $CONFIG_RTAI_LATENCY_SELF_CALIBRATION_PERIOD" >&5
+$as_echo "$CONFIG_RTAI_LATENCY_SELF_CALIBRATION_PERIOD" >&6; }
+
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for latency self calibration time" >&5
+$as_echo_n "checking for latency self calibration time... " >&6; }
+# Check whether --enable-latency-self-calibration-time was given.
+if test "${enable_latency_self_calibration_time+set}" = set; then :
+  enableval=$enable_latency_self_calibration_time; case "$enableval" in
+ 	[0-9]*) CONFIG_RTAI_LATENCY_SELF_CALIBRATION_TIME=$enableval ;;
+ 	*) as_fn_error $? "Bad argument to option: --enable-latency-self-calibration-time=<seconds>" "$LINENO" 5 ;;
+	esac
+fi
+
+if test x$CONFIG_RTAI_LATENCY_SELF_CALIBRATION_TIME = x ; then
+  # Use a reasonable default if unset
+  CONFIG_RTAI_LATENCY_SELF_CALIBRATION_TIME=1
+fi
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $CONFIG_RTAI_LATENCY_SELF_CALIBRATION_TIME" >&5
+$as_echo "$CONFIG_RTAI_LATENCY_SELF_CALIBRATION_TIME" >&6; }
 
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking for user busy align ret delay" >&5
 $as_echo_n "checking for user busy align ret delay... " >&6; }
@@ -18976,7 +18993,12 @@ _ACEOF
 
 
 cat >>confdefs.h <<_ACEOF
-#define CONFIG_RTAI_SCHED_LATENCY $CONFIG_RTAI_SCHED_LATENCY
+#define CONFIG_RTAI_LATENCY_SELF_CALIBRATION_PERIOD $CONFIG_RTAI_LATENCY_SELF_CALIBRATION_PERIOD
+_ACEOF
+
+
+cat >>confdefs.h <<_ACEOF
+#define CONFIG_RTAI_LATENCY_SELF_CALIBRATION_TIME $CONFIG_RTAI_LATENCY_SELF_CALIBRATION_TIME
 _ACEOF
 
 
@@ -19694,15 +19716,6 @@ fi
 else
   CONFIG_RTAI_OLD_FASHIONED_BUILD_TRUE='#'
   CONFIG_RTAI_OLD_FASHIONED_BUILD_FALSE=
-fi
-
-
- if test "$CONFIG_RTAI_SCHED_LATENCY_SELFCALIBRATE" = y; then
-  CONFIG_RTAI_SCHED_LATENCY_SELFCALIBRATE_TRUE=
-  CONFIG_RTAI_SCHED_LATENCY_SELFCALIBRATE_FALSE='#'
-else
-  CONFIG_RTAI_SCHED_LATENCY_SELFCALIBRATE_TRUE='#'
-  CONFIG_RTAI_SCHED_LATENCY_SELFCALIBRATE_FALSE=
 fi
 
 
@@ -20536,10 +20549,6 @@ Usually this means the macro was only invoked conditionally." "$LINENO" 5
 fi
 if test -z "${CONFIG_RTAI_OLD_FASHIONED_BUILD_TRUE}" && test -z "${CONFIG_RTAI_OLD_FASHIONED_BUILD_FALSE}"; then
   as_fn_error $? "conditional \"CONFIG_RTAI_OLD_FASHIONED_BUILD\" was never defined.
-Usually this means the macro was only invoked conditionally." "$LINENO" 5
-fi
-if test -z "${CONFIG_RTAI_SCHED_LATENCY_SELFCALIBRATE_TRUE}" && test -z "${CONFIG_RTAI_SCHED_LATENCY_SELFCALIBRATE_FALSE}"; then
-  as_fn_error $? "conditional \"CONFIG_RTAI_SCHED_LATENCY_SELFCALIBRATE\" was never defined.
 Usually this means the macro was only invoked conditionally." "$LINENO" 5
 fi
 if test -z "${CONFIG_RTAI_ADDONS_TRUE}" && test -z "${CONFIG_RTAI_ADDONS_FALSE}"; then

@@ -103,6 +103,12 @@
 #undef CONFIG_RTAI_KSTACK_HEAPSZ
 
 /* Kconfig */
+#undef CONFIG_RTAI_LATENCY_SELF_CALIBRATION_PERIOD
+
+/* Kconfig */
+#undef CONFIG_RTAI_LATENCY_SELF_CALIBRATION_TIME
+
+/* Kconfig */
 #undef CONFIG_RTAI_LEDS
 
 /* Kconfig */
@@ -236,9 +242,6 @@
 
 /* Kconfig */
 #undef CONFIG_RTAI_SCHED_ISR_LOCK
-
-/* Kconfig */
-#undef CONFIG_RTAI_SCHED_LATENCY
 
 /* Kconfig */
 #undef CONFIG_RTAI_SCHED_LXRT_NUMSLOTS

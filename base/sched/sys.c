@@ -336,7 +336,9 @@ void rt_make_soft_real_time(RT_TASK *task)
 }
 EXPORT_SYMBOL(rt_make_soft_real_time);
 
+#if 0
 static long kernel_calibrator_spv(long period, long loops, RT_TASK *task);
+#endif
 
 static inline long long handle_lxrt_request (unsigned int lxsrq, long *arg, RT_TASK *task)
 {
@@ -656,20 +658,12 @@ static inline long long handle_lxrt_request (unsigned int lxsrq, long *arg, RT_T
 			return 0;
 		}
 
-		case KERNEL_CALIBRATOR: {
-			struct arg { long period, loops, Latency; };
-#if CONFIG_RTAI_SCHED_LATENCY <= 1 || (RTAI_KERN_BUSY_ALIGN_RET_DELAY >= 0) || (RTAI_USER_BUSY_ALIGN_RET_DELAY >= 0) 
-			extern int rt_smp_half_tick[];
-			int cpu;
-			rtai_tunables.sched_latency = rtai_imuldiv(abs((int)larg->Latency), rtai_tunables.clock_freq, 1000000000);
-			if (rtai_tunables.sched_latency < rtai_tunables.setup_time_TIMER_CPUNIT) {
-				rtai_tunables.sched_latency = rtai_tunables.setup_time_TIMER_CPUNIT;
-			}
-			for (cpu = 0; cpu < RTAI_NR_CPUS; cpu++) {
-				rt_smp_half_tick[cpu] = rtai_tunables.sched_latency/2;
-			}
-#endif
-			return larg->Latency < 0 ? 0 : kernel_calibrator_spv(larg->period, larg->loops, task);
+		case SCHED_LATENCIES: {
+			extern int KernelLatency, UserLatency;
+			struct arg { long klat, ulat, period; };
+			KernelLatency = larg->klat;
+			UserLatency   = larg->ulat;
+			return 0;
 		}
 
 		case GET_CPU_FREQ: {
@@ -807,6 +801,7 @@ void init_fun_ext (void)
 	rt_fun_ext[0] = rt_fun_lxrt;
 }
 
+#if 0
 /* SUPPORT FOR CALIBRATING SCHEDULING LATENCIES FOR KERNEL SPACE TASKS */
 
 struct kern_cal_arg { long period, loops; RT_TASK *task; };
@@ -845,6 +840,7 @@ long kernel_calibrator_spv(long period, long loops, RT_TASK *task)
 	kfree(calsup);
 	return period;
 }
+#endif
 
 /* SUPPORT FOR KERNEL THREADS, IN SOFT-HARD REAL TIME 
  * MODE, TO BE USED THE SAME WAY AS IN USER SPACED.              

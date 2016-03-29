@@ -1,3 +1,16 @@
+2016-03-30 Paolo Mantegazza <mantegazza@aero.polimi.it>
+
+	* base/arch/x86/calibration/calibrate.c: rewrite user space support
+	  for calibrating scheduling latencies on the fly.
+	* base/include/rtai_lxrt.h: recast the kernel_calibrator function 
+	  as a simple interface to provide kernel and user space latencies,
+	  in clock count units.
+	* base/include/rtai_sched.h: add per task calibrated latency variable.
+	* base/include/rtai_schedcore.h: wake up timed tasks, immediately 
+	  accounting for the available per task schedling latency.
+	* base/sched/sched.c: rework the all kernel/user space self calibration
+	  stuff.
+
 2016-03-29 Paolo Mantegazza <mantegazza@aero.polimi.it>
 	   Pierangelo Masarati <pierangelo.masarati@polimi.it>
 

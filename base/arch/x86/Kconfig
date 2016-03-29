@@ -371,6 +371,10 @@ config RTAI_LATENCY_SELF_CALIBRATION_PERIOD
 	Use a period that is closer to your range of interest. Because of 
 	chache warming, lower periods will tend to anticipate the scheduling
 	when higher ones are used and viceversa.
+	If valuable calibrated values are available, they can be used to
+	substitute those obtained by calibrating, through the rtai_sched.ko
+	parameters "kernel_latency" and "user_latency", either any single one
+	or both, e.g: "insmod rtai_sched.ko user_latency=10000".
 
 config RTAI_LATENCY_SELF_CALIBRATION_TIME
 	string "Latency self calibration time (s)"
@@ -408,6 +412,10 @@ config RTAI_LATENCY_SELF_CALIBRATION_TIME
 	carried out in a "calm" environment, strongly suggested, there is no 
 	need to exceed a few seconds. In any case, it is done just once, or
 	when you want it again. 
+	If valuable calibrated values are available, they can be used to
+	substitute those obtained by calibrating, through the rtai_sched.ko
+	parameters "kernel_latency" and "user_latency", either any single one
+	or both, e.g: "insmod rtai_sched.ko user_latency=10000".
 
 config RTAI_KERN_BUSY_ALIGN_RET_DELAY
 	string "Delay to return to a switched in timed kernel task (ns)"

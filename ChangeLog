@@ -1,10 +1,18 @@
+2016-03-29 Paolo Mantegazza <mantegazza@aero.polimi.it>
+	   Pierangelo Masarati <pierangelo.masarati@polimi.it>
+
+	* base/arch/x86/Kconfig: removed old self calibration parameters,
+	  substituted with the new ones, i.e.: self calibration period and
+	  time.
+
 2016-03-28 Paolo Mantegazza <mantegazza@aero.polimi.it>
 
-	* testsuite/user/latency.c: reworked heading lines and added chache warmup.
-	* testsuite/kthreads/display.c and latency.c: reworked heading lines and 
+	* testsuite/user/latency.c: reworked heading lines and added chache 
+          warmup.
+	* testsuite/kthreads/display.c and latency.c: reworked heading lines 
+          and added chache warmup.
+	* testsuite/kern/display.c and latency.c: reworked heading lines and 
 	  added chache warmup.
-	* testsuite/kern/display.c and latency.c: reworked heading lines and added 
-	  chache warmup.
 
 2016-03-23 Paolo Mantegazza <mantegazza@aero.polimi.it>
 

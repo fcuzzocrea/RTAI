@@ -58,7 +58,7 @@
 
 2015-12-10 Paolo Mantegazza <mantegazza@aero.polimi.it>
 
-	* base/arch/x86/defconfig: set the use of new error retirn code by 
+	* base/arch/x86/defconfig: set the use of new error return code by 
           default; do not configure COMEDI usage innuser space by default.
 
 2015-12-04 Pierangelo Masarati <pierangelo.masarati@polimi.it>

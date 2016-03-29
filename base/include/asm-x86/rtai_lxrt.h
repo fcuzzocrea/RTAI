@@ -36,7 +36,7 @@ union rtai_lxrt_t { RTIME rt; long i[2]; void *v[2]; };
 
 #define TIMER_NAME     RTAI_TIMER_NAME
 #define TIMER_FREQ     RTAI_TIMER_FREQ
-#define SCHED_LATENCY  RTAI_SCHED_LATENCY
+//#define SCHED_LATENCY  RTAI_SCHED_LATENCY
 
 #define USE_LINUX_TIMER
 #define update_linux_timer(cpuid) \

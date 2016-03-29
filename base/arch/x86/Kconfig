@@ -349,7 +349,9 @@ config RTAI_LATENCY_SELF_CALIBRATION_PERIOD
 	by RTAI itself, both for kernel and user space tasks.
 	The calibration procedure is applied on the fly the first time 
 	rtai_sched.ko is insmoded, by launching, in series, calibrating tasks
-	in kernel and user space.
+	in kernel and user space. That will, typically, happen when any
+	latency test, of the the testsuite which comes with RTAI, is used
+	to verify its installation.
 	The present parameter sets the calibration period, while another one
 	defines the calibration time.
 	The calibration results are saved in
@@ -382,7 +384,9 @@ config RTAI_LATENCY_SELF_CALIBRATION_TIME
 	by RTAI itself, both for kernel and user space tasks.
 	The calibration procedure is applied on the fly the first time 
 	rtai_sched.ko is insmoded, by launching, in series, calibrating tasks
-	in kernel and user space.
+	in kernel and user space. That will, typically, happen when any
+	latency test, of the the testsuite which comes with RTAI, is used
+	to verify its installation.
 	The present parameter sets the calibration time, while another one
 	defines the calibration period.
 	The calibration results are saved in 

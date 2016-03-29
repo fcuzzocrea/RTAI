@@ -389,7 +389,7 @@ static inline void wake_up_timed_tasks(int cpuid)
 #else
 	task = (taskh = &rt_smp_linux_task[0])->tnext;
 #endif
-	if (task->resume_time <= rt_time_h) {
+	if (task->resume_time - task->schedlat <= rt_time_h) {
 		do {
 			if ((task->state & RT_SCHED_SUSPENDED) && task->suspdepth > 0) {
 				task->suspdepth = 0;
@@ -400,7 +400,7 @@ static inline void wake_up_timed_tasks(int cpuid)
 	                        } else {
         	                        enq_ready_task(task);
                 	        }
-#if CONFIG_RTAI_SCHED_LATENCY && ((CONFIG_RTAI_USER_BUSY_ALIGN_RET_DELAY > 0 || CONFIG_RTAI_KERN_BUSY_ALIGN_RET_DELAY > 0))
+#if /*CONFIG_RTAI_SCHED_LATENCY &&*/ ((CONFIG_RTAI_USER_BUSY_ALIGN_RET_DELAY > 0 || CONFIG_RTAI_KERN_BUSY_ALIGN_RET_DELAY > 0))
 				task->busy_time_align = oneshot_timer;
 #endif
         	        }

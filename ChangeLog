@@ -10,6 +10,9 @@
 	  accounting for the available per task schedling latency.
 	* base/sched/sched.c: rework the all kernel/user space self calibration
 	  stuff.
+	* base/sched/sys.c: recast the kernel_calibrator function
+          as a simple interface to provide kernel and user space latencies,
+          in clock count units.
 
 2016-03-29 Paolo Mantegazza <mantegazza@aero.polimi.it>
 	   Pierangelo Masarati <pierangelo.masarati@polimi.it>

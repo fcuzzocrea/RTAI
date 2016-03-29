@@ -413,7 +413,7 @@
 #define LXRT_RWL_DELETE 	1028
 #define LXRT_SPL_INIT		1029
 #define LXRT_SPL_DELETE 	1030
-#define KERNEL_CALIBRATOR	1031
+#define SCHED_LATENCIES   	1031
 #define GET_CPU_FREQ		1032
 
 #define FORCE_SOFT 0x80000000
@@ -1520,10 +1520,10 @@ RTAI_PROTO(RTIME, stop_ftimer,(void))
 	return rtai_lxrt(BIDX, SIZARG, STOP_TIMER, &arg).rt;
 }
 
-RTAI_PROTO(int, kernel_calibrator, (int period, int loops, int Latency))
+RTAI_PROTO(int, rt_sched_latencies, (int klat, int ulat, int period))
 {
-	struct { long period, loops, Latency; } arg = { period, loops, Latency };
-	return rtai_lxrt(BIDX, SIZARG, KERNEL_CALIBRATOR, &arg).i[0];
+	struct { long period, loops, Latency; } arg = { klat, ulat, period };
+	return rtai_lxrt(BIDX, SIZARG, SCHED_LATENCIES, &arg).i[0];
 }
 
 RTAI_PROTO(unsigned int, rt_get_cpu_freq, (void))

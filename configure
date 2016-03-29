@@ -641,6 +641,7 @@ LIBOBJS
 subdirs
 CONFIG_RTAI_ADDONS_FALSE
 CONFIG_RTAI_ADDONS_TRUE
+RTAI_INSTALL_DIR
 CROSSCOMPILE_TEST
 CONFIG_RTAI_LINUXDIR
 RTAI_POSIX_WRAP
@@ -15728,6 +15729,8 @@ case "$host" in
    exit 1;;
 esac
 
+RTAI_INSTALL_DIR=
+
 
 RTAI_KCONFIG_FILE=$srcdir/base/arch/$RTAI_TARGET_ARCH/defconfig
 kconfig_type=default
@@ -19152,6 +19155,8 @@ _ACEOF
 
 
 
+RTAI_INSTALL_DIR='${exec_prefix}'
+
 
  if test "$CONFIG_KBUILD" = y; then
   CONFIG_KBUILD_TRUE=
@@ -20010,6 +20015,7 @@ fi
 RTAI_POSIX_WRAP=`for f in \`cat "${srcdir}/base/posix/POSIX_WRAPS"\`; do echo -n " -Wl,--wrap -Wl,$f" ; done`
 
 RTAI_USER_CFLAGS="-I$LINUX_KERNELSRC/include $RTAI_REAL_USER_CFLAGS"
+
 
 
 

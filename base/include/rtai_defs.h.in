@@ -1,0 +1,9 @@
+/* $Header: /cvs/rtai/vulcano/base/include/rtai_defs.h.in,v 1.1 2016/03/29 11:58:22 ando Exp $ */
+
+#ifndef RTAI_DEFS_H
+#define RTAI_DEFS_H
+
+#define RTAI_INSTALL_DIR	"%RTAI_INSTALL_DIR%"
+
+#endif /* RTAI_DEFS_H */
+

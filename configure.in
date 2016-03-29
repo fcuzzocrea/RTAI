@@ -121,6 +121,8 @@ case "$host" in
    exit 1;;
 esac
 
+RTAI_INSTALL_DIR=
+
 dnl
 dnl Load the RTAI configuration.
 dnl
@@ -1608,6 +1610,8 @@ AH_BOTTOM([#endif /* __IN_RTAI__ */])
 dnl No longer used after 2.6.17
 dnl AH_BOTTOM([#include <linux/config.h>])
 
+RTAI_INSTALL_DIR='${exec_prefix}'
+
 dnl
 dnl Produce automake conditionals.
 dnl
@@ -2017,6 +2021,7 @@ AC_SUBST(RTAI_POSIX_WRAP)
 AC_SUBST(CONFIG_RTAI_LINUXDIR)
 AC_SUBST(CROSSCOMPILE_TEST)
 
+AC_SUBST(RTAI_INSTALL_DIR)
 
 AC_CONFIG_FILES([ \
 	GNUmakefile \

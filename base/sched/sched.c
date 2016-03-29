@@ -59,6 +59,7 @@ void rtai_proc_lxrt_unregister(void);
 #endif
 
 #include <rtai.h>
+#include <rtai_defs.h>
 #include <asm/rtai_sched.h>
 #include <rtai_lxrt.h>
 #include <rtai_registry.h>

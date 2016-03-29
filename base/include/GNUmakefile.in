@@ -293,6 +293,7 @@ RTAI_BUILTIN_MODLIST = @RTAI_BUILTIN_MODLIST@
 RTAI_COMPAT_CPPFLAGS = @RTAI_COMPAT_CPPFLAGS@
 RTAI_FP_CFLAGS = @RTAI_FP_CFLAGS@
 RTAI_HOST_STRING = @RTAI_HOST_STRING@
+RTAI_INSTALL_DIR = @RTAI_INSTALL_DIR@
 RTAI_KBUILD_BOTTOM = @RTAI_KBUILD_BOTTOM@
 RTAI_KBUILD_CLEAN = @RTAI_KBUILD_CLEAN@
 RTAI_KBUILD_CMD = @RTAI_KBUILD_CMD@
@@ -444,6 +445,9 @@ nobase_include_HEADERS = \
 		rtai_wrappers.h
 
 SUBDIRS = $(ARCHDIR)
+EXTRA_DIST = \
+rtai_defs.h.in
+
 DISTCLEANFILES = asm
 all: all-recursive
 
@@ -665,7 +669,7 @@ distdir: $(DISTFILES)
 	done
 check-am: all-am
 check: check-recursive
-all-am: GNUmakefile $(HEADERS)
+all-am: GNUmakefile $(HEADERS) all-local
 installdirs: installdirs-recursive
 installdirs-am:
 	for dir in "$(DESTDIR)$(includedir)"; do \
@@ -768,13 +772,13 @@ ps: ps-recursive
 
 ps-am:
 
-uninstall-am: uninstall-nobase_includeHEADERS
+uninstall-am: uninstall-local uninstall-nobase_includeHEADERS
 
 .MAKE: $(am__recursive_targets) install-am install-strip
 
-.PHONY: $(am__recursive_targets) CTAGS GTAGS TAGS all all-am check \
-	check-am clean clean-generic clean-libtool cscopelist-am ctags \
-	ctags-am distclean distclean-generic distclean-libtool \
+.PHONY: $(am__recursive_targets) CTAGS GTAGS TAGS all all-am all-local \
+	check check-am clean clean-generic clean-libtool cscopelist-am \
+	ctags ctags-am distclean distclean-generic distclean-libtool \
 	distclean-local distclean-tags distdir dvi dvi-am html html-am \
 	info info-am install install-am install-data install-data-am \
 	install-data-local install-dvi install-dvi-am install-exec \
@@ -784,15 +788,27 @@ uninstall-am: uninstall-nobase_includeHEADERS
 	install-strip installcheck installcheck-am installdirs \
 	installdirs-am maintainer-clean maintainer-clean-generic \
 	mostlyclean mostlyclean-generic mostlyclean-libtool pdf pdf-am \
-	ps ps-am tags tags-am uninstall uninstall-am \
+	ps ps-am tags tags-am uninstall uninstall-am uninstall-local \
 	uninstall-nobase_includeHEADERS
 
+
+all-local: rtai_defs.h FORCE
+
+rtai_defs.h: rtai_defs.h.in GNUmakefile
+	sed \
+		-e "s;%RTAI_INSTALL_DIR%;@RTAI_INSTALL_DIR@;" \
+		$(srcdir)/$@.in > $@
 
 install-data-local:
 	$(INSTALL_HEADER) $(CONFIG_HEADER) $(DESTDIR)$(includedir)/rtai_config.h
 
 @CONFIG_RTAI_OLD_FASHIONED_BUILD_TRUE@distclean-local:
 @CONFIG_RTAI_OLD_FASHIONED_BUILD_TRUE@	rm -f $(DESTDIR)$(includedir)/asm $(DESTDIR)$(includedir)/rtai_config.h
+
+uninstall-local: rtai_defs.h
+	rm -f rtai_defs.h
+
+FORCE:
 
 # Tell versions [3.59,3.63) of GNU make to not export all variables.
 # Otherwise a system limit (for SysV at least) may be exceeded.

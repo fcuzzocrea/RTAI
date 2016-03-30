@@ -2525,6 +2525,8 @@ static void kernel_lat_cal(long period)
 static int recalibrate = 0;
 module_param(recalibrate, int, S_IRUGO);
 
+#define sign(i) (((i) >= 0) ? 1 : -1)
+
 static void calibrate_latencies(void)
 {
 #define ALPHA_ARGSIZE 60
@@ -2552,7 +2554,7 @@ static void calibrate_latencies(void)
 	sprintf(arg2, "%d", recalibrate ? -1 : 0);
 	sprintf(arg3, "%d", -1);
 	printk("USERMODE CHECK: %s.\n", !call_usermodehelper(argv[0], argv, envp, UMH_WAIT_PROC) ? "OK" : "ERROR");
-	printk("USERMODE CHECK PROVIDED (TSC UNITS): KernelLatency %d, UserLatency %d.\n", KernelLatency, UserLatency);
+	printk("USERMODE CHECK PROVIDED (ns): KernelLatency %d, UserLatency %d.\n", KernelLatency > 0 ? (int)count2nano(KernelLatency) : KernelLatency, UserLatency > 0 ? (int)count2nano(UserLatency) : UserLatency);
 
 	if (kernel_latency > 0) {
 		KernelLatency = nano2count(kernel_latency);
@@ -2569,7 +2571,7 @@ static void calibrate_latencies(void)
 		while (!end_kernel_lat_cal) msleep(100);
 		kfree(task);
 #endif
-		printk("AFTER KERNEL CALIBRATION (WITH %s, TSC UNITS): KernelLatency %d, UserLatency %d (CALIBRATION: PERIOD %d (ns), TIME %lld (ns)).\n", CAL_WITH_KTHREAD ? "KTHREAD" : "RTAI TASK", KernelLatency, UserLatency, CONFIG_RTAI_LATENCY_SELF_CALIBRATION_PERIOD, count2nano(rtai_rdtsc() - t));
+		printk("AFTER KERNEL CALIBRATION (WITH %s, ns): KernelLatency %d, UserLatency %d (CALIBRATION: PERIOD %d (ns), TIME %lld (ns)).\n", CAL_WITH_KTHREAD ? "KTHREAD" : "RTAI TASK", (int)count2nano(KernelLatency), UserLatency > 0 ? (int)count2nano(UserLatency) : UserLatency, CONFIG_RTAI_LATENCY_SELF_CALIBRATION_PERIOD, count2nano(rtai_rdtsc() - t));
 	}
 
 	if (user_latency > 0) {
@@ -2579,10 +2581,10 @@ static void calibrate_latencies(void)
 		sprintf(arg2, "%d", period);
 		sprintf(arg3, "%d", KernelLatency);
 		printk("USERMODE USER SPACE CALIBRATION: %s.\n", !call_usermodehelper(argv[0], argv, envp, UMH_WAIT_PROC) ? "OK" : "ERROR");
-		printk("AFTER USER CALIBRATION (TSC UNITS): KernelLatency %d, UserLatency %d (CALIBRATION: PERIOD %d (ns), TIME %lld (ns)).\n", KernelLatency, UserLatency, CONFIG_RTAI_LATENCY_SELF_CALIBRATION_PERIOD, count2nano(rtai_rdtsc() - t));
+		printk("AFTER USER CALIBRATION (ns): KernelLatency %d, UserLatency %d (CALIBRATION: PERIOD %d (ns), TIME %lld (ns)).\n", (int)count2nano(KernelLatency), (int)count2nano(UserLatency), CONFIG_RTAI_LATENCY_SELF_CALIBRATION_PERIOD, count2nano(rtai_rdtsc() - t));
 	}
 
-	printk("FINAL CALIBRATION SUMMARY (TSC UNITS): KernelLatency %d, UserLatency %d.\n", KernelLatency, UserLatency);
+	printk("FINAL CALIBRATION SUMMARY (ns): KernelLatency %d, UserLatency %d.\n", (int)count2nano(KernelLatency), (int)count2nano(UserLatency));
 }
 
 extern int rt_registry_alloc(void);

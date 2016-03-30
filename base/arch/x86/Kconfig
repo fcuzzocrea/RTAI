@@ -377,7 +377,7 @@ config RTAI_LATENCY_SELF_CALIBRATION_PERIOD
 	or both, e.g: "insmod rtai_sched.ko user_latency=10000".
 	A further way to modify the scheduling latencies is to edit the first
 	two fields of "rtai-installdir/calibration/latencies", kernel and
-	user space respectively.
+	user space respectively, likely the simplest and speediest mode.
 
 config RTAI_LATENCY_SELF_CALIBRATION_TIME
 	string "Latency self calibration time (s)"
@@ -421,7 +421,7 @@ config RTAI_LATENCY_SELF_CALIBRATION_TIME
 	or both, e.g: "insmod rtai_sched.ko user_latency=10000".
 	A further way to modify the scheduling latencies is to edit the first
 	two fields of "rtai-installdir/calibration/latencies", kernel and
-	user space respectively.
+	user space respectively, likely the simplest and speediest mode.
 
 config RTAI_KERN_BUSY_ALIGN_RET_DELAY
 	string "Delay to return to a switched in timed kernel task (ns)"

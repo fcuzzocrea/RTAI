@@ -2503,14 +2503,15 @@ static void kernel_lat_cal(long period)
 	resume_time = start_time + 5*period;
 	rt_task_make_periodic(NULL, resume_time, period);
 	for (loop = 1; loop <= (max_loops + WARMUP); loop++) {
-		if (loop > WARMUP) {
-			resume_time += period;
-			if (!rt_task_wait_period()) {
-				latency += (long)(rtai_rdtsc() - resume_time);
-			} else {
-				ovrns++;
-				max_overn_loop = loop;
+		resume_time += period;
+		if (!rt_task_wait_period()) {
+			latency += (long)(rtai_rdtsc() - resume_time);
+			if (loop == WARMUP) {
+				latency = 0;
 			}
+		} else {
+			ovrns++;
+			max_overn_loop = loop;
 		}
 	}
 

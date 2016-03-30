@@ -43,7 +43,7 @@ int main(int argc, char **argv)
 #define WARMUP 50
 	RT_TASK *usrcal;
 	RTIME start_time, resume_time;
-	int loops, max_loops, period, ulat = -1, klat = -1;
+	int loop, max_loops, period, ulat = -1, klat = -1;
 	long latency = 0, ovrns = 0;
 	FILE *file;
 
@@ -54,7 +54,7 @@ int main(int argc, char **argv)
 			fscanf(file, "%d %d %d", &klat, &ulat, &period);
 			fclose(file);
 		}
-		rt_sched_latencies(klat, ulat, period);
+		rt_sched_latencies(nano2count(klat), nano2count(ulat), nano2count(period));
 	} else {
  		if (!(usrcal = rt_thread_init(nam2num("USRCAL"), 0, 0, SCHED_FIFO, 0xF))) {
 			return 1;
@@ -67,19 +67,20 @@ int main(int argc, char **argv)
 			start_time = rt_rdtsc();
 			resume_time = start_time + 5*period;
 			rt_task_make_periodic(usrcal, resume_time, period);
-			for (loops = 1; loops <= (max_loops + WARMUP); loops++) {
-				if (loops > WARMUP) {
-					resume_time += period;
-					if (!rt_task_wait_period()) {
-						latency += (long)(rt_rdtsc() - resume_time);
-					} else {
-						ovrns++;
-					}
+			for (loop = 1; loop <= (max_loops + WARMUP); loop++) {
+				resume_time += period;
+				if (!rt_task_wait_period()) {
+					latency += (long)(rt_rdtsc() - resume_time);
+	               		        if (loop == WARMUP) {
+                                		latency = 0;
+		                        }
+				} else {
+					ovrns++;
 				}
 			}
 			rt_make_soft_real_time();
 			ulat = latency/max_loops;
-			fprintf(file, "%d %d %d\n", klat, ulat, period);
+			fprintf(file, "%d %d %d\n", count2nano(klat), count2nano(ulat), count2nano(period));
 			rt_sched_latencies(klat, ulat, period);
 			fclose(file);
 		}

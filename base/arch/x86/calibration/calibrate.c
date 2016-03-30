@@ -54,7 +54,7 @@ int main(int argc, char **argv)
 			fscanf(file, "%d %d %d", &klat, &ulat, &period);
 			fclose(file);
 		}
-		rt_sched_latencies(nano2count(klat), nano2count(ulat), nano2count(period));
+		rt_sched_latencies(klat > 0 ? nano2count(klat) : klat, ulat > 0 ? nano2count(ulat) : ulat, period > 0 ? nano2count(period) : period);
 	} else {
  		if (!(usrcal = rt_thread_init(nam2num("USRCAL"), 0, 0, SCHED_FIFO, 0xF))) {
 			return 1;
@@ -80,7 +80,7 @@ int main(int argc, char **argv)
 			}
 			rt_make_soft_real_time();
 			ulat = latency/max_loops;
-			fprintf(file, "%d %d %d\n", count2nano(klat), count2nano(ulat), count2nano(period));
+			fprintf(file, "%lld %lld %lld\n", count2nano(klat), count2nano(ulat), count2nano(period));
 			rt_sched_latencies(klat, ulat, period);
 			fclose(file);
 		}

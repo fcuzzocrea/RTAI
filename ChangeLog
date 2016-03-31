@@ -25,9 +25,13 @@
 2016-03-29 Paolo Mantegazza <mantegazza@aero.polimi.it>
 	   Pierangelo Masarati <pierangelo.masarati@polimi.it>
 
-	* base/arch/x86/Kconfig: removed old self calibration parameters,
-	  substituted with the new ones, i.e.: self calibration period and
-	  time.
+	* base/arch/x86/Kconfig and configure.in: removed old self
+	  calibration parameters, substituted with the new ones,
+	  i.e.: self calibration period and time.
+	* base/sched/GNUmakefile.am: removed old self calibration
+	  stuff
+	* base/include/rtai_defs.h.in and base/include/GNUmakefile.am:
+	  generate macro for installation path
 
 2016-03-28 Paolo Mantegazza <mantegazza@aero.polimi.it>
 

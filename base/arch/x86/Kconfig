@@ -339,7 +339,7 @@ config RTAI_LONG_TIMED_LIST
 
 config RTAI_LATENCY_SELF_CALIBRATION_PERIOD
 	string "Latency self calibration period (ns)"
-	default 200000
+	default 100000
         help
 	In order to be on time, as finely as possible, RTAI anticipates the 
 	next scheduling shot of the hard timer clock interrupt by an amount 

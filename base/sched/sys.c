@@ -935,6 +935,7 @@ int kthread_server(void *args)
 		}
 	} while (!rtai_tskext(current, TSKEXT3));
 	__task_delete(kthread_server_task);
+	rtai_tskext(current, TSKEXT3) = NULL;
         return 0;
 }
 

@@ -3,7 +3,8 @@
 	* base/arch/x86/calibration/calibrate.c: save the scheduling latencies
 	  in nanoseconds, to make it easier their editing.
 	* base/sched/sched.c: echo diagnose of the scheduling latencies in 
-	  nanoseconds, to make it easier their reading.
+	  nanoseconds, to make it easier their reading; be sure of the kernel 
+	  thread server end at rmmod rtai_sched.
 
 2016-03-30 Paolo Mantegazza <mantegazza@aero.polimi.it>
 

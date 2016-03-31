@@ -369,7 +369,7 @@ config RTAI_LATENCY_SELF_CALIBRATION_PERIOD
 	Such a procedure should allow appropriate latency calibrations also
 	when cross development and embedding is needed.
 	Use a period that is closer to your range of interest. Because of 
-	chache warming, lower periods will tend to anticipate the scheduling
+	cache warming, lower periods will tend to anticipate the scheduling
 	when higher ones are used and viceversa.
 	If valuable calibrated values are available, they can be used to
 	substitute those obtained by calibrating, through the rtai_sched.ko

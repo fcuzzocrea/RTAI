@@ -282,7 +282,7 @@ int set_rtext(RT_TASK *task, int priority, int uses_fpu, void(*signal)(void), un
 		rtai_tskext(current, TSKEXT1) = task->lnxtsk = current;
 		put_current_on_cpu(cpuid);
 	}
-	task->schedlat = !task->lnxtsk || !task->lnxtsk->mm ? KernelLatency : UserLatency;
+	task->schedlat = task->lnxtsk->mm ? UserLatency : KernelLatency;
 	flags = rt_global_save_flags_and_cli();
 	task->next = 0;
 	rt_linux_task.prev->next = task;
@@ -425,7 +425,7 @@ int rt_task_init_cpuid(RT_TASK *task, void (*rt_thread)(long), long data, int st
 	task->max_msg_size[0] = (long)rt_thread;
 	task->max_msg_size[1] = data;
 	init_arch_stack();
-	task->schedlat = !task->lnxtsk || !task->lnxtsk->mm ? KernelLatency : UserLatency;
+	task->schedlat = KernelLatency;
 
 	flags = rt_global_save_flags_and_cli();
 	task->next = 0;
@@ -2484,25 +2484,28 @@ static void timer_fun(unsigned long none)
 #include <linux/kmod.h>
 
 #define CAL_WITH_KTHREAD 0
+#define MAX_LOOPS CONFIG_RTAI_LATENCY_SELF_CALIBRATION_TIME
 
 static int end_kernel_lat_cal;
 static void kernel_lat_cal(long period)
 {
 #define WARMUP 50
-	int loop, max_loops, max_overn_loop = 0;
-	long latency = 0, ovrns = 0;
+	int loop, max_overn_loop;
+	long latency, ovrns;
 	RTIME start_time, resume_time;
+
+	max_overn_loop  = 0;
+	latency = ovrns = 0;
 
 #if CAL_WITH_KTHREAD 
 	rt_thread_init(nam2num("KERCAL"), 0, 1, SCHED_FIFO, 0xF);
 #endif
 
 	period = nano2count(period);
-	max_loops = CONFIG_RTAI_LATENCY_SELF_CALIBRATION_TIME*(tuned.clock_freq/period);
 	start_time = rtai_rdtsc();
 	resume_time = start_time + 5*period;
 	rt_task_make_periodic(NULL, resume_time, period);
-	for (loop = 1; loop <= (max_loops + WARMUP); loop++) {
+	for (loop = 1; loop <= (MAX_LOOPS + WARMUP); loop++) {
 		resume_time += period;
 		if (!rt_task_wait_period()) {
 			latency += (long)(rtai_rdtsc() - resume_time);
@@ -2518,7 +2521,7 @@ static void kernel_lat_cal(long period)
 	if (ovrns) {
 		printk("KERNEL SPACE CALIBRATION: OVERRUNS %ld, MAX OVERRUN LOOP %d, NUMBER OF WARMUP LOOOP %d.\n", ovrns, max_overn_loop, WARMUP);
 	}
-	KernelLatency = latency/max_loops;
+	KernelLatency = latency/MAX_LOOPS;
 	end_kernel_lat_cal = 1;
 }
 
@@ -2537,7 +2540,7 @@ static void calibrate_latencies(void)
 	char arg2[NUM_ARGSIZE] = { 0, }, arg3[NUM_ARGSIZE] = { 0, };
 	char *envp[] = { env0, "TERM=linux", "PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin", NULL };
 	char *argv[] = { arg0, arg1, arg2, arg3, NULL };
-	int cpuid, period = nano2count(CONFIG_RTAI_LATENCY_SELF_CALIBRATION_PERIOD);
+	int cpuid, period = nano2count(1000000000/CONFIG_RTAI_LATENCY_SELF_CALIBRATION_PERIOD);
 
 	tuned.sched_latency = 0;
 	satdelay = oneshot_span;

@@ -22,6 +22,7 @@
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <unistd.h>
+#include <math.h>
 
 #include <rtai_lxrt.h>
 
@@ -38,12 +39,101 @@ static inline RTIME rt_rdtsc(void)
 #endif
 }
 
+#ifdef __KERNEL__
+#define rt_rdtsc rtai_rd_tsc
+#endif
+#define DIAG_KF_LAT_EVAL 0
+#define MAX_LOOPS CONFIG_RTAI_LATENCY_SELF_CALIBRATION_TIME
+#define R  ((double)4.0)
+#define Q  (R/(MAX_LOOPS*MAX_LOOPS))
+#define P0 R
+static inline double kf_lat_eval(long period)
+{
+	int calok, loop;
+	double us, xe, pe, q, r; 
+	double xp, pp, pep, y, g;
+	RTIME start_time, resume_time;
+
+	us = ((double)rt_get_cpu_freq()/1.0e9);
+	xe = us;
+	pe = P0*us*us; 
+	q  = Q*us*us;
+	r  = R*us*us;
+
+#if DIAG_KF_LAT_EVAL
+	rt_printk("INITIAL VALUES: xe %g, pe %g, q %g, r %g, us %g.\n",  xe, pe, q, r, us);
+#endif
+
+	start_time = rt_rdtsc();
+	resume_time = start_time + 5*period;
+	rt_task_make_periodic(NULL, resume_time, period);
+	for (calok = loop = 1; loop <= MAX_LOOPS; loop++) {
+		resume_time += period;
+		if (!rt_task_wait_period()) {
+			y = (rt_rdtsc() - resume_time);
+		} else {
+			y = period;
+		}
+		xp = xe;
+		pp = pe + q;
+		g = pp/(pp + r);
+		xe = xp + g*(y - xp);
+		pep = pe;
+		pe = (1.0 - g)*pp;
+
+#if DIAG_KF_LAT_EVAL
+		rt_printk("loop %d, xp %g, xe %g, pp %g, pe %g, g %g, y  %g.\n", loop, xp, xe, pp, pe, g, y);
+#endif
+
+		if (fabs((xe - xp)/xe) < 1.0e-3 && fabs((pe - pep)/pe) < 1.0e-3) {
+			if (calok++ > 50) break;
+		} else {
+			calok = 0;
+		}
+	}
+	return xe;
+}
+
+#if 1
+int main(int argc, char **argv)
+{
+	RT_TASK *usrcal;
+	int period, ulat = -1, klat = -1;
+	FILE *file;
+
+	period = atoi(argv[2]);
+	if (period <= 0) {
+		if (!period && !access(argv[1], F_OK)) {
+			file = fopen(argv[1], "r");
+			fscanf(file, "%d %d %d", &klat, &ulat, &period);
+			fclose(file);
+		}
+		rt_sched_latencies(klat > 0 ? nano2count(klat) : klat, ulat > 0 ? nano2count(ulat) : ulat, period > 0 ? nano2count(period) : period);
+	} else {
+ 		if (!(usrcal = rt_thread_init(nam2num("USRCAL"), 0, 0, SCHED_FIFO, 0x1))) {
+			return 1;
+		}
+		if ((file = fopen(argv[1], "w"))) {
+			klat = atoi(argv[3]);
+			mlockall(MCL_CURRENT | MCL_FUTURE);
+			rt_make_hard_real_time();
+			ulat = kf_lat_eval(period);
+			rt_make_soft_real_time();
+			fprintf(file, "%lld %lld %lld\n", count2nano(klat), count2nano(ulat), count2nano(period));
+			rt_sched_latencies(klat, ulat, period);
+			fclose(file);
+		}
+		rt_thread_delete(usrcal);
+	}
+	return 0;
+}
+#else
 int main(int argc, char **argv)
 {
 #define WARMUP 50
 	RT_TASK *usrcal;
 	RTIME start_time, resume_time;
-	int loop, max_loops, period, ulat = -1, klat = -1;
+	int loop, period, ulat = -1, klat = -1;
 	long latency = 0, ovrns = 0;
 	FILE *file;
 
@@ -61,25 +151,24 @@ int main(int argc, char **argv)
 		}
 		if ((file = fopen(argv[1], "w"))) {
 			klat = atoi(argv[3]);
-			max_loops = CONFIG_RTAI_LATENCY_SELF_CALIBRATION_TIME*(rt_get_cpu_freq()/period);
 			mlockall(MCL_CURRENT | MCL_FUTURE);
 			rt_make_hard_real_time();
 			start_time = rt_rdtsc();
 			resume_time = start_time + 5*period;
 			rt_task_make_periodic(usrcal, resume_time, period);
-			for (loop = 1; loop <= (max_loops + WARMUP); loop++) {
+			for (loop = 1; loop <= (MAX_LOOPS + WARMUP); loop++) {
 				resume_time += period;
 				if (!rt_task_wait_period()) {
 					latency += (long)(rt_rdtsc() - resume_time);
-	               		        if (loop == WARMUP) {
-                                		latency = 0;
-		                        }
+					if (loop == WARMUP) {
+						latency = 0;
+					}
 				} else {
 					ovrns++;
 				}
 			}
 			rt_make_soft_real_time();
-			ulat = latency/max_loops;
+			ulat = latency/MAX_LOOPS;
 			fprintf(file, "%lld %lld %lld\n", count2nano(klat), count2nano(ulat), count2nano(period));
 			rt_sched_latencies(klat, ulat, period);
 			fclose(file);
@@ -88,3 +177,4 @@ int main(int argc, char **argv)
 	}
 	return 0;
 }
+#endif

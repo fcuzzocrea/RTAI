@@ -2487,6 +2487,47 @@ static void timer_fun(unsigned long none)
 #define MAX_LOOPS CONFIG_RTAI_LATENCY_SELF_CALIBRATION_TIME
 
 static int end_kernel_lat_cal;
+
+#if 0
+int kfgain = 986411;
+#define MAX_LOOPS CONFIG_RTAI_LATENCY_SELF_CALIBRATION_TIME
+static void kernel_lat_cal(long period)
+{
+#define WARMUP 50
+	int loop, calok, xp, xe, y;
+	RTIME start_time, resume_time;
+
+	xe = 0;
+
+#if CAL_WITH_KTHREAD 
+	rt_thread_init(nam2num("KERCAL"), 0, 1, SCHED_FIFO, 0xF);
+#endif
+
+	start_time = rtai_rdtsc();
+	resume_time = start_time + 5*period;
+	rt_task_make_periodic(NULL, resume_time, period);
+	for (calok = loop = 1; loop <= MAX_LOOPS; loop++) {
+		resume_time += period;
+		if (!rt_task_wait_period()) {
+			y = (long)(rtai_rdtsc() - resume_time);
+		} else {
+			continue;
+		}
+		xp = xe;
+		xe = xe + rtai_imuldiv(y - xe, kfgain, 1000000000);
+		printk("loop %d, xe %d, y %d.\n", loop, xe, y);
+
+		if (abs(xe - xp) < abs(xe)/1000) {
+			if (calok++ > 50) { KernelLatency = xe; end_kernel_lat_cal = 1; return; } // break;
+		} else {
+			calok = 0;
+		}
+	}
+
+	KernelLatency = xe;
+	end_kernel_lat_cal = 1;
+}
+#else
 static void kernel_lat_cal(long period)
 {
 #define WARMUP 50
@@ -2501,7 +2542,6 @@ static void kernel_lat_cal(long period)
 	rt_thread_init(nam2num("KERCAL"), 0, 1, SCHED_FIFO, 0xF);
 #endif
 
-	period = nano2count(period);
 	start_time = rtai_rdtsc();
 	resume_time = start_time + 5*period;
 	rt_task_make_periodic(NULL, resume_time, period);
@@ -2524,6 +2564,7 @@ static void kernel_lat_cal(long period)
 	KernelLatency = latency/MAX_LOOPS;
 	end_kernel_lat_cal = 1;
 }
+#endif
 
 static int recalibrate = 0;
 module_param(recalibrate, int, S_IRUGO);

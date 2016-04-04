@@ -1,3 +1,8 @@
+2016-04-04 Pierangelo Masarati <pierangelo.masarati@polimi.it>
+
+	* base/arch/x86/Kconfig, base/arch/x86/defconfig, configure.in: 
+	  redefined self-calibration macros and defaults.
+
 2016-04-02 Paolo Mantegazza <mantegazza@aero.polimi.it>
 
 	* base/arch/x86/calibration/calibrate.c: added a calibration through a

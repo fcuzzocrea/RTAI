@@ -337,7 +337,7 @@ config RTAI_LONG_TIMED_LIST
 #	A user can then further tune such values at will, e.g. using the 
 #	calibration-helper. 
 
-config RTAI_LATENCY_SELF_CALIBRATION_PERIOD
+config RTAI_LATENCY_SELF_CALIBRATION_FREQ
 	string "Latency self calibration frequency (Hz)"
 	default 5000
         help
@@ -379,9 +379,9 @@ config RTAI_LATENCY_SELF_CALIBRATION_PERIOD
 	two fields of "rtai-installdir/calibration/latencies", kernel and
 	user space respectively, likely the simplest and speediest mode.
 
-config RTAI_LATENCY_SELF_CALIBRATION_TIME
+config RTAI_LATENCY_SELF_CALIBRATION_CYCLES
 	string "Number of latency self calibration cycles"
-	default RTAI_LATENCY_SELF_CALIBRATION_PERIOD
+	default RTAI_LATENCY_SELF_CALIBRATION_FREQ
 	help
 	In order to be on time, as finely as possible, RTAI anticipates the 
 	next scheduling shot of the hard timer clock interrupt by an amount 

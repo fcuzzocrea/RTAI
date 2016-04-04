@@ -16408,34 +16408,34 @@ $as_echo_n "checking for latency self calibration period... " >&6; }
 # Check whether --enable-latency-self-calibration-period was given.
 if test "${enable_latency_self_calibration_period+set}" = set; then :
   enableval=$enable_latency_self_calibration_period; case "$enableval" in
- 	[0-9]*) CONFIG_RTAI_LATENCY_SELF_CALIBRATION_PERIOD=$enableval ;;
+ 	[0-9]*) CONFIG_RTAI_LATENCY_SELF_CALIBRATION_FREQ=$enableval ;;
  	*) as_fn_error $? "Bad argument to option: --enable-latency-self-calibration-period=<nanoseconds>" "$LINENO" 5 ;;
 	esac
 fi
 
-if test x$CONFIG_RTAI_LATENCY_SELF_CALIBRATION_PERIOD = x ; then
+if test x$CONFIG_RTAI_LATENCY_SELF_CALIBRATION_FREQ = x ; then
   # Use a reasonable default if unset
-  CONFIG_RTAI_LATENCY_SELF_CALIBRATION_PERIOD=100000
+  CONFIG_RTAI_LATENCY_SELF_CALIBRATION_FREQ=5000
 fi
-{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $CONFIG_RTAI_LATENCY_SELF_CALIBRATION_PERIOD" >&5
-$as_echo "$CONFIG_RTAI_LATENCY_SELF_CALIBRATION_PERIOD" >&6; }
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $CONFIG_RTAI_LATENCY_SELF_CALIBRATION_FREQ" >&5
+$as_echo "$CONFIG_RTAI_LATENCY_SELF_CALIBRATION_FREQ" >&6; }
 
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking for latency self calibration time" >&5
 $as_echo_n "checking for latency self calibration time... " >&6; }
 # Check whether --enable-latency-self-calibration-time was given.
 if test "${enable_latency_self_calibration_time+set}" = set; then :
   enableval=$enable_latency_self_calibration_time; case "$enableval" in
- 	[0-9]*) CONFIG_RTAI_LATENCY_SELF_CALIBRATION_TIME=$enableval ;;
+ 	[0-9]*) CONFIG_RTAI_LATENCY_SELF_CALIBRATION_CYCLES=$enableval ;;
  	*) as_fn_error $? "Bad argument to option: --enable-latency-self-calibration-time=<seconds>" "$LINENO" 5 ;;
 	esac
 fi
 
-if test x$CONFIG_RTAI_LATENCY_SELF_CALIBRATION_TIME = x ; then
+if test x$CONFIG_RTAI_LATENCY_SELF_CALIBRATION_CYCLES = x ; then
   # Use a reasonable default if unset
-  CONFIG_RTAI_LATENCY_SELF_CALIBRATION_TIME=1
+  CONFIG_RTAI_LATENCY_SELF_CALIBRATION_CYCLES=5000
 fi
-{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $CONFIG_RTAI_LATENCY_SELF_CALIBRATION_TIME" >&5
-$as_echo "$CONFIG_RTAI_LATENCY_SELF_CALIBRATION_TIME" >&6; }
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $CONFIG_RTAI_LATENCY_SELF_CALIBRATION_CYCLES" >&5
+$as_echo "$CONFIG_RTAI_LATENCY_SELF_CALIBRATION_CYCLES" >&6; }
 
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking for user busy align ret delay" >&5
 $as_echo_n "checking for user busy align ret delay... " >&6; }
@@ -18993,12 +18993,12 @@ _ACEOF
 
 
 cat >>confdefs.h <<_ACEOF
-#define CONFIG_RTAI_LATENCY_SELF_CALIBRATION_PERIOD $CONFIG_RTAI_LATENCY_SELF_CALIBRATION_PERIOD
+#define CONFIG_RTAI_LATENCY_SELF_CALIBRATION_FREQ $CONFIG_RTAI_LATENCY_SELF_CALIBRATION_FREQ
 _ACEOF
 
 
 cat >>confdefs.h <<_ACEOF
-#define CONFIG_RTAI_LATENCY_SELF_CALIBRATION_TIME $CONFIG_RTAI_LATENCY_SELF_CALIBRATION_TIME
+#define CONFIG_RTAI_LATENCY_SELF_CALIBRATION_CYCLES $CONFIG_RTAI_LATENCY_SELF_CALIBRATION_CYCLES
 _ACEOF
 
 

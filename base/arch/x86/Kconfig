@@ -352,7 +352,7 @@ config RTAI_LATENCY_SELF_CALIBRATION_FREQ
 	kernel and user space task. That will, typically, happen when any
 	latency test, of the the testsuite which comes with RTAI, is used
 	to verify its installation.
-	The present parameter sets the calibration frequancy, while another 
+	The present parameter sets the calibration frequency, while another 
 	one defines the number of loops to be spent for calibrating.
 	The calibration results are saved in
 	"rtai-installdir/calibration/latencies", where "rtai-installdir" is
@@ -365,14 +365,14 @@ config RTAI_LATENCY_SELF_CALIBRATION_FREQ
 	At the very first rtai_sched.ko insmoding, after delating the 
 	latencies file or after insmoding rtai_sched.ko with "recalibrate=1",
 	you should be prepared to wait for approximately twice the calibration
-	time required to ccary out the numebr of requested calibrated loop.
+	time required to carry out the number of requested calibrated loops.
 	Such a procedure should allow appropriate latency calibrations also
 	when cross development and embedding is needed.
 	Use a frequency that is close to your range of interest. Because of 
 	cache warming, lower frequencies will tend to anticipate the scheduling
 	when higher ones are used and viceversa.
 	If valuable calibrated values are available, they can be used to
-	substitute those obtained by calibrating, through the rtai_sched.ko
+	substitute those obtained by calibrating, through rtai_sched.ko
 	parameters "kernel_latency" and "user_latency", in nanos, either any 
 	single one or both, e.g: "insmod rtai_sched.ko user_latency=4000".
 	A further way to modify the scheduling latencies is to edit the first
@@ -400,12 +400,12 @@ config RTAI_LATENCY_SELF_CALIBRATION_CYCLES
 	Use a number of cycles appropriate to allow an adequate number of 
 	reschedules. If the calibration is carried out in a "calm" environment,
 	strongly suggested, there is no need to exceed a few seconds. In any 
-	case, it is done just once, or when you want it again.
+	case, it is done just once, or when you will force it again.
 	Nonetheless, it should be remarked that the calibration precedure, 
 	based on a Kalman filter, checks its convergence, exiting at once 
-	what it is obtained. Therefore it is quite possible that the related
-	procedure will be faster than expected, i.e. it will use less that 
-	the requested cycles.
+	when the calibration tolerances are met. Therefore it is quite
+	possible that the related procedure will be faster than expected,
+	i.e. it will use less that the requested cycles.
 	The calibration results are saved in
 	"rtai-installdir/calibration/latencies", where "rtai-installdir" is
 	the RTAI installation directory defined when configuring RTAI.
@@ -417,7 +417,7 @@ config RTAI_LATENCY_SELF_CALIBRATION_CYCLES
 	At the very first rtai_sched.ko insmoding, after delating the 
 	latencies file or after insmoding rtai_sched.ko with "recalibrate=1",
 	you should be prepared to wait for approximately twice the calibration
-	time required to ccary out the numebr of requested calibrated loop.
+	time required to carry out the number of requested calibrated loops.
 	Such a procedure should allow appropriate latency calibrations also
 	when cross development and embedding is needed.
 	Use a frequency that is close to your range of interest. Because of 

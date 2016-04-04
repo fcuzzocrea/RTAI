@@ -39,29 +39,25 @@ static inline RTIME rt_rdtsc(void)
 #endif
 }
 
-#ifdef __KERNEL__
-#define rt_rdtsc rtai_rd_tsc
-#endif
 #define DIAG_KF_LAT_EVAL 0
-#define MAX_LOOPS CONFIG_RTAI_LATENCY_SELF_CALIBRATION_TIME
-#define R  ((double)4.0)
-#define Q  (R/(MAX_LOOPS*MAX_LOOPS))
+#define MAX_LOOPS CONFIG_RTAI_LATENCY_SELF_CALIBRATION_CYCLES
+#define R  ((double)2.0)
+#define Q  (R/(3.3e3))
 #define P0 R
 static inline double kf_lat_eval(long period)
 {
 	int calok, loop;
-	double us, xe, pe, q, r; 
-	double xp, pp, pep, y, g;
+	double xe, pe, q, r; 
+	double xp, pp, ppe, y, g;
 	RTIME start_time, resume_time;
 
-	us = ((double)rt_get_cpu_freq()/1.0e9);
-	xe = us;
-	pe = P0*us*us; 
-	q  = Q*us*us;
-	r  = R*us*us;
+	xe = 0;
+	pe = P0*P0; 
+	q  = Q*Q;
+	r  = R*R;
 
 #if DIAG_KF_LAT_EVAL
-	rt_printk("INITIAL VALUES: xe %g, pe %g, q %g, r %g, us %g.\n",  xe, pe, q, r, us);
+	rt_printk("INITIAL VALUES: xe %g, pe %g, q %g, r %g.\n", xe, pe, q, r);
 #endif
 
 	start_time = rt_rdtsc();
@@ -78,17 +74,17 @@ static inline double kf_lat_eval(long period)
 		pp = pe + q;
 		g = pp/(pp + r);
 		xe = xp + g*(y - xp);
-		pep = pe;
+		ppe = pe;
 		pe = (1.0 - g)*pp;
 
 #if DIAG_KF_LAT_EVAL
-		rt_printk("loop %d, xp %g, xe %g, pp %g, pe %g, g %g, y  %g.\n", loop, xp, xe, pp, pe, g, y);
+		rt_printk("loop %d, xp %g, xe %g, y %g, pp %g, pe %g, g %g, r %g.\n", loop, xp, xe, y, pp, pe, g, r);
 #endif
 
-		if (fabs((xe - xp)/xe) < 1.0e-3 && fabs((pe - pep)/pe) < 1.0e-3) {
+		if (fabs((xe - xp)/xe) < 1.0e-3 && fabs((pe - ppe)/pe) < 1.0e-3) {
 			if (calok++ > 50) break;
 		} else {
-			calok = 0;
+			calok = 1;
 		}
 	}
 	return xe;

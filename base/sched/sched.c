@@ -2484,20 +2484,33 @@ static void timer_fun(unsigned long none)
 #include <linux/kmod.h>
 
 #define CAL_WITH_KTHREAD 0
-#define MAX_LOOPS CONFIG_RTAI_LATENCY_SELF_CALIBRATION_TIME
+#define MAX_LOOPS CONFIG_RTAI_LATENCY_SELF_CALIBRATION_CYCLES
 
 static int end_kernel_lat_cal;
 
-#if 0
-int kfgain = 986411;
-#define MAX_LOOPS CONFIG_RTAI_LATENCY_SELF_CALIBRATION_TIME
+#if 1
+#define DIAG_KF_LAT_EVAL 0
+#define SN 3300
+#define SG 1000000000
+#define R  (2*SN)
+#define Q  (R/SN)
+#define P0 R
+#define rtai_simuldiv(s, m, d) \
+	((s) > 0 ? rtai_imuldiv((s), (m), (d)) : -rtai_imuldiv(-(s), (m), (d)));
 static void kernel_lat_cal(long period)
 {
-#define WARMUP 50
-	int loop, calok, xp, xe, y;
+	int loop, calok;
+	int xp, xe, y, pe, pp, ppe, g, q, r;
 	RTIME start_time, resume_time;
 
+	q  = Q*Q;
+	r  = R*R;
 	xe = 0;
+	pe = P0*P0;
+
+#if DIAG_KF_LAT_EVAL
+	rt_printk("INITIAL VALUES: xe %d, pe %d, q %d, r %d.\n", xe, pe, q, r);
+#endif
 
 #if CAL_WITH_KTHREAD 
 	rt_thread_init(nam2num("KERCAL"), 0, 1, SCHED_FIFO, 0xF);
@@ -2511,16 +2524,23 @@ static void kernel_lat_cal(long period)
 		if (!rt_task_wait_period()) {
 			y = (long)(rtai_rdtsc() - resume_time);
 		} else {
-			continue;
+			y = period;
 		}
-		xp = xe;
-		xe = xe + rtai_imuldiv(y - xe, kfgain, 1000000000);
-		printk("loop %d, xe %d, y %d.\n", loop, xe, y);
+                xp = xe;
+                pp = pe + q;
+                g = rtai_imuldiv(pp, SG, pp + r);
+                xe = xp + rtai_simuldiv(y - xp, g, SG);
+		ppe = pe;
+                pe = rtai_simuldiv(SG - g, pp, SG);
 
-		if (abs(xe - xp) < abs(xe)/1000) {
-			if (calok++ > 50) { KernelLatency = xe; end_kernel_lat_cal = 1; return; } // break;
+#if DIAG_KF_LAT_EVAL
+		rt_printk("loop %d, xp %d, xe %d, y %d, pp %d, pe %d, g %d, r %d.\n", loop, xp, xe, y, pp, pe, g, r);
+#endif
+
+		if (abs(xe - xp) < abs(xe)/1000 && abs(pe - ppe) < abs(pe)/1000) {
+			if (calok++ > 25) break;
 		} else {
-			calok = 0;
+			calok = 1;
 		}
 	}
 
@@ -2581,7 +2601,7 @@ static void calibrate_latencies(void)
 	char arg2[NUM_ARGSIZE] = { 0, }, arg3[NUM_ARGSIZE] = { 0, };
 	char *envp[] = { env0, "TERM=linux", "PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin", NULL };
 	char *argv[] = { arg0, arg1, arg2, arg3, NULL };
-	int cpuid, period = nano2count(1000000000/CONFIG_RTAI_LATENCY_SELF_CALIBRATION_PERIOD);
+	int cpuid, period = nano2count(1000000000/CONFIG_RTAI_LATENCY_SELF_CALIBRATION_FREQ);
 
 	tuned.sched_latency = 0;
 	satdelay = oneshot_span;
@@ -2615,7 +2635,7 @@ static void calibrate_latencies(void)
 		while (!end_kernel_lat_cal) msleep(100);
 		kfree(task);
 #endif
-		printk("AFTER KERNEL CALIBRATION (WITH %s, ns): KernelLatency %d, UserLatency %d (CALIBRATION: PERIOD %d (ns), TIME %lld (ns)).\n", CAL_WITH_KTHREAD ? "KTHREAD" : "RTAI TASK", (int)count2nano(KernelLatency), UserLatency > 0 ? (int)count2nano(UserLatency) : UserLatency, CONFIG_RTAI_LATENCY_SELF_CALIBRATION_PERIOD, count2nano(rtai_rdtsc() - t));
+		printk("AFTER KERNEL CALIBRATION (WITH %s, ns): KernelLatency %d, UserLatency %d (CALIBRATION: PERIOD %d (ns), TIME %lld (ns)).\n", CAL_WITH_KTHREAD ? "KTHREAD" : "RTAI TASK", (int)count2nano(KernelLatency), UserLatency > 0 ? (int)count2nano(UserLatency) : UserLatency, CONFIG_RTAI_LATENCY_SELF_CALIBRATION_FREQ, count2nano(rtai_rdtsc() - t));
 	}
 
 	if (user_latency > 0) {
@@ -2625,7 +2645,7 @@ static void calibrate_latencies(void)
 		sprintf(arg2, "%d", period);
 		sprintf(arg3, "%d", KernelLatency);
 		printk("USERMODE USER SPACE CALIBRATION: %s.\n", !call_usermodehelper(argv[0], argv, envp, UMH_WAIT_PROC) ? "OK" : "ERROR");
-		printk("AFTER USER CALIBRATION (ns): KernelLatency %d, UserLatency %d (CALIBRATION: PERIOD %d (ns), TIME %lld (ns)).\n", (int)count2nano(KernelLatency), (int)count2nano(UserLatency), CONFIG_RTAI_LATENCY_SELF_CALIBRATION_PERIOD, count2nano(rtai_rdtsc() - t));
+		printk("AFTER USER CALIBRATION (ns): KernelLatency %d, UserLatency %d (CALIBRATION: PERIOD %d (ns), TIME %lld (ns)).\n", (int)count2nano(KernelLatency), (int)count2nano(UserLatency), CONFIG_RTAI_LATENCY_SELF_CALIBRATION_FREQ, count2nano(rtai_rdtsc() - t));
 	}
 
 	printk("FINAL CALIBRATION SUMMARY (ns): KernelLatency %d, UserLatency %d.\n", (int)count2nano(KernelLatency), (int)count2nano(UserLatency));

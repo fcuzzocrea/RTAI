@@ -2,6 +2,8 @@
 
 	* base/arch/x86/Kconfig, base/arch/x86/defconfig, configure.in: 
 	  redefined self-calibration macros and defaults.
+	* base/sched/sched.c: added kalman filter based kernel latency 
+	  calibration, as for user space but with integer arithmetics.
 
 2016-04-02 Paolo Mantegazza <mantegazza@aero.polimi.it>
 

@@ -40,6 +40,8 @@ static inline RTIME rt_rdtsc(void)
 }
 
 #define DIAG_KF_LAT_EVAL 0
+#define HINF 0
+#define THETA ((double)0.1)
 #define MAX_LOOPS CONFIG_RTAI_LATENCY_SELF_CALIBRATION_CYCLES
 #define R  ((double)2.0)
 #define Q  (R/(3.3e3))
@@ -70,12 +72,20 @@ static inline double kf_lat_eval(long period)
 		} else {
 			y = period;
 		}
+#if !HINF
 		xp = xe;
 		pp = pe + q;
 		g = pp/(pp + r);
 		xe = xp + g*(y - xp);
 		ppe = pe;
 		pe = (1.0 - g)*pp;
+#else
+		xp = xe;
+		g = pe/(pe*(1.0 - THETA*r) + r);
+		xe = xp + g*(y - xp);
+		ppe = pe;
+		pe = g*r + q;
+#endif
 
 #if DIAG_KF_LAT_EVAL
 		rt_printk("loop %d, xp %g, xe %g, y %g, pp %g, pe %g, g %g, r %g.\n", loop, xp, xe, y, pp, pe, g, r);

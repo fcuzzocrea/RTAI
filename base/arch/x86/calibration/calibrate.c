@@ -44,8 +44,9 @@ static inline RTIME rt_rdtsc(void)
 #define THETA ((double)0.1)
 #define MAX_LOOPS CONFIG_RTAI_LATENCY_SELF_CALIBRATION_CYCLES
 #define R  ((double)2.0)
-#define Q  (R/(3.3e3))
+#define Q  0.0
 #define P0 R
+#define ALPHA ((double)1.0001)
 static inline double kf_lat_eval(long period)
 {
 	int calok, loop;
@@ -73,18 +74,18 @@ static inline double kf_lat_eval(long period)
 			y = period;
 		}
 #if !HINF
-		xp = xe;
-		pp = pe + q;
-		g = pp/(pp + r);
-		xe = xp + g*(y - xp);
+		xp  = xe;
+		pp  = ALPHA*pe + q;
+		g   = pp/(pp + r);
+		xe  = xp + g*(y - xp);
 		ppe = pe;
-		pe = (1.0 - g)*pp;
+		pe  = (1.0 - g)*pp;
 #else
-		xp = xe;
-		g = pe/(pe*(1.0 - THETA*r) + r);
-		xe = xp + g*(y - xp);
+		xp  = xe;
+		g   = pe/(pe*(1.0 - THETA*r) + r);
+		xe  = xp + g*(y - xp);
 		ppe = pe;
-		pe = g*r + q;
+		pe  = g*r + q;
 #endif
 
 #if DIAG_KF_LAT_EVAL
@@ -97,6 +98,7 @@ static inline double kf_lat_eval(long period)
 			calok = 1;
 		}
 	}
+	rt_printk("USER SPACE LATENCY ENDED AT CYCLE: %d, LATENCY = %g, VARIANCE = %g, GAIN = %g.\n", loop - 1 , xe,  pe, g);
 	return xe;
 }
 

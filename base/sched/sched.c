@@ -2490,11 +2490,12 @@ static int end_kernel_lat_cal;
 
 #if 1
 #define DIAG_KF_LAT_EVAL 0
-#define SN 3300
+#define SV 3300
 #define SG 1000000000
-#define R  (2*SN)
-#define Q  (R/SN)
+#define R  (2*SV)
+#define Q  0
 #define P0 R
+#define ALPHA 1000100000
 #define rtai_simuldiv(s, m, d) \
 	((s) > 0 ? rtai_imuldiv((s), (m), (d)) : -rtai_imuldiv(-(s), (m), (d)));
 static void kernel_lat_cal(long period)
@@ -2527,7 +2528,7 @@ static void kernel_lat_cal(long period)
 			y = period;
 		}
                 xp = xe;
-                pp = pe + q;
+                pp = rtai_imuldiv(pe, ALPHA, SG) + q;   // pp = alpha*pe + q;
                 g = rtai_imuldiv(pp, SG, pp + r);
                 xe = xp + rtai_simuldiv(y - xp, g, SG);
 		ppe = pe;
@@ -2543,6 +2544,7 @@ static void kernel_lat_cal(long period)
 			calok = 1;
 		}
 	}
+	rt_printk("KERNEL SPACE LATENCY ENDED AT CYCLE: %d, LATENCY = %d, VARIANCE = %d/%d, GAIN = %d/%d.\n", loop - 1 , xe, pe, SV*SV, g, SG);
 
 	KernelLatency = xe;
 	end_kernel_lat_cal = 1;

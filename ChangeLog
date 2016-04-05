@@ -1,7 +1,10 @@
 2016-04-05 Paolo Mantegazza <mantegazza@aero.polimi.it>
 
-	* base/arch/x86/calibration/calibrate.c: added option for playing with
-	  Hinf filtering.
+	* base/arch/x86/calibration/calibrate.c: added a fading memory 
+	  option for the user space latency calibration and an option 
+	  for playing with an alternative Hinf filtering.
+	* base/sched/sched.c: added a fading memory option for the kernel
+	  space latency calibration.
 
 2016-04-04 Pierangelo Masarati <pierangelo.masarati@polimi.it>
 
@@ -61,7 +64,7 @@
 
 2016-03-23 Paolo Mantegazza <mantegazza@aero.polimi.it>
 
-	* base/sched/sched.c: hard timers started-stopped in the scheduler,
+	+* base/sched/sched.c: hard timers started-stopped in the scheduler,
 	  oneshot only, related user calls emptied.
 
 2016-03-12 Paolo Mantegazza <mantegazza@aero.polimi.it>

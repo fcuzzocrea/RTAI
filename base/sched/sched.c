@@ -2498,7 +2498,7 @@ static int end_kernel_lat_cal;
 #define ALPHA 1000100000
 #define rtai_simuldiv(s, m, d) \
 	((s) > 0 ? rtai_imuldiv((s), (m), (d)) : -rtai_imuldiv(-(s), (m), (d)));
-static void kernel_lat_cal(long period)
+static void kf_lat_eval(long period)
 {
 	int loop, calok;
 	int xp, xe, y, pe, pp, ppe, g, q, r;
@@ -2632,7 +2632,7 @@ static void calibrate_latencies(void)
 #else
 		RT_TASK *task;
 		task = kmalloc(sizeof(RT_TASK), GFP_KERNEL);
-		rt_task_init(task, kernel_lat_cal, period, 4096, 0, 1, 0);
+		rt_task_init(task, kf_lat_eval, period, 4096, 0, 1, 0);
 		rt_task_resume(task);
 		while (!end_kernel_lat_cal) msleep(100);
 		kfree(task);

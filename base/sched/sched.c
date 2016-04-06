@@ -2490,7 +2490,7 @@ static int end_kernel_lat_cal;
 
 #if 1
 #define DIAG_KF_LAT_EVAL 0
-#define SV 3300
+#define SV 3163
 #define SG 1000000000
 #define R  (2*SV)
 #define Q  0

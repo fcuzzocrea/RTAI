@@ -2527,12 +2527,12 @@ static void kernel_lat_cal(long period)
 		} else {
 			y = period;
 		}
-                xp = xe;
-                pp = rtai_imuldiv(pe, ALPHA, SG) + q;   // pp = alpha*pe + q;
-                g = rtai_imuldiv(pp, SG, pp + r);
-                xe = xp + rtai_simuldiv(y - xp, g, SG);
-		ppe = pe;
-                pe = rtai_simuldiv(SG - g, pp, SG);
+		xp  = xe;				 // xp = xe
+		pp  = rtai_imuldiv(pe, ALPHA, SG) + q;   // pp = ALPHA*pe + q
+		g   = rtai_imuldiv(pp, SG, pp + r);       // g = pp/(pp + r)
+		xe  = xp + rtai_simuldiv(y - xp, g, SG); // xe = xp + g*(y - xp)
+		ppe = pe;				// ppe = pe
+		pe  = rtai_simuldiv(SG - g, pp, SG);     // pe = (1.0 - g)*pp
 
 #if DIAG_KF_LAT_EVAL
 		rt_printk("loop %d, xp %d, xe %d, y %d, pp %d, pe %d, g %d, r %d.\n", loop, xp, xe, y, pp, pe, g, r);

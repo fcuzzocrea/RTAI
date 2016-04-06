@@ -14300,7 +14300,7 @@ index 5e973ef..fb3a19b 100644
  }
  
  static void ttwu_queue_remote(struct task_struct *p, int cpu)
-@@ -1592,7 +1596,8 @@ try_to_wake_up(struct task_struct *p, unsigned int state, int wake_flags)
+@@ -1592,7 +1596,8 @@ try_to_wake_up(struct task_struct *p, un
  	 */
  	smp_mb__before_spinlock();
  	raw_spin_lock_irqsave(&p->pi_lock, flags);
@@ -14310,7 +14310,7 @@ index 5e973ef..fb3a19b 100644
  		goto out;
  
  	success = 1; /* we're going to change ->state */
-@@ -2214,6 +2219,8 @@ asmlinkage void schedule_tail(struct task_struct *prev)
+@@ -2214,6 +2219,8 @@ asmlinkage void schedule_tail(struct tas
  {
  	struct rq *rq = this_rq();
  
@@ -14319,35 +14319,64 @@ index 5e973ef..fb3a19b 100644
  	finish_task_switch(rq, prev);
  
  	/*
-@@ -2234,7 +2241,7 @@ asmlinkage void schedule_tail(struct task_struct *prev)
+@@ -2234,16 +2241,21 @@ asmlinkage void schedule_tail(struct tas
   * context_switch - switch to the new MM and the new
   * thread's register state.
   */
 -static inline void
-+static inline int
++static int
  context_switch(struct rq *rq, struct task_struct *prev,
  	       struct task_struct *next)
  {
-@@ -2277,12 +2284,18 @@ context_switch(struct rq *rq, struct task_struct *prev,
+ 	struct mm_struct *mm, *oldmm;
+ 
+-	prepare_task_switch(rq, prev, next);
+-
+ 	mm = next->mm;
+ 	oldmm = prev->active_mm;
++
++if (!rq) {
++	__switch_mm(oldmm, next->active_mm, next);
++	if (!mm) enter_lazy_tlb(oldmm, next);
++} else {
++	prepare_task_switch(rq, prev, next);
++
+ 	/*
+ 	 * For paravirt, this is coupled with an exit in switch_to to
+ 	 * combine the page table reload and the switch backend into
+@@ -2271,12 +2283,20 @@ context_switch(struct rq *rq, struct tas
+ #ifndef __ARCH_WANT_UNLOCKED_CTXSW
+ 	spin_release(&rq->lock.dep_map, 1, _THIS_IP_);
+ #endif
++}
++#ifdef CONFIG_IPIPE
++//	next->ptd[IPIPE_ROOT_NPTDKEYS - 1] = prev;
++#endif /* CONFIG_IPIPE */
+ 
+ 	context_tracking_task_switch(prev, next);
+ 	/* Here we just switch the register state and the stack. */
  	switch_to(prev, next, prev);
  
  	barrier();
 +
++if (unlikely(rq)) {
 +	if (unlikely(__ipipe_switch_tail()))
 +		return 1;
-+
  	/*
  	 * this_rq must be evaluated again because prev may have moved
  	 * CPUs since it called schedule(), thus the 'rq' on its stack
- 	 * frame will be invalid.
+@@ -2284,6 +2304,10 @@ context_switch(struct rq *rq, struct tas
  	 */
  	finish_task_switch(this_rq(), prev);
-+
-+	return 0;
  }
++	return 0;
++}
++
++EXPORT_SYMBOL(context_switch);
  
  /*
-@@ -2499,6 +2512,7 @@ notrace unsigned long get_parent_ip(unsigned long addr)
+  * nr_running and nr_context_switches:
+@@ -2499,6 +2523,7 @@ notrace unsigned long get_parent_ip(unsi
  
  void __kprobes preempt_count_add(int val)
  {
@@ -14355,7 +14384,7 @@ index 5e973ef..fb3a19b 100644
  #ifdef CONFIG_DEBUG_PREEMPT
  	/*
  	 * Underflow?
-@@ -2521,6 +2535,7 @@ EXPORT_SYMBOL(preempt_count_add);
+@@ -2521,6 +2546,7 @@ EXPORT_SYMBOL(preempt_count_add);
  
  void __kprobes preempt_count_sub(int val)
  {
@@ -14363,7 +14392,7 @@ index 5e973ef..fb3a19b 100644
  #ifdef CONFIG_DEBUG_PREEMPT
  	/*
  	 * Underflow?
-@@ -2567,6 +2582,7 @@ static noinline void __schedule_bug(struct task_struct *prev)
+@@ -2567,6 +2593,7 @@ static noinline void __schedule_bug(stru
   */
  static inline void schedule_debug(struct task_struct *prev)
  {
@@ -14371,7 +14400,7 @@ index 5e973ef..fb3a19b 100644
  	/*
  	 * Test if we are atomic. Since do_exit() needs to call into
  	 * schedule() atomically, we ignore that path. Otherwise whine
-@@ -2653,7 +2669,7 @@ pick_next_task(struct rq *rq)
+@@ -2653,7 +2680,7 @@ pick_next_task(struct rq *rq)
   *          - return from syscall or exception to user-space
   *          - return from interrupt-handler to user-space
   */
@@ -14380,7 +14409,7 @@ index 5e973ef..fb3a19b 100644
  {
  	struct task_struct *prev, *next;
  	unsigned long *switch_count;
-@@ -2667,6 +2683,10 @@ need_resched:
+@@ -2667,6 +2694,10 @@ need_resched:
  	rcu_note_context_switch(cpu);
  	prev = rq->curr;
  
@@ -14391,7 +14420,7 @@ index 5e973ef..fb3a19b 100644
  	schedule_debug(prev);
  
  	if (sched_feat(HRTICK))
-@@ -2720,7 +2740,8 @@ need_resched:
+@@ -2720,7 +2751,8 @@ need_resched:
  		rq->curr = next;
  		++*switch_count;
  
@@ -14401,7 +14430,7 @@ index 5e973ef..fb3a19b 100644
  		/*
  		 * The context switch have flipped the stack from under us
  		 * and restored the local variables which were saved when
-@@ -2729,14 +2750,18 @@ need_resched:
+@@ -2729,14 +2761,18 @@ need_resched:
  		 */
  		cpu = smp_processor_id();
  		rq = cpu_rq(cpu);
@@ -14421,7 +14450,7 @@ index 5e973ef..fb3a19b 100644
  }
  
  static inline void sched_submit_work(struct task_struct *tsk)
-@@ -2799,12 +2824,13 @@ asmlinkage void __sched notrace preempt_schedule(void)
+@@ -2799,12 +2835,13 @@ asmlinkage void __sched notrace preempt_
  	 * If there is a non-zero preempt_count or interrupts are disabled,
  	 * we do not want to preempt the current task. Just return..
  	 */
@@ -14437,7 +14466,7 @@ index 5e973ef..fb3a19b 100644
  		__preempt_count_sub(PREEMPT_ACTIVE);
  
  		/*
-@@ -3493,6 +3519,7 @@ change:
+@@ -3493,6 +3530,7 @@ change:
  	oldprio = p->prio;
  	prev_class = p->sched_class;
  	__setscheduler(rq, p, attr);
@@ -14445,7 +14474,15 @@ index 5e973ef..fb3a19b 100644
  
  	if (running)
  		p->sched_class->set_curr_task(rq);
-@@ -4587,10 +4614,13 @@ int set_cpus_allowed_ptr(struct task_struct *p, const struct cpumask *new_mask)
+@@ -4567,6 +4605,7 @@ void do_set_cpus_allowed(struct task_str
+  * task must not exit() & deallocate itself prematurely. The
+  * call is not atomic; no spinlocks may be held.
+  */
++
+ int set_cpus_allowed_ptr(struct task_struct *p, const struct cpumask *new_mask)
+ {
+ 	unsigned long flags;
+@@ -4587,10 +4626,13 @@ int set_cpus_allowed_ptr(struct task_str
  	do_set_cpus_allowed(p, new_mask);
  
  	/* Can the task run on the task's current CPU? If so, we're done */
@@ -14460,7 +14497,15 @@ index 5e973ef..fb3a19b 100644
  	if (p->on_rq) {
  		struct migration_arg arg = { p, dest_cpu };
  		/* Need help from migration thread: drop lock and wait. */
-@@ -8028,3 +8058,42 @@ void dump_cpu_task(int cpu)
+@@ -5585,6 +5627,7 @@ cpu_attach_domain(struct sched_domain *s
+ 
+ /* cpus with isolated domains */
+ static cpumask_var_t cpu_isolated_map;
++EXPORT_SYMBOL_GPL(cpu_isolated_map);
+ 
+ /* Setup the mask of cpus configured for isolated domains */
+ static int __init isolated_cpu_setup(char *str)
+@@ -8028,3 +8071,42 @@ void dump_cpu_task(int cpu)
  	pr_info("Task dump for CPU %d:\n", cpu);
  	sched_show_task(cpu_curr(cpu));
  }

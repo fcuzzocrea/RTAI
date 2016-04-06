@@ -198,18 +198,10 @@ index 61fd18b..43d7fe7 100644
  static inline void debug_stack_usage_inc(void)
  {
 diff --git a/arch/x86/include/asm/desc.h b/arch/x86/include/asm/desc.h
-index a94b82e..e185603 100644
+index a94b82e..39fa15d 100644
 --- a/arch/x86/include/asm/desc.h
 +++ b/arch/x86/include/asm/desc.h
-@@ -4,6 +4,7 @@
- #include <asm/desc_defs.h>
- #include <asm/ldt.h>
- #include <asm/mmu.h>
-+#include <asm/hw_irq.h>
- 
- #include <linux/smp.h>
- #include <linux/percpu.h>
-@@ -361,11 +362,16 @@ static inline void _set_gate(int gate, u
+@@ -376,11 +376,16 @@ static inline void _set_gate(int gate, unsigned type, void *addr,
   * Pentium F0 0F bugfix can have resulted in the mapped
   * IDT being write-protected.
   */
@@ -227,7 +219,14 @@ index a94b82e..e185603 100644
  		_trace_set_gate(n, GATE_INTERRUPT, (void *)trace_##addr,\
  				0, 0, __KERNEL_CS);			\
  	} while (0)
-@@ -377,6 +383,13 @@ extern unsigned long used_vectors[];
+@@ -389,9 +394,20 @@ extern int first_system_vector;
+ /* used_vectors is BITMAP for irq is not managed by percpu vector_irq */
+ extern unsigned long used_vectors[];
+ 
++#ifdef CONFIG_IPIPE
++extern int vector_irq[NR_VECTORS];
++#endif
++
  static inline void alloc_system_vector(int vector)
  {
  	if (!test_bit(vector, used_vectors)) {
@@ -241,7 +240,7 @@ index a94b82e..e185603 100644
  		set_bit(vector, used_vectors);
  		if (first_system_vector > vector)
  			first_system_vector = vector;
-@@ -385,6 +398,12 @@ static inline void alloc_system_vector(i
+@@ -400,6 +416,12 @@ static inline void alloc_system_vector(int vector)
  	}
  }
  
@@ -254,7 +253,7 @@ index a94b82e..e185603 100644
  #define alloc_intr_gate(n, addr)				\
  	do {							\
  		alloc_system_vector(n);				\
-@@ -430,7 +449,7 @@ static inline void set_system_intr_gate_
+@@ -445,7 +467,7 @@ static inline void set_system_intr_gate_ist(int n, void *addr, unsigned ist)
  	_set_gate(n, GATE_INTERRUPT, addr, 0x3, ist, __KERNEL_CS);
  }
  
@@ -374,6 +373,18 @@ index 4615906..fcb4fb6 100644
  #endif
  
  extern void (*__initconst interrupt[NR_VECTORS-FIRST_EXTERNAL_VECTOR])(void);
+diff --git a/arch/x86/include/asm/i387.h b/arch/x86/include/asm/i387.h
+index ed8089d..fcc288e 100644
+--- a/arch/x86/include/asm/i387.h
++++ b/arch/x86/include/asm/i387.h
+@@ -21,6 +21,7 @@ struct user_i387_struct;
+ extern int init_fpu(struct task_struct *child);
+ extern void fpu_finit(struct fpu *fpu);
+ extern int dump_fpu(struct pt_regs *, struct user_i387_struct *);
++extern void __math_state_restore(struct task_struct *tsk);
+ extern void math_state_restore(void);
+ 
+ extern bool irq_fpu_usable(void);
 diff --git a/arch/x86/include/asm/i8259.h b/arch/x86/include/asm/i8259.h
 index ccffa53..f02e9f6 100644
 --- a/arch/x86/include/asm/i8259.h
@@ -438,7 +449,7 @@ index 615fa90..e0a62ab 100644
  extern void default_send_IPI_mask_sequence_phys(const struct cpumask *mask,
 diff --git a/arch/x86/include/asm/ipipe.h b/arch/x86/include/asm/ipipe.h
 new file mode 100644
-index 0000000..68af8b7
+index 0000000..ccc8945
 --- /dev/null
 +++ b/arch/x86/include/asm/ipipe.h
 @@ -0,0 +1,118 @@
@@ -468,7 +479,7 @@ index 0000000..68af8b7
 +
 +#ifdef CONFIG_IPIPE
 +
-+#define IPIPE_CORE_RELEASE	3
++#define IPIPE_CORE_RELEASE	6
 +
 +struct ipipe_domain;
 +struct pt_regs;
@@ -1264,7 +1275,7 @@ diff --git a/arch/x86/include/asm/mmu_context.h b/arch/x86/include/asm/mmu_conte
 index 166af2a..b9caf91 100644
 --- a/arch/x86/include/asm/mmu_context.h
 +++ b/arch/x86/include/asm/mmu_context.h
-@@ -78,11 +78,14 @@ static inline void enter_lazy_tlb(struct
+@@ -34,11 +34,14 @@ static inline void enter_lazy_tlb(struct mm_struct *mm, struct task_struct *tsk)
  #endif
  }
  
@@ -1281,7 +1292,7 @@ index 166af2a..b9caf91 100644
  	if (likely(prev != next)) {
  #ifdef CONFIG_SMP
  		this_cpu_write(cpu_tlbstate.state, TLBSTATE_OK);
-@@ -127,10 +130,22 @@ static inline void switch_mm(struct mm_s
+@@ -83,10 +86,22 @@ static inline void switch_mm(struct mm_struct *prev, struct mm_struct *next,
  #endif
  }
  
@@ -1703,7 +1714,7 @@ index de918c4..21d6c77 100644
  
  static void flat_send_IPI_mask(const struct cpumask *cpumask, int vector)
 diff --git a/arch/x86/kernel/apic/io_apic.c b/arch/x86/kernel/apic/io_apic.c
-index 1183d54..595a4f3 100644
+index 1183d54..a513d60 100644
 --- a/arch/x86/kernel/apic/io_apic.c
 +++ b/arch/x86/kernel/apic/io_apic.c
 @@ -82,8 +82,8 @@
@@ -1767,7 +1778,7 @@ index 1183d54..595a4f3 100644
  }
  
  /*
-@@ -621,18 +628,28 @@ void native_eoi_ioapic_pin(int apic, int pin, int vector)
+@@ -621,15 +628,21 @@ void native_eoi_ioapic_pin(int apic, int pin, int vector)
  	}
  }
  
@@ -1783,8 +1794,6 @@ index 1183d54..595a4f3 100644
  					       cfg->vector);
 +}
 +
-+#if !defined(CONFIG_IPIPE) || defined(CONFIG_SMP)
-+
 +void eoi_ioapic_irq(unsigned int irq, struct irq_cfg *cfg)
 +{
 +	unsigned long flags;
@@ -1794,12 +1803,7 @@ index 1183d54..595a4f3 100644
  	raw_spin_unlock_irqrestore(&ioapic_lock, flags);
  }
  
-+#endif /* !CONFIG_IPIPE || CONFIG_SMP */
-+
- static void clear_IO_APIC_pin(unsigned int apic, unsigned int pin)
- {
- 	struct IO_APIC_route_entry entry;
-@@ -1395,8 +1412,19 @@ void __setup_vector_irq(int cpu)
+@@ -1395,8 +1408,19 @@ void __setup_vector_irq(int cpu)
  		vector = cfg->vector;
  		per_cpu(vector_irq, cpu)[vector] = irq;
  	}
@@ -1819,7 +1823,7 @@ index 1183d54..595a4f3 100644
  		irq = per_cpu(vector_irq, cpu)[vector];
  		if (irq <= VECTOR_UNDEFINED)
  			continue;
-@@ -1480,6 +1508,19 @@ int native_setup_ioapic_entry(int irq, struct IO_APIC_route_entry *entry,
+@@ -1480,6 +1504,19 @@ int native_setup_ioapic_entry(int irq, struct IO_APIC_route_entry *entry,
  	return 0;
  }
  
@@ -1839,7 +1843,7 @@ index 1183d54..595a4f3 100644
  static void setup_ioapic_irq(unsigned int irq, struct irq_cfg *cfg,
  				struct io_apic_irq_attr *attr)
  {
-@@ -1517,7 +1558,7 @@ static void setup_ioapic_irq(unsigned int irq, struct irq_cfg *cfg,
+@@ -1517,7 +1554,7 @@ static void setup_ioapic_irq(unsigned int irq, struct irq_cfg *cfg,
  
  	ioapic_register_intr(irq, cfg, attr->trigger);
  	if (irq < nr_legacy_irqs())
@@ -1848,7 +1852,7 @@ index 1183d54..595a4f3 100644
  
  	ioapic_write_entry(attr->ioapic, attr->ioapic_pin, entry);
  }
-@@ -2240,11 +2281,12 @@ static unsigned int startup_ioapic_irq(struct irq_data *data)
+@@ -2240,11 +2277,12 @@ static unsigned int startup_ioapic_irq(struct irq_data *data)
  
  	raw_spin_lock_irqsave(&ioapic_lock, flags);
  	if (irq < nr_legacy_irqs()) {
@@ -1862,7 +1866,7 @@ index 1183d54..595a4f3 100644
  	raw_spin_unlock_irqrestore(&ioapic_lock, flags);
  
  	return was_pending;
-@@ -2299,7 +2341,8 @@ asmlinkage __visible void smp_irq_move_cleanup_interrupt(void)
+@@ -2299,7 +2337,8 @@ asmlinkage __visible void smp_irq_move_cleanup_interrupt(void)
  	exit_idle();
  
  	me = smp_processor_id();
@@ -1872,7 +1876,7 @@ index 1183d54..595a4f3 100644
  		int irq;
  		unsigned int irr;
  		struct irq_desc *desc;
-@@ -2460,14 +2503,16 @@ int native_ioapic_set_affinity(struct irq_data *data,
+@@ -2460,14 +2499,16 @@ int native_ioapic_set_affinity(struct irq_data *data,
  
  static void ack_apic_edge(struct irq_data *data)
  {
@@ -1891,7 +1895,7 @@ index 1183d54..595a4f3 100644
  static bool io_apic_level_ack_pending(struct irq_cfg *cfg)
  {
  	struct irq_pin_list *entry;
-@@ -2495,7 +2540,7 @@ static inline bool ioapic_irqd_mask(struct irq_data *data, struct irq_cfg *cfg)
+@@ -2495,7 +2536,7 @@ static inline bool ioapic_irqd_mask(struct irq_data *data, struct irq_cfg *cfg)
  {
  	/* If we are moving the irq we need to mask it */
  	if (unlikely(irqd_is_setaffinity_pending(data))) {
@@ -1900,7 +1904,7 @@ index 1183d54..595a4f3 100644
  		return true;
  	}
  	return false;
-@@ -2533,7 +2578,7 @@ static inline void ioapic_irqd_unmask(struct irq_data *data,
+@@ -2533,7 +2574,7 @@ static inline void ioapic_irqd_unmask(struct irq_data *data,
  		 */
  		if (!io_apic_level_ack_pending(cfg))
  			irq_move_masked_irq(data);
@@ -1909,7 +1913,7 @@ index 1183d54..595a4f3 100644
  	}
  }
  #else
-@@ -2547,12 +2592,46 @@ static inline void ioapic_irqd_unmask(struct irq_data *data,
+@@ -2547,12 +2588,46 @@ static inline void ioapic_irqd_unmask(struct irq_data *data,
  }
  #endif
  
@@ -1957,7 +1961,7 @@ index 1183d54..595a4f3 100644
  
  	irq_complete_move(cfg);
  	masked = ioapic_irqd_mask(data, cfg);
-@@ -2612,8 +2691,50 @@ static void ack_apic_level(struct irq_data *data)
+@@ -2612,8 +2687,50 @@ static void ack_apic_level(struct irq_data *data)
  	}
  
  	ioapic_irqd_unmask(data, cfg, masked);
@@ -1991,8 +1995,8 @@ index 1183d54..595a4f3 100644
 +	__mask_ioapic(cfg);
 +	raw_spin_unlock(&ioapic_lock);
 +	ack_apic_level(data);
-+}
-+
+ }
+ 
 +static void release_ioapic_irq(struct irq_data *data)
 +{
 +	struct irq_cfg *cfg = data->chip_data;
@@ -2001,14 +2005,14 @@ index 1183d54..595a4f3 100644
 +	raw_spin_lock_irqsave(&ioapic_lock, flags);
 +	__unmask_ioapic(cfg);
 +	raw_spin_unlock_irqrestore(&ioapic_lock, flags);
- }
- 
++}
++
 +#endif	/* CONFIG_IPIPE */
 +
  static struct irq_chip ioapic_chip __read_mostly = {
  	.name			= "IO-APIC",
  	.irq_startup		= startup_ioapic_irq,
-@@ -2623,6 +2744,13 @@ static struct irq_chip ioapic_chip __read_mostly = {
+@@ -2623,6 +2740,13 @@ static struct irq_chip ioapic_chip __read_mostly = {
  	.irq_eoi		= ack_apic_level,
  	.irq_set_affinity	= native_ioapic_set_affinity,
  	.irq_retrigger		= ioapic_retrigger_irq,
@@ -2022,7 +2026,7 @@ index 1183d54..595a4f3 100644
  	.flags			= IRQCHIP_SKIP_SET_WAKE,
  };
  
-@@ -2654,23 +2782,29 @@ static inline void init_IO_APIC_traps(void)
+@@ -2654,23 +2778,29 @@ static inline void init_IO_APIC_traps(void)
  
  static void mask_lapic_irq(struct irq_data *data)
  {
@@ -2055,7 +2059,7 @@ index 1183d54..595a4f3 100644
  }
  
  static struct irq_chip lapic_chip __read_mostly = {
-@@ -2678,6 +2812,9 @@ static struct irq_chip lapic_chip __read_mostly = {
+@@ -2678,6 +2808,9 @@ static struct irq_chip lapic_chip __read_mostly = {
  	.irq_mask	= mask_lapic_irq,
  	.irq_unmask	= unmask_lapic_irq,
  	.irq_ack	= ack_lapic_irq,
@@ -2065,7 +2069,7 @@ index 1183d54..595a4f3 100644
  };
  
  static void lapic_register_intr(int irq)
-@@ -2776,7 +2913,7 @@ static inline void __init check_timer(void)
+@@ -2776,7 +2909,7 @@ static inline void __init check_timer(void)
  	/*
  	 * get/set the timer IRQ vector:
  	 */
@@ -2074,7 +2078,7 @@ index 1183d54..595a4f3 100644
  	assign_irq_vector(0, cfg, apic->target_cpus());
  
  	/*
-@@ -2833,7 +2970,7 @@ static inline void __init check_timer(void)
+@@ -2833,7 +2966,7 @@ static inline void __init check_timer(void)
  			int idx;
  			idx = find_irq_entry(apic1, pin1, mp_INT);
  			if (idx != -1 && irq_trigger(idx))
@@ -2083,7 +2087,7 @@ index 1183d54..595a4f3 100644
  		}
  		if (timer_irq_works()) {
  			if (disable_timer_pin_1 > 0)
-@@ -2865,7 +3002,7 @@ static inline void __init check_timer(void)
+@@ -2865,7 +2998,7 @@ static inline void __init check_timer(void)
  		 * Cleanup, just in case ...
  		 */
  		local_irq_disable();
@@ -2092,7 +2096,7 @@ index 1183d54..595a4f3 100644
  		clear_IO_APIC_pin(apic2, pin2);
  		apic_printk(APIC_QUIET, KERN_INFO "....... failed.\n");
  	}
-@@ -2874,6 +3011,10 @@ static inline void __init check_timer(void)
+@@ -2874,6 +3007,10 @@ static inline void __init check_timer(void)
  		    "...trying to set up timer as Virtual Wire IRQ...\n");
  
  	lapic_register_intr(0);
@@ -2103,7 +2107,7 @@ index 1183d54..595a4f3 100644
  	apic_write(APIC_LVT0, APIC_DM_FIXED | cfg->vector);	/* Fixed mode */
  	legacy_pic->unmask(0);
  
-@@ -2882,7 +3023,7 @@ static inline void __init check_timer(void)
+@@ -2882,7 +3019,7 @@ static inline void __init check_timer(void)
  		goto out;
  	}
  	local_irq_disable();
@@ -2112,7 +2116,7 @@ index 1183d54..595a4f3 100644
  	apic_write(APIC_LVT0, APIC_LVT_MASKED | APIC_DM_FIXED | cfg->vector);
  	apic_printk(APIC_QUIET, KERN_INFO "..... failed.\n");
  
-@@ -3174,6 +3315,9 @@ static struct irq_chip msi_chip = {
+@@ -3174,6 +3311,9 @@ static struct irq_chip msi_chip = {
  	.irq_ack		= ack_apic_edge,
  	.irq_set_affinity	= msi_set_affinity,
  	.irq_retrigger		= ioapic_retrigger_irq,
@@ -2122,7 +2126,7 @@ index 1183d54..595a4f3 100644
  	.flags			= IRQCHIP_SKIP_SET_WAKE,
  };
  
-@@ -3273,6 +3417,9 @@ static struct irq_chip dmar_msi_type = {
+@@ -3273,6 +3413,9 @@ static struct irq_chip dmar_msi_type = {
  	.irq_ack		= ack_apic_edge,
  	.irq_set_affinity	= dmar_msi_set_affinity,
  	.irq_retrigger		= ioapic_retrigger_irq,
@@ -2132,7 +2136,7 @@ index 1183d54..595a4f3 100644
  	.flags			= IRQCHIP_SKIP_SET_WAKE,
  };
  
-@@ -3324,6 +3471,9 @@ static struct irq_chip hpet_msi_type = {
+@@ -3324,6 +3467,9 @@ static struct irq_chip hpet_msi_type = {
  	.irq_ack = ack_apic_edge,
  	.irq_set_affinity = hpet_msi_set_affinity,
  	.irq_retrigger = ioapic_retrigger_irq,
@@ -2142,7 +2146,7 @@ index 1183d54..595a4f3 100644
  	.flags = IRQCHIP_SKIP_SET_WAKE,
  };
  
-@@ -3388,6 +3538,9 @@ static struct irq_chip ht_irq_chip = {
+@@ -3388,6 +3534,9 @@ static struct irq_chip ht_irq_chip = {
  	.irq_ack		= ack_apic_edge,
  	.irq_set_affinity	= ht_set_affinity,
  	.irq_retrigger		= ioapic_retrigger_irq,
@@ -2152,7 +2156,7 @@ index 1183d54..595a4f3 100644
  	.flags			= IRQCHIP_SKIP_SET_WAKE,
  };
  
-@@ -3631,6 +3784,18 @@ int acpi_get_override_irq(u32 gsi, int *trigger, int *polarity)
+@@ -3631,6 +3780,18 @@ int acpi_get_override_irq(u32 gsi, int *trigger, int *polarity)
  	return 0;
  }
  
@@ -3298,7 +3302,7 @@ index 319bcb9..49cc3ff 100644
  
  	printk(KERN_INFO "HPET: %d timers in total, %d timers will be used for per-cpu timer\n",
 diff --git a/arch/x86/kernel/i387.c b/arch/x86/kernel/i387.c
-index 8d6e954..6cdfefe 100644
+index 8d6e954..e06eb01 100644
 --- a/arch/x86/kernel/i387.c
 +++ b/arch/x86/kernel/i387.c
 @@ -73,7 +73,9 @@ EXPORT_SYMBOL(irq_fpu_usable);
@@ -3311,13 +3315,34 @@ index 8d6e954..6cdfefe 100644
  	if (__thread_has_fpu(me)) {
  		__thread_clear_has_fpu(me);
  		__save_init_fpu(me);
-@@ -82,6 +84,7 @@ void __kernel_fpu_begin(void)
+@@ -82,11 +84,15 @@ void __kernel_fpu_begin(void)
  		this_cpu_write(fpu_owner_task, NULL);
  		clts();
  	}
 +	hard_cond_local_irq_restore(flags);
  }
  EXPORT_SYMBOL(__kernel_fpu_begin);
+ 
+ void __kernel_fpu_end(void)
+ {
++	unsigned long flags;
++
++	flags = hard_cond_local_irq_save();
+ 	if (use_eager_fpu()) {
+ 		/*
+ 		 * For eager fpu, most the time, tsk_used_math() is true.
+@@ -96,10 +102,11 @@ void __kernel_fpu_end(void)
+ 		 * actions, so we don't need to restore the math here.
+ 		 */
+ 		if (likely(tsk_used_math(current)))
+-			math_state_restore();
++			__math_state_restore(current);
+ 	} else {
+ 		stts();
+ 	}
++	hard_cond_local_irq_restore(flags);
+ }
+ EXPORT_SYMBOL(__kernel_fpu_end);
  
 diff --git a/arch/x86/kernel/i8253.c b/arch/x86/kernel/i8253.c
 index f2b96de..51e9d08 100644
@@ -4267,7 +4292,7 @@ index 668d8f2..913c3c7 100644
  	while (!cpu_online(cpu)) {
  		cpu_relax();
 diff --git a/arch/x86/kernel/traps.c b/arch/x86/kernel/traps.c
-index 07ab8e9..617f07c 100644
+index 07ab8e9..6e9aa67 100644
 --- a/arch/x86/kernel/traps.c
 +++ b/arch/x86/kernel/traps.c
 @@ -221,9 +221,9 @@ static void do_error_trap(struct pt_regs *regs, long error_code, char *str,
@@ -4416,7 +4441,31 @@ index 07ab8e9..617f07c 100644
  asmlinkage __visible void __attribute__((weak)) smp_thermal_interrupt(void)
  {
  }
-@@ -689,6 +728,7 @@ asmlinkage __visible void __attribute__((weak)) smp_threshold_interrupt(void)
+@@ -676,6 +715,23 @@ asmlinkage __visible void __attribute__((weak)) smp_threshold_interrupt(void)
+ {
+ }
+ 
++void __math_state_restore(struct task_struct *tsk)
++{
++	__thread_fpu_begin(tsk);
++
++	/*
++	 * Paranoid restore. send a SIGSEGV if we fail to restore the state.
++	 */
++	if (unlikely(restore_fpu_checking(tsk))) {
++		drop_init_fpu(tsk);
++		hard_cond_local_irq_enable();
++		force_sig_info(SIGSEGV, SEND_SIG_PRIV, tsk);
++		return;
++	}
++
++	tsk->thread.fpu_counter++;
++}
++
+ /*
+  * 'math_state_restore()' saves the current math information in the
+  * old math state array, and gets the new ones from the current task
+@@ -689,6 +745,7 @@ asmlinkage __visible void __attribute__((weak)) smp_threshold_interrupt(void)
  void math_state_restore(void)
  {
  	struct task_struct *tsk = current;
@@ -4424,24 +4473,24 @@ index 07ab8e9..617f07c 100644
  
  	if (!tsk_used_math(tsk)) {
  		local_irq_enable();
-@@ -705,6 +745,7 @@ void math_state_restore(void)
+@@ -705,23 +762,14 @@ void math_state_restore(void)
  		local_irq_disable();
  	}
  
+-	__thread_fpu_begin(tsk);
+-
+-	/*
+-	 * Paranoid restore. send a SIGSEGV if we fail to restore the state.
+-	 */
+-	if (unlikely(restore_fpu_checking(tsk))) {
+-		drop_init_fpu(tsk);
+-		force_sig_info(SIGSEGV, SEND_SIG_PRIV, tsk);
+-		return;
+-	}
+-
+-	tsk->thread.fpu_counter++;
 +	flags = hard_cond_local_irq_save();
- 	__thread_fpu_begin(tsk);
- 
- 	/*
-@@ -712,16 +753,18 @@ void math_state_restore(void)
- 	 */
- 	if (unlikely(restore_fpu_checking(tsk))) {
- 		drop_init_fpu(tsk);
-+		hard_cond_local_irq_enable();
- 		force_sig_info(SIGSEGV, SEND_SIG_PRIV, tsk);
- 		return;
- 	}
- 
- 	tsk->thread.fpu_counter++;
++	__math_state_restore(tsk);
 +	hard_cond_local_irq_restore(flags);
  }
  EXPORT_SYMBOL_GPL(math_state_restore);
@@ -4453,7 +4502,7 @@ index 07ab8e9..617f07c 100644
  {
  	enum ctx_state prev_state;
  
-@@ -746,10 +789,16 @@ do_device_not_available(struct pt_regs *regs, long error_code)
+@@ -746,10 +794,16 @@ do_device_not_available(struct pt_regs *regs, long error_code)
  #endif
  	exception_exit(prev_state);
  }
@@ -4471,7 +4520,7 @@ index 07ab8e9..617f07c 100644
  {
  	siginfo_t info;
  	enum ctx_state prev_state;
-@@ -768,14 +817,24 @@ dotraplinkage void do_iret_error(struct pt_regs *regs, long error_code)
+@@ -768,14 +822,24 @@ dotraplinkage void do_iret_error(struct pt_regs *regs, long error_code)
  	}
  	exception_exit(prev_state);
  }
@@ -5360,8 +5409,27 @@ index c5029c1..2d68014 100644
  	select CPU_IDLE_GOV_LADDER if (!NO_HZ && !NO_HZ_IDLE)
  	select CPU_IDLE_GOV_MENU if (NO_HZ || NO_HZ_IDLE)
  	help
+diff --git a/drivers/iommu/irq_remapping.c b/drivers/iommu/irq_remapping.c
+index 74a1767..7cf4766 100644
+--- a/drivers/iommu/irq_remapping.c
++++ b/drivers/iommu/irq_remapping.c
+@@ -366,12 +366,12 @@ void panic_if_irq_remap(const char *msg)
+ 
+ static void ir_ack_apic_edge(struct irq_data *data)
+ {
+-	ack_APIC_irq();
++	__ack_APIC_irq();
+ }
+ 
+ static void ir_ack_apic_level(struct irq_data *data)
+ {
+-	ack_APIC_irq();
++	__ack_APIC_irq();
+ 	eoi_ioapic_irq(data->irq, data->chip_data);
+ }
+ 
 diff --git a/drivers/tty/serial/8250/8250_core.c b/drivers/tty/serial/8250/8250_core.c
-index e5c31ea..8dce875 100644
+index e5c31ea..8dce8751 100644
 --- a/drivers/tty/serial/8250/8250_core.c
 +++ b/drivers/tty/serial/8250/8250_core.c
 @@ -3480,6 +3480,84 @@ static int serial8250_resume(struct platform_device *dev)
@@ -8586,7 +8654,7 @@ index 321d0ce..fa9d93e 100644
  	early_boot_irqs_disabled = true;
  
  /*
-@@ -558,6 +558,7 @@ asmlinkage __visible void __init start_k
+@@ -558,6 +558,7 @@ asmlinkage __visible void __init start_kernel(void)
  	pidhash_init();
  	vfs_caches_init_early();
  	sort_main_extable();
@@ -8594,7 +8662,7 @@ index 321d0ce..fa9d93e 100644
  	trap_init();
  	mm_init();
  
-@@ -589,6 +590,11 @@ asmlinkage __visible void __init start_k
+@@ -589,6 +590,11 @@ asmlinkage __visible void __init start_kernel(void)
  	softirq_init();
  	timekeeping_init();
  	time_init();
@@ -8606,7 +8674,7 @@ index 321d0ce..fa9d93e 100644
  	sched_clock_postinit();
  	perf_event_init();
  	profile_init();
-@@ -879,6 +885,7 @@ static void __init do_basic_setup(void)
+@@ -878,6 +884,7 @@ static void __init do_basic_setup(void)
  	shmem_init();
  	driver_init();
  	init_irq_proc();
@@ -8837,7 +8905,7 @@ index 0000000..218f51da
 +config IPIPE_LEGACY
 +	bool "I-pipe legacy interface"
 +	depends on IPIPE
-+       default n
++	default n
 +	---help---
 +	  Activate this option if you want to control the interrupt
 +	  pipeline via the legacy interface.
@@ -9284,10 +9352,10 @@ index 0000000..797a849
 +}
 diff --git a/kernel/ipipe/core.c b/kernel/ipipe/core.c
 new file mode 100644
-index 0000000..0320453
+index 0000000..d7c8934
 --- /dev/null
 +++ b/kernel/ipipe/core.c
-@@ -0,0 +1,1933 @@
+@@ -0,0 +1,1932 @@
 +/* -*- linux-c -*-
 + * linux/kernel/ipipe/core.c
 + *
@@ -11042,11 +11110,10 @@ index 0000000..0320453
 +	 * currently stalled, in which case preemption would be
 +	 * disabled, and no migration could occur.
 +	 */
-+	if (this_domain == ipipe_root_domain) {
-+		p = raw_cpu_ptr(&ipipe_percpu.root);
-+		if (test_bit(IPIPE_STALL_FLAG, &p->status) || preempt_count())
-+			goto out;
-+	}
++
++	p = raw_cpu_ptr(&ipipe_percpu.root);
++	if (!preemptible())
++		goto out;
 +	/*
 +	 * Our caller may end up accessing the wrong per-cpu variable
 +	 * instance due to CPU migration; tell it to complain about
@@ -11223,10 +11290,10 @@ index 0000000..0320453
 +#endif
 diff --git a/kernel/ipipe/timer.c b/kernel/ipipe/timer.c
 new file mode 100644
-index 0000000..354bf29
+index 0000000..143f9e6
 --- /dev/null
 +++ b/kernel/ipipe/timer.c
-@@ -0,0 +1,500 @@
+@@ -0,0 +1,501 @@
 +/* -*- linux-c -*-
 + * linux/kernel/ipipe/timer.c
 + *
@@ -11594,6 +11661,7 @@ index 0000000..354bf29
 +		timer->real_set_next_event = evtdev->set_next_event;
 +		evtdev->mult = 1;
 +		evtdev->shift = 0;
++		evtdev->max_delta_ns = UINT_MAX;
 +		evtdev->set_mode = emumode;
 +		evtdev->set_next_event = emutick;
 +		evtdev->ipipe_stolen = 1;
@@ -11722,11 +11790,11 @@ index 0000000..354bf29
 +	__ipipe_notify_kevent(IPIPE_KEVT_HOSTRT, &data);
 +}
 +
-+#endif /* CONFIG_IPIPE_HAVE_HOSTRT */
 +EXPORT_SYMBOL(ipipe_select_timers);
 +EXPORT_SYMBOL(ipipe_timers_release);
 +EXPORT_SYMBOL(ipipe_timer_start);
 +EXPORT_SYMBOL(ipipe_timer_stop);
++#endif /* CONFIG_IPIPE_HAVE_HOSTRT */
 diff --git a/kernel/ipipe/tracer.c b/kernel/ipipe/tracer.c
 new file mode 100644
 index 0000000..da272c50
@@ -15109,18 +15177,6 @@ index 1afec32..5803111 100644
  		goto out;
  
  	/*
-diff --git a/mm/Kconfig b/mm/Kconfig
-index 1d1ae6b..dbe4ef9 100644
---- a/mm/Kconfig
-+++ b/mm/Kconfig
-@@ -409,6 +409,7 @@ config NOMMU_INITIAL_TRIM_EXCESS
- config TRANSPARENT_HUGEPAGE
- 	bool "Transparent Hugepage Support"
- 	depends on HAVE_ARCH_TRANSPARENT_HUGEPAGE
-+	depends on !IPIPE
- 	select COMPACTION
- 	help
- 	  Transparent Hugepages allows the kernel to use huge pages and
 diff --git a/mm/memory.c b/mm/memory.c
 index 90fb265..8a1fd79 100644
 --- a/mm/memory.c

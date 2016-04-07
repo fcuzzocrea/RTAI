@@ -47,7 +47,7 @@ int main(int argc, char *argv[])
 
 	signal(SIGINT, endme);
 
-	if ((fd0 = open(rtf_getfifobyminor(3, nm, sizeof(nm)), O_RDONLY)) < 0) {
+	if ((fd0 = open(rtf_getfifobyminor(1, nm, sizeof(nm)), O_RDONLY)) < 0) {
 		fprintf(stderr, "Error opening %s\n",nm);
 		exit(1);
 	}

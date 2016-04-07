@@ -62,7 +62,7 @@ int timer_mode = 0;
 RTAI_MODULE_PARM(timer_mode, int);
 MODULE_PARM_DESC(timer_mode, "timer running mode: 0-oneshot, 1-periodic");
 
-#define DEBUG_FIFO 3
+#define DEBUG_FIFO 1
 #define TIMER_TO_CPU 3		// < 0  || > 1 to maintain a symmetric processed timer.
 #define RUNNABLE_ON_CPUS 3	// 1: on cpu 0 only, 2: on cpu 1 only, 3: on any;
 #define RUN_ON_CPUS (num_online_cpus() > 1 ? RUNNABLE_ON_CPUS : 1)

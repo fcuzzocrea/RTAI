@@ -2539,7 +2539,7 @@ static void kf_lat_eval(long period)
 #endif
 
 		if (abs(xe - xp) < abs(xe)/1000 && abs(pe - ppe) < abs(pe)/1000) {
-			if (calok++ > 25) break;
+			if (calok++ > 50) break;
 		} else {
 			calok = 1;
 		}

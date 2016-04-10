@@ -1,3 +1,12 @@
+2016-04-11 Paolo Mantegazza <mantegazza@aero.polimi.it>
+
+	* base/arch/x86/Kconfig: added parameter to chooce latency calibration
+	  metrics.
+	* base/arch/x86/calibration/calibrate.c: calibrate user space latency
+	  according to the chosen metrics.
+	* base/sched/sched.c: calibrate kernel space latency according to the 
+	  chosen metrics.
+
 2016-04-05 Paolo Mantegazza <mantegazza@aero.polimi.it>
 
 	* base/arch/x86/calibration/calibrate.c: added a fading memory 

@@ -2490,6 +2490,7 @@ static int end_kernel_lat_cal;
 
 #if 1
 #define DIAG_KF_LAT_EVAL 0
+#define RTAI_LATENCY_SELF_CALIBRATION_METRICS 2
 #define SV 3163
 #define SG 1000000000
 #define R  (2*SV)
@@ -2500,7 +2501,7 @@ static int end_kernel_lat_cal;
 	((s) > 0 ? rtai_imuldiv((s), (m), (d)) : -rtai_imuldiv(-(s), (m), (d)));
 static void kf_lat_eval(long period)
 {
-	int loop, calok;
+	int loop, calok, xm;
 	int xp, xe, y, pe, pp, ppe, g, q, r;
 	RTIME start_time, resume_time;
 
@@ -2508,6 +2509,7 @@ static void kf_lat_eval(long period)
 	r  = R*R;
 	xe = 0;
 	pe = P0*P0;
+	xm = 1000000000;
 
 #if DIAG_KF_LAT_EVAL
 	rt_printk("INITIAL VALUES: xe %d, pe %d, q %d, r %d.\n", xe, pe, q, r);
@@ -2527,6 +2529,7 @@ static void kf_lat_eval(long period)
 		} else {
 			y = period;
 		}
+		if (y < xm) xm = y;
 		xp  = xe;				 // xp = xe
 		pp  = rtai_imuldiv(pe, ALPHA, SG) + q;   // pp = ALPHA*pe + q
 		g   = rtai_imuldiv(pp, SG, pp + r);       // g = pp/(pp + r)
@@ -2539,14 +2542,14 @@ static void kf_lat_eval(long period)
 #endif
 
 		if (abs(xe - xp) < abs(xe)/1000 && abs(pe - ppe) < abs(pe)/1000) {
-			if (calok++ > 50) break;
+			if (calok++ > 250) break;
 		} else {
 			calok = 1;
 		}
 	}
-	rt_printk("KERNEL SPACE LATENCY ENDED AT CYCLE: %d, LATENCY = %d, VARIANCE = %d/%d, GAIN = %d/%d.\n", loop - 1 , xe, pe, SV*SV, g, SG);
+	rt_printk("KERNEL SPACE LATENCY ENDED AT CYCLE: %d, LATENCY = %d, VARIANCE = %d/%d, GAIN = %d/%d, LEAST = %d.\n", loop - 1 , xe, pe, SV*SV, g, SG, xm);
 
-	KernelLatency = xe;
+	KernelLatency = RTAI_LATENCY_SELF_CALIBRATION_METRICS == 1 ? xe : (RTAI_LATENCY_SELF_CALIBRATION_METRICS == 2 ? xm : (xe + xm)/2);
 	end_kernel_lat_cal = 1;
 }
 #else

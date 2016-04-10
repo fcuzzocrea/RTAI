@@ -40,6 +40,7 @@ static inline RTIME rt_rdtsc(void)
 }
 
 #define DIAG_KF_LAT_EVAL 0
+#define RTAI_LATENCY_SELF_CALIBRATION_METRICS 2
 #define HINF 0
 #define THETA ((double)0.1)
 #define MAX_LOOPS CONFIG_RTAI_LATENCY_SELF_CALIBRATION_CYCLES
@@ -50,7 +51,7 @@ static inline RTIME rt_rdtsc(void)
 static inline double kf_lat_eval(long period)
 {
 	int calok, loop;
-	double xe, pe, q, r; 
+	double xe, pe, q, r, xm; 
 	double xp, pp, ppe, y, g;
 	RTIME start_time, resume_time;
 
@@ -58,6 +59,7 @@ static inline double kf_lat_eval(long period)
 	pe = P0*P0; 
 	q  = Q*Q;
 	r  = R*R;
+	xm = 1.0e9; 
 
 #if DIAG_KF_LAT_EVAL
 	rt_printk("INITIAL VALUES: xe %g, pe %g, q %g, r %g.\n", xe, pe, q, r);
@@ -73,6 +75,7 @@ static inline double kf_lat_eval(long period)
 		} else {
 			y = period;
 		}
+		if (y < xm) xm = y;
 #if !HINF
 		xp  = xe;
 		pp  = ALPHA*pe + q;
@@ -93,13 +96,13 @@ static inline double kf_lat_eval(long period)
 #endif
 
 		if (fabs((xe - xp)/xe) < 1.0e-3 && fabs((pe - ppe)/pe) < 1.0e-3) {
-			if (calok++ > 50) break;
+			if (calok++ > 250) break;
 		} else {
 			calok = 1;
 		}
 	}
-	rt_printk("USER SPACE LATENCY ENDED AT CYCLE: %d, LATENCY = %g, VARIANCE = %g, GAIN = %g.\n", loop - 1 , xe,  pe, g);
-	return xe;
+	rt_printk("USER SPACE LATENCY ENDED AT CYCLE: %d, LATENCY = %g, VARIANCE = %g, GAIN = %g, LEAST = %g.\n", loop - 1 , xe,  pe, g, xm);
+	return RTAI_LATENCY_SELF_CALIBRATION_METRICS == 1 ? xe : (RTAI_LATENCY_SELF_CALIBRATION_METRICS == 2 ? xm : (xe + xm)/2);
 }
 
 #if 1

@@ -1146,7 +1146,7 @@ static void kthread_fun(void *null)
 	while (!end) {
 		for (i = 0; i < num_online_cpus(); i++) {
 			if (i != CONFIG_RTAI_MASTER_TSC_CPU) {
-				set_cpus_allowed(current, cpumask_of_cpu(i));
+				set_cpus_allowed_ptr(current, cpumask_of(i));
 				sync_tsc(CONFIG_RTAI_MASTER_TSC_CPU, i);
 			}
 		}

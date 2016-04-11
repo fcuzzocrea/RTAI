@@ -341,12 +341,13 @@ config RTAI_LATENCY_SELF_CALIBRATION_METRICS
 	string "Lat. cal. metrics: 1- AVRG (default), 2- LEAST, 3- (AVRG+LEAST)/2"
 	default 1
 	help
-	This parameter sets the latency calibration criteria. 1 - LEAST VALUE 
-	should be chosen if one wants to avoid average values that can result 
-	in being somewhat less than zero. 2 - AVERAGE will provide mostly zero 
-	averages, but possible oscillations below zero can be more significant.
-	3 - (AVERAGE + LEAST_VALUE)/2, a trivial compromise between the previous
-	two.
+	This parameter sets the latency calibration criteria.
+	1 - AVERAGE will provide mostly zero averages, but possible oscillations
+	    below zero could be significant.
+	2 - LEAST VALUE should be chosen for average values being only marginally
+	    less than zero.
+	3 - (AVERAGE + LEAST_VALUE)/2, a trivial compromise in between the previous
+	    two.
 
 config RTAI_LATENCY_SELF_CALIBRATION_FREQ
 	string "Latency self calibration frequency (Hz)"

@@ -338,7 +338,7 @@ config RTAI_LONG_TIMED_LIST
 #	calibration-helper. 
 
 config RTAI_LATENCY_SELF_CALIBRATION_METRICS
-	string "Lat. cal. metrics: 1 - LEAST (default), 2 - AVRG, 3 - (AVRG+LEAST)/2"
+	string "Lat. cal. metrics: 1 - AVRG (default), 2 - LEAST, 3 - (AVRG+LEAST)/2"
 	default 1
 	help
 	This parameter sets the latency calibration criteria. 1 - LEAST VALUE 

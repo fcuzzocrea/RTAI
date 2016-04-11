@@ -6,8 +6,9 @@
 	  according to the chosen metrics.
 	* base/sched/sched.c: calibrate kernel space latency according to the 
 	  chosen metrics.
-	* base/arch/x86/hal/hal.c: set allowed cpus to be portable acros 
-	  differing Linux versions.
+	* base/arch/x86/hal/hal.c: set allowed cpus to be portable across 
+	  differing Linux versions, fix printk warnings and linux version 
+	  dependency of cpu_isolated_mask.
 
 2016-04-05 Paolo Mantegazza <mantegazza@aero.polimi.it>
 

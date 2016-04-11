@@ -695,8 +695,8 @@ static int PROC_READ_FUN(rtai_read_proc)
 	PROC_PRINT("\n** RTAI/x86:\n\n");
 	PROC_PRINT("    CPU   Frequency: %lu (Hz)\n", rtai_tunables.clock_freq);
 	PROC_PRINT("    TIMER Frequency: %lu (Hz)\n", TIMER_FREQ);
-	PROC_PRINT("    TIMER Latency: %ld (ns)\n", rtai_imuldiv(rtai_tunables.sched_latency, 1000000000, rtai_tunables.clock_freq));
-	PROC_PRINT("    TIMER Setup: %ld (ns)\n", rtai_imuldiv(rtai_tunables.setup_time_TIMER_CPUNIT, 1000000000, rtai_tunables.clock_freq));
+	PROC_PRINT("    TIMER Latency: %ld (ns)\n", (long)rtai_imuldiv(rtai_tunables.sched_latency, 1000000000, rtai_tunables.clock_freq));
+	PROC_PRINT("    TIMER Setup: %ld (ns)\n", (long)rtai_imuldiv(rtai_tunables.setup_time_TIMER_CPUNIT, 1000000000, rtai_tunables.clock_freq));
     
 	none = 1;
 	PROC_PRINT("\n** Real-time IRQs used by RTAI: ");
@@ -779,8 +779,10 @@ static void rtai_proc_unregister (void)
 
 #ifdef CONFIG_SMP
 #if LINUX_VERSION_CODE < KERNEL_VERSION(4,0,0)
+#define CPU_ISOLATED_MAP (&cpu_isolated_map)
 	extern unsigned long cpu_isolated_map; 
 #else
+#define CPU_ISOLATED_MAP (cpu_isolated_map)
 	extern cpumask_var_t cpu_isolated_map;
 #endif
 #else
@@ -851,7 +853,7 @@ int __rtai_hal_init (void)
 #else
 	CpuIsolatedMap = 0;
 	for (i = 0; i < RTAI_NR_CPUS; i++) {
-		if (cpumask_test_cpu(i, &cpu_isolated_map)) {
+		if (cpumask_test_cpu(i, CPU_ISOLATED_MAP)) {
 			set_bit(i, &CpuIsolatedMap);
 		}
 	}
@@ -871,7 +873,7 @@ int __rtai_hal_init (void)
 	IsolCpusMask = 0;
 #endif
 
-	printk(KERN_INFO "RTAI[hal]: mounted. ISOL_CPUS_MASK: %lx, LINUX CPU ISOLATED MAP: %lx).\n", IsolCpusMask, cpu_isolated_map);
+	printk(KERN_INFO "RTAI[hal]: mounted. ISOL_CPUS_MASK: %lx.\n", IsolCpusMask);
 
 #if defined(__i386__) && defined(CONFIG_SMP) && defined(CONFIG_RTAI_DIAG_TSC_SYNC)
 	init_tsc_sync();

@@ -39,7 +39,7 @@ struct SmiRegisters {
 };
 
 
-#define N_SMI_REGS 11
+#define N_SMI_REGS 12
 struct SmiRegisters smi_regs[N_SMI_REGS] = {
 	{.name = "INTEL_USB2_EN ",	.value = (0x01 << 18)},
 	{.name = "LEGACY_USB2_EN",	.value = (0x01 << 17)},
@@ -51,7 +51,28 @@ struct SmiRegisters smi_regs[N_SMI_REGS] = {
 	{.name = "SLP_EN        ",	.value = (0x01 << 4) },
 	{.name = "LEGACY_USB_EN ",	.value = (0x01 << 3) },
 	{.name = "BIOS_EN       ",	.value = (0x01 << 2) },
+	{.name = "EOS (special) ",	.value = (0x01 << 1) },
 	{.name = "GBL_SMI_EN    ",	.value = (0x01)      }
+};
+
+#define N_SMI_GPIO_REGS 16
+struct SmiRegisters smi_gpio_regs[N_SMI_GPIO_REGS] = {
+	{.name = "GPIO[15]   ",	.value = (0x01 << 15)},
+	{.name = "GPIO[14]   ",	.value = (0x01 << 14)},
+	{.name = "GPIO[13]   ",	.value = (0x01 << 13)},
+	{.name = "GPIO[12]   ",	.value = (0x01 << 12)},
+	{.name = "GPIO[11]   ",	.value = (0x01 << 11)},
+	{.name = "GPIO[10]   ",	.value = (0x01 << 10)},
+	{.name = "GPIO[9]    ",	.value = (0x01 << 9) },
+	{.name = "GPIO[8]    ",	.value = (0x01 << 8) },
+	{.name = "GPIO[7]    ",	.value = (0x01 << 7) },
+	{.name = "GPIO[6]    ",	.value = (0x01 << 6) },
+	{.name = "GPIO[5]    ",	.value = (0x01 << 5) },
+	{.name = "GPIO[4]    ",	.value = (0x01 << 4) },
+	{.name = "GPIO[3]    ",	.value = (0x01 << 3) },
+	{.name = "GPIO[2]    ",	.value = (0x01 << 2) },
+	{.name = "GPIO[1]    ",	.value = (0x01 << 1) },
+	{.name = "GPIO[0]    ",	.value = (0x01)      }
 };
 
 
@@ -68,12 +89,14 @@ void warning_message(void) {
 	char m62[] = "io-controller-hub-10-family-datasheet.html";
 	char m7[] = "PRESS SPACE TO CONTINUE";
 	char m8[] = "PRESS q TO QUIT";
+	int req_rows = 34;
+	int req_cols = 79;
 	
 	getmaxyx(stdscr,row, col);
-	if (row < 31 || col < 79) {
+	if (row < req_rows || col < req_cols) {
 		endwin();
 		fprintf(stderr, "The interactive version of this program requires\n");
-		fprintf(stderr, "a terminal that has at least %d rows and %d colums\n", 31, 79);
+		fprintf(stderr, "a terminal that has at least %d rows and %d colums\n", req_rows, req_cols);
 		exit(1);	
 	}
 	attron(A_BOLD);
@@ -167,7 +190,8 @@ void write_pci(uint16_t * smi_en_addr, uint32_t *value) {
 void print_bit(int start_row, int * col, uint32_t * val) {
 	int i, table;  
 	int row;
-	int start_reg[2] = {0, 2};
+	int end_reg[2] = {N_SMI_REGS, N_SMI_GPIO_REGS};
+	struct SmiRegisters * regs[2] = {smi_regs, smi_gpio_regs};
 	
 #define PRINT_BIT(c,n,v,f) {                                              \
 	mvprintw(row, c, "%16s (0x%0*x) = ",                    \
@@ -178,9 +202,9 @@ void print_bit(int start_row, int * col, uint32_t * val) {
 }
 	int nbits = 8;
 	for (table = 0; table < 2; table++) {
-		row = start_row + start_reg[table];
-		for (i = start_reg[table]; i < N_SMI_REGS; i++) {
-			PRINT_BIT(col[table], nbits, val[table], smi_regs[i]);
+		row = start_row;
+		for (i = 0; i < end_reg[table]; i++) {
+			PRINT_BIT(col[table], nbits, val[table], regs[table][i]);
        			row++;
 		}
 		nbits =  4;
@@ -204,10 +228,11 @@ int main(int argc, char *argv[]) {
 
 	int ch = ' ';
 	int cur_line;
-	int table_start_row = 20;
+	int table_start_row = 18;
 	int table_start_col[2] = {10, 49};
 	int bit_col[2] = {42, 77};
-	int start_reg[2] = {0, 2};
+	int start_reg[2] = {0, 0};
+	int end_reg[2] = {N_SMI_REGS-1, N_SMI_GPIO_REGS-1};
 	int do_stuff = 0;
 	int smi_n = 0;
 
@@ -341,16 +366,18 @@ int main(int argc, char *argv[]) {
 		ch = getch();
 		switch(ch) {
 			case KEY_RIGHT:
-				if (current_bit >= start_reg[1]) {
+				if (current_bit >= start_reg[1] && current_bit <= end_reg[1]) {
 					current_smi = 1;
 					move(cur_line, bit_col[current_smi]);
 					refresh();
 				}
 				break;
 			case KEY_LEFT:
-				current_smi = 0;
-				move(cur_line, bit_col[current_smi]);
-				refresh();
+				if (current_bit >= start_reg[0] && current_bit <= end_reg[0]) {
+					current_smi = 0;
+					move(cur_line, bit_col[current_smi]);
+					refresh();
+				}
 				break;
 			case KEY_UP:
 				if (current_bit != start_reg[current_smi]) {
@@ -361,7 +388,7 @@ int main(int argc, char *argv[]) {
 				}
 				break;
 			case KEY_DOWN:
-				if (current_bit != 10) {
+				if (current_bit != end_reg[current_smi]) {
 					cur_line++;
 					current_bit++;
 					move(cur_line, bit_col[current_smi]);

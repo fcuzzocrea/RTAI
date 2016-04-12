@@ -1,22 +1,9 @@
-/* 
- *
- * Copyright (C) 2016, Marco Morandini <marco.morandini@polimi.it>.
- * Copyright (C) 2006, 2010 Jan Kiszka <jan.kiszka@web.de>.
- *
- * Derived from Jan Kiszka's smictrlv2.
- *
- * This program is free software; you can redistribute it and/or modify it
- * under the terms of the GNU General Public License as published by
- * the Free Software Foundation; either version 3 of the License, or
- * (at your option) any later version.
- */
-
-
 #include <string.h>
 #include <stdlib.h>
 #include <unistd.h>
 #include <locale.h>
 #include <ncurses.h>
+#include <stdint.h>
 
 #include <pci/pci.h>
 #include <sys/io.h>
@@ -27,6 +14,19 @@
 
 #define PMBASE_B0           0x40
 #define PMBASE_B1           0x41
+/* 
+ *
+ * Copyright (C) 2016, Marco Morandini <marco.morandini@polimi.it>.
+ * Copyright (C) 2006, 2010 Jan Kiszka <jan.kiszka@web.de>.
+ *
+ * Based on Jan Kiszka's smictrlv2.
+ *
+ * This program is free software; you can redistribute it and/or modify it
+ * under the terms of the GNU General Public License as published by
+ * the Free Software Foundation; either version 3 of the License, or
+ * (at your option) any later version.
+ */
+
 
 #define SMI_CTRL_ADDR       0x30
 #define SMI_STATUS_ADDR     0x34
@@ -34,38 +34,26 @@
 #define SMI_MON_ADDR        0x40
 
 struct SmiRegisters {
-	char name[19];
+	char name[15];
 	uint32_t value;
 };
 
 
 #define N_SMI_REGS 11
 struct SmiRegisters smi_regs[N_SMI_REGS] = {
-	{.name = "INTEL_USB2_EN_BIT ",	.value = (0x01 << 18)},
-	{.name = "LEGACY_USB2_EN_BIT",	.value = (0x01 << 17)},
-	{.name = "PERIODIC_EN_BIT   ",	.value = (0x01 << 14)},
-	{.name = "TCO_EN_BIT        ",	.value = (0x01 << 13)},
-	{.name = "MCSMI_EN_BIT      ",	.value = (0x01 << 11)},
-	{.name = "SWSMI_TMR_EN_BIT  ",	.value = (0x01 << 6) },
-	{.name = "APMC_EN_BIT       ",	.value = (0x01 << 5) },
-	{.name = "SLP_EN_BIT        ",	.value = (0x01 << 4) },
-	{.name = "LEGACY_USB_EN_BIT ",	.value = (0x01 << 3) },
-	{.name = "BIOS_EN_BIT       ",	.value = (0x01 << 2) },
-	{.name = "GBL_SMI_EN_BIT    ",	.value = (0x01)      }
+	{.name = "INTEL_USB2_EN ",	.value = (0x01 << 18)},
+	{.name = "LEGACY_USB2_EN",	.value = (0x01 << 17)},
+	{.name = "PERIODIC_EN   ",	.value = (0x01 << 14)},
+	{.name = "TCO_EN        ",	.value = (0x01 << 13)},
+	{.name = "MCSMI_EN      ",	.value = (0x01 << 11)},
+	{.name = "SWSMI_TMR_EN  ",	.value = (0x01 << 6) },
+	{.name = "APMC_EN       ",	.value = (0x01 << 5) },
+	{.name = "SLP_EN        ",	.value = (0x01 << 4) },
+	{.name = "LEGACY_USB_EN ",	.value = (0x01 << 3) },
+	{.name = "BIOS_EN       ",	.value = (0x01 << 2) },
+	{.name = "GBL_SMI_EN    ",	.value = (0x01)      }
 };
 
-/* SMI_EN register: ICH[0](16 bits), ICH[2-5](32 bits) */
-// #define INTEL_USB2_EN_BIT   (0x01 << 18) /* ICH4, ... */
-// #define LEGACY_USB2_EN_BIT  (0x01 << 17) /* ICH4, ... */
-// #define PERIODIC_EN_BIT     (0x01 << 14) /* called 1MIN_ in ICH0 */
-// #define TCO_EN_BIT          (0x01 << 13)
-// #define MCSMI_EN_BIT        (0x01 << 11)
-// #define SWSMI_TMR_EN_BIT    (0x01 << 6)
-// #define APMC_EN_BIT         (0x01 << 5)
-// #define SLP_EN_BIT          (0x01 << 4)
-// #define LEGACY_USB_EN_BIT   (0x01 << 3)
-// #define BIOS_EN_BIT         (0x01 << 2)
-// #define GBL_SMI_EN_BIT      (0x01) /* This is reset by a PCI reset event! */
 
 void warning_message(void) {
 	int ch, row, col;
@@ -76,18 +64,35 @@ void warning_message(void) {
 	char m4[] = "The SMI bits are documented e.g. into";
 	char m5[] = "Intel's  I/O Controller Hub 10 (ICH10) Family datasheet";
 	char m6[] = "http://www.intel.com/content/www/us/en/io/io-controller-hub-10-family-datasheet.html";
+	char m61[] = "http://www.intel.com/content/www/us/en/io/";
+	char m62[] = "io-controller-hub-10-family-datasheet.html";
 	char m7[] = "PRESS SPACE TO CONTINUE";
 	char m8[] = "PRESS q TO QUIT";
 	
-	getmaxyx(stdscr,row,col);
+	getmaxyx(stdscr,row, col);
+	if (row < 31 || col < 79) {
+		endwin();
+		fprintf(stderr, "The interactive version of this program requires\n");
+		fprintf(stderr, "a terminal that has at least %d rows and %d colums\n", 31, 79);
+		exit(1);	
+	}
+	attron(A_BOLD);
 	mvprintw(row/2-5,(col-strlen(m1))/2,"%s",m1);
+	attroff(A_BOLD);
 	mvprintw(row/2-3,(col-strlen(m2))/2,"%s",m2);
 	mvprintw(row/2-1,(col-strlen(m3))/2,"%s",m3);
 	mvprintw(row/2+1,(col-strlen(m4))/2,"%s",m4);
 	mvprintw(row/2+2,(col-strlen(m5))/2,"%s",m5);
-	mvprintw(row/2+3,(col-strlen(m6))/2,"%s",m6);
-	mvprintw(row/2+5,(col-strlen(m7))/2,"%s",m7);
-	mvprintw(row/2+6,(col-strlen(m8))/2,"%s",m8);
+	if (col < 85) {
+		mvprintw(row/2+3,(col-strlen(m61))/2,"%s",m61);
+		mvprintw(row/2+4,(col-strlen(m62))/2,"%s",m62);
+	} else {
+		mvprintw(row/2+3,(col-strlen(m6))/2,"%s",m6);
+	}
+	attron(A_BOLD);
+	mvprintw(row/2+6,(col-strlen(m7))/2,"%s",m7);
+	mvprintw(row/2+7,(col-strlen(m8))/2,"%s",m8);
+	attroff(A_BOLD);
 
 	ch = 't';
 	while(ch != 'q') {
@@ -131,10 +136,8 @@ struct pci_dev * find_smi_device(struct pci_access * pacc) {
 		pci_lookup_name(pacc, device_name, sizeof(device_name),
 				PCI_LOOKUP_DEVICE, dev->vendor_id, dev->device_id);
 
-		attron(A_BOLD);
 		mvprintw(0, 0, " SMI-enabled chipset found:\n %s %s (%04x:%04x)\n",
 			vendor_name, device_name, dev->vendor_id, dev->device_id);
-		attroff(A_BOLD);
 		refresh();
 		return dev;
 	}
@@ -166,28 +169,22 @@ void print_bit(int start_row, int * col, uint32_t * val) {
 	int row;
 	int start_reg[2] = {0, 2};
 	
-#define PRINT_BIT(c,v,f) {                                              \
-	mvprintw(row, c, "%20s (0x%08x) = %s",                    \
-		f.name, f.value, ((v)&f.value) ? "1" : "0");                     \
+#define PRINT_BIT(c,n,v,f) {                                              \
+	mvprintw(row, c, "%16s (0x%0*x) = ",                    \
+		f.name, n, f.value, ((v)&f.value) ? "1" : "0");                     \
+	if ((v)&f.value) attron(A_BOLD); \
+	printw("%s", ((v)&f.value) ? "1" : "0"); \
+	if ((v)&f.value) attroff(A_BOLD); \
 }
+	int nbits = 8;
 	for (table = 0; table < 2; table++) {
 		row = start_row + start_reg[table];
 		for (i = start_reg[table]; i < N_SMI_REGS; i++) {
-			PRINT_BIT(col[table], val[table], smi_regs[i]);
+			PRINT_BIT(col[table], nbits, val[table], smi_regs[i]);
        			row++;
 		}
+		nbits =  4;
 	}
-// 	PRINT_BIT(INTEL_USB2_EN_BIT);
-// 	PRINT_BIT(LEGACY_USB2_EN_BIT);
-// 	PRINT_BIT(PERIODIC_EN_BIT);
-// 	PRINT_BIT(TCO_EN_BIT);
-// 	PRINT_BIT(MCSMI_EN_BIT);
-// 	PRINT_BIT(SWSMI_TMR_EN_BIT);
-// 	PRINT_BIT(APMC_EN_BIT);
-// 	PRINT_BIT(SLP_EN_BIT);
-// 	PRINT_BIT(LEGACY_USB_EN_BIT);
-// 	PRINT_BIT(BIOS_EN_BIT);
-// 	PRINT_BIT(GBL_SMI_EN_BIT);
     
 #undef PRINT_BIT
 	refresh();
@@ -207,9 +204,9 @@ int main(int argc, char *argv[]) {
 
 	int ch = ' ';
 	int cur_line;
-	int table_start_row = 25;
-	int table_start_col[2] = {1, 60};
-	int bit_col[2] = {37, 96};
+	int table_start_row = 20;
+	int table_start_col[2] = {10, 49};
+	int bit_col[2] = {42, 77};
 	int start_reg[2] = {0, 2};
 	int do_stuff = 0;
 	int smi_n = 0;
@@ -272,9 +269,9 @@ int main(int argc, char *argv[]) {
 			"     SMI_EN", 8, orig_value[0]);
 	        fprintf(stderr, " %s register startup value:\t0x%0*x\n", 
 			"GPIO SMI_EN", 4, orig_value[1]);
-	        fprintf(stderr, " %s register current value:\t0x%0*x\n", 
+	        fprintf(stderr, " %s register new value    :\t0x%0*x\n", 
 			"     SMI_EN", 8, new_value[0]);
-	        fprintf(stderr, " %s register current value:\t0x%0*x\n", 
+	        fprintf(stderr, " %s register new value    :\t0x%0*x\n", 
 			"GPIO SMI_EN", 4, new_value[1]);
 		exit(0);
 	}
@@ -288,42 +285,48 @@ int main(int argc, char *argv[]) {
 
 	warning_message();
 
-	attron(A_BOLD);
-        mvprintw(4, 0, " %s register startup value:\t0x%0*x\n", 
-			"     SMI_EN", 8, orig_value[0]);
-        mvprintw(5, 0, " %s register startup value:\t0x%0*x\n", 
-			"GPIO SMI_EN", 4, orig_value[1]);
-        mvprintw(8, 0, " %s register current value:\t0x%0*x\n", 
-			"     SMI_EN", 8, new_value[0]);
-        mvprintw(9, 0, " %s register current value:\t0x%0*x\n", 
-			"GPIO SMI_EN", 4, new_value[1]);
-	attroff(A_BOLD);
-	refresh();
+	find_smi_device(pacc);
 	
 	attron(A_BOLD);
-	mvprintw(11, 1, "USAGE:");
+	mvprintw(3, 1, "USE:");
 	attroff(A_BOLD);
-	mvprintw(13, 1, "SELECT BIT MASK BELOW");
+//	mvprintw(6, 1, "SELECT BIT MASK BELOW");
 	//mvprintw(4, 1, "      g          SWITCH TO/FROM alt GPIO SMI_EN");
-	mvprintw(14, 1, "   a          APPLY BIT MASK");
-	mvprintw(15, 1, "   r          RESET TO STARTUP VALUES");
-	mvprintw(16, 1, "   q          QUIT");
-	mvprintw(17, 1, "   SPACE      TOGGLE");
-	mvprintw(18, 1, "   ARROW KEYS NAVIGATE");
+	mvprintw( 7, 1, "   a:          to set the states to be applied");
+	mvprintw( 8, 1, "   r:          to reset startup states");
+	mvprintw( 9, 1, "   q:          to quit");
+	mvprintw(6, 1, "   SPACE:      to toggle highlighted bit");
+	mvprintw(5, 1, "   ARROW KEYS: to navigate over bits");
 	attron(A_BOLD);
 	//mvprintw(4, 7, "g");
-	mvprintw(14, 4, "a");
-	mvprintw(15, 4, "r");
-	mvprintw(16, 4, "q");
-	mvprintw(17, 4, "SPACE");
-	mvprintw(18, 4, "ARROW KEYS");
+	mvprintw( 7, 4, "a");
+	mvprintw( 8, 4, "r");
+	mvprintw( 9, 4, "q");
+	mvprintw( 6, 4, "SPACE");
+	mvprintw( 5, 4, "ARROW KEYS");
 	attroff(A_BOLD);
+	refresh();
 
 	attron(A_BOLD);
-	mvprintw(21, 1, "CURRENT BIT MASK");
-	mvprintw(23, 1, "SMI_EN:");
-	mvprintw(23, 60, "ALT GPIO SMI_EN:");
+	mvprintw(11, table_start_col[0]+17, " SMI_EN:");
+	mvprintw(11, table_start_col[1]+17, " GPIO SMI_EN:");
 	attroff(A_BOLD);
+        mvprintw(13, 1, " startup states:");
+		mvprintw(13, table_start_col[0]+18, "0x%0*x\n", 8, orig_value[0]);
+		mvprintw(13, table_start_col[1]+18, "0x%0*x\n", 4, orig_value[1]);
+        mvprintw(14, 1, " current states:");
+		mvprintw(14, table_start_col[0]+18, "0x%0*x\n", 8, new_value[0]);
+		mvprintw(14, table_start_col[1]+18, "0x%0*x\n", 4, new_value[1]);
+	attron(A_BOLD);
+        mvprintw(16, 1, "states to be applied:");
+		mvprintw(16, table_start_col[0]+18, "0x%0*x\n", 8, new_value[0]);
+		mvprintw(16, table_start_col[1]+18, "0x%0*x\n", 4, new_value[1]);
+	attroff(A_BOLD);
+	refresh();
+
+//	attron(A_BOLD);
+//	mvprintw(21, table_start_col[0], "BIT MASK");
+//	attroff(A_BOLD);
 	
 
 //	attron(A_BOLD | A_REVERSE);
@@ -368,12 +371,12 @@ int main(int argc, char *argv[]) {
 			case ' ':
 				new_value[current_smi] = new_value[current_smi]^smi_regs[current_bit].value;
 				attron(A_BOLD);
-			        mvprintw(8, table_start_col[1], " %s register required value:\t0x%0*x\n", 
-					"     SMI_EN", 8, new_value[0]);
-			        mvprintw(9, table_start_col[1], " %s register required value:\t0x%0*x\n", 
-					"GPIO SMI_EN", 4, new_value[1]);
+				mvprintw(16, table_start_col[0]+18, "0x%0*x\n", 8, new_value[0]);
+				mvprintw(16, table_start_col[1]+18, "0x%0*x\n", 4, new_value[1]);
 				attroff(A_BOLD);
+				if (new_value[current_smi]&smi_regs[current_bit].value) attron(A_BOLD);
 				mvprintw(cur_line, bit_col[current_smi], new_value[current_smi]&smi_regs[current_bit].value?"1":"0");
+				if (new_value[current_smi]&smi_regs[current_bit].value) attroff(A_BOLD);
 				move(cur_line, bit_col[current_smi]);
 				refresh();
 				break;
@@ -381,11 +384,11 @@ int main(int argc, char *argv[]) {
 				write_pci(smi_en_addr, orig_value);
 				read_pci(smi_en_addr, new_value);
 								
+				mvprintw(14, table_start_col[0]+18, "0x%0*x\n", 8, new_value[0]);
+				mvprintw(14, table_start_col[1]+18, "0x%0*x\n", 4, new_value[1]);
 				attron(A_BOLD);
-			        mvprintw(8, 0, " %s register current value:\t0x%0*x\n", 
-					"     SMI_EN", 8, new_value[0]);
-			        mvprintw(9, 0, " %s register current value:\t0x%0*x\n", 
-					"GPIO SMI_EN", 4, new_value[1]);
+				mvprintw(16, table_start_col[0]+18, "0x%0*x\n", 8, new_value[0]);
+				mvprintw(16, table_start_col[1]+18, "0x%0*x\n", 4, new_value[1]);
 				attroff(A_BOLD);
 				print_bit(table_start_row, table_start_col, new_value);
 				move(cur_line, bit_col[current_smi]);
@@ -395,11 +398,11 @@ int main(int argc, char *argv[]) {
 				write_pci(smi_en_addr, new_value);
 				read_pci(smi_en_addr, new_value);
 				
+				mvprintw(14, table_start_col[0]+18, "0x%0*x\n", 8, new_value[0]);
+				mvprintw(14, table_start_col[1]+18, "0x%0*x\n", 4, new_value[1]);
 				attron(A_BOLD);
-			        mvprintw(8, 0, " %s register current value:\t0x%0*x\n", 
-					"     SMI_EN", 8, new_value[0]);
-			        mvprintw(9, 0, " %s register current value:\t0x%0*x\n", 
-					"GPIO SMI_EN", 4, new_value[1]);
+				mvprintw(16, table_start_col[0]+18, "0x%0*x\n", 8, new_value[0]);
+				mvprintw(16, table_start_col[1]+18, "0x%0*x\n", 4, new_value[1]);
 				attroff(A_BOLD);
 				print_bit(table_start_row, table_start_col, new_value);
 				move(cur_line, bit_col[current_smi]);

@@ -8,6 +8,97 @@
 #include <pci/pci.h>
 #include <sys/io.h>
 
+extern int read_sensors_config_file(void);
+extern void read_maximum_temperature(void);
+extern void cleanup_sensors_library(void);
+
+
+#ifdef HAVE_SENSORS
+
+#include "sensors/sensors.h"
+
+/* Return 0 on success, and an exit error code otherwise */
+int read_sensors_config_file(void)
+{
+	int err;
+
+	/* Use libsensors default config */
+	err = sensors_init(NULL);
+	if (err) {
+		return 1;
+	}
+
+	return 0;
+}
+
+
+
+/* returns number of chips found */
+void read_maximum_temperature(void) {
+	const sensors_chip_name *chip;
+	int chip_nr;	
+	float max_temp = 0.;
+
+	const sensors_feature *feature;
+	int i;
+
+	const sensors_subfeature *sf;
+	double val;
+	char *label;
+
+	chip_nr = 0;
+	while ((chip = sensors_get_detected_chips(NULL, &chip_nr))) {
+		i = 0;
+		while ((feature = sensors_get_features(chip, &i))) {
+			switch (feature->type) {
+				case SENSORS_FEATURE_TEMP:
+					if ((label = sensors_get_label(chip, feature))) {
+						free(label);
+
+						sf = sensors_get_subfeature(chip, feature, SENSORS_SUBFEATURE_TEMP_FAULT);
+						if (sf && sensors_get_value(chip, sf->number, &val)) {
+							//printf("   FAULT  ");
+						} else {
+							sf = sensors_get_subfeature(chip, feature, SENSORS_SUBFEATURE_TEMP_INPUT);
+							if (sf && sensors_get_value(chip, sf->number, &val) == 0) {
+								if (val > max_temp)
+									max_temp = val;
+							}
+						}
+					}
+					break;
+				default:
+					continue;
+			}
+		}
+	}
+	attron(A_BOLD);
+	mvprintw(5, 54, "Max measured temp: %3.0f C\n", max_temp);
+	attroff(A_BOLD);
+	refresh();
+	return;
+}
+
+void cleanup_sensors_library(void) {
+	sensors_cleanup();
+	return;
+}
+
+#else /* !HAVE_SENSORS */
+int read_sensors_config_file(void) {
+	return 1;
+}
+void read_maximum_temperature(void) {
+	return;
+}
+
+void cleanup_sensors_library(void) {
+	return;
+}
+
+#endif /* HAVE_SENSORS */
+
+
 /* Intel chipset LPC (Low Pin Count) bus controller: PCI device=31 function=0 */
 #define LPC_DEV             31
 #define LPC_FUNC            0
@@ -167,7 +258,7 @@ struct pci_dev * find_smi_device(struct pci_access * pacc) {
 	printf("No SMI-enabled chipset found\n");
 
 	pci_cleanup(pacc);
-	endwin();
+	//endwin();	
 	
 	return 0;
 }
@@ -233,8 +324,10 @@ int main(int argc, char *argv[]) {
 	int bit_col[2] = {42, 77};
 	int start_reg[2] = {0, 0};
 	int end_reg[2] = {N_SMI_REGS-1, N_SMI_GPIO_REGS-1};
+	struct SmiRegisters * regs[2] = {smi_regs, smi_gpio_regs};
 	int do_stuff = 0;
 	int smi_n = 0;
+	int err_sensors_library;
 
 	/* check root */
 	if (iopl(3) < 0) {
@@ -301,14 +394,20 @@ int main(int argc, char *argv[]) {
 		exit(0);
 	}
 
+
 	/* initialize ncurses */
 	setlocale(LC_ALL, "");
-	initscr(); cbreak(); noecho();
+	initscr(); 
+	halfdelay(5);//cbreak(); 
+	noecho();
 	nonl();
 	intrflush(stdscr, FALSE);
 	keypad(stdscr, TRUE);
 
 	warning_message();
+
+	/* initialize sensors library */
+	err_sensors_library = read_sensors_config_file();
 
 	find_smi_device(pacc);
 	
@@ -365,6 +464,13 @@ int main(int argc, char *argv[]) {
 	while(ch != 'q') {
 		ch = getch();
 		switch(ch) {
+			case ERR:
+				if (!err_sensors_library) {
+					read_maximum_temperature();
+					move(cur_line, bit_col[current_smi]);
+					refresh();
+				}
+				break;
 			case KEY_RIGHT:
 				if (current_bit >= start_reg[1] && current_bit <= end_reg[1]) {
 					current_smi = 1;
@@ -396,14 +502,14 @@ int main(int argc, char *argv[]) {
 				}
 				break;
 			case ' ':
-				new_value[current_smi] = new_value[current_smi]^smi_regs[current_bit].value;
+				new_value[current_smi] = new_value[current_smi]^regs[current_smi][current_bit].value;
 				attron(A_BOLD);
 				mvprintw(16, table_start_col[0]+18, "0x%0*x\n", 8, new_value[0]);
 				mvprintw(16, table_start_col[1]+18, "0x%0*x\n", 4, new_value[1]);
 				attroff(A_BOLD);
-				if (new_value[current_smi]&smi_regs[current_bit].value) attron(A_BOLD);
-				mvprintw(cur_line, bit_col[current_smi], new_value[current_smi]&smi_regs[current_bit].value?"1":"0");
-				if (new_value[current_smi]&smi_regs[current_bit].value) attroff(A_BOLD);
+				if (new_value[current_smi]&regs[current_smi][current_bit].value) attron(A_BOLD);
+				mvprintw(cur_line, bit_col[current_smi], new_value[current_smi]&regs[current_smi][current_bit].value?"1":"0");
+				if (new_value[current_smi]&regs[current_smi][current_bit].value) attroff(A_BOLD);
 				move(cur_line, bit_col[current_smi]);
 				refresh();
 				break;
@@ -442,6 +548,7 @@ int main(int argc, char *argv[]) {
 
 	pci_cleanup(pacc);
 	endwin();
+	cleanup_sensors_library();
 	
 	return 0;
 }

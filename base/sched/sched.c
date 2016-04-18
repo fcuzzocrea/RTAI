@@ -2598,12 +2598,12 @@ module_param(recalibrate, int, S_IRUGO);
 
 static void calibrate_latencies(void)
 {
-#define ALPHA_ARGSIZE 60
 #define NUM_ARGSIZE   15
-//	char *envp[] = { "HOME=/usr/vulcano/calibration", "TERM=linux", "PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin", NULL };
-//	char *argv[] = { "/usr/vulcano/calibration/calibrate", "/usr/vulcano/calibration/latencies", arg2, arg3, NULL };
-	char env0[ALPHA_ARGSIZE] = { 0, }, arg0[ALPHA_ARGSIZE] = { 0, }, arg1[ALPHA_ARGSIZE] = { 0, };
-	char arg2[NUM_ARGSIZE] = { 0, }, arg3[NUM_ARGSIZE] = { 0, };
+	char env0[] = RTAI_INSTALL_DIR"/calibration";
+	char arg0[] = RTAI_INSTALL_DIR"/calibration/calibrate";
+	char arg1[] = RTAI_INSTALL_DIR"/calibration/latencies";
+	char arg2[NUM_ARGSIZE];
+	char arg3[NUM_ARGSIZE] = "-1";
 	char *envp[] = { env0, "TERM=linux", "PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin", NULL };
 	char *argv[] = { arg0, arg1, arg2, arg3, NULL };
 	int cpuid, period = nano2count(1000000000/CONFIG_RTAI_LATENCY_SELF_CALIBRATION_FREQ);
@@ -2614,14 +2614,7 @@ static void calibrate_latencies(void)
 		tuned.timers_tol[cpuid] = rt_half_tick = 0;
 	}
 
-	if (snprintf(env0, ALPHA_ARGSIZE - sizeof("latencies   "), "%s/calibration", RTAI_INSTALL_DIR) >= ALPHA_ARGSIZE - sizeof("latencies   ")) {
-		printk("SCHED LATENCY CALIBRATION FAILED BECAUSE OF A DEFICIENT STRING SIZING (%d).\n", ALPHA_ARGSIZE);
-		return;
-	}
-	sprintf(arg0, "%s/calibrate", env0);
-	sprintf(arg1, "%s/latencies", env0);
 	sprintf(arg2, "%d", recalibrate ? -1 : 0);
-	sprintf(arg3, "%d", -1);
 	printk("USERMODE CHECK: %s.\n", !call_usermodehelper(argv[0], argv, envp, UMH_WAIT_PROC) ? "OK" : "ERROR");
 	printk("USERMODE CHECK PROVIDED (ns): KernelLatency %d, UserLatency %d.\n", KernelLatency > 0 ? (int)count2nano(KernelLatency) : KernelLatency, UserLatency > 0 ? (int)count2nano(UserLatency) : UserLatency);
 

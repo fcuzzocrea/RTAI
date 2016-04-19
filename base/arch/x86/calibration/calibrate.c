@@ -40,7 +40,6 @@ static inline RTIME rt_rdtsc(void)
 }
 
 #define DIAG_KF_LAT_EVAL 0
-#define RTAI_LATENCY_SELF_CALIBRATION_METRICS 2
 #define HINF 0
 #define THETA ((double)0.1)
 #define MAX_LOOPS CONFIG_RTAI_LATENCY_SELF_CALIBRATION_CYCLES
@@ -102,7 +101,7 @@ static inline double kf_lat_eval(long period)
 		}
 	}
 	rt_printk("USER SPACE LATENCY ENDED AT CYCLE: %d, LATENCY = %g, VARIANCE = %g, GAIN = %g, LEAST = %g.\n", loop - 1 , xe,  pe, g, xm);
-	return RTAI_LATENCY_SELF_CALIBRATION_METRICS == 1 ? xe : (RTAI_LATENCY_SELF_CALIBRATION_METRICS == 2 ? xm : (xe + xm)/2);
+	return CONFIG_RTAI_LATENCY_SELF_CALIBRATION_METRICS == 1 ? xe : (CONFIG_RTAI_LATENCY_SELF_CALIBRATION_METRICS == 2 ? xm : (xe + xm)/2);
 }
 
 #if 1

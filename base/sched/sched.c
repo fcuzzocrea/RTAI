@@ -2490,7 +2490,6 @@ static int end_kernel_lat_cal;
 
 #if 1
 #define DIAG_KF_LAT_EVAL 0
-#define RTAI_LATENCY_SELF_CALIBRATION_METRICS 2
 #define SV 3163
 #define SG 1000000000
 #define R  (2*SV)
@@ -2549,7 +2548,7 @@ static void kf_lat_eval(long period)
 	}
 	rt_printk("KERNEL SPACE LATENCY ENDED AT CYCLE: %d, LATENCY = %d, VARIANCE = %d/%d, GAIN = %d/%d, LEAST = %d.\n", loop - 1 , xe, pe, SV*SV, g, SG, xm);
 
-	KernelLatency = RTAI_LATENCY_SELF_CALIBRATION_METRICS == 1 ? xe : (RTAI_LATENCY_SELF_CALIBRATION_METRICS == 2 ? xm : (xe + xm)/2);
+	KernelLatency = CONFIG_RTAI_LATENCY_SELF_CALIBRATION_METRICS == 1 ? xe : (CONFIG_RTAI_LATENCY_SELF_CALIBRATION_METRICS == 2 ? xm : (xe + xm)/2);
 	end_kernel_lat_cal = 1;
 }
 #else

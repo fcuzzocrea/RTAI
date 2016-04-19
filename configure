@@ -18167,6 +18167,8 @@ CONFIG_BUILD_SMISPV=n
 if test $RTAI_TARGET_ARCH = x86 ; then
 		{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for libsensors" >&5
 $as_echo_n "checking for libsensors... " >&6; }
+	save_LIBS="$LIBS"
+	LIBS="$LIBS -lsensors"
 	link_sensors=n
 	cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
@@ -18188,6 +18190,7 @@ if ac_fn_c_try_link "$LINENO"; then :
 fi
 rm -f core conftest.err conftest.$ac_objext \
     conftest$ac_exeext conftest.$ac_ext
+	LIBS="$save_LIBS"
 
 	if test $link_sensors = y ; then
 		{ $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
@@ -18202,6 +18205,8 @@ $as_echo "no" >&6; }
 
 		{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for libpci" >&5
 $as_echo_n "checking for libpci... " >&6; }
+	save_LIBS="$LIBS"
+	LIBS="$LIBS -lpci"
 	link_pci=n
 	cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
@@ -18223,6 +18228,7 @@ if ac_fn_c_try_link "$LINENO"; then :
 fi
 rm -f core conftest.err conftest.$ac_objext \
     conftest$ac_exeext conftest.$ac_ext
+	LIBS="$save_LIBS"
 
 	if test $link_pci = y ; then
 		{ $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5

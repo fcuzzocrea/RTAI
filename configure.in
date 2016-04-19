@@ -1179,12 +1179,15 @@ CONFIG_BUILD_SMISPV=n
 if test $RTAI_TARGET_ARCH = x86 ; then
 	dnl check for libsensors
 	AC_MSG_CHECKING(for libsensors)
+	save_LIBS="$LIBS"
+	LIBS="$LIBS -lsensors"
 	link_sensors=n
 	AC_TRY_LINK([
 #include <sensors/sensors.h>
 		],[
 	(void)sensors_init(0);
 		],[link_sensors=y])
+	LIBS="$save_LIBS"
 
 	if test $link_sensors = y ; then
 		AC_MSG_RESULT(yes)
@@ -1195,12 +1198,15 @@ if test $RTAI_TARGET_ARCH = x86 ; then
 
 	dnl check for libpci
 	AC_MSG_CHECKING(for libpci)
+	save_LIBS="$LIBS"
+	LIBS="$LIBS -lpci"
 	link_pci=n
 	AC_TRY_LINK([
 #include <pci/pci.h>
 		],[
 	(void)pci_init(0);
 		],[link_pci=y])
+	LIBS="$save_LIBS"
 
 	if test $link_pci = y ; then
 		AC_MSG_RESULT(yes)

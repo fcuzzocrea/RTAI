@@ -1018,6 +1018,12 @@
         * base/sched/sched.c: rt_signal_wake_up reverted to wake up on 
 	  Linux signals hanyhow.
 
+2013-07-18 Marco Morandini <marco.morandini@polimi.it>
+
+        * base/arch/x86/calibrate/smispv.c: new interactive SMI supervisor-
+	  monitor, including max overall hardware temperature, to control
+	  possible SMI related abnormal latencies.
+
 2013-07-18 Paolo Mantegazza <mantegazza@aero.polimi.it>
 
         * base/sched/sched.c: rt_signal_wake_up will allow hard real time 

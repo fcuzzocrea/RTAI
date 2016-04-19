@@ -8,6 +8,8 @@
 #include <pci/pci.h>
 #include <sys/io.h>
 
+#include <rtai_config.h>
+
 extern int read_sensors_config_file(void);
 extern void read_maximum_temperature(void);
 extern void cleanup_sensors_library(void);

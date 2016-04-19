@@ -1,3 +1,10 @@
+2016-04-19 Pierangelo Masarati <pierangelo.masarati@polimi.it>
+
+	* base/arch/x86/calibration/GNUmakefile.am: conditional compilation
+	  of smispv
+	* configure.in: added CONFIG_RTAI_LATENCY_SELF_CALIBRATION_METRICS;
+	  conditional compilation of smispv
+
 2016-04-11 Paolo Mantegazza <mantegazza@aero.polimi.it>
 
 	* base/arch/x86/Kconfig: added parameter to chooce latency calibration

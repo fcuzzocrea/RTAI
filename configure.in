@@ -719,14 +719,29 @@ AC_ARG_ENABLE(long-timed-lists,
 	esac])
 AC_MSG_RESULT(${CONFIG_RTAI_LONG_TIMED_LIST:-no})
 
-AC_MSG_CHECKING(for latency self calibration period)
-AC_ARG_ENABLE(latency-self-calibration-period,
-	[ --enable-latency-self-calibration-period	Set latency self calibration period],
+AC_MSG_CHECKING(for latency self calibration metrics)
+AC_ARG_ENABLE(latency-self-calibration-metrics,
+	[ --enable-latency-self-calibration-metrics	Set latency self calibration metrics],
+	[case "$enableval" in
+ changequote(,)dnl
+	[1-3]*) CONFIG_RTAI_LATENCY_SELF_CALIBRATION_METRICS=$enableval ;;
+ changequote([,])dnl
+	*) AC_MSG_ERROR([Bad argument to option: --enable-latency-self-calibration-metrics=[1-3]]) ;;
+	esac])
+if test x$CONFIG_RTAI_LATENCY_SELF_CALIBRATION_METRICS = x ; then
+  # Use a reasonable default if unset
+  CONFIG_RTAI_LATENCY_SELF_CALIBRATION_METRICS=1
+fi
+AC_MSG_RESULT($CONFIG_RTAI_LATENCY_SELF_CALIBRATION_METRICS)
+
+AC_MSG_CHECKING(for latency self calibration freq)
+AC_ARG_ENABLE(latency-self-calibration-freq,
+	[ --enable-latency-self-calibration-freq	Set latency self calibration freq],
 	[case "$enableval" in
  changequote(,)dnl
 	[0-9]*) CONFIG_RTAI_LATENCY_SELF_CALIBRATION_FREQ=$enableval ;;
  changequote([,])dnl
-	*) AC_MSG_ERROR([Bad argument to option: --enable-latency-self-calibration-period=<nanoseconds>]) ;;
+	*) AC_MSG_ERROR([Bad argument to option: --enable-latency-self-calibration-freq=<Hz>]) ;;
 	esac])
 if test x$CONFIG_RTAI_LATENCY_SELF_CALIBRATION_FREQ = x ; then
   # Use a reasonable default if unset
@@ -734,14 +749,14 @@ if test x$CONFIG_RTAI_LATENCY_SELF_CALIBRATION_FREQ = x ; then
 fi
 AC_MSG_RESULT($CONFIG_RTAI_LATENCY_SELF_CALIBRATION_FREQ)
 
-AC_MSG_CHECKING(for latency self calibration time)
-AC_ARG_ENABLE(latency-self-calibration-time,
-	[ --enable-latency-self-calibration-time	Set latency self calibration time],
+AC_MSG_CHECKING(for latency self calibration cycles)
+AC_ARG_ENABLE(latency-self-calibration-cycles,
+	[ --enable-latency-self-calibration-cycles	Set latency self calibration cycles],
 	[case "$enableval" in
  changequote(,)dnl
 	[0-9]*) CONFIG_RTAI_LATENCY_SELF_CALIBRATION_CYCLES=$enableval ;;
  changequote([,])dnl
-	*) AC_MSG_ERROR([Bad argument to option: --enable-latency-self-calibration-time=<seconds>]) ;;
+	*) AC_MSG_ERROR([Bad argument to option: --enable-latency-self-calibration-cycles=<numcycles>]) ;;
 	esac])
 if test x$CONFIG_RTAI_LATENCY_SELF_CALIBRATION_CYCLES = x ; then
   # Use a reasonable default if unset
@@ -1158,6 +1173,58 @@ if test x$CONFIG_X86_TSC = xy ; then
 fi
 
 dnl
+dnl Check whether compile calibration/smispv
+dnl
+CONFIG_BUILD_SMISPV=n
+if test $RTAI_TARGET_ARCH = x86 ; then
+	dnl check for libsensors
+	AC_MSG_CHECKING(for libsensors)
+	link_sensors=n
+	AC_TRY_LINK([
+#include <sensors/sensors.h>
+		],[
+	(void)sensors_init(0);
+		],[link_sensors=y])
+
+	if test $link_sensors = y ; then
+		AC_MSG_RESULT(yes)
+		AC_DEFINE(HAVE_SENSORS,1,[have libsensors])
+	else
+		AC_MSG_RESULT(no)
+	fi
+
+	dnl check for libpci
+	AC_MSG_CHECKING(for libpci)
+	link_pci=n
+	AC_TRY_LINK([
+#include <pci/pci.h>
+		],[
+	(void)pci_init(0);
+		],[link_pci=y])
+
+	if test $link_pci = y ; then
+		AC_MSG_RESULT(yes)
+		AC_DEFINE(HAVE_PCI,1,[have libpci])
+
+		CONFIG_BUILD_SMISPV=y
+	else
+		AC_MSG_RESULT(no)
+	fi
+
+	if test $CONFIG_BUILD_SMISPV = y ; then
+		if test $link_sensors = n ; then
+			AC_MSG_RESULT(    ... smispv will be built WITHOUT temperature monitoring)
+		else
+			AC_MSG_RESULT(    ... smispv will be built)
+		fi
+	else
+		AC_MSG_RESULT(    ... smispv will NOT be built)
+	fi
+fi
+
+AM_CONDITIONAL(CONFIG_BUILD_SMISPV,[test "$CONFIG_BUILD_SMISPV" = y])
+
+dnl
 dnl Check for additional build options.
 dnl
 
@@ -1503,6 +1570,7 @@ test x$CONFIG_RTAI_SCHED_ISR_LOCK = xy && AC_DEFINE(CONFIG_RTAI_SCHED_ISR_LOCK,1
 AC_DEFINE_UNQUOTED(CONFIG_RTAI_RTC_FREQ,$CONFIG_RTAI_RTC_FREQ,[Kconfig])
 test x$CONFIG_RTAI_LONG_TIMED_LIST = xy && AC_DEFINE(CONFIG_RTAI_LONG_TIMED_LIST,1,[Kconfig])
 AC_DEFINE_UNQUOTED(CONFIG_RTAI_SCHED_8254_LATENCY,$CONFIG_RTAI_SCHED_8254_LATENCY,[Kconfig])
+AC_DEFINE_UNQUOTED(CONFIG_RTAI_LATENCY_SELF_CALIBRATION_METRICS,$CONFIG_RTAI_LATENCY_SELF_CALIBRATION_METRICS,[Kconfig])
 AC_DEFINE_UNQUOTED(CONFIG_RTAI_LATENCY_SELF_CALIBRATION_FREQ,$CONFIG_RTAI_LATENCY_SELF_CALIBRATION_FREQ,[Kconfig])
 AC_DEFINE_UNQUOTED(CONFIG_RTAI_LATENCY_SELF_CALIBRATION_CYCLES,$CONFIG_RTAI_LATENCY_SELF_CALIBRATION_CYCLES,[Kconfig])
 AC_DEFINE_UNQUOTED(CONFIG_RTAI_SCHED_LXRT_NUMSLOTS,$CONFIG_RTAI_SCHED_LXRT_NUMSLOTS,[Kconfig])

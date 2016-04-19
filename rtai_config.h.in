@@ -109,6 +109,9 @@
 #undef CONFIG_RTAI_LATENCY_SELF_CALIBRATION_FREQ
 
 /* Kconfig */
+#undef CONFIG_RTAI_LATENCY_SELF_CALIBRATION_METRICS
+
+/* Kconfig */
 #undef CONFIG_RTAI_LEDS
 
 /* Kconfig */
@@ -322,6 +325,12 @@
 
 /* Define to 1 if you have the <memory.h> header file. */
 #undef HAVE_MEMORY_H
+
+/* have libpci */
+#undef HAVE_PCI
+
+/* have libsensors */
+#undef HAVE_SENSORS
 
 /* Define to 1 if you have the <stdint.h> header file. */
 #undef HAVE_STDINT_H

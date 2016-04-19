@@ -5,6 +5,11 @@ modext = @RTAI_MODULE_EXT@
 
 CROSS_COMPILE = @CROSS_COMPILE@
 
+if CONFIG_BUILD_SMISPV
+bin_PROGRAMS = smispv
+smispv_SOURCES = smispv.c
+endif # CONFIG_BUILD_SMISPV
+
 libcalibrate_rt_a_SOURCES = calibrate-module.c calibrate.h
 libsmi_rt_a_SOURCES = smi-module.c
 
@@ -94,6 +99,11 @@ install-data-local:
 	@chmod +x $(DESTDIR)$(calibrationdir)/run
 	$(INSTALL_SCRIPT) -m 755 setsmi $(DESTDIR)$(bindir)
 	@$(LN_S) -f $(bindir)/setsmi $(DESTDIR)$(bindir)/rstsmi
+
+if CONFIG_BUILD_SMISPV
+install-data-local:
+	$(INSTALL_SCRIPT) -m 755 smispv $(DESTDIR)$(calibrationdir)
+endif # CONFIG_BUILD_SMISPV
 
 run: all
 	@$(top_srcdir)/rtai-scripts/rtai-load --verbose

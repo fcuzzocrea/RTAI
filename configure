@@ -828,6 +828,8 @@ DBX_DOC_ROOT
 DOXYGEN_HAVE_DOT
 DOXYGEN
 RTAI_MAYBE_DOCDIR
+CONFIG_BUILD_SMISPV_FALSE
+CONFIG_BUILD_SMISPV_TRUE
 GL_LIBS
 GL_CFLAGS
 X_EXTRA_LIBS
@@ -1005,8 +1007,9 @@ enable_ktasks_sched_lxrt
 enable_sched_lock_isr
 enable_rtc_freq
 enable_long_timed_lists
-enable_latency_self_calibration_period
-enable_latency_self_calibration_time
+enable_latency_self_calibration_metrics
+enable_latency_self_calibration_freq
+enable_latency_self_calibration_cycles
 enable_user_busy_align_ret_delay
 enable_kernel_busy_align_ret_delay
 enable_sched_lxrt_numslots
@@ -1727,8 +1730,9 @@ Optional Features:
  --enable-sched-lock-isr	Enable scheduler lock in ISRs
  --enable-rtc-freq	Enable RTC freq
  --enable-long-timed-lists	Enable long timed lists
- --enable-latency-self-calibration-period	Set latency self calibration period
- --enable-latency-self-calibration-time	Set latency self calibration time
+ --enable-latency-self-calibration-metrics	Set latency self calibration metrics
+ --enable-latency-self-calibration-freq	Set latency self calibration freq
+ --enable-latency-self-calibration-cycles	Set latency self calibration cycles
  --user-busy-align-ret-delay	Set user busy align ret delay
  --kernel-busy-align-ret-delay	Set kernel busy align ret delay
  --enable-sched-lxrt-numslots	Set maximum number of LXRT slots
@@ -16403,13 +16407,30 @@ fi
 { $as_echo "$as_me:${as_lineno-$LINENO}: result: ${CONFIG_RTAI_LONG_TIMED_LIST:-no}" >&5
 $as_echo "${CONFIG_RTAI_LONG_TIMED_LIST:-no}" >&6; }
 
-{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for latency self calibration period" >&5
-$as_echo_n "checking for latency self calibration period... " >&6; }
-# Check whether --enable-latency-self-calibration-period was given.
-if test "${enable_latency_self_calibration_period+set}" = set; then :
-  enableval=$enable_latency_self_calibration_period; case "$enableval" in
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for latency self calibration metrics" >&5
+$as_echo_n "checking for latency self calibration metrics... " >&6; }
+# Check whether --enable-latency-self-calibration-metrics was given.
+if test "${enable_latency_self_calibration_metrics+set}" = set; then :
+  enableval=$enable_latency_self_calibration_metrics; case "$enableval" in
+ 	[1-3]*) CONFIG_RTAI_LATENCY_SELF_CALIBRATION_METRICS=$enableval ;;
+ 	*) as_fn_error $? "Bad argument to option: --enable-latency-self-calibration-metrics=1-3" "$LINENO" 5 ;;
+	esac
+fi
+
+if test x$CONFIG_RTAI_LATENCY_SELF_CALIBRATION_METRICS = x ; then
+  # Use a reasonable default if unset
+  CONFIG_RTAI_LATENCY_SELF_CALIBRATION_METRICS=1
+fi
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $CONFIG_RTAI_LATENCY_SELF_CALIBRATION_METRICS" >&5
+$as_echo "$CONFIG_RTAI_LATENCY_SELF_CALIBRATION_METRICS" >&6; }
+
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for latency self calibration freq" >&5
+$as_echo_n "checking for latency self calibration freq... " >&6; }
+# Check whether --enable-latency-self-calibration-freq was given.
+if test "${enable_latency_self_calibration_freq+set}" = set; then :
+  enableval=$enable_latency_self_calibration_freq; case "$enableval" in
  	[0-9]*) CONFIG_RTAI_LATENCY_SELF_CALIBRATION_FREQ=$enableval ;;
- 	*) as_fn_error $? "Bad argument to option: --enable-latency-self-calibration-period=<nanoseconds>" "$LINENO" 5 ;;
+ 	*) as_fn_error $? "Bad argument to option: --enable-latency-self-calibration-freq=<Hz>" "$LINENO" 5 ;;
 	esac
 fi
 
@@ -16420,13 +16441,13 @@ fi
 { $as_echo "$as_me:${as_lineno-$LINENO}: result: $CONFIG_RTAI_LATENCY_SELF_CALIBRATION_FREQ" >&5
 $as_echo "$CONFIG_RTAI_LATENCY_SELF_CALIBRATION_FREQ" >&6; }
 
-{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for latency self calibration time" >&5
-$as_echo_n "checking for latency self calibration time... " >&6; }
-# Check whether --enable-latency-self-calibration-time was given.
-if test "${enable_latency_self_calibration_time+set}" = set; then :
-  enableval=$enable_latency_self_calibration_time; case "$enableval" in
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for latency self calibration cycles" >&5
+$as_echo_n "checking for latency self calibration cycles... " >&6; }
+# Check whether --enable-latency-self-calibration-cycles was given.
+if test "${enable_latency_self_calibration_cycles+set}" = set; then :
+  enableval=$enable_latency_self_calibration_cycles; case "$enableval" in
  	[0-9]*) CONFIG_RTAI_LATENCY_SELF_CALIBRATION_CYCLES=$enableval ;;
- 	*) as_fn_error $? "Bad argument to option: --enable-latency-self-calibration-time=<seconds>" "$LINENO" 5 ;;
+ 	*) as_fn_error $? "Bad argument to option: --enable-latency-self-calibration-cycles=<numcycles>" "$LINENO" 5 ;;
 	esac
 fi
 
@@ -18142,6 +18163,103 @@ $as_echo "#define CONFIG_RTAI_TSC 1" >>confdefs.h
 
 fi
 
+CONFIG_BUILD_SMISPV=n
+if test $RTAI_TARGET_ARCH = x86 ; then
+		{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for libsensors" >&5
+$as_echo_n "checking for libsensors... " >&6; }
+	link_sensors=n
+	cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+#include <sensors/sensors.h>
+
+int
+main ()
+{
+
+	(void)sensors_init(0);
+
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_link "$LINENO"; then :
+  link_sensors=y
+fi
+rm -f core conftest.err conftest.$ac_objext \
+    conftest$ac_exeext conftest.$ac_ext
+
+	if test $link_sensors = y ; then
+		{ $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
+$as_echo "yes" >&6; }
+
+$as_echo "#define HAVE_SENSORS 1" >>confdefs.h
+
+	else
+		{ $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+	fi
+
+		{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for libpci" >&5
+$as_echo_n "checking for libpci... " >&6; }
+	link_pci=n
+	cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+#include <pci/pci.h>
+
+int
+main ()
+{
+
+	(void)pci_init(0);
+
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_link "$LINENO"; then :
+  link_pci=y
+fi
+rm -f core conftest.err conftest.$ac_objext \
+    conftest$ac_exeext conftest.$ac_ext
+
+	if test $link_pci = y ; then
+		{ $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
+$as_echo "yes" >&6; }
+
+$as_echo "#define HAVE_PCI 1" >>confdefs.h
+
+
+		CONFIG_BUILD_SMISPV=y
+	else
+		{ $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+	fi
+
+	if test $CONFIG_BUILD_SMISPV = y ; then
+		if test $link_sensors = n ; then
+			{ $as_echo "$as_me:${as_lineno-$LINENO}: result: ... smispv will be built WITHOUT temperature monitoring" >&5
+$as_echo "... smispv will be built WITHOUT temperature monitoring" >&6; }
+		else
+			{ $as_echo "$as_me:${as_lineno-$LINENO}: result: ... smispv will be built" >&5
+$as_echo "... smispv will be built" >&6; }
+		fi
+	else
+		{ $as_echo "$as_me:${as_lineno-$LINENO}: result: ... smispv will NOT be built" >&5
+$as_echo "... smispv will NOT be built" >&6; }
+	fi
+fi
+
+ if test "$CONFIG_BUILD_SMISPV" = y; then
+  CONFIG_BUILD_SMISPV_TRUE=
+  CONFIG_BUILD_SMISPV_FALSE='#'
+else
+  CONFIG_BUILD_SMISPV_TRUE='#'
+  CONFIG_BUILD_SMISPV_FALSE=
+fi
+
+
 
 if test \! -d $srcdir/doc; then
     unset RTAI_MAYBE_DOCDIR
@@ -18989,6 +19107,11 @@ $as_echo "#define CONFIG_RTAI_LONG_TIMED_LIST 1" >>confdefs.h
 
 cat >>confdefs.h <<_ACEOF
 #define CONFIG_RTAI_SCHED_8254_LATENCY $CONFIG_RTAI_SCHED_8254_LATENCY
+_ACEOF
+
+
+cat >>confdefs.h <<_ACEOF
+#define CONFIG_RTAI_LATENCY_SELF_CALIBRATION_METRICS $CONFIG_RTAI_LATENCY_SELF_CALIBRATION_METRICS
 _ACEOF
 
 
@@ -20273,6 +20396,10 @@ Usually this means the macro was only invoked conditionally." "$LINENO" 5
 fi
 if test -z "${am__fastdepCCAS_TRUE}" && test -z "${am__fastdepCCAS_FALSE}"; then
   as_fn_error $? "conditional \"am__fastdepCCAS\" was never defined.
+Usually this means the macro was only invoked conditionally." "$LINENO" 5
+fi
+if test -z "${CONFIG_BUILD_SMISPV_TRUE}" && test -z "${CONFIG_BUILD_SMISPV_FALSE}"; then
+  as_fn_error $? "conditional \"CONFIG_BUILD_SMISPV\" was never defined.
 Usually this means the macro was only invoked conditionally." "$LINENO" 5
 fi
 if test -z "${DBX_DOC_TRUE}" && test -z "${DBX_DOC_FALSE}"; then

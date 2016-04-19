@@ -18193,14 +18193,14 @@ fi
 rm -f core conftest.err conftest.$ac_objext \
     conftest$ac_exeext conftest.$ac_ext
 	LIBS="$save_LIBS"
-	SENSORS_LIBS="-lsensors"
 
 	if test $link_sensors = y ; then
 		{ $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
 $as_echo "yes" >&6; }
 
-$as_echo "#define HAVE_SENSORS 1" >>confdefs.h
+$as_echo "#define CONFIG_RTAI_HAVE_SENSORS 1" >>confdefs.h
 
+		SENSORS_LIBS="-lsensors"
 	else
 		{ $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
 $as_echo "no" >&6; }

@@ -123,7 +123,7 @@ am_calibration_helper_OBJECTS =  \
 calibration_helper_OBJECTS = $(am_calibration_helper_OBJECTS)
 calibration_helper_DEPENDENCIES = ../../../sched/liblxrt/liblxrt.la
 am__smispv_SOURCES_DIST = smispv.c
-@CONFIG_BUILD_SMISPV_TRUE@am_smispv_OBJECTS = smispv.$(OBJEXT)
+@CONFIG_BUILD_SMISPV_TRUE@am_smispv_OBJECTS = smispv-smispv.$(OBJEXT)
 smispv_OBJECTS = $(am_smispv_OBJECTS)
 smispv_DEPENDENCIES =
 AM_V_P = $(am__v_P_@AM_V@)
@@ -377,6 +377,10 @@ moduledir = @RTAI_MODULE_DIR@
 modext = @RTAI_MODULE_EXT@
 @CONFIG_BUILD_SMISPV_TRUE@smispv_SOURCES = smispv.c
 @CONFIG_BUILD_SMISPV_TRUE@smispv_LDADD = -lncurses -lpci @SENSORS_LIBS@
+@CONFIG_BUILD_SMISPV_TRUE@smispv_CPPFLAGS = \
+@CONFIG_BUILD_SMISPV_TRUE@	-I$(top_srcdir)/base/include \
+@CONFIG_BUILD_SMISPV_TRUE@	-I../../../include
+
 libcalibrate_rt_a_SOURCES = calibrate-module.c calibrate.h
 libsmi_rt_a_SOURCES = smi-module.c
 @CONFIG_KBUILD_FALSE@noinst_LIBRARIES = libcalibrate_rt.a libsmi_rt.a
@@ -590,7 +594,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/calibration_helper-calibration_helper.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libcalibrate_rt_a-calibrate-module.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libsmi_rt_a-smi-module.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/smispv.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/smispv-smispv.Po@am__quote@
 
 .c.o:
 @am__fastdepCC_TRUE@	$(AM_V_CC)$(COMPILE) -MT $@ -MD -MP -MF $(DEPDIR)/$*.Tpo -c -o $@ $<
@@ -668,6 +672,20 @@ calibration_helper-calibration_helper.obj: calibration_helper.c
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='calibration_helper.c' object='calibration_helper-calibration_helper.obj' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(calibration_helper_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o calibration_helper-calibration_helper.obj `if test -f 'calibration_helper.c'; then $(CYGPATH_W) 'calibration_helper.c'; else $(CYGPATH_W) '$(srcdir)/calibration_helper.c'; fi`
+
+smispv-smispv.o: smispv.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(smispv_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT smispv-smispv.o -MD -MP -MF $(DEPDIR)/smispv-smispv.Tpo -c -o smispv-smispv.o `test -f 'smispv.c' || echo '$(srcdir)/'`smispv.c
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/smispv-smispv.Tpo $(DEPDIR)/smispv-smispv.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='smispv.c' object='smispv-smispv.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(smispv_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o smispv-smispv.o `test -f 'smispv.c' || echo '$(srcdir)/'`smispv.c
+
+smispv-smispv.obj: smispv.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(smispv_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT smispv-smispv.obj -MD -MP -MF $(DEPDIR)/smispv-smispv.Tpo -c -o smispv-smispv.obj `if test -f 'smispv.c'; then $(CYGPATH_W) 'smispv.c'; else $(CYGPATH_W) '$(srcdir)/smispv.c'; fi`
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/smispv-smispv.Tpo $(DEPDIR)/smispv-smispv.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='smispv.c' object='smispv-smispv.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(smispv_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o smispv-smispv.obj `if test -f 'smispv.c'; then $(CYGPATH_W) 'smispv.c'; else $(CYGPATH_W) '$(srcdir)/smispv.c'; fi`
 
 mostlyclean-libtool:
 	-rm -f *.lo
@@ -795,8 +813,8 @@ distclean-generic:
 maintainer-clean-generic:
 	@echo "This command is intended for maintainers to use"
 	@echo "it deletes files that may require special tools to rebuild."
-@CONFIG_KBUILD_FALSE@clean-local:
 @CONFIG_KBUILD_FALSE@distclean-local:
+@CONFIG_KBUILD_FALSE@clean-local:
 clean: clean-am
 
 clean-am: clean-binPROGRAMS clean-calibrationPROGRAMS clean-generic \

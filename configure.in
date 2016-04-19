@@ -1189,11 +1189,11 @@ if test $RTAI_TARGET_ARCH = x86 ; then
 	(void)sensors_init(0);
 		],[link_sensors=y])
 	LIBS="$save_LIBS"
-	SENSORS_LIBS="-lsensors"
 
 	if test $link_sensors = y ; then
 		AC_MSG_RESULT(yes)
-		AC_DEFINE(HAVE_SENSORS,1,[have libsensors])
+		AC_DEFINE(CONFIG_RTAI_HAVE_SENSORS,1,[have libsensors])
+		SENSORS_LIBS="-lsensors"
 	else
 		AC_MSG_RESULT(no)
 	fi

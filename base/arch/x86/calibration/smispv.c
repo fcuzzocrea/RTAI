@@ -14,8 +14,7 @@ extern int read_sensors_config_file(void);
 extern void read_maximum_temperature(void);
 extern void cleanup_sensors_library(void);
 
-
-#ifdef HAVE_SENSORS
+#ifdef CONFIG_RTAI_HAVE_SENSORS
 
 #include "sensors/sensors.h"
 
@@ -86,7 +85,7 @@ void cleanup_sensors_library(void) {
 	return;
 }
 
-#else /* !HAVE_SENSORS */
+#else /* !CONFIG_RTAI_HAVE_SENSORS */
 int read_sensors_config_file(void) {
 	return 1;
 }
@@ -98,7 +97,7 @@ void cleanup_sensors_library(void) {
 	return;
 }
 
-#endif /* HAVE_SENSORS */
+#endif /* !CONFIG_RTAI_HAVE_SENSORS */
 
 
 /* Intel chipset LPC (Low Pin Count) bus controller: PCI device=31 function=0 */

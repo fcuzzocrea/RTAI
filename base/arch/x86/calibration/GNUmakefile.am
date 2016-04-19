@@ -9,6 +9,9 @@ if CONFIG_BUILD_SMISPV
 bin_PROGRAMS = smispv
 smispv_SOURCES = smispv.c
 smispv_LDADD = -lncurses -lpci @SENSORS_LIBS@
+smispv_CPPFLAGS = \
+	-I$(top_srcdir)/base/include \
+	-I../../../include
 endif # CONFIG_BUILD_SMISPV
 
 libcalibrate_rt_a_SOURCES = calibrate-module.c calibrate.h

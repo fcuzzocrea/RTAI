@@ -8,6 +8,7 @@ CROSS_COMPILE = @CROSS_COMPILE@
 if CONFIG_BUILD_SMISPV
 bin_PROGRAMS = smispv
 smispv_SOURCES = smispv.c
+smispv_LDADD = -lncurses -lpci @SENSORS_LIBS@
 endif # CONFIG_BUILD_SMISPV
 
 libcalibrate_rt_a_SOURCES = calibrate-module.c calibrate.h

@@ -830,6 +830,7 @@ DOXYGEN
 RTAI_MAYBE_DOCDIR
 CONFIG_BUILD_SMISPV_FALSE
 CONFIG_BUILD_SMISPV_TRUE
+SENSORS_LIBS
 GL_LIBS
 GL_CFLAGS
 X_EXTRA_LIBS
@@ -18164,6 +18165,7 @@ $as_echo "#define CONFIG_RTAI_TSC 1" >>confdefs.h
 fi
 
 CONFIG_BUILD_SMISPV=n
+SENSORS_LIBS=
 if test $RTAI_TARGET_ARCH = x86 ; then
 		{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for libsensors" >&5
 $as_echo_n "checking for libsensors... " >&6; }
@@ -18191,6 +18193,7 @@ fi
 rm -f core conftest.err conftest.$ac_objext \
     conftest$ac_exeext conftest.$ac_ext
 	LIBS="$save_LIBS"
+	SENSORS_LIBS="-lsensors"
 
 	if test $link_sensors = y ; then
 		{ $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
@@ -18256,6 +18259,7 @@ $as_echo "... smispv will be built" >&6; }
 $as_echo "... smispv will NOT be built" >&6; }
 	fi
 fi
+
 
  if test "$CONFIG_BUILD_SMISPV" = y; then
   CONFIG_BUILD_SMISPV_TRUE=

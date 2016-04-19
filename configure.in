@@ -1176,6 +1176,7 @@ dnl
 dnl Check whether compile calibration/smispv
 dnl
 CONFIG_BUILD_SMISPV=n
+SENSORS_LIBS=
 if test $RTAI_TARGET_ARCH = x86 ; then
 	dnl check for libsensors
 	AC_MSG_CHECKING(for libsensors)
@@ -1188,6 +1189,7 @@ if test $RTAI_TARGET_ARCH = x86 ; then
 	(void)sensors_init(0);
 		],[link_sensors=y])
 	LIBS="$save_LIBS"
+	SENSORS_LIBS="-lsensors"
 
 	if test $link_sensors = y ; then
 		AC_MSG_RESULT(yes)
@@ -1228,6 +1230,7 @@ if test $RTAI_TARGET_ARCH = x86 ; then
 	fi
 fi
 
+AC_SUBST(SENSORS_LIBS)
 AM_CONDITIONAL(CONFIG_BUILD_SMISPV,[test "$CONFIG_BUILD_SMISPV" = y])
 
 dnl

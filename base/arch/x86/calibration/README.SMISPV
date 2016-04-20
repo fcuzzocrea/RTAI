@@ -1,0 +1,37 @@
+To fix SMI problems you may try running as root "smispv [[-g] -s <xxx>]", 
+where <xxx> should be the value to which you want to set the SMI registers. 
+The -g option should be used if you want to change the alternate GPI registers.
+Called without any argument smispv runs as an interactive terminal
+application that allows to interactively play with the SMI registers
+and find the combination that best suites your needs.
+
+BEWARE: playing with SMI registers is NOT recommended and MAY IRREPARABLY 
+DAMAGE YOUR PC.
+Do it AT YOUR OWN RISK. You SHOULD KNOW WHAT YOU ARE DOING.
+We think it could be helpful to disable in the BIOS any "smart fan" feature, 
+and force all the fans to run at their maximum speed. 
+But again, this is just speculation, and you are basically on your own.
+
+Be also aware that if your machine has high latencies due to SMI interrupts then
+
+- if the BIOS sets the TCO_LOCK bit of the TCO1 Control Register 
+	then smispv will not be able to change the TCO_EN bit.
+- if the BIOS sets the SMI_LOCK bit of the General PM Configuration 1 Register
+	then smispv will not be able to change the GLB_SMI_EN bit.
+
+The SMI registers are documented e.g. into the 
+Intel's  I/O Controller Hub 10 (ICH10) Family datasheet
+that is dowoadable from
+
+http://www.intel.com/content/www/us/en/io/io-controller-hub-10-family-datasheet.html
+
+If you don't have the faintest idea of what an SMI interrupt is, try first
+reading
+
+https://en.wikipedia.org/wiki/System_Management_Mode
+
+and
+
+https://mjg59.dreamwidth.org/30773.html
+
+later on.

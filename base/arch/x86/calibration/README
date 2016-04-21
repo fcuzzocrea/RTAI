@@ -4,15 +4,15 @@
 
 Let's recall that scheduling latency calibrations are required only for  
 hard timers in oneshot mode, which is the only mode used by RTAI now.
-That said, there are two calibrations to be cared of: hard timer shots, for
-APIC and 8254, and scheduling latencies, which are to be compensated by 
+That said, there are two calibrations to be cared of: hard timer shots 
+(APIC or 8254) and scheduling latencies, which are to be compensated by 
 appropriately anticipating the required timer shots programming.
 
 	Calibration of hard timers shot, APIC and 8254, programming
 	===========================================================
 
-Such a calibration is fast and hiddenly carried out at each schedule module 
-insmoding. So there is no need to say more for it.
+Such a calibration is fast and hiddenly carried out at each rtai_sched
+module insmoding. So there is no need to say more for it.
 
 		      Scheduling latencies calibration
 		      ================================
@@ -22,13 +22,14 @@ one for kernel space tasks. In fact there could be a sizeable latency
 difference, kernel space latencies being generally less the those in user space.
 The related values are determined at the first rtai_sched module use and saved
 to avoid repeating it at any ensuing insmod.
-If any available installed latency test is run after calibrating, one could see somewhat different values with respect to the calibrated result. That is due 
-to the somewhat different overhead of the installed latency tests. 
+If any available installed latency test is run after calibrating one could see
+somewhat different values with respect to the calibrated result. That is due 
+to the different overhead of the installed latency tests with respect to the
+one used for the calibration. 
 Here are some further clues on the calibration parameters, available as helpers
 in menuconfig.
 
-RTAI_LATENCY_SELF_CALIBRATION_METRICS.
-This parameter sets the latency calibration criteria.
+RTAI_LATENCY_SELF_CALIBRATION_METRICS: Set the latency calibration criteria.
 1 - AVERAGE will provide mostly zero averages, but possible oscillations
     below zero could be significant.
 2 - LEAST VALUE should be chosen for average values being only marginally
@@ -122,19 +123,20 @@ substitute those obtained by calibrating, through the rtai_sched.ko
 	Busy wait looping for a sharper on time latency calibration
 	===========================================================
 
-The RTAI scheduler has the possibility of assigning scheduling latencies 
+The RTAI scheduler has also the possibility of exploiting scheduling latencies 
 slightly in excess of those required and then wait for a sharper matching of 
 the scheduling time by busy waiting on the hard timer.
-That is achieved by enabling the configuration option RTAI_BUSY_TIME_ALIGN.
-Since the busy wait is done at the exiting of the scheduler there is still a
-completion overhead to be set, to take into account the closure of the whole
-return path, i.e. till the exiting of the calling timing function. Therefore,
-after enabling RTAI_BUSY_TIME_ALIGN, there is the possibility of setting such 
-completion values with the options RTAI_KERN_BUSY_ALIGN_RET_DELAY and 
-RTAI_USER_BUSY_ALIGN_RET_DELAY, whose default value is zero. The required 
-times must be assigned by the user when configuring RTAI.
-To be sure to engage the busy wait, sometimes a user might use such an option 
-in combination with a marginally longer than needed latency value.
+That is achieved by enabling the configuration options 
+RTAI_KERN_BUSY_ALIGN_RET_DELAY and RTAI_USER_BUSY_ALIGN_RET_DELAY.
+In fact, since the busy wait is done at the exiting of the scheduler there is 
+still a completion overhead to be set, to take into account the closure of the 
+whole return path, i.e. till the exiting of the calling timing function. 
+Therefore, there is the possibility of setting such completion values with the 
+options RTAI_KERN_BUSY_ALIGN_RET_DELAY and RTAI_USER_BUSY_ALIGN_RET_DELAY, 
+whose default value is zero. The required times must be assigned by the user 
+when configuring RTAI. To be sure to engage the busy wait, sometimes a user 
+might use such an option in combination with a marginally longer than needed 
+latency value.
 
 Finally, it must be remarked that all of what above should be carried out and 
 verified on a "quiet" machine. In fact the calibration can be significantly 

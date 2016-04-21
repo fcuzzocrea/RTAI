@@ -1,8 +1,9 @@
 To fix SMI problems run "setsmi [hal_smi_masked_bits=<xxx>]", where
 "hal_smi_masked_bits" should be used if SMI devices must be disabled
 selectively. Without it SMI is disabled completely. Note that using
-"setsmi hal_smi_masked_bits=1" will disable SMI completely, it is in
-fact the default action if nothing is said at insmod, but ca be very dangerous.
+"setsmi hal_smi_masked_bits=1" will disable SMI completely. It is in
+fact the default action if nothing is said at insmod, but can be very 
+dangerous.
 
 A list of a few specific bits:
 #define INTEL_USB2_EN_BIT   (0x01 << 18) /* ICH4, ... */
@@ -19,7 +20,7 @@ A list of a few specific bits:
 The default action of disabling SMI support completely will disable any 
 device wanting to acces SMI. So assigning a specific "hal_smi_masked_bits" 
 may be a more viable way of controlling SMI. Such a choice may however 
-be not a trivial one, entailing some testing trials. In fact it is in view
+not be a trivial one, entailing some testing trials. In fact it is in view
 of the need of easily fiddling with such a bit mask, without recompiling the
 related support, that the alternative of setting it at RTAI configuration
 has been dismissed.
@@ -28,6 +29,8 @@ To reset SMI to its previous state simply run: "rstsmi".
 
 Both scripts are located in $PREFIX/bin/ and they assume that directory
 is in your $PATH.
+
+See also README.SMISPV, in this direcory, for another way to supervise SMI.
 
 ------------------------------------------------------------------------------
 
@@ -74,7 +77,6 @@ Content-Type: text/plain; charset=us-ascii
 Content-Transfer-Encoding: 7bit
 Content-Disposition: inline
 X-Mime-Autoconverted: from 8bit to 7bit by courier 0.39
-
 
 Hi Jason and Paolo,
 

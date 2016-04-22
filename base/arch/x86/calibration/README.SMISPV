@@ -1,9 +1,21 @@
-To fix SMI problems you may try running as root "smispv [[-g] -s <xxx>]", 
-where <xxx> should be the value to which you want to set the SMI registers. 
-The -g option should be used if you want to change the alternate GPI registers.
-Called without any argument smispv runs as an interactive terminal
-application that allows to interactively play with the SMI registers
-and find the combination that best suites your needs.
+Available here or in the RTAI installation directory, under the subdir
+"calibration/smispv", SMISPV is an interactive monitor/supervisor of the 
+System Management Interrupt (SMI). It allows to pay with SMI configuration 
+in a "what if" approach. For example operated while an RTAI latency test is
+running it will show on the fly how setting certain bits on can lead to large
+timed scheduling latencies. 
+To have it RTAI make has to find at least libpci, while if libsensors is also
+available it will allow to monitor the highest temperature it can find.
+So, If none of the above libs is found then it sill simply not be made. 
+With just libpci being found there will be no temperature monitoring.
+As seen below it shows scaring messages about its use. Nonetheless, especially
+if you have read the documentation, the RTAI README on the tuning paramenter, 
+temperatures are monitored and it is not run for too long a time, the danger
+of burning you computer is somewhat limited.
+Its use is simple and self contained. Launch it and follow the displayed 
+usage clues.
+
+Here are a few suggestions.
 
 BEWARE: playing with SMI registers is NOT recommended and MAY IRREPARABLY 
 DAMAGE YOUR PC.
@@ -19,7 +31,7 @@ Be also aware that if your machine has high latencies due to SMI interrupts then
 - if the BIOS sets the SMI_LOCK bit of the General PM Configuration 1 Register
 	then smispv will not be able to change the GLB_SMI_EN bit.
 
-The SMI registers are documented e.g. into the 
+The SMI registers are documented, e.g., into the 
 Intel's  I/O Controller Hub 10 (ICH10) Family datasheet
 that is dowoadable from
 
@@ -35,3 +47,10 @@ and
 https://mjg59.dreamwidth.org/30773.html
 
 later on.
+
+Once you are documented and acquainted with it you can fix your SMI problems 
+by simply running it as root with the following command: 
+"smispv [[-g] -s <xxx>]"; 
+where <xxx> should be the value to which you want to set the SMI registers. 
+The -g option should be used if you want to change the alternate GPI registers.
+The above use can be seen as a substitute of using the SMI fixing module.

@@ -1,5 +1,11 @@
 2016-04-20 Paolo Mantegazza <mantegazza@aero.polimi.it>
 
+	* base/arch/x86/hal/hal.c: abort compilation if CONFIG_IPIPE_LEGACY,
+	  trivial way to avoid undue confusion and troubles in the use of
+	  RTAI.
+
+2016-04-20 Paolo Mantegazza <mantegazza@aero.polimi.it>
+
 	* base/arch/x86/calibration/smi-module.c: updated SMI chipset 
 	  list.
 

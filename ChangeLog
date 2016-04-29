@@ -1,3 +1,7 @@
+2016-04-29 Pierangelo Masarati <pierangelo.masarati@polimi.it>
+
+	* RTAI 5.0-test2
+
 2016-04-20 Paolo Mantegazza <mantegazza@aero.polimi.it>
 
 	* base/arch/x86/hal/hal.c: abort compilation if CONFIG_IPIPE_LEGACY,

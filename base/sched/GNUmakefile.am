@@ -97,4 +97,4 @@ install-exec-local: $(schedulers)
 # liblxrt is always built
 SUBDIRS = liblxrt
 
-EXTRA_DIST = Makefile.kbuild selfcalibrate.sh
+EXTRA_DIST = Makefile.kbuild

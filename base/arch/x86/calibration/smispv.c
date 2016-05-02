@@ -1,3 +1,25 @@
+/*
+ * Copyright (C) 2016, Marco Morandini <marco.morandini@polimi.it>.
+ * Copyright (C) 2006, 2010 Jan Kiszka <jan.kiszka@web.de>.
+ *
+ * Based on Jan Kiszka's smictrlv2.
+ *
+ * This library is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU Lesser General Public
+ * License as published by the Free Software Foundation; either
+ * version 2 of the License, or (at your option) any later version.
+ *
+ * This library is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+ * Lesser General Public License for more details.
+
+ * You should have received a copy of the GNU Lesser General Public
+ * License along with this library; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA.
+ */
+
+
 #include <string.h>
 #include <stdlib.h>
 #include <unistd.h>
@@ -31,8 +53,6 @@ int read_sensors_config_file(void)
 
 	return 0;
 }
-
-
 
 /* returns number of chips found */
 void read_maximum_temperature(void) {
@@ -86,6 +106,7 @@ void cleanup_sensors_library(void) {
 }
 
 #else /* !CONFIG_RTAI_HAVE_SENSORS */
+
 int read_sensors_config_file(void) {
 	return 1;
 }
@@ -99,26 +120,12 @@ void cleanup_sensors_library(void) {
 
 #endif /* !CONFIG_RTAI_HAVE_SENSORS */
 
-
 /* Intel chipset LPC (Low Pin Count) bus controller: PCI device=31 function=0 */
 #define LPC_DEV             31
 #define LPC_FUNC            0
 
 #define PMBASE_B0           0x40
 #define PMBASE_B1           0x41
-/* 
- *
- * Copyright (C) 2016, Marco Morandini <marco.morandini@polimi.it>.
- * Copyright (C) 2006, 2010 Jan Kiszka <jan.kiszka@web.de>.
- *
- * Based on Jan Kiszka's smictrlv2.
- *
- * This program is free software; you can redistribute it and/or modify it
- * under the terms of the GNU General Public License as published by
- * the Free Software Foundation; either version 3 of the License, or
- * (at your option) any later version.
- */
-
 
 #define SMI_CTRL_ADDR       0x30
 #define SMI_STATUS_ADDR     0x34
@@ -129,7 +136,6 @@ struct SmiRegisters {
 	char name[15];
 	uint32_t value;
 };
-
 
 #define N_SMI_REGS 12
 struct SmiRegisters smi_regs[N_SMI_REGS] = {
@@ -166,7 +172,6 @@ struct SmiRegisters smi_gpio_regs[N_SMI_GPIO_REGS] = {
 	{.name = "GPIO[1]    ",	.value = (0x01 << 1) },
 	{.name = "GPIO[0]    ",	.value = (0x01)      }
 };
-
 
 void warning_message(void) {
 	int ch, row, col;
@@ -221,7 +226,6 @@ void warning_message(void) {
 	exit(1);
 }
 
-
 uint16_t get_smi_en_addr(struct pci_dev *dev, uint8_t gpio)
 {
     uint8_t byte0, byte1;
@@ -263,7 +267,6 @@ struct pci_dev * find_smi_device(struct pci_access * pacc) {
 	
 	return 0;
 }
-
 
 void read_pci(uint16_t * smi_en_addr, uint32_t *value) {
         value[0] = inl(smi_en_addr[0]);

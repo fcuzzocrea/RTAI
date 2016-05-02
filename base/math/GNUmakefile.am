@@ -4,7 +4,7 @@ modext = @RTAI_MODULE_EXT@
 
 CROSS_COMPILE = @CROSS_COMPILE@
 
-libmath_a_SOURCES = libm.c export_glibc.h export_newlib.h export_uclibc.h
+libmath_a_SOURCES = libm.c export_glibc.h export_newlib.h export_uclibc.h export_musl.h
 
 if CONFIG_KBUILD
 rtai_math.ko: @RTAI_KBUILD_ENV@

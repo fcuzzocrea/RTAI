@@ -112,6 +112,6 @@ endif # CONFIG_BUILD_SMISPV
 run: all
 	@$(top_srcdir)/rtai-scripts/rtai-load --verbose
 
-EXTRA_DIST = runinfo README.SMI Makefile.kbuild
+EXTRA_DIST = runinfo README.SMI README.SMISPV Makefile.kbuild
 
 DISTCLEANFILES = Makefile

@@ -422,7 +422,7 @@ calibration_helper_LDADD = \
 
 RT_MODULES = rtai_smi$(modext)
 calibrate_DEPENDENCIES = liblxrt.la
-EXTRA_DIST = runinfo README.SMI Makefile.kbuild
+EXTRA_DIST = runinfo README.SMI README.SMISPV Makefile.kbuild
 DISTCLEANFILES = Makefile
 all: all-am
 

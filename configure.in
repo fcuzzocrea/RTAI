@@ -655,19 +655,19 @@ AC_ARG_ENABLE(watchdog,
 	esac])
 AC_MSG_RESULT(${CONFIG_RTAI_WD:-no})
 
-AC_MSG_CHECKING(for leds-based debugging support)
-AC_ARG_ENABLE(leds,
-	[ --enable-leds		Enable leds-based debugging support],
-	[case "$enableval" in
-	y | yes | b | builtin | built-in) CONFIG_RTAI_LEDS=y ;;
-	m | mod | module) CONFIG_RTAI_LEDS=m ;;
-	*) unset CONFIG_RTAI_LEDS ;;
-	esac])
-AC_MSG_RESULT(${CONFIG_RTAI_LEDS:-no})
-
-if test x$CONFIG_RTAI_LEDS = xy ; then
-  RTAI_BUILTIN_MODLIST="$RTAI_BUILTIN_MODLIST leds"
-fi
+dnl AC_MSG_CHECKING(for leds-based debugging support)
+dnl AC_ARG_ENABLE(leds,
+dnl 	[ --enable-leds		Enable leds-based debugging support],
+dnl 	[case "$enableval" in
+dnl 	y | yes | b | builtin | built-in) CONFIG_RTAI_LEDS=y ;;
+dnl 	m | mod | module) CONFIG_RTAI_LEDS=m ;;
+dnl 	*) unset CONFIG_RTAI_LEDS ;;
+dnl 	esac])
+dnl AC_MSG_RESULT(${CONFIG_RTAI_LEDS:-no})
+dnl 
+dnl if test x$CONFIG_RTAI_LEDS = xy ; then
+dnl   RTAI_BUILTIN_MODLIST="$RTAI_BUILTIN_MODLIST leds"
+dnl fi
 
 AC_MSG_CHECKING(whether LXRT wraps service calls through Linux syscalls)
 AC_ARG_ENABLE(lxrt-use-linux-syscall,

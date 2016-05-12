@@ -1002,7 +1002,6 @@ enable_malloc
 enable_tasklets
 enable_usi
 enable_watchdog
-enable_leds
 enable_lxrt_use_linux_syscall
 enable_ktasks_sched_lxrt
 enable_sched_lock_isr
@@ -1725,7 +1724,6 @@ Optional Features:
  --enable-tasklets	Enable tasklets support
  --enable-usi		Enable user-space interrupt support
  --enable-watchdog	Enable watchdog support
- --enable-leds		Enable leds-based debugging support
  --enable-lxrt-use-linux-syscall	Wrap LXRT service calls throug Linux syscall mechanism
  --enable-ktasks-sched-lxrt	Enable LXRT scheduler with kernel tasks support
  --enable-sched-lock-isr	Enable scheduler lock in ISRs
@@ -16325,23 +16323,6 @@ fi
 { $as_echo "$as_me:${as_lineno-$LINENO}: result: ${CONFIG_RTAI_WD:-no}" >&5
 $as_echo "${CONFIG_RTAI_WD:-no}" >&6; }
 
-{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for leds-based debugging support" >&5
-$as_echo_n "checking for leds-based debugging support... " >&6; }
-# Check whether --enable-leds was given.
-if test "${enable_leds+set}" = set; then :
-  enableval=$enable_leds; case "$enableval" in
-	y | yes | b | builtin | built-in) CONFIG_RTAI_LEDS=y ;;
-	m | mod | module) CONFIG_RTAI_LEDS=m ;;
-	*) unset CONFIG_RTAI_LEDS ;;
-	esac
-fi
-
-{ $as_echo "$as_me:${as_lineno-$LINENO}: result: ${CONFIG_RTAI_LEDS:-no}" >&5
-$as_echo "${CONFIG_RTAI_LEDS:-no}" >&6; }
-
-if test x$CONFIG_RTAI_LEDS = xy ; then
-  RTAI_BUILTIN_MODLIST="$RTAI_BUILTIN_MODLIST leds"
-fi
 
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking whether LXRT wraps service calls through Linux syscalls" >&5
 $as_echo_n "checking whether LXRT wraps service calls through Linux syscalls... " >&6; }

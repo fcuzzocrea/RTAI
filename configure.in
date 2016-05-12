@@ -2039,7 +2039,7 @@ if test x$CONFIG_KBUILD = xy; then
    AC_CONFIG_LINKS(base/ipc/tbx/Makefile:base/ipc/tbx/Makefile.kbuild)
    AC_CONFIG_LINKS(base/ipc/netrpc/Makefile:base/ipc/netrpc/Makefile.kbuild)
    AC_CONFIG_LINKS(base/ipc/shm/Makefile:base/ipc/shm/Makefile.kbuild)
-   AC_CONFIG_LINKS(base/leds/Makefile:base/leds/Makefile.kbuild)
+dnl   AC_CONFIG_LINKS(base/leds/Makefile:base/leds/Makefile.kbuild)
    AC_CONFIG_LINKS(base/posix/Makefile:base/posix/Makefile.kbuild)
    AC_CONFIG_LINKS(base/malloc/Makefile:base/malloc/Makefile.kbuild)
    AC_CONFIG_LINKS(base/tasklets/Makefile:base/tasklets/Makefile.kbuild)
@@ -2147,10 +2147,10 @@ AC_CONFIG_FILES([ \
 	base/trace/GNUmakefile \
 	base/wd/GNUmakefile \
 	base/usi/GNUmakefile \
-	base/leds/GNUmakefile \
 	base/posix/GNUmakefile \
 	])
 
+dnl base/leds/GNUmakefile \
 dnl base/arch/ppc/GNUmakefile \
 dnl base/arch/ppc/hal/GNUmakefile \
 dnl base/include/asm-ppc/GNUmakefile \

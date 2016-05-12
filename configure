@@ -20101,8 +20101,6 @@ if test x$CONFIG_KBUILD = xy; then
 
    ac_config_links="$ac_config_links base/ipc/shm/Makefile:base/ipc/shm/Makefile.kbuild"
 
-   ac_config_links="$ac_config_links base/leds/Makefile:base/leds/Makefile.kbuild"
-
    ac_config_links="$ac_config_links base/posix/Makefile:base/posix/Makefile.kbuild"
 
    ac_config_links="$ac_config_links base/malloc/Makefile:base/malloc/Makefile.kbuild"
@@ -20187,7 +20185,7 @@ RTAI_USER_CFLAGS="-I$LINUX_KERNELSRC/include $RTAI_REAL_USER_CFLAGS"
 
 
 
-ac_config_files="$ac_config_files GNUmakefile base/GNUmakefile base/arch/GNUmakefile base/include/GNUmakefile base/ipc/GNUmakefile base/sched/GNUmakefile base/sched/liblxrt/GNUmakefile base/scripts/GNUmakefile base/scripts/rtai-config base/scripts/rtai-load base/arch/x86/GNUmakefile base/arch/x86/hal/GNUmakefile base/arch/x86/calibration/GNUmakefile base/arch/x86/calibration/setsmi base/include/asm-x86/GNUmakefile base/arch/arm/GNUmakefile base/arch/arm/hal/GNUmakefile base/include/asm-arm/GNUmakefile base/ipc/bits/GNUmakefile base/ipc/fifos/GNUmakefile base/ipc/netrpc/GNUmakefile base/ipc/shm/GNUmakefile base/ipc/sem/GNUmakefile base/ipc/msg/GNUmakefile base/ipc/mbx/GNUmakefile base/ipc/tbx/GNUmakefile base/ipc/mq/GNUmakefile base/math/GNUmakefile base/malloc/GNUmakefile base/tasklets/GNUmakefile base/trace/GNUmakefile base/wd/GNUmakefile base/usi/GNUmakefile base/leds/GNUmakefile base/posix/GNUmakefile"
+ac_config_files="$ac_config_files GNUmakefile base/GNUmakefile base/arch/GNUmakefile base/include/GNUmakefile base/ipc/GNUmakefile base/sched/GNUmakefile base/sched/liblxrt/GNUmakefile base/scripts/GNUmakefile base/scripts/rtai-config base/scripts/rtai-load base/arch/x86/GNUmakefile base/arch/x86/hal/GNUmakefile base/arch/x86/calibration/GNUmakefile base/arch/x86/calibration/setsmi base/include/asm-x86/GNUmakefile base/arch/arm/GNUmakefile base/arch/arm/hal/GNUmakefile base/include/asm-arm/GNUmakefile base/ipc/bits/GNUmakefile base/ipc/fifos/GNUmakefile base/ipc/netrpc/GNUmakefile base/ipc/shm/GNUmakefile base/ipc/sem/GNUmakefile base/ipc/msg/GNUmakefile base/ipc/mbx/GNUmakefile base/ipc/tbx/GNUmakefile base/ipc/mq/GNUmakefile base/math/GNUmakefile base/malloc/GNUmakefile base/tasklets/GNUmakefile base/trace/GNUmakefile base/wd/GNUmakefile base/usi/GNUmakefile base/posix/GNUmakefile"
 
 
 
@@ -21661,7 +21659,6 @@ do
     "base/ipc/tbx/Makefile") CONFIG_LINKS="$CONFIG_LINKS base/ipc/tbx/Makefile:base/ipc/tbx/Makefile.kbuild" ;;
     "base/ipc/netrpc/Makefile") CONFIG_LINKS="$CONFIG_LINKS base/ipc/netrpc/Makefile:base/ipc/netrpc/Makefile.kbuild" ;;
     "base/ipc/shm/Makefile") CONFIG_LINKS="$CONFIG_LINKS base/ipc/shm/Makefile:base/ipc/shm/Makefile.kbuild" ;;
-    "base/leds/Makefile") CONFIG_LINKS="$CONFIG_LINKS base/leds/Makefile:base/leds/Makefile.kbuild" ;;
     "base/posix/Makefile") CONFIG_LINKS="$CONFIG_LINKS base/posix/Makefile:base/posix/Makefile.kbuild" ;;
     "base/malloc/Makefile") CONFIG_LINKS="$CONFIG_LINKS base/malloc/Makefile:base/malloc/Makefile.kbuild" ;;
     "base/tasklets/Makefile") CONFIG_LINKS="$CONFIG_LINKS base/tasklets/Makefile:base/tasklets/Makefile.kbuild" ;;
@@ -21712,7 +21709,6 @@ do
     "base/trace/GNUmakefile") CONFIG_FILES="$CONFIG_FILES base/trace/GNUmakefile" ;;
     "base/wd/GNUmakefile") CONFIG_FILES="$CONFIG_FILES base/wd/GNUmakefile" ;;
     "base/usi/GNUmakefile") CONFIG_FILES="$CONFIG_FILES base/usi/GNUmakefile" ;;
-    "base/leds/GNUmakefile") CONFIG_FILES="$CONFIG_FILES base/leds/GNUmakefile" ;;
     "base/posix/GNUmakefile") CONFIG_FILES="$CONFIG_FILES base/posix/GNUmakefile" ;;
     "addons/GNUmakefile") CONFIG_FILES="$CONFIG_FILES addons/GNUmakefile" ;;
     "addons/cpp/GNUmakefile") CONFIG_FILES="$CONFIG_FILES addons/cpp/GNUmakefile" ;;

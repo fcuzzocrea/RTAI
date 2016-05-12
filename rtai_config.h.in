@@ -88,9 +88,6 @@
 #undef CONFIG_RTAI_IMMEDIATE_LINUX_SYSCALL
 
 /* Kconfig */
-#undef CONFIG_RTAI_INTERNAL_LEDS_SUPPORT
-
-/* Kconfig */
 #undef CONFIG_RTAI_INTERNAL_LXRT_INLINE
 
 /* Kconfig */
@@ -113,12 +110,6 @@
 
 /* Kconfig */
 #undef CONFIG_RTAI_LATENCY_SELF_CALIBRATION_METRICS
-
-/* Kconfig */
-#undef CONFIG_RTAI_LEDS
-
-/* Kconfig */
-#undef CONFIG_RTAI_LEDS_BUILTIN
 
 /* Kconfig */
 #undef CONFIG_RTAI_LONG_TIMED_LIST

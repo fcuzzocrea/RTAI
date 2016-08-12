@@ -434,7 +434,7 @@ index 615fa90..e0a62ab 100644
  extern void default_send_IPI_mask_sequence_phys(const struct cpumask *mask,
 diff --git a/arch/x86/include/asm/ipipe.h b/arch/x86/include/asm/ipipe.h
 new file mode 100644
-index 0000000..b5966a6
+index 0000000..876ea0b
 --- /dev/null
 +++ b/arch/x86/include/asm/ipipe.h
 @@ -0,0 +1,112 @@
@@ -464,7 +464,7 @@ index 0000000..b5966a6
 +
 +#ifdef CONFIG_IPIPE
 +
-+#define IPIPE_CORE_RELEASE	3
++#define IPIPE_CORE_RELEASE	6
 +
 +struct ipipe_domain;
 +struct pt_regs;
@@ -1225,13 +1225,13 @@ index 73e38f1..4ceb737 100644
 --- a/arch/x86/include/asm/mmu_context.h
 +++ b/arch/x86/include/asm/mmu_context.h
 @@ -74,7 +74,7 @@ static inline void load_mm_ldt(struct mm_struct *mm)
-	else
-		clear_LDT();
-
+ 	else
+ 		clear_LDT();
+ 
 -	DEBUG_LOCKS_WARN_ON(preemptible());
 +	DEBUG_LOCKS_WARN_ON(preemptible() && !hard_irqs_disabled());
  }
-
+ 
  /*
 @@ -92,11 +92,14 @@ static inline void enter_lazy_tlb(struct mm_struct *mm, struct task_struct *tsk)
  #endif
@@ -3423,10 +3423,10 @@ index e7cc537..bc5e8f8 100644
  handle_real_irq:
 diff --git a/arch/x86/kernel/ipipe.c b/arch/x86/kernel/ipipe.c
 new file mode 100644
-index 0000000..d63126c
+index 0000000..fb9d80f
 --- /dev/null
 +++ b/arch/x86/kernel/ipipe.c
-@@ -0,0 +1,499 @@
+@@ -0,0 +1,510 @@
 +/*   -*- linux-c -*-
 + *   linux/arch/x86/kernel/ipipe.c
 + *
@@ -3485,6 +3485,7 @@ index 0000000..d63126c
 +#include <asm/i387.h>
 +#include <asm/fpu-internal.h>
 +#include <asm/mce.h>
++#include <asm/mmu_context.h>
 +
 +DEFINE_PER_CPU(unsigned long, __ipipe_cr2);
 +EXPORT_PER_CPU_SYMBOL_GPL(__ipipe_cr2);
@@ -3926,6 +3927,16 @@ index 0000000..d63126c
 +#if defined(CONFIG_CC_STACKPROTECTOR) && defined(CONFIG_X86_64)
 +EXPORT_PER_CPU_SYMBOL_GPL(irq_stack_union);
 +#endif
++
++#ifdef CONFIG_IPIPE_LEGACY
++#ifdef CONFIG_TRACEPOINTS
++EXPORT_TRACEPOINT_SYMBOL_GPL(tlb_flush);
++#endif
++#ifdef CONFIG_PERF_EVENTS
++EXPORT_SYMBOL_GPL(rdpmc_always_available);
++#endif
++#endif
++
 diff --git a/arch/x86/kernel/irq.c b/arch/x86/kernel/irq.c
 index e5952c2..9376ee0 100644
 --- a/arch/x86/kernel/irq.c
@@ -5746,6 +5757,19 @@ index 0000000..1f6e9c3
 +static inline void __ipipe_init_threadinfo(struct ipipe_threadinfo *p) { p->ptd[0] = p->ptd[1] = p->ptd[2] = p->ptd[3] = 0; }
 +
 +#endif /* !_IPIPE_THREAD_INFO_H */
+diff --git a/include/linux/basic_mmio_gpio.h b/include/linux/basic_mmio_gpio.h
+index 0e97856..b5d7e60 100644
+--- a/include/linux/basic_mmio_gpio.h
++++ b/include/linux/basic_mmio_gpio.h
+@@ -50,7 +50,7 @@ struct bgpio_chip {
+ 	 * Used to lock bgpio_chip->data. Also, this is needed to keep
+ 	 * shadowed and real data registers writes together.
+ 	 */
+-	spinlock_t lock;
++	ipipe_spinlock_t lock;
+ 
+ 	/* Shadowed data register to clear/set bits safely. */
+ 	unsigned long data;
 diff --git a/include/linux/clockchips.h b/include/linux/clockchips.h
 index 96c280b..0baa8f1 100644
 --- a/include/linux/clockchips.h
@@ -5798,6 +5822,18 @@ index 901555a..1ba117c 100644
  	int	(*read)(struct console *, char *, unsigned);
  	struct tty_driver *(*device)(struct console *, int *);
  	void	(*unblank)(void);
+diff --git a/include/linux/ftrace.h b/include/linux/ftrace.h
+index 6cd8c0e..0951ab4 100644
+--- a/include/linux/ftrace.h
++++ b/include/linux/ftrace.h
+@@ -134,6 +134,7 @@ enum {
+ 	FTRACE_OPS_FL_ALLOC_TRAMP		= 1 << 12,
+ 	FTRACE_OPS_FL_IPMODIFY			= 1 << 13,
+ 	FTRACE_OPS_FL_PID			= 1 << 14,
++	FTRACE_OPS_FL_IPIPE_EXCLUSIVE		= 1 << 15,
+ };
+ 
+ #ifdef CONFIG_DYNAMIC_FTRACE
 diff --git a/include/linux/hardirq.h b/include/linux/hardirq.h
 index f4af034..fa16b8c 100644
 --- a/include/linux/hardirq.h
@@ -6308,10 +6344,10 @@ index 0000000..0a9b5b6
 +#endif	/* !__LINUX_IPIPE_H */
 diff --git a/include/linux/ipipe_base.h b/include/linux/ipipe_base.h
 new file mode 100644
-index 0000000..8c06eed
+index 0000000..42b368a
 --- /dev/null
 +++ b/include/linux/ipipe_base.h
-@@ -0,0 +1,360 @@
+@@ -0,0 +1,365 @@
 +/* -*- linux-c -*-
 + * include/linux/ipipe_base.h
 + *
@@ -6422,6 +6458,7 @@ index 0000000..8c06eed
 +#define IPIPE_KEVT_EXIT		4
 +#define IPIPE_KEVT_CLEANUP	5
 +#define IPIPE_KEVT_HOSTRT	6
++#define IPIPE_KEVT_CLOCKFREQ	7
 +
 +struct ipipe_vm_notifier {
 +	void (*handler)(struct ipipe_vm_notifier *nfy);
@@ -6550,6 +6587,9 @@ index 0000000..8c06eed
 +#define __ipipe_report_cleanup(mm)					\
 +	__ipipe_notify_kevent(IPIPE_KEVT_CLEANUP, mm)
 +
++#define __ipipe_report_clockfreq_update(freq)				\
++	__ipipe_notify_kevent(IPIPE_KEVT_CLOCKFREQ, &(freq))
++
 +void __ipipe_notify_vm_preemption(void);
 +
 +void __ipipe_call_mayday(struct pt_regs *regs);
@@ -6569,7 +6609,8 @@ index 0000000..8c06eed
 +#define IPIPE_EVENT_EXIT	(IPIPE_FIRST_EVENT + 4)
 +#define IPIPE_EVENT_CLEANUP	(IPIPE_FIRST_EVENT + 5)
 +#define IPIPE_EVENT_HOSTRT	(IPIPE_FIRST_EVENT + 6)
-+#define IPIPE_EVENT_SYSCALL	(IPIPE_FIRST_EVENT + 7)
++#define IPIPE_EVENT_CLOCKFREQ	(IPIPE_FIRST_EVENT + 7)
++#define IPIPE_EVENT_SYSCALL	(IPIPE_FIRST_EVENT + 8)
 +#define IPIPE_LAST_EVENT	IPIPE_EVENT_SYSCALL
 +#define IPIPE_NR_EVENTS		(IPIPE_LAST_EVENT + 1)
 +
@@ -7420,10 +7461,10 @@ index 0000000..d00c56b
 +#endif	/* !__LINUX_IPIPE_DOMAIN_H */
 diff --git a/include/linux/ipipe_lock.h b/include/linux/ipipe_lock.h
 new file mode 100644
-index 0000000..f71d2f1
+index 0000000..a108278
 --- /dev/null
 +++ b/include/linux/ipipe_lock.h
-@@ -0,0 +1,260 @@
+@@ -0,0 +1,327 @@
 +/*   -*- linux-c -*-
 + *   include/linux/ipipe_lock.h
 + *
@@ -7452,21 +7493,86 @@ index 0000000..f71d2f1
 +	arch_spinlock_t arch_lock;
 +} __ipipe_spinlock_t;
 +
++#define ipipe_spinlock(lock)	((__ipipe_spinlock_t *)(lock))
 +#define ipipe_spinlock_p(lock)							\
 +	__builtin_types_compatible_p(typeof(lock), __ipipe_spinlock_t *) ||	\
 +	__builtin_types_compatible_p(typeof(lock), __ipipe_spinlock_t [])
 +
++#define std_spinlock_raw(lock)	((raw_spinlock_t *)(lock))
 +#define std_spinlock_raw_p(lock)					\
 +	__builtin_types_compatible_p(typeof(lock), raw_spinlock_t *) ||	\
 +	__builtin_types_compatible_p(typeof(lock), raw_spinlock_t [])
 +
++#ifdef CONFIG_PREEMPT_RT_FULL
++
++#define PICK_SPINLOCK_IRQSAVE(lock, flags)				\
++	do {								\
++		if (ipipe_spinlock_p(lock))				\
++			(flags) = __ipipe_spin_lock_irqsave(ipipe_spinlock(lock)); \
++		else if (std_spinlock_raw_p(lock))				\
++			__real_raw_spin_lock_irqsave(std_spinlock_raw(lock), flags); \
++		else __bad_lock_type();					\
++	} while (0)
++
++#define PICK_SPINTRYLOCK_IRQSAVE(lock, flags)				\
++	({								\
++		int __ret__;						\
++		if (ipipe_spinlock_p(lock))				\
++			__ret__ = __ipipe_spin_trylock_irqsave(ipipe_spinlock(lock), &(flags)); \
++		else if (std_spinlock_raw_p(lock))				\
++			__ret__ = __real_raw_spin_trylock_irqsave(std_spinlock_raw(lock), flags); \
++		else __bad_lock_type();					\
++		__ret__;						\
++	 })
++
++#define PICK_SPINTRYLOCK_IRQ(lock)					\
++	({								\
++		int __ret__;						\
++		if (ipipe_spinlock_p(lock))				\
++			__ret__ = __ipipe_spin_trylock_irq(ipipe_spinlock(lock)); \
++		else if (std_spinlock_raw_p(lock))				\
++			__ret__ = __real_raw_spin_trylock_irq(std_spinlock_raw(lock)); \
++		else __bad_lock_type();					\
++		__ret__;						\
++	 })
++
++#define PICK_SPINUNLOCK_IRQRESTORE(lock, flags)				\
++	do {								\
++		if (ipipe_spinlock_p(lock))				\
++			__ipipe_spin_unlock_irqrestore(ipipe_spinlock(lock), flags); \
++		else if (std_spinlock_raw_p(lock)) {			\
++			__ipipe_spin_unlock_debug(flags);		\
++			__real_raw_spin_unlock_irqrestore(std_spinlock_raw(lock), flags); \
++		} else __bad_lock_type();				\
++	} while (0)
++
++#define PICK_SPINOP(op, lock)						\
++	({								\
++		if (ipipe_spinlock_p(lock))				\
++			arch_spin##op(&ipipe_spinlock(lock)->arch_lock); \
++		else if (std_spinlock_raw_p(lock))			\
++			__real_raw_spin##op(std_spinlock_raw(lock));	\
++		else __bad_lock_type();					\
++		(void)0;						\
++	})
++
++#define PICK_SPINOP_RET(op, lock, type)					\
++	({								\
++		type __ret__;						\
++		if (ipipe_spinlock_p(lock))				\
++			__ret__ = arch_spin##op(&ipipe_spinlock(lock)->arch_lock); \
++		else if (std_spinlock_raw_p(lock))			\
++			__ret__ = __real_raw_spin##op(std_spinlock_raw(lock)); \
++		else { __ret__ = -1; __bad_lock_type(); }		\
++		__ret__;						\
++	})
++
++#else /* !CONFIG_PREEMPT_RT_FULL */
++
++#define std_spinlock(lock)	((spinlock_t *)(lock))
 +#define std_spinlock_p(lock)						\
 +	__builtin_types_compatible_p(typeof(lock), spinlock_t *) ||	\
 +	__builtin_types_compatible_p(typeof(lock), spinlock_t [])
-+
-+#define ipipe_spinlock(lock)	((__ipipe_spinlock_t *)(lock))
-+#define std_spinlock_raw(lock)	((raw_spinlock_t *)(lock))
-+#define std_spinlock(lock)	((spinlock_t *)(lock))
 +
 +#define PICK_SPINLOCK_IRQSAVE(lock, flags)				\
 +	do {								\
@@ -7542,6 +7648,8 @@ index 0000000..f71d2f1
 +		else { __ret__ = -1; __bad_lock_type(); }		\
 +		__ret__;						\
 +	})
++
++#endif /* !CONFIG_PREEMPT_RT_FULL */
 +
 +#define arch_spin_lock_init(lock)					\
 +	do {								\
@@ -7672,7 +7780,7 @@ index 0000000..f71d2f1
 +#define __ipipe_spin_trylock_irq(lock)		1
 +#define __ipipe_spin_trylock_irqsave(lock, x)	({ (void)(x); 1; })
 +#define __ipipe_spin_unlock_irqrestore(lock, x)	do { (void)(x); } while (0)
-+#define __ipipe_spin_unlock_irqbegin(lock)	do { } while (0)
++#define __ipipe_spin_unlock_irqbegin(lock)	spin_unlock(lock)
 +#define __ipipe_spin_unlock_irqcomplete(x)	do { (void)(x); } while (0)
 +#define __ipipe_spin_unlock_debug(flags)	do { } while (0)
 +
@@ -7686,10 +7794,10 @@ index 0000000..f71d2f1
 +#endif /* !__LINUX_IPIPE_LOCK_H */
 diff --git a/include/linux/ipipe_tickdev.h b/include/linux/ipipe_tickdev.h
 new file mode 100644
-index 0000000..58a4142
+index 0000000..2f065ad
 --- /dev/null
 +++ b/include/linux/ipipe_tickdev.h
-@@ -0,0 +1,145 @@
+@@ -0,0 +1,148 @@
 +/* -*- linux-c -*-
 + * include/linux/ipipe_tickdev.h
 + *
@@ -7769,6 +7877,7 @@ index 0000000..58a4142
 +			      struct clock_event_device *cdev);
 +	int (*real_set_next_event)(unsigned long evt,
 +				   struct clock_event_device *cdev);
++	unsigned int (*refresh_freq)(void);
 +};
 +
 +#define __ipipe_hrtimer_irq __ipipe_raw_cpu_read(ipipe_percpu.hrtimer_irq)
@@ -7820,6 +7929,8 @@ index 0000000..58a4142
 +const char *ipipe_timer_name(void);
 +
 +unsigned ipipe_timer_ns2ticks(struct ipipe_timer *timer, unsigned ns);
++
++void __ipipe_timer_refresh_freq(unsigned int hrclock_freq);
 +
 +#else /* !CONFIG_IPIPE */
 +
@@ -9376,7 +9487,7 @@ index 0000000..797a849
 +}
 diff --git a/kernel/ipipe/core.c b/kernel/ipipe/core.c
 new file mode 100644
-index 0000000..3b07d65
+index 0000000..339fb95
 --- /dev/null
 +++ b/kernel/ipipe/core.c
 @@ -0,0 +1,1932 @@
@@ -10219,7 +10330,7 @@ index 0000000..3b07d65
 +	unsigned long flags, irq = 0;
 +	int ipos;
 +
-+	spin_lock_irqsave(&__ipipe_lock, flags);
++	raw_spin_lock_irqsave(&__ipipe_lock, flags);
 +
 +	if (__ipipe_virtual_irq_map != ~0) {
 +		ipos = ffz(__ipipe_virtual_irq_map);
@@ -10227,7 +10338,7 @@ index 0000000..3b07d65
 +		irq = ipos + IPIPE_VIRQ_BASE;
 +	}
 +
-+	spin_unlock_irqrestore(&__ipipe_lock, flags);
++	raw_spin_unlock_irqrestore(&__ipipe_lock, flags);
 +
 +	return irq;
 +}
@@ -10257,7 +10368,7 @@ index 0000000..3b07d65
 +	    (irq >= IPIPE_NR_XIRQS && !ipipe_virtual_irq_p(irq)))
 +		return -EINVAL;
 +
-+	spin_lock_irqsave(&__ipipe_lock, flags);
++	raw_spin_lock_irqsave(&__ipipe_lock, flags);
 +
 +	if (ipd->irqs[irq].handler) {
 +		ret = -EBUSY;
@@ -10275,7 +10386,7 @@ index 0000000..3b07d65
 +	if (irq < IPIPE_NR_ROOT_IRQS)
 +		__ipipe_enable_irqdesc(ipd, irq);
 +out:
-+	spin_unlock_irqrestore(&__ipipe_lock, flags);
++	raw_spin_unlock_irqrestore(&__ipipe_lock, flags);
 +
 +	return ret;
 +}
@@ -10290,7 +10401,7 @@ index 0000000..3b07d65
 +	ipipe_root_only();
 +#endif /* CONFIG_IPIPE_LEGACY */
 +
-+	spin_lock_irqsave(&__ipipe_lock, flags);
++	raw_spin_lock_irqsave(&__ipipe_lock, flags);
 +
 +	if (ipd->irqs[irq].handler == NULL)
 +		goto out;
@@ -10303,7 +10414,7 @@ index 0000000..3b07d65
 +	if (irq < IPIPE_NR_ROOT_IRQS)
 +		__ipipe_disable_irqdesc(ipd, irq);
 +out:
-+	spin_unlock_irqrestore(&__ipipe_lock, flags);
++	raw_spin_unlock_irqrestore(&__ipipe_lock, flags);
 +}
 +EXPORT_SYMBOL_GPL(ipipe_free_irq);
 +
@@ -10947,7 +11058,7 @@ index 0000000..3b07d65
 +	 * another CPU. Enter a spinning wait until he releases the
 +	 * global lock.
 +	 */
-+	spin_lock(&__ipipe_cpu_barrier);
++	raw_spin_lock(&__ipipe_cpu_barrier);
 +
 +	/* Got it. Now get out. */
 +
@@ -10957,7 +11068,7 @@ index 0000000..3b07d65
 +
 +	cpumask_set_cpu(cpu, &__ipipe_cpu_pass_map);
 +
-+	spin_unlock(&__ipipe_cpu_barrier);
++	raw_spin_unlock(&__ipipe_cpu_barrier);
 +
 +	cpumask_clear_cpu(cpu, &__ipipe_cpu_sync_map);
 +}
@@ -10990,7 +11101,7 @@ index 0000000..3b07d65
 +		}
 +restart:
 +		online = *cpu_online_mask;
-+		spin_lock(&__ipipe_cpu_barrier);
++		raw_spin_lock(&__ipipe_cpu_barrier);
 +
 +		__ipipe_cpu_sync = syncfn;
 +
@@ -11016,7 +11127,7 @@ index 0000000..3b07d65
 +			 */
 +			__ipipe_cpu_sync = NULL;
 +
-+			spin_unlock(&__ipipe_cpu_barrier);
++			raw_spin_unlock(&__ipipe_cpu_barrier);
 +			/*
 +			 * Ensure all CPUs consumed the IPI to avoid
 +			 * running __ipipe_cpu_sync prematurely. This
@@ -11046,7 +11157,7 @@ index 0000000..3b07d65
 +
 +#ifdef CONFIG_SMP
 +	if (atomic_dec_and_test(&__ipipe_critical_count)) {
-+		spin_unlock(&__ipipe_cpu_barrier);
++		raw_spin_unlock(&__ipipe_cpu_barrier);
 +		while (!cpumask_empty(&__ipipe_cpu_sync_map))
 +			cpu_relax();
 +		cpumask_clear_cpu(ipipe_processor_id(), &__ipipe_cpu_lock_map);
@@ -11314,10 +11425,10 @@ index 0000000..3b07d65
 +#endif
 diff --git a/kernel/ipipe/timer.c b/kernel/ipipe/timer.c
 new file mode 100644
-index 0000000..73f748e
+index 0000000..a9917f4
 --- /dev/null
 +++ b/kernel/ipipe/timer.c
-@@ -0,0 +1,501 @@
+@@ -0,0 +1,524 @@
 +/* -*- linux-c -*-
 + * linux/kernel/ipipe/timer.c
 + *
@@ -11444,7 +11555,7 @@ index 0000000..73f748e
 +	if (timer->cpumask == NULL)
 +		timer->cpumask = cpumask_of(smp_processor_id());
 +
-+	spin_lock_irqsave(&lock, flags);
++	raw_spin_lock_irqsave(&lock, flags);
 +
 +	list_for_each_entry(t, &timers, link) {
 +		if (t->rating <= timer->rating) {
@@ -11454,7 +11565,7 @@ index 0000000..73f748e
 +	}
 +	list_add_tail(&timer->link, &timers);
 +  done:
-+	spin_unlock_irqrestore(&lock, flags);
++	raw_spin_unlock_irqrestore(&lock, flags);
 +}
 +
 +static void ipipe_timer_request_sync(void)
@@ -11477,17 +11588,13 @@ index 0000000..73f748e
 +	timer->request(timer, steal);
 +}
 +
-+/* Set up a timer as per-cpu timer for ipipe */
-+static void install_pcpu_timer(unsigned cpu, unsigned hrclock_freq,
-+			      struct ipipe_timer *t) {
-+	unsigned hrtimer_freq;
++static void config_pcpu_timer(struct ipipe_timer *t, unsigned hrclock_freq)
++{
 +	unsigned long long tmp;
++	unsigned hrtimer_freq;
 +
-+	if (__ipipe_hrtimer_freq == 0)
++	if (__ipipe_hrtimer_freq != t->freq)
 +		__ipipe_hrtimer_freq = t->freq;
-+
-+	per_cpu(ipipe_percpu.hrtimer_irq, cpu) = t->irq;
-+	per_cpu(percpu_timer, cpu) = t;
 +
 +	hrtimer_freq = t->freq;
 +	if (__ipipe_hrclock_freq > UINT_MAX)
@@ -11499,6 +11606,15 @@ index 0000000..73f748e
 +		+ hrclock_freq - 1;
 +	do_div(tmp, hrclock_freq);
 +	t->c2t_frac = tmp;
++}
++
++/* Set up a timer as per-cpu timer for ipipe */
++static void install_pcpu_timer(unsigned cpu, unsigned hrclock_freq,
++			      struct ipipe_timer *t)
++{
++	per_cpu(ipipe_percpu.hrtimer_irq, cpu) = t->irq;
++	per_cpu(percpu_timer, cpu) = t;
++	config_pcpu_timer(t, hrclock_freq);
 +}
 +
 +static void select_root_only_timer(unsigned cpu, unsigned hrclock_khz,
@@ -11554,7 +11670,7 @@ index 0000000..73f748e
 +	} else
 +		hrclock_freq = __ipipe_hrclock_freq;
 +
-+	spin_lock_irqsave(&lock, flags);
++	raw_spin_lock_irqsave(&lock, flags);
 +
 +	/* First, choose timers for the CPUs handled by ipipe */
 +	for_each_cpu(cpu, mask) {
@@ -11594,7 +11710,7 @@ index 0000000..73f748e
 +		}
 +	}
 +
-+	spin_unlock_irqrestore(&lock, flags);
++	raw_spin_unlock_irqrestore(&lock, flags);
 +
 +	flags = ipipe_critical_enter(ipipe_timer_request_sync);
 +	ipipe_timer_request_sync();
@@ -11603,7 +11719,7 @@ index 0000000..73f748e
 +	return 0;
 +
 +err_remove_all:
-+	spin_unlock_irqrestore(&lock, flags);
++	raw_spin_unlock_irqrestore(&lock, flags);
 +
 +	for_each_cpu(cpu, mask) {
 +		per_cpu(ipipe_percpu.hrtimer_irq, cpu) = -1;
@@ -11815,13 +11931,31 @@ index 0000000..73f748e
 +}
 +
 +#endif /* CONFIG_IPIPE_HAVE_HOSTRT */
++
++int clockevents_program_event(struct clock_event_device *dev, ktime_t expires,
++			      bool force);
++
++void __ipipe_timer_refresh_freq(unsigned int hrclock_freq)
++{
++	struct ipipe_timer *t = __ipipe_raw_cpu_read(percpu_timer);
++	unsigned long flags;
++
++	if (t && t->refresh_freq) {
++		t->freq = t->refresh_freq();
++		flags = hard_local_irq_save();
++		config_pcpu_timer(t, hrclock_freq);
++		hard_local_irq_restore(flags);
++		clockevents_program_event(t->host_timer,
++					  t->host_timer->next_event, false);
++	}
++}
 +EXPORT_SYMBOL(ipipe_select_timers);
 +EXPORT_SYMBOL(ipipe_timers_release);
 +EXPORT_SYMBOL(ipipe_timer_start);
 +EXPORT_SYMBOL(ipipe_timer_stop);
 diff --git a/kernel/ipipe/tracer.c b/kernel/ipipe/tracer.c
 new file mode 100644
-index 0000000..da272c50
+index 0000000..b393e9b
 --- /dev/null
 +++ b/kernel/ipipe/tracer.c
 @@ -0,0 +1,1468 @@
@@ -12029,7 +12163,7 @@ index 0000000..da272c50
 +	if (length > per_cpu(trace_path, cpu)[per_cpu(max_path, cpu)].length) {
 +		/* we need protection here against other cpus trying
 +		   to start a proc dump */
-+		spin_lock(&global_path_lock);
++		raw_spin_lock(&global_path_lock);
 +
 +		/* active path holds new worst case */
 +		tp->length = length;
@@ -12038,7 +12172,7 @@ index 0000000..da272c50
 +		/* find next unused trace path */
 +		active = __ipipe_get_free_trace_path(active, cpu);
 +
-+		spin_unlock(&global_path_lock);
++		raw_spin_unlock(&global_path_lock);
 +
 +		tp = &per_cpu(trace_path, cpu)[active];
 +
@@ -12061,7 +12195,7 @@ index 0000000..da272c50
 +
 +	/* we need protection here against other cpus trying
 +	 * to set their frozen path or to start a proc dump */
-+	spin_lock(&global_path_lock);
++	raw_spin_lock(&global_path_lock);
 +
 +	per_cpu(frozen_path, cpu) = active;
 +
@@ -12075,7 +12209,7 @@ index 0000000..da272c50
 +			tp->end = -1;
 +	}
 +
-+	spin_unlock(&global_path_lock);
++	raw_spin_unlock(&global_path_lock);
 +
 +	tp = &per_cpu(trace_path, cpu)[active];
 +
@@ -12230,7 +12364,7 @@ index 0000000..da272c50
 +	int cpu;
 +	struct ipipe_trace_path *tp;
 +
-+	spin_lock_irqsave(&global_path_lock, flags);
++	raw_spin_lock_irqsave(&global_path_lock, flags);
 +
 +	cpu = ipipe_processor_id();
 + restart:
@@ -13159,7 +13293,7 @@ index 0000000..da272c50
 +
 +static struct ftrace_ops ipipe_trace_ops = {
 +	.func = ipipe_trace_function,
-+	.flags = FTRACE_OPS_FL_RECURSION_SAFE,
++	.flags = FTRACE_OPS_FL_IPIPE_EXCLUSIVE,
 +};
 +
 +static ssize_t __ipipe_wr_enable(struct file *file, const char __user *buffer,
@@ -14046,7 +14180,7 @@ index 2329daa..79cfe9b 100644
  	if (pm_wakeup_pending()) {
  		error = -EAGAIN;
 diff --git a/kernel/printk/printk.c b/kernel/printk/printk.c
-index 3c1aca0..90b1189 100644
+index 3c1aca0..ae6b3d5 100644
 --- a/kernel/printk/printk.c
 +++ b/kernel/printk/printk.c
 @@ -62,6 +62,9 @@ int console_printk[4] = {
@@ -14162,7 +14296,7 @@ index 3c1aca0..90b1189 100644
 +	goto start;
 +
 +	do {
-+		spin_unlock_irqrestore(&__ipipe_printk_lock, flags);
++		raw_spin_unlock_irqrestore(&__ipipe_printk_lock, flags);
 + start:
 +		lmax = __ipipe_printk_fill;
 +		while (out < lmax) {
@@ -14171,13 +14305,13 @@ index 3c1aca0..90b1189 100644
 +			p += len;
 +			out += len;
 +		}
-+		spin_lock_irqsave(&__ipipe_printk_lock, flags);
++		raw_spin_lock_irqsave(&__ipipe_printk_lock, flags);
 +	}
 +	while (__ipipe_printk_fill != lmax);
 +
 +	__ipipe_printk_fill = 0;
 +
-+	spin_unlock_irqrestore(&__ipipe_printk_lock, flags);
++	raw_spin_unlock_irqrestore(&__ipipe_printk_lock, flags);
 +}
 +
  /**
@@ -14215,7 +14349,7 @@ index 3c1aca0..90b1189 100644
 +		goto out;
 +	}
 +
-+	spin_lock_irqsave(&__ipipe_printk_lock, flags);
++	raw_spin_lock_irqsave(&__ipipe_printk_lock, flags);
 +
 +	oldcount = __ipipe_printk_fill;
 +	fbytes = __LOG_BUF_LEN - oldcount;
@@ -14226,7 +14360,7 @@ index 3c1aca0..90b1189 100644
 +	} else
 +		r = 0;
 +
-+	spin_unlock_irqrestore(&__ipipe_printk_lock, flags);
++	raw_spin_unlock_irqrestore(&__ipipe_printk_lock, flags);
 +
 +	if (oldcount == 0)
 +		ipipe_raise_irq(__ipipe_printk_virq);
@@ -14372,14 +14506,14 @@ index 4d870eb..fa7217c 100644
 --- a/kernel/sched/core.c
 +++ b/kernel/sched/core.c
 @@ -308,6 +308,7 @@ int sysctl_sched_rt_runtime = 950000;
- 
+
  /* cpus with isolated domains */
  cpumask_var_t cpu_isolated_map;
 +EXPORT_SYMBOL(cpu_isolated_map);
- 
+
  /*
   * this_rq_lock - lock this runqueue and disable interrupts.
-@@ -1565,7 +1566,9 @@ void scheduler_ipi(void)
+@@ -1565,7 +1565,9 @@ void scheduler_ipi(void)
  	 * however a fair share of IPIs are still resched only so this would
  	 * somewhat pessimize the simple resched case.
  	 */
@@ -14625,6 +14759,7 @@ index 4d870eb..fa7217c 100644
 +EXPORT_SYMBOL_GPL(__ipipe_reenter_root);
 +
 +#endif /* CONFIG_IPIPE */
+diff --git a/kernel/sched/wait.c b/kernel/sched/wait.c
 diff --git a/kernel/sched/wait.c b/kernel/sched/wait.c
 index 852143a..efc4a6f 100644
 --- a/kernel/sched/wait.c
@@ -14920,7 +15055,7 @@ index 3b9a48a..edd9470 100644
  	help
  	  This option will modify all the calls to function tracing
 diff --git a/kernel/trace/ftrace.c b/kernel/trace/ftrace.c
-index eb11011..5fa6c0a 100644
+index eb11011..d0957bd 100644
 --- a/kernel/trace/ftrace.c
 +++ b/kernel/trace/ftrace.c
 @@ -32,6 +32,7 @@
@@ -14931,7 +15066,33 @@ index eb11011..5fa6c0a 100644
  
  #include <trace/events/sched.h>
  
-@@ -2518,6 +2519,9 @@ void __weak arch_ftrace_update_code(int command)
+@@ -262,8 +263,17 @@ static ftrace_func_t ftrace_ops_get_list_func(struct ftrace_ops *ops)
+ 
+ static void update_ftrace_function(void)
+ {
++	struct ftrace_ops *ops;
+ 	ftrace_func_t func;
+ 
++	for (ops = ftrace_ops_list;
++	     ops != &ftrace_list_end; ops = ops->next)
++		if (ops->flags & FTRACE_OPS_FL_IPIPE_EXCLUSIVE) {
++			set_function_trace_op = ops;
++			func = ops->func;
++			goto set_pointers;
++		}
++
+ 	/*
+ 	 * Prepare the ftrace_ops that the arch callback will use.
+ 	 * If there's only one ftrace_ops registered, the ftrace_ops_list
+@@ -291,6 +301,7 @@ static void update_ftrace_function(void)
+ 
+ 	update_function_graph_func();
+ 
++  set_pointers:
+ 	/* If there's no change, then do nothing more here */
+ 	if (ftrace_trace_function == func)
+ 		return;
+@@ -2518,6 +2529,9 @@ void __weak arch_ftrace_update_code(int command)
  
  static void ftrace_run_update_code(int command)
  {
@@ -14941,7 +15102,7 @@ index eb11011..5fa6c0a 100644
  	int ret;
  
  	ret = ftrace_arch_code_modify_prepare();
-@@ -2531,7 +2535,13 @@ static void ftrace_run_update_code(int command)
+@@ -2531,7 +2545,13 @@ static void ftrace_run_update_code(int command)
  	 * is safe. The stop_machine() is the safest, but also
  	 * produces the most overhead.
  	 */
@@ -14955,7 +15116,7 @@ index eb11011..5fa6c0a 100644
  
  	ret = ftrace_arch_code_modify_post_process();
  	FTRACE_WARN_ON(ret);
-@@ -4877,10 +4887,10 @@ static int ftrace_process_locs(struct module *mod,
+@@ -4877,10 +4897,10 @@ static int ftrace_process_locs(struct module *mod,
  	 * reason to cause large interrupt latencies while we do it.
  	 */
  	if (!mod)
@@ -14968,7 +15129,7 @@ index eb11011..5fa6c0a 100644
  	ret = 0;
   out:
  	mutex_unlock(&ftrace_lock);
-@@ -4979,9 +4989,11 @@ void __init ftrace_init(void)
+@@ -4979,9 +4999,11 @@ void __init ftrace_init(void)
  	unsigned long count, flags;
  	int ret;
  
@@ -14982,7 +15143,7 @@ index eb11011..5fa6c0a 100644
  	if (ret)
  		goto failed;
  
-@@ -5174,7 +5186,16 @@ __ftrace_ops_list_func(unsigned long ip, unsigned long parent_ip,
+@@ -5174,7 +5196,16 @@ __ftrace_ops_list_func(unsigned long ip, unsigned long parent_ip,
  		}
  	} while_for_each_ftrace_op(op);
  out:
@@ -15342,24 +15503,22 @@ index 86c8911..373a30b 100644
  	return err;
  }
 diff --git a/lib/smp_processor_id.c b/lib/smp_processor_id.c
-index 1afec32..5803111 100644
+index 1afec32..f7c1a2a 100644
 --- a/lib/smp_processor_id.c
 +++ b/lib/smp_processor_id.c
-@@ -12,10 +12,13 @@ notrace static unsigned int check_preemption_disabled(const char *what1,
+@@ -12,6 +12,12 @@ notrace static unsigned int check_preemption_disabled(const char *what1,
  {
  	int this_cpu = raw_smp_processor_id();
  
++	if (hard_irqs_disabled())
++		goto out;
++
 +	if (!ipipe_root_p)
 +		goto out;
 +
  	if (likely(preempt_count()))
  		goto out;
  
--	if (irqs_disabled())
-+	if (irqs_disabled() || hard_irqs_disabled())
- 		goto out;
- 
- 	/*
 diff --git a/mm/memory.c b/mm/memory.c
 index 2a9e098..46ec4cd 100644
 --- a/mm/memory.c
@@ -15567,7 +15726,7 @@ index 2a9e098..46ec4cd 100644
  
  static struct kmem_cache *page_ptl_cachep;
 diff --git a/mm/mlock.c b/mm/mlock.c
-index 3d3ee6c..ed47c08 100644
+index 3d3ee6ca..ed47c08 100644
 --- a/mm/mlock.c
 +++ b/mm/mlock.c
 @@ -756,3 +756,28 @@ void user_shm_unlock(size_t size, struct user_struct *user)
@@ -15700,5 +15859,18 @@ index 2faaa29..ef00f26 100644
 + 	__ipipe_pin_mapping_globally(start, end);
 + 
  	return nr;
+ }
+ 
+diff --git a/sound/soc/intel/atom/sst/sst.c b/sound/soc/intel/atom/sst/sst.c
+index 96c2e42..2e6e3cf 100644
+--- a/sound/soc/intel/atom/sst/sst.c
++++ b/sound/soc/intel/atom/sst/sst.c
+@@ -369,7 +369,7 @@ static inline void sst_restore_shim64(struct intel_sst_drv *ctx,
+ 	 */
+ 	spin_lock_irqsave(&ctx->ipc_spin_lock, irq_flags);
+ 	sst_shim_write64(shim, SST_IMRX, shim_regs->imrx),
+-	sst_shim_write64(shim, SST_CSR, shim_regs->csr),
++	sst_shim_write64(shim, SST_CSR, shim_regs->csr);
+ 	spin_unlock_irqrestore(&ctx->ipc_spin_lock, irq_flags);
  }
  

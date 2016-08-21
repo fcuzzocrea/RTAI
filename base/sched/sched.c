@@ -2829,7 +2829,7 @@ static void __rtai_lxrt_exit(void)
 	rtheap_destroy(&rtai_kstack_heap, GFP_KERNEL);
 #endif
 	rt_registry_free();
-	current->state = TASK_INTERRUPTIBLE;
+	set_current_state(TASK_INTERRUPTIBLE);
 	schedule_timeout(HZ/10);
 
 #ifdef DECLR_8254_TSC_EMULATION

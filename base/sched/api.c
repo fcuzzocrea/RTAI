@@ -1232,7 +1232,7 @@ static unsigned short primes[ ] = { 1, 103, 211, 307, 401, 503, 601, 701, 809, 9
 
 #define hash_fun(m, n) ((m)%(n) + 1)
 
-static int hash_ins_adr(void *adr, struct rt_registry_entry *list, int lstlen, int nlink)
+static inline int hash_ins_adr(void *adr, struct rt_registry_entry *list, int lstlen, int nlink)
 {
 	int i, k;
 	unsigned long flags;
@@ -1260,6 +1260,7 @@ COLLISION_COUNT();
 			rt_spin_unlock_irqrestore(flags, &list_lock);
 			return k;
 		}
+		rt_spin_unlock_irqrestore(flags, &list_lock);
 	}
 }
 
@@ -1295,11 +1296,11 @@ COLLISION_COUNT();
 			list[k].alink = 0;
 			rt_spin_unlock_irqrestore(flags, &list_lock);
 	                if (hash_ins_adr(adr, list, lstlen, k) <= 0) {
-				rt_spin_unlock_irqrestore(flags, &list_lock);
         	                return 0;
                 	}
 			return k;
 		}
+		rt_spin_unlock_irqrestore(flags, &list_lock);
 	}
 }
 
@@ -1334,6 +1335,7 @@ COLLISION_COUNT();
 			rt_spin_unlock_irqrestore(flags, &list_lock);
 			return NULL;
 		}
+		rt_spin_unlock_irqrestore(flags, &list_lock);
 	}
 }
 
@@ -1365,6 +1367,7 @@ COLLISION_COUNT();
 			rt_spin_unlock_irqrestore(flags, &list_lock);
 			return 0;
 		}
+		rt_spin_unlock_irqrestore(flags, &list_lock);
 	}
 }
 
@@ -1559,6 +1562,7 @@ void rt_registry_free(void)
 {
 	if (lxrt_list) {
 		vfree(lxrt_list);
+		lxrt_list = NULL;
 	}
 }
 #else
@@ -1762,7 +1766,7 @@ unsigned long is_process_registered(struct task_struct *tsk)
 {
         void *adr;
 
-        if ((adr = tsk->rtai_tskext(TSKEXT0))) {
+	if ((adr = rtai_tskext(tsk, TSKEXT0))) {
 		int slot;
 		for (slot = 1; slot <= max_slots; slot++) {
 			if (lxrt_list[slot].adr == adr) {

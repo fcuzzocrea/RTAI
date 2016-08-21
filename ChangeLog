@@ -1,3 +1,16 @@
+2016-08-21 Sebastian Kuzminsky <seb@highlab.com>
+
+	* base/math/README.KLIB: fixed a few typos.
+	* base/sched/sched.c: set Linux current task state using its suuport, 
+	  in  place of doing it by hand.
+	* base/sched/api.c: nullify lxrt_list after vfreeing what it points at;
+	  fix the setting of rtai task extension in the old registry way; avoid
+	  a redundant spin unlock when hash_ins_adr is satisfied in hash_ins_name;  
+	  add supposedly missing spin unlocks in functions: hash_ins_adr,  
+	  hash_ins_name, hash_find_name, hash_find_adr (just a formal error, 
+	  a branch of the if-then-else construct should always be satisfied 
+	  anyhow).
+ 
 2016-04-29 Pierangelo Masarati <pierangelo.masarati@polimi.it>
 
 	* RTAI 5.0-test2

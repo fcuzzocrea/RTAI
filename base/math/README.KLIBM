@@ -73,8 +73,8 @@ directory.
 Have a look at their README-INSTALL files for any  configuration option you 
 may need.
 Notice also that below we will assume no cross development. If that is the 
-case, you should read their installation instructions to define the host-targe 
-architectures appropriatly. The the following configuration suggestions
+case, you should read their installation instructions to define the build/host/target 
+architectures appropriately. The following configuration suggestions
 are those to be added for having libm.a work in kernel space with RTAI.
 
 GLIBC, http://www.gnu.org/software/libc/ (recall that it is likely you have 

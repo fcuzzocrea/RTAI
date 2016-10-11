@@ -434,7 +434,7 @@ index 615fa90..e0a62ab 100644
  extern void default_send_IPI_mask_sequence_phys(const struct cpumask *mask,
 diff --git a/arch/x86/include/asm/ipipe.h b/arch/x86/include/asm/ipipe.h
 new file mode 100644
-index 0000000..876ea0b
+index 0000000..ed68a7e
 --- /dev/null
 +++ b/arch/x86/include/asm/ipipe.h
 @@ -0,0 +1,112 @@
@@ -464,7 +464,7 @@ index 0000000..876ea0b
 +
 +#ifdef CONFIG_IPIPE
 +
-+#define IPIPE_CORE_RELEASE	6
++#define IPIPE_CORE_RELEASE	7
 +
 +struct ipipe_domain;
 +struct pt_regs;
@@ -11955,7 +11955,7 @@ index 0000000..a9917f4
 +EXPORT_SYMBOL(ipipe_timer_stop);
 diff --git a/kernel/ipipe/tracer.c b/kernel/ipipe/tracer.c
 new file mode 100644
-index 0000000..b393e9b
+index 0000000..1ae7bc2
 --- /dev/null
 +++ b/kernel/ipipe/tracer.c
 @@ -0,0 +1,1468 @@
@@ -12020,7 +12020,7 @@ index 0000000..b393e9b
 +#define IPIPE_TFLG_CURRDOM_SHIFT    10	 /* bits 10..11: current domain */
 +#define IPIPE_TFLG_CURRDOM_MASK	    0x0C00
 +#define IPIPE_TFLG_DOMSTATE_SHIFT   12	 /* bits 12..15: domain stalled? */
-+#define IPIPE_TFLG_DOMSTATE_BITS    3
++#define IPIPE_TFLG_DOMSTATE_BITS    1
 +
 +#define IPIPE_TFLG_DOMAIN_STALLED(point, n) \
 +	(point->flags & (1 << (n + IPIPE_TFLG_DOMSTATE_SHIFT)))

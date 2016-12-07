@@ -1,3 +1,8 @@
+2016-12-07 Paolo Mantegazza <mantegazza@aero.polimi.it>
+
+	* base/arch/x86/ihal/hal.c: fixed inconsistent declaration of 
+	  cpu_isolated_map for the UP case.
+
 2016-08-21 Sebastian Kuzminsky <seb@highlab.com>
 
 	* base/math/README.KLIB: fixed a few typos.

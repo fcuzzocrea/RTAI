@@ -781,7 +781,6 @@ static void rtai_proc_unregister (void)
 
 #endif /* CONFIG_PROC_FS */
 
-#ifdef CONFIG_SMP
 #if LINUX_VERSION_CODE < KERNEL_VERSION(4,0,0)
 #define CPU_ISOLATED_MAP (&cpu_isolated_map)
 	extern unsigned long cpu_isolated_map; 
@@ -789,9 +788,7 @@ static void rtai_proc_unregister (void)
 #define CPU_ISOLATED_MAP (cpu_isolated_map)
 	extern cpumask_var_t cpu_isolated_map;
 #endif
-#else
-static unsigned long cpu_isolated_map; 
-#endif
+
 extern struct ipipe_domain ipipe_root;
 extern void (*dispatch_irq_head)(unsigned int);
 extern int (*rtai_trap_hook)(unsigned, struct pt_regs *);

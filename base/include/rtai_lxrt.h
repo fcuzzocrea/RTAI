@@ -889,6 +889,7 @@ RTAI_PROTO(RT_TASK *, rt_thread_init, (unsigned long name, int priority, int max
  */
 RTAI_PROTO(RT_TASK *,rt_task_init,(unsigned long name, int priority, int stack_size, int max_msg_size))
 {
+	(void)stack_size;
 	return rt_task_init_schmod(name, priority, 0, max_msg_size, SCHED_FIFO, 0xFF);
 }
 
@@ -1258,7 +1259,7 @@ RTAI_PROTO(void,start_rt_apic_timers,(struct apic_timer_setup_data *setup_mode, 
 
 RTAI_PROTO(int, rt_hard_timer_tick_cpuid, (int cpuid))
 {
-	struct { unsigned long cpuid; } arg = { cpuid };
+	struct { long cpuid; } arg = { cpuid };
 	return rtai_lxrt(BIDX, SIZARG, HARD_TIMER_COUNT_CPUID, &arg).i[LOW];
 }
 

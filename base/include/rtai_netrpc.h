@@ -53,7 +53,8 @@
 
 #define SIZARG sizeof(arg)
 
-#define PACKPORT(port, ext, fun, timed) (((port) << 18) | ((timed) << 13) | ((ext) << 8) | (fun))
+//#define PACKPORT(port, ext, fun, timed) (((port) << 18) | ((timed) << 13) | ((ext) << 8) | (fun))
+#define PACKPORT(port, ext, fun, timed) ((unsigned long)(((port) << 18) | ((timed) << 13) | ((ext) << 8) | (fun)))
 
 #define PORT(i)   ((i) >> 18)
 #define FUN(i)    ((i) & 0xFF)
@@ -797,7 +798,7 @@ static inline int RT_mbx_receive_timed(unsigned long node, int port, MBX *mbx, v
 
 static inline int rt_send_req_rel_port(unsigned long node, int port, unsigned long id, MBX *mbx, int hard)
 {
-	struct { unsigned long node, port; unsigned long id; MBX *mbx; long hard; } args = { node, port, id, mbx, hard };
+	struct { unsigned long node; long port; unsigned long id; MBX *mbx; long hard; } args = { node, port, id, mbx, hard };
 	return rtai_lxrt(NET_RPC_IDX, SIZARGS, SEND_REQ_REL_PORT, &args).i[LOW];
 } 
 
@@ -1023,6 +1024,7 @@ static inline int RT_poll_4to8(unsigned long node, int port, struct rt_poll_s *p
 	struct rt_poll_lls { unsigned long long what, forwhat; } pdsa[nr];
 	struct { void *pdsa1; void *pdsa2; unsigned long pdsa_size; RTIME timeout; } arg = { pdsa, pdsa, nr*sizeof(struct rt_poll_lls), timeout };
 	struct { unsigned long fun; long type; void *args; long argsize; long space; unsigned long partypes; } args = { PACKPORT(port, NET_RPC_EXT, RT_POLL_NETRPC, 4), UR1(1, 3) | UW1(2, 3), &arg, SIZARG, 0, PARTYPES4(UINT, UINT, UINT, RTIM) };
+	(void)node;
 	for (i = 0; i < nr; i++) {
 		pdsa[i].what    = (unsigned long)pdsain[i].what;
 		pdsa[i].forwhat = pdsain[i].forwhat;
@@ -1042,6 +1044,7 @@ static inline int RT_poll_8to4(unsigned long node, int port, struct rt_poll_s *p
 	struct rt_poll_is { unsigned int what, forwhat; } pdsa[nr];
 	struct { void *pdsa1; void *pdsa2; unsigned long pdsa_size; RTIME timeout; } arg = { pdsa, pdsa, nr*sizeof(struct rt_poll_is), timeout };
 	struct { unsigned long fun; long type; void *args; long argsize; long space; unsigned long partypes; } args = { PACKPORT(port, NET_RPC_EXT, RT_POLL_NETRPC, 4), UR1(1, 3) | UW1(2, 3), &arg, SIZARG, 0, PARTYPES4(VADR, UINT, UINT, RTIM) };
+	(void)node;
 	for (i = 0; i < nr; i++) {
 		pdsa[i].what    = (unsigned int)(unsigned long)pdsain[i].what;
 		pdsa[i].forwhat = pdsain[i].forwhat;
@@ -1118,6 +1121,7 @@ static inline RT_TASK *RT_send_timed(unsigned long node, int port, RT_TASK *task
 
 static inline RT_TASK *RT_evdrp(unsigned long node, int port, RT_TASK *task, void *msg)
 {
+	(void)port;
         if (!task || !node) {
 		return rt_evdrp(task, msg);
 	} 
@@ -1126,6 +1130,7 @@ static inline RT_TASK *RT_evdrp(unsigned long node, int port, RT_TASK *task, voi
 
 static inline RT_TASK *RT_receive(unsigned long node, int port, RT_TASK *task, void *msg)
 {
+	(void)port;
         if (!task || !node) {
 		return rt_receive(task, msg);
 	} 
@@ -1134,6 +1139,7 @@ static inline RT_TASK *RT_receive(unsigned long node, int port, RT_TASK *task, v
 
 static inline RT_TASK *RT_receive_if(unsigned long node, int port, RT_TASK *task, void *msg)
 {
+	(void)port;
         if (!task || !node) {
 		return rt_receive_if(task, msg);
 	} 
@@ -1142,6 +1148,7 @@ static inline RT_TASK *RT_receive_if(unsigned long node, int port, RT_TASK *task
 
 static inline RT_TASK *RT_receive_until(unsigned long node, int port, RT_TASK *task, void *msg, RTIME time)
 {
+	(void)port;
         if (!task || !node) {
 		return rt_receive_until(task, msg, nano2count(time));
 	} 
@@ -1150,6 +1157,7 @@ static inline RT_TASK *RT_receive_until(unsigned long node, int port, RT_TASK *t
 
 static inline RT_TASK *RT_receive_timed(unsigned long node, int port, RT_TASK *task, void *msg, RTIME delay)
 {
+	(void)port;
         if (!task || !node) {
 		return rt_receive_timed(task, msg, nano2count(delay));
 	} 
@@ -1208,7 +1216,7 @@ static inline int RT_isrpc(unsigned long node, int port, RT_TASK *task)
 
 static inline RT_TASK *RT_return(unsigned long node, int port, RT_TASK *task, unsigned long result)
 {
-
+	(void)port;
         if (!task || !node) {
 		return rt_return(task, result);
 	} 
@@ -1298,7 +1306,7 @@ static inline RT_TASK *RT_sendx_timed(unsigned long node, int port, RT_TASK *tas
 
 static inline RT_TASK *RT_returnx(unsigned long node, int port, RT_TASK *task, void *msg, int size)
 {
-
+	(void)port;
         if (!task || !node) {
 		return rt_returnx(task, msg, size);
 	} 
@@ -1307,6 +1315,7 @@ static inline RT_TASK *RT_returnx(unsigned long node, int port, RT_TASK *task, v
 
 static inline RT_TASK *RT_evdrpx(unsigned long node, int port, RT_TASK *task, void *msg, int size, long *len)
 {
+	(void)port;
         if (!task || !node) {
 		return rt_evdrpx(task, msg, size, len);
 	} 
@@ -1315,6 +1324,7 @@ static inline RT_TASK *RT_evdrpx(unsigned long node, int port, RT_TASK *task, vo
 
 static inline RT_TASK *RT_receivex(unsigned long node, int port, RT_TASK *task, void *msg, int size, long *len)
 {
+	(void)port;
         if (!task || !node) {
 		return rt_receivex(task, msg, size, len);
 	} 
@@ -1323,6 +1333,7 @@ static inline RT_TASK *RT_receivex(unsigned long node, int port, RT_TASK *task, 
 
 static inline RT_TASK *RT_receivex_if(unsigned long node, int port, RT_TASK *task, void *msg, int size, long *len)
 {
+	(void)port;
         if (!task || !node) {
 		return rt_receivex_if(task, msg, size, len);
 	} 
@@ -1331,6 +1342,7 @@ static inline RT_TASK *RT_receivex_if(unsigned long node, int port, RT_TASK *tas
 
 static inline RT_TASK *RT_receivex_until(unsigned long node, int port, RT_TASK *task, void *msg, int size, long *len, RTIME time)
 {
+	(void)port;
         if (!task || !node) {
 		return rt_receivex_until(task, msg, size, len, nano2count(time));
 	} 
@@ -1339,6 +1351,7 @@ static inline RT_TASK *RT_receivex_until(unsigned long node, int port, RT_TASK *
 
 static inline RT_TASK *RT_receivex_timed(unsigned long node, int port, RT_TASK *task, void *msg, int size, long *len, RTIME delay)
 {
+	(void)port;
         if (!task || !node) {
 		return rt_receivex_timed(task, msg, size, len, nano2count(delay));
 	} 

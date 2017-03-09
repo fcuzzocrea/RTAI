@@ -450,25 +450,25 @@ RTAI_PROTO(struct rt_task_struct *,rt_trigger,(struct rt_task_struct *proxy))
 
 RTAI_PROTO(int, rt_Send,(pid_t pid, void *smsg, void *rmsg, size_t ssize, size_t rsize ))
 {
-	struct { long pid; void *smsg; void *rmsg; long ssize, rsize;} arg = { pid, smsg, rmsg, ssize, rsize };
+	struct { long pid; void *smsg; void *rmsg; unsigned long ssize, rsize;} arg = { pid, smsg, rmsg, ssize, rsize };
 	return (pid_t) rtai_lxrt(BIDX, SIZARG, RT_SEND, &arg).i[LOW];
 }
 
 RTAI_PROTO(pid_t, rt_Receive,(pid_t pid, void *msg, size_t maxsize, size_t *msglen))
 {
-	struct { long pid; void *msg; long maxsize; size_t *msglen; } arg = { pid, msg, maxsize, msglen };
+	struct { long pid; void *msg; unsigned long maxsize; size_t *msglen; } arg = { pid, msg, maxsize, msglen };
 	return (pid_t) rtai_lxrt(BIDX, SIZARG, RT_RECEIVE, &arg).i[LOW];
 }
 
 RTAI_PROTO(pid_t, rt_Creceive,(pid_t pid, void *msg, size_t maxsize, size_t *msglen, RTIME delay))
 {
-	struct { long pid; void *msg; long maxsize; size_t *msglen; RTIME delay;} arg = { pid, msg, maxsize, msglen, delay };
+	struct { long pid; void *msg; unsigned long maxsize; size_t *msglen; RTIME delay;} arg = { pid, msg, maxsize, msglen, delay };
 	return (pid_t) rtai_lxrt(BIDX, SIZARG, RT_CRECEIVE, &arg).i[LOW];
 }
 
 RTAI_PROTO(pid_t, rt_Reply,(pid_t pid, void *msg, size_t size))
 {
-	struct { long pid; void *msg; long size;} arg = { pid, msg, size };
+	struct { long pid; void *msg; unsigned long size;} arg = { pid, msg, size };
 	return (pid_t) rtai_lxrt(BIDX, SIZARG, RT_REPLY, &arg).i[LOW];
 }
 
@@ -528,7 +528,7 @@ RTAI_PROTO(unsigned long, rt_qDynAlloc,(unsigned long n))
 
 RTAI_PROTO(unsigned long, rt_qDynFree,(int n))
 {
-	struct { unsigned long n; } arg = { n };
+	struct { long n; } arg = { n };
 	return (unsigned long) rtai_lxrt(BIDX, SIZARG, RT_QDYNFREE, &arg).i[LOW];
 }
 
@@ -610,7 +610,7 @@ RTAI_PROTO(int, rt_qSync,(void))
 
 RTAI_PROTO(pid_t, rt_qReceive,(pid_t target, void *buf, size_t maxlen, size_t *msglen))
 {
-	struct { long target; void *buf; long maxlen; size_t *msglen; } arg = { target, buf, maxlen, msglen };
+	struct { long target; void *buf; unsigned long maxlen; size_t *msglen; } arg = { target, buf, maxlen, msglen };
 	return (pid_t) rtai_lxrt(BIDX, SIZARG, RT_QRECEIVE, &arg).i[LOW];
 }
 

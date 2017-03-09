@@ -414,6 +414,7 @@ RTAI_PROTO(int, rt_poll, (struct rt_poll_s *pdsa, unsigned long nr, RTIME timeou
 	struct { struct rt_poll_s *pdsa; unsigned long nr; RTIME timeout; long space; } arg = { pdsa, nr, timeout, 0 };
 	return rtai_lxrt(BIDX, SIZARG, SEM_RT_POLL, &arg).i[LOW];
 #else
+	(void)pdsa; (void)nr; (void)timeout;
 	return RTE_OBJINV;
 #endif
 }

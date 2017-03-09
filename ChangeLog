@@ -1,3 +1,9 @@
+2017-03-09 Paolo Mantegazza <mantegazza@aero.polimi.it>
+
+	* base/include/rtai_lxrt.h, rtai_msg.h, rtai_netrpc.h, rtai_sem.h: fixed
+	  a bunch of unharmful warnings, quite annoying in large compilations,
+	  especially under g++, e.g (q)rtailab.
+
 2016-12-07 Paolo Mantegazza <mantegazza@aero.polimi.it>
 
 	* base/arch/x86/ihal/hal.c: fixed inconsistent declaration of 

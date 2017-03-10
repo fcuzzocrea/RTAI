@@ -1,3 +1,9 @@
+2017-03-10 Paolo Mantegazza <mantegazza@aero.polimi.it>
+
+	* base/arch/x86/hal/hal.c: update for newer kernels.
+	* base/sched/sys.c: update for newer kernels.
+	* base/include/asm-x86/rtai_lxrt.h: update for newer kernels.
+
 2017-03-09 Paolo Mantegazza <mantegazza@aero.polimi.it>
 
 	* base/include/rtai_lxrt.h, rtai_msg.h, rtai_netrpc.h, rtai_sem.h: fixed

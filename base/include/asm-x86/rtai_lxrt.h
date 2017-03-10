@@ -92,7 +92,9 @@ static inline void _lxrt_context_switch (struct task_struct *prev, struct task_s
 /*
  *	if (__thread_has_fpu(prev)) clts(); is not needed, it is done already
  */
-#if LINUX_VERSION_CODE > KERNEL_VERSION(3,13,0)
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(4,2,0)
+        prev->thread.fpu.counter = 0;
+#elif LINUX_VERSION_CODE > KERNEL_VERSION(3,13,0)
         prev->thread.fpu_counter = 0;
 #elif LINUX_VERSION_CODE > KERNEL_VERSION(2,6,19)
         prev->fpu_counter = 0;

@@ -68,7 +68,9 @@ MODULE_LICENSE("GPL");
 #endif /* CONFIG_X86_IO_APIC */
 #include <asm/apic.h>
 #endif /* CONFIG_X86_LOCAL_APIC */
+
 #define __RTAI_HAL__
+#define FPREGS_OWNER_CTX
 #include <rtai.h>
 #include <asm/rtai_hal.h>
 #include <asm/rtai_lxrt.h>
@@ -212,6 +214,13 @@ void rt_set_irq_retmode (unsigned irq, int retmode)
 
 // 3 - IRQs enabling/disabling naming and calling
 #define rtai_irq_endis_fun(fun, irq) irq_##fun(&(rtai_irq_desc(irq).irq_data)) 
+
+// 4 - IRQs affinity
+#if LINUX_VERSION_CODE < KERNEL_VERSION(4,4,0)
+#define rtai_irq_affinity(irq) (irq_to_desc(irq)->irq_data.affinity)
+#else
+#define rtai_irq_affinity(irq) (irq_to_desc(irq)->irq_common_data.affinity)
+#endif
 
 unsigned rt_startup_irq (unsigned irq)
 {
@@ -458,7 +467,7 @@ unsigned long rt_assign_irq_to_cpu (int irq, unsigned long cpumask)
 
 		rtai_save_flags_and_cli(flags);
 		spin_lock(&rtai_iset_lock);
-		cpumask_copy((void *)&oldmask, irq_to_desc(irq)->irq_data.affinity);
+		cpumask_copy((void *)&oldmask, rtai_irq_affinity(irq));
 		hal_set_irq_affinity(irq, CPUMASK_T(cpumask)); 
 		if (oldmask) {
 			rtai_old_irq_affinity[irq] = oldmask;
@@ -484,7 +493,7 @@ unsigned long rt_reset_irq_to_sym_mode (int irq)
 			rtai_restore_flags(flags);
 			return -EINVAL;
 		}
-		cpumask_copy((void *)&oldmask, irq_to_desc(irq)->irq_data.affinity);
+		cpumask_copy((void *)&oldmask, rtai_irq_affinity(irq));
 		if (rtai_old_irq_affinity[irq]) {
 	        	hal_set_irq_affinity(irq, CPUMASK_T(rtai_old_irq_affinity[irq]));
 	        	rtai_old_irq_affinity[irq] = 0;

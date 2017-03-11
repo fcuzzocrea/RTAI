@@ -596,6 +596,7 @@ static int rtai_trap_fault (unsigned trap, struct pt_regs *regs)
 	if (!in_hrt_mode(rtai_cpuid())) {
 		goto propagate;
 	}
+#ifdef CONFIG_RTAI_FPU_SUPPORT
 	if (trap == 7)	{
 		struct task_struct *linux_task = current;
 		rtai_cli();
@@ -613,6 +614,7 @@ static int rtai_trap_fault (unsigned trap, struct pt_regs *regs)
 		rtai_sti();
 		return 1;
 	}
+#endif
 	if (rtai_trap_handler && rtai_trap_handler(trap, trap2sig[trap], regs, NULL)) {
 		return 1;
 	}

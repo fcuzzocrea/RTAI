@@ -1,3 +1,9 @@
+2017-03-12 Paolo Mantegazza <mantegazza@aero.polimi.it>
+
+	* base/include/asm-x86/rtai_fpu.h: update for newer kernels, 
+	  code reworked, compacted and stremlined, no more per 32-64
+	  bit archs specific includes.
+
 2017-03-11 Paolo Mantegazza <mantegazza@aero.polimi.it>
 
 	* base/arch/x86/hal/hal.c: make it compile with FPU configured as 

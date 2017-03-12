@@ -35,7 +35,7 @@ Nov. 2001, Jan Kiszka (Jan.Kiszka@web.de) fix a tiny bug in __task_init.
 #include <linux/semaphore.h>
 #include <asm/uaccess.h>
 
-#define FPREGS_OWNER_CTX
+#define DEFINE_FPU_FPREGS_OWNER_CTX
 #include <rtai_sched.h>
 #include <rtai_lxrt.h>
 #include <rtai_sem.h>

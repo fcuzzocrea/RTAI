@@ -70,7 +70,7 @@ MODULE_LICENSE("GPL");
 #endif /* CONFIG_X86_LOCAL_APIC */
 
 #define __RTAI_HAL__
-#define FPREGS_OWNER_CTX
+#define DEFINE_FPU_FPREGS_OWNER_CTX
 #include <rtai.h>
 #include <asm/rtai_hal.h>
 #include <asm/rtai_lxrt.h>

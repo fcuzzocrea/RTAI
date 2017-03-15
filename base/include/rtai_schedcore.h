@@ -103,8 +103,6 @@ extern RT_TASK *rt_smp_current[];
 
 extern RTIME rt_smp_time_h[];
 
-extern int rt_smp_oneshot_timer[];
-
 extern volatile int rt_sched_timed;
 
 #ifdef CONFIG_RTAI_MALLOC
@@ -144,11 +142,9 @@ void rtai_handle_isched_lock(int nesting);
 
 #ifdef CONFIG_SMP
 #define rt_time_h (rt_smp_time_h[cpuid])
-#define oneshot_timer (rt_smp_oneshot_timer[cpuid])
 #define rt_linux_task (rt_smp_linux_task[cpuid])
 #else
 #define rt_time_h (rt_smp_time_h[0])
-#define oneshot_timer (rt_smp_oneshot_timer[0])
 #define rt_linux_task (rt_smp_linux_task[0])
 #endif
 
@@ -400,8 +396,8 @@ static inline void wake_up_timed_tasks(int cpuid)
 	                        } else {
         	                        enq_ready_task(task);
                 	        }
-#if /*CONFIG_RTAI_SCHED_LATENCY &&*/ ((CONFIG_RTAI_USER_BUSY_ALIGN_RET_DELAY > 0 || CONFIG_RTAI_KERN_BUSY_ALIGN_RET_DELAY > 0))
-				task->busy_time_align = oneshot_timer;
+#if ((CONFIG_RTAI_USER_BUSY_ALIGN_RET_DELAY > 0 || CONFIG_RTAI_KERN_BUSY_ALIGN_RET_DELAY > 0))
+				task->busy_time_align = 1;
 #endif
         	        }
 			rb_erase_task(task, cpuid);
@@ -418,17 +414,6 @@ static inline void wake_up_timed_tasks(int cpuid)
 }
 
 #define get_time() rt_get_time()
-#if 0
-static inline RTIME get_time(void)
-{
-#ifdef CONFIG_SMP
-	int cpuid;
-	return rt_smp_oneshot_timer[cpuid = rtai_cpuid()] ? rdtsc() : rt_smp_times[cpuid].tick_time;
-#else
-	return rt_smp_oneshot_timer[0] ? rdtsc() : rt_smp_times[0].tick_time;
-#endif
-}
-#endif
 
 static inline void enqueue_blocked(RT_TASK *task, QUEUE *queue, int qtype)
 {

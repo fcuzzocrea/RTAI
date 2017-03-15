@@ -93,16 +93,6 @@ ACKNOWLEDGMENTS:
 #include <linux/vmalloc.h>
 #include <linux/mm.h>
 
-#if 0
-#if LINUX_VERSION_CODE < KERNEL_VERSION(2,6,0)
-#include <linux/wrapper.h>
-#else /* >= 2.6.0 */
-#include <linux/mm.h>
-#define mem_map_reserve(p)   SetPageReserved(p)
-#define mem_map_unreserve(p) ClearPageReserved(p)
-#endif /* < 2.6.0 */
-#endif
-
 #define UVIRT_TO_KVA(adr)  uvirt_to_kva(pgd_offset_k(adr), (adr))
 
 #if LINUX_VERSION_CODE > KERNEL_VERSION(2,6,10)

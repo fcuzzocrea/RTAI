@@ -700,12 +700,10 @@ void rt_gettimeorig(RTIME time_orig[])
  * @retval 0 on success. A negative value on failure as described below:
  * - @b EINVAL: task does not refer to a valid task.
  *
- * Recall that the term clock ticks depends on the mode in which the hard
- * timer runs. So if the hard timer was set as periodic a clock tick will
- * last as the period set in start_rt_timer, while if oneshot mode is used
- * a clock tick will last as the inverse of the running frequency of the
- * hard timer in use and irrespective of any period used in the call to
- * start_rt_timer.
+ * Recall that the term clock ticks depends on the mode in which the 
+ * hard timer runs. So, since only oneshot is used, a clock tick will
+ * last as the inverse of the running frequency of the hard timer in
+ * use, irrespective of any period used in the call to start_rt_timer.
  */
 RTAI_SYSCALL_MODE int rt_task_make_periodic_relative_ns(RT_TASK *task, RTIME start_delay, RTIME period)
 {
@@ -758,12 +756,10 @@ RTAI_SYSCALL_MODE int rt_task_make_periodic_relative_ns(RT_TASK *task, RTIME sta
  * - @b EINVAL: task does not refer to a valid task.
  *
  * See also: @ref rt_task_make_periodic_relative_ns().
- * Recall that the term clock ticks depends on the mode in which the hard
- * timer runs. So if the hard timer was set as periodic a clock tick will
- * last as the period set in start_rt_timer, while if oneshot mode is used
- * a clock tick will last as the inverse of the running frequency of the
- * hard timer in use and irrespective of any period used in the call to
- * start_rt_timer.
+ * Recall that the term clock ticks depends on the mode in which the 
+ * hard timer runs. So, since only oneshot is used, a clock tick will
+ * last as the inverse of the running frequency of the hard timer in
+ * use, irrespective of any period used in the call to start_rt_timer.
  *
  */
 RTAI_SYSCALL_MODE int rt_task_make_periodic(RT_TASK *task, RTIME start_time, RTIME period)
@@ -819,12 +815,7 @@ int rt_task_wait_period(void)
 	ASSIGN_RT_CURRENT;
 	if (rt_current->resync_frame) { // Request from watchdog
 	    	rt_current->resync_frame = 0;
-		rt_current->periodic_resume_time = rt_current->resume_time = oneshot_timer ? rtai_rdtsc() :
-#ifdef CONFIG_SMP
-		rt_smp_times[cpuid].tick_time;
-#else
-		rt_smp_times[0].tick_time;
-#endif
+		rt_current->periodic_resume_time = rt_current->resume_time = rtai_rdtsc();
 	} else if ((rt_current->periodic_resume_time += rt_current->period) > rt_time_h) {
 		void *blocked_on;
 		rt_current->resume_time = rt_current->periodic_resume_time;
@@ -2237,7 +2228,6 @@ EXPORT_SYMBOL(nano2count_cpuid);
 EXPORT_SYMBOL(rt_smp_linux_task);
 EXPORT_SYMBOL(rt_smp_current);
 EXPORT_SYMBOL(rt_smp_time_h);
-EXPORT_SYMBOL(rt_smp_oneshot_timer);
 EXPORT_SYMBOL(wake_up_srq);
 EXPORT_SYMBOL(set_rt_fun_entries);
 EXPORT_SYMBOL(reset_rt_fun_entries);

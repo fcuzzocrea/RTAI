@@ -6,14 +6,14 @@ Introduction
 ------------
 
 In "base/wd" directory you can find an optional watchdog module. Its purpose 
-is to provide protection services to RTAI thereby protecting it (and the host 
+is to implement protection services to RTAI, thereby protecting it (and the host 
 Linux OS) against programming errors in RTAI applications. It needs the RTAI 
-module and a scheduler to be mounted, and once mounted it will constantly
+module and a scheduler to be mounted and, once mounted, it will constantly
 monitor periodic RT tasks that already exist, or are created later. However it 
 is an optional extra, so assuming your RTAI applications are well behaved then 
 RTAI should behave the same whether or not you have the watchdog mounted. The 
-overhead imposed by the watchdog depends on the speed that you run it, but in 
-most cases should be minimal.
+overhead imposed by the watchdog depends on the speed that you run it but, in 
+most cases, should be minimal.
 
 
 Compatibility with other RT Modules
@@ -29,32 +29,25 @@ what speed is used yourself. A module parameter (TickPeriod) is provided for
 you to specify an appropriate setting when you mount the module. Or you can of 
 course edit the source.
 
-The issue of timers also needs a special mention. Firstly you need to ensure 
-that you configure the watchdog to use the same timer mode (ie. oneshot or 
-periodic) as the rest of your RT tasks. A module parameter (OneShot) is 
-provided for this purpose. Another thing to remember is that the watchdog needs
-to have complete control over the RT timer. Therefore you should ensure that 
-not only does your RT application use the same timer mode as the watchdog at a 
-compatible speed, but that it does not try to start and stop the RT timer. 
-Such actions could affect the watchdog timing and even freeze it so it cannot 
-protect your system. Nowadays it is suggested to use the oneshot mode, the
-default if you do not say anything. It is the more viable solution since it
-imposes no timing constraints onto any task. So the watchdog can run relatively
-slowly, to create the least overhead, while applications are using more higly
-stringent timings. Nonetheless the periodic mode might still be useful but 
-you should use it only at very high frequencies, say in the range of 10s of KHz.
-
+The issue of timers also needs a special mention. In fact the watchdog needs
+to have complete control over the RT timer  and can run relatively slowly, to 
+create the least overhead, while applications are using more higly stringent 
+timings. 
 
 Policies
 --------
 
 Now that you have the basic watchdog configuration in place you need to decide
 what the watchdog's policy should be. By this I mean what should happen to RT
-tasks that overrun their alloted time slot (period). The default watchdog policy
-is to suspend the offending task. While this will certainly protect the rest of
-the system, it may perhaps be more brutal than useful. The watchdog module
-provides some alternative policies which will be described below, but first we
-should consider the likely fault scenarios.
+tasks that overrun their alloted time slot (period). That implies that the 
+watchdog can monitor periodic tasks that has been made such by calling a
+"make_periodic" function. Therefore, unless it becomes an infinite looper (see 
+below), any other way to provide a periodic execution, 
+e.g. "rt_sleep_until(until += period)" will run undected by the watchdog. 
+The default watchdog policy is to suspend the offending task. While this
+will certainly protect the rest of the system, it may perhaps be more brutal
+than useful. The watchdog module provides some alternative policies which will
+be described below, but first we should consider the likely fault scenarios.
 
 In general task overruns fall into 2 categories, infinite loops or periods too
 short for the task to get its work done before it is due to be scheduled again. 
@@ -83,8 +76,7 @@ o Resynchronise the task's frame time and nothing more. This is good for tasks
   permanently suspending it is configurable. 
   
 o Debug policy, this is a special case of the above resync policy. It is
-  recommended when step and trace debugging RT tasks that use the oneshot timer
-  mode.
+  recommended when step and trace debugging RT tasks.
 
 o Stretch the period of the offending task until it no longer overruns. The 
   percentage increment (of the original period) is configurable, as is the
@@ -131,7 +123,7 @@ following watchdog API call...
 enum watchdog_policy {
     NOTHING,                            // Not recommended
     RESYNC,				// Good for occasional overruns
-    DEBUG,				// Good for debugging oneshot tasks
+    DEBUG,				// Good for debugging tasks
     STRETCH,                            // Good for overrunning tasks
     SLIP,                               // Good for infinite loops
     SUSPEND,                            // Good for most things
@@ -238,10 +230,9 @@ resumed neither the RT scheduler or the watchdog will think that any task has
 overrun and no action will be taken. A possible system hang or crash will be 
 avoided.
 
-Unfortunately time is only frozen when the RT timer is running in periodic mode
-rather tham oneshot mode. In oneshot mode although interrupts are disabled at a
-breakpoint, the TSC (which is used to track time in oneshot mode on Pentiums) is
-still running. This means that when execution is resumed the scheduler (and the
+In the oneshot mode, i.e. the one used by RTAI, although interrupts are disabled 
+at a breakpoint, the TSC (which is used to track time in oneshot mode on Pentiums)
+is still running. This means that when execution is resumed the scheduler (and the
 watchdog) will see a sudden leap forward in time. Virtually every RT task will
 seem to have overrun and the watchdog will start enforcing its policy on those 
 tasks. However the scheduler will already be trying to catch up with the missed 
@@ -259,12 +250,10 @@ disables the safety net and offense limit described in previous sections. If
 this wasn't done then tasks might be suspended by mistake if you spent a long
 time at a breakpoint, or if you hit a large number of breakpoints.
 
-So to summarise, if you are step and trace debugging periodic (not oneshot) RT
-tasks then you don't need to worry. However if you are debugging oneshot tasks
-then you need to use the watchdog (with policy set to 'Resync' or 'Debug') in 
-order to avoid possible system hangs and reboots when you resume execution after
-a breakpoint. 'Debug' policy is recommended since you won't have to remember to 
-disable the safety net and offense limit.
+So to summarise, you may need to use the watchdog (with policy set to 'Resync'
+or 'Debug') in order to avoid possible system hangs and reboots when you resume
+execution after a breakpoint. 'Debug' policy is recommended since you won't have
+to remember to disable the safety net and offense limit.
 
 
 Proc Interface
@@ -281,7 +270,7 @@ never have a chance to show up in the bad task list. Some sample /proc output...
 
 RTAI Watchdog Status
 --------------------
-2 Watchdog tasks running @ 100Hz in oneshot mode
+2 Watchdog tasks running at 100 Hz
 Using static memory management (100 entries)
 Policy         : 'Stretch'
 Grace periods  : 1 (forced)
@@ -341,6 +330,5 @@ LooperTimeLimit ms by suspending it when such a limit is exceeded.
 LooperTimeLimit is set to 100 ms by default, it is a parameter that can be 
 changed as needed at insmoding.
 
-Updated to the latest RTAI state, including loopers monitoring, March 2009
-Paolo Mantegazza
-mantegazza@aero.polimi.it
+Updated to the latest RTAI state, including loopers monitoring, March 2009,
+Paolo Mantegazza <mantegazza@aero.polimi.it>.

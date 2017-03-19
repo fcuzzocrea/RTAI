@@ -34,7 +34,7 @@
 typedef enum watchdog_policy { 
     WD_NOTHING, 				// Not recommended
     WD_RESYNC,				// Good for occasional overruns
-    WD_DEBUG,				// Good for debugging oneshot tasks
+    WD_DEBUG,				// Good for debugging tasks
     WD_STRETCH,				// Good for overrunning tasks
     WD_SLIP, 				// Good for infinite loops
     WD_SUSPEND, 				// Good for most things

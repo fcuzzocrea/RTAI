@@ -56,8 +56,8 @@
  *      a task before permanently suspending it is configurable. 
  *
  *    o Debug policy, this is a special case of the above resync policy. It is 
- *      recommended when step and trace debugging RT tasks that use oneshot RT 
- *      timer mode. (See README.WATCHDOG for full details)
+ *      recommended when step and trace debugging RT tasks. 
+ *      (See README.WATCHDOG for full details)
  *
  *    o Stretch (increase) the period of the offending task until it no longer
  *      overruns. The percentage increment (of the original period) is 
@@ -92,7 +92,7 @@
  * 5. Keeps a record of bad tasks (apart from those that have been killed) that 
  *    can be examined via a /proc interface. (/proc/rtai/watchdog)
  * 
- * ID: @(#)$Id: wd.c,v 1.17 2015/10/28 19:23:34 ando Exp $
+ * ID: @(#)$Id: wd.c,v 1.18 2017/03/19 15:55:22 mante Exp $
  *
  *******************************************************************************/
 
@@ -140,7 +140,7 @@ static BAD_RT_TASK bad_task_pool[BAD_TASK_MAX];
 #endif
 
 // The current version number
-static char version[] = "$Revision: 1.17 $";
+static char version[] = "$Revision: 1.18 $";
 static char ver[10];
 
 // User friendly policy names
@@ -158,8 +158,8 @@ static BAD_RT_TASK *bad_tl[RTAI_NR_CPUS]; // Bad task lists (1 per watchdog)
 static int TickPeriod = 10000000;	// Task period in nano seconds
 RTAI_MODULE_PARM(TickPeriod, int);	// (should be shorter than all others)
 
-static int wd_OneShot = 1;		// One shot timer mode or not (periodic)
-RTAI_MODULE_PARM(wd_OneShot, int);	// (should be the same as other tasks)
+static int wd_OneShot = 1;		// One shot timer mode (the only one in use now)
+//RTAI_MODULE_PARM(wd_OneShot, int);	// (should be the same as other tasks) 
 
 static int Grace = 3;			// How much a task can be overdue
 RTAI_MODULE_PARM(Grace, int);		// (in periods, always 1 in some modes)
@@ -509,7 +509,7 @@ static void watchdog(long wd)
 	else     output &= ~(1 << wd);
 	outb(output, LPT_PORT);
 #endif
-	// Fix any overrun of our own (step and trace debug in oneshot mode)
+	// Fix any overrun of our own (step and trace debug)
 	now = rt_get_time_cpuid(wd);
 	if (now - self->resume_time >= self->period) {
 	    self->resync_frame = 1;
@@ -601,10 +601,9 @@ static int PROC_READ_FUN(wdog_read_proc)
     // Heading and parameters
     PROC_PRINT("\nRTAI Watchdog Status\n");
     PROC_PRINT(  "--------------------\n");
-    PROC_PRINT("%d Watchdog task%s running @ %dHz in %s mode\n", 
+    PROC_PRINT("%d Watchdog task%s running at %d Hz in oneshot mode\n", 
 	       num_wdogs, num_wdogs > 1 ? "s" : "",
-	       (int)rtai_imuldiv(NSECS_PER_SEC, 1, TickPeriod), 
-	       wd_OneShot ? "oneshot" : "periodic");
+	       (int)rtai_imuldiv(NSECS_PER_SEC, 1, TickPeriod));
 #ifdef MY_ALLOC
     PROC_PRINT("Using static memory management (%d entries)\n", BAD_TASK_MAX);
 #else
@@ -763,10 +762,9 @@ int __rtai_wd_init(void)
 
     // Log initial parameters
     WDLOG( "loaded.\n");
-    WDLOG( "%d Watchdog task%s running @ %dHz in %s mode\n", 
+    WDLOG( "%d Watchdog task%s running at %d Hz in oneshot mode\n", 
 	   num_wdogs, num_wdogs > 1 ? "s" : "",
-	   rtai_imuldiv(NSECS_PER_SEC, 1, TickPeriod), 
-	   wd_OneShot ? "oneshot" : "periodic");
+	   rtai_imuldiv(NSECS_PER_SEC, 1, TickPeriod));
 #ifdef MY_ALLOC
     WDLOG( "Using static memory management (%d entries)\n", BAD_TASK_MAX);
 #else

@@ -1,3 +1,16 @@
+2017-03-19 Paolo Mantegazza <mantegazza@aero.polimi.it>
+
+	* base/wd/README.WATCHDOG: edited to inform that oneshot is the 
+	  only hard timer mode in use now.
+	* base/wd/wd.c: force wd_OneShot to be always 1, oneshot is the
+          only hard timer mode in use now.
+
+2017-03-15 Paolo Mantegazza <mantegazza@aero.polimi.it>
+
+	* base/include/rtai_shm.h: wiped unused code away.
+	* base/include/rtai_schedcore.h: wiped unused code away, cleaned
+	  the code related the nomore used oneshot mode.
+
 2017-03-12 Paolo Mantegazza <mantegazza@aero.polimi.it>
 
 	* base/include/asm-x86/rtai_fpu.h: update for newer kernels, 

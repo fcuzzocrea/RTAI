@@ -4,12 +4,17 @@
 	  only hard timer mode in use now.
 	* base/wd/wd.c: force wd_OneShot to be always 1, oneshot is the
           only hard timer mode in use now.
+	* base/sched/api.c: no more references to any hard timer mode but
+	  oneshot, be it in comments or code.
+	* base/sched/sched.c: cleaned dead code, wiped out anything
+	  referencing non oneshot hard timer mode, the only one in use
+	  now.
 
 2017-03-15 Paolo Mantegazza <mantegazza@aero.polimi.it>
 
 	* base/include/rtai_shm.h: wiped unused code away.
 	* base/include/rtai_schedcore.h: wiped unused code away, cleaned
-	  the code related the nomore used oneshot mode.
+	  the code related to the nomore used periodic mode.
 
 2017-03-12 Paolo Mantegazza <mantegazza@aero.polimi.it>
 

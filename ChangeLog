@@ -2,6 +2,8 @@
 
 	* base/wd/README.WATCHDOG: edited to inform that oneshot is the 
 	  only hard timer mode in use now.
+	* base/include/rtai_wd.h: wiped away a comment suggesting possible
+	  non oneshot hard time mode.
 	* base/wd/wd.c: force wd_OneShot to be always 1, oneshot is the
           only hard timer mode in use now.
 	* base/sched/api.c: no more references to any hard timer mode but

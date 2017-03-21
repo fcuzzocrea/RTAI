@@ -1,3 +1,10 @@
+2017-03-21 Paolo Mantegazza <mantegazza@aero.polimi.it>
+
+	* base/include/rtai_shm.h: fixed a few warnings and cleaned old
+	  stuff.
+	* addons/comedi/rtai_comedi.h: fixed warnings and a couple of
+	  distributed functions error, appearing only in C++.
+
 2017-03-19 Paolo Mantegazza <mantegazza@aero.polimi.it>
 
 	* base/wd/README.WATCHDOG: edited to inform that oneshot is the 

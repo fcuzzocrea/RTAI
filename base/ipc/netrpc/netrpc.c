@@ -318,7 +318,6 @@ static void net_resume_task(int sock, struct portslot_t *p)
 }
 
 int get_min_tasks_cpuid(void);
-int set_rtext(RT_TASK *, int, int, void(*)(void), unsigned int, void *);
 int clr_rtext(RT_TASK *);
 void rt_schedule_soft(RT_TASK *);
 
@@ -343,7 +342,7 @@ static inline long long soft_rt_genfun_call(RT_TASK *task, void *fun, void *args
 //extern void rt_daemonize(void);
 static void thread_fun(RT_TASK *task)
 {
-	if (!set_rtext(task, task->fun_args[3], 0, 0, get_min_tasks_cpuid(), 0)) {
+	if (!set_rtext(task, task->fun_args[3], 0, 0, get_min_tasks_cpuid())) {
 //		rt_daemonize();
 		sigfillset(&current->blocked);
 		rtai_set_linux_task_priority(current, SCHED_FIFO, MIN_LINUX_RTPRIO);

@@ -245,6 +245,8 @@ typedef struct rt_task_struct {
 extern "C" {
 #endif /* !__cplusplus */
 
+int set_rtext(RT_TASK *task, int priority, int uses_fpu, void(*signal)(void), unsigned int cpuid);
+
 int rt_task_init(struct rt_task_struct *task,
 		 void (*rt_thread)(long),
 		 long data,

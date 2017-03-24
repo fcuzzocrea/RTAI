@@ -211,7 +211,7 @@ void put_current_on_cpu(int cpuid)
 #endif /* CONFIG_SMP */
 }
 
-int set_rtext(RT_TASK *task, int priority, int uses_fpu, void(*signal)(void), unsigned int cpuid, struct task_struct *relink)
+int set_rtext(RT_TASK *task, int priority, int uses_fpu, void(*signal)(void), unsigned int cpuid)
 {
 	unsigned long flags;
 
@@ -260,20 +260,14 @@ int set_rtext(RT_TASK *task, int priority, int uses_fpu, void(*signal)(void), un
 	task->exectime[0] = task->exectime[1] = 0;
 	task->system_data_ptr = 0;
 	atomic_inc((atomic_t *)(tasks_per_cpu + cpuid));
-	if (0 && relink) {
-		task->priority = task->base_priority = priority;
-		task->suspdepth = task->is_hard = 1;
-		task->state = RT_SCHED_READY | RT_SCHED_SUSPENDED;
-		rtai_tskext(relink, TSKEXT0) = task;
-		task->lnxtsk = relink;
-	} else {
-		task->priority = task->base_priority = BASE_SOFT_PRIORITY + priority;
-		task->suspdepth = task->is_hard = 0;
-		task->state = RT_SCHED_READY;
-		rtai_tskext(current, TSKEXT0) = task;
-		rtai_tskext(current, TSKEXT1) = task->lnxtsk = current;
-		put_current_on_cpu(cpuid);
-	}
+
+	task->priority = task->base_priority = BASE_SOFT_PRIORITY + priority;
+	task->suspdepth = task->is_hard = 0;
+	task->state = RT_SCHED_READY;
+	rtai_tskext(current, TSKEXT0) = task;
+	rtai_tskext(current, TSKEXT1) = task->lnxtsk = current;
+	put_current_on_cpu(cpuid);
+
 	task->schedlat = task->lnxtsk->mm ? UserLatency : KernelLatency;
 	flags = rt_global_save_flags_and_cli();
 	task->next = 0;

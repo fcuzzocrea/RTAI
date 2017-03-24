@@ -32,6 +32,10 @@
 #ifndef _RTAI_NAM2NUM_H
 #define _RTAI_NAM2NUM_H
 
+#ifdef __cplusplus
+extern "C" {
+#endif /* __cplusplus */
+
 #include <rtai_types.h>
 
 #ifdef __KERNEL__
@@ -124,5 +128,9 @@ NAM2NUM_PROTO(void, num2nam, (unsigned long num, char *name))
 	}
 	name[k] = 0;
 }
+
+#ifdef __cplusplus
+}
+#endif /* __cplusplus */
 
 #endif /* !_RTAI_NAM2NUM_H */

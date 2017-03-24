@@ -1,3 +1,16 @@
+2017-03-25 Paolo Mantegazza <mantegazza@aero.polimi.it>
+
+	* base/include/rtai_nam2num.h: added the construct extern "C" { }
+	 to  make it C++ friendlier.
+	* base/include/rtai_sched.h: added the declaration of the function 
+	  set_rtext, to avoid repeating it when used in a few files.
+	* base/ipc/netrpc.c: use the new declaration of set_rtext, omitting 
+	  a nomore used argument.
+	* base/sched/sys.c: use the new declaration of set_rtext, omitting 
+	  a nomore used argument.
+	* base/sched/sched.c: wiped out unused code, shortening the call
+	  list, because of a nomore used arg.
+
 2017-03-21 Paolo Mantegazza <mantegazza@aero.polimi.it>
 
 	* base/include/rtai_shm.h: fixed a few warnings and cleaned old

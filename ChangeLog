@@ -1,3 +1,7 @@
+2017-03-28 Paolo Mantegazza <mantegazza@aero.polimi.it>
+
+	* base/include/rtai_sanity.h: allow using gcc version up to 5.
+
 2017-03-25 Paolo Mantegazza <mantegazza@aero.polimi.it>
 
 	* base/include/rtai_nam2num.h: added the construct extern "C" { }

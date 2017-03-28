@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 1999-2003 Paolo Mantegazza <mantegazza@aero.polimi.it>
+ * Copyright (C) 1999-2017 Paolo Mantegazza <mantegazza@aero.polimi.it>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License as
@@ -20,7 +20,7 @@
 #define _RTAI_SANITY_H
 
 #if !( __GNUC__ == 2 && __GNUC_MINOR__ > 8 && __GNUC_MINOR__ < 96 ) && \
-	__GNUC__ > 4
+	__GNUC__ > 5
 #warning: You are likely using an unsupported GCC version! \
           Please read GCC-WARNINGS carefully.
 #endif

@@ -1,3 +1,10 @@
+2017-04-01 Paolo Mantegazza <mantegazza@aero.polimi.it>
+
+	* base/sched/sched.c: added the missing setting of the epoch
+	  origin (rt_gettimeorig) when hard timers are started, needed
+	  when REALTIME mode is used and some further cleaning more.
+	  (BTW, it is not a 1st of April fool).
+
 2017-03-28 Paolo Mantegazza <mantegazza@aero.polimi.it>
 
 	* base/include/rtai_sanity.h: allow using gcc version up to 5.

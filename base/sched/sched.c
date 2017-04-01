@@ -1296,7 +1296,7 @@ static int _rt_linux_hrt_next_shot(unsigned long deltat, void *hrt_dev) // ??? s
 
 #endif /* CONFIG_GENERIC_CLOCKEVENTS */
 
-static void _start_rt_timers(void)
+static void rt_start_timers(void)
 {
 	unsigned long flags, cpuid;
 
@@ -1308,11 +1308,12 @@ static void _start_rt_timers(void)
 		timer_shot_fired = 1;
 	}
 	rt_sched_timed = 1;
+	rt_gettimeorig(NULL);
 	rt_global_restore_flags(flags);
 }
 
 
-static void _stop_rt_timers(void)
+static void rt_stop_timers(void)
 {
 	int cpuid; 
 	if (rt_sched_timed) {
@@ -1324,47 +1325,19 @@ static void _stop_rt_timers(void)
 	}
 }
 
-static void start_rt_timers(void) { }
-
-static void stop_rt_timers(void)  { }
-
-RTAI_SYSCALL_MODE void start_rt_apic_timers(struct apic_timer_setup_data *setup_data, unsigned int rcvr_jiffies_cpuid)
-{
-	start_rt_timers();
-	return;
-}
+RTAI_SYSCALL_MODE void start_rt_apic_timers(struct apic_timer_setup_data *setup_data, unsigned int rcvr_jiffies_cpuid) { return; }
 
 
-RTAI_SYSCALL_MODE RTIME start_rt_timer(int period)
-{
-	start_rt_timers();
-	return period;
-}
+RTAI_SYSCALL_MODE RTIME start_rt_timer(int period) { return period; }
 
 
-void stop_rt_timer(void)
-{
-	stop_rt_timers();
-	return;
-}
+void stop_rt_timer(void) { return; }
 
 
-RTAI_SYSCALL_MODE int rt_hard_timer_tick_count(void)
-{
-	if (rt_sched_timed) {
-		return 0;
-	}
-	return -1;
-}
+RTAI_SYSCALL_MODE int rt_hard_timer_tick_count(void) { return 0; }
 
 
-RTAI_SYSCALL_MODE int rt_hard_timer_tick_count_cpuid(int cpuid)
-{
-	if (rt_sched_timed) {
-		return 0;
-	}
-	return -1;
-}
+RTAI_SYSCALL_MODE int rt_hard_timer_tick_count_cpuid(int cpuid) { return 0; }
 
 
 RT_TRAP_HANDLER rt_set_task_trap_handler( RT_TASK *task, unsigned int vec, RT_TRAP_HANDLER handler)
@@ -1379,11 +1352,10 @@ RT_TRAP_HANDLER rt_set_task_trap_handler( RT_TASK *task, unsigned int vec, RT_TR
 	return old_handler;
 }
 
-static int Latency = 0; // SCHED_LATENCY;
+static int Latency = 0;
 RTAI_MODULE_PARM(Latency, int);
 
-static int SetupTimeTIMER; // = TIMER_SETUP_TIME;
-//RTAI_MODULE_PARM(SetupTimeTIMER, int);
+static int SetupTimeTIMER;
 
 extern void krtai_objects_release(void);
 
@@ -1439,7 +1411,7 @@ static void lxrt_killall (void)
 {
 	int cpuid;
 	
-	_stop_rt_timers();
+	rt_stop_timers();
 	for (cpuid = 0; cpuid < RTAI_NR_CPUS; cpuid++) {
 		while (rt_linux_task.next) {
 			rt_task_delete(rt_linux_task.next);
@@ -2663,7 +2635,7 @@ exit:
 #if defined(CONFIG_GENERIC_CLOCKEVENTS) && CONFIG_RTAI_RTC_FREQ == 0
 	rt_linux_hrt_next_shot = _rt_linux_hrt_next_shot;
 #endif
-	_start_rt_timers();
+	rt_start_timers();
 	calibrate_latencies();
 
 	return retval;

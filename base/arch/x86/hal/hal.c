@@ -1005,7 +1005,9 @@ EXPORT_SYMBOL(rtai_set_linux_task_priority);
 
 EXPORT_SYMBOL(rtai_linux_context);
 EXPORT_SYMBOL(rtai_domain);
+#ifdef CONFIG_PROC_FS
 EXPORT_SYMBOL(rtai_proc_root);
+#endif
 EXPORT_SYMBOL(rtai_tunables);
 EXPORT_SYMBOL(rtai_cpu_lock);
 EXPORT_SYMBOL(rtai_cpu_realtime);

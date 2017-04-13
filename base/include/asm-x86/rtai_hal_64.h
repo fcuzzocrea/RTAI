@@ -84,7 +84,12 @@ static inline unsigned long long rtai_rdtsc(void)
 }
 
 #else
+#if defined(CONFIG_SMP) && defined(CONFIG_RTAI_DIAG_TSC_SYNC) && defined(CONFIG_RTAI_TUNE_TSC_SYNC)
+extern volatile long rtai_tsc_ofst[];
+#define rtai_rdtsc() ({ unsigned long long t; ipipe_read_tsc(t); t - rtai_tsc_ofst[rtai_cpuid()]; })
+#else
 #define rtai_rdtsc() ({ unsigned long long t; ipipe_read_tsc(t); t; })
+#endif
 #endif
 
 #endif /* !_RTAI_ASM_X86_64_HAL_H */

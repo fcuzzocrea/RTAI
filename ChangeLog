@@ -1,3 +1,12 @@
+2017-04-14 Paolo Mantegazza <mantegazza@aero.polimi.it>
+
+	* base/arch/x86/hal/hal.c: extend multi processor TSCs alignment
+	  to x86_64.
+	* base/include/asm-x86/rtai_hal_64.h: added support for correcting
+	  TSCs misalignments.
+	* base/arch/x86/Kconfig: edited to be up to date with the latest
+	  TSC alignment stuff.
+
 2017-04-01 Paolo Mantegazza <mantegazza@aero.polimi.it>
 
 	* base/sched/sched.c: added the missing setting of the epoch

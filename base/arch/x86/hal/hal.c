@@ -696,10 +696,10 @@ void rtai_set_linux_task_priority (struct task_struct *task, int policy, int pri
 
 struct proc_dir_entry *rtai_proc_root = NULL;
 
-#if defined(__i386__) && defined(CONFIG_SMP) && defined(CONFIG_RTAI_DIAG_TSC_SYNC)
-extern void init_tsc_sync(void);
-extern void cleanup_tsc_sync(void);
-extern volatile long rtai_tsc_ofst[];
+#if defined(CONFIG_SMP) && defined(CONFIG_RTAI_DIAG_TSC_SYNC)
+void init_tsc_sync(void);
+void cleanup_tsc_sync(void);
+volatile long rtai_tsc_ofst[];
 #endif
 
 static int PROC_READ_FUN(rtai_read_proc)
@@ -745,10 +745,14 @@ static int PROC_READ_FUN(rtai_read_proc)
     	PROC_PRINT("\n\n");
 
 #ifdef CONFIG_SMP
-#if defined(__i386__) && defined(CONFIG_RTAI_DIAG_TSC_SYNC)
-	PROC_PRINT("** RTAI TSC OFFSETs (TSC units, 0 ref. CPU): ");
+#ifdef CONFIG_RTAI_DIAG_TSC_SYNC
+	PROC_PRINT("** RTAI TSC OFFSETs (nanosecs, ref. CPU %d): ", CONFIG_RTAI_MASTER_TSC_CPU);
     	for (i = 0; i < num_online_cpus(); i++) {
-		PROC_PRINT("CPU#%d: %ld; ", i, rtai_tsc_ofst[i]);
+		long long tsc_ofst;
+		tsc_ofst = rtai_tsc_ofst[i] > 0 ?
+			    rtai_llimd(rtai_tsc_ofst[i], 1000000000, rtai_tunables.clock_freq) :
+			   -rtai_llimd(-rtai_tsc_ofst[i], 1000000000, rtai_tunables.clock_freq);
+		PROC_PRINT("CPU#%d: %lld; ", i, tsc_ofst);
         }
     	PROC_PRINT("\n\n");
 #endif
@@ -887,7 +891,7 @@ int __rtai_hal_init (void)
 
 	printk(KERN_INFO "RTAI[hal]: mounted. ISOL_CPUS_MASK: %lx.\n", IsolCpusMask);
 
-#if defined(__i386__) && defined(CONFIG_SMP) && defined(CONFIG_RTAI_DIAG_TSC_SYNC)
+#if defined(CONFIG_SMP) && defined(CONFIG_RTAI_DIAG_TSC_SYNC)
 	init_tsc_sync();
 #endif
 
@@ -917,7 +921,7 @@ void __rtai_hal_exit (void)
 		}
 	}
 
-#if defined(__i386__) && defined(CONFIG_SMP) && defined(CONFIG_RTAI_DIAG_TSC_SYNC)
+#if defined(CONFIG_SMP) && defined(CONFIG_RTAI_DIAG_TSC_SYNC)
 	cleanup_tsc_sync();
 #endif
 
@@ -1005,9 +1009,7 @@ EXPORT_SYMBOL(rtai_set_linux_task_priority);
 
 EXPORT_SYMBOL(rtai_linux_context);
 EXPORT_SYMBOL(rtai_domain);
-#ifdef CONFIG_PROC_FS
 EXPORT_SYMBOL(rtai_proc_root);
-#endif
 EXPORT_SYMBOL(rtai_tunables);
 EXPORT_SYMBOL(rtai_cpu_lock);
 EXPORT_SYMBOL(rtai_cpu_realtime);
@@ -1018,27 +1020,20 @@ EXPORT_SYMBOL(rt_sync_printk);
 
 EXPORT_SYMBOL(IsolCpusMask);
 
-#if defined(__i386__) && defined(CONFIG_SMP) && defined(CONFIG_RTAI_DIAG_TSC_SYNC)
+#if defined(CONFIG_SMP) && defined(CONFIG_RTAI_DIAG_TSC_SYNC)
 
 /*
 	Hacked from arch/ia64/kernel/smpboot.c.
 */
 
-//#define DIAG_OUT_OF_SYNC_TSC
+//#define PRINT_DIAG_OUT_OF_SYNC_TSC
 
-#ifdef DIAG_OUT_OF_SYNC_TSC
+#ifdef PRINT_DIAG_OUT_OF_SYNC_TSC
 static int sync_cnt[RTAI_NR_CPUS];
 #endif
 
 volatile long rtai_tsc_ofst[RTAI_NR_CPUS];
 EXPORT_SYMBOL(rtai_tsc_ofst);
-
-static inline long long readtsc(void)
-{
-	long long t;
-	__asm__ __volatile__("rdtsc" : "=A" (t));
-	return t;
-}
 
 #define MASTER	(0)
 #define SLAVE	(SMP_CACHE_BYTES/8)
@@ -1071,7 +1066,7 @@ static void sync_master(void *arg)
 		}
 		go[MASTER] = 0;
 		spin_lock_irqsave(&tsclock, lflags);
-		go[SLAVE] = readtsc();
+		go[SLAVE] = rtai_rdtsc();
 		spin_unlock_irqrestore(&tsclock, lflags);
 	}
 	local_irq_restore(flags);
@@ -1088,7 +1083,7 @@ static inline long long get_delta(long long *rt, long long *master, unsigned int
 	long i, done;
 
 	for (done = i = 0; i < NUM_ITERS; ++i) {
-		t0 = readtsc();
+		t0 = rtai_rdtsc();
 		go[MASTER] = 1;
 		spin_lock_irqsave(&tsclock, lflags);
 		while (!(tm = go[SLAVE])) {
@@ -1098,7 +1093,7 @@ static inline long long get_delta(long long *rt, long long *master, unsigned int
 		}
 		spin_unlock_irqrestore(&tsclock, lflags);
 		go[SLAVE] = 0;
-		t1 = readtsc();
+		t1 = rtai_rdtsc();
 		dt = t1 - t0;
 		if (!first_sync_loop_done && dt > worst_tsc_round_trip[slave]) {
 			worst_tsc_round_trip[slave] = dt;
@@ -1146,14 +1141,13 @@ static void sync_tsc(unsigned long master, unsigned int slave)
 	delta = get_delta(&rt, &master_time_stamp, slave);
 	spin_unlock_irqrestore(&tsc_sync_lock, flags);
 
-#ifdef DIAG_OUT_OF_SYNC_TSC
-	printk(KERN_INFO "# %d - CPU %u: synced its TSC with CPU %u (master time stamp %llu cycles, < - OFFSET %lld cycles - > , max double tsc read span %llu cycles)\n", ++sync_cnt[slave], slave, master, master_time_stamp, delta, rt);
+#ifdef PRINT_DIAG_OUT_OF_SYNC_TSC
+	printk(KERN_INFO "# %d - CPU %u: synced its TSC with CPU %lu (master time stamp %llu cycles, < - OFFSET %lld cycles - > , max double tsc read span %llu cycles)\n", ++sync_cnt[slave], slave, master, master_time_stamp, delta, rt);
 #endif
 }
 
-//#define CONFIG_RTAI_MASTER_TSC_CPU  0
-#define SLEEP0  500 // ms
-#define DSLEEP  500 // ms
+#define SLEEP0  1000 // ms
+#define DSLEEP  1000 // ms
 static volatile int end;
 
 static void kthread_fun(void *null)

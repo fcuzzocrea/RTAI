@@ -216,12 +216,15 @@ config RTAI_CPUS
 	PAY ATTENTION: the default value is 2.
 
 config RTAI_DIAG_TSC_SYNC
-	bool "Diagnose out of sync MP-TSCs"
+	bool "Diagnose out of sync multi processor TSCs"
 	default n
 	help
-	Check alignment of MP-TSCs, against a master CPU, and show them in
-	the RTAI HAL proc file system (in TSC count units). It is for x86_32
-	only; ignored on x86_64.
+	Check the alignment of multi processor TSCs against a master CPU.
+	Display them in the RTAI HAL proc file system (in nanosecs) and
+	use them to correct any bias by also enabling RTAI_TUNE_TSC_SYNC.
+	To check if it is an option worth having, insmod just rtai_hal.ko
+	and type, a few times, cat /proc/rtai/hal, to see how much the 
+	TSCs are skewed with respect to the chosen master CPU.
 
 config RTAI_MASTER_TSC_CPU
 	depends on RTAI_DIAG_TSC_SYNC

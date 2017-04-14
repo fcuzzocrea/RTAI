@@ -696,10 +696,10 @@ void rtai_set_linux_task_priority (struct task_struct *task, int policy, int pri
 
 struct proc_dir_entry *rtai_proc_root = NULL;
 
+long long rtai_tsc_ofst[RTAI_NR_CPUS];
+EXPORT_SYMBOL(rtai_tsc_ofst);
 #if defined(CONFIG_SMP) && defined(CONFIG_RTAI_DIAG_TSC_SYNC)
-void init_tsc_sync(void);
-void cleanup_tsc_sync(void);
-volatile long rtai_tsc_ofst[];
+void tsc_sync(void);
 #endif
 
 static int PROC_READ_FUN(rtai_read_proc)
@@ -749,7 +749,7 @@ static int PROC_READ_FUN(rtai_read_proc)
 	PROC_PRINT("** RTAI TSC OFFSETs (nanosecs, ref. CPU %d): ", CONFIG_RTAI_MASTER_TSC_CPU);
     	for (i = 0; i < num_online_cpus(); i++) {
 		long long tsc_ofst;
-		tsc_ofst = rtai_tsc_ofst[i] > 0 ?
+		tsc_ofst = rtai_tsc_ofst[i] >= 0 ?
 			    rtai_llimd(rtai_tsc_ofst[i], 1000000000, rtai_tunables.clock_freq) :
 			   -rtai_llimd(-rtai_tsc_ofst[i], 1000000000, rtai_tunables.clock_freq);
 		PROC_PRINT("CPU#%d: %lld; ", i, tsc_ofst);
@@ -892,7 +892,7 @@ int __rtai_hal_init (void)
 	printk(KERN_INFO "RTAI[hal]: mounted. ISOL_CPUS_MASK: %lx.\n", IsolCpusMask);
 
 #if defined(CONFIG_SMP) && defined(CONFIG_RTAI_DIAG_TSC_SYNC)
-	init_tsc_sync();
+	tsc_sync();
 #endif
 
 	printk("SYSINFO - # CPUs: %d, TIMER NAME: '%s', TIMER IRQ: %d, TIMER FREQ: %lu, CLOCK NAME: '%s', CLOCK FREQ: %lu, CPU FREQ: %llu, LINUX TIMER IRQ: %d.\n", sysinfo.sys_nr_cpus, ipipe_timer_name(), rtai_tunables.timer_irq, rtai_tunables.timer_freq, ipipe_clock_name(), rtai_tunables.clock_freq, sysinfo.sys_cpu_freq, __ipipe_hrtimer_irq); 
@@ -920,10 +920,6 @@ void __rtai_hal_exit (void)
 			rt_reset_irq_to_sym_mode(i);
 		}
 	}
-
-#if defined(CONFIG_SMP) && defined(CONFIG_RTAI_DIAG_TSC_SYNC)
-	cleanup_tsc_sync();
-#endif
 
 	printk(KERN_INFO "RTAI[hal]: unmounted.\n");
 }
@@ -1023,168 +1019,171 @@ EXPORT_SYMBOL(IsolCpusMask);
 #if defined(CONFIG_SMP) && defined(CONFIG_RTAI_DIAG_TSC_SYNC)
 
 /*
-	Hacked from arch/ia64/kernel/smpboot.c.
-*/
+ *	Hacked from arch/ia64/kernel/smpboot.c.
+ */
 
 //#define PRINT_DIAG_OUT_OF_SYNC_TSC
 
-#ifdef PRINT_DIAG_OUT_OF_SYNC_TSC
-static int sync_cnt[RTAI_NR_CPUS];
-#endif
+static volatile long long tsc_offset;
 
-volatile long rtai_tsc_ofst[RTAI_NR_CPUS];
-EXPORT_SYMBOL(rtai_tsc_ofst);
+#define MASTER  (0)
+#define SLAVE   (SMP_CACHE_BYTES/8)
 
-#define MASTER	(0)
-#define SLAVE	(SMP_CACHE_BYTES/8)
+#define NUM_ROUNDS      64      /* magic value */
+#define NUM_ITERS       5       /* likewise */
 
-#define NUM_ITERS  10
-
-#if LINUX_VERSION_CODE < KERNEL_VERSION(2,6,0)
-static spinlock_t tsc_sync_lock = SPIN_LOCK_UNLOCKED;
-static spinlock_t tsclock = SPIN_LOCK_UNLOCKED;
-#else
 static DEFINE_SPINLOCK(tsc_sync_lock);
-static DEFINE_SPINLOCK(tsclock);
-#endif
 
-static volatile long long go[SLAVE + 1];
+static volatile unsigned long long go[SLAVE + 1];
+
+#if 1
+#define CPU_RELAX cpu_relax
+#else
+#define CPU_RELAX barrier
+#endif
 
 static void sync_master(void *arg)
 {
-	unsigned long flags, lflags, i;
-
-	if ((unsigned long)arg != rtai_cpuid()) {
-		return;
-	}
+	unsigned long flags, i;
 
 	go[MASTER] = 0;
+
 	local_irq_save(flags);
-	for (i = 0; i < NUM_ITERS; ++i) {
+	for (i = 0; i < NUM_ROUNDS*NUM_ITERS; ++i) {
 		while (!go[MASTER]) {
-			cpu_relax();
+			CPU_RELAX();
 		}
 		go[MASTER] = 0;
-		spin_lock_irqsave(&tsclock, lflags);
 		go[SLAVE] = rtai_rdtsc();
-		spin_unlock_irqrestore(&tsclock, lflags);
 	}
 	local_irq_restore(flags);
 }
 
-static int first_sync_loop_done;
-static unsigned long worst_tsc_round_trip[RTAI_NR_CPUS];
-
-static inline long long get_delta(long long *rt, long long *master, unsigned int slave)
+static inline long long get_delta(long long *rt, long long *master_time_stamp)
 {
 	unsigned long long best_t0 = 0, best_t1 = ~0ULL, best_tm = 0;
-	unsigned long long tcenter = 0, t0, t1, tm, dt;
-	unsigned long lflags;
-	long i, done;
+	unsigned long long tcenter = 0, t0, t1, tm;
+	int i;
 
-	for (done = i = 0; i < NUM_ITERS; ++i) {
-		t0 = rtai_rdtsc();
+	for (i = 0; i < NUM_ITERS; ++i) {
+		t0 = rtai_rdtsc() + tsc_offset;
 		go[MASTER] = 1;
-		spin_lock_irqsave(&tsclock, lflags);
 		while (!(tm = go[SLAVE])) {
-			spin_unlock_irqrestore(&tsclock, lflags);
-			cpu_relax();
-			spin_lock_irqsave(&tsclock, lflags);
+			CPU_RELAX();
 		}
-		spin_unlock_irqrestore(&tsclock, lflags);
 		go[SLAVE] = 0;
-		t1 = rtai_rdtsc();
-		dt = t1 - t0;
-		if (!first_sync_loop_done && dt > worst_tsc_round_trip[slave]) {
-			worst_tsc_round_trip[slave] = dt;
-		}
-		if (dt < (best_t1 - best_t0) && (dt <= worst_tsc_round_trip[slave] || !first_sync_loop_done)) {
-			done = 1;
-			best_t0 = t0, best_t1 = t1, best_tm = tm;
+		t1 = rtai_rdtsc() + tsc_offset;
+
+		if ((t1 - t0) < (best_t1 - best_t0)) {
+			best_t0 = t0;
+			best_t1 = t1;
+			best_tm = tm;
 		}
 	}
 
-	if (done) {
-		*rt = best_t1 - best_t0;
-		*master = best_tm - best_t0;
-		tcenter = best_t0/2 + best_t1/2;
-		if (best_t0 % 2 + best_t1 % 2 == 2) {
-			++tcenter;
-		}
+	*rt = best_t1 - best_t0;
+	*master_time_stamp = best_tm - best_t0;
+
+	/* average best_t0 and best_t1 without overflow: */
+	tcenter = best_t0/2 + best_t1/2;
+	if (best_t0 % 2 + best_t1 % 2 == 2) {
+		++tcenter;
 	}
-	if (!first_sync_loop_done) {
-		worst_tsc_round_trip[slave] = (worst_tsc_round_trip[slave]*120)/100;
-		first_sync_loop_done = 1;
-		return done ? rtai_tsc_ofst[slave] = tcenter - best_tm : 0;
-	}
-	return done ? rtai_tsc_ofst[slave] = (8*rtai_tsc_ofst[slave] + 2*((long)(tcenter - best_tm)))/10 : 0;
+	return (tcenter - best_tm);
 }
 
-static void sync_tsc(unsigned long master, unsigned int slave)
+static void sync_tsc(unsigned int master)
 {
+	long long delta, adj, adjust_latency = 0;
+	long long rt, master_time_stamp, bound;
 	unsigned long flags;
-	long long delta, rt = 0, master_time_stamp = 0;
+	int i, done = 0;
+
+#ifdef PRINT_DIAG_OUT_OF_SYNC_TSC
+	struct {
+		long long rt;		/* roundtrip time */
+		long long master;	/* master's timestamp */
+		long long diff;		/* difference between midpoint and master's timestamp */
+		long long lat;		/* estimate of tsc adjustment latency */
+	} t[NUM_ROUNDS];
+#endif
 
 	go[MASTER] = 1;
-	if (smp_call_function(sync_master, (void *)master,
-#if LINUX_VERSION_CODE < KERNEL_VERSION(2,6,27)
- 							   1,
-#endif
-							      0) < 0) {
-//		printk(KERN_ERR "sync_tsc: slave CPU %u failed to get attention from master CPU %u!\n", slave, master);
+
+	if (smp_call_function_single(master, sync_master, NULL, 0) < 0) {
+		printk(KERN_ERR "sync_tsc: failed to get attention of CPU %u!\n", master);
 		return;
 	}
+
 	while (go[MASTER]) {
-		cpu_relax();	/* wait for master to be ready */
+		CPU_RELAX();	/* wait for master to be ready */
 	}
+
 	spin_lock_irqsave(&tsc_sync_lock, flags);
-	delta = get_delta(&rt, &master_time_stamp, slave);
+	for (i = 0; i < NUM_ROUNDS; ++i) {
+		delta = get_delta(&rt, &master_time_stamp);
+		if (delta == 0) {
+			done = 1;	/* let's lock on to this... */
+			bound = rt;
+		}
+
+		if (!done) {
+			if (i > 0) {
+				adjust_latency += -delta;
+				adj = -delta + adjust_latency/4;
+			} else {
+				adj = -delta;
+			}
+
+			tsc_offset += adj;
+//			just for x86_64, true x86_32 should not allow writes into TSC
+//			wrmsrl(MSR_IA32_TSC, rtai_rdtsc() + adj);  just for x86_64, x86_64
+		}
+#ifdef PRINT_DIAG_OUT_OF_SYNC_TSC
+		t[i].rt = rt;
+		t[i].master = master_time_stamp;
+		t[i].diff = delta;
+		t[i].lat = adjust_latency/4;
+#endif
+	}
 	spin_unlock_irqrestore(&tsc_sync_lock, flags);
 
 #ifdef PRINT_DIAG_OUT_OF_SYNC_TSC
-	printk(KERN_INFO "# %d - CPU %u: synced its TSC with CPU %lu (master time stamp %llu cycles, < - OFFSET %lld cycles - > , max double tsc read span %llu cycles)\n", ++sync_cnt[slave], slave, master, master_time_stamp, delta, rt);
+	for (i = 0; i < NUM_ROUNDS; ++i)
+		printk("rt=%5lld master=%5lld diff=%5lld adjlat=%5lld\n",
+		       t[i].rt, t[i].master, t[i].diff, t[i].lat);
 #endif
+
+	printk(KERN_INFO "CPU %d: synchronized TSC with CPU %u (last diff %lld cycles, "
+	       "maxerr %lld cycles), tsc_offset %lld (counts).\n", rtai_cpuid(), master, delta, rt, tsc_offset);
 }
 
-#define SLEEP0  1000 // ms
-#define DSLEEP  1000 // ms
 static volatile int end;
 
 static void kthread_fun(void *null)
 {
-	int i;
-	while (!end) {
-		for (i = 0; i < num_online_cpus(); i++) {
-			if (i != CONFIG_RTAI_MASTER_TSC_CPU) {
-				set_cpus_allowed_ptr(current, cpumask_of(i));
-				sync_tsc(CONFIG_RTAI_MASTER_TSC_CPU, i);
-			}
+        int i;
+	 for (i = 0; i < num_online_cpus(); i++) {
+		if (i != CONFIG_RTAI_MASTER_TSC_CPU) {
+			tsc_offset = 0;
+			set_cpus_allowed_ptr(current, cpumask_of(i));
+			sync_tsc(CONFIG_RTAI_MASTER_TSC_CPU);
+			rtai_tsc_ofst[i] = tsc_offset;
 		}
-		msleep(SLEEP0 + irandu(DSLEEP));
 	}
-	end = 0;
+        end = 1;
 }
 
 #include <linux/kthread.h>
 
-void init_tsc_sync(void)
+void tsc_sync(void)
 {
-	if (num_online_cpus() > 1) {
-		kthread_run((void *)kthread_fun, NULL, "RTAI_TSC_SYNC");
-		while(!first_sync_loop_done) {
-			msleep(100);
-		}
-	}
-}
-
-void cleanup_tsc_sync(void)
-{
-	if (num_online_cpus() > 1) {
-		end = 1;
-		while(end) {
-			msleep(100);
-		}
-	}
+        if (num_online_cpus() > 1) {
+                kthread_run((void *)kthread_fun, NULL, "RTAI_TSC_SYNC");
+                while(!end) {
+                        msleep(100);
+                }
+        }
 }
 
 #endif /* defined(CONFIG_SMP) && defined(CONFIG_RTAI_DIAG_TSC_SYNC) */

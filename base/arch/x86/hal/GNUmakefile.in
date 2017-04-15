@@ -78,8 +78,6 @@ PRE_UNINSTALL = :
 POST_UNINSTALL = :
 build_triplet = @build@
 host_triplet = @host@
-@CONFIG_I386_TRUE@am__append_1 = hal_32.c
-@CONFIG_I386_FALSE@am__append_2 = hal_64.c
 subdir = base/arch/x86/hal
 DIST_COMMON = $(srcdir)/GNUmakefile.in $(srcdir)/GNUmakefile.am \
 	$(top_srcdir)/base/config/autoconf/mkinstalldirs \
@@ -102,9 +100,7 @@ am__v_AR_ = $(am__v_AR_@AM_DEFAULT_V@)
 am__v_AR_0 = @echo "  AR      " $@;
 am__v_AR_1 = 
 libhal_a_LIBADD =
-am__libhal_a_SOURCES_DIST = hal.c hal_32.c hal_64.c
-@CONFIG_I386_TRUE@am__objects_1 = hal_32.$(OBJEXT)
-@CONFIG_I386_FALSE@am__objects_2 = hal_64.$(OBJEXT)
+am__libhal_a_SOURCES_DIST = hal.c
 am_libhal_a_OBJECTS = hal.$(OBJEXT) $(am__objects_1) $(am__objects_2)
 libhal_a_OBJECTS = $(am_libhal_a_OBJECTS)
 AM_V_P = $(am__v_P_@AM_V@)
@@ -363,7 +359,7 @@ libhal_a_SOURCES = hal.c $(am__append_1) $(am__append_2)
 @CONFIG_KBUILD_FALSE@	-I$(top_srcdir)/base/include \
 @CONFIG_KBUILD_FALSE@	-I../../../include
 
-EXTRA_DIST = Makefile.kbuild hal_32.c hal_64.c
+EXTRA_DIST = Makefile.kbuild
 DISTCLEANFILES = Makefile
 all: all-am
 
@@ -415,8 +411,6 @@ distclean-compile:
 	-rm -f *.tab.c
 
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/hal.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/hal_32.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/hal_64.Po@am__quote@
 
 .c.o:
 @am__fastdepCC_TRUE@	$(AM_V_CC)$(COMPILE) -MT $@ -MD -MP -MF $(DEPDIR)/$*.Tpo -c -o $@ $<

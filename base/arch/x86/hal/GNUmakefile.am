@@ -6,12 +6,6 @@ CROSS_COMPILE = @CROSS_COMPILE@
 
 libhal_a_SOURCES = hal.c
 
-if CONFIG_I386
-libhal_a_SOURCES += hal_32.c
-else
-libhal_a_SOURCES += hal_64.c
-endif
-
 if CONFIG_KBUILD
 rtai_hal.ko: @RTAI_KBUILD_ENV@
 rtai_hal.ko: $(libhal_a_SOURCES)
@@ -48,6 +42,6 @@ install-exec-local: rtai_hal$(modext)
 	$(mkinstalldirs) $(DESTDIR)$(moduledir)
 	$(INSTALL_DATA) $< $(DESTDIR)$(moduledir)
 
-EXTRA_DIST = Makefile.kbuild hal_32.c hal_64.c
+EXTRA_DIST = Makefile.kbuild
 
 DISTCLEANFILES = Makefile

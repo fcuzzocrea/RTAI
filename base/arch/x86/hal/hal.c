@@ -677,12 +677,6 @@ void rtai_uvec_handler(void);
 
 extern int (*rtai_syscall_hook)(struct pt_regs *);
 
-#if LINUX_VERSION_CODE < KERNEL_VERSION(2,6,11)
-static int errno;
-
-static inline _syscall3(int, sched_setscheduler, pid_t,pid, int,policy, struct sched_param *,param)
-#endif
-
 void rtai_set_linux_task_priority (struct task_struct *task, int policy, int prio)
 {
 	struct sched_param param = { .sched_priority = prio };
@@ -774,11 +768,7 @@ static int rtai_proc_register (void)
 		printk(KERN_ERR "Unable to initialize /proc/rtai.\n");
 		return -1;
         }
-#if LINUX_VERSION_CODE < KERNEL_VERSION(2,6,30)
-	rtai_proc_root->owner = THIS_MODULE;
-#endif
-	ent = CREATE_PROC_ENTRY("hal", S_IFREG|S_IRUGO|S_IWUSR, rtai_proc_root,
-&rtai_hal_proc_fops);
+	ent = CREATE_PROC_ENTRY("hal", S_IFREG|S_IRUGO|S_IWUSR, rtai_proc_root, &rtai_hal_proc_fops);
 	if (!ent) {
 		printk(KERN_ERR "Unable to initialize /proc/rtai/hal.\n");
 		return -1;
@@ -1092,7 +1082,7 @@ static inline long long get_delta(long long *rt, long long *master_time_stamp)
 	return (tcenter - best_tm);
 }
 
-static void sync_tsc(unsigned int master)
+void sync_tsc(unsigned int master)
 {
 	long long delta, adj, adjust_latency = 0;
 	long long rt, master_time_stamp, bound;
@@ -1157,6 +1147,7 @@ static void sync_tsc(unsigned int master)
 	printk(KERN_INFO "CPU %d: synchronized TSC with CPU %u (last diff %lld cycles, "
 	       "maxerr %lld cycles), tsc_offset %lld (counts).\n", rtai_cpuid(), master, delta, rt, tsc_offset);
 }
+EXPORT_SYMBOL(sync_tsc);
 
 static volatile int end;
 

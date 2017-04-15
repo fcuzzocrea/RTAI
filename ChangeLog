@@ -1,7 +1,11 @@
 2017-04-15 Paolo Mantegazza <mantegazza@aero.polimi.it>
 
 	* base/arch/x86/hal/hal.c: the TSC alignment hack is now closer 
-	  to  what found in arch/ia64/kernel/smpboot.c.
+	  to  what found in arch/ia64/kernel/smpboot.c; got rid of useless
+	  older Linux versions; exported sync_tsc for possible independent
+	  uses.
+	* base/arch/x86/hal/GNUmakefile.am and GNUmakefile.in: get make rid 
+	  of no more used, arch dependent, hal_32.c and hal_64.c.
 
 2017-04-14 Paolo Mantegazza <mantegazza@aero.polimi.it>
 

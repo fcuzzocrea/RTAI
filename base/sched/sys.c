@@ -531,15 +531,9 @@ static inline long long handle_lxrt_request (unsigned int lxsrq, long *arg, RT_T
 		}
 
 		case NONROOT_HRT: {
-#if LINUX_VERSION_CODE < KERNEL_VERSION(2,6,24)
-			current->cap_effective |= ((1 << CAP_IPC_LOCK)  |
-						   (1 << CAP_SYS_RAWIO) |
-						   (1 << CAP_SYS_NICE));
-#else
 			set_lxrt_perm(CAP_IPC_LOCK);
 			set_lxrt_perm(CAP_SYS_RAWIO);
 			set_lxrt_perm(CAP_SYS_NICE);
-#endif
 			return 0;
 		}
 

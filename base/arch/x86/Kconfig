@@ -220,18 +220,20 @@ config RTAI_DIAG_TSC_SYNC
 	default n
 	help
 	Check the alignment of multi processor TSCs against a master CPU.
-	Display them in the RTAI HAL proc file system (in nanosecs) and
-	use them to correct any bias by also enabling RTAI_TUNE_TSC_SYNC.
+	Display them in the RTAI HAL proc file system (in nanosecs).
 	To check if it is an option worth having, insmod just rtai_hal.ko
-	and type, a few times, cat /proc/rtai/hal, to see how much the 
-	TSCs are skewed with respect to the chosen master CPU.
+	and type "cat /proc/rtai/hal", to see how much the TSCs are skewed
+	with respect to the chosen master CPU.
+	If you want to use them to correct any bias enable RTAI_TUNE_TSC_SYNC
+	also.
 
 config RTAI_MASTER_TSC_CPU
 	depends on RTAI_DIAG_TSC_SYNC
 	string "Define the master CPU for aligning MP-TSCs"
 	default 0
 	help
-	Master CPU for diagnosis and correction of TSCs alignment.
+	Master CPU to use to diagnose and, possibly, correct, if RTAI_TUNE_TSC_SYNC
+	is set, TSC (mis)alignments.
 
 config RTAI_TUNE_TSC_SYNC
 	depends on RTAI_DIAG_TSC_SYNC
@@ -239,7 +241,7 @@ config RTAI_TUNE_TSC_SYNC
 	default n
 	help
 	Use offsets made available by enabling the out of sync diagnosis to
-	keep readings of TSCs times as aligned as possible.
+	keep readings of TSC times as aligned as possible.
 
 endmenu
 

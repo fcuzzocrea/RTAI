@@ -126,8 +126,8 @@ static inline long long rtai_llimd(long long ll, int mult, int div) {
 #if 0 // Let's try the patch support, 32-64 bits independent
 
 #if defined(CONFIG_SMP) && defined(CONFIG_RTAI_DIAG_TSC_SYNC) && defined(CONFIG_RTAI_TUNE_TSC_SYNC)
-extern volatile long rtai_tsc_ofst[];
-#define rtai_rdtsc() ({ unsigned long long t; __asm__ __volatile__( "rdtsc" : "=A" (t)); t - rtai_tsc_ofst[rtai_cpuid()]; })
+extern long long rtai_tsc_ofst[];
+#define rtai_rdtsc() ({ unsigned long long t; __asm__ __volatile__( "rdtsc" : "=A" (t)); t + rtai_tsc_ofst[rtai_cpuid()]; })
 #else
 #define rtai_rdtsc() ({ unsigned long long t; __asm__ __volatile__( "rdtsc" : "=A" (t)); t; })
 #endif

@@ -1,3 +1,8 @@
+2017-04-16 Paolo Mantegazza <mantegazza@aero.polimi.it>
+
+	* base/include/asm-x86/rtai_hal_32.h and rtai_hal_64.h: take care
+	  of the refurbished synchronization of the TCSes.
+
 2017-04-15 Paolo Mantegazza <mantegazza@aero.polimi.it>
 
 	* base/arch/x86/hal/hal.c: the TSC alignment hack is now closer 

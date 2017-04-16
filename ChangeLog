@@ -2,6 +2,11 @@
 
 	* base/include/asm-x86/rtai_hal_32.h and rtai_hal_64.h: take care
 	  of the refurbished synchronization of the TCSes.
+	* base/sched/sys.c: get rid of too old kernel versions support.
+	* base/ipc/fifos/fifos.c: get rid of too old kernel versions support.
+	* base/shm/kvmem.c: get rid of too old kernel versions support.
+	* base/include/asm-x86: make got rid of the nomore needed 32-64 bits
+	  specific fpu headers.
 
 2017-04-15 Paolo Mantegazza <mantegazza@aero.polimi.it>
 

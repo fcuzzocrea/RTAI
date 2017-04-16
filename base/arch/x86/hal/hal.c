@@ -1010,6 +1010,7 @@ EXPORT_SYMBOL(IsolCpusMask);
 
 /*
  *	Hacked from arch/ia64/kernel/smpboot.c.
+ *      Possible no_cpu_relax option from arch/x86_64/kernel/smpboot.c.
  */
 
 //#define PRINT_DIAG_OUT_OF_SYNC_TSC
@@ -1026,7 +1027,7 @@ static DEFINE_SPINLOCK(tsc_sync_lock);
 
 static volatile unsigned long long go[SLAVE + 1];
 
-#if 1
+#if 0
 #define CPU_RELAX cpu_relax
 #else
 #define CPU_RELAX barrier

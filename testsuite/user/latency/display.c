@@ -32,7 +32,7 @@ void endme(int sig) { end = 1; }
 
 int main(void)
 {
-	unsigned int msg;
+	unsigned long msg;
 	MBX *mbx;
 	struct sample { long long min; long long max; int index, ovrn; } samp;
 	time_t timestamp;

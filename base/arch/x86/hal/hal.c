@@ -1034,7 +1034,7 @@ static DEFINE_SPINLOCK(tsclock);
 #else
 #define DECLARE_TSC_FLAGS
 #define TSC_LOCK
-#define UNTSC_LOCK
+#define TSC_UNLOCK
 #endif
 
 static volatile unsigned long long go[SLAVE + 1];
@@ -1047,8 +1047,8 @@ static volatile unsigned long long go[SLAVE + 1];
 
 static void sync_master(void *arg)
 {
-	DECLARE_TSC_FLAGS;
 	unsigned long flags, i;
+	DECLARE_TSC_FLAGS;
 
 	go[MASTER] = 0;
 
@@ -1067,10 +1067,10 @@ static void sync_master(void *arg)
 
 static inline long long get_delta(long long *rt, long long *master_time_stamp)
 {
-	DECLARE_TSC_FLAGS;
 	unsigned long long best_t0 = 0, best_t1 = ~0ULL, best_tm = 0;
 	unsigned long long tcenter = 0, t0, t1, tm;
 	int i;
+	DECLARE_TSC_FLAGS;
 
 	for (i = 0; i < NUM_ITERS; ++i) {
 		t0 = rtai_rdtsc() + tsc_offset;

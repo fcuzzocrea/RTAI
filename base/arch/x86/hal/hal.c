@@ -1024,6 +1024,18 @@ static volatile long long tsc_offset;
 #define NUM_ITERS       5       /* likewise */
 
 static DEFINE_SPINLOCK(tsc_sync_lock);
+#ifdef __i386__
+static DEFINE_SPINLOCK(tsclock);
+#define DECLARE_TSC_FLAGS unsigned long lflags
+#define TSC_LOCK \
+	do { spin_lock_irqsave(&tsclock, lflags); } while (0)
+#define TSC_UNLOCK \
+	do { spin_unlock_irqrestore(&tsclock, lflags); } while (0)
+#else
+#define DECLARE_TSC_FLAGS
+#define TSC_LOCK
+#define UNTSC_LOCK
+#endif
 
 static volatile unsigned long long go[SLAVE + 1];
 
@@ -1035,6 +1047,7 @@ static volatile unsigned long long go[SLAVE + 1];
 
 static void sync_master(void *arg)
 {
+	DECLARE_TSC_FLAGS;
 	unsigned long flags, i;
 
 	go[MASTER] = 0;
@@ -1045,13 +1058,16 @@ static void sync_master(void *arg)
 			CPU_RELAX();
 		}
 		go[MASTER] = 0;
+		TSC_LOCK;
 		go[SLAVE] = rtai_rdtsc();
+		TSC_UNLOCK;
 	}
 	local_irq_restore(flags);
 }
 
 static inline long long get_delta(long long *rt, long long *master_time_stamp)
 {
+	DECLARE_TSC_FLAGS;
 	unsigned long long best_t0 = 0, best_t1 = ~0ULL, best_tm = 0;
 	unsigned long long tcenter = 0, t0, t1, tm;
 	int i;
@@ -1059,9 +1075,13 @@ static inline long long get_delta(long long *rt, long long *master_time_stamp)
 	for (i = 0; i < NUM_ITERS; ++i) {
 		t0 = rtai_rdtsc() + tsc_offset;
 		go[MASTER] = 1;
+		TSC_LOCK;
 		while (!(tm = go[SLAVE])) {
+			TSC_UNLOCK;
 			CPU_RELAX();
+			TSC_LOCK;
 		}
+		TSC_UNLOCK;
 		go[SLAVE] = 0;
 		t1 = rtai_rdtsc() + tsc_offset;
 

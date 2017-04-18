@@ -1,3 +1,8 @@
+2017-04-18 Paolo Mantegazza <mantegazza@aero.polimi.it>
+
+	* base/arch/x86/hal/hal.c: as for the previous version, use a spinlock
+	  to make rtai_rdtsc 32 bits atomic.
+
 2017-04-16 Paolo Mantegazza <mantegazza@aero.polimi.it>
 
 	* base/include/asm-x86/rtai_hal_32.h and rtai_hal_64.h: take care

@@ -1,3 +1,7 @@
+2017-04-20 Paolo Mantegazza <mantegazza@aero.polimi.it>
+
+	* iaddons/rtdm/all files: extensively revised and updated.
+
 2017-04-18 Paolo Mantegazza <mantegazza@aero.polimi.it>
 
 	* base/arch/x86/hal/hal.c: as for the previous version, use a spinlock

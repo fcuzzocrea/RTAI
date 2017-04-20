@@ -1,23 +1,21 @@
 /**
  * @file
- * Real-Time Driver Model for RTAI, serial device profile header
+ * Real-Time Driver Model, serial device profile header.
  *
  * @note Copyright (C) 2005-2007 Jan Kiszka <jan.kiszka@web.de>
  *
- * with adaptions for RTAI by Paolo Mantegazza <mantegazza@aero.polimi.it>
- *
- * RTAI is free software; you can redistribute it and/or modify it
- * under the terms of the GNU General Public License as published by
+ * This program is free software; you can redistribute it and/or modify 
+ * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation; either version 2 of the License, or
  * (at your option) any later version.
  *
- * RTAI is distributed in the hope that it will be useful, but
+ * This program is distributed in the hope that it will be useful, but
  * WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
  * General Public License for more details.
  *
  * You should have received a copy of the GNU General Public License
- * along with RTAI; if not, write to the Free Software Foundation,
+ * along with this program; if not, write to the Free Software Foundation,
  * Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
  *
  * @ingroup rtserial
@@ -28,8 +26,7 @@
  * @defgroup rtserial Serial Devices
  *
  * This is the common interface a RTDM-compliant serial device has to provide.
- * Feel free to comment on this profile via the RTAI mailing list
- * (rtai@rtai.org) or directly to the author (jan.kiszka@web.de).
+ * Feel free to comment on this profile directly to the author (jan.kiszka@web.de).
  *
  * @b Profile @b Revision: 3
  * @n

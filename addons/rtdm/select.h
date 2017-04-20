@@ -1,21 +1,21 @@
-/*!\file select.h
+/*!\file nucleus/select.h
  * \brief file descriptors events multiplexing header.
  * \author Gilles Chanteperdrix
  *
- * Copyright (C) 2008 Efixo <gilles.chanteperdrix@laposte.net>
+ * Copyright (C) 2008 Efixo <gilles.chanteperdrix@xenomai.org>
  *
- * Rtai is free software; you can redistribute it and/or modify
+ * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published
  * by the Free Software Foundation; either version 2 of the License,
  * or (at your option) any later version.
  *
- * Rtai is distributed in the hope that it will be useful, but
+ * This program is distributed in the hope that it will be useful, but
  * WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
  * General Public License for more details.
  *
  * You should have received a copy of the GNU General Public License
- * along with Rtai; if not, write to the Free Software
+ * along with this program; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA
  * 02111-1307, USA.
  *
@@ -28,7 +28,7 @@
 /*! \addtogroup select
  *@{*/
 
-#include "xn.h"
+#include <rtdm/xn.h>
 
 #define XNSELECT_READ      0
 #define XNSELECT_WRITE     1
@@ -84,7 +84,7 @@ static inline void __FD_ZERO__(__kernel_fd_set *__p)
 	}
 }
 
-#ifdef CONFIG_RTAI_RTDM_SELECT
+#ifdef CONFIG_XENO_OPT_SELECT
 
 struct xnselect {
 	xnqueue_t bindings;
@@ -154,7 +154,7 @@ int xnselect_umount(void);
 }
 #endif /* __cplusplus */
 
-#else /* !CONFIG_RTAI_RTDM_SELECT */
+#else /* !CONFIG_XENO_OPT_SELECT */
 struct xnselector;
 #define DECLARE_XNSELECT(name)
 #define xnselect_init(block)
@@ -162,7 +162,7 @@ struct xnselector;
 	({ -EBADF; })
 #define xnselect_signal(block, state) ({ int __ret = 0; __ret; })
 #define xnselect_destroy(block)
-#endif /* !CONFIG_RTAI_RTDM_SELECT */
+#endif /* !CONFIG_XENO_OPT_SELECT */
 
 /*@}*/
 

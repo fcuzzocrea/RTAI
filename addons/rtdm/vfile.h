@@ -1,10 +1,7 @@
 /**
  * @file
- * This file is part of the Xenomai project.
  *
  * @note Copyright (C) 2010 Philippe Gerum <rpm@xenomai.org>
- *
- * adapted to RTAI by Paolo Mantegazza <mantegazza@aero.polimi.it>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License as
@@ -23,32 +20,16 @@
  * @ingroup vfile
  */
 
-#ifndef RTAI_RTDM_VFILE_H
-#define RTAI_RTDM_VFILE_H
+#ifndef _XENO_NUCLEUS_VFILE_H
+#define _XENO_NUCLEUS_VFILE_H
 
-#ifdef CONFIG_PROC_FS
+#if defined(CONFIG_XENO_OPT_VFILE) || defined(DOXYGEN_CPP)
 
 /** @addtogroup vfile
  *@{*/
 
 #include <linux/proc_fs.h>
 #include <linux/seq_file.h>
-
-#include <rtdm/xn.h>
-
-#if LINUX_VERSION_CODE < KERNEL_VERSION(3,10,0)
-
-#define PDE_DATA(inode) PDE(inode)->data
-
-static inline void proc_remove(struct proc_dir_entry *pde)
-{
-        remove_proc_entry(pde->name, pde->parent);
-}
-
-#endif
-
-#define wrap_f_inode(file)                ((file)->f_path.dentry->d_inode)
-#define wrap_proc_dir_entry_owner(entry)  do { (void)entry; } while(0)
 
 struct xnvfile_directory;
 struct xnvfile_regular_iterator;
@@ -96,9 +77,7 @@ struct xnvfile_lock_ops {
 };
 
 /*
- * XXX: struct semaphore is legacy for mutual exclusion, but supported
- * on both 2.4 and 2.6 kernels. Will be changed to mutex when 2.4
- * support is dropped from RTAI.
+ * XXX: struct semaphore is legacy for mutual exclusion.
  */
 struct xnvfile_hostlock_class {
 	struct xnvfile_lock_ops ops;
@@ -311,7 +290,7 @@ struct xnvfile_regular_iterator {
  *
  * This structure describes the operations available with a
  * snapshot-driven vfile. It defines handlers for returning a
- * printable snapshot of some RTAI object contents upon a
+ * printable snapshot of some object contents upon a
  * user-space read request, and for updating this object upon a
  * user-space write request.
  */
@@ -468,7 +447,7 @@ struct xnvfile_snapshot_ops {
 	/**
 	 * @anchor snapshot_store
 	 * This handler receives data written to the vfile, likely for
-	 * updating the associated RTAI object's state, or
+	 * updating the associated object's state, or
 	 * triggering any other action which fits. This is the only
 	 * handler which deals with the write-side of a vfile.  It is
 	 * called when writing to the /proc entry of the vfile
@@ -687,14 +666,14 @@ void xnvfile_destroy_link(struct xnvfile_link *vlink)
 		.sem = __SEMAPHORE_INITIALIZER(name.sem, 1),		\
 	}
 
-#else /* !CONFIG_PROC_FS */
+#else /* !CONFIG_XENO_OPT_VFILE */
 
 #define xnvfile_touch_tag(tag)	do { } while (0)
 
 #define xnvfile_touch(vfile)	do { } while (0)
 
-#endif /* !CONFIG_PROC_FS */
+#endif /* !CONFIG_XENO_OPT_VFILE */
 
 /*@}*/
 
-#endif /* !RTAI_RTDM_VFILE_H */
+#endif /* !_XENO_NUCLEUS_VFILE_H */

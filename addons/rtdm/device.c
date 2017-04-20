@@ -1,24 +1,22 @@
 /**
  * @file
- * Real-Time Driver Model for RTAI, device management
+ * Real-Time Driver Model, device management.
  *
  * @note Copyright (C) 2005 Jan Kiszka <jan.kiszka@web.de>
  * @note Copyright (C) 2005 Joerg Langenberg <joerg.langenberg@gmx.net>
  *
- * with adaptions for RTAI by Paolo Mantegazza <mantegazza@aero.polimi.it>
- *
- * RTAI is free software; you can redistribute it and/or modify it
- * under the terms of the GNU General Public License as published by
+ * This program is free software; you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation; either version 2 of the License, or
  * (at your option) any later version.
  *
- * RTAI is distributed in the hope that it will be useful, but
+ * This program is distributed in the hope that it will be useful, but
  * WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
  * General Public License for more details.
  *
  * You should have received a copy of the GNU General Public License
- * along with RTAI; if not, write to the Free Software Foundation,
+ * along with this program; if not, write to the Free Software Foundation,
  * Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
  */
 
@@ -61,7 +59,7 @@ static int name_hashkey_mask;
 static int proto_hashkey_mask;
 
 int rtdm_apc;
-EXPORT_SYMBOL(rtdm_apc);
+EXPORT_SYMBOL_GPL(rtdm_apc);
 
 struct semaphore nrt_dev_lock;
 DEFINE_XNLOCK(rt_dev_lock);
@@ -207,26 +205,26 @@ int rtdm_dev_register(struct rtdm_device *device)
 		return -ENOSYS;
 
 	/* Sanity check: structure version */
-	RTAI_ASSERT(RTDM, device->struct_version == RTDM_DEVICE_STRUCT_VER,
+	XENO_ASSERT(RTDM, device->struct_version == RTDM_DEVICE_STRUCT_VER,
 		    xnlogerr("RTDM: invalid rtdm_device version (%d, "
 			     "required %d)\n", device->struct_version,
 			     RTDM_DEVICE_STRUCT_VER);
 		    return -EINVAL;);
 
 	/* Sanity check: proc_name specified? */
-	RTAI_ASSERT(RTDM, device->proc_name,
-		    xnlogerr("RTDM: no /proc entry name specified\n");
+	XENO_ASSERT(RTDM, device->proc_name,
+		    xnlogerr("RTDM: no vfile (/proc) name specified\n");
 		    return -EINVAL;);
 
 	switch (device->device_flags & RTDM_DEVICE_TYPE_MASK) {
 	case RTDM_NAMED_DEVICE:
 		/* Sanity check: any open handler? */
-		RTAI_ASSERT(RTDM, ANY_HANDLER(*device, open),
+		XENO_ASSERT(RTDM, ANY_HANDLER(*device, open),
 			    xnlogerr("RTDM: missing open handler\n");
 			    return -EINVAL;);
 		if (device->open_rt &&
 		    device->socket_rt != (void *)rtdm_no_support)
-		        xnlogerr("RTDM: RT open handler is deprecated, "
+			xnlogerr("RTDM: RT open handler is deprecated, "
 				 "driver requires update.\n");
 		SET_DEFAULT_OP_IF_NULL(*device, open);
 		SET_DEFAULT_OP(*device, socket);
@@ -234,7 +232,7 @@ int rtdm_dev_register(struct rtdm_device *device)
 
 	case RTDM_PROTOCOL_DEVICE:
 		/* Sanity check: any socket handler? */
-		RTAI_ASSERT(RTDM, ANY_HANDLER(*device, socket),
+		XENO_ASSERT(RTDM, ANY_HANDLER(*device, socket),
 			    xnlogerr("RTDM: missing socket handler\n");
 			    return -EINVAL;);
 		if (device->socket_rt &&
@@ -371,7 +369,7 @@ err:
 	return ret;
 }
 
-EXPORT_SYMBOL(rtdm_dev_register);
+EXPORT_SYMBOL_GPL(rtdm_dev_register);
 
 /**
  * @brief Unregisters a RTDM device
@@ -453,7 +451,7 @@ int rtdm_dev_unregister(struct rtdm_device *device, unsigned int poll_delay)
 	return 0;
 }
 
-EXPORT_SYMBOL(rtdm_dev_unregister);
+EXPORT_SYMBOL_GPL(rtdm_dev_unregister);
 /** @} */
 
 int __init rtdm_dev_init(void)

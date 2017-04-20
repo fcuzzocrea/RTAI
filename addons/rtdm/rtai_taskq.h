@@ -25,8 +25,9 @@
 extern struct epoch_struct boot_epoch;
 
 typedef struct rt_task_queue {
-    struct rt_queue queue; /* <= Must be first in struct. */
-    int qtype;
+	struct rt_queue queue; /* <= Must be first in struct. */
+	int qtype;
+	unsigned long status;
 } TASKQ;
 
 #define XNTIMEO  0x00000001  // RTE_TIMOUT
@@ -53,7 +54,7 @@ extern volatile unsigned long tosched_mask;
 
 void rt_schedule_readied(void);
 
-void rt_taskq_init(TASKQ *taskq, unsigned long type);
+void rt_taskq_init(TASKQ *taskq, unsigned int type);
 
 RT_TASK *rt_taskq_ready_one(TASKQ *taskq);
 

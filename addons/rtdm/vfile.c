@@ -1,10 +1,7 @@
 /**
  * @file
- * This file is part of the Xenomai project.
  *
  * @note Copyright (C) 2010 Philippe Gerum <rpm@xenomai.org>
- *
- * adapted to RTAI by Paolo Mantegazza <mantegazza@aero.polimi.it>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License as
@@ -25,8 +22,8 @@
  * @ingroup nucleus
  * @defgroup vfile Virtual file services
  *
- * Virtual files provide a mean to export RTAI object states to
- * user-space, based on common kernel interfaces.  This encapsulation
+ * Virtual files provide a mean to export kernel object states to
+ * user-space, based on common kernel interfaces. This encapsulation
  * is aimed at:
  *
  * - supporting consistent collection of very large record-based
@@ -59,7 +56,7 @@
  * - regular sequential file (struct xnvfile_regular). This is
  * basically an encapsulated sequential file object as available from
  * the host kernel (i.e. seq_file), with a few additional features to
- * make it more handy in an RTAI environment, like implicit locking
+ * make it more handy in a this environment, like implicit locking
  * support and shortened declaration for simplest, single-record
  * output.
  *
@@ -77,14 +74,15 @@
 #include <stdarg.h>
 #include <linux/ctype.h>
 
+#include <rtdm/xn.h>
 #include <rtdm/vfile.h>
 
 /**
  * @var struct xnvfile_directory nkvfroot
- * @brief RTAI vfile root directory
+ * @brief RTDM vfile root directory
  *
- * This vdir maps the /proc/rtai directory. It can be used to
- * create a hierarchy of RTAI-related vfiles under this root.
+ * This vdir maps the /proc/RTDM directory. It can be used to
+ * create a hierarchy of RTDM-related vfiles under this root.
  */
 struct xnvfile_directory nkvfroot;
 EXPORT_SYMBOL_GPL(nkvfroot);
@@ -153,6 +151,14 @@ static int vfile_snapshot_open(struct inode *inode, struct file *file)
 	int revtag, ret, nrdata;
 	struct seq_file *seq;
 	caddr_t data;
+
+	/*
+	 * There is no point in reading/writing to v-files that must
+	 * be connected to RTDM resources if the system has not
+	 * been initialized yet.
+	 */
+	if (!xnpod_active_p())
+		return -ESRCH;
 
 	if ((file->f_mode & FMODE_WRITE) != 0 && ops->store == NULL)
 		return -EACCES;
@@ -224,7 +230,7 @@ redo:
 	 * errors in all other cases.
 	 */
 	if (ops->begin) {
-		RTAI_BUGON(NUCLEUS, ops->end == NULL);
+		XENO_BUGON(NUCLEUS, ops->end == NULL);
 		data = ops->begin(it);
 		if (data == NULL) {
 			kfree(it);
@@ -272,6 +278,15 @@ redo:
 			data += vfile->datasz;
 			it->nrdata++;
 		}
+#ifdef CONFIG_SMP
+		{
+			/* Leave some time for other cpus to get the lock */
+			xnticks_t wakeup = xnarch_get_cpu_tsc();
+			wakeup += xnarch_ns_to_tsc(1000);
+			while ((xnsticks_t)(xnarch_get_cpu_tsc() - wakeup) < 0)
+				cpu_relax();
+		}
+#endif
 	}
 
 	if (ret < 0) {
@@ -301,7 +316,7 @@ static int vfile_snapshot_release(struct inode *inode, struct file *file)
 		it = seq->private;
 		if (it) {
 			--xnvfile_nref(it->vfile);
-			RTAI_BUGON(NUCLEUS, it->vfile->entry.refcnt < 0);
+			XENO_BUGON(NUCLEUS, it->vfile->entry.refcnt < 0);
 			if (it->databuf)
 				it->endfn(it, it->databuf);
 			kfree(it);
@@ -385,7 +400,7 @@ static struct file_operations vfile_snapshot_fops = {
  *
  * @param parent A pointer to a virtual directory descriptor; the
  * vfile entry will be created into this directory. If NULL, the /proc
- * root directory will be used. /proc/rtai is mapped on the
+ * root directory will be used. /proc/RTDM is mapped on the
  * globally available @a nkvfroot vdir.
  *
  * @return 0 is returned on success. Otherwise:
@@ -400,7 +415,7 @@ int xnvfile_init_snapshot(const char *name,
 	struct proc_dir_entry *ppde, *pde;
 	int mode;
 
-	RTAI_BUGON(NUCLEUS, vfile->tag == NULL);
+	XENO_BUGON(NUCLEUS, vfile->tag == NULL);
 
 	if (vfile->entry.lockops == NULL)
 		/* Defaults to nucleus lock */
@@ -556,7 +571,7 @@ static int vfile_regular_release(struct inode *inode, struct file *file)
 		it = seq->private;
 		if (it) {
 			--xnvfile_nref(it->vfile);
-			RTAI_BUGON(NUCLEUS, xnvfile_nref(it->vfile) < 0);
+			XENO_BUGON(NUCLEUS, xnvfile_nref(it->vfile) < 0);
 			kfree(it);
 		}
 
@@ -624,7 +639,7 @@ static struct file_operations vfile_regular_fops = {
  *
  * @param parent A pointer to a virtual directory descriptor; the
  * vfile entry will be created into this directory. If NULL, the /proc
- * root directory will be used. /proc/rtai is mapped on the
+ * root directory will be used. /proc/RTDM is mapped on the
  * globally available @a nkvfroot vdir.
  *
  * @return 0 is returned on success. Otherwise:
@@ -668,7 +683,7 @@ EXPORT_SYMBOL_GPL(xnvfile_init_regular);
  *
  * @param parent A pointer to a virtual directory descriptor standing
  * for the parent directory of the new vdir.  If NULL, the /proc root
- * directory will be used. /proc/rtai is mapped on the globally
+ * directory will be used. /proc/RTDM is mapped on the globally
  * available @a nkvfroot vdir.
  *
  * @return 0 is returned on success. Otherwise:
@@ -714,7 +729,7 @@ EXPORT_SYMBOL_GPL(xnvfile_init_dir);
  *
  * @param parent A pointer to a virtual directory descriptor standing
  * for the parent directory of the new vlink. If NULL, the /proc root
- * directory will be used. /proc/rtai is mapped on the globally
+ * directory will be used. /proc/RTDM is mapped on the globally
  * available @a nkvfroot vdir.
  *
  * @return 0 is returned on success. Otherwise:
@@ -949,7 +964,7 @@ int __init xnvfile_init_root(void)
 	struct xnvfile_directory *vdir = &nkvfroot;
 	struct proc_dir_entry *pde;
 
-	pde = proc_mkdir("rtai", NULL);
+	pde = proc_mkdir("RTDM", NULL);
 	if (pde == NULL)
 		return -ENOMEM;
 
@@ -964,7 +979,7 @@ int __init xnvfile_init_root(void)
 void xnvfile_destroy_root(void)
 {
 	nkvfroot.entry.pde = NULL;
-	remove_proc_entry("rtai", NULL);
+	remove_proc_entry("RTDM", NULL);
 }
 
 /*@}*/

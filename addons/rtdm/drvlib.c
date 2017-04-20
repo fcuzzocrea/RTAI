@@ -1,25 +1,23 @@
 /**
  * @file
- * Real-Time Driver Model for RTAI, driver library
+ * Real-Time Driver Model, driver library.
  *
  * @note Copyright (C) 2005-2007 Jan Kiszka <jan.kiszka@web.de>
  * @note Copyright (C) 2005 Joerg Langenberg <joerg.langenberg@gmx.net>
- * @note Copyright (C) 2008 Gilles Chanteperdrix <gilles.chanteperdrix@gmail.com>
+ * @note Copyright (C) 2008 Gilles Chanteperdrix <gilles.chanteperdrix@xenomai.org>
  *
- * with adaptions for RTAI by Paolo Mantegazza <mantegazza@aero.polimi.it>
- *
- * RTAI is free software; you can redistribute it and/or modify it
+ * This program is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License as published by
  * the Free Software Foundation; either version 2 of the License, or
  * (at your option) any later version.
  *
- * RTAI is distributed in the hope that it will be useful, but
+ * This program is distributed in the hope that it will be useful, but
  * WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
  * General Public License for more details.
  *
  * You should have received a copy of the GNU General Public License
- * along with RTAI; if not, write to the Free Software Foundation,
+ * along with this program; if not, write to the Free Software Foundation,
  * Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
  */
 
@@ -41,6 +39,7 @@
 #include <linux/highmem.h>
 #include <linux/err.h>
 
+#include <rtdm/select.h>
 #include <rtdm/rtdm_driver.h>
 
 /*!
@@ -61,7 +60,7 @@
  *
  * @note The system timer may have to be started to obtain valid results.
  * Whether this happens automatically or is controlled by the
- * application (as with RTAI) depends on the RTDM host environment.
+ * application depends on the RTDM host environment.
  *
  * Environments:
  *
@@ -87,7 +86,7 @@ nanosecs_abs_t rtdm_clock_read(void);
  *
  * @note The system timer may have to be started to obtain valid results.
  * Whether this happens automatically or is controlled by the
- * application (as with RTAI) depends on the RTDM host environment.
+ * application depends on the RTDM host environment.
  *
  * Environments:
  *
@@ -155,6 +154,28 @@ int rtdm_task_init_cpuid(rtdm_task_t *task, const char *name,
 	rt_register(nam2num(lname > name ? lname : name), task, IS_TASK, 0);
 	return 0;
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -365,20 +386,20 @@ int rtdm_task_sleep_abs(nanosecs_abs_t wakeup_time, enum rtdm_timer_mode mode);
 
 #endif /* DOXYGEN_CPP */
 
+int __rtdm_task_sleep(xnticks_t timeout, xntmode_t mode)
+{
+	xnthread_t *curr = xnpod_current_thread();
 
+	XENO_ASSERT(RTDM, !xnpod_unblockable_p(), return -EPERM;);
 
+	xnpod_suspend_thread(curr, XNDELAY,
+			     xntbase_ns2ticks_ceil(xnthread_time_base(curr),
+						   timeout), mode, NULL);
 
+	return xnthread_test_info(curr, XNBREAK) ? -EINTR : 0;
+}
 
-
-
-
-
-
-
-
-
-
-
+EXPORT_SYMBOL_GPL(__rtdm_task_sleep);
 
 /**
  * @brief Wait on a real-time task to terminate
@@ -406,25 +427,25 @@ int rtdm_task_sleep_abs(nanosecs_abs_t wakeup_time, enum rtdm_timer_mode mode);
  */
 void rtdm_task_join_nrt(rtdm_task_t *task, unsigned int poll_delay)
 {
-#define JOIN_TIMEOUT 1000 // in millisecs
-	int t;
+	spl_t s;
 
+	XENO_ASSERT(RTDM, xnpod_root_p(), return;);
 
 	trace_mark(xn_rtdm, task_joinnrt, "thread %p poll_delay %u",
 		   task, poll_delay);
 
-	for (t = 0; task->magic && t < JOIN_TIMEOUT; t += poll_delay) {
+	xnlock_get_irqsave(&nklock, s);
+
+	while (!xnthread_test_state(task, XNZOMBIE)) {
+		xnlock_put_irqrestore(&nklock, s);
+
 		msleep(poll_delay);
+
+		xnlock_get_irqsave(&nklock, s);
 	}
-	rtdm_task_destroy(task);
+
+	xnlock_put_irqrestore(&nklock, s);
 }
-
-
-
-
-
-
-
 
 EXPORT_SYMBOL_GPL(rtdm_task_join_nrt);
 
@@ -450,10 +471,10 @@ EXPORT_SYMBOL_GPL(rtdm_task_join_nrt);
  */
 void rtdm_task_busy_sleep(nanosecs_rel_t delay)
 {
-        xnticks_t wakeup = rtai_rdtsc() + rtai_llimd(delay, rtai_tunables.clock_freq, 1000000000);
+	xnticks_t wakeup = xnarch_get_cpu_tsc() + xnarch_ns_to_tsc(delay);
 
-        while ((xnticks_t)(rtai_rdtsc() - wakeup) < 0)
-                cpu_relax();
+	while ((xnsticks_t)(xnarch_get_cpu_tsc() - wakeup) < 0)
+		cpu_relax();
 }
 
 EXPORT_SYMBOL_GPL(rtdm_task_busy_sleep);
@@ -506,11 +527,11 @@ int rtdm_timer_init(rtdm_timer_t *timer, rtdm_timer_handler_t handler,
  */
 void rtdm_timer_destroy(rtdm_timer_t *timer)
 {
+	spl_t s;
 
-
-
+	xnlock_get_irqsave(&nklock, s);
 	xntimer_destroy(timer);
-
+	xnlock_put_irqrestore(&nklock, s);
 }
 
 EXPORT_SYMBOL_GPL(rtdm_timer_destroy);
@@ -545,14 +566,14 @@ EXPORT_SYMBOL_GPL(rtdm_timer_destroy);
 int rtdm_timer_start(rtdm_timer_t *timer, nanosecs_abs_t expiry,
 		     nanosecs_rel_t interval, enum rtdm_timer_mode mode)
 {
- 
+	spl_t s;
 	int err;
 
-
-	err = xntimer_start(timer, xntbase_ns2ticks(rtdm_tbase, expiry),
-			    xntbase_ns2ticks(rtdm_tbase, interval),
+	xnlock_get_irqsave(&nklock, s);
+	err = xntimer_start(timer, xntbase_ns2ticks_ceil(rtdm_tbase, expiry),
+			    xntbase_ns2ticks_ceil(rtdm_tbase, interval),
 			    (xntmode_t)mode);
-
+	xnlock_put_irqrestore(&nklock, s);
 
 	return err;
 }
@@ -577,11 +598,11 @@ EXPORT_SYMBOL_GPL(rtdm_timer_start);
  */
 void rtdm_timer_stop(rtdm_timer_t *timer)
 {
- 
+	spl_t s;
 
-
+	xnlock_get_irqsave(&nklock, s);
 	xntimer_stop(timer);
-
+	xnlock_put_irqrestore(&nklock, s);
 }
 
 EXPORT_SYMBOL_GPL(rtdm_timer_stop);
@@ -632,38 +653,26 @@ void rtdm_timer_stop_in_handler(rtdm_timer_t *timer);
 #endif /* DOXYGEN_CPP */
 /** @} */
 
-/* --- RTAI proper common to events, sems and mtxes --- */
+/* --- IPC cleanup helper --- */
 
-static inline int _sem_wait(void *sem)
+#define RTDM_SYNCH_DELETED          XNSYNCH_SPARE0
+
+void __rtdm_synch_flush(xnsynch_t *synch, unsigned long reason)
 {
-	if (rt_sem_wait(sem) < RTE_LOWERR) {
-		return 0;
-	}
-	return _rt_whoami()->unblocked ? -EINTR : -EIDRM;
+	spl_t s;
+
+	xnlock_get_irqsave(&nklock, s);
+
+	if (reason == XNRMID)
+		xnsynch_set_flags(synch, RTDM_SYNCH_DELETED);
+
+	if (likely(xnsynch_flush(synch, reason) == XNSYNCH_RESCHED))
+		xnpod_schedule();
+
+	xnlock_put_irqrestore(&nklock, s);
 }
 
-static inline int _sem_wait_timed(void *sem, nanosecs_rel_t timeout, rtdm_toseq_t *timeout_seq)
-{
-	int ret;
-
-	if (timeout < 0) {
-		return (ret = rt_sem_wait_if(sem)) > 0 ? 0 : ret != RTE_OBJINV ? -EWOULDBLOCK : -EIDRM;
-	}
-	if (!timeout) {
-		/* infinite timeout */
-		ret = rt_sem_wait(sem);
-	} else {
-		/* timeout sequence, i.e. abs timeout, or relative timeout */
-		ret = timeout_seq ? rt_sem_wait_until(sem, *timeout_seq) : rt_sem_wait_timed(sem, nano2count(timeout)); 
-	}
-	if (ret < RTE_LOWERR) {
-		return 0;
-	}
-	if (ret == SEM_TIMOUT) {
-		return -ETIMEDOUT;
-	}
-	return _rt_whoami()->unblocked ? -EINTR : -EIDRM;
-}
+EXPORT_SYMBOL_GPL(__rtdm_synch_flush);
 
 /*!
  * @ingroup driverapi
@@ -715,30 +724,6 @@ int device_service_routine(...)
  * interpret special timeout values (infinite and non-blocking),
  * disburdening the driver developer from handling them separately.
  *
- * RTAI REMARK: 
- * This is just a confusing set of words to patch missing APIs with absolute
- * deadlines in xenomai. In short a timeout_seq is nothing but the absolute 
- * deadline and so should be used in any related RTAI API that does it so
- * natively already. Thus the same code in RTAI would simply be: 
- * @code
-int device_service_routine(...)
-{
- 	...
-	while (received < requested) {
-		ret = rtdm_event_timedwait(&event->synch_base, rt_get_time()+timeout);
-		if (ret < 0) // including -ETIMEDOUT
-			break;
-		...
-		// receive some data
-		...
-	}
-	...
-}
- * @endcode
- * though it is not so because of an easier porting. Nonetheless the RTAI 
- * implementation takes care of using its simpler native way anyhow.
- * END OF RTAI REMARK.
- *
  * Environments:
  *
  * This service can be called from:
@@ -750,15 +735,15 @@ int device_service_routine(...)
  */
 void rtdm_toseq_init(rtdm_toseq_t *timeout_seq, nanosecs_rel_t timeout)
 {
+	xntbase_t *base = xnthread_time_base(xnpod_current_thread());
 
+	XENO_ASSERT(RTDM, !xnpod_unblockable_p(), /* only warn here */;);
 
-
-
-
-	*timeout_seq = rt_get_time() + nano2count(timeout);
+	*timeout_seq =
+	    xntbase_get_jiffies(base) + xntbase_ns2ticks_ceil(base, timeout);
 }
 
-EXPORT_SYMBOL(rtdm_toseq_init);
+EXPORT_SYMBOL_GPL(rtdm_toseq_init);
 /** @} */
 
 /*!
@@ -789,18 +774,18 @@ void rtdm_event_init(rtdm_event_t *event, unsigned long pending)
 	trace_mark(xn_rtdm, event_init,
 		   "event %p pending %lu", event, pending);
 
-
-
-	if (pending)
-		event->pending = pending;
-	rt_typed_sem_init(&event->synch_base, 0, BIN_SEM | PRIO_Q);
+	/* Make atomic for re-initialisation support */
 	xnlock_get_irqsave(&nklock, s);
+
+	xnsynch_init(&event->synch_base, XNSYNCH_PRIO, NULL);
+	if (pending)
+		xnsynch_set_flags(&event->synch_base, RTDM_EVENT_PENDING);
 	xnselect_init(&event->select_block);
 
 	xnlock_put_irqrestore(&nklock, s);
 }
 
-EXPORT_SYMBOL(rtdm_event_init);
+EXPORT_SYMBOL_GPL(rtdm_event_init);
 
 #ifdef DOXYGEN_CPP /* Only used for doxygen doc generation */
 /**
@@ -865,23 +850,23 @@ void rtdm_event_pulse(rtdm_event_t *event);
  */
 void rtdm_event_signal(rtdm_event_t *event)
 {
-	unsigned long flags;
-
+	int resched = 0;
+	spl_t s;
 
 	trace_mark(xn_rtdm, event_signal, "event %p", event);
 
-	flags = rt_global_save_flags_and_cli();
-	__set_bit(0, &event->pending);
-	rt_sem_broadcast(&event->synch_base);
-	rt_global_restore_flags(flags);
-	SELECT_SIGNAL(&event->select_block, 1);
+	xnlock_get_irqsave(&nklock, s);
+
+	xnsynch_set_flags(&event->synch_base, RTDM_EVENT_PENDING);
+	if (xnsynch_flush(&event->synch_base, 0))
+		resched = 1;
+	if (xnselect_signal(&event->select_block, 1))
+		resched = 1;
+	if (resched)
+		xnpod_schedule();
+
+	xnlock_put_irqrestore(&nklock, s);
 }
-
-
-
-
-
-
 
 EXPORT_SYMBOL_GPL(rtdm_event_signal);
 
@@ -914,20 +899,7 @@ EXPORT_SYMBOL_GPL(rtdm_event_signal);
  */
 int rtdm_event_wait(rtdm_event_t *event)
 {
-	unsigned long flags;
-	int ret;
-
-	flags = rt_global_save_flags_and_cli();
-	if (!__test_and_clear_bit(0, &event->pending)) {
-		if (!(ret = _sem_wait(&event->synch_base))) {
-			__clear_bit(0, &event->pending);
-		}
-	} else {
-		ret = 0;
-	}
-	rt_global_restore_flags(flags);
-
-	return ret;
+	return rtdm_event_timedwait(event, 0, NULL);
 }
 
 EXPORT_SYMBOL_GPL(rtdm_event_wait);
@@ -973,63 +945,64 @@ EXPORT_SYMBOL_GPL(rtdm_event_wait);
 int rtdm_event_timedwait(rtdm_event_t *event, nanosecs_rel_t timeout,
 			 rtdm_toseq_t *timeout_seq)
 {
-	unsigned long flags;
-	int ret;
+	xnthread_t *curr;
+	spl_t s;
+	int err = 0;
 
-
-
+	XENO_ASSERT(RTDM, !xnpod_unblockable_p(), return -EPERM;);
 
 	trace_mark(xn_rtdm, event_timedwait,
 		   "event %p timeout %Lu timeout_seq %p timeout_seq_value %Lu",
 		   event, (long long)timeout, timeout_seq, (long long)(timeout_seq ? *timeout_seq : 0));
 
-	flags = rt_global_save_flags_and_cli();
-	if (!__test_and_clear_bit(0, &event->pending)) {
-		if (!(ret = _sem_wait_timed(&event->synch_base, timeout, timeout_seq))) {
-			__clear_bit(0, &event->pending);
-			rt_global_restore_flags(flags);
-			SELECT_SIGNAL(&event->select_block, 0);
-		} else {
-			rt_global_restore_flags(flags);
-		}
+	xnlock_get_irqsave(&nklock, s);
+
+	if (unlikely(xnsynch_test_flags(&event->synch_base,
+					RTDM_SYNCH_DELETED)))
+		err = -EIDRM;
+	else if (likely(xnsynch_test_flags(&event->synch_base,
+					   RTDM_EVENT_PENDING))) {
+		xnsynch_clear_flags(&event->synch_base, RTDM_EVENT_PENDING);
+		xnselect_signal(&event->select_block, 0);
 	} else {
-		rt_global_restore_flags(flags);
-		SELECT_SIGNAL(&event->select_block, 0);
-		ret = 0;
+		/* non-blocking mode */
+		if (timeout < 0) {
+			err = -EWOULDBLOCK;
+			goto unlock_out;
+		}
+
+		curr = xnpod_current_thread();
+
+		if (timeout_seq && (timeout > 0)) {
+			/* timeout sequence */
+			xnsynch_sleep_on(&event->synch_base, *timeout_seq,
+					 XN_ABSOLUTE);
+		} else {
+			/* infinite or relative timeout */
+			xnsynch_sleep_on(&event->synch_base,
+					 xntbase_ns2ticks_ceil
+					 (xnthread_time_base(curr), timeout),
+					 XN_RELATIVE);
+		}
+
+		if (likely
+		    (!xnthread_test_info(curr, XNTIMEO | XNRMID | XNBREAK))) {
+			xnsynch_clear_flags(&event->synch_base,
+					    RTDM_EVENT_PENDING);
+			xnselect_signal(&event->select_block, 0);
+		} else if (xnthread_test_info(curr, XNTIMEO))
+			err = -ETIMEDOUT;
+		else if (xnthread_test_info(curr, XNRMID))
+			err = -EIDRM;
+		else /* XNBREAK */
+			err = -EINTR;
 	}
 
-	return ret;
+unlock_out:
+	xnlock_put_irqrestore(&nklock, s);
+
+	return err;
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 EXPORT_SYMBOL_GPL(rtdm_event_timedwait);
 
@@ -1051,21 +1024,21 @@ EXPORT_SYMBOL_GPL(rtdm_event_timedwait);
  */
 void rtdm_event_clear(rtdm_event_t *event)
 {
-
+	spl_t s;
 
 	trace_mark(xn_rtdm, event_clear, "event %p", event);
 
+	xnlock_get_irqsave(&nklock, s);
 
-	event->pending = 0;
-	SELECT_SIGNAL(&event->select_block, 0);
+	xnsynch_clear_flags(&event->synch_base, RTDM_EVENT_PENDING);
+	xnselect_signal(&event->select_block, 0);
+
+	xnlock_put_irqrestore(&nklock, s);
 }
-
-
-
 
 EXPORT_SYMBOL_GPL(rtdm_event_clear);
 
-#ifdef CONFIG_RTAI_RTDM_SELECT
+#ifdef CONFIG_XENO_OPT_RTDM_SELECT
 /**
  * @brief Bind a selector to an event
  *
@@ -1110,9 +1083,9 @@ int rtdm_event_select_bind(rtdm_event_t *event, rtdm_selector_t *selector,
 	xnlock_get_irqsave(&nklock, s);
 	err = xnselect_bind(&event->select_block,
 			    binding, selector, type, fd_index,
-			    event->pending || 
-			    event->synch_base.magic != RT_SEM_MAGIC);
-
+			    xnsynch_test_flags(&event->synch_base,
+					       RTDM_SYNCH_DELETED |
+					       RTDM_EVENT_PENDING));
 	xnlock_put_irqrestore(&nklock, s);
 
 	if (err)
@@ -1121,7 +1094,7 @@ int rtdm_event_select_bind(rtdm_event_t *event, rtdm_selector_t *selector,
 	return err;
 }
 EXPORT_SYMBOL_GPL(rtdm_event_select_bind);
-#endif /* CONFIG_RTAI_RTDM_SELECT */
+#endif /* CONFIG_XENO_OPT_RTDM_SELECT */
 /** @} */
 
 /*!
@@ -1151,13 +1124,13 @@ void rtdm_sem_init(rtdm_sem_t *sem, unsigned long value)
 
 	trace_mark(xn_rtdm, sem_init, "sem %p value %lu", sem, value);
 
-
-
-
-	rt_typed_sem_init(&sem->sem, value, CNT_SEM | PRIO_Q);
-
+	/* Make atomic for re-initialisation support */
 	xnlock_get_irqsave(&nklock, s);
+
+	sem->value = value;
+	xnsynch_init(&sem->synch_base, XNSYNCH_PRIO, NULL);
 	xnselect_init(&sem->select_block);
+
 	xnlock_put_irqrestore(&nklock, s);
 }
 
@@ -1211,7 +1184,7 @@ void rtdm_sem_destroy(rtdm_sem_t *sem);
  */
 int rtdm_sem_down(rtdm_sem_t *sem)
 {
-	return _sem_wait(&sem->sem);
+	return rtdm_sem_timeddown(sem, 0, NULL);
 }
 
 EXPORT_SYMBOL_GPL(rtdm_sem_down);
@@ -1257,53 +1230,53 @@ EXPORT_SYMBOL_GPL(rtdm_sem_down);
 int rtdm_sem_timeddown(rtdm_sem_t *sem, nanosecs_rel_t timeout,
 		       rtdm_toseq_t *timeout_seq)
 {
+	xnthread_t *curr;
+	spl_t s;
+	int err = 0;
 
-	int retval;
-
-
-
+	XENO_ASSERT(RTDM, !xnpod_unblockable_p(), return -EPERM;);
 
 	trace_mark(xn_rtdm, sem_timedwait,
 		   "sem %p timeout %Lu timeout_seq %p timeout_seq_value %Lu",
 		   sem, (long long)timeout, timeout_seq, (long long)(timeout_seq ? *timeout_seq : 0));
 
+	xnlock_get_irqsave(&nklock, s);
 
+	if (unlikely(xnsynch_test_flags(&sem->synch_base, RTDM_SYNCH_DELETED)))
+		err = -EIDRM;
+	else if (sem->value > 0) {
+		if(!--sem->value)
+			xnselect_signal(&sem->select_block, 0);
+	} else if (timeout < 0) /* non-blocking mode */
+		err = -EWOULDBLOCK;
+	else {
+		curr = xnpod_current_thread();
 
+		if (timeout_seq && (timeout > 0)) {
+			/* timeout sequence */
+			xnsynch_sleep_on(&sem->synch_base, *timeout_seq,
+					 XN_ABSOLUTE);
+		} else {
+			/* infinite or relative timeout */
+			xnsynch_sleep_on(&sem->synch_base,
+					 xntbase_ns2ticks_ceil
+					 (xnthread_time_base(curr), timeout),
+					 XN_RELATIVE);
+		}
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-	if ((retval = _sem_wait_timed(&sem->sem, timeout, timeout_seq)) == 1) {	
-		SELECT_SIGNAL(&sem->select_block, 0);
+		if (xnthread_test_info(curr, XNTIMEO | XNRMID | XNBREAK)) {
+			if (xnthread_test_info(curr, XNTIMEO))
+				err = -ETIMEDOUT;
+			else if (xnthread_test_info(curr, XNRMID))
+				err = -EIDRM;
+			else /* XNBREAK */
+				err = -EINTR;
+		}
 	}
-	return retval;
+
+	xnlock_put_irqrestore(&nklock, s);
+
+	return err;
 }
 
 EXPORT_SYMBOL_GPL(rtdm_sem_timeddown);
@@ -1329,25 +1302,25 @@ EXPORT_SYMBOL_GPL(rtdm_sem_timeddown);
  */
 void rtdm_sem_up(rtdm_sem_t *sem)
 {
-
+	spl_t s;
 
 	trace_mark(xn_rtdm, sem_up, "sem %p", sem);
 
+	xnlock_get_irqsave(&nklock, s);
 
-	rt_sem_signal(&sem->sem);
-	if (sem->sem.count > 0) {
-		SELECT_SIGNAL(&sem->select_block, 1);
-	}
+	if (xnsynch_wakeup_one_sleeper(&sem->synch_base))
+		xnpod_schedule();
+	else
+		if (sem->value++ == 0
+		    && xnselect_signal(&sem->select_block, 1))
+			xnpod_schedule();
+
+	xnlock_put_irqrestore(&nklock, s);
 }
-
-
-
-
-
 
 EXPORT_SYMBOL_GPL(rtdm_sem_up);
 
-#ifdef CONFIG_RTAI_RTDM_SELECT
+#ifdef CONFIG_XENO_OPT_RTDM_SELECT
 /**
  * @brief Bind a selector to a semaphore
  *
@@ -1392,9 +1365,9 @@ int rtdm_sem_select_bind(rtdm_sem_t *sem, rtdm_selector_t *selector,
 	xnlock_get_irqsave(&nklock, s);
 	err = xnselect_bind(&sem->select_block, binding, selector,
 			    type, fd_index,
-			    sem->sem.count > 0 ||
-			    sem->sem.magic != RT_SEM_MAGIC);
-
+			    (sem->value > 0) ||
+			    xnsynch_test_flags(&sem->synch_base,
+					       RTDM_SYNCH_DELETED));
 	xnlock_put_irqrestore(&nklock, s);
 
 	if (err)
@@ -1403,8 +1376,41 @@ int rtdm_sem_select_bind(rtdm_sem_t *sem, rtdm_selector_t *selector,
 	return err;
 }
 EXPORT_SYMBOL_GPL(rtdm_sem_select_bind);
-#endif /* CONFIG_RTAI_RTDM_SELECT */
+#endif /* CONFIG_XENO_OPT_RTDM_SELECT */
 /** @} */
+
+/* --- RTAI proper for RTDM mutexes --- */
+
+static inline int _sem_wait(void *sem)
+{
+	if (rt_sem_wait(sem) < RTE_LOWERR) {
+		return 0;
+	}
+	return _rt_whoami()->unblocked ? -EINTR : -EIDRM;
+}
+
+static inline int _sem_wait_timed(void *sem, nanosecs_rel_t timeout, rtdm_toseq_t *timeout_seq)
+{
+	int ret;
+
+	if (timeout < 0) {
+		return (ret = rt_sem_wait_if(sem)) > 0 ? 0 : ret != RTE_OBJINV ? -EWOULDBLOCK : -EIDRM;
+	}
+	if (!timeout) {
+		/* infinite timeout */
+		ret = rt_sem_wait(sem);
+	} else {
+		/* timeout sequence, i.e. abs timeout, or relative timeout */
+		ret = timeout_seq ? rt_sem_wait_until(sem, *timeout_seq) : rt_sem_wait_timed(sem, nano2count(timeout)); 
+	}
+	if (ret < RTE_LOWERR) {
+		return 0;
+	}
+	if (ret == SEM_TIMOUT) {
+		return -ETIMEDOUT;
+	}
+	return _rt_whoami()->unblocked ? -EINTR : -EIDRM;
+}
 
 /*!
  * @name Mutex Services
@@ -1607,6 +1613,7 @@ int rtdm_mutex_timedlock(rtdm_mutex_t *mutex, nanosecs_rel_t timeout,
 
 
 
+
 EXPORT_SYMBOL_GPL(rtdm_mutex_timedlock);
 /** @} */
 
@@ -1642,8 +1649,7 @@ EXPORT_SYMBOL_GPL(rtdm_mutex_timedlock);
  * This service can be called from:
  *
  * - Kernel module initialization/cleanup code
- * - Kernel-based task
- * - User-space task (RT, non-RT)
+ * - User-space task (non-RT)
  *
  * Rescheduling: never.
  */
@@ -1651,21 +1657,21 @@ int rtdm_irq_request(rtdm_irq_t *irq_handle, unsigned int irq_no,
 		     rtdm_irq_handler_t handler, unsigned long flags,
 		     const char *device_name, void *arg)
 {
-        int err;
+	int err;
 
-	RTAI_ASSERT(RTDM, xnpod_root_p(), return -EPERM;);
+	XENO_ASSERT(RTDM, xnpod_root_p(), return -EPERM;);
 
-        xnintr_init(irq_handle, device_name, irq_no, handler, NULL, flags);
+	xnintr_init(irq_handle, device_name, irq_no, handler, NULL, flags);
 
-        err = xnintr_attach(irq_handle, arg);
-        if (err)
-                return err;
+	err = xnintr_attach(irq_handle, arg);
+	if (err)
+		return err;
 
-        err = xnintr_enable(irq_handle);
-        if (err)
-                xnintr_detach(irq_handle);
+	err = xnintr_enable(irq_handle);
+	if (err)
+		xnintr_detach(irq_handle);
 
-        return err;
+	return err;
 }
 
 EXPORT_SYMBOL_GPL(rtdm_irq_request);
@@ -1678,13 +1684,17 @@ EXPORT_SYMBOL_GPL(rtdm_irq_request);
  *
  * @return 0 on success, otherwise negative error code
  *
+ * @note The caller is responsible for shutting down the IRQ source at device
+ * level before invoking this service. In turn, rtdm_irq_free ensures that any
+ * pending event on the given IRQ line is fully processed on return from this
+ * service.
+ *
  * Environments:
  *
  * This service can be called from:
  *
  * - Kernel module initialization/cleanup code
- * - Kernel-based task
- * - User-space task (RT, non-RT)
+ * - User-space task (non-RT)
  *
  * Rescheduling: never.
  */
@@ -1696,6 +1706,14 @@ int rtdm_irq_free(rtdm_irq_t *irq_handle);
  * @param[in,out] irq_handle IRQ handle as returned by rtdm_irq_request()
  *
  * @return 0 on success, otherwise negative error code
+ *
+ * @note This service is for exceptional use only. Drivers should always prefer
+ * interrupt masking at device level (via corresponding control registers etc.)
+ * over masking at line level. Keep in mind that the latter is incompatible
+ * with IRQ line sharing and can also be more costly as interrupt controller
+ * access requires broader synchronization. Also, certain IRQ types may not
+ * allow the invocation over RT and interrupt contexts. The caller is
+ * responsible for excluding such conflicts.
  *
  * Environments:
  *
@@ -1716,6 +1734,14 @@ int rtdm_irq_enable(rtdm_irq_t *irq_handle);
  * @param[in,out] irq_handle IRQ handle as returned by rtdm_irq_request()
  *
  * @return 0 on success, otherwise negative error code
+ *
+ * @note This service is for exceptional use only. Drivers should always prefer
+ * interrupt masking at device level (via corresponding control registers etc.)
+ * over masking at line level. Keep in mind that the latter is incompatible
+ * with IRQ line sharing and can also be more costly as interrupt controller
+ * access requires broader synchronization. Also, certain IRQ types may not
+ * allow the invocation over RT and interrupt contexts. The caller is
+ * responsible for excluding such conflicts.
  *
  * Environments:
  *
@@ -1816,7 +1842,7 @@ void rtdm_nrtsig_pend(rtdm_nrtsig_t *nrt_sig);
  * @{
  */
 
-
+#if defined(CONFIG_XENO_OPT_PERVASIVE) || defined(DOXYGEN_CPP)
 struct rtdm_mmap_data {
 	void *src_vaddr;
 	phys_addr_t src_paddr;
@@ -1836,7 +1862,7 @@ static int rtdm_mmap_buffer(struct file *filp, struct vm_area_struct *vma)
 
 	vaddr = (unsigned long)mmap_data->src_vaddr;
 	paddr = mmap_data->src_paddr;
-	if (paddr == 0) /* kmalloc memory? */
+	if (paddr == 0)	/* kmalloc memory? */
 		paddr = __pa(vaddr);
 
 	maddr = vma->vm_start;
@@ -1847,8 +1873,8 @@ static int rtdm_mmap_buffer(struct file *filp, struct vm_area_struct *vma)
 	if ((vaddr >= VMALLOC_START) && (vaddr < VMALLOC_END)) {
 		unsigned long mapped_size = 0;
 
-		RTAI_ASSERT(RTDM, vaddr == PAGE_ALIGN(vaddr), return -EINVAL);
-		RTAI_ASSERT(RTDM, (size % PAGE_SIZE) == 0, return -EINVAL);
+		XENO_ASSERT(RTDM, vaddr == PAGE_ALIGN(vaddr), return -EINVAL);
+		XENO_ASSERT(RTDM, (size % PAGE_SIZE) == 0, return -EINVAL);
 
 		while (mapped_size < size) {
 			if (xnarch_remap_vm_page(vma, maddr, vaddr))
@@ -1914,9 +1940,9 @@ static int rtdm_do_mmap(rtdm_user_info_t *user_info,
 	void *old_priv_data;
 	struct file *filp;
 
-	RTAI_ASSERT(RTDM, xnpod_root_p(), return -EPERM;);
+	XENO_ASSERT(RTDM, xnpod_root_p(), return -EPERM;);
 
-	filp = filp_open("/dev/zero", O_RDWR, 0);
+	filp = filp_open(XNHEAP_DEV_NAME, O_RDWR, 0);
 	if (IS_ERR(filp))
 		return PTR_ERR(filp);
 
@@ -2110,17 +2136,15 @@ int rtdm_munmap(rtdm_user_info_t *user_info, void *ptr, size_t len)
 {
 	int err;
 
-	RTAI_ASSERT(RTDM, xnpod_root_p(), return -EPERM;);
+	XENO_ASSERT(RTDM, xnpod_root_p(), return -EPERM;);
 
-	down_write(&user_info->mm->mmap_sem);
-	err = do_munmap(user_info->mm, (unsigned long)ptr, len);
-	up_write(&user_info->mm->mmap_sem);
+	err = vm_munmap((unsigned long)ptr, len);
 
 	return err;
 }
 
 EXPORT_SYMBOL_GPL(rtdm_munmap);
-
+#endif /* CONFIG_XENO_OPT_PERVASIVE || DOXYGEN_CPP */
 
 /**
  * @brief Enforces a rate limit
@@ -2185,7 +2209,7 @@ EXPORT_SYMBOL(rtdm_ratelimit);
  * @param ... Arguments referred by @a format
  *
  * @return On success, this service returns the number of characters printed.
- * Otherwise, a negativ error code is returned.
+ * Otherwise, a negative error code is returned.
  *
  * Environments:
  *

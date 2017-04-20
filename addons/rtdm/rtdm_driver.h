@@ -1,24 +1,23 @@
 /**
  * @file
- * Real-Time Driver Model for RTAI, driver API header
+ * Real-Time Driver Model, driver API header.
  *
  * @note Copyright (C) 2005-2007 Jan Kiszka <jan.kiszka@web.de>
  * @note Copyright (C) 2005 Joerg Langenberg <joerg.langenberg@gmx.net>
- * @note Copyright (C) 2008 Gilles Chanteperdrix <gilles.chanteperdrix@gmail.com>
- * @note Copyright (C) 2005-2010 Paolo Mantegazza <mantegazza@aero.polimi.it>
+ * @note Copyright (C) 2008 Gilles Chanteperdrix <gilles.chanteperdrix@xenomai.org>
  *
- * RTAI is free software; you can redistribute it and/or modify it
- * under the terms of the GNU General Public License as published by
+ * This program is free software; you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation; either version 2 of the License, or
  * (at your option) any later version.
  *
- * RTAI is distributed in the hope that it will be useful, but
+ * This program is distributed in the hope that it will be useful, but
  * WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
  * General Public License for more details.
  *
  * You should have received a copy of the GNU General Public License
- * along with RTAI; if not, write to the Free Software Foundation,
+ * along with this program; if not, write to the Free Software Foundation,
  * Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
  *
  * @ingroup driverapi
@@ -38,8 +37,8 @@
 #include <rtai_schedcore.h>
 #include <rtai_sched.h>
 
-#include "xn.h"
-#include "select.h"
+#include <rtdm/xn.h>
+#include <rtdm/select.h>
 #include <rtdm/vfile.h>
 #include <rtdm/rtdm.h>
 
@@ -297,7 +296,7 @@ typedef ssize_t (*rtdm_write_handler_t)(struct rtdm_dev_context *context,
  * http://www.opengroup.org/onlinepubs/009695399 */
 typedef ssize_t (*rtdm_recvmsg_handler_t)(struct rtdm_dev_context *context,
 					  rtdm_user_info_t *user_info,
-					  struct msghdr *msg, int flags);
+					  struct user_msghdr *msg, int flags);
 
 /**
  * Transmit message handler
@@ -317,7 +316,7 @@ typedef ssize_t (*rtdm_recvmsg_handler_t)(struct rtdm_dev_context *context,
  * http://www.opengroup.org/onlinepubs/009695399 */
 typedef ssize_t (*rtdm_sendmsg_handler_t)(struct rtdm_dev_context *context,
 					  rtdm_user_info_t *user_info,
-					  const struct msghdr *msg, int flags);
+					  const struct user_msghdr *msg, int flags);
 /** @} Operation Handler Prototypes */
 
 typedef int (*rtdm_rt_handler_t)(struct rtdm_dev_context *context,
@@ -510,14 +509,11 @@ struct rtdm_device {
 
 	/** Name of /proc entry for the device, must not be NULL */
 	const char *proc_name;
-#ifdef CONFIG_PROC_FS
-        /** Set to device's vfile data after registration, do not modify */
-        struct xnvfile_directory vfroot;
-        struct xnvfile_regular info_vfile;
+#ifdef CONFIG_XENO_OPT_VFILE
+	/** Set to device's vfile data after registration, do not modify */
+	struct xnvfile_directory vfroot;
+	struct xnvfile_regular info_vfile;
 #endif
-
-	/** Set to device's /proc root entry after registration, do not modify */
-	struct proc_dir_entry *proc_entry;
 
 	/** Driver definable device ID */
 	int device_id;
@@ -568,7 +564,7 @@ struct rtdm_dev_context *rtdm_context_get(int fd);
 
 static inline void rtdm_context_lock(struct rtdm_dev_context *context)
 {
-	RTAI_ASSERT(RTDM, CONTEXT_IS_LOCKED(context),
+	XENO_ASSERT(RTDM, CONTEXT_IS_LOCKED(context),
 		    /* just warn if context was a dangling pointer */);
 	atomic_inc(&context->close_lock_count);
 }
@@ -577,9 +573,9 @@ extern int rtdm_apc;
 
 static inline void rtdm_context_unlock(struct rtdm_dev_context *context)
 {
-	RTAI_ASSERT(RTDM, CONTEXT_IS_LOCKED(context),
+	XENO_ASSERT(RTDM, CONTEXT_IS_LOCKED(context),
 		    /* just warn if context was a dangling pointer */);
-	xnarch_before_atomic_dec();
+	smp_mb__before_atomic();
 	if (unlikely(atomic_dec_and_test(&context->close_lock_count)))
 		rthal_apc_schedule(rtdm_apc);
 }
@@ -590,17 +586,17 @@ static inline void rtdm_context_put(struct rtdm_dev_context *context)
 }
 
 /* --- clock services --- */
-
-
+struct xntbase;
+extern struct xntbase *rtdm_tbase;
 
 static inline nanosecs_abs_t rtdm_clock_read(void)
 {
-	return rt_get_time_ns();
+	return xntbase_ticks2ns(rtdm_tbase, xntbase_get_time(rtdm_tbase));
 }
 
 static inline nanosecs_abs_t rtdm_clock_read_monotonic(void)
 {
-	return rt_get_time_ns();
+	return xntbase_ticks2ns(rtdm_tbase, xntbase_get_jiffies(rtdm_tbase));
 }
 #endif /* !DOXYGEN_CPP */
 
@@ -658,13 +654,15 @@ int rtdm_select_bind(int fd, rtdm_selector_t *selector,
 	<LEAVE_ATOMIC_SECTION>			\
 }
 #else /* This is how it really works */
-#define RTDM_EXECUTE_ATOMICALLY(code_block)	\
-{						\
-	spl_t s;				\
-						\
-	s = rt_global_save_flags_and_cli();	\
-	code_block;				\
-	rt_global_restore_flags(s);		\
+#define RTDM_EXECUTE_ATOMICALLY(code_block)		\
+{							\
+	spl_t __rtdm_s;					\
+							\
+	xnlock_get_irqsave(&nklock, __rtdm_s);		\
+	__xnpod_lock_sched();				\
+	code_block;					\
+	__xnpod_unlock_sched();				\
+	xnlock_put_irqrestore(&nklock, __rtdm_s);	\
 }
 #endif
 /** @} Global Lock across Scheduler Invocation */
@@ -677,10 +675,10 @@ int rtdm_select_bind(int fd, rtdm_selector_t *selector,
 /**
  * Static lock initialisation
  */
-#define RTDM_LOCK_UNLOCKED	SPIN_LOCK_UNLOCKED
+#define RTDM_LOCK_UNLOCKED	RTHAL_SPIN_LOCK_UNLOCKED
 
 /** Lock variable */
-typedef spinlock_t rtdm_lock_t;
+typedef rthal_spinlock_t rtdm_lock_t;
 
 /** Variable to save the context while holding a lock */
 typedef unsigned long rtdm_lockctx_t;
@@ -700,7 +698,7 @@ typedef unsigned long rtdm_lockctx_t;
  *
  * Rescheduling: never.
  */
-#define rtdm_lock_init(lock)	spin_lock_init(lock)
+#define rtdm_lock_init(lock)	rthal_spin_lock_init(lock)
 
 /**
  * Acquire lock from non-preemptible contexts
@@ -719,12 +717,13 @@ typedef unsigned long rtdm_lockctx_t;
  * Rescheduling: never.
  */
 #ifdef DOXYGEN_CPP /* Beautify doxygen output */
-#define rtdm_lock_get(lock)	rt_spin_lock(lock)
+#define rtdm_lock_get(lock)	rthal_spin_lock(lock)
 #else /* This is how it really works */
 #define rtdm_lock_get(lock)					\
 	do {							\
-		RTAI_BUGON(RTDM, !rthal_local_irq_disabled());	\
-		rt_spin_lock(lock);				\
+		XENO_BUGON(RTDM, !rthal_local_irq_disabled());	\
+		rthal_spin_lock(lock);				\
+		__xnpod_lock_sched();				\
 	} while (0)
 #endif
 
@@ -744,7 +743,11 @@ typedef unsigned long rtdm_lockctx_t;
  *
  * Rescheduling: never.
  */
-#define rtdm_lock_put(lock)	rt_spin_unlock(lock)
+#define rtdm_lock_put(lock)			\
+	do {					\
+		rthal_spin_unlock(lock);	\
+		__xnpod_unlock_sched();		\
+	} while (0)
 
 /**
  * Acquire lock and disable preemption
@@ -763,8 +766,11 @@ typedef unsigned long rtdm_lockctx_t;
  *
  * Rescheduling: never.
  */
-#define rtdm_lock_get_irqsave(lock, context)    \
-	do { context = rt_spin_lock_irqsave(lock); } while (0)
+#define rtdm_lock_get_irqsave(lock, context)		\
+	do {						\
+		rthal_spin_lock_irqsave(lock, context);	\
+		__xnpod_lock_sched();			\
+	} while (0)
 
 /**
  * Release lock and restore preemption state
@@ -783,8 +789,12 @@ typedef unsigned long rtdm_lockctx_t;
  *
  * Rescheduling: possible.
  */
-#define rtdm_lock_put_irqrestore(lock, context) \
-	rt_spin_unlock_irqrestore(context, lock)
+#define rtdm_lock_put_irqrestore(lock, context)		\
+	do {						\
+		rthal_spin_unlock(lock);		\
+		__xnpod_unlock_sched();			\
+		rthal_local_irq_restore(context);	\
+	} while (0)
 
 /**
  * Disable preemption locally
@@ -803,7 +813,7 @@ typedef unsigned long rtdm_lockctx_t;
  * Rescheduling: never.
  */
 #define rtdm_lock_irqsave(context)	\
-	rtai_save_flags_and_cli(context)
+	rthal_local_irq_save(context)
 
 /**
  * Restore preemption state
@@ -822,7 +832,7 @@ typedef unsigned long rtdm_lockctx_t;
  * Rescheduling: possible.
  */
 #define rtdm_lock_irqrestore(context)	\
-	rtai_restore_flags(context)
+	rthal_local_irq_restore(context)
 /** @} Spinlock with Preemption Deactivation */
 
 /** @} rtdmsync */
@@ -894,7 +904,7 @@ int rtdm_irq_request(rtdm_irq_t *irq_handle, unsigned int irq_no,
 #ifndef DOXYGEN_CPP /* Avoid static inline tags for RTDM in doxygen */
 static inline int rtdm_irq_free(rtdm_irq_t *irq_handle)
 {
-	RTAI_ASSERT(RTDM, xnpod_root_p(), return -EPERM;);
+	XENO_ASSERT(RTDM, xnpod_root_p(), return -EPERM;);
 	return xnintr_detach(irq_handle);
 }
 
@@ -935,24 +945,26 @@ typedef void (*rtdm_nrtsig_handler_t)(rtdm_nrtsig_t nrt_sig, void *arg);
 static inline int rtdm_nrtsig_init(rtdm_nrtsig_t *nrt_sig,
 				   rtdm_nrtsig_handler_t handler, void *arg)
 {
-	*nrt_sig = hal_alloc_irq();
+	*nrt_sig = rthal_alloc_virq();
 
 	if (*nrt_sig == 0)
 		return -EAGAIN;
 
-	ipipe_request_irq(hal_root_domain, *nrt_sig, handler, arg, NULL);
-
+	rthal_virtualize_irq(rthal_root_domain, *nrt_sig, handler, arg, NULL,
+			     IPIPE_HANDLE_MASK);
 	return 0;
 }
 
 static inline void rtdm_nrtsig_destroy(rtdm_nrtsig_t *nrt_sig)
 {
-	hal_free_irq(*nrt_sig);
+	rthal_virtualize_irq(rthal_root_domain, *nrt_sig, NULL, NULL, NULL, 0);
+
+	rthal_free_virq(*nrt_sig);
 }
 
 static inline void rtdm_nrtsig_pend(rtdm_nrtsig_t *nrt_sig)
 {
-	hal_pend_uncond(*nrt_sig, rtai_cpuid());
+	rthal_trigger_irq(*nrt_sig);
 }
 #endif /* !DOXYGEN_CPP */
 
@@ -994,7 +1006,7 @@ enum rtdm_timer_mode {
 #ifndef DOXYGEN_CPP /* Avoid broken doxygen output */
 #define rtdm_timer_init(timer, handler, name)		\
 ({							\
-	xntimer_init((timer), handler);			\
+	xntimer_init((timer), rtdm_tbase, handler);	\
 	xntimer_set_name((timer), (name));		\
 	0;						\
 })
@@ -1013,8 +1025,8 @@ static inline int rtdm_timer_start_in_handler(rtdm_timer_t *timer,
 					      nanosecs_rel_t interval,
 					      enum rtdm_timer_mode mode)
 {
-	return xntimer_start(timer, xntbase_ns2ticks(rtdm_tbase, expiry),
-			     xntbase_ns2ticks(rtdm_tbase, interval),
+	return xntimer_start(timer, xntbase_ns2ticks_ceil(rtdm_tbase, expiry),
+			     xntbase_ns2ticks_ceil(rtdm_tbase, interval),
 			     (xntmode_t)mode);
 }
 
@@ -1068,7 +1080,7 @@ static inline int rtdm_task_init(rtdm_task_t *task, const char *name,
 {
 	return rtdm_task_init_cpuid(task, name, task_proc, arg, priority, period, get_min_tasks_cpuid());
 }
-
+int __rtdm_task_sleep(xnticks_t timeout, xntmode_t mode);
 void rtdm_task_busy_sleep(nanosecs_rel_t delay);
 
 #ifndef DOXYGEN_CPP /* Avoid static inline tags for RTDM in doxygen */
@@ -1109,36 +1121,18 @@ static inline int rtdm_task_unblock(rtdm_task_t *task)
 
 static inline rtdm_task_t *rtdm_task_current(void)
 {
-	return _rt_whoami();
+	return xnpod_current_thread();
 }
 
 static inline int rtdm_task_wait_period(void)
 {
-	if (!_rt_whoami()->period) {
-		return -EINVAL;
-	}
-	if (!rt_task_wait_period()) {
-		return 0;
-	}
-	if (_rt_whoami()->unblocked) {
-		return -EINTR;
-	}
-	return rt_sched_timed ? -ETIMEDOUT : -EIDRM;
+	XENO_ASSERT(RTDM, !xnpod_unblockable_p(), return -EPERM;);
+	return xnpod_wait_thread_period(NULL);
 }
 
-//RTA_SYSCALL_MODE int rt_sleep(longlong);
 static inline int rtdm_task_sleep(nanosecs_rel_t delay)
 {
-        if (delay < 0) {
-                return 0;
-        }
-        if (delay < 0) {
-                delay = RTAI_TIME_LIMIT;
-        }
-        if (rt_sleep(nano2count(delay)) && _rt_whoami()->unblocked) {
-                return -EINTR;
-        }
-        return 0;
+	return __rtdm_task_sleep(delay, XN_RELATIVE);
 }
 
 static inline int
@@ -1147,19 +1141,13 @@ rtdm_task_sleep_abs(nanosecs_abs_t wakeup_date, enum rtdm_timer_mode mode)
 	/* For the sake of a consistent API usage... */
 	if (mode != RTDM_TIMERMODE_ABSOLUTE && mode != RTDM_TIMERMODE_REALTIME)
 		return -EINVAL;
-	if (rt_sleep_until(nano2count(wakeup_date)) && _rt_whoami()->unblocked) {
-		return -EINTR;
-	}
-	return 0;
+	return __rtdm_task_sleep(wakeup_date, (xntmode_t)mode);
 }
 
 /* rtdm_task_sleep_abs shall be used instead */
 static inline int __deprecated rtdm_task_sleep_until(nanosecs_abs_t wakeup_time)
 {
-	if (rt_sleep_until(nano2count(wakeup_time)) && _rt_whoami()->unblocked) {
-		return -EINTR;
-	}
-	return 0;
+	return __rtdm_task_sleep(wakeup_time, XN_REALTIME);
 }
 #endif /* !DOXYGEN_CPP */
 
@@ -1172,19 +1160,19 @@ void rtdm_toseq_init(rtdm_toseq_t *timeout_seq, nanosecs_rel_t timeout);
 /* --- event services --- */
 
 typedef struct {
-	struct rt_semaphore synch_base; unsigned long pending;
+	xnsynch_t synch_base;
 	DECLARE_XNSELECT(select_block);
 } rtdm_event_t;
 
 #define RTDM_EVENT_PENDING		XNSYNCH_SPARE1
 
 void rtdm_event_init(rtdm_event_t *event, unsigned long pending);
-#ifdef CONFIG_RTAI_RTDM_SELECT
+#ifdef CONFIG_XENO_OPT_RTDM_SELECT
 int rtdm_event_select_bind(rtdm_event_t *event, rtdm_selector_t *selector,
 			   enum rtdm_selecttype type, unsigned fd_index);
-#else /* !CONFIG_RTAI_RTDM_SELECT */
+#else /* !CONFIG_XENO_OPT_RTDM_SELECT */
 #define rtdm_event_select_bind(e, s, t, i) ({ (void)(e); -EBADF; })
-#endif /* !CONFIG_RTAI_RTDM_SELECT */
+#endif /* !CONFIG_XENO_OPT_RTDM_SELECT */
 int rtdm_event_wait(rtdm_event_t *event);
 int rtdm_event_timedwait(rtdm_event_t *event, nanosecs_rel_t timeout,
 			 rtdm_toseq_t *timeout_seq);
@@ -1193,18 +1181,18 @@ void rtdm_event_signal(rtdm_event_t *event);
 void rtdm_event_clear(rtdm_event_t *event);
 
 #ifndef DOXYGEN_CPP /* Avoid static inline tags for RTDM in doxygen */
-
+void __rtdm_synch_flush(xnsynch_t *synch, unsigned long reason);
 
 static inline void rtdm_event_pulse(rtdm_event_t *event)
 {
 	trace_mark(xn_rtdm, event_pulse, "event %p", event);
-	rt_sem_broadcast(&event->synch_base);
+	__rtdm_synch_flush(&event->synch_base, 0);
 }
 
 static inline void rtdm_event_destroy(rtdm_event_t *event)
 {
 	trace_mark(xn_rtdm, event_destroy, "event %p", event);
-	rt_sem_delete(&event->synch_base);
+	__rtdm_synch_flush(&event->synch_base, XNRMID);
 	xnselect_destroy(&event->select_block);
 }
 #endif /* !DOXYGEN_CPP */
@@ -1212,18 +1200,18 @@ static inline void rtdm_event_destroy(rtdm_event_t *event)
 /* --- semaphore services --- */
 
 typedef struct {
-	struct rt_semaphore sem;
+	unsigned long value;
+	xnsynch_t synch_base;
 	DECLARE_XNSELECT(select_block);
 } rtdm_sem_t;
 
-
 void rtdm_sem_init(rtdm_sem_t *sem, unsigned long value);
-#ifdef CONFIG_RTAI_RTDM_SELECT
+#ifdef CONFIG_XENO_OPT_RTDM_SELECT
 int rtdm_sem_select_bind(rtdm_sem_t *sem, rtdm_selector_t *selector,
 			 enum rtdm_selecttype type, unsigned fd_index);
-#else /* !CONFIG_RTAI_RTDM_SELECT */
-#define rtdm_sem_select_bind(s, se, t, i) ({ -EBADF; })
-#endif /* !CONFIG_RTAI_RTDM_SELECT */
+#else /* !CONFIG_XENO_OPT_RTDM_SELECT */
+#define rtdm_sem_select_bind(s, se, t, i) ({ (void)(s); -EBADF; })
+#endif /* !CONFIG_XENO_OPT_RTDM_SELECT */
 int rtdm_sem_down(rtdm_sem_t *sem);
 int rtdm_sem_timeddown(rtdm_sem_t *sem, nanosecs_rel_t timeout,
 		       rtdm_toseq_t *timeout_seq);
@@ -1233,7 +1221,7 @@ void rtdm_sem_up(rtdm_sem_t *sem);
 static inline void rtdm_sem_destroy(rtdm_sem_t *sem)
 {
 	trace_mark(xn_rtdm, sem_destroy, "sem %p", sem);
-	rt_sem_delete(&sem->sem);
+	__rtdm_synch_flush(&sem->synch_base, XNRMID);
 	xnselect_destroy(&sem->select_block);
 }
 #endif /* !DOXYGEN_CPP */
@@ -1252,7 +1240,7 @@ int rtdm_mutex_timedlock(rtdm_mutex_t *mutex, nanosecs_rel_t timeout,
 #ifndef DOXYGEN_CPP /* Avoid static inline tags for RTDM in doxygen */
 static inline void rtdm_mutex_unlock(rtdm_mutex_t *mutex)
 {
-
+	XENO_ASSERT(RTDM, !xnpod_asynch_p(), return;);
 
 	trace_mark(xn_rtdm, mutex_unlock, "mutex %p", mutex);
 
@@ -1273,34 +1261,34 @@ static inline void rtdm_mutex_destroy(rtdm_mutex_t *mutex)
 #define rtdm_printk(format, ...)	printk(format, ##__VA_ARGS__)
 
 struct rtdm_ratelimit_state {
-        rtdm_lock_t     lock;           /* protect the state */
-        nanosecs_abs_t  interval;
-        int             burst;
-        int             printed;
-        int             missed;
-        nanosecs_abs_t  begin;
+	rtdm_lock_t	lock;		/* protect the state */
+	nanosecs_abs_t  interval;
+	int		burst;
+	int		printed;
+	int		missed;
+	nanosecs_abs_t	begin;
 };
 
 int rtdm_ratelimit(struct rtdm_ratelimit_state *rs, const char *func);
 
-#define DEFINE_RTDM_RATELIMIT_STATE(name, interval_init, burst_init)    \
-        struct rtdm_ratelimit_state name = {                            \
-                .lock           = RTDM_LOCK_UNLOCKED,                   \
-                .interval       = interval_init,                        \
-                .burst          = burst_init,                           \
-        }
+#define DEFINE_RTDM_RATELIMIT_STATE(name, interval_init, burst_init)	\
+	struct rtdm_ratelimit_state name = {				\
+		.lock		= RTDM_LOCK_UNLOCKED,			\
+		.interval	= interval_init,			\
+		.burst		= burst_init,				\
+	}
 
 /* We use the Linux defaults */
-#define DEF_RTDM_RATELIMIT_INTERVAL     5000000000LL
-#define DEF_RTDM_RATELIMIT_BURST        10
+#define DEF_RTDM_RATELIMIT_INTERVAL	5000000000LL
+#define DEF_RTDM_RATELIMIT_BURST	10
 
-#define rtdm_printk_ratelimited(fmt, ...)  ({                           \
-        static DEFINE_RTDM_RATELIMIT_STATE(_rs,                         \
-                                           DEF_RTDM_RATELIMIT_INTERVAL, \
-                                           DEF_RTDM_RATELIMIT_BURST);   \
-                                                                        \
-        if (rtdm_ratelimit(&_rs, __func__))                             \
-                printk(fmt, ##__VA_ARGS__);                             \
+#define rtdm_printk_ratelimited(fmt, ...)  ({				\
+	static DEFINE_RTDM_RATELIMIT_STATE(_rs,				\
+					   DEF_RTDM_RATELIMIT_INTERVAL,	\
+					   DEF_RTDM_RATELIMIT_BURST);	\
+									\
+	if (rtdm_ratelimit(&_rs, __func__))				\
+		printk(fmt, ##__VA_ARGS__);				\
 })
 
 #ifndef DOXYGEN_CPP /* Avoid static inline tags for RTDM in doxygen */
@@ -1314,7 +1302,7 @@ static inline void rtdm_free(void *ptr)
 	xnfree(ptr);
 }
 
-#ifdef CONFIG_RTAI_OPT_PERVASIVE
+#ifdef CONFIG_XENO_OPT_PERVASIVE
 int rtdm_mmap_to_user(rtdm_user_info_t *user_info,
 		      void *src_addr, size_t len,
 		      int prot, void **pptr,
@@ -1330,54 +1318,63 @@ int rtdm_munmap(rtdm_user_info_t *user_info, void *ptr, size_t len);
 static inline int rtdm_read_user_ok(rtdm_user_info_t *user_info,
 				    const void __user *ptr, size_t size)
 {
-	return __xn_access_ok(user_info, VERIFY_READ, ptr, size);
+	return access_rok(ptr, size);
 }
 
 static inline int rtdm_rw_user_ok(rtdm_user_info_t *user_info,
 				  const void __user *ptr, size_t size)
 {
-	return __xn_access_ok(user_info, VERIFY_WRITE, ptr, size);
+	return access_wok(ptr, size);
 }
 
 static inline int rtdm_copy_from_user(rtdm_user_info_t *user_info,
 				      void *dst, const void __user *src,
 				      size_t size)
 {
-	return __xn_copy_from_user(user_info, dst, src, size) ? -EFAULT : 0;
+	return __xn_copy_from_user(dst, src, size) ? -EFAULT : 0;
 }
 
 static inline int rtdm_safe_copy_from_user(rtdm_user_info_t *user_info,
 					   void *dst, const void __user *src,
 					   size_t size)
 {
-	return (!__xn_access_ok(user_info, VERIFY_READ, src, size) ||
-		__xn_copy_from_user(user_info, dst, src, size)) ? -EFAULT : 0;
+	return (!access_rok(src, size) ||
+		__xn_copy_from_user(dst, src, size)) ? -EFAULT : 0;
 }
 
 static inline int rtdm_copy_to_user(rtdm_user_info_t *user_info,
 				    void __user *dst, const void *src,
 				    size_t size)
 {
-	return __xn_copy_to_user(user_info, dst, src, size) ? -EFAULT : 0;
+	return __xn_copy_to_user(dst, src, size) ? -EFAULT : 0;
 }
 
 static inline int rtdm_safe_copy_to_user(rtdm_user_info_t *user_info,
 					 void __user *dst, const void *src,
 					 size_t size)
 {
-	return (!__xn_access_ok(user_info, VERIFY_WRITE, dst, size) ||
-		__xn_copy_to_user(user_info, dst, src, size)) ? -EFAULT : 0;
+	return (!access_wok(dst, size) ||
+		__xn_copy_to_user(dst, src, size)) ? -EFAULT : 0;
 }
 
 static inline int rtdm_strncpy_from_user(rtdm_user_info_t *user_info,
 					 char *dst,
 					 const char __user *src, size_t count)
 {
-	if (unlikely(!__xn_access_ok(user_info, VERIFY_READ, src, 1)))
+	if (unlikely(!access_rok(src, 1)))
 		return -EFAULT;
-	return __xn_strncpy_from_user(user_info, dst, src, count);
+	return __xn_strncpy_from_user(dst, src, count);
 }
-#else /* !CONFIG_RTAI_OPT_PERVASIVE */
+
+static inline int rtdm_rt_capable(rtdm_user_info_t *user_info)
+{
+	XENO_ASSERT(RTDM, !xnpod_asynch_p(), return 0;);
+
+	return (user_info ? xnshadow_thread(user_info) != NULL
+			  : !xnpod_root_p());
+}
+
+#else /* !CONFIG_XENO_OPT_PERVASIVE */
 /* Define void user<->kernel services that simply fail */
 #define rtdm_mmap_to_user(...)		({ -ENOSYS; })
 #define rtdm_munmap(...)		({ -ENOSYS; })
@@ -1391,16 +1388,16 @@ static inline int rtdm_strncpy_from_user(rtdm_user_info_t *user_info,
 
 static inline int rtdm_rt_capable(rtdm_user_info_t *user_info)
 {
-	RTAI_ASSERT(RTDM, !xnpod_asynch_p(), return 0;);
-        return (user_info ? xnshadow_thread(user_info) != NULL
-                          : !xnpod_root_p());
+	XENO_ASSERT(RTDM, !xnpod_asynch_p(), return 0;);
+
+	return !xnpod_root_p();
 }
 
-#endif /* CONFIG_RTAI_OPT_PERVASIVE */
+#endif /* CONFIG_XENO_OPT_PERVASIVE */
 
 static inline int rtdm_in_rt_context(void)
 {
-	return (_rt_whoami()->is_hard > 0);
+	return (rthal_current_domain != rthal_root_domain);
 }
 
 #endif /* !DOXYGEN_CPP */

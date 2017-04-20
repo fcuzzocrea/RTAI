@@ -68,6 +68,8 @@
 #include <linux/sched.h>
 #include <linux/socket.h>
 
+#include <rtdm/xn.h>
+
 typedef u32 socklen_t;
 typedef struct task_struct rtdm_user_info_t;
 
@@ -132,7 +134,7 @@ typedef int64_t nanosecs_rel_t;
 #define RTDM_CLASS_NETWORK		4
 #define RTDM_CLASS_RTMAC		5
 #define RTDM_CLASS_TESTING		6
-#define RTDM_CLASS_RTIPC                7
+#define RTDM_CLASS_RTIPC		7
 /*
 #define RTDM_CLASS_USB			?
 #define RTDM_CLASS_FIREWIRE		?
@@ -259,10 +261,10 @@ ssize_t __rt_dev_read(rtdm_user_info_t *user_info, int fd, void *buf,
 ssize_t __rt_dev_write(rtdm_user_info_t *user_info, int fd, const void *buf,
 		       size_t nbyte);
 ssize_t __rt_dev_recvmsg(rtdm_user_info_t *user_info, int fd,
-			 struct msghdr *msg, int flags);
+			 struct user_msghdr *msg, int flags);
 ssize_t __rt_dev_sendmsg(rtdm_user_info_t *user_info, int fd,
-			 const struct msghdr *msg, int flags);
-#include "select.h"
+			 const struct user_msghdr *msg, int flags);
+#include <rtdm/select.h>
 int __rt_dev_select(int nfds, fd_set *rfds, fd_set *wfds, fd_set *efds, nanosecs_rel_t timeout, struct xnselector *selector, int space);
 #endif /* __KERNEL__ */
 
@@ -301,11 +303,7 @@ static inline ssize_t rt_dev_recvfrom(int fd, void *buf, size_t len, int flags,
 				      socklen_t *fromlen)
 {
 	struct iovec iov;
-#if LINUX_VERSION_CODE < KERNEL_VERSION(4,0,0)
-	struct msghdr msg;
-#else
 	struct user_msghdr msg;
-#endif
 	int ret;
 
 	iov.iov_base = buf;
@@ -318,16 +316,11 @@ static inline ssize_t rt_dev_recvfrom(int fd, void *buf, size_t len, int flags,
 	msg.msg_control = NULL;
 	msg.msg_controllen = 0;
 
-#if LINUX_VERSION_CODE < KERNEL_VERSION(4,0,0)
 	ret = rt_dev_recvmsg(fd, &msg, flags);
-#else
-	ret = rt_dev_recvmsg(fd, (void *)&msg, flags);
-#endif
 	if (ret >= 0 && from)
 		*fromlen = msg.msg_namelen;
 	return ret;
 }
-
 
 static inline int rt_dev_select(int nfds, fd_set *rfds, fd_set *wfds, fd_set *efds, nanosecs_rel_t timeout)
 {
@@ -345,6 +338,8 @@ static inline int rt_dev_select(int nfds, fd_set *rfds, fd_set *wfds, fd_set *ef
 }
 
 #else /* !__KERNEL__ */
+
+#define user_msghdr msghdr
 
 #ifdef __cplusplus
 extern "C" {
@@ -407,7 +402,7 @@ static inline int rt_dev_ioctl(int fd, int request, ...)
 static inline ssize_t rt_dev_read(int fd, void *buf, size_t nbytes)
 {
         struct { long fd; void *buf; long nbytes; } arg = { fd, buf, nbytes };
-        return RTDM_RTAI_LXRT(RTDM_INDX, SIZARG, __rtdm_read, &arg);
+	return RTDM_RTAI_LXRT(RTDM_INDX, SIZARG, __rtdm_read, &arg);
 }
 
 static inline ssize_t rt_dev_write(int fd, const void *buf, size_t nbytes)
@@ -481,11 +476,7 @@ static inline ssize_t rt_dev_sendto(int fd, const void *buf, size_t len,
 				    socklen_t tolen)
 {
 	struct iovec iov;
-#if LINUX_VERSION_CODE < KERNEL_VERSION(4,0,0)
-	struct msghdr msg;
-#else
 	struct user_msghdr msg;
-#endif
 
 	iov.iov_base = (void *)buf;
 	iov.iov_len = len;
@@ -497,11 +488,7 @@ static inline ssize_t rt_dev_sendto(int fd, const void *buf, size_t len,
 	msg.msg_control = NULL;
 	msg.msg_controllen = 0;
 
-#if LINUX_VERSION_CODE < KERNEL_VERSION(4,0,0)
 	return rt_dev_sendmsg(fd, &msg, flags);
-#else
-	return rt_dev_sendmsg(fd, (void *)&msg, flags);
-#endif
 }
 
 static inline ssize_t rt_dev_send(int fd, const void *buf, size_t len,

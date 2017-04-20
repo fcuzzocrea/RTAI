@@ -1,23 +1,21 @@
-/*!\file select.c
+/*!\file nucleus/select.c
  * \brief file descriptors events multiplexing.
  * \author Gilles Chanteperdrix
  *
- * Copyright (C) 2008 Efixo <gilles.chanteperdrix@laposte.net>
+ * Copyright (C) 2008 Efixo <gilles.chanteperdrix@xenomai.org>
  *
- * with adaptions for RTAI by Paolo Mantegazza <mantegazza@aero.polimi.it>
- *
- * RTAI is free software; you can redistribute it and/or modify
+ * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published
  * by the Free Software Foundation; either version 2 of the License,
  * or (at your option) any later version.
  *
- * RTAI is distributed in the hope that it will be useful, but
+ * This program is distributed in the hope that it will be useful, but
  * WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
  * General Public License for more details.
  *
  * You should have received a copy of the GNU General Public License
- * along with RTAI; if not, write to the Free Software
+ * along with this program; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA
  * 02111-1307, USA.
  *
@@ -48,12 +46,10 @@
  * housekeeping.
  *@{*/
 
-#include "select.h"
-
-#ifdef CONFIG_RTAI_RTDM_SELECT
-
 #include <linux/types.h>
 #include <linux/bitops.h>	/* For hweight_long */
+
+#include <rtdm/select.h>
 
 static xnqueue_t xnselectors;
 static int xnselect_apc;
@@ -328,13 +324,13 @@ int xnselect(struct xnselector *selector,
 	     xnticks_t timeout, xntmode_t timeout_mode)
 {
 	unsigned i, not_empty = 0;
-	xnthread_t *thread;
+	xnthread_t *curr;
 	spl_t s;
 
 	if ((unsigned) nfds > __FD_SETSIZE)
 		return -EINVAL;
 
-	thread = xnpod_current_thread();
+	curr = xnpod_current_thread();
 
 	for (i = 0; i < XNSELECT_MAX_TYPES; i++)
 		if (out_fds[i])
@@ -367,7 +363,7 @@ int xnselect(struct xnselector *selector,
 					  &selector->fds[i].pending, nfds))
 				not_empty = 1;
 
-		if (xnthread_test_info(thread, XNBREAK | XNTIMEO))
+		if (xnthread_test_info(curr, XNBREAK | XNTIMEO))
 			break;
 	}
 	xnlock_put_irqrestore(&nklock, s);
@@ -382,7 +378,7 @@ int xnselect(struct xnselector *selector,
 		return count;
 	}
 
-	if (xnthread_test_info(thread, XNBREAK))
+	if (xnthread_test_info(curr, XNBREAK))
 		return -EINTR;
 
 	return 0; /* Timeout */
@@ -403,8 +399,8 @@ void xnselector_destroy(struct xnselector *selector)
 	inith(&selector->destroy_link);
 	xnlock_get_irqsave(&nklock, s);
 	appendq(&xnselectors, &selector->destroy_link);
+	__rthal_apc_schedule(xnselect_apc);
 	xnlock_put_irqrestore(&nklock, s);
-	rthal_apc_schedule(xnselect_apc);
 }
 EXPORT_SYMBOL_GPL(xnselector_destroy);
 
@@ -460,7 +456,5 @@ int xnselect_umount(void)
 	rthal_apc_free(xnselect_apc);
 	return 0;
 }
-
-#endif
 
 /*@}*/

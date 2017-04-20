@@ -2,28 +2,25 @@
  * Copyright (C) 2005 Jan Kiszka <jan.kiszka@web.de>.
  * Copyright (C) 2005 Joerg Langenberg <joerg.langenberg@gmx.net>.
  *
- * adapted to RTAI by Paolo Mantegazza <mantegazza@aero.polimi.it>
- *
- * RTAI is free software; you can redistribute it and/or modify it
- * under the terms of the GNU General Public License as published by
+ * This program is free software; you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation; either version 2 of the License, or
  * (at your option) any later version.
  *
- * RTAI is distributed in the hope that it will be useful, but
+ * This program is distributed in the hope that it will be useful, but
  * WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
  * General Public License for more details.
  *
  * You should have received a copy of the GNU General Public License
- * along with RTAI; if not, write to the Free Software Foundation,
+ * along with this program; if not, write to the Free Software Foundation,
  * Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
  */
 
-
-#include "rtdm/internal.h"
+#include "internal.h"
 #include <rtdm/vfile.h>
 
-struct xnvfile_directory rtdm_vfroot;	/* /proc/rtai/rtdm */
+struct xnvfile_directory rtdm_vfroot;	/* /proc/RTDM/rtdm */
 
 struct vfile_device_data {
 	int h;
@@ -406,8 +403,7 @@ int __init rtdm_proc_init(void)
 	int ret;
 
 	/* Initialise vfiles */
-//	ret = xnvfile_init_root(); /proc/rtai is initted elsewhere
-	ret = xnvfile_init_dir("rtai/rtdm", &rtdm_vfroot, &nkvfroot);
+	ret = xnvfile_init_dir("rtdm", &rtdm_vfroot, &nkvfroot);
 	if (ret)
 		goto error;
 
@@ -441,5 +437,4 @@ void rtdm_proc_cleanup(void)
 	xnvfile_destroy_regular(&proto_vfile);
 	xnvfile_destroy_regular(&named_vfile);
 	xnvfile_destroy_dir(&rtdm_vfroot);
-//	xnvfile_destroy_root(); /proc/rtai is destroyed elsewhere
 }

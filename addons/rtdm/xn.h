@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2005-2010 Paolo Mantegazza <mantegazza@aero.polimi.it>
+ * Copyright (C) 2005-2017 Paolo Mantegazza <mantegazza@aero.polimi.it>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License as
@@ -31,36 +31,55 @@
 
 #include <rtai_schedcore.h>
 
-#define CONFIG_RTAI_OPT_PERVASIVE
+#define XNARCH_NR_IRQS              RTHAL_NR_IRQS
+#define CONFIG_XENO_OPT_RTDM_FILDES CONFIG_RTAI_RTDM_FD_MAX
+#define XNHEAP_DEV_NAME             "/dev/rtai_shm"
 
-#ifndef CONFIG_RTAI_DEBUG_RTDM
-#define CONFIG_RTAI_DEBUG_RTDM  0
+#define CONFIG_XENO_OPT_PERVASIVE
+
+#ifdef CONFIG_PROC_FS
+#define CONFIG_XENO_OPT_VFILE
 #endif
 
-#define RTAI_DEBUG(subsystem)   (CONFIG_RTAI_DEBUG_##subsystem > 0)
+#ifdef CONFIG_RTAI_RTDM_SELECT
+#define CONFIG_XENO_OPT_SELECT
+#define CONFIG_XENO_OPT_RTDM_SELECT
+#endif
 
-#define RTAI_ASSERT(subsystem, cond, action)  do { \
-    if (unlikely(CONFIG_RTAI_DEBUG_##subsystem > 0 && !(cond))) { \
+#ifdef CONFIG_RTAI_RTDM_SHIRQ
+#define CONFIG_XENO_OPT_SHIRQ 
+#endif
+
+#define CONFIG_XENO_DEBUG_RTDM_APPL 0
+#define CONFIG_XENO_DEBUG_RTDM      0
+
+#define XENO_DEBUG(subsystem)   (CONFIG_XENO_DEBUG_##subsystem > 0)
+
+#define XENO_ASSERT(subsystem, cond, action)  do { \
+    if (unlikely(CONFIG_XENO_DEBUG_##subsystem > 0 && !(cond))) { \
         xnlogerr("assertion failed at %s:%d (%s)\n", __FILE__, __LINE__, (#cond)); \
         action; \
     } \
 } while(0)
 
-#define RTAI_BUGON(subsystem, cond)  do { /*\
-	if (unlikely(CONFIG_RTAI_DEBUG_##subsystem > 0 && (cond))) \
+#define XENO_BUGON(subsystem, cond)  do { /*\
+	if (unlikely(CONFIG_XENO_DEBUG_##subsystem > 0 && (cond))) \
 		xnpod_fatal("bug at %s:%d (%s)", __FILE__, __LINE__, (#cond)); */ \
  } while(0)
 
-/* 
-  With what above we let some assertion diagnostic. Here below we keep knowledge
-  of specific assertions we care of.
- */
+#if LINUX_VERSION_CODE < KERNEL_VERSION(3,16,0)
+#define smp_mb__before_atomic()  smp_mb()
+#endif
+
+// with what above we let some assertion diagnostic, below we keep knowledge of
+// specific assertions we care of
 
 #define xnpod_root_p()          (!rtai_tskext(current, TSKEXT0) || !rtai_tskext_t(current, TSKEXT0)->is_hard)
 #define xnshadow_thread(t)      ((xnthread_t *)rtai_tskext(current, TSKEXT0))
 #define rthal_local_irq_test()  (!rtai_save_flags_irqbit())
 #define rthal_local_irq_enable  rtai_sti 
-#define rthal_domain rtai_domain
+#define rthal_domain            rtai_domain
+
 #define rthal_local_irq_disabled()                              \
 ({                                                              \
         unsigned long __flags, __ret;                           \
@@ -70,32 +89,12 @@
         __ret;                                                  \
 })
 
-#if LINUX_VERSION_CODE < KERNEL_VERSION(2,6,0)
-
-#define _MODULE_PARM_STRING_charp "s"
-#define compat_module_param_array(name, type, count, perm) \
-        static inline void *__check_existence_##name(void) { return &name; } \
-        MODULE_PARM(name, "1-" __MODULE_STRING(count) _MODULE_PARM_STRING_##type)
-
-typedef unsigned long phys_addr_t;
-
-#else
-
 #define compat_module_param_array(name, type, count, perm) \
         module_param_array(name, type, NULL, perm)
 
-#endif
-
-#if LINUX_VERSION_CODE < KERNEL_VERSION(2,6,24)
 #define trace_mark(ev, fmt, args...)  do { } while (0)
-#else
-#if LINUX_VERSION_CODE < KERNEL_VERSION(2,6,32)
-#include <linux/marker.h>
-#endif
-#define trace_mark(ev, fmt, args...)  do { } while (0)
-#endif
 
-//recursive smp locks, as for RTAI global lock stuff but with an own name
+// recursive smp locks, as for RTAI global lock stuff but with an own name
 
 #define nklock (*((xnlock_t *)rtai_cpu_lock))
 
@@ -128,8 +127,6 @@ typedef struct { struct global_lock lock[1]; } xnlock_t;
 
 static inline void xnlock_init(xnlock_t *lock)
 {
-//	lock->lock[0].mask = 0;
-//	lock->lock[0].lock = (arch_spinlock_t)__ARCH_SPIN_LOCK_UNLOCKED;
 	lock->lock[0] = (struct global_lock) { 0, __ARCH_SPIN_LOCK_UNLOCKED };
 }
 
@@ -216,108 +213,45 @@ static inline void xnlock_put_irqrestore(xnlock_t *lock, spl_t flags)
 
 // user space access (taken from Linux)
 
-#define __xn_access_ok(task, type, addr, size) \
-	(access_ok(type, addr, size))
+//#define __xn_access_ok(task, type, addr, size) (access_ok(type, addr, size))
+#define access_rok(addr, size)  access_ok(VERIFY_READ, (addr), (size))
+#define access_wok(addr, size)  access_ok(VERIFY_WRITE, (addr), (size))
 
-#if LINUX_VERSION_CODE < KERNEL_VERSION(2,6,0)
-#define __xn_copy_from_user(task, dstP, srcP, n) \
-	({ long err = __copy_from_user(dstP, srcP, n); err; })
-
-#define __xn_copy_to_user(task, dstP, srcP, n) \
-	({ long err = __copy_to_user(dstP, srcP, n); err; })
-#else
-#define __xn_copy_from_user(task, dstP, srcP, n) \
-	({ long err = __copy_from_user_inatomic(dstP, srcP, n); err; })
-
-#define __xn_copy_to_user(task, dstP, srcP, n) \
-	({ long err = __copy_to_user_inatomic(dstP, srcP, n); err; })
-#endif
+#define __xn_copy_from_user(dstP, srcP, n)      __copy_from_user_inatomic(dstP, srcP, n)
+#define __xn_copy_to_user(dstP, srcP, n)        __copy_to_user_inatomic(dstP, srcP, n)
+#define __xn_put_user(src, dstP)                __put_user(src, dstP)
+#define __xn_get_user(dst, srcP)                __get_user(dst, srcP)
 
 #if !defined CONFIG_M68K || defined CONFIG_MMU
-#define __xn_strncpy_from_user(task, dstP, srcP, n) \
+#define __xn_strncpy_from_user(dstP, srcP, n) \
 	({ long err = rt_strncpy_from_user(dstP, srcP, n); err; })
 /*	({ long err = __strncpy_from_user(dstP, srcP, n); err; }) */
 #else
-#define __xn_strncpy_from_user(task, dstP, srcP, n) \
+#define __xn_strncpy_from_user(dstP, srcP, n) \
 	({ long err = strncpy_from_user(dstP, srcP, n); err; })
 #endif /* CONFIG_M68K */
 
+
+#include <rtai_shm.h>
+
+#define __va_to_kva(adr)  UVIRT_TO_KVA(adr)
+
 static inline int xnarch_remap_io_page_range(struct file *filp, struct vm_area_struct *vma, unsigned long from, unsigned long to, unsigned long size, pgprot_t prot)
 {
-#if LINUX_VERSION_CODE < KERNEL_VERSION(2,6,0)
-
-	vma->vm_flags |= VM_RESERVED;
-	return remap_page_range(from, to, size, prot);
-
-#else /* LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,0) */
-
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,15)
-	return remap_pfn_range(vma, from, (to) >> PAGE_SHIFT, size, prot);
-#elif LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,10)
-	return remap_pfn_range(vma, from, (to) >> PAGE_SHIFT, size, prot);
-#else /* LINUX_VERSION_CODE < KERNEL_VERSION(2,6,10) */
-	vma->vm_flags |= VM_RESERVED;
-	return remap_page_range(vma, from, to, size, prot);
-#endif /* LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,15) */
-
-#endif /* LINUX_VERSION_CODE < KERNEL_VERSION(2,6,0) */
+	vma->vm_page_prot = pgprot_noncached(vma->vm_page_prot);
+	return remap_pfn_range(vma, from, to >> PAGE_SHIFT, size, pgprot_noncached(prot));
 }
-
-#define wrap_remap_kmem_page_range(vma,from,to,size,prot) ({ \
-    vma->vm_flags |= VM_RESERVED; \
-    remap_page_range(from,to,size,prot); \
-})
 
 static inline int xnarch_remap_kmem_page_range(struct vm_area_struct *vma, unsigned long from, unsigned long to, unsigned long size, pgprot_t prot)
 {
-#if LINUX_VERSION_CODE < KERNEL_VERSION(2,6,0)
-
-	vma->vm_flags |= VM_RESERVED;
-	return remap_page_range(from, to, size, prot);
-
-#else /* LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,0) */
-
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,15) && defined(CONFIG_MMU)
 	return remap_pfn_range(vma, from, to >> PAGE_SHIFT, size, prot);
-#elif LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,10)
-	return remap_pfn_range(vma, from, to >> PAGE_SHIFT, size, prot);
-#else /* LINUX_VERSION_CODE < KERNEL_VERSION(2,6,10) */
-	vma->vm_flags |= VM_RESERVED;
-	return remap_page_range(from, to, size, prot);
-#endif /* LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,15) */
-
-#endif /* LINUX_VERSION_CODE < KERNEL_VERSION(2,6,0) */
 }
-
-#include <rtai_shm.h>
-#define __va_to_kva(adr)  UVIRT_TO_KVA(adr)
 
 #ifdef CONFIG_MMU
 
 static inline int xnarch_remap_vm_page(struct vm_area_struct *vma, unsigned long from, unsigned long to)
 {
-#if LINUX_VERSION_CODE < KERNEL_VERSION(2,6,0)
-
-	vma->vm_flags |= VM_RESERVED;
-	return remap_page_range(from, virt_to_phys((void *)__va_to_kva(to)), PAGE_SIZE, PAGE_SHARED);
-
-#else /* LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,0) */
-
-#ifndef VM_RESERVED
-#define VM_RESERVED (VM_DONTEXPAND | VM_DONTDUMP)
-#endif
-
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,15) && defined(CONFIG_MMU)
-	vma->vm_flags |= VM_RESERVED;
 	return vm_insert_page(vma, from, vmalloc_to_page((void *)to));
-#elif LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,10)
-	return remap_pfn_range(vma, from, virt_to_phys((void *)__va_to_kva(to)) >> PAGE_SHIFT, PAGE_SHIFT, PAGE_SHARED);
-#else /* LINUX_VERSION_CODE < KERNEL_VERSION(2,6,10) */
-	vma->vm_flags |= VM_RESERVED;
-	return remap_page_range(from, virt_to_phys((void *)__va_to_kva(to)), PAGE_SIZE, PAGE_SHARED);
-#endif /* LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,15) */
-
-#endif /* LINUX_VERSION_CODE < KERNEL_VERSION(2,6,0) */
 }
 
 #endif
@@ -338,18 +272,6 @@ static inline int xnarch_remap_vm_page(struct vm_area_struct *vma, unsigned long
 
 #define XN_ISR_ATTACHED   0x10000
 
-#if !defined(CONFIG_PPC) && (LINUX_VERSION_CODE < KERNEL_VERSION(2,4,32) || (LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,0) && LINUX_VERSION_CODE < KERNEL_VERSION(2,6,14)))
-
-#define rthal_virtualize_irq(dom, irq, isr, cookie, ackfn, mode) \
-	ipipe_virtualize_irq(dom, irq, isr, ackfn, mode)
-
-#else
-
-#define rthal_virtualize_irq(dom, irq, isr, cookie, ackfn, mode) \
-	ipipe_virtualize_irq(dom, irq, isr, cookie, ackfn, mode)
-
-#endif
-
 struct xnintr;
 
 typedef int (*xnisr_t)(struct xnintr *intr);
@@ -362,20 +284,18 @@ typedef atomic_t atomic_counter_t;
 
 typedef RTIME xnticks_t;
 
-typedef struct xnstat_exectime {
-        xnticks_t start;
-        xnticks_t total;
-} xnstat_exectime_t;
+typedef struct xnstat_exectime { xnticks_t start; xnticks_t total; } xnstat_exectime_t;
 
-typedef struct xnstat_counter {
-        int counter;
-} xnstat_counter_t;
+typedef struct xnstat_counter { int counter; } xnstat_counter_t;
+
 #define xnstat_counter_inc(c)  ((c)->counter++)
 
+typedef cpumask_t xnarch_cpumask_t;
+
 typedef struct xnintr {
-#ifdef CONFIG_RTAI_RTDM_SHIRQ
+#ifdef CONFIG_XENO_OPT_SHIRQ
     struct xnintr *next;
-#endif /* CONFIG_RTAI_RTDM_SHIRQ */
+#endif /* CONFIG_XENO_OPT_SHIRQ */
     unsigned unhandled;
     xnisr_t isr;
     void *cookie;
@@ -388,7 +308,6 @@ typedef struct xnintr {
 	xnstat_exectime_t account;
 	xnstat_exectime_t sum;
     } stat[RTAI_NR_CPUS];
-
 } xnintr_t;
 
 #define xnsched_cpu(sched)  rtai_cpuid()
@@ -431,7 +350,6 @@ int xnintr_disable (xnintr_t *intr);
 	rt_release_irq(irq);
 
 extern struct rtai_realtime_irq_s rtai_realtime_irq[];
-//#define xnarch_get_irq_cookie(irq)  (rtai_realtime_irq[irq].cookie)
 #define xnarch_get_irq_cookie(irq)  (rtai_domain.irqs[irq].cookie)
 
 extern unsigned long IsolCpusMask;
@@ -440,23 +358,27 @@ extern unsigned long IsolCpusMask;
 
 // support for RTDM timers
 
+#define RTDM_TIMER_NAMELEN 32
 struct rtdm_timer_struct {
         struct rtdm_timer_struct *next, *prev;
         int priority, cpuid;
         RTIME firing_time, period;
         void (*handler)(unsigned long);
         unsigned long data;
+	char name[RTDM_TIMER_NAMELEN];
 #ifdef  CONFIG_RTAI_LONG_TIMED_LIST
         rb_root_t rbr;
         rb_node_t rbn;
 #endif
 };
 
-RTAI_SYSCALL_MODE void rt_timer_remove(struct rtdm_timer_struct *timer);
+struct xntbase;
+
+typedef struct rtdm_timer_struct xntimer_t;
 
 RTAI_SYSCALL_MODE int rt_timer_insert(struct rtdm_timer_struct *timer, int priority, RTIME firing_time, RTIME period, void (*handler)(unsigned long), unsigned long data);
 
-typedef struct rtdm_timer_struct xntimer_t;
+RTAI_SYSCALL_MODE void rt_timer_remove(struct rtdm_timer_struct *timer);
 
 #define XN_INFINITE  (0)
 
@@ -467,9 +389,10 @@ typedef enum xntmode {
         XN_REALTIME
 } xntmode_t;
 
-#define xntbase_ns2ticks(rtdm_tbase, expiry)  nano2count(expiry)
+#define xntbase_ns2ticks(base, t)      nano2count(t)
+#define xntbase_ns2ticks_ceil(base, t) ({ t; })
 
-static inline void xntimer_init(xntimer_t *timer, void (*handler)(xntimer_t *))
+static inline void xntimer_init(xntimer_t *timer, struct xntbase *base, void (*handler)(xntimer_t *))
 {
         memset(timer, 0, sizeof(struct rtdm_timer_struct));
         timer->handler = (void *)handler;
@@ -477,19 +400,33 @@ static inline void xntimer_init(xntimer_t *timer, void (*handler)(xntimer_t *))
 	timer->next    =  timer->prev = timer;
 }
 
-#define xntimer_set_name(timer, name)
+static inline void xntimer_set_name(xntimer_t *timer, const char *name)
+{
+	if (name != NULL) {
+		strncpy(timer->name, name, sizeof(timer->name));
+	}
+}
+
+
+extern struct epoch_struct boot_epoch;
 
 static inline int xntimer_start(xntimer_t *timer, xnticks_t value, xnticks_t interval, int mode)
 {
-	return rt_timer_insert(timer, 0, value, interval, timer->handler, (unsigned long)timer);
+	if (mode == XN_RELATIVE) {
+		value += rt_get_time_ns();
+	}
+	if (mode == XN_REALTIME) {
+		value += boot_epoch.time[boot_epoch.touse][0];
+	}
+	return rt_timer_insert(timer, 0, nano2count(value), nano2count(interval), timer->handler, (unsigned long)timer);
 }
 
-static inline void xntimer_destroy(xntimer_t *timer)
+static inline void xntimer_stop(xntimer_t *timer)
 {
         rt_timer_remove(timer);
 }
 
-static inline void xntimer_stop(xntimer_t *timer)
+static inline void xntimer_destroy(xntimer_t *timer)
 {
         rt_timer_remove(timer);
 }
@@ -508,10 +445,7 @@ long uld, unsigned long *r)
 
 // support for RTDM select
 
-typedef struct xnholder {
-	struct xnholder *next;
-	struct xnholder *prev;
-} xnholder_t;
+typedef struct xnholder { struct xnholder *next; struct xnholder *prev; } xnholder_t;
 
 typedef xnholder_t xnqueue_t;
 
@@ -569,6 +503,7 @@ static inline int emptyq_p(xnqueue_t *queue)
 #define xnthread_t            RT_TASK
 #define xnpod_current_thread  _rt_whoami
 #define xnthread_test_info    rt_task_test_taskq_retval
+#define xnthread_test_state(task, flags) ({ !task->magic; }) // attenzione, vale solo per XNZOMBIE 
 
 #define xnsynch_t                   TASKQ
 #define xnsynch_init(s, f, p)       rt_taskq_init(s, f)
@@ -580,10 +515,21 @@ static inline void xnsynch_sleep_on(void *synch, xnticks_t timeout, xntmode_t ti
 	if (timeout == XN_INFINITE) {
 		rt_taskq_wait(synch);
 	} else {
-		rt_taskq_wait_until(synch, timeout_mode == XN_RELATIVE ? rt_get_time() + timeout : timeout);
+		timeout = nano2count(timeout);
+		if (timeout_mode == XN_RELATIVE) {
+			timeout += rtai_rdtsc();
+		} else if (timeout_mode == XN_REALTIME) {
+			timeout -= boot_epoch.time[boot_epoch.touse][0];
+		}
+		rt_taskq_wait_until(synch, timeout);
 	}
 }
+#define xnsynch_test_flags(synchp, flags)   ((synchp)->status & (flags))
+#define xnsynch_set_flags(synchp, flags)    ((synchp)->status |= flags)
+#define xnsynch_clear_flags(synchp, flags)  ((synchp)->status &= ~(flags))
 
+#define XNSYNCH_SPARE0  0x01000000
+#define XNSYNCH_SPARE1  0x02000000
 #define XNSYNCH_NOPIP    0
 #define XNSYNCH_PRIO     TASKQ_PRIO
 #define XNSYNCH_FIFO     TASKQ_FIFO
@@ -601,58 +547,160 @@ static inline void xnsynch_sleep_on(void *synch, xnticks_t timeout, xntmode_t ti
 #define rthal_apc_schedule(apc) \
 	rt_pend_linux_srq((apc))
 
-#ifdef CONFIG_RTAI_RTDM_SELECT
-
-#define SELECT_SIGNAL(select_block, state) \
-do { \
-	spl_t flags; \
-        xnlock_get_irqsave(&nklock, flags); \
-        if (xnselect_signal(select_block, state) && state) { \
-                xnpod_schedule(); \
-	} \
-	xnlock_put_irqrestore(&nklock, flags); \
-} while (0)
-
-#else
-
-#define SELECT_SIGNAL(select_block, state)  do { } while (0)
-
-#endif
-
-#if LINUX_VERSION_CODE < KERNEL_VERSION(2,6,0)
-
-#define __WORK_INITIALIZER(n,f,d) {                             \
-        .list   = { &(n).list, &(n).list },                     \
-        .sync = 0,                                              \
-        .routine = (f),                                         \
-        .data = (d),                                            \
-}
-
-#define DECLARE_WORK(n,f,d)             struct tq_struct n = __WORK_INITIALIZER(n, f, d)
-#define DECLARE_WORK_NODATA(n, f)       DECLARE_WORK(n, f, NULL)
-#define DECLARE_WORK_FUNC(f)            void f(void *cookie)
-#define DECLARE_DELAYED_WORK_NODATA(n, f) DECLARE_WORK(n, f, NULL)
-
-#define schedule_delayed_work(work, delay) do {                 \
-	if (delay) {                                            \
-		set_current_state(TASK_UNINTERRUPTIBLE);        \
-		schedule_timeout(delay);                        \
-	}                                                       \
-	schedule_task(work);                                    \
-} while (0)
-
-#else
-
-#if LINUX_VERSION_CODE < KERNEL_VERSION(2,6,20)
-#define DECLARE_WORK_NODATA(f, n)       DECLARE_WORK(f, n, NULL)
-#define DECLARE_WORK_FUNC(f)            void f(void *cookie)
-#define DECLARE_DELAYED_WORK_NODATA(n, f) DECLARE_DELAYED_WORK(n, f, NULL)
-#else /* >= 2.6.20 */
 #define DECLARE_WORK_NODATA(f, n)       DECLARE_WORK(f, n)
 #define DECLARE_WORK_FUNC(f)            void f(struct work_struct *work)
 #define DECLARE_DELAYED_WORK_NODATA(n, f) DECLARE_DELAYED_WORK(n, f)
-#endif /* >= 2.6.20 */
 
+// +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
+#if LINUX_VERSION_CODE < KERNEL_VERSION(3,19,0)
+#define user_msghdr msghdr
 #endif
+
+typedef struct xntbase { } xntbase_t;
+
+typedef struct xnshadow_ppd_t { } xnshadow_ppd_t;
+
+/* Call with nklock locked irqs off. */
+static inline xnshadow_ppd_t *xnshadow_ppd_get(unsigned muxid)
+{
+        return NULL;
+}
+
+typedef long long xnsticks_t;
+
+#define xnarch_get_cpu_tsc rtai_rdtsc
+
+static inline xnticks_t xntbase_get_jiffies(xntbase_t *base)
+{
+        return rt_get_time_ns();
+}
+
+#define xnarch_ns_to_tsc nano2count 
+
+#define xnpod_active_p() (1)
+
+#ifdef CONFIG_XENO_OPT_VFILE
+#define wrap_f_inode(file)	((file)->f_path.dentry->d_inode)
+#define wrap_proc_dir_entry_owner(entry) do { (void)entry; } while(0)
+#endif
+
+typedef cpumask_t xnarch_cpumask_t;
+
+#ifdef CONFIG_SMP
+#define xnarch_cpu_online_map (*cpu_online_mask)
+#else
+#define xnarch_cpu_online_map cpumask_of_cpu(0)
+#endif
+#define xnarch_cpu_set(cpu, mask)          cpu_set(cpu, (mask))
+#define xnarch_cpu_clear(cpu, mask)        cpu_clear(cpu, (mask))
+#define xnarch_cpu_isset(cpu, mask)        cpu_isset(cpu, (mask))
+#define xnarch_cpu_test_and_set(cpu, mask) cpu_test_and_set(cpu, (mask))
+
+#define XNKCOUT         0x80000000      /*!< Sched callout context */
+#define XNINTCK         0x40000000      /*!< In master tick handler context */
+#define XNINSW          0x20000000      /*!< In context switch */
+#define XNRESCHED       0x10000000      /*!< Needs rescheduling */
+
+#define XNHTICK         0x00008000      /*!< Host tick pending  */
+#define XNINIRQ         0x00004000      /*!< In IRQ handling context */
+#define XNHDEFER        0x00002000      /*!< Host tick deferred */
+#define XNINLOCK        0x00001000      /*!< Scheduler locked */
+
+typedef struct xnsched xnsched_t;
+
+#define rthal_irq_ackfn_t ipipe_irq_ackfn_t
+
+#define xntbase_ticks2ns(a, b) rt_get_time_ns()
+
+#define RTHAL_SPIN_LOCK_UNLOCKED SPIN_LOCK_UNLOCKED
+
+#define rthal_spinlock_t spinlock_t
+
+#define rthal_spin_lock_init spin_lock_init
+
+#define rthal_spin_lock   rt_spin_lock
+#define rthal_spin_unlock rt_spin_unlock
+
+#define rthal_spin_lock_irqsave(lock, context) \
+	do {  context = rt_spin_lock_irqsave(lock); } while (0)
+
+#define rthal_local_irq_save rtai_save_flags_and_cli
+#define rthal_local_irq_restore rtai_restore_flags
+
+#define __xnpod_lock_sched   rt_sched_lock 
+#define __xnpod_unlock_sched rt_sched_unlock 
+
+int ipipe_virtualize_irq(void *, unsigned int, void *, void *, void *, unsigned int);
+void ipipe_trigger_irq(unsigned int);
+
+#define rthal_alloc_virq     ipipe_alloc_virq
+#define rthal_virtualize_irq ipipe_virtualize_irq
+#define rthal_free_virq      ipipe_free_virq
+#define rthal_trigger_irq    ipipe_trigger_irq //hal_pend_uncond(irq, rtai_cpuid())
+
+#define rthal_root_domain hal_root_domain
+
+//#define rthal_trigger_irq(irq) hal_pend_uncond(irq, rtai_cpuid())
+
+#define xnpod_asynch_p()      ({ 0; })
+#define xnpod_unblockable_p() ({ 0; })
+#define xnpod_unblockable_p() ({ 0; })
+
+#define rthal_current_domain ipipe_current_domain
+
+#define XNDELAY   0x00000004
+static inline void xnpod_suspend_thread(xnthread_t *thread, xnflags_t mask, xnticks_t timeout, xntmode_t timeout_mode, xnsynch_t *wchan)
+{
+	xnticks_t now = rtai_rdtsc();
+        unsigned long flags;
+	
+	if (timeout == XN_INFINITE) {
+		thread->retval = rt_task_suspend(thread) == RTE_UNBLKD ? XNBREAK : 0;
+		return;
+	}
+	timeout = nano2count(timeout);
+	if (timeout_mode == XN_RELATIVE) {
+		timeout += rtai_rdtsc();
+	} else if (timeout_mode == XN_REALTIME) {
+		timeout -= boot_epoch.time[boot_epoch.touse][0];
+	}
+
+        flags = rt_global_save_flags_and_cli();
+	if ((thread->resume_time = timeout) > now) {
+		void *blocked_on;
+		thread->blocked_on = NULL;
+		thread->state |= RT_SCHED_DELAYED;
+                rem_ready_current(thread);
+		enq_timed_task(thread);
+		rt_schedule();
+                blocked_on = thread->blocked_on;
+                rt_global_restore_flags(flags);
+                thread->retval = likely(!blocked_on) ? 0 : XNBREAK;
+        	return;
+        }
+        rt_global_restore_flags(flags);
+	thread->retval = XNTIMEO;
+        return;
+}
+
+static inline int xnpod_wait_thread_period(unsigned long *overruns)
+{
+        if (_rt_whoami()->period <= 0) {
+                return -EWOULDBLOCK;
+        }
+        if (!rt_task_wait_period()) {
+        	if (overruns) {
+			overruns = 0;
+		}
+                return 0;
+        }
+        if (_rt_whoami()->unblocked) {
+                return -EINTR;
+        }
+        return rt_sched_timed ? -ETIMEDOUT : -EIDRM;
+}
+
+#define xnthread_time_base(a) ({ rtdm_tbase; })
 
 #endif /* !_RTAI_XNSTUFF_H */

@@ -2,20 +2,18 @@
  * Copyright (C) 2005-2007 Jan Kiszka <jan.kiszka@web.de>.
  * Copyright (C) 2005 Joerg Langenberg <joerg.langenberg@gmx.net>.
  *
- * with adaptions for RTAI by Paolo Mantegazza <mantegazza@aero.polimi.it>
- *
- * RTAI is free software; you can redistribute it and/or modify it
- * under the terms of the GNU General Public License as published by
+ * This prorgram is free software; you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation; either version 2 of the License, or
  * (at your option) any later version.
  *
- * RTAI is distributed in the hope that it will be useful, but
+ * This program is distributed in the hope that it will be useful, but
  * WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
  * General Public License for more details.
  *
  * You should have received a copy of the GNU General Public License
- * along with RTAI; if not, write to the Free Software Foundation,
+ * along with ithis program; if not, write to the Free Software Foundation,
  * Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
  */
 
@@ -23,14 +21,16 @@
 #define _RTDM_INTERNAL_H
 
 #include <linux/list.h>
-#include <linux/proc_fs.h>
 #include <linux/sem.h>
 
-
-
+#include <rtdm/xn.h>
 #include <rtdm/rtdm_driver.h>
 
-#define RTDM_FD_MAX			CONFIG_RTAI_RTDM_FD_MAX
+#ifndef CONFIG_XENO_OPT_DEBUG_RTDM_APPL
+#define CONFIG_XENO_OPT_DEBUG_RTDM_APPL	0
+#endif
+
+#define RTDM_FD_MAX			CONFIG_XENO_OPT_RTDM_FILDES
 
 #define DEF_DEVNAME_HASHTAB_SIZE	256	/* entries in name hash table */
 #define DEF_PROTO_HASHTAB_SIZE		256	/* entries in protocol hash table */
@@ -40,12 +40,12 @@ struct rtdm_fildes {
 };
 
 struct rtdm_process {
-#ifdef CONFIG_PROC_FS
+#ifdef CONFIG_XENO_OPT_VFILE
 	char name[32];
 	pid_t pid;
-#endif /* CONFIG_PROC_FS */
+#endif /* CONFIG_XENO_OPT_VFILE */
 
-
+	xnshadow_ppd_t ppd;
 };
 
 DECLARE_EXTERN_XNLOCK(rt_fildes_lock);
@@ -79,8 +79,8 @@ static inline void rtdm_dereference_device(struct rtdm_device *device)
 int __init rtdm_dev_init(void);
 void rtdm_dev_cleanup(void);
 
-#ifdef CONFIG_PROC_FS
-int __init rtdm_proc_init(void);
+#ifdef CONFIG_XENO_OPT_VFILE
+int rtdm_proc_init(void);
 void rtdm_proc_cleanup(void);
 int rtdm_proc_register_device(struct rtdm_device *device);
 void rtdm_proc_unregister_device(struct rtdm_device *device);

@@ -1,24 +1,22 @@
 /**
  * @file
- * Real-Time Driver Model for RTAI, device operation multiplexing
+ * Real-Time Driver Model, device operation multiplexing.
  *
  * @note Copyright (C) 2005 Jan Kiszka <jan.kiszka@web.de>
  * @note Copyright (C) 2005 Joerg Langenberg <joerg.langenberg@gmx.net>
  *
- * with adaptions for RTAI by Paolo Mantegazza <mantegazza@aero.polimi.it>
- *
- * RTAI is free software; you can redistribute it and/or modify it
- * under the terms of the GNU General Public License as published by
+ * This program is free software; you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation; either version 2 of the License, or
  * (at your option) any later version.
  *
- * RTAI is distributed in the hope that it will be useful, but
+ * This program is distributed in the hope that it will be useful, but
  * WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
  * General Public License for more details.
  *
  * You should have received a copy of the GNU General Public License
- * along with RTAI; if not, write to the Free Software Foundation,
+ * along with this program; if not, write to the Free Software Foundation,
  * Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
  */
 
@@ -28,14 +26,7 @@
  * @{
  */
 
-#include <linux/delay.h>
-
-
-
-
-
-
-#include "rtdm/internal.h"
+#include "internal.h"
 
 #define CLOSURE_RETRY_PERIOD_MS	100
 
@@ -49,6 +40,9 @@ int open_fildes;	/* number of used descriptors */
 static DECLARE_WORK_FUNC(close_callback);
 static DECLARE_DELAYED_WORK_NODATA(close_work, close_callback);
 static LIST_HEAD(cleanup_queue);
+
+xntbase_t *rtdm_tbase;
+EXPORT_SYMBOL_GPL(rtdm_tbase);
 
 DEFINE_XNLOCK(rt_fildes_lock);
 
@@ -96,7 +90,7 @@ struct rtdm_dev_context *rtdm_context_get(int fd)
 	return context;
 }
 
-EXPORT_SYMBOL(rtdm_context_get);
+EXPORT_SYMBOL_GPL(rtdm_context_get);
 
 static int create_instance(struct rtdm_device *device,
 			   struct rtdm_dev_context **context_ptr,
@@ -104,11 +98,11 @@ static int create_instance(struct rtdm_device *device,
 			   rtdm_user_info_t *user_info, int nrt_mem)
 {
 	struct rtdm_dev_context *context;
-
+	xnshadow_ppd_t *ppd = NULL;
 	int fd;
 	spl_t s;
 
-	/* 
+	/*
 	 * Reset to NULL so that we can always use cleanup_files/instance to
 	 * revert also partially successful allocations.
 	 */
@@ -159,15 +153,17 @@ static int create_instance(struct rtdm_device *device,
 
 	context->fd = fd;
 	context->ops = &device->ops;
-	atomic_set(&context->close_lock_count, 0);
+	atomic_set(&context->close_lock_count, 1);
 
+#ifdef CONFIG_XENO_OPT_PERVASIVE
+	xnlock_get_irqsave(&nklock, s);
+	ppd = xnshadow_ppd_get(__rtdm_muxid);
+	xnlock_put_irqrestore(&nklock, s);
+#endif /* CONFIG_XENO_OPT_PERVASIVE */
 
-
-
-
-	context->reserved.owner = NULL;
-
-
+	context->reserved.owner =
+	    ppd ? container_of(ppd, struct rtdm_process, ppd) : NULL;
+	INIT_LIST_HEAD(&context->reserved.cleanup);
 
 	return 0;
 }
@@ -290,7 +286,7 @@ int __rt_dev_open(rtdm_user_info_t *user_info, const char *path, int oflag)
 		ret = device->open_rt(context, user_info, oflag);
 	}
 
-	RTAI_ASSERT(RTDM, !rthal_local_irq_disabled(),
+	XENO_ASSERT(RTDM, !rthal_local_irq_disabled(),
 		    rthal_local_irq_enable(););
 
 	if (unlikely(ret < 0))
@@ -311,7 +307,7 @@ err_out:
 	return ret;
 }
 
-EXPORT_SYMBOL(__rt_dev_open);
+EXPORT_SYMBOL_GPL(__rt_dev_open);
 
 int __rt_dev_socket(rtdm_user_info_t *user_info, int protocol_family,
 		    int socket_type, int protocol)
@@ -342,7 +338,7 @@ int __rt_dev_socket(rtdm_user_info_t *user_info, int protocol_family,
 		ret = device->socket_rt(context, user_info, protocol);
 	}
 
-	RTAI_ASSERT(RTDM, !rthal_local_irq_disabled(),
+	XENO_ASSERT(RTDM, !rthal_local_irq_disabled(),
 		    rthal_local_irq_enable(););
 
 	if (unlikely(ret < 0))
@@ -363,7 +359,7 @@ err_out:
 	return ret;
 }
 
-EXPORT_SYMBOL(__rt_dev_socket);
+EXPORT_SYMBOL_GPL(__rt_dev_socket);
 
 int __rt_dev_close(rtdm_user_info_t *user_info, int fd)
 {
@@ -408,7 +404,7 @@ int __rt_dev_close(rtdm_user_info_t *user_info, int fd)
 	else
 		ret = context->ops->close_rt(context, user_info);
 
-	RTAI_ASSERT(RTDM, !rthal_local_irq_disabled(),
+	XENO_ASSERT(RTDM, !rthal_local_irq_disabled(),
 		    rthal_local_irq_enable(););
 
 	xnlock_get_irqsave(&rt_fildes_lock, s);
@@ -443,7 +439,7 @@ err_out:
 	return ret;
 }
 
-EXPORT_SYMBOL(__rt_dev_close);
+EXPORT_SYMBOL_GPL(__rt_dev_close);
 
 void cleanup_owned_contexts(void *owner)
 {
@@ -462,12 +458,12 @@ void cleanup_owned_contexts(void *owner)
 		xnlock_put_irqrestore(&rt_fildes_lock, s);
 
 		if (context) {
-			if (RTAI_DEBUG(RTDM))
+			if (XENO_DEBUG(RTDM_APPL))
 				xnprintf("RTDM: closing file descriptor %d.\n",
 					 fd);
 
 			ret = __rt_dev_close(NULL, fd);
-			RTAI_ASSERT(RTDM, ret == 0 || ret == -EBADF,
+			XENO_ASSERT(RTDM, ret == 0 || ret == -EBADF,
 				    /* only warn here */;);
 		}
 	}
@@ -491,7 +487,7 @@ do {									\
 	else								\
 		ret = ops->operation##_nrt(context, user_info, args);	\
 									\
-	RTAI_ASSERT(RTDM, !rthal_local_irq_disabled(), 			\
+	XENO_ASSERT(RTDM, !rthal_local_irq_disabled(),			\
 		    rthal_local_irq_enable();)
 
 #define MAJOR_FUNCTION_WRAPPER_BH()					\
@@ -538,7 +534,7 @@ int __rt_dev_ioctl(rtdm_user_info_t *user_info, int fd, int request, ...)
 	MAJOR_FUNCTION_WRAPPER_BH();
 }
 
-EXPORT_SYMBOL(__rt_dev_ioctl);
+EXPORT_SYMBOL_GPL(__rt_dev_ioctl);
 
 ssize_t __rt_dev_read(rtdm_user_info_t *user_info, int fd, void *buf,
 		      size_t nbyte)
@@ -548,7 +544,7 @@ ssize_t __rt_dev_read(rtdm_user_info_t *user_info, int fd, void *buf,
 	MAJOR_FUNCTION_WRAPPER(read, buf, nbyte);
 }
 
-EXPORT_SYMBOL(__rt_dev_read);
+EXPORT_SYMBOL_GPL(__rt_dev_read);
 
 ssize_t __rt_dev_write(rtdm_user_info_t *user_info, int fd, const void *buf,
 		       size_t nbyte)
@@ -558,10 +554,10 @@ ssize_t __rt_dev_write(rtdm_user_info_t *user_info, int fd, const void *buf,
 	MAJOR_FUNCTION_WRAPPER(write, buf, nbyte);
 }
 
-EXPORT_SYMBOL(__rt_dev_write);
+EXPORT_SYMBOL_GPL(__rt_dev_write);
 
 ssize_t __rt_dev_recvmsg(rtdm_user_info_t *user_info, int fd,
-			 struct msghdr *msg, int flags)
+			 struct user_msghdr *msg, int flags)
 {
 	trace_mark(xn_rtdm, recvmsg, "user_info %p fd %d msg_name %p "
 		   "msg_namelen %u msg_iov %p msg_iovlen %zu "
@@ -572,10 +568,10 @@ ssize_t __rt_dev_recvmsg(rtdm_user_info_t *user_info, int fd,
 	MAJOR_FUNCTION_WRAPPER(recvmsg, msg, flags);
 }
 
-EXPORT_SYMBOL(__rt_dev_recvmsg);
+EXPORT_SYMBOL_GPL(__rt_dev_recvmsg);
 
 ssize_t __rt_dev_sendmsg(rtdm_user_info_t *user_info, int fd,
-			 const struct msghdr *msg, int flags)
+			 const struct user_msghdr *msg, int flags)
 {
 	trace_mark(xn_rtdm, sendmsg, "user_info %p fd %d msg_name %p "
 		   "msg_namelen %u msg_iov %p msg_iovlen %zu "
@@ -586,7 +582,7 @@ ssize_t __rt_dev_sendmsg(rtdm_user_info_t *user_info, int fd,
 	MAJOR_FUNCTION_WRAPPER(sendmsg, msg, flags);
 }
 
-EXPORT_SYMBOL(__rt_dev_sendmsg);
+EXPORT_SYMBOL_GPL(__rt_dev_sendmsg);
 
 /**
  * @brief Bind a selector to specified event types of a given file descriptor
@@ -634,7 +630,7 @@ int rtdm_select_bind(int fd, rtdm_selector_t *selector,
 
 	ret = ops->select_bind(context, selector, type, fd_index);
 
-	RTAI_ASSERT(RTDM, !rthal_local_irq_disabled(),
+	XENO_ASSERT(RTDM, !rthal_local_irq_disabled(),
 		    rthal_local_irq_enable(););
 
 	rtdm_context_unlock(context);
@@ -643,7 +639,7 @@ int rtdm_select_bind(int fd, rtdm_selector_t *selector,
 	return ret;
 }
 
-EXPORT_SYMBOL(rtdm_select_bind);
+EXPORT_SYMBOL_GPL(rtdm_select_bind);
 
 #ifdef DOXYGEN_CPP /* Only used for doxygen doc generation */
 
@@ -803,7 +799,7 @@ ssize_t rtdm_write(int fd, const void *buf, size_t nbyte);
  *
  * Rescheduling: possible.
  */
-ssize_t rtdm_recvmsg(int fd, struct msghdr *msg, int flags);
+ssize_t rtdm_recvmsg(int fd, struct user_msghdr *msg, int flags);
 
 /**
  * @brief Receive message from socket
@@ -843,7 +839,7 @@ ssize_t rtdm_recv(int fd, void *buf, size_t len, int flags);
  *
  * Rescheduling: possible.
  */
-ssize_t rtdm_sendmsg(int fd, const struct msghdr *msg, int flags);
+ssize_t rtdm_sendmsg(int fd, const struct user_msghdr *msg, int flags);
 
 /**
  * @brief Transmit message to socket
@@ -1141,7 +1137,7 @@ ssize_t rt_dev_write(int fd, const void *buf, size_t nbyte);
  * @see @c recvmsg() in IEEE Std 1003.1,
  * http://www.opengroup.org/onlinepubs/009695399
  */
-ssize_t rt_dev_recvmsg(int fd, struct msghdr *msg, int flags);
+ssize_t rt_dev_recvmsg(int fd, struct user_msghdr *msg, int flags);
 
 /**
  * @brief Receive message from socket
@@ -1206,7 +1202,7 @@ ssize_t rt_dev_recv(int fd, void *buf, size_t len, int flags);
  * @see @c sendmsg() in IEEE Std 1003.1,
  * http://www.opengroup.org/onlinepubs/009695399
  */
-ssize_t rt_dev_sendmsg(int fd, const struct msghdr *msg, int flags);
+ssize_t rt_dev_sendmsg(int fd, const struct user_msghdr *msg, int flags);
 
 /**
  * @brief Transmit message to socket
@@ -1522,6 +1518,6 @@ int __rt_dev_select(int nfds, fd_set *rfds, fd_set *wfds, fd_set *efds, nanosecs
 	return ret;
 }
 
-EXPORT_SYMBOL(__rt_dev_select);
+EXPORT_SYMBOL_GPL(__rt_dev_select);
 
 #endif

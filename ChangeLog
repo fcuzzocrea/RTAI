@@ -1,6 +1,11 @@
+2017-04-21 Paolo Mantegazza <mantegazza@aero.polimi.it>
+
+	* addons/rtdm/rtai_taskq.c: anticipate a null task pointer check in
+	  the while loop termination test of rt_taskq_ready_all.
+
 2017-04-20 Paolo Mantegazza <mantegazza@aero.polimi.it>
 
-	* iaddons/rtdm/all files: extensively revised and updated.
+	* addons/rtdm/all files: extensively revised and updated.
 
 2017-04-18 Paolo Mantegazza <mantegazza@aero.polimi.it>
 

@@ -67,7 +67,6 @@ static int xnselect_apc;
  *
  * @param select_block pointer to the xnselect structure to be initialized
  */
-struct xnselect;
 void xnselect_init(struct xnselect *select_block)
 {
 	initq(&select_block->bindings);

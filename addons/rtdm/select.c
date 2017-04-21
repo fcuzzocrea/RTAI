@@ -51,6 +51,8 @@
 
 #include <rtdm/select.h>
 
+#ifdef CONFIG_RTAI_RTDM_SELECT
+
 static xnqueue_t xnselectors;
 static int xnselect_apc;
 
@@ -65,6 +67,7 @@ static int xnselect_apc;
  *
  * @param select_block pointer to the xnselect structure to be initialized
  */
+struct xnselect;
 void xnselect_init(struct xnselect *select_block)
 {
 	initq(&select_block->bindings);
@@ -456,5 +459,7 @@ int xnselect_umount(void)
 	rthal_apc_free(xnselect_apc);
 	return 0;
 }
+
+#endif /* CONFIG_RTAI_RTDM_SELECT */
 
 /*@}*/

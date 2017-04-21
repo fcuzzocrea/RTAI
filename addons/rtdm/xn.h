@@ -290,8 +290,6 @@ typedef struct xnstat_counter { int counter; } xnstat_counter_t;
 
 #define xnstat_counter_inc(c)  ((c)->counter++)
 
-typedef cpumask_t xnarch_cpumask_t;
-
 typedef struct xnintr {
 #ifdef CONFIG_XENO_OPT_SHIRQ
     struct xnintr *next;

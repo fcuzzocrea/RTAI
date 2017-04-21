@@ -86,16 +86,14 @@ int rt_taskq_ready_all(TASKQ *taskq, unsigned long why)
 	tosched = 0;
 	q = &(taskq->queue);
 	flags = rt_global_save_flags_and_cli();
-	while ((q = q->next) != &(taskq->queue)) {
-		if ((task = q->task)) {
-			dequeue_blocked(task = q->task);
-			rem_timed_task(task);
-			task->retval = why;
-			if (task->state != RT_SCHED_READY && (task->state &= ~(RT_SCHED_TASKQ | RT_SCHED_DELAYED)) == RT_SCHED_READY) {
-				enq_ready_task(task);
-				TOSCHED_TASK(task);
-				tosched = 1;
-			}
+	while ((q = q->next) != &(taskq->queue) && (task = q->task)) {
+		dequeue_blocked(task = q->task);
+		rem_timed_task(task);
+		task->retval = why;
+		if (task->state != RT_SCHED_READY && (task->state &= ~(RT_SCHED_TASKQ | RT_SCHED_DELAYED)) == RT_SCHED_READY) {
+			enq_ready_task(task);
+			TOSCHED_TASK(task);
+			tosched = 1;
 		}
 		rt_global_restore_flags(flags);
 		flags = rt_global_save_flags_and_cli();

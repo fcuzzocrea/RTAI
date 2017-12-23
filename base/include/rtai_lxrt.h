@@ -19,8 +19,8 @@
  * Lesser General Public License for more details.
 
  * You should have received a copy of the GNU Lesser General Public
- * License along with this library; if not, write to the Free Software
- * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA.
+ * License along with this library; if not, see <http://www.gnu.org/licenses/>.
+ * 
  *
  * ACKNOWLEDGMENTS:
  * Pierre Cloutier (pcloutier@poseidoncontrols.com) has suggested the 6 
@@ -392,7 +392,7 @@
 #define LXRT_MBX_DELETE		1007
 #define MAKE_SOFT_RT		1008
 #define MAKE_HARD_RT		1009
-#define PRINT_TO_SCREEN		1010
+#define PRINT_TO_SCREEN		1010 // free, can be reused
 #define NONROOT_HRT		1011
 #define RT_BUDDY		1012
 #define HRT_USE_FPU     	1013
@@ -1189,10 +1189,8 @@ RTAI_PROTO(int,rt_linux_use_fpu,(int use_fpu_flag))
 
 RTAI_PROTO(int, rt_task_get_info, (RT_TASK *task, RT_TASK_INFO *task_info))
 {
-	RT_TASK_INFO ltask_info;
-	struct { RT_TASK *task; RT_TASK_INFO *taskinfo; } arg = { task, &ltask_info };
+	struct { RT_TASK *task; RT_TASK_INFO *taskinfo; } arg = { task, task_info };
 	if (task_info && !rtai_lxrt(BIDX, SIZARG, GET_TASK_INFO, &arg).i[LOW]) {
-		*task_info = ltask_info;
 		return 0;
 	}
 	return -EINVAL;
@@ -1484,10 +1482,8 @@ RTAI_PROTO(int, rt_task_masked_unblock, (RT_TASK *task, unsigned long mask))
 
 RTAI_PROTO(void, rt_get_exectime, (RT_TASK *task, RTIME *exectime))
 {
-	RTIME lexectime[] = { 0LL, 0LL, 0LL };
-	struct { RT_TASK *task; RTIME *lexectime; } arg = { task, lexectime };
+	struct { RT_TASK *task; RTIME *exectime; } arg = { task, exectime };
 	rtai_lxrt(BIDX, SIZARG, GET_EXECTIME, &arg);
-	memcpy(exectime, lexectime, sizeof(lexectime));
 }
 
 RTAI_PROTO(void, rt_gettimeorig, (RTIME time_orig[]))

@@ -19,8 +19,8 @@
  * GNU General Public License for more details.
  *
  * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
+ * along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ *
  */
 
 
@@ -205,29 +205,56 @@ static RTAI_SYSCALL_MODE void rt_set_heap(unsigned long, void *);
 #endif
 
 #ifdef HAVE_UNLOCKED_IOCTL
-static long rtai_shm_f_ioctl(struct file *file, unsigned int cmd, unsigned long arg)
+static long rtai_shm_f_ioctl(struct file *file, unsigned int cmd, unsigned long uarg)
 #else
-static int rtai_shm_f_ioctl(struct inode *inode, struct file *file, unsigned int cmd, unsigned long arg)
+static int rtai_shm_f_ioctl(struct inode *inode, struct file *file, unsigned int cmd, unsigned long uarg)
 #endif
 {
 	switch (cmd) {
+#ifdef CONFIG_RTAI_USE_STACK_ARGS
 		case SHM_ALLOC: {
-			TRACE_RTAI_SHM(TRACE_RTAI_EV_SHM_MALLOC, ((unsigned long *)arg)[0], cmd, current->pid);
-			return rt_shm_alloc_usp(((unsigned long *)arg)[0], ((long *)arg)[1], ((long *)arg)[2]);
+			TRACE_RTAI_SHM(TRACE_RTAI_EV_SHM_MALLOC, ((unsigned long *)uarg)[0], cmd, current->pid);
+			return rt_shm_alloc_usp(((unsigned long *)uarg)[0], ((long *)uarg)[1], ((long *)uarg)[2]);
 		}
 		case SHM_FREE: {
-			TRACE_RTAI_SHM(TRACE_RTAI_EV_SHM_FREE, arg, cmd, current->pid);
-			return _rt_shm_free(arg, rt_get_type(arg));	
+			TRACE_RTAI_SHM(TRACE_RTAI_EV_SHM_FREE, uarg, cmd, current->pid);
+			return _rt_shm_free(uarg, rt_get_type(uarg));	
 		}
 		case SHM_SIZE: {
-			TRACE_RTAI_SHM(TRACE_RTAI_EV_SHM_GET_SIZE, arg, cmd, current->pid);
-			return rt_shm_size((unsigned long *)((unsigned long *)arg)[0]);
+			TRACE_RTAI_SHM(TRACE_RTAI_EV_SHM_GET_SIZE, uarg, cmd, current->pid);
+			return rt_shm_size((unsigned long *)((unsigned long *)uarg)[0]);
 		}
 #ifdef CONFIG_RTAI_MALLOC
 		case HEAP_SET: {
-			rt_set_heap(((unsigned long *)arg)[0], (void *)((unsigned long *)arg)[1]);
+			rt_set_heap(((unsigned long *)uarg)[0], (void *)((unsigned long *)uarg)[1]);
 			return 0;
 		}
+#endif
+#else
+		case SHM_ALLOC: {
+			struct { unsigned long name; long arg, suprt; } arg;
+			rt_copy_from_user(&arg, (void *)uarg, sizeof(arg));
+			return rt_shm_alloc_usp(arg.name, arg.arg, arg.suprt);
+		}
+		case SHM_FREE: {
+			unsigned long arg;
+			rt_get_user(arg, (unsigned long *)uarg);
+			return _rt_shm_free(arg, rt_get_type(arg));	
+		}
+		case SHM_SIZE: {
+			unsigned long arg;
+			rt_get_user(arg, (unsigned long *)uarg);
+			rt_get_user(arg, (unsigned long *)arg);
+			return rt_shm_size(&arg);
+		}
+#ifdef CONFIG_RTAI_MALLOC
+		case HEAP_SET: {
+			struct { unsigned long name; long arg; } arg;
+			rt_copy_from_user(&arg, (void *)uarg, sizeof(arg));
+			rt_set_heap(arg.name, (void *)arg.arg);
+			return 0;
+		}
+#endif
 #endif
 	}
 	return 0;

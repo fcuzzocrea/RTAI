@@ -1,9 +1,9 @@
 /*
  * Copyright (C) 2006 Thomas Leibner (leibner@t-online.de) (first complete writeup)
- *               2002 David Schleef (ds@schleef.org) (COMEDI master)
- *               2002 Lorenzo Dozio (dozio@aero.polimi.it) (made it all work)
- *               2006 Roberto Bucher <roberto.bucher@supsi.ch> (upgrade)
- *               2002-2010 Paolo Mantegazza (mantegazza@aero.polimi.it) (hints/support)
+ * Copyright (C) 2002 David Schleef (ds@schleef.org) (COMEDI master)
+ * Copyright (C) 2002 Lorenzo Dozio (dozio@aero.polimi.it) (made it all work)
+ * Copyright (C) 2006 Roberto Bucher <roberto.bucher@supsi.ch> (upgrade)
+ * Copyright (C) 2002-2017 Paolo Mantegazza (mantegazza@aero.polimi.it) (continued maintenance)
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License as
@@ -16,8 +16,8 @@
  * GNU General Public License for more details.
  *
  * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
+ * along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ *
  */
 
 /*
@@ -56,6 +56,12 @@ MODULE_LICENSE("GPL");
 
 #endif
 
+#ifdef CONFIG_RTAI_USE_STACK_ARGS
+#define USE_STACK_ARGS 1
+#else
+#define USE_STACK_ARGS 0
+#endif
+
 #define KSPACE(adr)  ((unsigned long)adr > PAGE_OFFSET)
 
 static int rtai_comedi_callback(unsigned int, RT_TASK *) __attribute__ ((__unused__));
@@ -70,7 +76,9 @@ static int rtai_comedi_callback(unsigned int val, RT_TASK *task)
 
 static RTAI_SYSCALL_MODE void *_comedi_open(const char *filename)
 {
-	return comedi_open(filename);
+	char lfilename[COMEDI_NAMELEN];
+	rt_strncpy_from_user(lfilename, filename, COMEDI_NAMELEN - 1);
+	return comedi_open(lfilename);
 }
 
 static RTAI_SYSCALL_MODE int _comedi_close(void *dev)
@@ -97,13 +105,17 @@ static RTAI_SYSCALL_MODE int _comedi_cancel(void *dev, unsigned int subdev)
 
 RTAI_SYSCALL_MODE int rt_comedi_register_callback(void *dev, unsigned int subdev, unsigned int mask, int (*callback)(unsigned int, void *), void *task)
 {
-	int retval;
+	int retval = 0;
 	if (task == NULL) {
 		task = rt_whoami();
 	}
 	((RT_TASK *)task)->resumsg = 0;
 	RTAI_COMEDI_LOCK(dev, subdev);
-	retval = comedi_register_callback(dev, subdev, mask, (void *)rtai_comedi_callback, task);
+	if (KSPACE(callback)) {
+		retval = comedi_register_callback(dev, subdev, mask, (void *)callback, task);
+	} else if (callback == NULL) {
+		retval = comedi_register_callback(dev, subdev, mask, (void *)rtai_comedi_callback, task);
+	}
 	RTAI_COMEDI_UNLOCK(dev, subdev);
 	return retval;
 }
@@ -111,18 +123,60 @@ RTAI_SYSCALL_MODE int rt_comedi_register_callback(void *dev, unsigned int subdev
 static RTAI_SYSCALL_MODE int _comedi_command(void *dev, comedi_cmd *cmd)
 {
 	int retval;
+#ifdef CONFIG_RTAI_USE_STACK_ARGS
 	RTAI_COMEDI_LOCK(dev, cmd->subdev);
 	retval = comedi_command(dev, (void *)cmd);
 	RTAI_COMEDI_UNLOCK(dev, cmd->subdev);
+#else
+	do {
+		comedi_cmd lcmd;
+		rt_copy_from_user(&lcmd, cmd, sizeof(comedi_cmd));
+		do {
+			unsigned int lchanlist[lcmd.chanlist_len];
+			sampl_t ldata[lcmd.data_len], *cmd_data = lcmd.data;
+			lcmd.chanlist = lchanlist;
+			lcmd.data = ldata;
+			rt_copy_from_user(lchanlist, lcmd.chanlist, sizeof(lchanlist));
+			rt_copy_from_user(ldata, lcmd.data, sizeof(ldata));
+			RTAI_COMEDI_LOCK(dev, lcmd.subdev);
+			retval = comedi_command(dev, &lcmd);
+			RTAI_COMEDI_UNLOCK(dev, lcmd.subdev);
+			if (!retval) {
+				rt_copy_to_user(cmd_data, ldata, sizeof(ldata));
+			} 
+		} while (0);
+	} while (0);
+#endif
 	return retval;
 }
 
 static RTAI_SYSCALL_MODE int _comedi_command_test(void *dev, comedi_cmd *cmd)
 {
 	int retval;
+#ifdef CONFIG_RTAI_USE_STACK_ARGS
 	RTAI_COMEDI_LOCK(dev, cmd->subdev);
 	retval = comedi_command_test(dev, (void *)cmd);
 	RTAI_COMEDI_UNLOCK(dev, cmd->subdev);
+#else
+	do {
+		comedi_cmd lcmd;
+		rt_copy_from_user(&lcmd, cmd, sizeof(comedi_cmd));
+		do {
+			unsigned int lchanlist[lcmd.chanlist_len];
+			sampl_t ldata[lcmd.data_len], *cmd_data = lcmd.data;
+			lcmd.chanlist = lchanlist;
+			lcmd.data = ldata;
+			rt_copy_from_user(lchanlist, lcmd.chanlist, sizeof(lchanlist));
+			rt_copy_from_user(ldata, lcmd.data, sizeof(ldata));
+			RTAI_COMEDI_LOCK(dev, lcmd.subdev);
+			retval = comedi_command_test(dev, &lcmd);
+			RTAI_COMEDI_UNLOCK(dev, lcmd.subdev);
+			if (!retval) {
+				rt_copy_to_user(cmd_data, ldata, sizeof(ldata));
+			} 
+		} while (0);
+	} while (0);
+#endif
 	return retval;
 }
 
@@ -130,7 +184,11 @@ static RTAI_SYSCALL_MODE int RT_comedi_command(void *dev, struct cmds_ofstlens *
 {
 	int retval;
 	comedi_cmd cmd[2]; // 2 instances, a safe room for 64 getting into 32
-	memcpy(cmd, (void *)ofstlens + ofstlens->cmd_ofst, ofstlens->cmd_len);
+	if (KSPACE(ofstlens) || USE_STACK_ARGS) {
+		memcpy(cmd, (void *)ofstlens + ofstlens->cmd_ofst, ofstlens->cmd_len);
+	} else {
+		rt_copy_from_user(cmd, (void *)ofstlens + ofstlens->cmd_ofst, ofstlens->cmd_len);
+	}
 	cmd[0].chanlist     = (void *)ofstlens + ofstlens->chanlist_ofst;
 	cmd[0].chanlist_len = ofstlens->chanlist_len;
 	cmd[0].data         = (void *)ofstlens + ofstlens->data_ofst;
@@ -139,10 +197,63 @@ static RTAI_SYSCALL_MODE int RT_comedi_command(void *dev, struct cmds_ofstlens *
 	return retval;
 }
 
+#define WAIT       0
+#define WAITIF     1
+#define WAITUNTIL  2
+
+static inline int __rt_comedi_wait(RTIME until, unsigned int *cbmask, int waitmode)
+{ 
+	if (cbmask) {
+		long retval;
+		RT_TASK *task = _rt_whoami();
+		switch (waitmode) {
+			case WAIT: 
+				retval = rt_task_suspend(task);
+				break;
+			case WAITIF: 
+				retval = rt_task_suspend_if(task);
+				break;
+			case WAITUNTIL: 
+				retval = rt_task_suspend_until(task, until);
+				break;
+			default: // useless, just to avoid compiler warnings
+				return RTE_PERM;
+		}
+		if (KSPACE(cbmask) || USE_STACK_ARGS) {
+			cbmask[0] = (unsigned int)task->resumsg;
+		} else {
+			rt_put_user((unsigned int)task->resumsg, cbmask);
+		}
+		task->resumsg = 0;
+		return retval;
+	}
+	return RTE_PERM;
+}
+
+RTAI_SYSCALL_MODE long rt_comedi_wait(unsigned int *cbmask)
+{ 
+	return __rt_comedi_wait((RTIME)0, cbmask, WAIT);
+}
+
+RTAI_SYSCALL_MODE long rt_comedi_wait_if(unsigned int *cbmask)
+{ 
+	return __rt_comedi_wait((RTIME)0, cbmask, WAITIF);
+}
+
+RTAI_SYSCALL_MODE long _rt_comedi_wait_until(unsigned int *cbmask, RTIME until)
+{
+	return __rt_comedi_wait(until, cbmask, WAITUNTIL);
+}
+
+RTAI_SYSCALL_MODE long _rt_comedi_wait_timed(unsigned int *cbmask, RTIME delay)
+{
+	return _rt_comedi_wait_until(cbmask, rt_get_time() + delay);
+}
+
 RTAI_SYSCALL_MODE long rt_comedi_command_data_read(void *dev, unsigned int subdev, long nchans, lsampl_t *data)
 {
-	void *aibuf;
-	int i, ofsti, ofstf, size;
+	lsampl_t *aibuf;
+	int i, ofsti, ofstf, size, kspace = KSPACE(data);
 #if 1
 	if (comedi_map(dev, subdev, &aibuf)) {
 		return RTE_OBJINV;
@@ -154,7 +265,11 @@ RTAI_SYSCALL_MODE long rt_comedi_command_data_read(void *dev, unsigned int subde
 	RTAI_COMEDI_LOCK(dev, subdev);
 	ofstf = ofsti = comedi_get_buffer_offset(dev, subdev);
 	for (i = 0; i < nchans; i++) {
-		data[i] = *(sampl_t *)(aibuf + ofstf % size);
+		if (kspace || USE_STACK_ARGS) {
+			data[i] = *(aibuf + ofstf % size);
+		} else {
+			rt_put_user(*(aibuf + ofstf % size), &data[i]);
+		}
 		ofstf += sizeof(sampl_t);
 	}
 	comedi_mark_buffer_read(dev, subdev, ofstf - ofsti);
@@ -187,10 +302,6 @@ RTAI_SYSCALL_MODE long rt_comedi_command_data_read(void *dev, unsigned int subde
 	return nchans;
 }
 
-#define WAIT       0
-#define WAITIF     1
-#define WAITUNTIL  2
-
 static inline int __rt_comedi_command_data_wread(void *dev, unsigned int subdev, long nchans, lsampl_t *data, RTIME until, unsigned int *cbmaskarg, int waitmode)
 {
 	unsigned int cbmask, mask;
@@ -214,7 +325,7 @@ static inline int __rt_comedi_command_data_wread(void *dev, unsigned int subdev,
 			return RTE_PERM;
 	}
 	if (!retval && (mask & cbmask)) {
-		if (kspace) {
+		if (kspace || USE_STACK_ARGS) {
 			cbmaskarg[0] = cbmask;
 		} else {
 			rt_put_user(cbmask, cbmaskarg);
@@ -259,6 +370,41 @@ RTAI_SYSCALL_MODE long RT_comedi_command_data_wread(void *dev, unsigned int subd
 	return 0;
 }
 
+RTAI_SYSCALL_MODE long rt_comedi_command_data_write(void *dev, unsigned int subdev, long nchans, lsampl_t *data)
+{
+	lsampl_t *aobuf;
+	int i, ofsti, ofstf, size, avbs, kspace = KSPACE(data);
+	if (comedi_map(dev, subdev, &aobuf)) {
+		return RTE_OBJINV;
+	}
+	size = comedi_get_buffer_size(dev, subdev);
+	avbs = comedi_get_buffer_contents(dev, subdev);
+	if ((size - avbs) < nchans) {
+		return (size - avbs);
+	}
+	RTAI_COMEDI_LOCK(dev, subdev);
+	ofstf = ofsti = (comedi_get_buffer_offset(dev, subdev) + avbs) % size;
+	for (i = 0; i < nchans; i++) {
+		if (kspace || USE_STACK_ARGS) {
+			*(aobuf + ofstf % size) = data[i];
+		} else {
+			rt_get_user(*(aobuf + ofstf % size), &data[i]);
+		}
+		ofstf += sizeof(sampl_t);
+	}
+	comedi_mark_buffer_written(dev, subdev, ofstf - ofsti);
+#if 0
+	if (!avbs) {
+		int retval;
+		if ((retval = _rt_comedi_trigger(dev, subdev)) < 0) {
+			return retval;
+		}
+	}
+#endif
+	RTAI_COMEDI_UNLOCK(dev, subdev);
+	return nchans;
+}
+
 static RTAI_SYSCALL_MODE int _comedi_data_write(void *dev, unsigned int subdev, unsigned int chan, unsigned int range, unsigned int aref, lsampl_t data)
 {
 	int retval;
@@ -270,19 +416,23 @@ static RTAI_SYSCALL_MODE int _comedi_data_write(void *dev, unsigned int subdev, 
 
 static RTAI_SYSCALL_MODE int _comedi_data_read(void *dev, unsigned int subdev, unsigned int chan, unsigned int range, unsigned int aref, lsampl_t *data)
 {
+	lsampl_t ldata;
 	int retval;
 	RTAI_COMEDI_LOCK(dev, subdev);
-	retval = comedi_data_read(dev, subdev, chan, range, aref, data);
+	retval = comedi_data_read(dev, subdev, chan, range, aref, &ldata);
 	RTAI_COMEDI_UNLOCK(dev, subdev);
+	rt_put_user(ldata, data);
 	return retval;
 }
 
 static RTAI_SYSCALL_MODE int _comedi_data_read_delayed(void *dev, unsigned int subdev, unsigned int chan, unsigned int range, unsigned int aref, lsampl_t *data, unsigned int nanosec)
 {
+	lsampl_t ldata;
 	int retval;
 	RTAI_COMEDI_LOCK(dev, subdev);
-	retval = comedi_data_read_delayed(dev, subdev, chan, range, aref, data, nanosec);
+	retval = comedi_data_read_delayed(dev, subdev, chan, range, aref, &ldata, nanosec);
 	RTAI_COMEDI_UNLOCK(dev, subdev);
+	rt_put_user(ldata, data);
 	return retval;
 }
 
@@ -306,10 +456,12 @@ static RTAI_SYSCALL_MODE int _comedi_dio_config(void *dev, unsigned int subdev, 
 
 static RTAI_SYSCALL_MODE int _comedi_dio_read(void *dev, unsigned int subdev, unsigned int chan, unsigned int *val)
 {
+	unsigned int lval;
 	int retval;
 	RTAI_COMEDI_LOCK(dev, subdev);
-	retval = comedi_dio_read(dev, subdev, chan, val);
+	retval = comedi_dio_read(dev, subdev, chan, &lval);
 	RTAI_COMEDI_UNLOCK(dev, subdev);
+	rt_put_user(lval, val);
 	return retval;
 }
 
@@ -324,10 +476,13 @@ static RTAI_SYSCALL_MODE int _comedi_dio_write(void *dev, unsigned int subdev, u
 
 static RTAI_SYSCALL_MODE int _comedi_dio_bitfield(void *dev, unsigned int subdev, unsigned int write_mask, unsigned int *bits)
 {
+	unsigned int lbits;
 	int retval;
+	rt_get_user(lbits, bits);
 	RTAI_COMEDI_LOCK(dev, subdev);
-	retval = comedi_dio_bitfield(dev, subdev, write_mask, bits);
+	retval = comedi_dio_bitfield(dev, subdev, write_mask, &lbits);
 	RTAI_COMEDI_UNLOCK(dev, subdev);
+	rt_put_user(lbits, bits);
 	return retval;
 }
 
@@ -345,7 +500,11 @@ RTAI_SYSCALL_MODE char *rt_comedi_get_driver_name(void *dev, char *name)
 {
 	const char *kname;
 	if ((kname = comedi_get_driver_name((void *)dev)) != 0) {
-		strncpy(name, kname, COMEDI_NAMELEN);
+		if (KSPACE(name)  || USE_STACK_ARGS) {
+			strncpy(name, kname, COMEDI_NAMELEN);
+		} else {
+			rt_copy_to_user(name, kname, strnlen(kname, COMEDI_NAMELEN));
+		}
 		return name;
 	};
 	return NULL;
@@ -355,7 +514,11 @@ RTAI_SYSCALL_MODE char *rt_comedi_get_board_name(void *dev, char *name)
 {
 	const char *kname;
 	if ((kname = comedi_get_board_name((void *)dev)) != 0) {
-		strncpy(name, kname, COMEDI_NAMELEN);
+		if (KSPACE(name) || USE_STACK_ARGS) {
+			strncpy(name, kname, COMEDI_NAMELEN);
+		} else {
+			rt_copy_to_user(name, kname, strnlen(kname, COMEDI_NAMELEN));
+		}
 		return name;
 	}
 	return NULL;
@@ -364,6 +527,15 @@ RTAI_SYSCALL_MODE char *rt_comedi_get_board_name(void *dev, char *name)
 static RTAI_SYSCALL_MODE int _comedi_get_subdevice_type(void *dev, unsigned int subdev)
 {
 	return comedi_get_subdevice_type(dev, subdev);
+}
+
+static RTAI_SYSCALL_MODE unsigned int _comedi_get_subdevice_flags(void *dev, unsigned int subdev)
+{
+	int retval;
+	RTAI_COMEDI_LOCK(dev, subdev);
+	retval = comedi_get_subdevice_flags(dev, subdev);
+	RTAI_COMEDI_UNLOCK(dev, subdev);
+	return retval;
 }
 
 static RTAI_SYSCALL_MODE int _comedi_find_subdevice_by_type(void *dev, int type, unsigned int start_subdevice)
@@ -389,20 +561,56 @@ static RTAI_SYSCALL_MODE int _comedi_get_n_ranges(void *dev, unsigned int subdev
 static RTAI_SYSCALL_MODE int _comedi_do_insn(void *dev, comedi_insn *insn)
 {
 	int retval;
+#ifdef CONFIG_RTAI_USE_STACK_ARGS
 	RTAI_COMEDI_LOCK(dev, insn->subdev);
 	retval = comedi_do_insn(dev, insn);
 	RTAI_COMEDI_UNLOCK(dev, insn->subdev);
+#else
+	do {
+		comedi_insn linsn;
+		rt_copy_from_user(&linsn, insn, sizeof(comedi_insn));
+		do {
+			lsampl_t ldata[linsn.n], *insn_data = linsn.data;
+			rt_copy_from_user(ldata, insn_data, sizeof(ldata));
+			linsn.data = ldata;
+			RTAI_COMEDI_LOCK(dev, linsn.subdev);
+			retval = comedi_do_insn(dev, &linsn);
+			RTAI_COMEDI_UNLOCK(dev, linsn.subdev);
+			rt_copy_to_user(insn_data, ldata, sizeof(ldata));
+		} while (0);
+	} while (0);
+#endif
 	return retval;
 }
 
 RTAI_SYSCALL_MODE int rt_comedi_do_insnlist(void *dev, comedi_insnlist *ilist)
 {
-	int i;
+	int i, n;
+#ifdef CONFIG_RTAI_USE_STACK_ARGS
 	for (i = 0; i < ilist->n_insns; i ++) {
-		if ((ilist->insns[i].n = comedi_do_insn(dev, &ilist->insns[i])) < 0) {
-			break;
-		}
+		RTAI_COMEDI_LOCK(dev, insn->subdev);
+		n = comedi_do_insn(dev, &ilist->insns[i]);
+		RTAI_COMEDI_UNLOCK(dev, insn->subdev);
+		if (n < 0) break;
 	}
+#else
+	comedi_insnlist lilist = { 0, NULL };
+	rt_copy_from_user(&lilist, ilist, sizeof(comedi_insnlist));
+	do {
+		comedi_insn linsns[lilist.n_insns];
+		rt_copy_from_user(linsns, lilist.insns, sizeof(linsns));
+		for (i = 0; i < lilist.n_insns; i ++) {
+			lsampl_t ldata[linsns[i].n], *insns_data = linsns[i].data;
+			rt_copy_from_user(ldata, insns_data, sizeof(ldata));
+			linsns[i].data = ldata;
+			RTAI_COMEDI_LOCK(dev, linsns[i].subdev);
+			n = comedi_do_insn(dev, &linsns[i]);
+			RTAI_COMEDI_UNLOCK(dev, linsns[i].subdev);
+			if (n < 0) break;
+			rt_copy_to_user(insns_data, ldata, sizeof(ldata));
+		}
+	} while (0);
+#endif
 	return i;
 }
 
@@ -416,7 +624,12 @@ RTAI_SYSCALL_MODE int RT_comedi_do_insnlist(void *dev, long n_insns, struct insn
 	lsampl_t *data           = RT_INSN_ADR(data_ofst);
 	comedi_insn insn[2]; // 2 instances, a safe room for 64 getting into 32
 	for (i = 0; i < n_insns; i ++) {
-		memcpy(insn, insns, ofstlens->insn_len);	
+
+		if (KSPACE(ofstlens) || USE_STACK_ARGS) {
+			memcpy(insn, insns, ofstlens->insn_len);	
+		} else {
+			rt_copy_from_user(insn, insns, ofstlens->insn_len);	
+		}
 		insn[0].data     = data + data_ofsts[i];
 		insn[0].subdev   = RT_INSN(subdev_ofst);
 		insn[0].chanspec = RT_INSN(chanspec_ofst);
@@ -436,7 +649,7 @@ static inline int _rt_comedi_trigger(void *dev, unsigned int subdev)
         insn.subdev = subdev;
         insn.n      = 1;
         insn.data   = &data;
-        return _comedi_do_insn(dev, &insn);
+        return comedi_do_insn(dev, &insn);
 }
 
 RTAI_SYSCALL_MODE int rt_comedi_trigger(void *dev, unsigned int subdev)
@@ -460,21 +673,16 @@ static RTAI_SYSCALL_MODE int _comedi_get_rangetype(unsigned int minor, unsigned 
 }
 */
 
-static RTAI_SYSCALL_MODE unsigned int _comedi_get_subdevice_flags(void *dev, unsigned int subdev)
-{
-	int retval;
-	RTAI_COMEDI_LOCK(dev, subdev);
-	retval = comedi_get_subdevice_flags(dev, subdev);
-	RTAI_COMEDI_UNLOCK(dev, subdev);
-	return retval;
-}
-
 static RTAI_SYSCALL_MODE int _comedi_get_krange(void *dev, unsigned int subdev, unsigned int chan, unsigned int range, comedi_krange *krange)
 {
-	return comedi_get_krange(dev, subdev, chan, range, krange);
+        int retval;
+        comedi_krange lkrange;
+	retval = comedi_get_krange(dev, subdev, chan, range, &lkrange);
+	rt_copy_from_user(krange, &lkrange, sizeof(lkrange));
+        return retval;
 }
 
-static RTAI_SYSCALL_MODE int _comedi_get_buf_head_pos(void * dev, unsigned int subdev)
+static RTAI_SYSCALL_MODE int _comedi_get_buf_head_pos(void *dev, unsigned int subdev)
 {
 	int retval;
 	RTAI_COMEDI_LOCK(dev, subdev);
@@ -508,86 +716,6 @@ static RTAI_SYSCALL_MODE int _comedi_unmap(void *dev, unsigned int subdev)
 	retval = comedi_unmap(dev, subdev);
 	RTAI_COMEDI_UNLOCK(dev, subdev);
 	return retval;
-}
-
-static inline int __rt_comedi_wait(RTIME until, unsigned int *cbmask, int waitmode)
-{ 
-	if (cbmask) {
-		long retval;
-		RT_TASK *task = _rt_whoami();
-		switch (waitmode) {
-			case WAIT: 
-				retval = rt_task_suspend(task);
-				break;
-			case WAITIF: 
-				retval = rt_task_suspend_if(task);
-				break;
-			case WAITUNTIL: 
-				retval = rt_task_suspend_until(task, until);
-				break;
-			default: // useless, just to avoid compiler warnings
-				return RTE_PERM;
-		}
-		if (KSPACE(cbmask)) {
-			cbmask[0] = (unsigned int)task->resumsg;
-		} else {
-			rt_put_user((unsigned int)task->resumsg, cbmask);
-		}
-		task->resumsg = 0;
-		return retval;
-	}
-	return RTE_PERM;
-}
-
-RTAI_SYSCALL_MODE long rt_comedi_wait(unsigned int *cbmask)
-{ 
-	return __rt_comedi_wait((RTIME)0, cbmask, WAIT);
-}
-
-RTAI_SYSCALL_MODE long rt_comedi_wait_if(unsigned int *cbmask)
-{ 
-	return __rt_comedi_wait((RTIME)0, cbmask, WAITIF);
-}
-
-RTAI_SYSCALL_MODE long _rt_comedi_wait_until(unsigned int *cbmask, RTIME until)
-{
-	return __rt_comedi_wait(until, cbmask, WAITUNTIL);
-}
-
-RTAI_SYSCALL_MODE long _rt_comedi_wait_timed(unsigned int *cbmask, RTIME delay)
-{
-	return _rt_comedi_wait_until(cbmask, rt_get_time() + delay);
-}
-
-RTAI_SYSCALL_MODE long rt_comedi_command_data_write(void *dev, unsigned int subdev, long nchans, lsampl_t *data)
-{
-	void *aobuf;
-	int i, ofsti, ofstf, size, avbs;
-	if (comedi_map(dev, subdev, &aobuf)) {
-		return RTE_OBJINV;
-	}
-	size = comedi_get_buffer_size(dev, subdev);
-	avbs = comedi_get_buffer_contents(dev, subdev);
-	if ((size - avbs) < nchans) {
-		return (size - avbs);
-	}
-	RTAI_COMEDI_LOCK(dev, subdev);
-	ofstf = ofsti = (comedi_get_buffer_offset(dev, subdev) + avbs) % size;
-	for (i = 0; i < nchans; i++) {
-		*(sampl_t *)(aobuf + ofstf % size) = data[i];
-		ofstf += sizeof(sampl_t);
-	}
-	comedi_mark_buffer_written(dev, subdev, ofstf - ofsti);
-#if 0
-	if (!avbs) {
-		int retval;
-		if ((retval = _rt_comedi_trigger(dev, subdev)) < 0) {
-			return retval;
-		}
-	}
-#endif
-	RTAI_COMEDI_UNLOCK(dev, subdev);
-	return nchans;
 }
 
 static struct rt_fun_entry rtai_comedi_fun[] = {

@@ -1,3 +1,12 @@
+# Copyright (C) 2005-2017 The RTAI project
+# This [file] is free software; the RTAI project
+# gives unlimited permission to copy and/or distribute it,
+# with or without modifications, as long as this notice is preserved.
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY, to the extent permitted by law; without
+# even the implied warranty of MERCHANTABILITY or FITNESS FOR A
+# PARTICULAR PURPOSE.
+
 TASKLETS Tasklets Support Module
 ================================
 
@@ -6,7 +15,7 @@ the line, pioneered by RTAI, of a symmetric usage of all its services
 inter-intra kernel and user space both for soft and hard real time.
 In such a way you have an wide spectrum of development and implementation
 options, allowing maximum flexibility with uncompromised performances.
-And of course, all LGPL open source.
+And of course, all LGPL free software.
 
 New services: tasklets and timers
 ---------------------------------

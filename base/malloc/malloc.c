@@ -15,8 +15,7 @@
  * License for more details.
  *
  * You should have received a copy of the GNU General Public License
- * along with RTAI; if not, write to the Free Software Foundation,
- * Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
+ * along with RTAI; if not, see <http://www.gnu.org/licenses/>.
  *
  * \ingroup shm
  */
@@ -806,8 +805,8 @@ unsigned long tlsf_get_used_size(rtheap_t *heap) {
  * License for more details.
  *
  * You should have received a copy of the GNU General Public License
- * along with RTAI; if not, write to the Free Software Foundation,
- * Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
+ * along with RTAI; if not, see <http://www.gnu.org/licenses/>.
+
  *
  * Dynamic memory allocation services lifted and adapted from the
  * Xenomai nucleus.

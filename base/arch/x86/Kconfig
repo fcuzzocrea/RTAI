@@ -1,3 +1,12 @@
+# Copyright (C) 2005-2017 The RTAI project
+# This [file] is free software; the RTAI project
+# gives unlimited permission to copy and/or distribute it,
+# with or without modifications, as long as this notice is preserved.
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY, to the extent permitted by law; without
+# even the implied warranty of MERCHANTABILITY or FITNESS FOR A
+# PARTICULAR PURPOSE.
+
 mainmenu "RTAI/x86 configuration"
 
 config MODULES
@@ -51,41 +60,6 @@ config RTAI_DOC_LATEX_NONSTOP
         verbose (nonstopmode) of LaTeX will be used instead. This 
         option is mainly intended for people writing RTAI 
         documentation.
-
-config RTAI_DBX_DOC
-	bool "Build DocBook XML documentation (HTML/PDF)"
-	default n
-	help
-	This option causes the DocBook XML based RTAI documentation to be
-	built. This option is intended for people actually writing
-	documentation and who want to update the pre-built manuals,
-	regular users can just use the latter directly.
-
-config RTAI_DBX_NET
-        bool "Let the DocBook XML tools use network"
-	depends on RTAI_DBX_DOC
-        default n
-        help
-        Let the DocBook tools use internet to fetch the DTD and XSL stylesheets.
-        If disabled, the documentation generation will fail if the necessary 
-        DTD(s) and XSL stylesheets can not be found on the local computer.
-
-config RTAI_DBX_ROOT
-        string "Docbook XML root"
-	depends on RTAI_DBX_DOC
-        default ""
-        help
-        Specify the DocBook XML root (that is, the directory where docbook.dtd
-        should be taken). Leave blank to let configure try the "well-known"
-        locations.
-
-config RTAI_DBX_XSL_ROOT
-        string "Docbook XML XSL stylesheet root"
-	depends on RTAI_DBX_DOC
-        default ""
-        help
-        Specify the DocBook XML XSL root. Leave blank to let configure try the
-        "well-known" locations.
 
 endmenu
 

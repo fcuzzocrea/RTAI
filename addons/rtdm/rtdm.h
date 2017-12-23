@@ -17,8 +17,7 @@
  * General Public License for more details.
  *
  * You should have received a copy of the GNU General Public License
- * along with RTAI; if not, write to the Free Software Foundation,
- * Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
+ * along with RTAI; if not, see <http://www.gnu.org/licenses/>.
  *
  * @ingroup userapi
  */
@@ -265,7 +264,7 @@ ssize_t __rt_dev_recvmsg(rtdm_user_info_t *user_info, int fd,
 ssize_t __rt_dev_sendmsg(rtdm_user_info_t *user_info, int fd,
 			 const struct user_msghdr *msg, int flags);
 #include <rtdm/select.h>
-int __rt_dev_select(int nfds, fd_set *rfds, fd_set *wfds, fd_set *efds, nanosecs_rel_t timeout, struct xnselector *selector, int space);
+int __rt_dev_select(int nfds, fd_set *rfds, fd_set *wfds, fd_set *efds, nanosecs_rel_t timeout);
 #endif /* __KERNEL__ */
 
 /* Define RTDM_NO_DEFAULT_USER_API to switch off the default rt_dev_xxx
@@ -322,20 +321,13 @@ static inline ssize_t rt_dev_recvfrom(int fd, void *buf, size_t len, int flags,
 	return ret;
 }
 
-static inline int rt_dev_select(int nfds, fd_set *rfds, fd_set *wfds, fd_set *efds, nanosecs_rel_t timeout)
-{
 #ifdef CONFIG_RTAI_RTDM_SELECT
-	struct xnselector *selector;
-	int ret;
-	selector = rt_malloc(sizeof(struct xnselector));
-	xnselector_init(selector);
-        ret = __rt_dev_select(nfds, rfds, wfds, efds, timeout, selector, 1);
-	xnselector_destroy(selector);
-	return ret;
+#define rt_dev_select(nfds, rfds, wfds, efds, timeout) \
+	__rt_dev_select(nfds, rfds, wfds, efds, timeout)
 #else
-	return -ENOSYS;
+#define rt_dev_select(nfds, rfds, wfds, efds, timeout) \
+	(-ENOSYS)
 #endif
-}
 
 #else /* !__KERNEL__ */
 

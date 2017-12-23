@@ -12,8 +12,8 @@
  * GNU General Public License for more details.
  *
  * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
+ * along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ *
  */
 
 /*
@@ -72,9 +72,9 @@ MODULE_LICENSE("GPL");
 
 int KernelLatency, UserLatency;
 static int kernel_latency = 0;
-module_param(KernelLatency, int, S_IRUGO);
+module_param(kernel_latency, int, S_IRUGO);
 static int user_latency = 0;
-module_param(UserLatency, int, S_IRUGO);
+module_param(user_latency, int, S_IRUGO);
 
 /* +++++++++++++++++ WHAT MUST BE AVAILABLE EVERYWHERE ++++++++++++++++++++++ */
 
@@ -278,6 +278,8 @@ int set_rtext(RT_TASK *task, int priority, int uses_fpu, void(*signal)(void), un
 
 	task->resq.prev = task->resq.next = &task->resq;
 	task->resq.task = NULL;
+
+	task->scheduler = 0;
 
 	return 0;
 }
@@ -2001,7 +2003,12 @@ static int lxrt_intercept_syscall(struct pt_regs *regs)
 			task->unblocked = 0;
 			*((long *)regs->LINUX_SYSCALL_REG4) = 1;
 		} else {
+
+#ifdef CONFIG_RTAI_USE_STACK_ARGS
 			*((long long *)regs->LINUX_SYSCALL_REG3) = srq > RTAI_NR_SRQS ?  rtai_lxrt_invoke(srq, (void *)regs->LINUX_SYSCALL_REG2, task) : rtai_usrq_dispatcher(srq, regs->LINUX_SYSCALL_REG2);
+#else
+			rt_put_user(srq > RTAI_NR_SRQS ?  rtai_lxrt_invoke(srq, (void *)regs->LINUX_SYSCALL_REG2, task) : rtai_usrq_dispatcher(srq, regs->LINUX_SYSCALL_REG2), (long long *)regs->LINUX_SYSCALL_REG3);
+#endif
 		}
 		if (!in_hrt_mode(rtai_cpuid())) {
 			hal_test_and_fast_flush_pipeline();
@@ -2016,7 +2023,11 @@ static int lxrt_intercept_fastcall(struct pt_regs *regs)
 {
 	unsigned long srq  = regs->LINUX_SYSCALL_REG1;
 	IF_IS_A_USI_SRQ_CALL_IT(srq, regs->LINUX_SYSCALL_REG2, (long long *)regs->LINUX_SYSCALL_REG3, regs->LINUX_SYSCALL_FLAGS, 1);
+#ifdef CONFIG_RTAI_USE_STACK_ARGS
 	*((long long *)regs->LINUX_SYSCALL_REG3) = srq > RTAI_NR_SRQS ?  rtai_lxrt_invoke(srq, (void *)regs->LINUX_SYSCALL_REG2, rtai_tskext_t(current, TSKEXT0)) : rtai_usrq_dispatcher(srq, regs->LINUX_SYSCALL_REG2);
+#else
+	rt_put_user(srq > RTAI_NR_SRQS ?  rtai_lxrt_invoke(srq, (void *)regs->LINUX_SYSCALL_REG2, rtai_tskext_t(current, TSKEXT0)) : rtai_usrq_dispatcher(srq, regs->LINUX_SYSCALL_REG2), (long long *)regs->LINUX_SYSCALL_REG3);
+#endif
 	if (!in_hrt_mode(rtai_cpuid())) {
 		hal_test_and_fast_flush_pipeline();
 		return 0;
@@ -2151,6 +2162,8 @@ static int rt_gettid(void)
 	return current->pid;
 }
 
+RTAI_SYSCALL_MODE int rt_task_get_info_user(RT_TASK *, RT_TASK_INFO *);
+
 static struct rt_native_fun_entry rt_sched_entries[] = {
 	{ { 0, rt_set_runnable_on_cpus },	    SET_RUNNABLE_ON_CPUS },
 	{ { 0, rt_set_runnable_on_cpuid },	    SET_RUNNABLE_ON_CPUID },
@@ -2175,7 +2188,7 @@ static struct rt_native_fun_entry rt_sched_entries[] = {
 	{ { 0, rt_get_time_ns },		    GET_TIME_NS },
 	{ { 0, rt_get_time_ns_cpuid },		    GET_TIME_NS_CPUID },
 	{ { 0, rt_get_cpu_time_ns },		    GET_CPU_TIME_NS },
-	{ { 0, rt_task_get_info },		    GET_TASK_INFO },
+	{ { 0, rt_task_get_info_user },		    GET_TASK_INFO },
 	{ { 0, rt_spv_RMS },			    SPV_RMS },
 	{ { 1, rt_change_prio },		    CHANGE_TASK_PRIO },
 	{ { 0, rt_sched_lock },			    SCHED_LOCK },
@@ -2475,9 +2488,11 @@ static void calibrate_latencies(void)
 		tuned.timers_tol[cpuid] = rt_half_tick = 0;
 	}
 
-	sprintf(arg2, "%d", recalibrate ? -1 : 0);
-	printk("USERMODE CHECK: %s.\n", !call_usermodehelper(argv[0], argv, envp, UMH_WAIT_PROC) ? "OK" : "ERROR");
-	printk("USERMODE CHECK PROVIDED (ns): KernelLatency %d, UserLatency %d.\n", KernelLatency > 0 ? (int)count2nano(KernelLatency) : KernelLatency, UserLatency > 0 ? (int)count2nano(UserLatency) : UserLatency);
+	if (!kernel_latency || !user_latency) {
+		sprintf(arg2, "%d", recalibrate ? -1 : 0);
+		printk("USERMODE CHECK: %s.\n", !call_usermodehelper(argv[0], argv, envp, UMH_WAIT_PROC) ? "OK" : "ERROR");
+		printk("USERMODE CHECK PROVIDED (ns): KernelLatency %d, UserLatency %d.\n", KernelLatency > 0 ? (int)count2nano(KernelLatency) : KernelLatency, UserLatency > 0 ? (int)count2nano(UserLatency) : UserLatency);
+	}
 
 	if (kernel_latency > 0) {
 		KernelLatency = nano2count(kernel_latency);

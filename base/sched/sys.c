@@ -1,7 +1,8 @@
 /*
  * Copyright (C) 2001-2015  Paolo Mantegazza <mantegazza@aero.polimi.it>,
- *		            Pierre Cloutier <pcloutier@poseidoncontrols.com>,
- *		            Steve Papacharalambous <stevep@zentropix.com>.
+ * Copyright (C) 2001       Pierre Cloutier <pcloutier@poseidoncontrols.com>,
+ * Copyright (C) 2001       Steve Papacharalambous <stevep@zentropix.com>,
+ * Copyright (C) 2001       Jan Kiszka (Jan.Kiszka@web.de)
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License as
@@ -14,8 +15,8 @@
  * GNU General Public License for more details.
  *
  * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
+ * along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ *
  */
 
 /*
@@ -334,12 +335,20 @@ EXPORT_SYMBOL(rt_make_soft_real_time);
 static long kernel_calibrator_spv(long period, long loops, RT_TASK *task);
 #endif
 
-static inline long long handle_lxrt_request (unsigned int lxsrq, long *arg, RT_TASK *task)
+static inline long long handle_lxrt_request (unsigned int lxsrq, long *uarg, RT_TASK *task)
 {
 #define larg ((struct arg *)arg)
 
 	union {unsigned long name; RT_TASK *rt_task; SEM *sem; MBX *mbx; RWL *rwl; SPL *spl; int i; void *p; long long ll; } arg0;
 	int srq;
+
+#ifdef CONFIG_RTAI_USE_STACK_ARGS
+	long *arg = uarg;
+#else
+	int argsize = lxsrq & 0x7FF;
+	long arg[argsize];
+	rt_copy_from_user(arg, uarg, argsize);
+#endif
 
 	if (likely((srq = SRQ(lxsrq)) < MAX_LXRT_FUN)) {
 		unsigned long type;
@@ -518,15 +527,17 @@ static inline long long handle_lxrt_request (unsigned int lxsrq, long *arg, RT_T
 			}
 			return 0;
 		}
-		case PRINT_TO_SCREEN: {
-			struct arg { char *display; long nch; };
-			arg0.i = rtai_print_to_screen("%s", larg->display);
-			return arg0.ll;
-		}
-
+		case PRINT_TO_SCREEN:
 		case PRINTK: {
 			struct arg { char *display; long nch; };
-			arg0.i = rt_printk("%s", larg->display);
+#ifdef CONFIG_RTAI_USE_STACK_ARGS
+			char *ldisplay = larg->display;
+#else
+			char ldisplay[larg->nch + 1];
+			rt_copy_from_user(ldisplay, larg->display, larg->nch);
+			ldisplay[larg->nch] = 0;
+#endif
+			arg0.i = rt_printk("%s", ldisplay);
 			return arg0.ll;
 		}
 
@@ -598,10 +609,12 @@ static inline long long handle_lxrt_request (unsigned int lxsrq, long *arg, RT_T
 		}
 		case GET_EXECTIME: {
 			struct arg { RT_TASK *task; RTIME *exectime; };
+			RTIME exectime[3];
 			if ((larg->task)->exectime[0] && (larg->task)->exectime[1]) {
-				larg->exectime[0] = (larg->task)->exectime[0]; 
-				larg->exectime[1] = (larg->task)->exectime[1]; 
-				larg->exectime[2] = rtai_rdtsc(); 
+				exectime[0] = (larg->task)->exectime[0]; 
+				exectime[1] = (larg->task)->exectime[1]; 
+				exectime[2] = rtai_rdtsc(); 
+				rt_copy_to_user(larg->exectime, exectime, sizeof(exectime));
 			}
                         return 0;
 		}

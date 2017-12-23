@@ -16,8 +16,7 @@
  * General Public License for more details.
  *
  * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software Foundation,
- * Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
+ * along with this program.  If not, see <http://www.gnu.org/licenses/>. 
  */
 
 /*!
@@ -1440,77 +1439,151 @@ int rt_dev_getpeername(int fd, struct sockaddr *name, socklen_t *namelen);
 #ifdef CONFIG_RTAI_RTDM_SELECT
 
 /*
+ * What below is copyrighted as GPL by:
+ * Copyright (C) 2005 Philippe Gerum <rpm@xenomai.org>
+ * Copyright (C) 2005 Gilles Chanteperdrix <gilles.chanteperdrix@xenomai.org>
+ * Adapted to RTAI 2017 by Paolo Mantegazza <paolo.mantegazz@polimi.it>.
+*/
+
+/*
  RTAI extension to use select as any other usual RTDM rt_dev_xxx service.
- At the moment selector kept and stack, initialised/destroyed at each call.
  Usage is as for: 
  int rt_dev_select(int nfds, fd_set *rfds, fd_set *wfds, fd_set *efds,
                    nanosecs_rel_t timeout);.
- As it can be seen args are as for the standard select call execpt for the
- timout which is in nanos, in place of timespec.
+ As it can be seen args are the same as the standard select call execpt 
+ for the timeout which is in nanos, in place of timeval/timespec.
 */
 
-#define SELECT_DIM  XNSELECT_MAX_TYPES
-
 /*
-RTDM_FD_START kept in case we'll ever need a shift for fd being different from 
-fd_index in the call to:
-int rtdm_select_bind(int fd, rtdm_selector_t *selector, enum rtdm_selecttype type, unsigned fd_index);
+ The macro RTDM_FD_START kept in case we'll ever need a shift for fd being 
+ different from fd_index in the call to:
+ int rtdm_select_bind(int fd, rtdm_selector_t *selector, enum rtdm_selecttype type, unsigned fd_index);
 */
 
 #define RTDM_FD_START  0
 
-int __rt_dev_select(int nfds, fd_set *rfds, fd_set *wfds, fd_set *efds, nanosecs_rel_t timeout, struct xnselector *selector, int space)
-{
-	int i, fd, ret;
-	fd_set *fds[SELECT_DIM] = { rfds, wfds, efds };
-	fd_set *reqp[SELECT_DIM], req[SELECT_DIM];
-	fd_set *resp[SELECT_DIM], res[SELECT_DIM];
-	fd_set **bp, *cp;
+extern struct xnselector *assign_selector(void);
 
-	for (ret = i = 0; i < SELECT_DIM; i++) {
-		if (fds[i] && find_first_bit(fds[i]->fds_bits, nfds) < nfds) {
-			ret = 1;
-			reqp[i] = &req[i];
-			resp[i] = &res[i];
-			if (space) {
-				memcpy((void *)reqp[i], (void *)fds[i], __FDELT__(nfds + __NFDBITS__ - 1)*sizeof(long));
-			} else {
-				rt_copy_from_user((void *)reqp[i], (void *)fds[i], __FDELT__(nfds + __NFDBITS__ - 1)*sizeof(long));
-			}
-		} else {
-			reqp[i] = resp[i] = NULL;
+static inline int fd_valid_p(int fd)
+{
+	const int rtdm_fd_start = RTDM_FD_START;
+	struct rtdm_dev_context *ctx;
+
+	ctx = rtdm_context_get(fd - rtdm_fd_start);
+	if (ctx) {
+		rtdm_context_unlock(ctx);
+		return 1;
+	}
+        return 0;
+}
+
+static inline int first_fd_valid_p(fd_set *fds[XNSELECT_MAX_TYPES], int nfds)
+{
+        int i, fd;
+
+        for (i = 0; i < XNSELECT_MAX_TYPES; i++) {
+                if (fds[i] && (fd = find_first_bit(fds[i]->fds_bits, nfds)) < nfds) {
+                        return fd_valid_p(fd);
 		}
 	}
+        return 1;
+}
 
-	if (!ret && !timeout) {
-		return -EINVAL;
+static inline int select_bind_one(struct xnselector *selector, unsigned type, int fd)
+{
+	const int rtdm_fd_start = RTDM_FD_START;
+	if (fd >= rtdm_fd_start) {
+		return rtdm_select_bind(fd, selector, type, fd);
 	}
+	return -EBADF;
+}
 
-	if (timeout) {
-		timeout = rt_get_time() + nano2count(timeout);
-	}
+static int select_bind_all(struct xnselector *selector,
+			   fd_set *fds[XNSELECT_MAX_TYPES], int nfds)
+{
+	unsigned fd, type;
+	int err;
 
-	do {
-		for (bp = reqp, i = 0; i < SELECT_DIM; i++) {
-			if ((cp = bp[i])) {
-				for (fd = find_first_bit(cp->fds_bits, nfds); fd < nfds; fd = find_next_bit(cp->fds_bits, nfds, fd + 1)) {
-					if ((ret = rtdm_select_bind(fd - RTDM_FD_START, selector, i, fd))) {
-						return ret;
-					}
+	for (type = 0; type < XNSELECT_MAX_TYPES; type++) {
+		fd_set *set = fds[type];
+		if (set) {
+			for (fd = find_first_bit(set->fds_bits, nfds);
+			     fd < nfds;
+			     fd = find_next_bit(set->fds_bits, nfds, fd + 1)) {
+				err = select_bind_one(selector, type, fd);
+				if (err) {
+					return err;
 				}
 			}
 		}
-		bp = resp;
-		ret = xnselect(selector, resp, reqp, nfds, timeout, XN_ABSOLUTE);
+	}
+	return 0;
+}
+
+int __rt_dev_select(int nfds, fd_set *rfds, fd_set *wfds, fd_set *efds, nanosecs_rel_t timeout)
+{
+	int kspace = ((unsigned long)rfds > PAGE_OFFSET || (unsigned long)wfds > PAGE_OFFSET || (unsigned long)efds > PAGE_OFFSET);
+	fd_set __user *ufd_sets[XNSELECT_MAX_TYPES] = { rfds, wfds, efds };
+	fd_set *in_fds[XNSELECT_MAX_TYPES]  = { NULL, NULL, NULL };
+	fd_set *out_fds[XNSELECT_MAX_TYPES] = { NULL, NULL, NULL };
+	fd_set in_fds_storage[XNSELECT_MAX_TYPES], out_fds_storage[XNSELECT_MAX_TYPES];
+	static struct xnselector *selector;
+	xnthread_t *curr;
+	int i, ret;
+	size_t fds_size;
+
+	curr = xnpod_current_thread();
+	if (!curr) { 
+		return -EPERM;
+	}
+
+	fds_size = __FDELT__(nfds + __NFDBITS__ - 1) * sizeof(long);
+	timeout = timeout ? rt_get_time() + nano2count(timeout) : XN_INFINITE;
+
+	for (i = 0; i < XNSELECT_MAX_TYPES; i++) {
+		if (ufd_sets[i]) {
+			in_fds[i] = &in_fds_storage[i];
+			out_fds[i] = &out_fds_storage[i];
+			if (kspace) {
+				memcpy(in_fds[i], (void __user *)ufd_sets[i], fds_size);
+			} else if (!access_wok((void __user *)ufd_sets[i], sizeof(fd_set)) || rt_copy_from_user(in_fds[i], (void __user *)ufd_sets[i], fds_size)) {
+				return -EFAULT;
+			}
+		}
+	}
+
+	selector = (void *)curr->scheduler;
+	if (1 && !selector) {
+		if (!first_fd_valid_p(in_fds, nfds)) {
+			return -EBADF;
+		}
+		if (!(selector = assign_selector())) {
+			return -ENOMEM;
+		}
+		xnselector_init(selector);
+		curr->scheduler = (long)selector;
+		if ((ret = select_bind_all(selector, in_fds, nfds))) {
+			return ret;
+		}
+	}
+
+	do {
+		ret = xnselect(selector, out_fds, in_fds, nfds, timeout, XN_ABSOLUTE);
+		if (ret == -ECHRNG) {
+			int ret = select_bind_all(selector, out_fds, nfds);
+			if (ret) {
+				return ret;
+			}
+		}
 	} while (ret == -ECHRNG);
 
-	if (ret > 0) {
-		for (i = 0; i < SELECT_DIM; i++) {
-			if (fds[i]) {
-				if (space) {
-					memcpy((void *)fds[i], (void *)resp[i], sizeof(fd_set));
-				} else {
-					rt_copy_to_user((void *)fds[i], (void *)resp[i], sizeof(fd_set));
+	if (ret >= 0) {
+		for (i = 0; i < XNSELECT_MAX_TYPES; i++) {
+			if (ufd_sets[i]) {
+				if (kspace) {
+					memcpy((void __user *)ufd_sets[i], out_fds[i], sizeof(fd_set));
+				} else if (rt_copy_to_user((void __user *)ufd_sets[i], out_fds[i], sizeof(fd_set))) {
+					return -EFAULT;
 				}
 			}
 		}

@@ -1,8 +1,8 @@
 /*
  * Copyright (C) 2002 Thomas Leibner (leibner@t-online.de) (first complete writeup)
- *               2002 David Schleef (ds@schleef.org) (COMEDI master)
- *               2002 Lorenzo Dozio (dozio@aero.polimi.it) (made it all work)
- *               2002-2010 Paolo Mantegazza (mantegazza@aero.polimi.it) (hints/support)
+ * Copyright (C) 2002 David Schleef (ds@schleef.org) (COMEDI master)
+ * Copyright (C) 2002 Lorenzo Dozio (dozio@aero.polimi.it) (made it all work)
+ * Copyright (C) 2002-2017 Paolo Mantegazza (mantegazza@aero.polimi.it) (continued maintenance)
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -15,8 +15,8 @@
  * Lesser General Public License for more details.
 
  * You should have received a copy of the GNU Lesser General Public
- * License along with this library; if not, write to the Free Software
- * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA.
+ * License along with this library; if not, see <http://www.gnu.org/licenses/>.
+ * 
  */
 
 
@@ -181,9 +181,7 @@ typedef void comedi_t;
 
 RTAI_PROTO(void *, comedi_open, (const char *filename))
 {
-	char lfilename[COMEDI_NAMELEN];
-        struct { char *filename; } arg = { lfilename };
-	strncpy(lfilename, filename, COMEDI_NAMELEN - 1);
+        struct { const char *filename; } arg = { filename };
         return rtai_lxrt(FUN_COMEDI_LXRT_INDX, COMEDI_LXRT_SIZARG, _KCOMEDI_OPEN, &arg).v[LOW];
 }
 
@@ -219,6 +217,48 @@ RTAI_PROTO(int, rt_comedi_register_callback, (void *dev, unsigned int subdevice,
 
 #define comedi_register_callback(dev, subdev, mask, cb, arg)  rt_comedi_register_callback(dev, subdev, mask, NULL, arg)
 
+RTAI_PROTO(int, comedi_command, (void *dev, comedi_cmd *cmd))
+{
+	if (cmd) {
+#ifdef CONFIG_RTAI_USE_STACK_ARGS
+		int retval;
+		comedi_cmd lcmd;
+	        struct { void *dev; comedi_cmd *cmd; } arg = { dev, &lcmd };
+		lcmd = cmd[0];
+        	retval = rtai_lxrt(FUN_COMEDI_LXRT_INDX, COMEDI_LXRT_SIZARG, _KCOMEDI_COMMAND, &arg).i[LOW];
+		if (!retval) {
+			cmd[0] = lcmd;
+		}
+        	return retval;
+#else
+	        struct { void *dev; comedi_cmd *cmd; } arg = { dev, cmd };
+        	return rtai_lxrt(FUN_COMEDI_LXRT_INDX, COMEDI_LXRT_SIZARG, _KCOMEDI_COMMAND, &arg).i[LOW];
+#endif
+	}
+	return -1;
+}
+
+RTAI_PROTO(int, comedi_command_test, (void *dev, comedi_cmd *cmd))
+{
+	if (cmd) {
+#ifdef CONFIG_RTAI_USE_STACK_ARGS
+		comedi_cmd lcmd;
+		int retval;
+	        struct { void *dev; comedi_cmd *cmd; } arg = { dev, &lcmd };
+		lcmd = cmd[0];
+	        retval = rtai_lxrt(FUN_COMEDI_LXRT_INDX, COMEDI_LXRT_SIZARG, _KCOMEDI_COMMAND_TEST, &arg).i[LOW];
+		if (!retval) {
+			cmd[0] = lcmd;
+		}
+        	return retval;
+#else
+	        struct { void *dev; comedi_cmd *cmd; } arg = { dev, cmd };
+        	return rtai_lxrt(FUN_COMEDI_LXRT_INDX, COMEDI_LXRT_SIZARG, _KCOMEDI_COMMAND_TEST, &arg).i[LOW];
+#endif
+	}
+	return -1;
+}
+
 RTAI_PROTO(long, rt_comedi_wait, (unsigned int *cbmask))
 {
        	struct { unsigned int *cbmask; } arg = { cbmask };
@@ -243,54 +283,92 @@ RTAI_PROTO(long, rt_comedi_wait_timed, (RTIME delay, unsigned int *cbmask))
 	return rtai_lxrt(FUN_COMEDI_LXRT_INDX, COMEDI_LXRT_SIZARG, _KCOMEDI_WAIT_TIMED, &arg).i[LOW];
 }
 
-RTAI_PROTO(int, comedi_command, (void *dev, comedi_cmd *cmd))
-{
-	comedi_cmd lcmd;
-	int retval;
-        struct { void *dev; comedi_cmd *cmd; } arg = { dev, &lcmd };
-	if (cmd) {
-		lcmd = cmd[0];
-        	retval = rtai_lxrt(FUN_COMEDI_LXRT_INDX, COMEDI_LXRT_SIZARG, _KCOMEDI_COMMAND, &arg).i[LOW];
-		if (!retval) {
-			cmd[0] = lcmd;
-		}
-        	return retval;
-	}
-	return -1;
-}
-
-RTAI_PROTO(int, comedi_command_test, (void *dev, comedi_cmd *cmd))
-{
-	comedi_cmd lcmd;
-	int retval;
-        struct { void *dev; comedi_cmd *cmd; } arg = { dev, &lcmd };
-	if (cmd) {
-		lcmd = cmd[0];
-	        retval = rtai_lxrt(FUN_COMEDI_LXRT_INDX, COMEDI_LXRT_SIZARG, _KCOMEDI_COMMAND_TEST, &arg).i[LOW];
-		if (!retval) {
-			cmd[0] = lcmd;
-		}
-        	return retval;
-	}
-	return -1;
-}
-
 RTAI_PROTO(long, rt_comedi_command_data_read, (void *dev, unsigned int subdev, long nchans, lsampl_t *data))
 {
+#ifdef CONFIG_RTAI_USE_STACK_ARGS
 	int retval;
 	lsampl_t ldata[nchans];
 	struct { void *dev; unsigned long subdev; long nchans; lsampl_t *data; } arg = { dev, subdev, nchans, ldata };
 	retval = rtai_lxrt(FUN_COMEDI_LXRT_INDX, COMEDI_LXRT_SIZARG, _KCOMEDI_COMD_DATA_READ, &arg).i[LOW];
 	memcpy(data, &ldata, sizeof(ldata));
 	return retval;
+#else
+	struct { void *dev; unsigned long subdev; long nchans; lsampl_t *data; } arg = { dev, subdev, nchans, data };
+	return rtai_lxrt(FUN_COMEDI_LXRT_INDX, COMEDI_LXRT_SIZARG, _KCOMEDI_COMD_DATA_READ, &arg).i[LOW];
+#endif
+}
+
+RTAI_PROTO(long, rt_comedi_command_data_wread, (void *dev, unsigned int subdev, long nchans, lsampl_t *data, unsigned int *cbmask))
+{
+#ifdef CONFIG_RTAI_USE_STACK_ARGS
+	int retval;
+	lsampl_t ldata[nchans];
+	struct { void *dev; unsigned long subdev; long nchans; lsampl_t *data; unsigned int *cbmask; } arg = { dev, subdev, nchans, ldata, cbmask };
+	retval = rtai_lxrt(FUN_COMEDI_LXRT_INDX, COMEDI_LXRT_SIZARG, _KCOMEDI_COMD_DATA_WREAD, &arg).i[LOW];
+	memcpy(data, &ldata, sizeof(ldata));
+	return retval;
+#else
+	struct { void *dev; unsigned long subdev; long nchans; lsampl_t *data; unsigned int *cbmask; } arg = { dev, subdev, nchans, data, cbmask };
+	return rtai_lxrt(FUN_COMEDI_LXRT_INDX, COMEDI_LXRT_SIZARG, _KCOMEDI_COMD_DATA_WREAD, &arg).i[LOW];
+#endif
+}
+
+RTAI_PROTO(long, rt_comedi_command_data_wread_if, (void *dev, unsigned int subdev, long nchans, lsampl_t *data, unsigned int *cbmask))
+{
+#ifdef CONFIG_RTAI_USE_STACK_ARGS
+	int retval;
+	lsampl_t ldata[nchans];
+	struct { void *dev; unsigned long subdev; long nchans; lsampl_t *data; unsigned int *cbmask; } arg = { dev, subdev, nchans, ldata, cbmask };
+	retval = rtai_lxrt(FUN_COMEDI_LXRT_INDX, COMEDI_LXRT_SIZARG, _KCOMEDI_COMD_DATA_WREAD_IF, &arg).i[LOW];
+	memcpy(data, &ldata, sizeof(ldata));
+	return retval;
+#else
+	struct { void *dev; unsigned long subdev; long nchans; lsampl_t *data; unsigned int *cbmask; } arg = { dev, subdev, nchans, data, cbmask };
+	return rtai_lxrt(FUN_COMEDI_LXRT_INDX, COMEDI_LXRT_SIZARG, _KCOMEDI_COMD_DATA_WREAD_IF, &arg).i[LOW];
+#endif
+}
+
+RTAI_PROTO(long, rt_comedi_command_data_wread_until, (void *dev, unsigned int subdev, long nchans, lsampl_t *data, RTIME until, unsigned int *cbmask))
+{
+#ifdef CONFIG_RTAI_USE_STACK_ARGS
+	int retval;
+	lsampl_t ldata[nchans];
+	struct { void *dev; unsigned long subdev; long nchans; lsampl_t *data; unsigned int *cbmask; RTIME until; } arg = { dev, subdev, nchans, ldata, cbmask, until };
+	retval = rtai_lxrt(FUN_COMEDI_LXRT_INDX, COMEDI_LXRT_SIZARG, _KCOMEDI_COMD_DATA_WREAD_UNTIL, &arg).i[LOW];
+	memcpy(data, &ldata, sizeof(ldata));
+	return retval;
+#else
+	struct { void *dev; unsigned long subdev; long nchans; lsampl_t *data; unsigned int *cbmask; RTIME until; } arg = { dev, subdev, nchans, data, cbmask, until };
+	return rtai_lxrt(FUN_COMEDI_LXRT_INDX, COMEDI_LXRT_SIZARG, _KCOMEDI_COMD_DATA_WREAD_UNTIL, &arg).i[LOW];
+#endif
+}
+
+RTAI_PROTO(long, rt_comedi_command_data_wread_timed, (void *dev, unsigned int subdev, long nchans, lsampl_t *data, RTIME delay, unsigned int *cbmask))
+{
+#ifdef CONFIG_RTAI_USE_STACK_ARGS
+	int retval;
+	lsampl_t ldata[nchans];
+	struct { void *dev; unsigned long subdev; long nchans; lsampl_t *data; unsigned int *cbmask; RTIME delay; } arg = { dev, subdev, nchans, ldata, cbmask, delay };
+	retval = rtai_lxrt(FUN_COMEDI_LXRT_INDX, COMEDI_LXRT_SIZARG, _KCOMEDI_COMD_DATA_WREAD_TIMED, &arg).i[LOW];
+	memcpy(data, &ldata, sizeof(ldata));
+	return retval;
+#else
+	struct { void *dev; unsigned long subdev; long nchans; lsampl_t *data; unsigned int *cbmask; RTIME delay; } arg = { dev, subdev, nchans, data, cbmask, delay };
+	return rtai_lxrt(FUN_COMEDI_LXRT_INDX, COMEDI_LXRT_SIZARG, _KCOMEDI_COMD_DATA_WREAD_TIMED, &arg).i[LOW];
+#endif
 }
 
 RTAI_PROTO(long, rt_comedi_command_data_write, (void *dev, unsigned int subdev, long nchans, lsampl_t *data))
 {
+#ifdef CONFIG_RTAI_USE_STACK_ARGS
 	lsampl_t ldata[nchans];
 	struct { void *dev; unsigned long subdev; long nchans; lsampl_t *data; } arg = { dev, subdev, nchans, ldata };
 	memcpy(ldata, data, sizeof(ldata));
 	return rtai_lxrt(FUN_COMEDI_LXRT_INDX, COMEDI_LXRT_SIZARG, _KCOMEDI_COMD_DATA_WRITE, &arg).i[LOW];
+#else
+	struct { void *dev; unsigned long subdev; long nchans; lsampl_t *data; } arg = { dev, subdev, nchans, data };
+	return rtai_lxrt(FUN_COMEDI_LXRT_INDX, COMEDI_LXRT_SIZARG, _KCOMEDI_COMD_DATA_WRITE, &arg).i[LOW];
+#endif
 }
 
 RTAI_PROTO(int, comedi_data_write, (void *dev, unsigned int subdev, unsigned int chan, unsigned int range, unsigned int aref, lsampl_t data))
@@ -301,22 +379,14 @@ RTAI_PROTO(int, comedi_data_write, (void *dev, unsigned int subdev, unsigned int
 
 RTAI_PROTO(int, comedi_data_read, (void *dev, unsigned int subdev, unsigned int chan, unsigned int range, unsigned int aref, lsampl_t *data))
 {
-	int retval;
-	lsampl_t ldata;
-	struct { void *dev; unsigned long subdev; unsigned long chan; unsigned long range; unsigned long aref; lsampl_t *data; } arg = { dev, subdev, chan, range, aref, &ldata };
-	retval = rtai_lxrt(FUN_COMEDI_LXRT_INDX, COMEDI_LXRT_SIZARG, _KCOMEDI_DATA_READ, &arg).i[LOW];
-	data[0] = ldata;
-	return retval;
+	struct { void *dev; unsigned long subdev; unsigned long chan; unsigned long range; unsigned long aref; lsampl_t *data; } arg = { dev, subdev, chan, range, aref, data };
+	return rtai_lxrt(FUN_COMEDI_LXRT_INDX, COMEDI_LXRT_SIZARG, _KCOMEDI_DATA_READ, &arg).i[LOW];
 }
 
 RTAI_PROTO(int, comedi_data_read_delayed, (void *dev, unsigned int subdev, unsigned int chan, unsigned int range, unsigned int aref, lsampl_t *data, unsigned int nanosec))
 {
-	int retval;
-	lsampl_t ldata;
-	struct { void *dev; unsigned long subdev; unsigned long chan; unsigned long range; unsigned long aref; lsampl_t *data; unsigned long nanosec;} arg = { dev, subdev, chan, range, aref, &ldata, nanosec };
-	retval = rtai_lxrt(FUN_COMEDI_LXRT_INDX, COMEDI_LXRT_SIZARG, _KCOMEDI_DATA_READ_DELAYED, &arg).i[LOW];
-	data[0] = ldata;
-	return retval;
+	struct { void *dev; unsigned long subdev; unsigned long chan; unsigned long range; unsigned long aref; lsampl_t *data; unsigned long nanosec;} arg = { dev, subdev, chan, range, aref, data, nanosec };
+	return rtai_lxrt(FUN_COMEDI_LXRT_INDX, COMEDI_LXRT_SIZARG, _KCOMEDI_DATA_READ_DELAYED, &arg).i[LOW];
 }
 
 RTAI_PROTO(int, comedi_data_read_hint, (void *dev, unsigned int subdev, unsigned int chan, unsigned int range, unsigned int aref))
@@ -333,12 +403,8 @@ RTAI_PROTO(int, comedi_dio_config, (void *dev, unsigned int subdev, unsigned int
 
 RTAI_PROTO(int, comedi_dio_read, (void *dev, unsigned int subdev, unsigned int chan, unsigned int *val))
 {
-        int retval;
-	unsigned int lval;
-        struct { void *dev; unsigned long subdev; unsigned long chan; unsigned int *val; } arg = { dev, subdev, chan, &lval };
-	retval = rtai_lxrt(FUN_COMEDI_LXRT_INDX, COMEDI_LXRT_SIZARG, _KCOMEDI_DIO_READ, &arg).i[LOW];
-	val[0] = lval;
-	return retval;
+        struct { void *dev; unsigned long subdev; unsigned long chan; unsigned int *val; } arg = { dev, subdev, chan, val };
+	return rtai_lxrt(FUN_COMEDI_LXRT_INDX, COMEDI_LXRT_SIZARG, _KCOMEDI_DIO_READ, &arg).i[LOW];
 }
 
 RTAI_PROTO(int, comedi_dio_write, (void *dev, unsigned int subdev, unsigned int chan, unsigned int val))
@@ -349,13 +415,8 @@ RTAI_PROTO(int, comedi_dio_write, (void *dev, unsigned int subdev, unsigned int 
 
 RTAI_PROTO(int, comedi_dio_bitfield, (void *dev, unsigned int subdev, unsigned int write_mask, unsigned int *bits))
 {
-        int retval;
-	unsigned int lbits = bits[0];
-	lbits = *bits;
-        struct { void *dev; unsigned long subdev; unsigned long write_mask; unsigned int *bits; } arg = { dev, subdev, write_mask, &lbits };
-	retval = rtai_lxrt(FUN_COMEDI_LXRT_INDX, COMEDI_LXRT_SIZARG, _KCOMEDI_DIO_BITFIELD, &arg).i[LOW];
-	bits[0] = lbits;
-	return retval;
+        struct { void *dev; unsigned long subdev; unsigned long write_mask; unsigned int *bits; } arg = { dev, subdev, write_mask, bits };
+	return rtai_lxrt(FUN_COMEDI_LXRT_INDX, COMEDI_LXRT_SIZARG, _KCOMEDI_DIO_BITFIELD, &arg).i[LOW];
 }
 
 RTAI_PROTO(int, comedi_get_n_subdevices, (void *dev))
@@ -372,24 +433,20 @@ RTAI_PROTO(int, comedi_get_version_code, (void *dev))
 
 RTAI_PROTO(char *, rt_comedi_get_driver_name, (void *dev, char *name))
 {
-        char lname[COMEDI_NAMELEN];
-        struct { void *dev; char *name; } arg = { dev, lname };
-	if ((char *)rtai_lxrt(FUN_COMEDI_LXRT_INDX, COMEDI_LXRT_SIZARG, _KCOMEDI_GET_DRIVER_NAME, &arg).v[LOW] == lname) {
-		strncpy(name, lname, COMEDI_NAMELEN);
+        struct { void *dev; char *name; } arg = { dev, name };
+	if ((char *)rtai_lxrt(FUN_COMEDI_LXRT_INDX, COMEDI_LXRT_SIZARG, _KCOMEDI_GET_DRIVER_NAME, &arg).v[LOW] == name) {
 		return name;
 	}
-	return 0;
+	return NULL;
 }
 
 RTAI_PROTO(char *, rt_comedi_get_board_name, (void *dev, char *name))
 {
-        char lname[COMEDI_NAMELEN];
-        struct { void *dev; char *name; } arg = { dev, lname };
-	if ((char *)rtai_lxrt(FUN_COMEDI_LXRT_INDX, COMEDI_LXRT_SIZARG, _KCOMEDI_GET_BOARD_NAME, &arg).v[LOW] == lname) {
-		strncpy(name, lname, COMEDI_NAMELEN);
+        struct { void *dev; char *name; } arg = { dev, name };
+	if ((char *)rtai_lxrt(FUN_COMEDI_LXRT_INDX, COMEDI_LXRT_SIZARG, _KCOMEDI_GET_BOARD_NAME, &arg).v[LOW] == name) {
 		return name;
 	}
-	return 0;
+	return NULL;
 }
 
 RTAI_PROTO(int, comedi_get_subdevice_type, (void *dev, unsigned int subdev))
@@ -431,6 +488,7 @@ RTAI_PROTO(int, comedi_get_n_ranges,(void *dev, unsigned int subdev, unsigned in
 RTAI_PROTO(int, comedi_do_insn, (void *dev, comedi_insn *insn))
 {
 	if (insn) {
+#ifdef CONFIG_RTAI_USE_STACK_ARGS
 		comedi_insn linsn = insn[0];
 		lsampl_t ldata[linsn.n];
 	        struct { void *dev; comedi_insn *insn; } arg = { dev, &linsn };
@@ -440,6 +498,10 @@ RTAI_PROTO(int, comedi_do_insn, (void *dev, comedi_insn *insn))
 		retval = rtai_lxrt(FUN_COMEDI_LXRT_INDX, COMEDI_LXRT_SIZARG, _KCOMEDI_DO_INSN, &arg).i[LOW];
 		memcpy(insn[0].data, ldata, sizeof(ldata));
         	return retval;
+#else
+	        struct { void *dev; comedi_insn *insn; } arg = { dev, insn };
+		return rtai_lxrt(FUN_COMEDI_LXRT_INDX, COMEDI_LXRT_SIZARG, _KCOMEDI_DO_INSN, &arg).i[LOW];
+#endif
 	}
 	return -1;
 }
@@ -447,6 +509,7 @@ RTAI_PROTO(int, comedi_do_insn, (void *dev, comedi_insn *insn))
 RTAI_PROTO(int, rt_comedi_do_insnlist, (void *dev, comedi_insnlist *ilist))
 {
 	if (ilist) {
+#ifdef CONFIG_RTAI_USE_STACK_ARGS
 		comedi_insnlist lilist = ilist[0];
 		comedi_insn insns[lilist.n_insns];
 	        struct { void *dev; comedi_insnlist *ilist; } arg = { dev, &lilist };
@@ -471,6 +534,10 @@ RTAI_PROTO(int, rt_comedi_do_insnlist, (void *dev, comedi_insnlist *ilist))
 			memcpy(ilist->insns[i].data, ldata[i], insns[i].n*sizeof(lsampl_t));
 		} }
         	return retval;
+#else
+	        struct { void *dev; comedi_insnlist *ilist; } arg = { dev, ilist };
+		return rtai_lxrt(FUN_COMEDI_LXRT_INDX, COMEDI_LXRT_SIZARG, _KCOMEDI_DO_INSN_LIST, &arg).i[LOW];
+#endif
 	}
 	return -1;
 }
@@ -489,52 +556,8 @@ RTAI_PROTO(int, comedi_poll,(void *dev, unsigned int subdev))
 
 RTAI_PROTO(int, comedi_get_krange,(void *dev, unsigned int subdev, unsigned int chan, unsigned int range, comedi_krange *krange))
 {
-	int retval;
-	comedi_krange lkrange;
-	struct { void *dev; unsigned long subdev; unsigned long chan; unsigned long range; comedi_krange *krange; } arg = { dev, subdev, chan, range, &lkrange };
-	retval = rtai_lxrt(FUN_COMEDI_LXRT_INDX, COMEDI_LXRT_SIZARG, _KCOMEDI_GET_KRANGE, &arg).i[LOW];
-	krange[0] = lkrange;
-	return retval;
-}
-
-RTAI_PROTO(long, rt_comedi_command_data_wread, (void *dev, unsigned int subdev, long nchans, lsampl_t *data, unsigned int *cbmask))
-{
-	int retval;
-	lsampl_t ldata[nchans];
-	struct { void *dev; unsigned long subdev; long nchans; lsampl_t *data; unsigned int *cbmask; } arg = { dev, subdev, nchans, ldata, cbmask };
-	retval = rtai_lxrt(FUN_COMEDI_LXRT_INDX, COMEDI_LXRT_SIZARG, _KCOMEDI_COMD_DATA_WREAD, &arg).i[LOW];
-	memcpy(data, &ldata, sizeof(ldata));
-	return retval;
-}
-
-RTAI_PROTO(long, rt_comedi_command_data_wread_if, (void *dev, unsigned int subdev, long nchans, lsampl_t *data, unsigned int *cbmask))
-{
-	int retval;
-	lsampl_t ldata[nchans];
-	struct { void *dev; unsigned long subdev; long nchans; lsampl_t *data; unsigned int *cbmask; } arg = { dev, subdev, nchans, ldata, cbmask };
-	retval = rtai_lxrt(FUN_COMEDI_LXRT_INDX, COMEDI_LXRT_SIZARG, _KCOMEDI_COMD_DATA_WREAD_IF, &arg).i[LOW];
-	memcpy(data, &ldata, sizeof(ldata));
-	return retval;
-}
-
-RTAI_PROTO(long, rt_comedi_command_data_wread_until, (void *dev, unsigned int subdev, long nchans, lsampl_t *data, RTIME until, unsigned int *cbmask))
-{
-	int retval;
-	lsampl_t ldata[nchans];
-	struct { void *dev; unsigned long subdev; long nchans; lsampl_t *data; unsigned int *cbmask; RTIME until; } arg = { dev, subdev, nchans, ldata, cbmask, until };
-	retval = rtai_lxrt(FUN_COMEDI_LXRT_INDX, COMEDI_LXRT_SIZARG, _KCOMEDI_COMD_DATA_WREAD_UNTIL, &arg).i[LOW];
-	memcpy(data, &ldata, sizeof(ldata));
-	return retval;
-}
-
-RTAI_PROTO(long, rt_comedi_command_data_wread_timed, (void *dev, unsigned int subdev, long nchans, lsampl_t *data, RTIME delay, unsigned int *cbmask))
-{
-	int retval;
-	lsampl_t ldata[nchans];
-	struct { void *dev; unsigned long subdev; long nchans; lsampl_t *data; unsigned int *cbmask; RTIME delay; } arg = { dev, subdev, nchans, ldata, cbmask, delay };
-	retval = rtai_lxrt(FUN_COMEDI_LXRT_INDX, COMEDI_LXRT_SIZARG, _KCOMEDI_COMD_DATA_WREAD_TIMED, &arg).i[LOW];
-	memcpy(data, &ldata, sizeof(ldata));
-	return retval;
+	struct { void *dev; unsigned long subdev; unsigned long chan; unsigned long range; comedi_krange *krange; } arg = { dev, subdev, chan, range, krange };
+	return rtai_lxrt(FUN_COMEDI_LXRT_INDX, COMEDI_LXRT_SIZARG, _KCOMEDI_GET_KRANGE, &arg).i[LOW];
 }
 
 #ifdef CONFIG_RTAI_NETRPC

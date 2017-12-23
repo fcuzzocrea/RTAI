@@ -12,8 +12,8 @@
  * GNU General Public License for more details.
  *
  * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
+ * along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ *
  */
 
 #ifndef _RTAI_NETRPC_H
@@ -27,8 +27,14 @@
 #include <rtai_mbx.h>
 #include <rtai_msg.h>
 
-#define MAX_STUBS     20
-#define MAX_SOCKS     20
+#ifdef CONFIG_X86_32
+#define MAX_STUBS     16
+#define MAX_SOCKS     16
+#else
+#define MAX_STUBS     32
+#define MAX_SOCKS     32
+#endif
+
 #define MAX_MSG_SIZE  1500
 
 #define NET_RPC_EXT  0

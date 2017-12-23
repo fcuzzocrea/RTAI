@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 1999-2013 Paolo Mantegazza <mantegazza@aero.polimi.it>
+ * Copyright (C) 1999-2017 Paolo Mantegazza <mantegazza@aero.polimi.it>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License as
@@ -12,8 +12,8 @@
  * GNU General Public License for more details.
  *
  * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
+ * along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ *
  */
 
 
@@ -22,6 +22,8 @@
 #include <linux/version.h>
 #include <linux/timer.h>
 #include <linux/unistd.h>
+#include <linux/delay.h>
+
 #include <asm/uaccess.h>
 
 #include <net/ip.h>
@@ -99,7 +101,6 @@ static char *ThisHardNode = 0;
 RTAI_MODULE_PARM(ThisHardNode, charp);
 
 #define MAX_DFUN_EXT  16
-//static struct rt_fun_entry *rt_net_rpc_fun_ext[MAX_DFUN_EXT];
 extern struct rt_fun_entry *rt_fun_ext[];
 #define rt_net_rpc_fun_ext rt_fun_ext
 
@@ -166,19 +167,16 @@ static inline int gvb_portslot(struct portslot_t *portslotp)
 
 static inline void check_portslot(unsigned long node, int port, struct portslot_t **p)
 {
-//	unsigned long flags;
 	int i;
 	struct portslot_t *p_old;
 	
 	p_old = *p; 
-//	flags = rt_spin_lock_irqsave(&portslot_lock);
 	for (i = MaxStubs; i < portslotsp; i++) {
 		if (portslot[i].p->addr.sin_port == htons(port) && portslot[i].p->addr.sin_addr.s_addr == node) {
 			*p = portslot[i].p;
 			break;
 		}	
 	}
-//	rt_spin_unlock_irqrestore(flags, &portslot_lock);
 	if (p_old != *p)	{
 		gvb_portslot(p_old);
 	}
@@ -211,7 +209,6 @@ void set_netrpc_encoding(void *encode_fun, void *decode_fun, void *ext)
 	if (!set_rt_fun_ext_index(ext, 1)) {
 		encdec_ext = ext;
 	}
-//	rt_net_rpc_fun_ext[1] = ext;
 }
 
 struct req_rel_msg { long long op, port, priority, hard; unsigned long long owner, name, rem_node, chkspare;};
@@ -339,11 +336,9 @@ static inline long long soft_rt_genfun_call(RT_TASK *task, void *fun, void *args
 	return task->retval;
 }
 
-//extern void rt_daemonize(void);
 static void thread_fun(RT_TASK *task)
 {
 	if (!set_rtext(task, task->fun_args[3], 0, 0, get_min_tasks_cpuid())) {
-//		rt_daemonize();
 		sigfillset(&current->blocked);
 		rtai_set_linux_task_priority(current, SCHED_FIFO, MIN_LINUX_RTPRIO);
 		soft_rt_fun_call(task, rt_task_suspend, task);
@@ -362,8 +357,7 @@ static int soft_kthread_init(RT_TASK *task, long fun, long arg, int priority)
 	task->fun_args[3] = priority;
 	if (!IS_ERR(kthread_run((void *)thread_fun, task, " "))) {
 		while (task->state != (RT_SCHED_READY | RT_SCHED_SUSPENDED)) {
-			current->state = TASK_INTERRUPTIBLE;
-			schedule_timeout(HZ/NETRPC_TIMER_FREQ);
+			msleep(1000/NETRPC_TIMER_FREQ);
 		}
 		return 0;
 	}
@@ -375,8 +369,7 @@ static int soft_kthread_delete(RT_TASK *task)
 	task->fun_args[1] = 1;
 	while (task->fun_args[1]) {
 		rt_task_masked_unblock(task, ~RT_SCHED_READY);
-		current->state = TASK_INTERRUPTIBLE;
-		schedule_timeout(HZ/NETRPC_TIMER_FREQ);
+		msleep(1000/NETRPC_TIMER_FREQ);
 	}
         clr_rtext(task);
 	return 0;
@@ -748,7 +741,7 @@ ret:
 	}
 }
 
-static int mod_timer_srq;
+static int netrpc_srq;
 
 RTAI_SYSCALL_MODE int rt_send_req_rel_port(unsigned long node, int op, unsigned long id, MBX *mbx, int hard)
 {
@@ -788,7 +781,7 @@ RTAI_SYSCALL_MODE int rt_send_req_rel_port(unsigned long node, int op, unsigned 
 	msgsize = encode ? encode(&portslot[0], &msg, sizeof(msg), PRT_REQ) : sizeof(msg);
 	for (i = 0; i < NETRPC_TIMER_FREQ && !portslotp->sem.count; i++) {
 		soft_rt_sendto(portslotp->socket[0], &msg, msgsize, 0, (void *)&portslotp->addr, ADRSZ);
-		rt_pend_linux_srq(mod_timer_srq);
+		rt_pend_linux_srq(netrpc_srq);
 		rt_sem_wait(&timer_sem);
 	}
 	if (portslotp->sem.count >= 1) {
@@ -842,12 +835,11 @@ RTAI_SYSCALL_MODE int rt_rel_stub(unsigned long long owner)
 {
 	int i;
 	i = find_stub(owner);
-	if (i)
-	{
-	i = gvb_stub(i,owner);	
-	return i;
+	if (i) {
+		i = gvb_stub(i, owner);	
+		return i;
 	} else {
-	return -ESRCH;
+		return -ESRCH;
 	}
 }
 
@@ -857,55 +849,6 @@ RTAI_SYSCALL_MODE int rt_waiting_return(unsigned long node, int port)
 	portslotp = portslot + (abs(port) >> PORT_SHF);
 	return portslotp->task < 0 && !portslotp->sem.count;
 }
-
-#if 0
-
-static inline void mbx_send_if(MBX *mbx, void *sendmsg, int msg_size)
-{
-#define MOD_SIZE(indx) ((indx) < mbx->size ? (indx) : (indx) - mbx->size)
-
-	unsigned long flags;
-	int tocpy, avbs;
-	char *msg;
-
-	if (!mbx) {
-		return;
-	}
-	msg = sendmsg;
-	if (msg_size <= mbx->frbs) {
-		RT_TASK *task;
-		avbs = mbx->avbs;
-		while (msg_size > 0 && mbx->frbs) {
-			if ((tocpy = mbx->size - mbx->lbyte) > msg_size) {
-				tocpy = msg_size;
-			}
-			if (tocpy > mbx->frbs) {
-				tocpy = mbx->frbs;
-			}
-			memcpy(mbx->bufadr + mbx->lbyte, msg, tocpy);
-			flags = rt_spin_lock_irqsave(&mbx->lock);
-			mbx->frbs -= tocpy;
-			rt_spin_unlock_irqrestore(flags, &mbx->lock);
-			avbs += tocpy;
-			msg_size -= tocpy;
-			*msg += tocpy;
-			mbx->lbyte = MOD_SIZE(mbx->lbyte + tocpy);
-		}
-		mbx->avbs = avbs;
-		flags = rt_global_save_flags_and_cli();
-		if ((task = mbx->waiting_task)) {
-			rem_timed_task(task);
-			mbx->waiting_task = (void *)0;
-        	        if (task->state != RT_SCHED_READY && (task->state &= ~(RT_SCHED_MBXSUSP | RT_SCHED_DELAYED)) == RT_SCHED_READY) {
-                	        enq_ready_task(task);
-				rt_schedule();
-	        	}
-		}
-		rt_global_restore_flags(flags);
-	}
-}
-
-#else
 
 static inline void mbx_signal(MBX *mbx)
 {
@@ -975,8 +918,6 @@ static void mbx_send_if(MBX *mbx, void *msg, int msg_size)
 	rt_global_restore_flags(flags);
 }
 
-#endif
-
 #define RETURN_ERR(err) \
 	do { \
 		union { long long ll; long l; } retval; \
@@ -1019,7 +960,6 @@ RTAI_SYSCALL_MODE long long _rt_net_rpc(long fun_ext_timed, long type, void *arg
 					RETURN_ERR(-RTE_CHGPORTOK);
 				}
 				mbx_send_if(portslotp->mbx, msg, offsetof(struct reply_t, msg) + reply->wsize + reply->w2size);
-//				mbx_send_if(portslotp->mbx, msg, rsize);
 			}
 			portslotp->task = 1;
 		}
@@ -1050,7 +990,6 @@ RTAI_SYSCALL_MODE long long _rt_net_rpc(long fun_ext_timed, long type, void *arg
 								RETURN_ERR(-RTE_CHGPORTOK);
 						}
 					mbx_send_if(portslotp->mbx, msg, offsetof(struct reply_t, msg) + reply->wsize + reply->w2size);
-//					mbx_send_if(portslotp->mbx, msg, rsize);
 				}
 			}
 		} else {
@@ -1192,6 +1131,9 @@ RTAI_SYSCALL_MODE unsigned long ddn2nl(const char *ddn)
 	return u.l;
 }
 
+static void send_thread(void);
+static void recv_thread(void);
+
 RTAI_SYSCALL_MODE unsigned long rt_set_this_node(const char *ddn, unsigned long node, int hard)
 {
 	return this_node[hard ? MSG_HARD : MSG_SOFT] = ddn ? ddn2nl(ddn) : node;
@@ -1242,7 +1184,7 @@ static RT_TASK *port_server;
 static int init_softrtnet(void);
 static void cleanup_softrtnet(void);
 
-void do_mod_timer(void)
+void mod_timer_hdlr(void)
 {
 	mod_timer(&timer, jiffies + HZ/NETRPC_TIMER_FREQ);
 }
@@ -1284,8 +1226,10 @@ int soft_rt_socket_callback(int sock, int (*func)(int sock, void *arg), void *ar
 }
 
 static int MaxSockSrq;
-static struct { int srq, in, out, *sockindx; } sysrq;
+static struct { int in, out, *sockindx; } sysrq;
 static DEFINE_SPINLOCK(sysrq_lock);
+
+static SEM mtx;
 
 int soft_rt_sendto(int sock, const void *msg, int msglen, unsigned int sflags, struct sockaddr *to, int tolen)
 {
@@ -1300,7 +1244,7 @@ int soft_rt_sendto(int sock, const void *msg, int msglen, unsigned int sflags, s
 		sysrq.sockindx[sysrq.in] = sock;
 	        sysrq.in = (sysrq.in + 1) & MaxSockSrq;
 		rt_spin_unlock_irqrestore(flags, &sysrq_lock);
-		rt_pend_linux_srq(sysrq.srq);
+		rt_sem_signal(&mtx);
 		return msglen;
 	}
 	return -1;
@@ -1326,14 +1270,10 @@ int soft_rt_recvfrom(int sock, void *msg, int msglen, unsigned int flags, struct
 #include <linux/poll.h>
 #include <linux/net.h>
 
-int errno;
-
 #define SYSCALL_BGN() \
 	do { int retval; mm_segment_t svdfs = get_fs(); set_fs(KERNEL_DS)
 #define SYSCALL_END() \
 	set_fs(svdfs); return retval; } while (0)
-
-#ifdef __NR_socketcall
 
 extern void *sys_call_table[];
 
@@ -1352,6 +1292,8 @@ static inline int kpoll(struct pollfd *ufds, unsigned int nfds, int timeout)
 //	retval = poll(ufds, nfds, timeout);
 	SYSCALL_END();
 }
+
+#ifdef __NR_socketcall  // 32 bits
 
 //static _syscall2(int, socketcall, int, call, void *, args)
 static inline int ksocketcall(int call, void *args)
@@ -1374,42 +1316,6 @@ static inline int kbind(int fd, struct sockaddr *umyaddr, int addrlen)
 	return ksocketcall(SYS_BIND, &args);
 }
 
-static inline int kconnect(int fd, struct sockaddr *serv_addr, int addrlen)
-{
-	struct { int fd; struct sockaddr *serv_addr; int addrlen; } args = { fd, serv_addr, addrlen };
-	return ksocketcall(SYS_CONNECT, &args);
-}
-
-static inline int klisten(int fd, int backlog)
-{
-	struct { int fd; int backlog; } args = { fd, backlog };
-	return ksocketcall(SYS_LISTEN, &args);
-}
-
-static inline int kaccept(int fd, struct sockaddr *upeer_sockaddr, int *upeer_addrlen)
-{
-	struct { int fd; struct sockaddr *upeer_sockaddr; int *upeer_addrlen; } args = { fd, upeer_sockaddr, upeer_addrlen };
-	return ksocketcall(SYS_ACCEPT, &args);
-}
-
-static inline int kgetsockname(int fd, struct sockaddr *usockaddr, int *usockaddr_len)
-{
-	struct { int fd; struct sockaddr *usockaddr; int *usockaddr_len; } args = { fd, usockaddr, usockaddr_len };
-	return ksocketcall(SYS_GETSOCKNAME, &args);
-}
-
-static inline int kgetpeername(int fd, struct sockaddr *usockaddr, int *usockaddr_len)
-{
-	struct { int fd; struct sockaddr *usockaddr; int *usockaddr_len; } args = { fd, usockaddr, usockaddr_len };
-	return ksocketcall(SYS_GETPEERNAME, &args);
-}
-
-static inline int ksocketpair(int family, int type, int protocol, int *usockvec)
-{
-	struct { int family; int type; int protocol; int *usockvec; } args = { family, type, protocol, usockvec };
-	return ksocketcall(SYS_SOCKETPAIR, &args);
-}
-
 static inline int ksendto(int fd, void *buff, size_t len, unsigned flags, struct sockaddr *addr, int addr_len)
 {
 	struct { int fd; void *buff; size_t len; unsigned flags; struct sockaddr *addr; int addr_len; } args = { fd, buff, len, flags, addr, addr_len };
@@ -1422,73 +1328,7 @@ static inline int krecvfrom(int fd, void *ubuf, size_t len, unsigned flags, stru
 	return ksocketcall(SYS_RECVFROM, &args);
 }
 
-static inline int kshutdown(int fd, int how)
-{
-	struct { int fd; int how; } args = { fd, how };
-	return ksocketcall(SYS_SHUTDOWN, &args);
-}
-
-static inline int ksetsockopt(int fd, int level, int optname, void *optval, int optlen)
-{
-	struct { int fd; int level; int optname; void *optval; int optlen; } args = { fd, level, optname, optval, optlen };
-	return ksocketcall(SYS_SETSOCKOPT, &args);
-}
-
-static inline int kgetsockopt(int fd, int level, int optname, char *optval, int *optlen)
-{
-	struct { int fd; int level; int optname; void *optval; int *optlen; } args = { fd, level, optname, optval, optlen };
-	return ksocketcall(SYS_GETSOCKOPT, &args);
-}
-
-static inline int ksendmsg(int fd, struct msghdr *msg, unsigned flags)
-{
-	struct { int fd; struct msghdr *msg; unsigned flags; } args = { fd, msg, flags };
-	return ksocketcall(SYS_SENDMSG, &args);
-}
-
-static inline int krecvmsg(int fd, struct msghdr *msg, unsigned flags)
-{
-	struct { int fd; struct msghdr *msg; unsigned flags; } args = { fd, msg, flags };
-	return ksocketcall(SYS_RECVMSG, &args);
-}
-
-#else
-
-#if 0  // just for compiling
-#define __NR_socket       1
-#define __NR_bind         1
-#define __NR_connect      1
-#define __NR_accept       1
-#define __NR_listen       1
-#define __NR_getsockname  1
-#define __NR_getpeername  1
-#define __NR_socketpair   1
-#define __NR_sendto       1
-#define __NR_recvfrom     1
-#define __NR_shutdown     1
-#define __NR_setsockopt   1
-#define __NR_getsockopt   1
-#define __NR_sendmsg      1
-#define __NR_recvmsg      1
-#endif
-
-extern void *sys_call_table[];
-
-static inline int kclose(int fd)
-{
-	SYSCALL_BGN();
-	retval = ((asmlinkage int (*)(int))sys_call_table[__NR_close])(fd);
-	SYSCALL_END();
-}
-
-//static _syscall3(int, poll, struct pollfd *, ufds, unsigned int, nfds, int, timeout)
-static inline int kpoll(struct pollfd *ufds, unsigned int nfds, int timeout)
-{
-	SYSCALL_BGN();
-	retval = ((int (*)(void *, unsigned int, int))sys_call_table[__NR_poll])(ufds, nfds, timeout);
-//	retval = poll(ufds, nfds, timeout);
-	SYSCALL_END();
-}
+#else  // 64 bits
 
 //static _syscall3(int, socket, int, family, int, type, int, protocol)
 static inline int ksocket(int family, int type, int protocol)
@@ -1505,60 +1345,6 @@ static inline int kbind(int fd, struct sockaddr *umyaddr, int addrlen)
 	SYSCALL_BGN();
 	retval = ((int (*)(int, struct sockaddr *, int))sys_call_table[__NR_bind])(fd, umyaddr, addrlen);
 //	retval = bind(fd, umyaddr, addrlen);
-	SYSCALL_END();
-}
-
-//static _syscall3(int, connect, int, fd, struct sockaddr *, serv_addr, int, addrlen)
-static inline int kconnect(int fd, struct sockaddr *serv_addr, int addrlen)
-{
-	SYSCALL_BGN();
-	retval = ((int (*)(int, struct sockaddr *, int))sys_call_table[__NR_connect])(fd, serv_addr, addrlen);
-//	retval = connect(fd, serv_addr, addrlen);
-	SYSCALL_END();
-}
-
-//static _syscall2(int, listen, int, fd, int, backlog)
-static inline int klisten(int fd, int backlog)
-{
-	SYSCALL_BGN();
-	retval = ((int (*)(int, int))sys_call_table[__NR_listen])(fd, backlog);
-//	retval = listen(fd, backlog);
-	SYSCALL_END();
-}
-
-//static _syscall3(int, accept, int, fd, struct sockaddr *, upeer_sockaddr, int *, upeer_addrlen)
-static inline int kaccept(int fd, struct sockaddr *upeer_sockaddr, int *upeer_addrlen)
-{
-	SYSCALL_BGN();
-	retval = ((int (*)(int, struct sockaddr *, int *))sys_call_table[__NR_accept])(fd, upeer_sockaddr, upeer_addrlen);
-//	retval = accept(fd, upeer_sockaddr, upeer_addrlen);
-	SYSCALL_END();
-}
-
-//static _syscall3(int, getsockname, int, fd, struct sockaddr *, usockaddr, int *, uaddr_len)
-static inline int kgetsockname(int fd, struct sockaddr *usockaddr, int *usockaddr_len)
-{
-	SYSCALL_BGN();
-	retval = ((int (*)(int, struct sockaddr *, int *))sys_call_table[__NR_getsockname])(fd, usockaddr, usockaddr_len);
-//	retval = getsockname(fd, usockaddr, usockaddr_len);
-	SYSCALL_END();
-}
-
-//static _syscall3(int, getpeername, int, fd, struct sockaddr *, usockaddr, int *, uaddr_len)
-static inline int kgetpeername(int fd, struct sockaddr *usockaddr, int *usockaddr_len)
-{
-	SYSCALL_BGN();
-	retval = ((int (*)(int, struct sockaddr *, int *))sys_call_table[__NR_getpeername])(fd, usockaddr, usockaddr_len);
-//	retval = getpeername(fd, usockaddr, usockaddr_len);
-	SYSCALL_END();
-}
-
-//static _syscall4(int, socketpair, int, family, int, type, int, protocol, int, usockvec[2])
-static inline int ksocketpair(int family, int type, int protocol, int *usockvec)
-{
-	SYSCALL_BGN();
-	retval = ((int (*)(int, int, int, int *))sys_call_table[__NR_socketpair])(family, type, protocol, usockvec);
-//	retval = socketpair(family, type, protocol, usockvec);
 	SYSCALL_END();
 }
 
@@ -1580,52 +1366,7 @@ static inline int krecvfrom(int fd, void *ubuf, size_t len, unsigned flags, stru
 	SYSCALL_END();
 }
 
-//static _syscall2(int, shutdown, int, fd, int, how)
-static inline int kshutdown(int fd, int how)
-{
-	SYSCALL_BGN();
-	retval = ((int (*)(int, int))sys_call_table[__NR_shutdown])(fd, how);
-//	retval = shutdown(fd, how);
-	SYSCALL_END();
-}
-
-//static _syscall5(int, setsockopt, int, fd, int, level, int, optname, void *, optval, int, optlen)
-static inline int ksetsockopt(int fd, int level, int optname, void *optval, int optlen)
-{
-	SYSCALL_BGN();
-	retval = ((int (*)(int, int, int, void *, int))sys_call_table[__NR_setsockopt])(fd, level, optname, optval, optlen);
-//	retval = setsockopt(fd, level, optname, optval, optlen);
-	SYSCALL_END();
-}
-
-//static _syscall5(int, getsockopt, int, fd, int, level, int, optname, char *, optval, int *, optlen)
-static inline int kgetsockopt(int fd, int level, int optname, char *optval, int *optlen)
-{
-	SYSCALL_BGN();
-	retval = ((int (*)(int, int, int, void *, int *))sys_call_table[__NR_getsockopt])(fd, level, optname, optval, optlen);
-//	retval = getsockopt(fd, level, optname, optval, optlen);
-	SYSCALL_END();
-}
-
-//static _syscall3(int, sendmsg, int, fd, struct msghdr *, msg, unsigned, flags)
-static inline int ksendmsg(int fd, struct msghdr *msg, unsigned flags)
-{
-	SYSCALL_BGN();
-	retval = ((int (*)(int, struct msghdr *, unsigned))sys_call_table[__NR_sendmsg])(fd, msg, flags);
-//	retval = sendmsg(fd, msg, flags);
-	SYSCALL_END();
-}
-
-//static _syscall3(int, recvmsg, int, fd, struct msghdr *, msg, unsigned, flags)
-static inline int krecvmsg(int fd, struct msghdr *msg, unsigned flags)
-{
-	SYSCALL_BGN();
-	retval = ((int (*)(int, struct msghdr *, unsigned))sys_call_table[__NR_recvmsg])(fd, msg, flags);
-//	retval = recvmsg(fd, msg, flags);
-	SYSCALL_END();
-}
-
-#endif
+#endif  // 32 or 64 bits
 
 static inline int ksend(int fd, void *buff, size_t len, unsigned flags)
 {
@@ -1637,28 +1378,39 @@ static inline int krecv(int fd, void *ubuf, size_t size, unsigned flags)
 	return krecvfrom(fd, ubuf, size, flags, NULL, NULL);
 }
 
-static DECLARE_MUTEX_LOCKED(mtx);
 static unsigned long end_softrtnet;
+
+static RT_TASK *send_task, *recv_task;
 
 static void send_thread(void)
 {
 	int i;
 
-	rtai_set_linux_task_priority(current, SCHED_FIFO, MAX_LINUX_RTPRIO);
 	sigfillset(&current->blocked);
+	send_task = rt_thread_init(nam2num("SNDSRV"), 95, 0, SCHED_FIFO, 0xF);
 	while (!end_softrtnet) {
-		i = down_interruptible(&mtx);
+		soft_rt_fun_call(send_task, rt_sem_wait, &mtx);
 		while (sysrq.out != sysrq.in) {
 			i = sysrq.sockindx[sysrq.out];
 			ksendto(socks[i].sock, socks[i].msg, socks[i].tosend, MSG_DONTWAIT, &socks[i].addr, ADRSZ);
 			sysrq.out = (sysrq.out + 1) & MaxSockSrq;
 		}
 	}
+	rt_thread_delete(send_task);
 	set_bit(1, &end_softrtnet);
 }
 
 static struct pollfd *pollv;
-static struct task_struct *recv_handle;
+
+static void do_all_callbacks(int *cblist)
+{
+	int i, k;
+	for (k = 1; k <= cblist[0]; k++) {
+		i = cblist[k];
+		socks[i].callback(i, socks[i].arg);
+	}
+	return;
+}
 
 static void recv_thread(void)
 {
@@ -1668,7 +1420,6 @@ static void recv_thread(void)
 		int k;
 		SPRT_ADDR.sin_port = htons(BASEPORT + i);
 		if ((socks[i].sock = ksocket(AF_INET, SOCK_DGRAM, 0)) < 0 || (k = kbind(socks[i].sock, (struct sockaddr *)&SPRT_ADDR, ADRSZ)) < 0) {
-			rt_free_srq(sysrq.srq);
 			kfree(socks);
 			kfree(pollv);
 			kfree(sysrq.sockindx);
@@ -1678,119 +1429,153 @@ static void recv_thread(void)
 		socks[i].addrlen = ADRSZ;
 		pollv[i].fd      = socks[i].sock;
 		pollv[i].events  = POLLIN;
+		pollv[i].revents = 0;
 	}
-	recv_handle = current;
-	rtai_set_linux_task_priority(current, SCHED_RR, MAX_LINUX_RTPRIO);
 	sigfillset(&current->blocked);
+	recv_task = rt_thread_init(nam2num("RCVSRV"), 95, 0, SCHED_FIFO, 0xF);
 	while (!end_softrtnet) {
 		if ((nevents = kpoll(pollv, MaxSocks, NETRPC_POLL_TMOUT)) > 0) {
+			int k = 1, cblist[nevents + 1];
+			cblist[0] = nevents;
 			i = -1;
 			do {
 				while (!pollv[++i].revents);
 				if ((socks[i].recvd = krecvfrom(socks[i].sock, socks[i].msg, MAX_MSG_SIZE, MSG_DONTWAIT, &socks[i].addr, &socks[i].addrlen)) > 0) {
-					socks[i].callback(i, socks[i].arg);
+					cblist[k++] = i; // socks[i].callback(i, socks[i].arg);
 				}
 			} while (--nevents);
+			do_all_callbacks(cblist);
 		}
 	}
 	for (i = 0; i < MaxSocks; i++) {
 		kclose(socks[i].sock);
 	}
+	rt_thread_delete(recv_task);
 	set_bit(2, &end_softrtnet);
+	return;
 }
 
-static void softrtnet_hdl(void)
+static long long user_softrtnet_hdlr(unsigned long srqarg)
 {
-	up(&mtx);
+	if (!srqarg) {
+		printk("SOFT RECV_THREAD LAUNCHED FROM USER SPACE SUPPORT.\n");
+		recv_thread();
+	} else if (srqarg == 1) {
+		printk("SOFT SEND_THREAD LAUNCHED FROM USER SPACE SUPPORT.\n");
+		send_thread();
+	}
+	return 0;
 }
+
+#if LINUX_VERSION_CODE > KERNEL_VERSION(4,4,0) && ((defined(CONFIG_X86_32) && (MAX_SOCKS + MAX_STUBS) > 32) || (defined(CONFIG_X86_64) && (MAX_SOCKS + MAX_STUBS) > 64))
+#error "Not ready yet, keep (MAX_SOCKS + MAX_STUBS): <= 32 for 32 bits and <= 64 for 64 bits machines."
+#define SOFTRTNET_USER_SUPPORT 1
+#else
+#define SOFTRTNET_USER_SUPPORT 0
+#endif
+
 
 static int init_softrtnet(void)
 {
 	int i;
 	for (i = 8*sizeof(unsigned long) - 1; !test_bit(i, &MaxSocks); i--);
 	MaxSockSrq = ((1 << i) != MaxSocks ? 1 << (i + 1) : MaxSocks) - 1;
-	if ((sysrq.srq = rt_request_srq(0xbadbeef2, softrtnet_hdl, 0)) < 0) {
-		printk("SOFT RTNet: no sysrq available.\n");
-		return sysrq.srq;
-	}
 	if (!(sysrq.sockindx = (int *)kmalloc((MaxSockSrq + 1)*sizeof(int), GFP_KERNEL))) {
-		printk("SOFT RTNet: no memory available for socket queus.\n");
-		return -ENOMEM;
+		printk("SOFT RTNet INIT: no memory available for socket queus.\n");
+		goto ret4;
 	}
 	if (!(socks = (struct sock_t *)kmalloc(MaxSocks*sizeof(struct sock_t), GFP_KERNEL))) {
-		kfree(sysrq.sockindx);
-		printk("SOFT RTNet: no memory available for socks.\n");
-		return -ENOMEM;
+		printk("SOFT RTNet INIT: no memory available for socks.\n");
+		goto ret3;
 	}
 	if (!(pollv = (struct pollfd *)kmalloc(MaxSocks*sizeof(struct pollfd), GFP_KERNEL))) {
-		kfree(sysrq.sockindx);
-		kfree(socks);
-		printk("SOFT RTNet: no memory available for polling.\n");
-		return -ENOMEM;
+		printk("SOFT RTNet INIT: no memory available for polling.\n");
+		goto ret2;
 	}
 	memset(socks, 0, MaxSocks*sizeof(struct sock_t));
-	if (IS_ERR(kthread_run((void *)send_thread, 0, "SNDSRV")) || IS_ERR(kthread_run((void *)recv_thread, 0, "RCVSRV"))) {
-			kfree(sysrq.sockindx);
-			kfree(socks);
-			kfree(pollv);
-			printk("SOFT RTNet: unable to set up Linux support kernel threads.\n");
-			return -EINVAL;
+	rt_typed_sem_init(&mtx, 0, BIN_SEM | FIFO_Q);
+	if (SOFTRTNET_USER_SUPPORT) {
+		char env0[] = "usr/rtai-5.1""/bin";
+		char arg0[] = "usr/rtai-5.1""/bin/user_softrtnet";
+		char arg1[] = "usr/rtai-5.1""/bin/execlog";
+		char *envp[] = { env0, "TERM=linux", "PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:usr", NULL };
+		char *argv[] = { arg0, arg1, NULL };
+		if (call_usermodehelper(argv[0], argv, envp, UMH_WAIT_EXEC)) {
+			printk("SOFT RTNet USERMODE HELPER ERROR.\n");
+			goto ret1;
+		}
+		printk("SOFT RTNet USERMODE HELPER OK.\n");
+	} else {
+		rt_thread_create((void *)send_thread, NULL, NULL);
+		rt_thread_create((void *)recv_thread, NULL, NULL);
 	}
-	while (!recv_handle) {
-		current->state = TASK_INTERRUPTIBLE;
-		schedule_timeout(HZ/NETRPC_DELAY_FREQ);
+	for (i = 0; i < 2*NETRPC_DELAY_FREQ && (!send_task || !recv_task); i++) {
+		msleep(1000/NETRPC_DELAY_FREQ);
+	}
+	if (!recv_task || !send_task) {
+		printk("SOFT RTNet INIT: send-receive soft server set up failed.\n");
+		goto ret1;
 	}
 	return 0;
+ret1:	rt_sem_delete(&mtx);
+ret2:	kfree(pollv);
+ret3:	kfree(socks);
+ret4:	kfree(sysrq.sockindx);
+	return -1;
 }
 
 static void cleanup_softrtnet(void)
 {
-	rt_free_srq(sysrq.srq);
+	int i;
 	end_softrtnet = 1;
-/* watch out: dirty trick, but we are sure the thread will do nothing more. */
-//	sigemptyset(&recv_handle->blocked);
-//	send_sig(SIGKILL, recv_handle, 1);
-/* watch out: end of the dirty trick. */
-	softrtnet_hdl();
-	while (end_softrtnet < 7) {
-		current->state = TASK_INTERRUPTIBLE;
-		schedule_timeout(HZ/NETRPC_DELAY_FREQ);
+	rt_sem_signal(&mtx);
+	for (i = 0; i < 2*NETRPC_DELAY_FREQ && end_softrtnet < 7; i++) {
+		msleep(1000/NETRPC_DELAY_FREQ);
+	}
+	if (end_softrtnet < 7) {
+		printk("SOFT RTNet CLEANUP: send-receive soft server did not end.\n");
 	}
 	kfree(sysrq.sockindx);
 	kfree(socks);
 	kfree(pollv);
+	rt_sem_delete(&mtx);
 }
 
 /*
  * this is a thing to make available externally what it should not,
  * needed to check the working of a user message processing addon
  */
-void **rt_net_rpc_fun_hook = (void *)rt_net_rpc_fun_ext;
+static void **rt_net_rpc_fun_hook = (void *)rt_net_rpc_fun_ext;
 
 int __rtai_netrpc_init(void)
 {
 	int i;
 
-	MaxStubsMone = MaxStubs - 1;
-	if ((mod_timer_srq = rt_request_srq(0xbadbeef1, do_mod_timer, 0)) < 0) {
-		printk("MOD_TIMER: no sysrq available.\n");
-		return mod_timer_srq;
-	}
-	if (!(recovery.msg = (struct recovery_msg *)kmalloc((MaxStubs)*sizeof(struct recovery_msg), GFP_KERNEL))) {
-		printk("Init MODULE no memory for recovery queue.\n");
-		rt_free_srq(mod_timer_srq);
-		return -ENOMEM;
-	}
-	MaxSocks += MaxStubs;
 	SPRT_ADDR.sin_family = AF_INET;
 	SPRT_ADDR.sin_addr.s_addr = htonl(INADDR_ANY);
+	MaxSocks += MaxStubs;
+	if (MAX_SOCKS != MAX_STUBS || (MAX_SOCKS & (MAX_SOCKS - 1)) || (MAX_STUBS & (MAX_STUBS - 1))) {
+		printk("NETRPC INIT: MAX_SOCKS (%d) must be equal to MAX_STUBS (%d) and both a power of 2.\n", MAX_SOCKS, MAX_STUBS);
+		return -1;
+	}
+	if ((netrpc_srq = rt_request_srq(0xbadface1, mod_timer_hdlr, user_softrtnet_hdlr)) < 0) {
+		printk("NETRPC INIT: no srq available for netrpc_srq.\n");
+		return -1;
+	}
 	if (init_softrtnet()) {
-		return 1;
+		printk("NETRPC INIT: soft rtnet initialization failed.\n");
+		return -1;
+	}
+	MaxStubsMone = MaxStubs - 1;
+	if (!(recovery.msg = (struct recovery_msg *)kmalloc((MaxStubs)*sizeof(struct recovery_msg), GFP_KERNEL))) {
+		printk("NETRPC INIT: no memory for recovery.msg.\n");
+		goto ret2;
 	}
 	rt_net_rpc_fun_ext[NET_RPC_EXT] = rt_fun_lxrt;
 	set_rt_fun_entries(rt_netrpc_entries);
 	if (!(portslot = kmalloc(MaxSocks*sizeof(struct portslot_t), GFP_KERNEL))) {
-		printk("KMALLOC FAILED ALLOCATING PORT SLOTS\n");
+		printk("NETRPC INIT: no memory for portslot.\n");
+		goto ret1;
 	}
 	if (!ThisSoftNode) {
 		ThisSoftNode = ThisNode;
@@ -1830,6 +1615,9 @@ int __rtai_netrpc_init(void)
 	init_timer(&timer);
 	timer.function = timer_fun;
 	return 0 ;
+ret1:	kfree(recovery.msg);
+ret2:	rt_free_srq(netrpc_srq);
+	return -1;
 }
 
 void __rtai_netrpc_exit(void)
@@ -1858,8 +1646,9 @@ void __rtai_netrpc_exit(void)
 		hard_rt_close(portslot[i].socket[1]);
 	}
 	kfree(portslot);
+	kfree(recovery.msg);
 	cleanup_softrtnet();
-	rt_free_srq(mod_timer_srq);
+	rt_free_srq(netrpc_srq);
 	return;
 }
 

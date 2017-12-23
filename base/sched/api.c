@@ -19,8 +19,8 @@
  * GNU General Public License for more details.
  *
  * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
+ * along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ *
  */
 
 
@@ -165,6 +165,16 @@ RTAI_SYSCALL_MODE int rt_task_get_info(RT_TASK *task, RT_TASK_INFO *task_info)
 	task_info->base_priority = task->base_priority;
 	task_info->priority      = task->priority;
 	return 0;
+}
+
+RTAI_SYSCALL_MODE int rt_task_get_info_user(RT_TASK *task, RT_TASK_INFO *task_info)
+{
+	RT_TASK_INFO ltask_info;
+	if (!rt_task_get_info(task, &ltask_info)) {
+		rt_copy_to_user(task_info, &ltask_info, sizeof(RT_TASK_INFO));
+		return 0;
+	}
+	return -EINVAL;
 }
 
 /**
@@ -2019,7 +2029,11 @@ void rt_exec_linux_syscall(RT_TASK *rt_current, struct linux_syscalls_list *sysc
 
 #if defined( __NR_socketcall)
 	if (regs->LINUX_SYSCALL_NR == __NR_socketcall) {
-		memcpy(syscall.pacargs, (void *)regs->LINUX_SYSCALL_REG2, sizeof(syscall.pacargs));
+		if ((void *)regs->LINUX_SYSCALL_REG2 > PAGE_OFFSET) {
+			memcpy(syscall.pacargs, (void *)regs->LINUX_SYSCALL_REG2, sizeof(syscall.pacargs));
+		} else {
+			rt_copy_from_user(syscall.pacargs, (void *)regs->LINUX_SYSCALL_REG2, sizeof(syscall.pacargs));
+		}
 		syscall.args[2] = (long)(&syscalls->syscall[in].pacargs);
 		id = offsetof(struct linux_syscall, retval);
 	} else

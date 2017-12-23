@@ -1,7 +1,7 @@
 // ====================================================================
-// Allan CORNET
-// Simon LIPP
-// INRIA 2008
+// Copyright (C) 2008 Allan CORNET
+// Copyright (C) 2008 Simon LIPP
+// Copyright (C) 2008 INRIA
 // This file is released into the public domain
 // ====================================================================
 

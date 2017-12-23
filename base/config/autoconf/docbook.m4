@@ -1,3 +1,12 @@
+# Copyright (C) 2005-2017 The RTAI project
+# This [file] is free software; the RTAI project
+# gives unlimited permission to copy and/or distribute it,
+# with or without modifications, as long as this notice is preserved.
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY, to the extent permitted by law; without
+# even the implied warranty of MERCHANTABILITY or FITNESS FOR A
+# PARTICULAR PURPOSE.
+#
 #                                               -*- Autoconf -*-
 # Building Docbook-XML documents with the autotools.
 #
@@ -65,9 +74,9 @@ fi
 AC_SUBST(DBX_XSLTPROC)
 
 
-AC_CHECK_PROG(DBX_FOP, fop.sh, fop.sh)
+AC_CHECK_PROG(DBX_FOP, fop, fop)
 if test x"$DBX_FOP" = x -a -n "$DBX_DOC"; then
-   AC_MSG_ERROR([fop.sh was not found. Check your PATH variable and try again.])
+   AC_MSG_ERROR([fop was not found. Check your PATH variable and try again.])
 fi
 AC_SUBST(DBX_FOP)
 

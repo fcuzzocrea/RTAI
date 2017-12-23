@@ -12,12 +12,8 @@ dnl MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
 dnl General Public License for more details.
 dnl
 dnl You should have received a copy of the GNU General Public License
-dnl along with this file; if not, write to:
+dnl along with this file; if not, see <http://www.gnu.org/licenses/>.
 dnl
-dnl   Free Software Foundation, Inc.
-dnl   Suite 330
-dnl   59 Temple Place
-dnl   Boston, MA 02111-1307, USA.
 dnl ####################################################################
 dnl @synopsis MDL_HAVE_OPENGL
 dnl 

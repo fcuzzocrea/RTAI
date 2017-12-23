@@ -1,3 +1,38 @@
+# Copyright (C) 2005-2017 The RTAI project
+# This [file] is free software; the RTAI project
+# gives unlimited permission to copy and/or distribute it,
+# with or without modifications, as long as this notice is preserved.
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY, to the extent permitted by law; without
+# even the implied warranty of MERCHANTABILITY or FITNESS FOR A
+# PARTICULAR PURPOSE.
+2017-07-14 Marco Morandini <marco.morandini@polimi.it>
+
+	* Got rid of rtai-lab/matrixx
+
+2016-05-15 Pierangelo Masarati <pierangelo.masarati@polimi.it>
+
+	* RTAI 5.1
+
+2016-05-15 Pierangelo Masarati <pierangelo.masarati@polimi.it>
+
+	* README.CONF_RMRKS: added missing file
+
+2017-05-09 Paolo Mantegazza <mantegazza@aero.polimi.it>
+
+	* base/sched/sched.c: fixed wrong module parm declaration for 
+	kernel_latency and user_latency. Don't look for calibrated
+	latencies if any of kernel_latency and user_latency is not zero.
+
+2016-05-05 Pierangelo Masarati <pierangelo.masarati@polimi.it>
+
+	* RTAI 5.0
+
+2017-05-04 Paolo Mantegazza <mantegazza@aero.polimi.it>
+
+	* README.CONF_RMRKS: a few remarks-hints about latencies and how to
+	  avoid them.
+
 2017-04-21 Paolo Mantegazza <mantegazza@aero.polimi.it>
 
 	* addons/rtdm/rtai_taskq.c: anticipate a null task pointer check in

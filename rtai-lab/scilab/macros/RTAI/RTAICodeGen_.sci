@@ -1,6 +1,6 @@
-//** INRIA / SCILAB / Roberto Bucher / Simone Mannori / Paolo Gai
-//** 16 Jan 2008
-//**
+// INRIA / SCILAB / Roberto Bucher / Simone Mannori / Paolo Gai / Henrik Slotholt
+// 16 Jan 2008
+//
 // Modified by Roberto Bucher roberto.bucher@supsi.ch from the original
 // CodeGeneration_.sci
 //
@@ -9,6 +9,28 @@
 //
 //** 10 Set 2007 : cleaner startup code by Simone Mannori
 //** 15 Aug 2009 : Hierarchical block names by Henrik Slotholt
+//
+// Copyright (C) 2008 INRIA
+// Copyright (C) 2008 Simone Mannori
+// Copyright (C) 2008 Paolo Gai
+// Copyright (C) 2009 Henrik Slotholt
+// Copyright (C) 2009 Roberto Bucher
+//
+// This program is free software; you can redistribute it and/or
+// modify it under the terms of the GNU General Public License as
+// published by the Free Software Foundation; either version 2 of the
+// License, or (at your option) any later version.
+//
+// This program is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU General Public License for more details.
+//
+// You should have received a copy of the GNU General Public License
+// along with this program.  If not, see <http://www.gnu.org/licenses/>.
+//
+//
+
 
 function RTAICodeGen_()
 

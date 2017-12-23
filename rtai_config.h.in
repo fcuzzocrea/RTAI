@@ -1,4 +1,4 @@
-/* rtai_config.h.in.  Generated from configure.in by autoheader.  */
+/* rtai_config.h.in.  Generated from configure.ac by autoheader.  */
 
 /* Kconfig */
 #undef CONFIG_KBUILD

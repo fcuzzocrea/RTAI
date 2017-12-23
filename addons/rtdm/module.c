@@ -18,8 +18,7 @@
  * General Public License for more details.
  *
  * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software Foundation,
- * Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
+ * along with this program.  If not, see <http://www.gnu.org/licenses/>. 
  */
 
 /*!
@@ -126,7 +125,7 @@ static RTAI_SYSCALL_MODE int sys_rtdm_sendmsg(long fd, const struct msghdr *msg,
 
 static RTAI_SYSCALL_MODE int sys_rtdm_select(int nfds, fd_set *rfds, fd_set *wfds, fd_set *efds, nanosecs_rel_t timeout)
 {
-	return rt_dev_select(nfds, rfds, wfds, efds, timeout);
+	return __rt_dev_select(nfds, rfds, wfds, efds, timeout);
 }
 
 static struct rt_fun_entry rtdm[] = {
@@ -1184,6 +1183,33 @@ static void rtai_timers_cleanup(void)
 	}
 }
 
+#ifdef CONFIG_RTAI_RTDM_SELECT
+
+#define MAX_NUM_SELECTORS (2*CONFIG_RTAI_RTDM_FD_MAX)
+
+struct {spinlock_t lock; int ind; struct xnselector selector[MAX_NUM_SELECTORS]; } selectors = { SPIN_LOCK_UNLOCKED, 0, };
+
+struct xnselector *assign_selector(int **busy) 
+{
+	struct xnselector *selector;
+	int exceeded;
+	rt_spin_lock(&selectors.lock);
+	if (!((selectors.ind + 1) & (MAX_NUM_SELECTORS - 1))) {
+		exceeded = 1;
+		selector = NULL;
+	} else {
+		exceeded = 0;
+		selector = &selectors.selector[selectors.ind];
+		selectors.ind = (selectors.ind + 1) & (MAX_NUM_SELECTORS - 1);
+	}
+	rt_spin_unlock(&selectors.lock);
+	if (exceeded) {
+		printk("ALLOWED SELECTORs REQUEST EXCEEDED, NONE AVAILABLE.\n");
+	}
+	return selector;
+}
+#endif
+
 int __init rtdm_skin_init(void)
 {
 	int err;
@@ -1228,6 +1254,10 @@ fail:
 void __exit rtdm_skin_exit(void)
 {
 #ifdef CONFIG_RTAI_RTDM_SELECT
+	int i;
+	for (i = 0; i < selectors.ind; i++) {
+		xnselector_destroy(&selectors.selector[i]); 
+	}
 	xnselect_umount();
 #endif
 	rtai_timers_cleanup();
@@ -1236,6 +1266,7 @@ void __exit rtdm_skin_exit(void)
 #ifdef CONFIG_PROC_FS
 	rtdm_proc_cleanup();
 #endif /* CONFIG_PROC_FS */
+
 	printk("RTDM stopped.\n");
 }
 

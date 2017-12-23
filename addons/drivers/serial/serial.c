@@ -1,6 +1,9 @@
 /*
  * Copyright (C) 2002-2008 Paolo Mantegazza <mantegazza@aero.polimi.it>
- *                         Giuseppe Renoldi <giuseppe@renoldi.org>
+ * Copyright (C) 2002      Giuseppe Renoldi <giuseppe@renoldi.org>
+ * Copyright (C) 2002      Rich Walker <rw@shadow.org.uk>, fixed support for UART 16450   
+ * Copyright (C) 2003      Richard Brunelle <rbrunelle@envitech.com>, fixed ISR hard flow 
+ * Copyright (C) 2008      Renato Castello <zx81@gmx.net>, support for shared interrupts  
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License as
@@ -13,13 +16,10 @@
  * GNU General Public License for more details.
  *
  * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
+ * along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ *
  */
 
-/* Nov. 2002, Rich Walker <rw@shadow.org.uk>, fixed support for UART 16450   */
-/* Jan. 2003, Richard Brunelle <rbrunelle@envitech.com>, fixed ISR hard flow */
-/* Apr. 2008, Renato Castello <zx81@gmx.net>, support for shared interrupts  */
 
 #include <linux/module.h>
 #include <linux/init.h>
@@ -308,10 +308,12 @@ static void mbx_init(struct rt_spmbx *mbx)
 
 #define MOD_SIZE(indx) ((indx) < spbufsiz ? (indx) : (indx) - spbufsiz)
 
+#define KSPACE(adr)  ((unsigned long)adr > PAGE_OFFSET)
+
 static inline int mbxput(struct rt_spmbx *mbx, char **msg, int msg_size)
 {
 	unsigned long flags;
-	int tocpy;
+	int tocpy, kspace = KSPACE(*msg);
 
 	while (msg_size > 0 && mbx->frbs) {
 		if ((tocpy = spbufsiz - mbx->lbyte) > msg_size) {
@@ -320,7 +322,11 @@ static inline int mbxput(struct rt_spmbx *mbx, char **msg, int msg_size)
 		if (tocpy > mbx->frbs) {
 			tocpy = mbx->frbs;
 		}
-		memcpy(mbx->bufadr + mbx->lbyte, *msg, tocpy);
+		if (kspace) {
+			memcpy(mbx->bufadr + mbx->lbyte, *msg, tocpy);
+		} else {
+			rt_copy_from_user(mbx->bufadr + mbx->lbyte, *msg, tocpy);
+		}
 		buf_atomic_bgn(flags, mbx);
 		mbx->frbs -= tocpy;
 		mbx->avbs += tocpy;
@@ -335,7 +341,7 @@ static inline int mbxput(struct rt_spmbx *mbx, char **msg, int msg_size)
 static inline int mbxget(struct rt_spmbx *mbx, char **msg, int msg_size)
 {
 	unsigned long flags;
-	int tocpy;
+	int tocpy, kspace = KSPACE(*msg);
 
 	while (msg_size > 0 && mbx->avbs) {
 		if ((tocpy = spbufsiz - mbx->fbyte) > msg_size) {
@@ -344,7 +350,11 @@ static inline int mbxget(struct rt_spmbx *mbx, char **msg, int msg_size)
 		if (tocpy > mbx->avbs) {
 			tocpy = mbx->avbs;
 		}
-		memcpy(*msg, mbx->bufadr + mbx->fbyte, tocpy);
+		if (kspace) {
+			memcpy(*msg, mbx->bufadr + mbx->fbyte, tocpy);
+		} else {
+			rt_copy_from_user(*msg, mbx->bufadr + mbx->fbyte, tocpy);
+		}
 		buf_atomic_bgn(flags, mbx);
 		mbx->frbs  += tocpy;
 		mbx->avbs  -= tocpy;
@@ -358,7 +368,7 @@ static inline int mbxget(struct rt_spmbx *mbx, char **msg, int msg_size)
 
 static inline int mbxevdrp(struct rt_spmbx *mbx, char **msg, int msg_size)
 {
-	int tocpy, fbyte, avbs;
+	int tocpy, fbyte, avbs, kspace = KSPACE(*msg);
 
 	fbyte = mbx->fbyte;
 	avbs  = mbx->avbs;
@@ -369,7 +379,11 @@ static inline int mbxevdrp(struct rt_spmbx *mbx, char **msg, int msg_size)
 		if (tocpy > avbs) {
 			tocpy = avbs;
 		}
-		memcpy(*msg, mbx->bufadr + fbyte, tocpy);
+		if (kspace) {
+			memcpy(*msg, mbx->bufadr + fbyte, tocpy);
+		} else {
+			rt_copy_from_user(*msg, mbx->bufadr + mbx->fbyte, tocpy);
+		}
 		avbs     -= tocpy;
 		msg_size -= tocpy;
 		*msg     += tocpy;

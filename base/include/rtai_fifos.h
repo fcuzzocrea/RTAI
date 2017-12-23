@@ -19,8 +19,8 @@
  * GNU General Public License for more details.
  *
  * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
+ * along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ *
  */
 
 #ifndef _RTAI_FIFOS_H
@@ -335,42 +335,26 @@ RTAI_PROTO(int, rtf_destroy,(unsigned int fifo))
 
 RTAI_PROTO(int, rtf_put,(unsigned int fifo, const void *buf, int count))
 {
-	char lbuf[count];
-	struct { unsigned long fifo; void *buf; long count; } arg = { fifo, lbuf, count };
-	memcpy(lbuf, buf, count);
+	struct { unsigned long fifo; const void *buf; long count; } arg = { fifo, buf, count };
 	return rtai_lxrt(FUN_FIFOS_LXRT_INDX, SIZARG, _PUT, &arg).i[LOW];
 }
 
 RTAI_PROTO(int, rtf_put_if,(unsigned int fifo, const void *buf, int count))
 {
-	char lbuf[count];
-	struct { unsigned long fifo; void *buf; long count; } arg = { fifo, lbuf, count };
-	memcpy(lbuf, buf, count);
+	struct { unsigned long fifo; const void *buf; long count; } arg = { fifo, buf, count };
 	return rtai_lxrt(FUN_FIFOS_LXRT_INDX, SIZARG, _PUT_IF, &arg).i[LOW];
 }
 
 RTAI_PROTO(int, rtf_get,(unsigned int fifo, void *buf, int count))
 {
-	int retval;
-	char lbuf[count];
-	struct { unsigned long fifo; void *buf; long count; } arg = { fifo, lbuf, count };
-	retval = rtai_lxrt(FUN_FIFOS_LXRT_INDX, SIZARG, _GET, &arg).i[LOW];
-	if (retval > 0) {
-		memcpy(buf, lbuf, retval);
-	}
-	return retval;
+	struct { unsigned long fifo; void *buf; long count; } arg = { fifo, buf, count };
+	return rtai_lxrt(FUN_FIFOS_LXRT_INDX, SIZARG, _GET, &arg).i[LOW];
 }
 
 RTAI_PROTO(int, rtf_get_if,(unsigned int fifo, void *buf, int count))
 {
-	int retval;
-	char lbuf[count];
-	struct { unsigned long fifo; void *buf; long count; } arg = { fifo, lbuf, count };
-	retval = rtai_lxrt(FUN_FIFOS_LXRT_INDX, SIZARG, _GET_IF, &arg).i[LOW];
-	if (retval > 0) {
-		memcpy(buf, lbuf, retval);
-	}
-	return retval;
+	struct { unsigned long fifo; void *buf; long count; } arg = { fifo, buf, count };
+	return rtai_lxrt(FUN_FIFOS_LXRT_INDX, SIZARG, _GET_IF, &arg).i[LOW];
 }
 
 RTAI_PROTO(int, rtf_get_avbs, (unsigned int fifo))
@@ -450,9 +434,7 @@ RTAI_PROTO(int, rtf_getfifobyname_lxrt,(const char *name))
 
 RTAI_PROTO(int, rtf_ovrwr_put,(unsigned int fifo, const void *buf, int count))
 {
-	char lbuf[count];
-	struct { unsigned long fifo; void *buf; long count; } arg = { fifo, lbuf, count };
-	memcpy(lbuf, buf, count);
+	struct { unsigned long fifo; const void *buf; long count; } arg = { fifo, buf, count };
 	return rtai_lxrt(FUN_FIFOS_LXRT_INDX, SIZARG, _OVERWRITE, &arg).i[LOW];
 }
 

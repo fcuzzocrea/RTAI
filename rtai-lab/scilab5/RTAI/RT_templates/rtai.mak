@@ -1,3 +1,12 @@
+# Copyright (C) 2017 The RTAI project
+# This [file] is free software; the RTAI project
+# gives unlimited permission to copy and/or distribute it,
+# with or without modifications, as long as this notice is preserved.
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY, to the extent permitted by law; without
+# even the implied warranty of MERCHANTABILITY or FITNESS FOR A
+# PARTICULAR PURPOSE.
+
 # Makefile generate from template rtai.mak
 # ========================================
 
@@ -20,12 +29,7 @@ CC_OPTIONS = -O -DNDEBUG -Dlinux -DNARROWPROTO -D_GNU_SOURCE
 MODEL = $$MODEL$$
 OBJSSTAN = rtmain.o common.o $$MODEL$$.o $$OBJ$$
 
-SCILIBS = \
-          $(SCIDIR)/libs/libsciscicos.a \
-          $(SCIDIR)/libs/libsciscicos_blocks.a \
-          $(SCIDIR)/libs/libscipolynomials.a \
-          $(SCIDIR)/libs/calelm.a \
-          $(SCIDIR)/libs/os_specific.a
+SCILIBS = $(SCIDIR)/libs/libscicos.a 
 
 OTHERLIBS = 
 ULIBRARY = $(RTAIDIR)/lib/libsciblk.a $(RTAIDIR)/lib/liblxrt.a

@@ -8,7 +8,7 @@
  *
  * @author Paolo Mantegazza
  *
- * @note Copyright &copy; 1999-2003 Paolo Mantegazza <mantegazza@aero.polimi.it>
+ * @note Copyright &copy; 1999-2017 Paolo Mantegazza <mantegazza@aero.polimi.it>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License as
@@ -21,8 +21,8 @@
  * GNU General Public License for more details.
  *
  * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
+ * along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ *
  */
 
 /* 
@@ -1681,6 +1681,36 @@ static struct file_operations rtf_fops =
 	fasync:		rtf_fasync,
 };
 
+RTAI_SYSCALL_MODE int rtf_ovrwr_put_user(unsigned int minor, void *buf, int count)
+{
+	VALID_FIFO;
+	return mbx_ovrwr_send(&(fifo[minor].mbx), buf, count, 1);
+}
+
+RTAI_SYSCALL_MODE int rtf_put_user(unsigned int minor, void *buf, int count)
+{
+	VALID_FIFO;
+	return count - mbx_send_wp(&(fifo[minor].mbx), buf, count, 1);
+}
+
+RTAI_SYSCALL_MODE int rtf_get_user(unsigned int minor, void *buf, int count)
+{
+	VALID_FIFO;
+	return count - mbx_receive_wp(&(fifo[minor].mbx), buf, count, 1);
+}
+
+RTAI_SYSCALL_MODE int rtf_put_if_user(unsigned int minor, void *buf, int count)
+{
+	VALID_FIFO;
+	return count - mbx_send_if(&(fifo[minor].mbx), buf, count, 1);
+}
+
+RTAI_SYSCALL_MODE int rtf_get_if_user(unsigned int minor, void *buf, int count)
+{
+	VALID_FIFO;
+	return count - mbx_receive_if(&(fifo[minor].mbx), buf, count, 1);
+}
+
 #ifdef CONFIG_DEVFS_FS
 #include <linux/devfs_fs_kernel.h>
 #endif
@@ -1695,8 +1725,8 @@ RTAI_MODULE_PARM(MaxFifos, int);
 static struct rt_fun_entry rtai_fifos_fun[] = {
 	[_CREATE]       = { 0, rtf_create },
 	[_DESTROY]      = { 0, rtf_destroy },
-	[_PUT]          = { 0, rtf_put },
-	[_GET]          = { 0, rtf_get },
+	[_PUT]          = { 0, rtf_put_user },
+	[_GET]          = { 0, rtf_get_user },
 	[_RESET]        = { 0, rtf_reset },
 	[_RESIZE]       = { 0, rtf_resize },
 	[_SEM_INIT]     = { 0, rtf_sem_init },
@@ -1705,9 +1735,9 @@ static struct rt_fun_entry rtai_fifos_fun[] = {
 	[_SEM_TRY]      = { 0, rtf_sem_trywait },
 	[_CREATE_NAMED] = { 0, rtf_create_named },
 	[_GETBY_NAME]   = { 0, rtf_getfifobyname },
-	[_OVERWRITE]    = { 0, rtf_ovrwr_put },
-	[_PUT_IF]       = { 0, rtf_put_if },
-	[_GET_IF]       = { 0, rtf_get_if },
+	[_OVERWRITE]    = { 0, rtf_ovrwr_put_user },
+	[_PUT_IF]       = { 0, rtf_put_if_user },
+	[_GET_IF]       = { 0, rtf_get_if_user },
 	[_AVBS]         = { 0, rtf_get_avbs },
 	[_FRBS]         = { 0, rtf_get_frbs }
 };

@@ -1,6 +1,6 @@
 /*
  * Copyright (C) 2002,2003 Paolo Mantegazza <mantegazza@aero.polimi.it>
- *                         Giuseppe Renoldi <giuseppe@renoldi.org>
+ * Copyright (C) 2002,2003 Giuseppe Renoldi <giuseppe@renoldi.org>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License as
@@ -13,8 +13,8 @@
  * GNU General Public License for more details.
  *
  * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
+ * along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ *
  */
 
 #ifndef _RTAI_SERIAL_H
@@ -200,34 +200,19 @@ RTAI_PROTO(int, rt_spclose, (unsigned int tty))
 
 RTAI_PROTO(int, rt_spread, (unsigned int tty, char *msg, int msg_size))
 {
-	int notrd, size;
-	char lmsg[size = abs(msg_size)];
-	struct { unsigned long tty; char *msg; long msg_size; } arg = { tty, lmsg, msg_size };
-	notrd = rtai_lxrt(FUN_EXT_RTAI_SP, SIZARG, _SPREAD, &arg).i[LOW];
-	if (notrd >= 0 && notrd != size) {
-		memcpy(msg, lmsg, size - notrd);	
-	}
-	return notrd;
+	struct { unsigned long tty; char *msg; long msg_size; } arg = { tty, msg, msg_size };
+	return rtai_lxrt(FUN_EXT_RTAI_SP, SIZARG, _SPREAD, &arg).i[LOW];
 }
 
 RTAI_PROTO(int, rt_spevdrp, (unsigned int tty, char *msg, int msg_size))
 {
-	int notrd, size;
-	char lmsg[size = abs(msg_size)];
-	struct { unsigned long tty; char *msg; long msg_size; } arg = { tty, lmsg, msg_size };
-	notrd = rtai_lxrt(FUN_EXT_RTAI_SP, SIZARG, _SPEVDRP, &arg).i[LOW];
-	if ( notrd >= 0 && notrd != size ) {
-		memcpy(msg, lmsg, size - notrd);	
-	}
-	return notrd;
+	struct { unsigned long tty; char *msg; long msg_size; } arg = { tty, msg, msg_size };
+	return rtai_lxrt(FUN_EXT_RTAI_SP, SIZARG, _SPEVDRP, &arg).i[LOW];
 }
 
 RTAI_PROTO(int, rt_spwrite, (unsigned int tty, char *msg, int msg_size))
 {
-	int size;
-	char lmsg[size = abs(msg_size)];
-	struct { unsigned long tty; char *msg; long msg_size; } arg = { tty, lmsg, msg_size };
-	memcpy(lmsg, msg, size);	
+	struct { unsigned long tty; char *msg; long msg_size; } arg = { tty, msg, msg_size };
 	return rtai_lxrt(FUN_EXT_RTAI_SP, SIZARG, _SPWRITE, &arg).i[LOW];
 }
 

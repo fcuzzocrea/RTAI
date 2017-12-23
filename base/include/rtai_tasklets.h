@@ -19,8 +19,8 @@
  * GNU General Public License for more details.
  *
  * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
+ * along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ *
  */
 
 #ifndef _RTAI_TASKLETS_H
@@ -441,10 +441,8 @@ RTAI_PROTO(void, rt_set_timer_period, (struct rt_tasklet_struct *timer, RTIME pe
 RTAI_PROTO(void, rt_get_timer_times, (struct rt_tasklet_struct *timer, RTIME timer_times[]))
 {
 	if (timer_times) {
-		  RTIME ltimer_times[2];
-			struct { struct rt_tasklet_struct *timer; RTIME *timer_times; } arg = { timer, ltimer_times };
-	    rtai_lxrt(TASKLETS_IDX, SIZARG, GET_TMR_TIM, &arg);
-	    memcpy(timer_times, ltimer_times, sizeof(ltimer_times));
+		struct { struct rt_tasklet_struct *timer; RTIME *timer_times; } arg = { timer, timer_times };
+		rtai_lxrt(TASKLETS_IDX, SIZARG, GET_TMR_TIM, &arg);
 	}
 }
 

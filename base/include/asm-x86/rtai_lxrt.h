@@ -1,8 +1,8 @@
 /*
  * Copyright (C) 1999-2015 Paolo Mantegazza <mantegazza@aero.polimi.it>
  * extensions for user space modules are jointly copyrighted (2000) with:
- *		Pierre Cloutier <pcloutier@poseidoncontrols.com>,
- *		Steve Papacharalambous <stevep@zentropix.com>.
+ * Copyright (C) 2000	Pierre Cloutier <pcloutier@poseidoncontrols.com>,
+ * Copyright (C) 2000	Steve Papacharalambous <stevep@zentropix.com>.
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -14,8 +14,8 @@
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
  * Lesser General Public License for more details.
  * You should have received a copy of the GNU Lesser General Public
- * License along with this library; if not, write to the Free Software
- * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA.
+ * License along with this library; if not, see <http://www.gnu.org/licenses/>.
+ * 
  */
 
 #ifndef _RTAI_ASM_X86_LXRT_H

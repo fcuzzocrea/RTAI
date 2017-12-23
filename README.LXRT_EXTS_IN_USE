@@ -1,3 +1,12 @@
+# Copyright (C) 2005-2017 The RTAI project
+# This [file] is free software; the RTAI project
+# gives unlimited permission to copy and/or distribute it,
+# with or without modifications, as long as this notice is preserved.
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY, to the extent permitted by law; without
+# even the implied warranty of MERCHANTABILITY or FITNESS FOR A
+# PARTICULAR PURPOSE.
+
 User space RTAI syscalls have 16 extensions slots. They allow any user to
 extend RTAI with her/his own user space callable APIs without touching
 RTAI itself. For the most efficient inline usage of any extension user slots 

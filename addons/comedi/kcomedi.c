@@ -1,8 +1,8 @@
 /*
  * Copyright (C) 2002 Thomas Leibner (leibner@t-online.de) (first complete writeup)
- *               2002 David Schleef (ds@schleef.org) (COMEDI master)
- *               2002 Lorenzo Dozio (dozio@aero.polimi.it) (made it all work)
- *               2002 Paolo Mantegazza (mantegazza@aero.polimi.it) (hints/support)
+ * Copyright (C) 2002 David Schleef (ds@schleef.org) (COMEDI master)
+ * Copyright (C) 2002 Lorenzo Dozio (dozio@aero.polimi.it) (made it all work)
+ * Copyright (C) 2002 Paolo Mantegazza (mantegazza@aero.polimi.it) (hints/support)
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -15,8 +15,8 @@
  * Lesser General Public License for more details.
 
  * You should have received a copy of the GNU Lesser General Public
- * License along with this library; if not, write to the Free Software
- * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA.
+ * License along with this library; if not, see <http://www.gnu.org/licenses/>.
+ * 
  */
 
 /**

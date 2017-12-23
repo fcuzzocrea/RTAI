@@ -19,8 +19,8 @@
  * GNU General Public License for more details.
  *
  * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
+ * along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ *
  */
 
 /**
@@ -125,6 +125,8 @@ static DEFINE_SPINLOCK(tasklets_lock);
 
 static struct rt_fun_entry rt_tasklet_fun[]  __attribute__ ((__unused__));
 
+static RTAI_SYSCALL_MODE void rt_get_timer_times_user(struct rt_tasklet_struct *, RTIME *);
+
 static struct rt_fun_entry rt_tasklet_fun[] = {
 	{ 0, rt_init_tasklet },    		//   0
 	{ 0, rt_delete_tasklet },    		//   1
@@ -142,7 +144,7 @@ static struct rt_fun_entry rt_tasklet_fun[] = {
 	{ 0, rt_wait_tasklet_is_hard },	   	//  13
 	{ 0, rt_set_tasklet_priority },  	//  14
 	{ 0, rt_register_task },	  	//  15
-	{ 0, rt_get_timer_times },		//  16	
+	{ 0, rt_get_timer_times_user },		//  16	
 	{ 0, rt_get_timer_overrun },		//  17	
 		
 /* Posix timers support */	
@@ -649,6 +651,13 @@ RTAI_SYSCALL_MODE void rt_get_timer_times(struct rt_tasklet_struct *timer, RTIME
 		
 	timer_times[0] = firing > 0 ? firing : -1;
 	timer_times[1] = timer->period;
+}
+
+static RTAI_SYSCALL_MODE void rt_get_timer_times_user(struct rt_tasklet_struct *timer, RTIME timer_times[])
+{
+	RTIME ltimer_times[2];
+	rt_get_timer_times(timer, ltimer_times);
+	rt_copy_to_user(timer_times, ltimer_times, sizeof(ltimer_times));
 }
 
 RTAI_SYSCALL_MODE RTIME rt_get_timer_overrun(struct rt_tasklet_struct *timer)

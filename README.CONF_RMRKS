@@ -1,0 +1,64 @@
+# Copyright (C) 2005-2017 The RTAI project
+# This [file] is free software; the RTAI project
+# gives unlimited permission to copy and/or distribute it,
+# with or without modifications, as long as this notice is preserved.
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY, to the extent permitted by law; without
+# even the implied warranty of MERCHANTABILITY or FITNESS FOR A
+# PARTICULAR PURPOSE.
+
+﻿CONFIG AND REMARKS-SUGGESTIONS ABOUT POSSIBLE LATENCY ISSUES
+
+< LINUX kernel related >
+- Under SMP set the number of CPUs equal to the real ones and have it matched in RTAI,
+  no hyperthreading intended (see below)
+- Some peripheral, e.g. video cards, may stall CPUs attempting to access IO space.
+  Verify "what ifs" related to graphic acceleration, likely better if disabled, and
+  X term usage.
+- LINUX use of DMA, especially when supported in burst mode.
+- Cached memory disruption.
+- Power management, see CONFIG_CPU_FREQ and CONFIG_CPU_IDLE below; on portables 
+  battery management too.
+- Recent Intel SpeedStepping and Boosting.
+- Disable AUDITSYSCALLS.
+- Disable CPU_FREQ.
+- Disable CPU_IDLE and INTEL_IDLE, or boot with "intel_idle.max_cstate=0". If want
+  a never sleeping CPU execute you, per cpu, idle task, i.e. just doing "while(1);".
+- Disable APM and ACPI_Processor, but not everything related to power management.
+  Take also into account that without ACPI enabled you might not see more than 
+  a single CPU.
+- Recent Intel SpeedStepping and Boosting.
+- Do not disable USB, but just any legacy support, possibly in the BIOS also. Once
+  upon a time old USB was a source of high RTAI latencies. Now that should be  
+  legacy support. 
+- Try to configure the CPU type to be as close as possibly to the one you have.
+- If unsure on the CPU to choose, care of setting one featuring a Time Stamp Clock 
+  (TSC), which means no 486 and "false" i586, as generic INTEL i586 compatibles
+  often do not have a TSC, while true INTEL ones do have it.
+- If you are using a UniProcessor (UP) compile RTAI against a UP configured kernel.
+  In fact RTAI compiled for SMP may not work when used on a UP machine. An issue 
+  to be fixed, sooner or later. In any case having everything UP for UP is always
+  the more efficient solution.
+- If it is of no interest to you, disable any kernel debug support. It is suggested
+  to always do so for production work.
+
+
+< RTAI related >
+- Even if RTAI can work with hyperthreading enabled, such an option is deprecated
+  as a possible cause of latency; in any case try and verify if it is acceptable,
+  with your hardware and for your applications.
+- Any initialization of the device drivers, or anything related to the hardware,
+  may lead to high latencies, e.g., but not always. For examples doing "startx &"
+  while a real time application is running. Once it is started there should be no
+  major problems. If the truble persists try disabling hardware graphic acceleration.
+  The best latencies usually come with no graphic application running.
+- A sizable part of the latency you see in RTAI hard timed programs can mature as 
+  an interrupt latency, little can be done to avoid that.
+- Recall that, for shared pieces of hardwarei, e.g APIC, LINUX is left with the
+  capability of using a few hard interrupt disable/enable. Moreover LINUX interrupts, 
+  during hard real time RTAI activities, are delayed but must be pended to be 
+  processed later anyhow, which requires keeping interrupts disabled for a, hopefully
+  short, while.
+- If SMI is enabled and latencies are high, often appearing periodic also, use the 
+  RTAI tools to monitor and, possibly, fix it.
+

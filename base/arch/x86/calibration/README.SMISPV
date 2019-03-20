@@ -7,10 +7,13 @@
 # even the implied warranty of MERCHANTABILITY or FITNESS FOR A
 # PARTICULAR PURPOSE.
 
-SMISPV is an interactive monitor/supervisor of the System Management Interrupt (SMI). 
 
-It is available here or in the RTAI installation directory, under the subdir
-"calibration/smispv" 
+SMISPV is an interactive monitor/supervisor of the System Management Interrupt (SMI). 
+At your own choice, it can be either a complement or a substitute to the setsmi-rstsmi
+approach explained in README.SMI. 
+
+It is available here and in the RTAI installation directory, under the subdirs
+"calibration/smispv" and "bin/smispv".
 
 It allows to play with SMI configuration with a "what if" approach. 
 For example, you can use it while running an RTAI latency test, 
@@ -69,3 +72,20 @@ by simply running it as root with the following command:
 where <xxx> should be the value to which you want to set the SMI registers. 
 The -g option should be used if you want to change the alternate GPI registers.
 The above use can be seen as a substitute of using the SMI fixing module.
+
+Eventually a typical smispv session could be carried out as follow:
+
+- exec the user space latency checker, found in the testsuite directory of your
+  RTAI installation;
+- check if it displays unusual latencies:
+- if so, in another console, exec smipvi and play with the SMI bits;
+- go back and forth to see is the latency behavior changes. you should check if
+  current latency does not show abnormally high values anymore;
+- eventually the current latency should stabilize on reasonable values;
+- if you have compiled smispv with the temperature monitoring keep it running
+  and go on working with linux for a bit of time, now and the checking the 
+  displayed temperarurer;
+- if everything remains OK, register the SMI bit map associated with the well
+  working latency test;
+- apply it using "smispv [[-g] -s <xxx>]" or, at you choice, using setsmi.
+

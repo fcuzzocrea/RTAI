@@ -26,6 +26,8 @@ ACKNOWLEDGMENTS:
 */
 
 
+#undef CONFIG_TRACEPOINTS
+
 #include <linux/module.h>
 #include <linux/kernel.h>
 #include <linux/version.h>
@@ -36,6 +38,9 @@ ACKNOWLEDGMENTS:
 #include <linux/irq.h>
 #include <linux/reboot.h>
 #include <linux/sys.h>
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(4,14,71)
+#include <linux/sched/mm.h>  // for mmdrop
+#endif
 
 #include <asm/param.h>
 #if LINUX_VERSION_CODE < KERNEL_VERSION(3,4,0)
@@ -1813,6 +1818,11 @@ void steal_from_linux(RT_TASK *rt_task)
 #endif
 }
 
+#ifndef set_task_state
+#define set_task_state(tsk, state_value) \
+	do { smp_store_mb((tsk)->state, (state_value));	} while (0)
+#endif
+
 void give_back_to_linux(RT_TASK *rt_task, int keeprio)
 {
 	struct task_struct *lnxtsk;
@@ -1887,7 +1897,7 @@ static void wake_up_srq_handler(unsigned srq)
 #endif
 }
 
-static unsigned long traptrans, systrans;
+static unsigned long traptrans, systrans, linux_srv_calls;
 
 static int lxrt_handle_trap(int vec, int signo, struct pt_regs *regs, void *dummy_data)
 {
@@ -1905,11 +1915,11 @@ static int lxrt_handle_trap(int vec, int signo, struct pt_regs *regs, void *dumm
 
 	if (rt_task->is_hard > 0) {
 		if (!traptrans++) {
-			rt_printk("\nLXRT CHANGED MODE (TRAP), PID = %d, VEC = %d, SIGNO = %d.\n", (rt_task->lnxtsk)->pid, vec, signo);
+			rt_printk("\nLXRT CHANGED MODE (TRAP), PID = %d, NAME = %s, VEC = %d, SIGNO = %d.\n", (rt_task->lnxtsk)->pid, (rt_task->lnxtsk)->comm, vec, signo);
 		}
-		SYSW_DIAG_MSG(rt_printk("\nFORCING IT SOFT (TRAP), PID = %d, VEC = %d, SIGNO = %d.\n", (rt_task->lnxtsk)->pid, vec, signo););
+		SYSW_DIAG_MSG(rt_printk("\n%d: FORCING IT SOFT (TRAP), PID = %d, NAME = %s, VEC = %d, SIGNO = %d.\n", traptrans, (rt_task->lnxtsk)->pid, (rt_task->lnxtsk)->comm, vec, signo););
 		give_back_to_linux(rt_task, -1);
-		SYSW_DIAG_MSG(rt_printk("FORCED IT SOFT (TRAP), PID = %d, VEC = %d, SIGNO = %d.\n", (rt_task->lnxtsk)->pid, vec, signo););
+		SYSW_DIAG_MSG(rt_printk("%d:  FORCED IT SOFT (TRAP), PID = %d, NAME = %s, VEC = %d, SIGNO = %d.\n", traptrans, (rt_task->lnxtsk)->pid, (rt_task->lnxtsk)->comm, vec, signo););
 	}
 
 	return 0;
@@ -1972,14 +1982,20 @@ static int lxrt_intercept_linux_syscall(struct pt_regs *regs, RT_TASK *task)
 	if (task) {
 		if (task->is_hard > 0) {
 			if (task->linux_syscall_server) {
+				if (!linux_srv_calls++) {
+					SYSW_DIAG_MSG(rt_printk("\nFIRST SYSCALL TO LINUX SERVER, PID = %d, NAME = %s, SYSCALL = %d.\n", (task->lnxtsk)->pid, (task->lnxtsk)->comm, regs->LINUX_SYSCALL_NR););
+				}
+				SYSW_DIAG_MSG(rt_printk("\n%d: SYSCALL TO LINUX SERVER, PID = %d, NAME = %s, SYSCALL = %d.\n", linux_srv_calls, (task->lnxtsk)->pid, (task->lnxtsk)->comm, regs->LINUX_SYSCALL_NR););
 				rt_exec_linux_syscall(task, ((RT_TASK *)task->linux_syscall_server)->linux_syscall_server, regs);
+				SYSW_DIAG_MSG(rt_printk("%d:     LINUX SERVER DID IT, PID = %d, NAME = %s, SYSCALL = %d.\n", linux_srv_calls, (task->lnxtsk)->pid, (task->lnxtsk)->comm, regs->LINUX_SYSCALL_NR););
 				return 1;
 			}
 			if (!systrans++) {
-				rt_printk("\nLXRT CHANGED MODE (SYSCALL), PID = %d, SYSCALL = %lu.\n", (task->lnxtsk)->pid, regs->LINUX_SYSCALL_NR);
+				rt_printk("\nLXRT CHANGED MODE (SYSCALL), PID = %d, NAME = %s, SYSCALL = %lu.\n", (task->lnxtsk)->pid, (task->lnxtsk)->comm, regs->LINUX_SYSCALL_NR);
 			}
-			SYSW_DIAG_MSG(rt_printk("\nFORCING IT SOFT (SYSCALL), PID = %d, SYSCALL = %d.\n", (task->lnxtsk)->pid, regs->LINUX_SYSCALL_NR););
+			SYSW_DIAG_MSG(rt_printk("\n%d: FORCING IT SOFT (SYSCALL), PID = %d, NAME = %s, SYSCALL = %d.\n", systrans, (task->lnxtsk)->pid, (task->lnxtsk)->comm, regs->LINUX_SYSCALL_NR););
 			give_back_to_linux(task, -1);
+			SYSW_DIAG_MSG(rt_printk("%d:  FORCED IT SOFT (SYSCALL), PID = %d, NAME = %s, SYSCALL = %d.\n", systrans, (task->lnxtsk)->pid, (task->lnxtsk)->comm, regs->LINUX_SYSCALL_NR););
 		}
 	}
 	hal_test_and_fast_flush_pipeline();
@@ -2001,13 +2017,22 @@ static int lxrt_intercept_syscall(struct pt_regs *regs)
 				give_back_to_linux(task, -1);
 			}
 			task->unblocked = 0;
-			*((long *)regs->LINUX_SYSCALL_REG4) = 1;
-		} else {
-
 #ifdef CONFIG_RTAI_USE_STACK_ARGS
-			*((long long *)regs->LINUX_SYSCALL_REG3) = srq > RTAI_NR_SRQS ?  rtai_lxrt_invoke(srq, (void *)regs->LINUX_SYSCALL_REG2, task) : rtai_usrq_dispatcher(srq, regs->LINUX_SYSCALL_REG2);
+			*((long *)regs->LINUX_SYSCALL_REG4) = 1L;
 #else
-			rt_put_user(srq > RTAI_NR_SRQS ?  rtai_lxrt_invoke(srq, (void *)regs->LINUX_SYSCALL_REG2, task) : rtai_usrq_dispatcher(srq, regs->LINUX_SYSCALL_REG2), (long long *)regs->LINUX_SYSCALL_REG3);
+			rt_put_user(1L, (long *)regs->LINUX_SYSCALL_REG4);
+#endif
+		} else {
+			long long retval;
+			if (srq > RTAI_NR_SRQS) {
+				retval = rtai_lxrt_invoke(srq, (void *)regs->LINUX_SYSCALL_REG2, task);
+			} else {
+				retval = rtai_usrq_dispatcher(srq, regs->LINUX_SYSCALL_REG2);
+			}
+#ifdef CONFIG_RTAI_USE_STACK_ARGS
+			*((long long *)regs->LINUX_SYSCALL_REG3) = retval;
+#else
+			rt_put_user(retval, (long long *)regs->LINUX_SYSCALL_REG3);
 #endif
 		}
 		if (!in_hrt_mode(rtai_cpuid())) {
@@ -2021,12 +2046,18 @@ static int lxrt_intercept_syscall(struct pt_regs *regs)
 
 static int lxrt_intercept_fastcall(struct pt_regs *regs)
 {
+	long long retval;
 	unsigned long srq  = regs->LINUX_SYSCALL_REG1;
 	IF_IS_A_USI_SRQ_CALL_IT(srq, regs->LINUX_SYSCALL_REG2, (long long *)regs->LINUX_SYSCALL_REG3, regs->LINUX_SYSCALL_FLAGS, 1);
+	if (srq > RTAI_NR_SRQS) {
+		retval = rtai_lxrt_invoke(srq, (void *)regs->LINUX_SYSCALL_REG2, rtai_tskext_t(current, TSKEXT0));
+	} else {
+		retval = rtai_usrq_dispatcher(srq, regs->LINUX_SYSCALL_REG2);
+	}
 #ifdef CONFIG_RTAI_USE_STACK_ARGS
-	*((long long *)regs->LINUX_SYSCALL_REG3) = srq > RTAI_NR_SRQS ?  rtai_lxrt_invoke(srq, (void *)regs->LINUX_SYSCALL_REG2, rtai_tskext_t(current, TSKEXT0)) : rtai_usrq_dispatcher(srq, regs->LINUX_SYSCALL_REG2);
+	*((long long *)regs->LINUX_SYSCALL_REG3) = retval;
 #else
-	rt_put_user(srq > RTAI_NR_SRQS ?  rtai_lxrt_invoke(srq, (void *)regs->LINUX_SYSCALL_REG2, rtai_tskext_t(current, TSKEXT0)) : rtai_usrq_dispatcher(srq, regs->LINUX_SYSCALL_REG2), (long long *)regs->LINUX_SYSCALL_REG3);
+	rt_put_user(retval, (long long *)regs->LINUX_SYSCALL_REG3);
 #endif
 	if (!in_hrt_mode(rtai_cpuid())) {
 		hal_test_and_fast_flush_pipeline();
@@ -2372,7 +2403,7 @@ static int end_kernel_lat_cal;
 #define P0 R
 #define ALPHA 1000100000
 #define rtai_simuldiv(s, m, d) \
-	((s) > 0 ? rtai_imuldiv((s), (m), (d)) : -rtai_imuldiv(-(s), (m), (d)));
+	((s) > 0 ? rtai_imuldiv((s), (m), (d)) : -rtai_imuldiv(-(s), (m), (d)))
 static void kf_lat_eval(long period)
 {
 	int loop, calok, xm;
@@ -2401,14 +2432,14 @@ static void kf_lat_eval(long period)
 		if (!rt_task_wait_period()) {
 			y = (long)(rtai_rdtsc() - resume_time);
 		} else {
-			y = period;
+			y = xe;
 		}
 		if (y < xm) xm = y;
 		xp  = xe;				 // xp = xe
-		pp  = rtai_imuldiv(pe, ALPHA, SG) + q;   // pp = ALPHA*pe + q
-		g   = rtai_imuldiv(pp, SG, pp + r);       // g = pp/(pp + r)
+		pp  = rtai_simuldiv(pe, ALPHA, SG) + q;  // pp = ALPHA*pe + q
+		g   = rtai_simuldiv(pp, SG, pp + r);     // g = pp/(pp + r)
 		xe  = xp + rtai_simuldiv(y - xp, g, SG); // xe = xp + g*(y - xp)
-		ppe = pe;				// ppe = pe
+		ppe = pe;				 // ppe = pe
 		pe  = rtai_simuldiv(SG - g, pp, SG);     // pe = (1.0 - g)*pp
 
 #if DIAG_KF_LAT_EVAL
@@ -2704,8 +2735,7 @@ static void __rtai_lxrt_exit(void)
 	rtheap_destroy(&rtai_kstack_heap, GFP_KERNEL);
 #endif
 	rt_registry_free();
-	set_current_state(TASK_INTERRUPTIBLE);
-	schedule_timeout(HZ/10);
+	msleep(100);
 
 #ifdef DECLR_8254_TSC_EMULATION
 	CLEAR_8254_TSC_EMULATION;

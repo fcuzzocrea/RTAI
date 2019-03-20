@@ -15,8 +15,22 @@ modext = @RTAI_MODULE_EXT@
 
 CROSS_COMPILE = @CROSS_COMPILE@
 
+bin_PROGRAMS = calibration_helper
+
+calibration_helper_SOURCES = calibration_helper.c
+calibration_helper_CPPFLAGS = \
+	@RTAI_REAL_USER_CFLAGS@ \
+	-DHAL_SCHED_PATH="\"$(DESTDIR)$(moduledir)\"" \
+	-DHAL_SCHED_MODEXT="\"$(modext)\"" \
+	-I$(top_srcdir)/base/include \
+	-I../../../include
+calibration_helper_LDADD = \
+	../../../sched/liblxrt/liblxrt.la \
+	-lpthread
+
 if CONFIG_BUILD_SMISPV
-bin_PROGRAMS = smispv
+bin_PROGRAMS += smispv
+
 smispv_SOURCES = smispv.c
 smispv_LDADD = -lncurses -lpci @SENSORS_LIBS@
 smispv_CPPFLAGS = \
@@ -43,14 +57,12 @@ else
 noinst_LIBRARIES = libcalibrate_rt.a libsmi_rt.a
 
 libcalibrate_rt_a_AR = $(CROSS_COMPILE)ar cru
-
 libcalibrate_rt_a_CPPFLAGS = \
 	@RTAI_KMOD_CFLAGS@ \
 	-I$(top_srcdir)/base/include \
 	-I../../../include
 
 libsmi_rt_a_AR = $(CROSS_COMPILE)ar cru
-
 libsmi_rt_a_CPPFLAGS = \
 	@RTAI_KMOD_CFLAGS@ \
 	-I$(top_srcdir)/base/include \
@@ -60,31 +72,16 @@ rtai_smi.o: libsmi_rt.a
 	$(CROSS_COMPILE)$(LD) --whole-archive $< -r -o $@
 endif
 
-calibration_PROGRAMS = calibrate calibration_helper
+calibration_PROGRAMS = calibrate
 
 calibrate_SOURCES = calibrate.c calibrate.h
-
 calibrate_CPPFLAGS = \
 	@RTAI_REAL_USER_CFLAGS@ \
 	-DHAL_SCHED_PATH="\"$(DESTDIR)$(moduledir)\"" \
 	-DHAL_SCHED_MODEXT="\"$(modext)\"" \
 	-I$(top_srcdir)/base/include \
 	-I../../../include
-
 calibrate_LDADD = \
-	../../../sched/liblxrt/liblxrt.la \
-	-lpthread
-
-calibration_helper_SOURCES = calibration_helper.c
-
-calibration_helper_CPPFLAGS = \
-	@RTAI_REAL_USER_CFLAGS@ \
-	-DHAL_SCHED_PATH="\"$(DESTDIR)$(moduledir)\"" \
-	-DHAL_SCHED_MODEXT="\"$(modext)\"" \
-	-I$(top_srcdir)/base/include \
-	-I../../../include
-
-calibration_helper_LDADD = \
 	../../../sched/liblxrt/liblxrt.la \
 	-lpthread
 
@@ -105,6 +102,8 @@ install-exec-local: $(RT_MODULES)
 		$(INSTALL_DATA) $$m $(DESTDIR)$(moduledir)/$$m ; \
 	done
 
+if CONFIG_BUILD_SMISPV
+# the only difference is installation of smispv in calibrationdir
 install-data-local:
 	$(mkinstalldirs) $(DESTDIR)$(calibrationdir) $(DESTDIR)$(bindir)
 	$(INSTALL_DATA) $(srcdir)/runinfo $(DESTDIR)$(calibrationdir)/.runinfo
@@ -113,10 +112,18 @@ install-data-local:
 	@chmod +x $(DESTDIR)$(calibrationdir)/run
 	$(INSTALL_SCRIPT) -m 755 setsmi $(DESTDIR)$(bindir)
 	@$(LN_S) -f $(bindir)/setsmi $(DESTDIR)$(bindir)/rstsmi
-
-if CONFIG_BUILD_SMISPV
+	$(INSTALL_SCRIPT) -m 755 smicnt $(DESTDIR)$(bindir)
+	$(INSTALL_SCRIPT) -m 755 smispv $(DESTDIR)$(bindir)
+else
 install-data-local:
-	$(INSTALL_SCRIPT) -m 755 smispv $(DESTDIR)$(calibrationdir)
+	$(mkinstalldirs) $(DESTDIR)$(calibrationdir) $(DESTDIR)$(bindir)
+	$(INSTALL_DATA) $(srcdir)/runinfo $(DESTDIR)$(calibrationdir)/.runinfo
+	@echo '#!/bin/sh' > $(DESTDIR)$(calibrationdir)/run
+	@echo "\$${DESTDIR}$(bindir)/rtai-load \$$*" >> $(DESTDIR)$(calibrationdir)/run
+	@chmod +x $(DESTDIR)$(calibrationdir)/run
+	$(INSTALL_SCRIPT) -m 755 setsmi $(DESTDIR)$(bindir)
+	@$(LN_S) -f $(bindir)/setsmi $(DESTDIR)$(bindir)/rstsmi
+	$(INSTALL_SCRIPT) -m 755 smicnt $(DESTDIR)$(bindir)
 endif # CONFIG_BUILD_SMISPV
 
 run: all

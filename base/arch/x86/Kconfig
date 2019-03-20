@@ -7,6 +7,7 @@
 # even the implied warranty of MERCHANTABILITY or FITNESS FOR A
 # PARTICULAR PURPOSE.
 
+
 mainmenu "RTAI/x86 configuration"
 
 config MODULES
@@ -15,7 +16,7 @@ config MODULES
 
 config RTAI_VERSION
 	string
-	default "5.0 (vulcano)"
+	default "5.1 (vulcano)"
 
 menu "General"
 
@@ -60,6 +61,41 @@ config RTAI_DOC_LATEX_NONSTOP
         verbose (nonstopmode) of LaTeX will be used instead. This 
         option is mainly intended for people writing RTAI 
         documentation.
+
+config RTAI_DBX_DOC
+	bool "Build DocBook XML documentation (HTML/PDF)"
+	default n
+	help
+	This option causes the DocBook XML based RTAI documentation to be
+	built. This option is intended for people actually writing
+	documentation and who want to update the pre-built manuals,
+	regular users can just use the latter directly.
+
+config RTAI_DBX_NET
+        bool "Let the DocBook XML tools use network"
+	depends on RTAI_DBX_DOC
+        default n
+        help
+        Let the DocBook tools use internet to fetch the DTD and XSL stylesheets.
+        If disabled, the documentation generation will fail if the necessary 
+        DTD(s) and XSL stylesheets can not be found on the local computer.
+
+config RTAI_DBX_ROOT
+        string "Docbook XML root"
+	depends on RTAI_DBX_DOC
+        default ""
+        help
+        Specify the DocBook XML root (that is, the directory where docbook.dtd
+        should be taken). Leave blank to let configure try the "well-known"
+        locations.
+
+config RTAI_DBX_XSL_ROOT
+        string "Docbook XML XSL stylesheet root"
+	depends on RTAI_DBX_DOC
+        default ""
+        help
+        Specify the DocBook XML XSL root. Leave blank to let configure try the
+        "well-known" locations.
 
 endmenu
 
@@ -316,6 +352,25 @@ config RTAI_LONG_TIMED_LIST
 #	A user can then further tune such values at will, e.g. using the 
 #	calibration-helper. 
 
+config RTAI_USE_STACK_ARGS
+	bool "Keep using RTAI way for user-kernel space on stack args exchange."
+	default n
+        help
+	When it is sure that RTAI syscalls args, to be copied between user-kernel
+	space, are on the stack, RTAI uses kernel space memcopy, instead of the 
+	various canonical copy from-to user. Such a scheme, quite simple and 
+	effective, has worked for almost two decades without any glitch. 
+	Unfortunately, recent CPUs, likely from Ix-6xxx onward, segfault with it, 
+	forcing RTAI to comply with the canonical way. 
+	The related trouble can be easily spotted at the very first rtai_sched.ko
+	usage, i.e. when the very first latency calibration is carried out (see
+	the related parameter helps), when the core dump summary, as read with dmesg,
+	shows a segfault at lxrt_intercept_syscall.
+	Nonetheless, such a way can still be a useful choice and may not cause any
+	trouble with recent ATOMs and CELERONs.
+	Thus, this parameter, defaulting to a safer no, let the user have a choice
+	anyhow.
+
 config RTAI_LATENCY_SELF_CALIBRATION_METRICS
 	string "Lat. cal. metrics: 1- AVRG (default), 2- LEAST, 3- (AVRG+LEAST)/2"
 	default 1
@@ -329,7 +384,7 @@ config RTAI_LATENCY_SELF_CALIBRATION_METRICS
 	    two.
 
 config RTAI_LATENCY_SELF_CALIBRATION_FREQ
-	string "Latency self calibration frequency (Hz)"
+	string "Latency self calibration frequency (Hz)."
 	default 10000
         help
 	In order to be on time, as finely as possible, RTAI anticipates the 
@@ -371,7 +426,7 @@ config RTAI_LATENCY_SELF_CALIBRATION_FREQ
 	user space respectively, likely the simplest and speediest mode.
 
 config RTAI_LATENCY_SELF_CALIBRATION_CYCLES
-	string "Number of latency self calibration cycles"
+	string "Number of latency self calibration cycles."
 	default RTAI_LATENCY_SELF_CALIBRATION_FREQ
 	help
 	In order to be on time, as finely as possible, RTAI anticipates the 
@@ -834,13 +889,12 @@ config RTAI_MATH
 	for the use of libc within the kernel.
 
 config RTAI_MATH_LIBM_TO_USE
-	string "1 - NEWLIB (default), 2 - uCLIB, 3 - GLIBC, 4 - MUSL"
+	string "1 - NEWLIB, 2 - uCLIBC-NG, 3 - MUSL (default)"
 	depends on RTAI_MATH
-	default 1
+	default 3
 	help
-	Your libm.a of choice. GLIBC works as it is for i386, so it could 
-	be preferred for such an arch. NEWLIB, uCLIB and MUSL can be used 
-	for both i386 and x86_64. Then the one to use is up to you. 
+	Your libm.a of choice. NEWLIB, uCLIBC-NG and MUSL can be used for
+	both i386 and x86_64. Then the one to be adopted is up to you. 
 	See: ./base/math/README.KLIBM for a few making suggestions.
 
 config RTAI_MATH_LIBM_DIR
@@ -854,7 +908,6 @@ config RTAI_MATH_KCOMPLEX
 	default n
 	help
 	This parameter allows the inclusion of complex support functions.
-	Ignored for uClibc.
 
 #config RTAI_MATH_C99
 #	bool "C99 standard support"

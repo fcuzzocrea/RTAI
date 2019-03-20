@@ -16,154 +16,44 @@
  * 
  */
 
+
 #include <stdio.h>
-#include <getopt.h>
+#include <stdlib.h>
+#include <string.h>
 
-#include <rtai_lxrt.h>
-
-struct option options[] = {
-	{ "help",       0, 0, 'h' },
-	{ "period",     1, 0, 'p' },
-	{ "spantime",   1, 0, 's' },
-	{ "tol",        1, 0, 't' },
-	{ NULL,         0, 0,  0  }
-};
-
-void print_usage(void)
-{
-    fputs(
-	("\n*** KERNEL-USER SPACE LATENCY CALIBRATIONS ***\n"
-	 "\n"
-	 "OPTIONS:\n"
-	 "  -h, --help\n"
-	 "      print usage\n"
-	 "  -p <period (us)>, --period <period (us)>\n"
-	 "      the period, in microseconds, of the hard real time calibrator task, default 200 (us)\n"
-	 "  -s <spantime (s)>, --spantime <spantime (s)>\n"
-	 "      the duration, in seconds, of the requested calibration, default 1 (s)\n"
-	 "  -t <conv. tol. (ns)>, --tol <conv. tol. (ns)>\n"
-	 "      the acceptable tolerance, in nanoseconds, within which the latency must stay, default 100 (ns)\n"
-	 "\n")
-	, stderr);
-}
-
-static int period = 200 /* us */, loops = 1 /* s */, use_tol = 100 /* ns */;
-
-static inline int sign(int v) { return v > 0 ? 1 : (v < 0 ? -1 : 0); }
-static int user_latency;
-static RT_TASK *calmng;
-
-static inline RTIME rt_get_time_in_usrspc(void)
-{
-#ifdef __i386__
-        unsigned long long t;
-        __asm__ __volatile__ ("rdtsc" : "=A" (t));
-       return t;
-#else
-        union { unsigned int __ad[2]; RTIME t; } t;
-        __asm__ __volatile__ ("rdtsc" : "=a" (t.__ad[0]), "=d" (t.__ad[1]));
-        return t.t;
-#endif
-}
-
-int user_calibrator(long loops)
-{
-	RTIME expected;
-	double s = 0;
-
- 	if (!rt_thread_init(nam2num("USRCAL"), 0, 0, SCHED_FIFO, 0xF)) {
-		printf("*** CANNOT INIT USER LATENCY CALIBRATOR TASK ***\n");
-		return 1;
-	}
-	mlockall(MCL_CURRENT | MCL_FUTURE);
-
-	rt_make_hard_real_time();
-	expected = rt_get_time_in_usrspc() + 10*period;
-	rt_task_make_periodic(NULL, expected, period);
-	while(loops--) {
-		expected += period;
-		rt_task_wait_period();
-		user_latency += rt_get_time_in_usrspc() - expected;
-		s += 3.14;
-	}
-	rt_make_soft_real_time();
-	rt_task_resume(calmng);
-
-
-	rt_thread_delete(NULL);
-	return s;
-}
+#include <calibrate.h>
 
 int main(int argc, char *argv[])
 {
-	int kern_latency, UserLatency = 0, KernLatency = 0, tol = use_tol;
+	FILE *smis;
+	char cmd[CMD_SIZE];
+        int retval = 0;
 
-        while (1) {
-		int c;
-		if ((c = getopt_long(argc, argv, "hp:t:l:", options, NULL)) < 0) {
-			break;
-		}
-		switch(c) {
-			case 'h': { print_usage();         return 0; } 
-			case 'p': { period = atoi(optarg);    break; }
-			case 't': { loops  = atoi(optarg);    break; }
-			case 'l': { tol    = atoi(optarg);    break; }
-		}
-	}
-
-	system("/sbin/insmod \"" HAL_SCHED_PATH "\"/rtai_hal" HAL_SCHED_MODEXT " >/dev/null 2>&1");
-	system("/sbin/insmod \"" HAL_SCHED_PATH "\"/rtai_sched" HAL_SCHED_MODEXT " >/dev/null 2>&1");
-
- 	if (!(calmng = rt_thread_init(nam2num("CALMNG"), 10, 0, SCHED_FIFO, 0xF)) ) {
-		printf("*** CANNOT INIT CALIBRATION TASK ***\n");
-		return 1;
-	}
-	printf("\n* CALIBRATING SCHEDULING LATENCIES FOR %d (s):", loops);
-	loops  = (loops*1000000 + period/2)/period;
-	printf(" PERIOD %d (us), LOOPS %d. *\n", period, loops);
-
-	start_rt_timer(0);
-	period = nano2count(1000*period);
-
-	printf("\n* KERNEL SPACE. *\n");
-	do {
-		kern_latency = rt_sched_latencies(period, loops, KernLatency);
-
-		kern_latency = (kern_latency + loops/2)/loops;
-		kern_latency = sign(kern_latency)*count2nano(abs(kern_latency));
-#if (CONFIG_RTAI_USER_BUSY_ALIGN_RET_DELAY > 0 || CONFIG_RTAI_KERN_BUSY_ALIGN_RET_DELAY > 0)
-		printf("* KERNEL SPACE RETURN DELAY: %d (ns), ADD TO THE ONE CONFIGURED. *\n", kern_latency);
-#else
-		printf("* KERNEL SPACE SCHED LATENCY: %d (ns), ADD TO THE ONE CONFIGURED. *\n", kern_latency);
-#endif
-
-		KernLatency += kern_latency;
-		printf("* KERNEL SPACE LATENCY: %d. *\n", KernLatency);
-	}	while (abs(kern_latency) > tol && (CONFIG_RTAI_USER_BUSY_ALIGN_RET_DELAY == 0 && CONFIG_RTAI_KERN_BUSY_ALIGN_RET_DELAY == 0));
-
-	printf("\n* USER SPACE. *\n");
-	do {
-		rt_sched_latencies(period, loops, -UserLatency);
-		rt_thread_create((void *)user_calibrator, (void *)(long)loops, 0);
-		rt_task_suspend(calmng);
-
-		user_latency = (user_latency + loops/2)/loops;
-		user_latency = sign(user_latency)*count2nano(abs(user_latency));
-#if CONFIG_RTAI_BUSY_TIME_ALIGN
-		printf("* USER SPACE RETURN DELAY: %d (ns), ADD TO THE ONE CONFIGURED. *\n", user_latency);
-#else
-		printf("* USER SPACE SCHED LATENCY: %d (ns), ADD TO THE ONE CONFIGURED. *\n", user_latency);
-#endif
-		UserLatency += user_latency;
-		printf("* USER SPACE LATENCY: %d. *\n", UserLatency);
-	}	while (abs(user_latency) > tol && (CONFIG_RTAI_USER_BUSY_ALIGN_RET_DELAY == 0 && CONFIG_RTAI_KERN_BUSY_ALIGN_RET_DELAY == 0));
-
-	stop_rt_timer();
-	rt_thread_delete(NULL);
-	printf("\n");
-
-	system("/sbin/rmmod rtai_sched >/dev/null 2>&1");
-	system("/sbin/rmmod rtai_hal >/dev/null 2>&1");
-
-	return 0;
+	system("lspci -nn | grep \"ISA bridge\" >"SUPRT_STREAM);
+	if ((smis = fopen(SUPRT_STREAM, "r"))) {
+		int n;
+		if ((n = fread(cmd, 1, sizeof(cmd), smis)) > 0) {
+			char *p;
+			p = strstr(cmd, "\n");
+			p[0] = 0;
+			printf("*** SETSMI found: \"%s\" ***\n", cmd);
+			if (strstr(cmd, "Intel Corporation")) {
+				if ((p = strstr(cmd, "[8086:"))) {
+					int hal_smi_masked_bits, user_smi_device;
+					sscanf(p + sizeof("[8086:") - 1, "%x", &user_smi_device);
+					hal_smi_masked_bits = argc == 2 ? atoi(argv[1]) : 1;
+					printf("*** SETSMI: \"insmod rtai_smi.ko hal_smi_masked_bits=0x%x user_smi_device=0x%x\" ***\n", hal_smi_masked_bits, user_smi_device);
+					sprintf(cmd, "insmod ../modules/rtai_smi.ko hal_smi_masked_bits=0x%x user_smi_device=0x%x", hal_smi_masked_bits, user_smi_device);
+					system(cmd);
+					goto cont;
+                                }
+                        }
+                }
+        }
+        printf("*** SETSMI: no Intel SMI chip found ***\n");
+        retval = -1;
+cont:
+	fclose(smis);
+	system("rm "SUPRT_STREAM);
+        return retval;
 }

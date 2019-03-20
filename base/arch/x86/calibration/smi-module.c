@@ -58,8 +58,6 @@
 #define #define PCI_DEVICE_ID_INTEL_ICH10_1  0x3a16 
 #endif
 
-
-
 #ifndef PCI_DEVICE_ID_INTEL_ICH9_1
 #define PCI_DEVICE_ID_INTEL_ICH9_1 0x2917
 #endif
@@ -73,8 +71,18 @@
 #define PCI_DEVICE_ID_INTEL_ESB2_0 0x2670
 #endif
 
-
-
+#ifndef PCI_DEVICE_ID_INTEL_H77_EXPRESS_CHIPSET_LPC
+#define PCI_DEVICE_ID_INTEL_H77_EXPRESS_CHIPSET_LPC 0x1e4a
+#endif
+#ifndef PCI_DEVICE_ID_INTEL_SUNRISE_POINT_H_LPC_0
+#define PCI_DEVICE_ID_INTEL_SUNRISE_POINT_H_LPC_0 0xa145
+#endif
+#ifndef PCI_DEVICE_ID_INTEL_SUNRISE_POINT_H_LPC_1
+#define PCI_DEVICE_ID_INTEL_SUNRISE_POINT_H_LPC_1 0xa149
+#endif
+#ifndef PCI_DEVICE_ID_INTEL_CELERON_J1900
+#define PCI_DEVICE_ID_INTEL_CELERON_J1900 0x0f1c
+#endif
 
 static struct pci_device_id hal_smi_pci_tbl[] = {
 { PCI_DEVICE(PCI_VENDOR_ID_INTEL, PCI_DEVICE_ID_INTEL_82801AA_0) },
@@ -98,24 +106,16 @@ static struct pci_device_id hal_smi_pci_tbl[] = {
 { PCI_DEVICE(PCI_VENDOR_ID_INTEL, PCI_DEVICE_ID_INTEL_ICH9_5) },
 { PCI_DEVICE(PCI_VENDOR_ID_INTEL, PCI_DEVICE_ID_INTEL_PCH_LPC_MIN) },
 { PCI_DEVICE(PCI_VENDOR_ID_INTEL, PCI_DEVICE_ID_INTEL_ESB2_0) },
+{ PCI_DEVICE(PCI_VENDOR_ID_INTEL, PCI_DEVICE_ID_INTEL_H77_EXPRESS_CHIPSET_LPC) },
+{ PCI_DEVICE(PCI_VENDOR_ID_INTEL, PCI_DEVICE_ID_INTEL_SUNRISE_POINT_H_LPC_0) },
+{ PCI_DEVICE(PCI_VENDOR_ID_INTEL, PCI_DEVICE_ID_INTEL_SUNRISE_POINT_H_LPC_1) },
+{ PCI_DEVICE(PCI_VENDOR_ID_INTEL, PCI_DEVICE_ID_INTEL_CELERON_J1900) },
+{ 0, },
 { 0, },
 };
 
-/* FIXME: Probably crippled too, need to be checked :
-
-0x24dc 82801EB (ICH5) LPC Interface Bridge (not a real ID, but exists in the
-pci.ids database, ICH5-M ?)
-{ PCI_VENDOR_ID_INTEL, PCI_DEVICE_ID_INTEL_82801EB_12, PCI_ANY_ID, PCI_ANY_ID, },
-
-*/
-
 #define DEVFN        0xf8 /* device 31, function 0 */
     
-#if LINUX_VERSION_CODE < KERNEL_VERSION(2,6,0)
-#define pci_get_device(a, b, c)  pci_find_device(a, b, c)
-#define pci_dev_put(a)           do { /*nothing*/ } while(0)
-#endif
-
 #define PMBASE_B0    0x40
 #define PMBASE_B1    0x41
 
@@ -136,7 +136,8 @@ pci.ids database, ICH5-M ?)
 #define BIOS_EN_BIT         (0x01 << 2)
 #define GBL_SMI_EN_BIT      (0x01 << 0)  /* This is reset by a PCI reset event! */
 
-unsigned long hal_smi_masked_bits = 0
+unsigned long hal_smi_masked_bits = 0x1
+#if 0
 #if CONFIG_RTAI_HW_SMI_ALL
     | GBL_SMI_EN_BIT
 #else
@@ -165,10 +166,17 @@ unsigned long hal_smi_masked_bits = 0
     | BIOS_EN_BIT
 #endif
 #endif
+#endif
 ;
-
 RTAI_MODULE_PARM(hal_smi_masked_bits, ulong);
 
+static int user_smi_device;
+RTAI_MODULE_PARM(user_smi_device, int);
+
+static int disp_smi_count;
+RTAI_MODULE_PARM(disp_smi_count, int);
+
+static unsigned long original_smi_value;
 static unsigned long hal_smi_saved_bits;
 static unsigned short hal_smi_en_addr;
 static struct pci_dev *smi_dev;
@@ -207,7 +215,8 @@ static void hal_smi_restore(void)
 static void hal_smi_disable(void)
 {
  	if (hal_smi_en_addr) {
-		hal_smi_saved_bits = inl(hal_smi_en_addr) & hal_smi_masked_bits;
+ 		original_smi_value = inl(hal_smi_en_addr);
+		hal_smi_saved_bits = original_smi_value & hal_smi_masked_bits;
 		mask_bits(hal_smi_masked_bits, hal_smi_en_addr);
 		register_reboot_notifier(&rtai_smi_reboot_notifier);
 	}
@@ -231,17 +240,26 @@ static int hal_smi_init(void)
  * Do not use pci_register_driver, pci_enable_device, ...
  * Just register the used ports.
  */
-	for (id = &hal_smi_pci_tbl[0]; dev == NULL && id->vendor != 0; id++) {
-	        dev = pci_get_device(id->vendor, id->device, NULL);
+	if (user_smi_device) {
+		id = &hal_smi_pci_tbl[sizeof(hal_smi_pci_tbl)/sizeof(struct pci_device_id) - 1];
+		id->vendor = PCI_VENDOR_ID_INTEL;
+		id->device = user_smi_device;
+		dev = pci_get_device(id->vendor, user_smi_device, NULL);
+		printk("RTAI: User assigned Intel SMI chipset (%0x:%0x).\n", id->vendor, id->device);
+	} else {
+		for (id = &hal_smi_pci_tbl[0]; dev == NULL && id->vendor != 0; id++) {
+		        dev = pci_get_device(id->vendor, id->device, NULL);
+		}
+		id--;
 	}
 
 	if (dev == NULL || dev->bus->number || dev->devfn != DEVFN) {
 		pci_dev_put(dev);
-		printk("RTAI: Intel chipset not found.\n");
+		printk("RTAI: Intel SMI chipset not found.\n");
   		return -ENODEV;
         }
 
-	printk("RTAI: Intel chipset found, enabling SMI workaround.\n");
+	printk("RTAI: Intel SMI chipset found (%0x:%0x), enabling SMI workaround.\n", id->vendor, id->device);
 	hal_smi_en_addr = get_smi_en_addr(dev);
 	smi_dev = dev;
 	hal_smi_disable();
@@ -250,19 +268,66 @@ static int hal_smi_init(void)
 
 /************************************************************************/
 
+#include <asm/cpufeature.h>
+#include <asm/msr.h>
+static int check_smi_count(void)
+{
+	int cpuid, ret;
+	unsigned long long q;
+	struct cpuinfo_x86 p;
+
+	if (!cpu_has(&p, X86_FEATURE_MSR)) {
+		printk("MSR NOT SUPPORTED\n");
+	} else {
+		for (cpuid = 0; cpuid < num_active_cpus(); cpuid++) {
+			ret = rdmsrl_safe_on_cpu(cpuid, MSR_SMI_COUNT, &q);
+			if (!ret) {
+				printk("- CPU %d (RETVAL %d), SMI COUNT %llu.\n", cpuid, ret, q);
+			} else {
+				printk("- CPU %d (RETVAL %d), CANNOT READ SMI COUNT REGISTER 0x%x.\n", cpuid, ret, MSR_SMI_COUNT);
+			}
+		}
+	}
+
+	return disp_smi_count;
+}
+
+static char *hint[] = { " GBL_SMI,", " EOS (special),", " BIOS,", " LEGACY_USB,", " SLP,", " APMC,", " SWSMI_TMR,", "", "", "", "", " MCSMI,", "", " TCO,", " PERIODIC,", "", "", " LEGACY_USB2,", " INTEL_USB2,"};
+
+static void reminders(unsigned long smi_value)
+{
+	char echo[200] = "Bits enabled:";
+	int i;
+	for (i = 0; i < sizeof(hint)/sizeof(char *); i++) {
+		if (smi_value & (1 << i)) {
+			strcat(echo, hint[i]);
+		}
+	}
+	printk("%s\b.\n", echo);
+	return;
+}
+
 int init_module(void)
 {
 	int retval;
+	if (check_smi_count()) return 0;
 	if (!(retval = hal_smi_init())) {
-		printk("SMI configuration has been cleared, mask used = %lx (saved mask setting %lx).\n", hal_smi_masked_bits, hal_smi_saved_bits);
+		unsigned long smi_value;
+		smi_value = inl(hal_smi_en_addr);
+		reminders(original_smi_value);
+		printk("Original SMI configuration value 0x%lx has been cleared with mask = 0x%lx (saved mask setting 0x%lx), new value 0x%lx.\n", original_smi_value, hal_smi_masked_bits, hal_smi_saved_bits, smi_value);
+		reminders(smi_value);
 	}
 	return retval;
 }
 
 void cleanup_module(void)         
 {
+	unsigned long smival;
+	if (disp_smi_count) return;
+	smival = inl(hal_smi_en_addr);
 	hal_smi_restore();
-	printk("SMI configuration has been reset, saved mask used = %lx.\n", hal_smi_saved_bits);
+	printk("SMI configuration value 0x%lx has been reset to its original value 0x%x, saved mask used = 0x%lx.\n", smival, inl(hal_smi_en_addr), hal_smi_saved_bits);
 	return;
 }
 

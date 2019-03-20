@@ -343,7 +343,14 @@ int main(int argc, char *argv[]) {
 	pci_init(pacc);
 	pci_scan_bus(pacc);
 	
-	dev = find_smi_device(pacc);
+	if (!(dev = find_smi_device(pacc))) {
+		printf(" smi device not found\n");
+		exit(1);
+        }
+        smi_en_addr[0] = get_smi_en_addr(dev, 0);
+        smi_en_addr[1] = get_smi_en_addr(dev, 1);
+
+
         smi_en_addr[0] = get_smi_en_addr(dev, 0);
         smi_en_addr[1] = get_smi_en_addr(dev, 1);
 	

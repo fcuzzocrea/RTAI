@@ -30,6 +30,7 @@
  * Copyright (C)     Paolo Mantegazza <mantegazza@aero.polimi.it>, 2005-2017.
  */
 
+
 #ifndef _RTAI_ASM_X86_FPU_H
 #define _RTAI_ASM_X86_FPU_H
 
@@ -55,7 +56,7 @@ extern unsigned int xstate_size;
 // RAW FPU MANAGEMENT FOR USAGE FROM WHAT/WHEREVER RTAI DOES IN KERNEL
 
 #define enable_fpu()  do { \
-	clts(); /*__asm__ __volatile__ ("clts"); */ \
+	__asm__ __volatile__ ("clts"); \
 } while(0)
 
 #define save_fpcr_and_enable_fpu(fpcr)  do { \
@@ -213,8 +214,24 @@ DEFINE_PER_CPU(struct fpu *, fpu_fpregs_owner_ctx);
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(4,2,0)
 
 #include <asm/fpu/internal.h>
+#if 0 //def CONFIG_TRACEPOINTS
+// Taken from Linux <asm/fpu/internal.h> and cleaned from warning and tracing
+// Yet to be enabled, removing "#undef CONFIG_TRACEPOINTS" in sched,c and hal.c
+/* Must be paired with a 'clts' before! */
+DECLARE_PER_CPU(struct fpu *, fpu_fpregs_owner_ctx);
+static inline void rtai_fpregs_activate(struct fpu *fpu)
+{
+#if LINUX_VERSION_CODE < KERNEL_VERSION(4,14,71)
+	fpu->fpregs_active = 1;
+#endif
+	this_cpu_write(fpu_fpregs_owner_ctx, fpu);
+}
+#else
+#define rtai_fpregs_activate fpregs_activate
+#endif
+
 #define rtai_set_fpu_used(lnxtsk) \
-	do { __fpregs_activate(&lnxtsk->thread.fpu); } while(0)
+	do { rtai_fpregs_activate(&lnxtsk->thread.fpu); } while(0)
 
 #elif LINUX_VERSION_CODE >= KERNEL_VERSION(3,4,0)
 

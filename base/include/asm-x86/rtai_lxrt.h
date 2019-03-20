@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 1999-2015 Paolo Mantegazza <mantegazza@aero.polimi.it>
+ * Copyright (C) 1999-2017 Paolo Mantegazza <mantegazza@aero.polimi.it>
  * extensions for user space modules are jointly copyrighted (2000) with:
  * Copyright (C) 2000	Pierre Cloutier <pcloutier@poseidoncontrols.com>,
  * Copyright (C) 2000	Steve Papacharalambous <stevep@zentropix.com>.
@@ -17,6 +17,7 @@
  * License along with this library; if not, see <http://www.gnu.org/licenses/>.
  * 
  */
+
 
 #ifndef _RTAI_ASM_X86_LXRT_H
 #define _RTAI_ASM_X86_LXRT_H
@@ -92,7 +93,14 @@ static inline void _lxrt_context_switch (struct task_struct *prev, struct task_s
 /*
  *	if (__thread_has_fpu(prev)) clts(); is not needed, it is done already
  */
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(4,2,0)
+
+//#if LINUX_VERSION_CODE >= KERNEL_VERSION(4,4,162)
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(4,4,162)
+// Do nothing, no more needed since lazy fpu managment has gone.
+// REMARK: it is likely that for lower x 4.4.x and 4.9.x behaved 
+// as shown below, while 4.4.162 and 4.9.135 inheredited the more
+// recent approach. 
+#elif LINUX_VERSION_CODE >= KERNEL_VERSION(4,2,0)
         prev->thread.fpu.counter = 0;
 #elif LINUX_VERSION_CODE > KERNEL_VERSION(3,13,0)
         prev->thread.fpu_counter = 0;
@@ -106,6 +114,23 @@ static inline void _lxrt_context_switch (struct task_struct *prev, struct task_s
         ( { int ret = __copy_from_user_inatomic(a, b, c); ret; } )
 #define rt_copy_to_user(a, b, c)  \
         ( { int ret = __copy_to_user_inatomic(a, b, c); ret; } )
+
+#ifndef CONFIG_RTAI_USE_STACK_ARGS
+
+static inline long rt__do_strncpy_from_user(char *dst, const char *src, long count)
+{
+	char *c = dst - 1;
+	do {
+		if (__get_user(*++c, src++)) return -1;
+	} while (*c && --count);
+        return (c - dst);
+}
+
+#define __do_strncpy_from_user(dst, src, count, res) \
+	do { res = rt__do_strncpy_from_user(dst, src, count); } while (0)
+
+#endif
+
 static inline long rt_strncpy_from_user(char *dst, const char __user *src, long
 count)
 {

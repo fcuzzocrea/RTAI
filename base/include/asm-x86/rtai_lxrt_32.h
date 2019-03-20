@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 1999-2015 Paolo Mantegazza <mantegazza@aero.polimi.it>
+ * Copyright (C) 1999-2017 Paolo Mantegazza <mantegazza@aero.polimi.it>
  * extensions for user space modules are jointly copyrighted (2000) with:
  * Copyright (C) 2000	Pierre Cloutier <pcloutier@poseidoncontrols.com>,
  * Copyright (C) 2000	Steve Papacharalambous <stevep@zentropix.com>.
@@ -18,6 +18,7 @@
  * License along with this library; if not, see <http://www.gnu.org/licenses/>.
  * 
  */
+
 
 #ifndef _RTAI_ASM_I386_LXRT_H
 #define _RTAI_ASM_I386_LXRT_H
@@ -48,6 +49,8 @@ extern "C" {
 #define LINUX_SYSCALL_REG6    RT_REG_BP
 #define LINUX_SYSCALL_RETREG  ax
 #define LINUX_SYSCALL_FLAGS   RT_REG_FLAGS
+
+#ifdef CONFIG_RTAI_USE_STACK_ARGS // WHY THIS DOES NOT WORK ANYWAY-MORE???
 
 /*
  *  From Linux lib/usercopy.c.
@@ -80,6 +83,8 @@ do {									   \
 		: "i"(-EFAULT), "0"(count), "1"(count), "3"(src), "4"(dst) \
 		: "memory");						   \
 } while (0)
+
+#endif
 
 #endif /* __KERNEL__ */
 

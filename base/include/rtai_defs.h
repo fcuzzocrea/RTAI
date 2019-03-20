@@ -21,7 +21,7 @@
 #ifndef RTAI_DEFS_H
 #define RTAI_DEFS_H
 
-#define RTAI_INSTALL_DIR	"/home/marco/Programmi/linux/rtai-installato"
+#define RTAI_INSTALL_DIR	"/usr/realtime"
 
 #endif /* RTAI_DEFS_H */
 

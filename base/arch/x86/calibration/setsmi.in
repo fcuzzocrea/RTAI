@@ -8,6 +8,7 @@
 # even the implied warranty of MERCHANTABILITY or FITNESS FOR A
 # PARTICULAR PURPOSE.
 
+
 MODULENAMENOEXT=rtai_smi
 MODULENAME="${MODULENAMENOEXT}@RTAI_MODULE_EXT@"
 
@@ -54,8 +55,11 @@ if test $SMIRESET -eq 0 ; then
 	insmod "$MODULEDIR/$MODULENAME" hal_smi_masked_bits=$SMI_MASKED_BITS
 	RC=$?
 fi
-if test $RC != 0 ; then
+if test $RC != 0; then
 	echo "$CMDNAME: $CMD $MODULEDIR/$MODULENAME failed"
+	if test $SMIRESET -eq 0; then
+		calibration_helper "$1"
+	fi
 	exit $RC
 fi
 

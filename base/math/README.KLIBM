@@ -7,10 +7,11 @@
 # even the implied warranty of MERCHANTABILITY or FITNESS FOR A
 # PARTICULAR PURPOSE.
 
-************************ libm support in kernel space ************************
+
+************************ LIBM SUPPORT IN KERNEL SPACE ************************
 
 This is a rework of Dave's (David Schleef) idea of making available libm
-in kernel space as a module exporting a subset of its functions.
+in kernel space, as a module exporting a subset of its functions.
 Such a rework is due to a few reasons. Among them, one is the need 
 to avoid user space headers, which may require a distribution proper 
 special include path; another one is that the previous implementation 
@@ -27,116 +28,146 @@ the linking.
 Moreover it now correctly handles errno (kerrno in RTAI), which was not 
 exploited in a thread safe way in the previous RTAI implementation.
 
-The idea is simple and under i386, so likely for any 32 bits arch, has 
-proven itself valid by simply using glibc-libm.a directly.
-
-Unfortunately glibc-libm.a does not work for x86_64, so likely for x86 archs 
-in general, because it is not compiled with the option "-mcmodel=kernel", 
-required for a kernel module.
-Recompiling x86_64 glibc-libm.a with such an option would entail patching its 
-configure-make scripts. As a matter of fact, glibc configure script forces
-also the use of "-fPIC" in some of his tests. Thus, regardless of the the fact 
-that CFLAGS-LDFLAGS contain "-mcmodel=kernel", it will fail working in a module. 
-In fact, that results in the two compiler options "-fPIC" and "-mcmodel=kernel" 
-being incompatible. 
-Moreover a fresh recompilation of glibc-libm.a may not be a light task. So it 
-has been decided to look for something else.
-
-Such a chosen else is basically resorting to a few known and lighter-embeddable 
-libraries: NEWLIB-libm.a, uClib-libm.a, MUSL-libc.a (MUSL-libc.a embedds libm.a),
-plus, as said, glibc-libm.a for i386.
-At the moment uClib has been tested for 32 bits only, for which any of 
-glibc-libm.a, newlib-libm.a, uClib-libm.a and musl-libm.a can be used.
+It is based on the use of a few known and lighter-embeddable libraries: 
+NEWLIB-libm.a, uClibc-ng-libc.a (uClibc-ng-libc.a embeds libm.a), 
+MUSL-libc.a (MUSL-libc.a embeds libm.a).
 
 The new implementation provides also an extension to both the double and float
 versions of most of the libm functions, which should be of help in enhancing 
 the possibility of setting up complex numerical applications in kernel space.
 
-A further extension, which can be selected at configure time, provides a new 
-support for complex functions in kernel space. It has required a simplified
-coding of a few missing basic functions, related to double and float complex 
-multiply and divide, but a more serious implementation is also available. 
+In fact, a further extension, which can be selected at configuration time,
+provides a new support for complex functions in kernel space. It has required a 
+simplified coding of a few missing basic functions, related to double and float
+complex multiply and divide, but a more serious implementation is also available. 
 The latter is taken from the LLVM compiler infrastructure, which is released 
-under the permissive free(dom) dual MIT and University of Illinois Open 
-Source Licenses.
+under the, GPL compatible, permissive free(dom) dual MIT and University of 
+Illinois Open Source Licenses.
 
-Also available are a couple of helper functions, to print double and 
-floating point numbers in kernel space, i.e.:
+Also available are a couple of helper functions, to print floating point and
+double numbers in kernel space, i.e.:
 - char *d2str(double d, int dgt, char *str), to convert a double to a string,
 float types have to use it too;
 - char *cd2str(complex double d, int dgt, char *str), to convert a double 
-complex to a string, in the form "real + j*imag", float complex types have 
-to use it too.
+complex to a string, in the form "real + j*imag" (or "real + imag j"), float 
+complex types have to use it too.
 They should be useful for quick checks and debugging in kernel space. 
 As such they are based on a somewhat naive implementation, whereas numbers 
 are formatted only as: +/-0.xxxxxxe+yy, where the number of "x"es is equal 
 to the number set for the argument "dgt" used in calling any of them.
 The printable number is returned in both str and as a pointer.
 
-We will now provide specific hints for each library to be used. As a general
+Specific hints for each library to be used are rovided below. As a general
 remark, if you are using the mentioned libraries just for RTAI kernel 
 applications, configure and make will be the main required commands.
-No need to "make install", just configure RTAI to point to their original
-lib directory. That means that you will not have to care of the installation
-directory. 
-Have a look at their README-INSTALL files for any  configuration option you 
-may need.
+No need to "make install", if you do not need it. Just configure RTAI to point
+to their original lib directory, in their "make" installation dir, avoiding 
+any "make install". Have a look at their README-INSTALL files for any 
+configuration option you may need.
 Notice also that below we will assume no cross development. If that is the 
-case, you should read their installation instructions to define the build/host/target 
-architectures appropriately. The following configuration suggestions
-are those to be added for having libm.a work in kernel space with RTAI.
-
-GLIBC, http://www.gnu.org/software/libc/ (recall that it is likely you have 
-it already).
-Little to say, you'll likely have libm.a already installed. So you have just
-to configure RTAI for using it. As already said, there are chances that it 
-will work just for 32 bit archs.
+case, you should read their installation instructions to define the 
+build/host/target architectures appropriately. The following configuration
+suggestions are the basic ones to be used for having libm.a work in kernel 
+space with RTAI.
 
 NEWLIB, http://sourceware.org/newlib/.
-Get its tarball and expand it, or clone its git and have a look at its README. 
+Get its tarball and expand it, or clone its git; have a look at its README. 
 For 32 bits:
 - ./configure --disable-shared --disable-multilib
   Newlib does not activate the -fPIC option so --disable-shared should be
-  the only thing to care.
+  the only thing more to care.
 - make
 For 64 bits:
 - ./configure --disable-shared --disable-multilib CFLAGS="-mcmodel=kernel"
   Newlib does not activate the -fPIC option so --disable-shared and 
-  mcmodel=kernel should be the only thing more to care.
+  mcmodel=kernel should be the only things more to care.
 - make
+- ar -dv libm.a lib_a-cacoshl.o lib_a-catanhl.o lib_a-casinhl.o lib_a-casinl.o
+  RTAI rtai_math.ko does not support any "long double". It is thus strange that
+  it could happen, but there have been instances in which a few long double 
+  complex functions, e.g. __mulxc3, got statically linked in rtai_math.ko, or
+  could be grepped somewhere through "grep -r __mulxc3", likely as a compiler
+  decision to improve precision.
+  Thus, it is a cautious attitude, after experiencing cases in which the above
+  entries appeared in libm.a, while they did not with other Linux installations.
+NEWLIB is a collection of software from several sources. So it mixes different 
+licenses, some of which cannot be qualified as strictly compatible with FREE(dom)
+SOFTWARE. So is up to you to decide to link it into RTAI libm.a support.
+
+uClibc-ng, http://www.uclibc-ng.org/. (a substitute of uClibc)
+Get a tarball and expand it, or clone its git and have a look at its INSTALL.
+In particular, care of installing the headers of the kernel with which you will
+use uClibc-ng, doing:
+- cd to the kernel version you want to match;
+- do: "make INSTALL_HDR_PATH=/tmp/linux-headers headers_install".
+uClibc-ng has a handy menuconfig which makes its configuration setting somewhat friendlier.
+So "make menuconfig" being sure to:
+In Target Architecture Features and Options:
+- Enable full C99 math library support
+- disable long double support
+- Linux kernel header location must be set to: /tmp/linux-headers/include
+General Library Settings:
+- disable Generate only Position Independent Code (PIC)
+- disable Enable shared libraries
+For 32 bits:
+Development/debugging options
+- Extra CFLAGS (--fno-pic)
+For 64 bits:
+Development/debugging options
+- Extra CFLAGS (-mcmodel=kernel -fno-pic)
+(REMARK - In practice, provided the above configuration points are satisfied, if you
+          want to reduce the size of libm.a, as well as its compilation time, you can
+	  disable anything else).
+- make.
+- do not care if 'lib/crti.o' failed.
+- ar -dv lib/libc.a fwrite.o write.o fputs.o sprintf.o strcpy.o strlen.o memcpy.o memset.o
+  needed to avoid having the above functions linked in kernel space, so using those
+  provided by the kernel and to avoid a linking conflict; it is a uClib-ng specific item, 
+  due to the fact that its libm.a is embedded in libc.a.
+- cp lib/libc.a lib/libm.a.
+  because of what said above.
+UCLIBC-NG seems to be released under FREE(DOM) SOFTWARE, plain LGPL, linceses.
 
 MUSL, http://www.musl-libc.org/.
-Get a tarball and expand it, or clone its git and have a look at its 
+Get a tarball and expand it, or clone its git; have a look at its 
 README-INSTALL. 
 Before configuring and making, execute the following script lines, from 
 within its base directory:
-- cp Makefile Makefile.saved 
-  for a following possible non RTAI reuse
-- sed 's/-fPIC//' <Makefile >Makefile.tmp; mv Makefile.tmp Makefile
+- cp Makefile Makefile.saved, for a following possible non RTAI reuse
+- sed 's/-fPIC//' <Makefile >Makefile.tmp; mv Makefile.tmp Makefile;
   needed  to disable -fPIC, set by default in the MUSL Makefile
 For 32 bits:
-- ./configure --disable-shared CFLAGS="-fno-common", 
+- ./configure --disable-shared CFLAGS="-fno-common -fno-pic", 
 For 64 bits:
-  ./configure --disable-shared CFLAGS="-mcmodel=kernel -fno-common", 
+- ./configure --disable-shared CFLAGS="-mcmodel=kernel -fno-common -fno-pic", 
 - make,
-- ar -d lib/libc.a fwrite.o write.o fputs.o sprintf.o strcpy.o strlen.o memcpy.o memset.o
+- ar -dv lib/libc.a fwrite.o write.o fputs.o sprintf.o strcpy.o strlen.o memcpy.o memset.o
   needed to avoid having the above functions linked in kernel space, so using those
-  provided by the kernel and to avoid a linking conflict; it is a MUSL specific item, 
+  provided by the kernel and to avoid a linking conflict. It is a MUSL specific item, 
   due to the fact that its libm.a is embedded in libc.a, leaving libm.a as just a
   link containing nothing.
+- ar -dv lib/libc.a cpow.o cpowf.o cpowl.o
+  RTAI rtai_math.ko does not support any "long double". It is thus strange that
+  it could happen, but there have been instances in which a few long double 
+  complex functions, e.g. __mulxc3, got statically linked in rtai_math.ko, or
+  could be grepped somewhere through "grep -r __mulxc3", likely as a compiler
+  decision to improve precision. The abovr functions will be anyhow provided in
+  rtai_math.ko.
+  Thus, it is a cautious attitude, after experiencing cases in which the above
+  entry appeared in libm.a, while they did not with other Linux installations.
 - cp lib/libc.a lib/libm.a.
-  as said above, to have a non empty libm.a link, as required by RTAI make.
+as previously said, to have a non empty libm.a link, as required by RTAI make.
+MUSL states that it is released under a (two close) standard permissive MIT license,
+which should qualify as FREE(dom) SOFTWARE compatible, so GPL compatible.
 
-uLIBC, http://www.uclibc.org/.
-uClibc has a handy menuconfig which makes its configuration setting somewhat friendlier.
-Set anything you need, then be sure to:
-- disable PIC
-- enable static making; 
-- enable  multithreads
-- enable C99 support
-- make.
-There should be no difference bewtween 32 and 64 bits configurations.
-As a side notice, it should be remarked that at the uLibc home site arch x86_64 is
-lacking a maintainer. That does not mean it will not work on such an arch.
+***************************** A FINAL IMPORTANT REMARK *****************************
+Nowadays, depending of the gcc version and enabled compiler standard options (e.g. ISOC99)
+most of the functions provided by the RTAI kernel math support (rtai_math.ko) are compiler
+builtins.
+Therefore, it is likely that your applications will end in not using any of the rtai_math.ko
+functions. Thus, even if it is insmoded, it will do nothing. To check if such is the case
+and what functions of rtai_math.ko are being used eventually, you have just to insmod your
+application module without insmoding rtai_math.ko. You will then be able to see, just by
+using dmesg, the missing functions, if any, that will be provided by rtai_math.ko.
 
 Marco Morandini and Paolo Mantegazza.

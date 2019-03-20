@@ -7,6 +7,7 @@
 # even the implied warranty of MERCHANTABILITY or FITNESS FOR A
 # PARTICULAR PURPOSE.
 
+
                      <*> USI (User Space Interrupts?) <*>
 
 N.B. the ? in the header is explained at the end of this text.
@@ -38,8 +39,8 @@ anything in kernel space.
 In fact it contains a few support functions allowing to write interrupt
 handlers directly in user space, without installing anything in the kernel. 
 The related APIs are much the same as those available from RTAI for kernel 
-space, so there is not much else to be saidi, from the conceptual point of
-view. 
+space, so there is not much else to be said, from the conceptual point of
+view at least. 
 You should just care of getting ioperm/iopl in order to gain the often 
 needed access to IO space.
 
@@ -120,8 +121,7 @@ Once more nothing new, there are other OSes that allow doing the same thing
 and UML should allow it also under plain Linux. On the RTAI side there is the 
 added advantage of having it in hard real time.
 
-After having illustrated USI as its acronym implies, i.e.: 
-User Space Interrupts, 
+After having illustrated USI as its acronym implies, i.e.: User Space Interrupts, 
 we must now recall that RTAI allows simmetry of usage of any of its services
 in kernel space alike. That means you can use all what has been explained here
 for managing interrupts in kernel space using RTAI kernel tasks. Nothing changes

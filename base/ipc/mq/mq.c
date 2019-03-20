@@ -32,6 +32,7 @@
 #include <linux/version.h>
 #include <linux/errno.h>
 #include <linux/stat.h>
+#include <linux/sched.h>
 #include <asm/uaccess.h>
 #ifdef CONFIG_PROC_FS
 #include <linux/proc_fs.h>

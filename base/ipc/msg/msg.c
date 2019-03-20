@@ -35,6 +35,7 @@
  * @defgroup rpc Remote procedure call functions
  */
 
+
 #include <linux/kernel.h>
 #include <linux/module.h>
 #include <linux/errno.h>
@@ -2148,11 +2149,17 @@ RTAI_SYSCALL_MODE pid_t rt_Name_attach(const char *argname)
 	return strnlen(task->task_name, RTAI_MAX_NAME_LENGTH) > (RTAI_MAX_NAME_LENGTH - 1) ? -EINVAL : task->tid;
 }
 
-RTAI_SYSCALL_MODE pid_t rt_Name_locate(const char *arghost, const char *argname)
+RTAI_SYSCALL_MODE pid_t rt_Name_locate(const char *arghost, const char *uargname)
 {
 	extern RT_TASK rt_smp_linux_task[];
 	int cpuid;
 	RT_TASK *task;
+	char argname[RTAI_MAX_NAME_LENGTH];
+	if ((unsigned long)uargname > PAGE_OFFSET) {
+	    	strncpy(argname, uargname, RTAI_MAX_NAME_LENGTH);
+	} else {
+	    	rt_strncpy_from_user(argname, uargname, RTAI_MAX_NAME_LENGTH);
+	}
         for (cpuid = 0; cpuid < num_online_cpus(); cpuid++) {
                 task = &rt_smp_linux_task[cpuid];
                 while ((task = task->next)) {

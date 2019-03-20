@@ -23,11 +23,13 @@
 #include <linux/timer.h>
 #include <linux/unistd.h>
 #include <linux/delay.h>
+#include <linux/sched.h>
 
 #include <asm/uaccess.h>
 
 #include <net/ip.h>
 
+#include <rtai_defs.h>
 #include <rtai_schedcore.h>
 #include <rtai_prinher.h>
 #include <rtai_netrpc.h>
@@ -35,6 +37,26 @@
 #include <rtai_mbx.h>
 
 MODULE_LICENSE("GPL");
+
+// Simple check to verify if memcpy is used between kernel and user space.
+// It seems not, but let's keep it simple for any user to verify what happens
+// in her/his own application.
+// To enable it just set the "#if 0" below into "#if 1"; with "#if 0" gcc will
+// avoid the use of do nothing inline and no overhead will be caused.
+static inline void check_kuadr(char *id, void *adr1, void *adr2)
+{
+#if 0
+	int val = (unsigned long)adr1 > (unsigned long)PAGE_OFFSET && (unsigned long)adr2 > (unsigned long)PAGE_OFFSET;
+	printk("<%s> %d %s.\n", id, val, val ? "" : "<!!!!!>");
+#endif
+#if 0
+	int val = (unsigned long)adr1 > (unsigned long)PAGE_OFFSET && (unsigned long)adr2 > (unsigned long)PAGE_OFFSET;
+	if (!val) {
+		printk("<%s> !!!!!.\n", id);
+	}
+#endif
+	return;
+}
 
 #define COMPILE_ANYHOW  // RTNet is not available but we want to compile anyhow
 #include "rtnetP.h"
@@ -222,6 +244,7 @@ static inline int argconv(void *ain, void *aout, int send_mach, int argsize, uns
 #define recv_mach  (sizeof(long))
 	int argsizeout;
 	if (send_mach == recv_mach) {
+		check_kuadr("argconv", aout, ain);
 		memcpy(aout, ain, argsize);
 		return argsize;
 	}
@@ -330,6 +353,7 @@ static inline int soft_rt_fun_call(RT_TASK *task, void *fun, void *arg)
 
 static inline long long soft_rt_genfun_call(RT_TASK *task, void *fun, void *args, int argsize)
 {
+	check_kuadr("soft_rt_genfun_call", task->fun_args, args);
 	memcpy(task->fun_args, args, argsize);
 	((struct fun_args *)task->fun_args)->fun = fun;
 	rt_schedule_soft(task);
@@ -525,6 +549,7 @@ recvrys:
 					arg.arg.wsize = wsize;
 					a[USP_WBF1(type) - 1] = (long)arg.arg.msg;
 					if ((USP_WBF1(type) - 1) == (USP_RBF1(type) - 1) && wsize == par->rsize) {
+						check_kuadr("soft_stub_fun", arg.arg.msg, (char *)ain + par->argsize);
 						memcpy(arg.arg.msg, (char *)ain + par->argsize, wsize);
 						a[USP_RBF1(type) - 1] = (long)(arg.arg.msg);
 					}
@@ -630,6 +655,7 @@ recvryh:
 				if (wsize > 0) {
 					arg.arg.wsize = wsize;
 					if ((USP_WBF1(type) - 1) == (USP_RBF1(type) - 1) && wsize == par->rsize) {
+						check_kuadr("hard_stub_fun", arg.arg.msg, (char *)ain + par->argsize);
 						memcpy(arg.arg.msg, (char *)ain + par->argsize, wsize);
 						a[USP_RBF1(type) - 1] = (long)(arg.arg.msg);
 					}
@@ -882,6 +908,7 @@ static inline void mbxput(MBX *mbx, char **msg, int msg_size)
 		if (tocpy > mbx->frbs) {
 			tocpy = mbx->frbs;
 		}
+		check_kuadr("mbxput", mbx->bufadr + mbx->lbyte, *msg);
 		memcpy(mbx->bufadr + mbx->lbyte, *msg, tocpy);
 		flags = rt_spin_lock_irqsave(&(mbx->lock));
 		mbx->frbs -= tocpy;
@@ -1000,8 +1027,15 @@ RTAI_SYSCALL_MODE long long _rt_net_rpc(long fun_ext_timed, long type, void *arg
 		RETURN_ERR(1);
 	}
 	if (NEED_TO_R(type)) {
-		rsize = USP_RSZ1(type);
-		rsize = rsize ? ((long *)args)[rsize - 1] : sizeof(long);
+		if ((rsize = USP_RSZ1(type))) {
+			if (space) {
+				rsize = ((long *)args)[rsize - 1];
+			} else {
+				rt_get_user(rsize, &((long *)args)[rsize - 1]);
+			}
+		} else {
+			rsize = sizeof(long);;
+		}
 	} else {
 		rsize = 0;
 	}
@@ -1018,12 +1052,20 @@ RTAI_SYSCALL_MODE long long _rt_net_rpc(long fun_ext_timed, long type, void *arg
 		arg->type = type;
 		arg->owner = portslotp->owner;
 		arg->partypes = partypes;
-		memcpy(arg->a, args, argsize);
+		if (space) {
+			check_kuadr("1 _rt_net_rpc", arg->a, args);
+			memcpy(arg->a, args, argsize);
+		} else {
+			rt_copy_from_user(arg->a, args, argsize);
+		}
 		if (rsize > 0) {
 			if (space) {
+				check_kuadr("2 _rt_net_rpc", (char *)arg->a + argsize, (void *)((long *)args + USP_RBF1(type) - 1)[0]);
 				memcpy((char *)arg->a + argsize, (void *)((long *)args + USP_RBF1(type) - 1)[0], rsize);
 			} else {
-				rt_copy_from_user((char *)arg->a + argsize, (void *)((long *)args + USP_RBF1(type) - 1)[0], rsize);
+				long p;
+				rt_get_user(p, &((long *)args + USP_RBF1(type) - 1)[0]);
+				rt_copy_from_user((char *)arg->a + argsize, (void *)p, rsize);
 			}
 		}
 		rsize = sizeof(struct par_t) - sizeof(long) + argsize + rsize;
@@ -1063,15 +1105,21 @@ RTAI_SYSCALL_MODE long long _rt_net_rpc(long fun_ext_timed, long type, void *arg
 		} else {
 			if (reply->wsize) {
 				if (space) {
+					check_kuadr("3 _rt_net_rpc", (char *)(*((long *)args + USP_WBF1(type) - 1)), reply->msg);
 					memcpy((char *)(*((long *)args + USP_WBF1(type) - 1)), reply->msg, reply->wsize);
 				} else {
-					rt_copy_to_user((char *)(*((long *)args + USP_WBF1(type) - 1)), reply->msg, reply->wsize);
+					long p;
+					rt_get_user(p, &((long *)args + USP_WBF1(type) - 1)[0]);
+					rt_copy_to_user((char *)p, reply->msg, reply->wsize);
 				}
 				if (reply->w2size) {
 					if (space) {
+						check_kuadr("4 _rt_net_rpc", (char *)(*((long *)args + USP_WBF2(type) - 1)), reply->msg + reply->wsize);
 						memcpy((char *)(*((long *)args + USP_WBF2(type) - 1)), reply->msg + reply->wsize, reply->w2size);
 					} else {
-						rt_copy_to_user((char *)(*((long *)args + USP_WBF2(type) - 1)), reply->msg + reply->wsize, reply->w2size);
+						long p;
+						rt_get_user(p, &((long *)args + USP_WBF2(type) - 1)[0]);
+						rt_copy_to_user((char *)p, reply->msg + reply->wsize, reply->w2size);
 					}
 				}
 			}
@@ -1151,6 +1199,7 @@ RTAI_SYSCALL_MODE int rt_poll_netrpc(struct rt_poll_s *pdsa1, struct rt_poll_s *
 		}
 	}
 	retval = _rt_poll(pdsa1, retval, timeout, 1);
+	check_kuadr("rt_poll_netrpc",pdsa2, pdsa1);
 	memcpy(pdsa2, pdsa1, pdsa_size);
 	return retval;
 }
@@ -1468,7 +1517,7 @@ static long long user_softrtnet_hdlr(unsigned long srqarg)
 }
 
 #if LINUX_VERSION_CODE > KERNEL_VERSION(4,4,0) && ((defined(CONFIG_X86_32) && (MAX_SOCKS + MAX_STUBS) > 32) || (defined(CONFIG_X86_64) && (MAX_SOCKS + MAX_STUBS) > 64))
-#error "Not ready yet, keep (MAX_SOCKS + MAX_STUBS): <= 32 for 32 bits and <= 64 for 64 bits machines."
+//#error "Not ready yet, keep (MAX_SOCKS + MAX_STUBS): <= 32 for 32 bits and <= 64 for 64 bits machines."
 #define SOFTRTNET_USER_SUPPORT 1
 #else
 #define SOFTRTNET_USER_SUPPORT 0
@@ -1495,9 +1544,9 @@ static int init_softrtnet(void)
 	memset(socks, 0, MaxSocks*sizeof(struct sock_t));
 	rt_typed_sem_init(&mtx, 0, BIN_SEM | FIFO_Q);
 	if (SOFTRTNET_USER_SUPPORT) {
-		char env0[] = "usr/rtai-5.1""/bin";
-		char arg0[] = "usr/rtai-5.1""/bin/user_softrtnet";
-		char arg1[] = "usr/rtai-5.1""/bin/execlog";
+		char env0[] = RTAI_INSTALL_DIR"/bin";
+		char arg0[] = RTAI_INSTALL_DIR"/bin/user_softrtnet";
+		char arg1[] = RTAI_INSTALL_DIR"/bin/execlog";
 		char *envp[] = { env0, "TERM=linux", "PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:usr", NULL };
 		char *argv[] = { arg0, arg1, NULL };
 		if (call_usermodehelper(argv[0], argv, envp, UMH_WAIT_EXEC)) {

@@ -14,6 +14,20 @@ modext = @RTAI_MODULE_EXT@
 
 CROSS_COMPILE = @CROSS_COMPILE@
 
+bin_PROGRAMS = user_softrtnet
+
+user_softrtnet_SOURCES = user_softrtnet.c
+
+user_softrtnet_CPPFLAGS = \
+	@RTAI_REAL_USER_CFLAGS@ \
+	-DHAL_SCHED_PATH="\"$(DESTDIR)$(moduledir)\"" \
+	-DHAL_SCHED_MODEXT="\"$(modext)\"" \
+	-I$(top_srcdir)/base/include \
+	-I../../../include
+
+user_softrtnet_LDADD = \
+	-lpthread
+
 libnetrpc_a_SOURCES = netrpc.c rtnetP.h
 
 if CONFIG_KBUILD

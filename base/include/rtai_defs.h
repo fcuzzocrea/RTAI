@@ -21,7 +21,7 @@
 #ifndef RTAI_DEFS_H
 #define RTAI_DEFS_H
 
-#define RTAI_INSTALL_DIR	"/usr/realtime"
+#define RTAI_INSTALL_DIR	"/usr/savannah"
 
 #endif /* RTAI_DEFS_H */
 

@@ -26,6 +26,7 @@
 #include <linux/compat.h>
 #include <linux/version.h>
 #include <linux/proc_fs.h>
+#include <linux/sched.h>
 #include <asm/uaccess.h>
 #include <asm/mman.h>
 

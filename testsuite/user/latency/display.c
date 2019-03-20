@@ -80,6 +80,7 @@ int main(void)
 	if (rt_get_adr(nam2num("LATCAL"))) {
 		rt_rpc(rt_get_adr(nam2num("LATCAL")), msg, &msg);
 	}
+
 	rt_task_delete(task);
 	exit(0);
 }

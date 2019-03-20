@@ -67,9 +67,11 @@ static void *slow_fun(void *arg)
 	mlockall(MCL_CURRENT | MCL_FUTURE);
 	rt_make_hard_real_time();
 	rt_sem_wait_barrier(barrier);
+
 	period = nano2count(SLOWMUL*TICK_TIME);
 	expected = start + 9*nano2count(TICK_TIME);
 	rt_task_make_periodic(Slow_Task, expected, period);
+
 	while (!end) {  
 		jit = abs(count2nano(rt_get_tscnt() - expected));
 		if (jit > slowjit) {
@@ -79,6 +81,7 @@ static void *slow_fun(void *arg)
 		expected += period;
 		rt_task_wait_period();                                        
 	}
+
 	rt_sem_wait_barrier(barrier);
 	rt_make_soft_real_time();
 	rt_thread_delete(Slow_Task);
@@ -98,9 +101,11 @@ static void *fast_fun(void *arg)
 	mlockall(MCL_CURRENT | MCL_FUTURE);
 	rt_make_hard_real_time();
 	rt_sem_wait_barrier(barrier);
+
 	period = nano2count(FASTMUL*TICK_TIME);
 	expected = start + 6*nano2count(TICK_TIME);
 	rt_task_make_periodic(Fast_Task, expected, period);
+
 	while (!end) {  
 		jit = abs(count2nano(rt_get_tscnt() - expected));
 		if (jit > fastjit) {
@@ -110,6 +115,7 @@ static void *fast_fun(void *arg)
 		expected += period;
 		rt_task_wait_period();                                        
 	}                      
+
 	rt_sem_wait_barrier(barrier);
 	rt_make_soft_real_time();
 	rt_thread_delete(Fast_Task);
@@ -137,9 +143,11 @@ static void *latency_fun(void *arg)
 	mlockall(MCL_CURRENT | MCL_FUTURE);
 	rt_make_hard_real_time();
 	rt_sem_wait_barrier(barrier);
+
 	period = nano2count(TICK_TIME);
 	expected = start + 3*period;
 	rt_task_make_periodic(Latency_Task, expected, period);
+
 	while (!end) {  
 		average = 0;
 		for (skip = 0; skip < NAVRG && !end; skip++) {
@@ -161,6 +169,7 @@ static void *latency_fun(void *arg)
 		samp.jitters[1] = slowjit;
 		rt_mbx_send_if(mbx, &samp, sizeof(samp));
 	}
+
 	rt_sem_wait_barrier(barrier);
 	rt_make_soft_real_time();
 	rt_thread_delete(Latency_Task);
@@ -189,20 +198,20 @@ int main(void)
 		exit(1);
 	}
 
-	start_rt_timer(0);
 	barrier = rt_sem_init(nam2num("PREMSM"), 4);
 	latency_thread = rt_thread_create(latency_fun, NULL, 0);
 	fast_thread    = rt_thread_create(fast_fun, NULL, 0);
 	slow_thread    = rt_thread_create(slow_fun, NULL, 0);
 	start = rt_get_tscnt() + nano2count(200000000);
 	rt_sem_wait_barrier(barrier);
+
 	pause();
 	end = 1;
+
 	rt_sem_wait_barrier(barrier);
 	rt_thread_join(latency_thread);
 	rt_thread_join(fast_thread);
 	rt_thread_join(slow_thread);
-	stop_rt_timer();	
 	rt_mbx_delete(mbx);
 	rt_sem_delete(barrier);
 	rt_thread_delete(Main_Task);

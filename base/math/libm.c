@@ -7,7 +7,8 @@
  * 
  * Dave's idea modified (2013) by Paolo Mantegazza <mantegazza@aero.polimi.it>, 
  * so to use just the standard GPLed glibc, with the added possibility of 
- * calling both the float and double version of glibc-libm functions.
+ * calling both the float and double version of libm.a functions, complex
+ * support included.
  * 
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2 as
@@ -31,7 +32,11 @@
 
 MODULE_LICENSE("GPL");
 
-/***** Begin of entries needed by glibc-libm *****/
+#if CONFIG_RTAI_MATH_LIBM_TO_USE < 1 || CONFIG_RTAI_MATH_LIBM_TO_USE > 3
+#error "***** 0 < CONFIG_RTAI_MATH_LIBM_TO_USE < 4 *****"
+#endif
+
+/***** Begin of libc entries needed by libm *****/
 
 int stderr = 2;
 
@@ -85,7 +90,119 @@ ssize_t write(int fildes, const void *buf, size_t nbytes)
 	generic_echo(buf, nbytes);
 }
 
-/***** End of entries needed by glibc-libm *****/
+/***** End of libc entries needed by libm *****/
+
+#if 1
+void __stack_chk_fail(void)
+{
+	panic("rtai_math.ko stack-protector: Kernel stack is corrupted in: %p\n",
+	__builtin_return_address(0));
+}
+#endif
+
+int signgam;
+
+#if CONFIG_RTAI_MATH_LIBM_TO_USE == 1 // NEWLIB
+#include "export_newlib.h"
+char using[] = "NEWLIB";
+#endif // NEWLIB
+
+#if CONFIG_RTAI_MATH_LIBM_TO_USE == 2 // UCLIBC-NG
+#include "export_uclibc.h"
+char using[] = "UCLIBC-NG";
+#ifdef CONFIG_RTAI_MATH_KCOMPLEX
+#ifdef CONFIG_X86_32
+#if 1
+#include "libm_cmplx.hc.gsl"
+#else
+#include "libm_cmplx.hc.musl"
+#endif
+#else
+asmlinkage double _Complex clog(double _Complex x)
+{
+	return log(cabs(x)) + I*carg(x);
+}
+asmlinkage float _Complex clogf(float _Complex x)
+{
+	return logf(cabsf(x)) + I*cargf(x);
+}
+#endif
+#endif
+#endif // UCLIBC-NG
+
+#if CONFIG_RTAI_MATH_LIBM_TO_USE == 3 // MUSL
+#include "export_musl.h"
+char using[] = "MUSL";
+#ifdef CONFIG_RTAI_MATH_KCOMPLEX
+// Hopefully a provisional fix. Till it is understood why a plain call of 
+// the ones in MUSL libc.a keeps segfaulting for X86_32 (aka i386)
+asmlinkage double _Complex cpow(double _Complex x, double _Complex y)
+{
+	return cexp(y*clog(x));
+}
+
+asmlinkage float _Complex cpowf(float _Complex x, float _Complex y)
+{
+	return cexpf(y*clogf(x));
+}
+// We have to provide them, till they are fixed in MUSL
+asmlinkage double _Complex cacosh(double _Complex z)
+{
+	z = cacos(z);
+	return cimag(z) > 0 ? __builtin_complex(cimag(z), -creal(z)) : __builtin_complex(-cimag(z), creal(z));
+}
+asmlinkage float _Complex cacoshf(float _Complex z)
+{
+	z = cacosf(z);
+	return cimagf(z) > 0 ? __builtin_complex(cimagf(z), -crealf(z)) : __builtin_complex(-cimagf(z), crealf(z));
+}
+#endif
+// Export gamma function not found in MUSL libc.a 
+double gamma(double x)
+{
+	return lgamma(x);
+}
+EXPORT_SYMBOL(gamma);
+
+double gamma_r(double x, int *signgamp)
+{
+	return lgamma_r(x, signgamp);
+}
+EXPORT_SYMBOL(gamma_r);
+
+float gammaf(float x)
+{
+	return lgammaf(x);
+}
+EXPORT_SYMBOL(gammaf);
+
+float gammaf_r(float x, int *signgamp)
+{
+	return lgammaf_r(x, signgamp);
+}
+EXPORT_SYMBOL(gammaf_r);
+#endif // MUSL
+
+int __rtai_math_init(void)
+{
+	printk(KERN_INFO "RTAI[math]: loaded, using %s.\n", using);
+	return 0;
+}
+
+void __rtai_math_exit(void)
+{
+	printk(KERN_INFO "RTAI[math]: unloaded.\n");
+}
+
+module_init(__rtai_math_init);
+module_exit(__rtai_math_exit);
+  
+EXPORT_SYMBOL(__fpclassify);
+EXPORT_SYMBOL(__fpclassifyf);
+EXPORT_SYMBOL(__signbit);
+EXPORT_SYMBOL(__signbitf);
+
+#if defined(CONFIG_RTAI_MATH_KCOMPLEX) && (defined(_RTAI_EXPORT_NEWLIB_H) || defined(_RTAI_EXPORT_MUSL_H) || defined(_RTAI_EXPORT_UCLIBC_H))
 
 char *d2str(double d, int dgt, char *str)
 {
@@ -140,88 +257,13 @@ char *d2str(double d, int dgt, char *str)
 }
 EXPORT_SYMBOL(d2str);
 
-int signgam;
-
-#if CONFIG_RTAI_MATH_LIBM_TO_USE == 1
-#include "export_newlib.h"
-char using[7] = "NEWLIB";
-#endif
-
-#if CONFIG_RTAI_MATH_LIBM_TO_USE == 2
-#include "export_uclibc.h"
-char using[7] = "UCLIBC";
-#endif
-
-#if CONFIG_RTAI_MATH_LIBM_TO_USE == 3
-#include "export_glibc.h"
-char using[7] = "GLIBC";
-#endif
-
-#if CONFIG_RTAI_MATH_LIBM_TO_USE == 4
-#include "export_musl.h"
-char using[7] = "MUSL";
-
-// Hopefully a provisional fix. Till it is understood why a plain call of 
-// the one in MUSL libc.a segfaults for 32 bits
-asmlinkage double _Complex cpow(double _Complex x, double _Complex y)
-{
-	return cexp(y*clog(x));
-}
-
-// Export gamma function not found in MUSL libc.a 
-double gamma(double x)
-{
-	return lgamma(x);
-}
-EXPORT_SYMBOL(gamma);
-
-double gamma_r(double x, int *signgamp)
-{
-	return lgamma_r(x, signgamp);
-}
-EXPORT_SYMBOL(gamma_r);
-
-float gammaf(float x)
-{
-	return lgammaf(x);
-}
-EXPORT_SYMBOL(gammaf);
-
-float gammaf_r(float x, int *signgamp)
-{
-	return lgammaf_r(x, signgamp);
-}
-EXPORT_SYMBOL(gammaf_r);
-#endif
-
-int __rtai_math_init(void)
-{
-	printk(KERN_INFO "RTAI[math]: loaded, using %s.\n", using);
-	return 0;
-}
-
-void __rtai_math_exit(void)
-{
-	printk(KERN_INFO "RTAI[math]: unloaded.\n");
-}
-
-module_init(__rtai_math_init);
-module_exit(__rtai_math_exit);
-  
-EXPORT_SYMBOL(__fpclassify);
-EXPORT_SYMBOL(__fpclassifyf);
-EXPORT_SYMBOL(__signbit);
-EXPORT_SYMBOL(__signbitf);
-
-#if defined(CONFIG_RTAI_MATH_KCOMPLEX) && (defined(_RTAI_EXPORT_GLIBC_H) || defined(_RTAI_EXPORT_NEWLIB_H) || defined(_RTAI_EXPORT_MUSL_H))
-
 char *cd2str(complex double cd, int dgt, char *str)
 {
 	int i;
 	d2str(__real__ cd, dgt, str);
 	i = strlen(str);
 	str[i] = ' ';
-#if 0
+#if 0 // two options to display the imaginary part
 	d2str(__imag__ cd, dgt, &str[i + 4]);
 	str[i + 1] = str[i + 4];
 	str[i + 2] = ' ';
@@ -236,24 +278,7 @@ char *cd2str(complex double cd, int dgt, char *str)
 }
 EXPORT_SYMBOL(cd2str);
 
-#if CONFIG_RTAI_MATH_LIBM_TO_USE == 3
-// Hopefully a provisional fix for glibc only. Till it is understood
-// why a plain call of glibc cpow and cpowf does not work
-asmlinkage double _Complex __cexp(double _Complex x);
-asmlinkage double _Complex __clog(double _Complex x);
-asmlinkage double _Complex cpow(double _Complex x, double _Complex y)
-{
-	return __cexp(y*__clog(x));
-}
-asmlinkage float _Complex __cexpf(float _Complex x);
-asmlinkage float _Complex __clogf(float _Complex x);
-asmlinkage float _Complex cpowf(float _Complex x, float _Complex y)
-{
-	return __cexpf(y*__clogf(x));
-}
-#endif
-
-#if CONFIG_RTAI_MATH_LIBM_TO_USE == 1 || CONFIG_RTAI_MATH_LIBM_TO_USE == 4
+#if CONFIG_RTAI_MATH_LIBM_TO_USE == 1 || CONFIG_RTAI_MATH_LIBM_TO_USE == 2 || CONFIG_RTAI_MATH_LIBM_TO_USE == 3 // i.e. them all
 asmlinkage double _Complex clog(double _Complex x);
 asmlinkage double _Complex clog10(double _Complex x)
 {
@@ -268,18 +293,21 @@ asmlinkage float _Complex clog10f(float _Complex x)
 }
 #endif
 
-double strtod(void) { return 0.0; }
-
-float strtof(void)  { return 0.0; }
-
 EXPORT_SYMBOL(cabs);
 EXPORT_SYMBOL(cabsf);
+EXPORT_SYMBOL(carg);
+EXPORT_SYMBOL(cargf);
+EXPORT_SYMBOL(cexp);
+EXPORT_SYMBOL(cexpf);
+EXPORT_SYMBOL(clog);
+EXPORT_SYMBOL(clogf);
+EXPORT_SYMBOL(clog10);
+EXPORT_SYMBOL(clog10f);
+#if CONFIG_RTAI_MATH_LIBM_TO_USE != 2 || defined(CONFIG_X86_32)
 EXPORT_SYMBOL(cacos);
 EXPORT_SYMBOL(cacosf);
 EXPORT_SYMBOL(cacosh);
 EXPORT_SYMBOL(cacoshf);
-EXPORT_SYMBOL(carg);
-EXPORT_SYMBOL(cargf);
 EXPORT_SYMBOL(casin);
 EXPORT_SYMBOL(casinf);
 EXPORT_SYMBOL(casinh);
@@ -292,14 +320,8 @@ EXPORT_SYMBOL(ccos);
 EXPORT_SYMBOL(ccosf);
 EXPORT_SYMBOL(ccosh);
 EXPORT_SYMBOL(ccoshf);
-EXPORT_SYMBOL(cexp);
-EXPORT_SYMBOL(cexpf);
 EXPORT_SYMBOL(cimag);
 EXPORT_SYMBOL(cimagf);
-EXPORT_SYMBOL(clog);
-EXPORT_SYMBOL(clogf);
-EXPORT_SYMBOL(clog10);
-EXPORT_SYMBOL(clog10f);
 EXPORT_SYMBOL(conj);
 EXPORT_SYMBOL(conjf);
 EXPORT_SYMBOL(cpow);
@@ -318,10 +340,21 @@ EXPORT_SYMBOL(ctan);
 EXPORT_SYMBOL(ctanf);
 EXPORT_SYMBOL(ctanh);
 EXPORT_SYMBOL(ctanhf);
+#endif
 
-//#define USE_COMPILER_QUALITY_CODE
+#if 1
+// It is called, even if long double is not supported here; let's track it, to track what has to be done
+double _Complex __mulxc3(long double a, long double b, long double c, long double d)
+{
+	printk(KERN_WARNING "***** __mulxc3 called by %s *****\n", using);
+	return __muldc3((double)a, (double)b, (double)c, (double)d);
+}
+#endif
+
+#define USE_COMPILER_QUALITY_CODE
 
 #ifndef USE_COMPILER_QUALITY_CODE
+
 /* 
  * This is the naive, but faster, approach.
  * No checks and readjustments for NAN and INFINITE
@@ -365,6 +398,7 @@ float _Complex __divsc3(float a, float b, float c, float d)
 }
 
 #else
+
 /* 
  * This is the LLVM compiler infrastructure.
  * It is an undeniably more serious, compiler quality, 
@@ -593,8 +627,8 @@ MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 GNU General Public License for more details.
 
 You should have received a copy of the GNU General Public License
-along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
+along with this program; if not, write to the Free Software
+Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 */
 
 

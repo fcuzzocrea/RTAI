@@ -159,6 +159,11 @@ ACKNOWLEDGEMENTS:
 
 MODULE_LICENSE("GPL");
 
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(4,14,71)
+#include <linux/sched/signal.h>
+#define CURRENT_TIME current_time(inode)
+#endif
+
 /* these are copied from <rt/rt_compat.h> */
 #define rtf_save_flags_and_cli(x)	do{x=rt_spin_lock_irqsave(&rtf_lock);}while(0)
 #define rtf_restore_flags(x)		rt_spin_unlock_irqrestore((x),&rtf_lock)

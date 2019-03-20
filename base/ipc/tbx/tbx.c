@@ -21,6 +21,7 @@
 #include <linux/module.h>
 #include <linux/kernel.h>
 #include <linux/errno.h>
+#include <linux/sched.h>
 #include <asm/uaccess.h>
 
 #include <rtai_registry.h>

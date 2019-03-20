@@ -25,6 +25,7 @@
 
 
 #include <linux/module.h>
+#include <linux/sched.h>
 #include <asm/uaccess.h>
 #include <asm/unistd.h>
 
@@ -1961,6 +1962,7 @@ RTAI_SYSCALL_MODE void rt_irq_signal(unsigned irq)
 		rt_task_resume((void *)rtai_domain.irqs[irq].cookie);
 	}
 }
+EXPORT_SYMBOL(rt_irq_signal);
 
 static int rt_irq_task_handler(unsigned irq, RT_TASK *irq_task)
 {
@@ -1998,6 +2000,7 @@ RTAI_SYSCALL_MODE int rt_release_irq_task (unsigned irq)
 
 /* +++++++++++++++++ SUPPORT FOR THE LINUX SYSCALL SERVER +++++++++++++++++++ */
 
+
 RTAI_SYSCALL_MODE int rt_set_linux_syscall_mode(long mode, void (*cbfun)(long, long))
 {
 	RT_TASK *server;
@@ -2010,6 +2013,67 @@ RTAI_SYSCALL_MODE int rt_set_linux_syscall_mode(long mode, void (*cbfun)(long, l
 	rt_put_user(cbfun, &syscalls->cbfun);
 	return 0;
 }
+
+#ifndef CONFIG_RTAI_USE_STACK_ARGS
+
+void rt_exec_linux_syscall(RT_TASK *rt_current, struct linux_syscalls_list *syscalls, struct pt_regs *regs)
+{
+	int in, id;
+	struct { int in, out, nr, id, mode; void (*cbfun)(long, long); RT_TASK *serv; } from;
+
+	rt_copy_from_user(&from, syscalls, sizeof(from));
+	in = from.in;
+	if (++from.in >= from.nr) {
+		from.in = 0;
+	}
+	if (from.mode == ASYNC_LINUX_SYSCALL && from.in == from.out) {
+		regs->LINUX_SYSCALL_RETREG = -1;
+		return;
+	}
+
+#if defined( __NR_socketcall)
+	if (regs->LINUX_SYSCALL_NR == __NR_socketcall) {
+		int i;
+		for (i = 0; i < NSYSCALL_PACARGS; i++) {
+			long pacarg;
+			rt_get_user(pacarg, (long *)regs->LINUX_SYSCALL_REG2 + i);
+			rt_put_user(pacarg, &syscalls->syscall[in].pacargs[i]);
+		}
+		rt_put_user((long)syscalls->syscall[in].pacargs, &syscalls->syscall[in].args[2]);
+	} else
+#endif
+	{
+		rt_put_user(regs->LINUX_SYSCALL_REG2, &syscalls->syscall[in].args[2]); 
+	}
+	rt_put_user(regs->LINUX_SYSCALL_NR,   &syscalls->syscall[in].args[0]); 
+	rt_put_user(regs->LINUX_SYSCALL_REG1, &syscalls->syscall[in].args[1]); 
+	rt_put_user(regs->LINUX_SYSCALL_REG3, &syscalls->syscall[in].args[3]); 
+	rt_put_user(regs->LINUX_SYSCALL_REG4, &syscalls->syscall[in].args[4]); 
+	rt_put_user(regs->LINUX_SYSCALL_REG5, &syscalls->syscall[in].args[5]); 
+	rt_put_user(regs->LINUX_SYSCALL_REG6, &syscalls->syscall[in].args[6]); 
+	rt_put_user(from.id,    &syscalls->syscall[in].id); 
+	rt_put_user(from.mode,  &syscalls->syscall[in].mode); 
+	rt_put_user(from.cbfun, &syscalls->syscall[in].cbfun); 
+	id = from.id;
+	if (++from.id < 0) {
+		from.id = 0;
+	}
+	rt_put_user(from.id, &syscalls->id);
+	rt_put_user(from.in, &syscalls->in);
+	if (from.serv->suspdepth >= -from.nr) {
+		from.serv->priority = rt_current->priority + BASE_SOFT_PRIORITY;
+		rt_task_resume(from.serv);
+	}
+	if (from.mode == SYNC_LINUX_SYSCALL) {
+		rt_task_suspend(rt_current);
+		rt_get_user(regs->LINUX_SYSCALL_RETREG, &syscalls->syscall[in].retval);
+	} else {
+		regs->LINUX_SYSCALL_RETREG = id;
+	}
+	return;
+}
+
+#else
 
 void rt_exec_linux_syscall(RT_TASK *rt_current, struct linux_syscalls_list *syscalls, struct pt_regs *regs)
 {
@@ -2068,7 +2132,9 @@ void rt_exec_linux_syscall(RT_TASK *rt_current, struct linux_syscalls_list *sysc
 	} else {
 		regs->LINUX_SYSCALL_RETREG = id;
 	}
+	return;
 }
+#endif
 
 /* ++++++++++++++++++++ END OF COMMON FUNCTIONALITIES +++++++++++++++++++++++ */
 

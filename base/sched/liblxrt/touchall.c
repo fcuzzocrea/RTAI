@@ -17,6 +17,7 @@
  * 
  */
 
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
@@ -24,6 +25,7 @@
 #include <sys/mman.h>
 #include <malloc.h>
 
+#if 0
 #define TOUCH_BUFSIZE 256
 #define GROW_STACK (64*1024)
 #define GROW_HEAP  (64*1024)
@@ -146,3 +148,4 @@ int main(int argc, char *argv[]) {
 	return 0;
 }
 */
+#endif

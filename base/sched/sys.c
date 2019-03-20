@@ -2,7 +2,6 @@
  * Copyright (C) 2001-2015  Paolo Mantegazza <mantegazza@aero.polimi.it>,
  * Copyright (C) 2001       Pierre Cloutier <pcloutier@poseidoncontrols.com>,
  * Copyright (C) 2001       Steve Papacharalambous <stevep@zentropix.com>,
- * Copyright (C) 2001       Jan Kiszka (Jan.Kiszka@web.de)
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License as
@@ -279,12 +278,14 @@ static int __task_delete(RT_TASK *rt_task)
 	if (rt_task->is_hard > 0) {
 		give_back_to_linux(rt_task, 0);
 	}
+#if 0
 	if ((server = rt_task->linux_syscall_server)) {
 		server->suspdepth = -RTE_HIGERR;
 		rt_task_masked_unblock(server, ~RT_SCHED_READY);
        		lnxtsk->state = TASK_INTERRUPTIBLE;
-	        schedule_timeout(HZ/10);
+	        msleep(100);
 	}
+#endif
 	if (clr_rtext(rt_task)) {
 		return -EFAULT;
 	}

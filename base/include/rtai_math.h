@@ -22,12 +22,6 @@
 #ifndef _RTAI_MATH_H
 #define _RTAI_MATH_H
 
-//#define CONFIG_RTAI_GLIBC
-//#define CONFIG_RTAI_NEWLIB
-//#define CONFIG_RTAI_UCLIBC
-
-//#define CONFIG_RTAI_KCOMPLEX
-
 #ifdef __KERNEL__
 
 #include <rtai_schedcore.h>
@@ -342,7 +336,9 @@ asmlinkage float _Complex ctanhf(float _Complex z);
  * Lesser General Public License for more details.
  *
  * You should have received a copy of the GNU Lesser General Public
- * License along with the GNU C Library; if not, see <http://www.gnu.org/licenses/>.
+ * License along with the GNU C Library; if not, write to the Free
+ * Software Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA
+ * 02111-1307 USA.
  */
 
 /*

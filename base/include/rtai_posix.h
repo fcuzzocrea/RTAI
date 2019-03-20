@@ -17,6 +17,7 @@
  *
  */
 
+
 #ifndef _RTAI_POSIX_H_
 #define _RTAI_POSIX_H_
 
@@ -1044,7 +1045,7 @@ static inline int timer_create(clockid_t clockid, struct sigevent *evp, timer_t 
 			handler_data = rt_malloc(sizeof(struct rt_handler_support));
 			handler_data->funarg = evp->sigev_value;
 			handler_data->_function = evp->_sigev_un._sigev_thread._function;
-			*timerid = rt_ptimer_create(timer, handler_wrpr, (unsigned long)handler_data, 1, 0);
+			*timerid = rt_kptimer_create(timer, handler_wrpr, (unsigned long)handler_data, 1, 0);
 		} else {
 			return -EINTR; 
 		}
@@ -2161,12 +2162,15 @@ RTAI_PROTO(int, __wrap_pthread_spin_destroy, (pthread_spinlock_t *lock))
 RTAI_PROTO(int, __wrap_pthread_spin_lock,(pthread_spinlock_t *lock))
 {
 	if (lock) {
-		pid_t tid;
-		if (((pid_t *)lock)[0] == (tid = _pthread_gettid_np())) {
+		pid_t tid = _pthread_gettid_np();
+		if (((pid_t *)lock)[0] == tid) {
 			return EDEADLOCK;
+		} else {
+			unsigned long l = lock[0];
+			while (atomic_cmpxchg((void *)&l, 0, tid));
+			lock[0] = l;
+			return 0;
 		}
-		while (atomic_cmpxchg((void *)lock, 0, tid));
-		return 0;
 	}
 	return EINVAL;
 }
@@ -2174,7 +2178,13 @@ RTAI_PROTO(int, __wrap_pthread_spin_lock,(pthread_spinlock_t *lock))
 RTAI_PROTO(int, __wrap_pthread_spin_trylock,(pthread_spinlock_t *lock))
 {
 	if (lock) {
-		return atomic_cmpxchg((void *)lock, 0, _pthread_gettid_np()) ? EBUSY : 0;
+		unsigned long l = lock[0];
+		if (atomic_cmpxchg((void *)&l, 0, _pthread_gettid_np())) {
+			return EBUSY;
+		} else {
+			lock[0] = l;
+			return 0;
+		}
 	}
 	return EINVAL;
 }
@@ -2303,33 +2313,36 @@ RTAI_PROTO(int, __wrap_nanosleep,(const struct timespec *rqtp, struct timespec *
 }
 
 /*
- * TIMER
+ * POSIX TIMERS
  */
  
+struct supfun_data { struct rt_tasklet_struct *tasklet; long signum; void (*handler)(unsigned long); unsigned long data; int done;};
+
 static int support_posix_timer(void *data)
 {
 	RT_TASK *task;
 	struct rt_tasklet_struct usptasklet;
-	struct data_stru { struct rt_tasklet_struct *tasklet; long signum; } data_struct;
+	struct supfun_data supfun_data;
 	
-	data_struct = *(struct data_stru *)data;
+	supfun_data = *(struct supfun_data *)data;
 
-	if (!(task = rt_thread_init((unsigned long)data_struct.tasklet, 98, 0, SCHED_FIFO, 0xF))) {
+	if (!(task = rt_thread_init((unsigned long)supfun_data.tasklet, 98, 0, SCHED_FIFO, 0xF))) {
 		printf("CANNOT INIT POSIX TIMER SUPPORT TASKLET\n");
 		return -1;
 	} else {
-		struct { struct rt_tasklet_struct *tasklet, *usptasklet; RT_TASK *task; } reg = { data_struct.tasklet, &usptasklet, task };
+		struct { struct rt_tasklet_struct *tasklet, *usptasklet; RT_TASK *task; } reg = { supfun_data.tasklet, &usptasklet, task };
 		rtai_lxrt(TASKLETS_IDX, sizeof(reg), REG_TASK, &reg);
 	}
 
 	mlockall(MCL_CURRENT | MCL_FUTURE);
 	rt_make_hard_real_time();
+	supfun_data.done = 1;
 	
-	if (data_struct.signum)	{
+	if (supfun_data.signum)	{
 		while (1) {
 			rt_task_suspend(task);
 			if (usptasklet.handler) {
-				pthread_kill((pthread_t)usptasklet.data, data_struct.signum);
+				pthread_kill((pthread_t)supfun_data.data, supfun_data.signum);
 			} else {
 				break;
 			}
@@ -2338,14 +2351,13 @@ static int support_posix_timer(void *data)
 		while (1) {	
 			rt_task_suspend(task);
 			if (usptasklet.handler) {
-				usptasklet.handler(usptasklet.data);
+				supfun_data.handler(supfun_data.data);
 			} else {
 				break;
 			}
 		}
 	}
 	
-	rtai_sti();
 	rt_make_soft_real_time();
 	rt_task_delete(task);
 
@@ -2355,35 +2367,44 @@ static int support_posix_timer(void *data)
 RTAI_PROTO (int, __wrap_timer_create, (clockid_t clockid, struct sigevent *evp, timer_t *timerid))
 {
 	void (*handler)(unsigned long) = ((void (*)(unsigned long))1);
-	int pid = -1;
+	int i;
 	unsigned long data = 0;
-	struct { struct rt_tasklet_struct *tasklet; long signum; } data_supfun;
+	struct supfun_data supfun_data;
 	
 	if (clockid != CLOCK_MONOTONIC && clockid != CLOCK_REALTIME) {
 		errno = ENOTSUP;
 		return -1;
 	}
+
 		
 	if (evp == NULL) {
-			data_supfun.signum = SIGALRM;
+			supfun_data.signum = SIGALRM;
 	} else {
 		if (evp->sigev_notify == SIGEV_SIGNAL) {
-			data_supfun.signum = evp->sigev_signo;
+			supfun_data.signum = evp->sigev_signo;
 			data = (unsigned long)evp->sigev_value.sival_ptr;
 		} else if (evp->sigev_notify == SIGEV_THREAD) {
-			data_supfun.signum = 0;
+			supfun_data.signum = 0;
 			data = (unsigned long)evp->sigev_value.sival_int;
-			handler = (void (*)(unsigned long)) evp->_sigev_un._sigev_thread._function;
-			pid = 1;
+			if (!(handler = (void (*)(unsigned long))evp->_sigev_un._sigev_thread._function)) {
+				errno = EINVAL;
+				return -1;
+			}
 		}
 	}
 
-	struct { struct rt_tasklet_struct *timer; void (*handler)(unsigned long); unsigned long data; long pid; long thread; } arg = { NULL, handler, data, pid, 0 };
-	arg.timer = (struct rt_tasklet_struct*)rtai_lxrt(TASKLETS_IDX, SIZARG, INIT, &arg).v[LOW];
-	data_supfun.tasklet = arg.timer; 
-	arg.thread = rt_thread_create((void *)support_posix_timer, &data_supfun, TASKLET_STACK_SIZE);
+	struct { struct rt_tasklet_struct **timer; } arg = { &supfun_data.tasklet };
 	*timerid = (timer_t)rtai_lxrt(TASKLETS_IDX, SIZARG, PTIMER_CREATE, &arg).i[LOW];
-	
+	supfun_data.done    = 0;
+	supfun_data.handler = handler; 
+	supfun_data.data    = data; 
+	rt_thread_create((void *)support_posix_timer, &supfun_data, TASKLET_STACK_SIZE);
+#define POLLS_PER_SEC 500
+	for (i = 0; i < POLLS_PER_SEC/5 && !supfun_data.done; i++) {
+		struct timespec delay = { 0, 1000000000/POLLS_PER_SEC };
+		nanosleep(&delay, NULL);
+	}
+#undef POLLS_PER_SEC
 	return 0;
 }
 
@@ -2393,7 +2414,7 @@ RTAI_PROTO (int, __wrap_timer_gettime, (timer_t timerid, struct itimerspec *valu
 	
 	struct { timer_t timer; RTIME *timer_times; } arg = { timerid, timer_times };
 	rtai_lxrt(TASKLETS_IDX, SIZARG, PTIMER_GETTIME, &arg);
-	
+
 	count2timespec( timer_times[0], &(value->it_value) );
 	count2timespec( timer_times[1], &(value->it_interval) );
 	

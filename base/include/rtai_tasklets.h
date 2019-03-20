@@ -23,6 +23,7 @@
  *
  */
 
+
 #ifndef _RTAI_TASKLETS_H
 #define _RTAI_TASKLETS_H
 
@@ -110,7 +111,7 @@ void __rtai_tasklets_exit(void);
 
 struct rt_tasklet_struct *rt_init_tasklet(void);
 
-RTAI_SYSCALL_MODE int rt_delete_tasklet(struct rt_tasklet_struct *tasklet);
+RTAI_SYSCALL_MODE void rt_delete_tasklet(struct rt_tasklet_struct *tasklet);
 
 RTAI_SYSCALL_MODE int rt_insert_tasklet(struct rt_tasklet_struct *tasklet, int priority, void (*handler)(unsigned long), unsigned long data, unsigned long id, int pid);
 
@@ -205,7 +206,8 @@ RTAI_SYSCALL_MODE RTIME rt_get_timer_overrun(struct rt_tasklet_struct *timer);
 
 /* Posix timers support */
 
-RTAI_SYSCALL_MODE timer_t rt_ptimer_create(struct rt_tasklet_struct *timer, void (*handler)(unsigned long), unsigned long data, long pid, long thread);
+RTAI_SYSCALL_MODE timer_t rt_kptimer_create(struct rt_tasklet_struct *timer, void (*handler)(unsigned long), unsigned long data, long pid, long thread);
+RTAI_SYSCALL_MODE timer_t rt_ptimer_create(struct rt_tasklet_struct **timer);
 
 RTAI_SYSCALL_MODE void rt_ptimer_settime(timer_t timer, const struct itimerspec *value, unsigned long data, long flags);
 
@@ -393,11 +395,9 @@ notdone:
 
 RTAI_PROTO(void, rt_delete_tasklet, (struct rt_tasklet_struct *tasklet))
 {
-	int thread;
 	struct { struct rt_tasklet_struct *tasklet; } arg = { tasklet };
-	if ((thread = rtai_lxrt(TASKLETS_IDX, SIZARG, DELETE, &arg).i[LOW])) {
-		rt_thread_join(thread);
-	}
+	rtai_lxrt(TASKLETS_IDX, SIZARG, DELETE, &arg);
+	return;
 }
 
 #define rt_delete_timer rt_delete_tasklet

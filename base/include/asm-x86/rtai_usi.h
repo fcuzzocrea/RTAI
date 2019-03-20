@@ -16,6 +16,7 @@
  *
  */
 
+
 #ifndef _RTAI_ASM_X86_USI_H
 #define _RTAI_ASM_X86_USI_H
 
@@ -77,9 +78,19 @@ static unsigned long (*usi_fun_entry[ ])(unsigned long, unsigned long *) = {
 	[_RESTORE_FLAGS]    = (void *)usi_restore_flags
 };
 
+#ifdef CONFIG_RTAI_USE_STACK_ARGS
+#define RTAI_USE_STACK_ARGS 1
+#else
+#define RTAI_USE_STACK_ARGS 0
+#endif
+
 #define IF_IS_A_USI_SRQ_CALL_IT(srq, args, retval, psr, retpath) \
 	if (srq > USI_SRQ_MASK) { \
-		*retval = usi_fun_entry[srq & ~USI_SRQ_MASK](args, &(psr)); \
+		if (RTAI_USE_STACK_ARGS) { \
+			*retval = usi_fun_entry[srq & ~USI_SRQ_MASK](args, &(psr)); \
+		} else { \
+			rt_put_user(usi_fun_entry[srq & ~USI_SRQ_MASK](args, &(psr)), retval); \
+		} \
 		return retpath; \
 	}
 #else

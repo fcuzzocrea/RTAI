@@ -116,7 +116,11 @@ struct cmds_ofstlens { unsigned int cmd_chanlist_ofst, cmd_data_ofst, cmd_ofst, 
 
 struct insns_ofstlens { unsigned int n_ofst, subdev_ofst, chanspec_ofst, insn_len, insns_ofst, data_ofsts, data_ofst; };
 
+#if 1
 #include <linux/comedi.h>
+#else // new way to be improved by using what configured for RTAI
+#include </home/mante/comedi/include/linux/comedi.h>
+#endif
 
 #ifdef __KERNEL__ /* For kernel module build. */
 

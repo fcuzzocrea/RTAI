@@ -39,6 +39,8 @@
  *@{*/
 
 
+#undef CONFIG_TRACEPOINTS
+
 #include <linux/module.h>
 #include <linux/delay.h>
 
@@ -67,6 +69,9 @@ MODULE_LICENSE("GPL");
 #endif /* CONFIG_X86_IO_APIC */
 #include <asm/apic.h>
 #endif /* CONFIG_X86_LOCAL_APIC */
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(4,14,71)
+#include <linux/sched/types.h>
+#endif
 
 #define __RTAI_HAL__
 #define DEFINE_FPU_FPREGS_OWNER_CTX
@@ -84,8 +89,11 @@ MODULE_LICENSE("GPL");
 MODULE_LICENSE("GPL");
 #endif
 
+#ifndef CONFIG_X86_TSC
+#error "Recent RTAI versions require a TSC; if not so look at older versions and see how to emulate it."
+#endif
 #ifdef CONFIG_IPIPE_LEGACY
-#error CONFIG_IPIPE_LEGACY MUST NOT BE ENABLED, RECONFIGURE LINUX AND REMAKE BOTH KERNEL AND RTAI.
+#error "CONFIG_IPIPE_LEGACY MUST NOT BE ENABLED, RECONFIGURE LINUX AND REMAKE BOTH KERNEL AND RTAI."
 #endif
 
 #define RTAI_NR_IRQS  IPIPE_NR_IRQS
@@ -662,11 +670,13 @@ static int hal_intercept_syscall(struct pt_regs *regs)
 {
 	if (likely(regs->LINUX_SYSCALL_NR >= RTAI_SYSCALL_NR)) {
 		unsigned long srq = regs->LINUX_SYSCALL_REG1;
+		long long retval;
 		IF_IS_A_USI_SRQ_CALL_IT(srq, regs->LINUX_SYSCALL_REG2, (long long *)regs->LINUX_SYSCALL_REG3, regs->LINUX_SYSCALL_FLAGS, 1);
+		retval = rtai_usrq_dispatcher(srq, regs->LINUX_SYSCALL_REG2);
 #ifdef CONFIG_RTAI_USE_STACK_ARGS
-		*((long long *)regs->LINUX_SYSCALL_REG3) = rtai_usrq_dispatcher(srq, regs->LINUX_SYSCALL_REG2);
+		*((long long *)regs->LINUX_SYSCALL_REG3) = retval;
 #else
-		rt_put_user(rtai_usrq_dispatcher(srq, regs->LINUX_SYSCALL_REG2), (long long *)regs->LINUX_SYSCALL_REG3);
+		rt_put_user(retval, (long long *)regs->LINUX_SYSCALL_REG3);
 #endif
 		hal_test_and_fast_flush_pipeline();
 	}
@@ -890,8 +900,10 @@ int __rtai_hal_init (void)
 
 	printk("SYSINFO - # CPUs: %d, TIMER NAME: '%s', TIMER IRQ: %d, TIMER FREQ: %lu, CLOCK NAME: '%s', CLOCK FREQ: %lu, CPU FREQ: %llu, LINUX TIMER IRQ: %d.\n", sysinfo.sys_nr_cpus, ipipe_timer_name(), rtai_tunables.timer_irq, rtai_tunables.timer_freq, ipipe_clock_name(), rtai_tunables.clock_freq, sysinfo.sys_cpu_freq, __ipipe_hrtimer_irq); 
 
-#ifndef CONFIG_RTAI_USE_STACK_ARGS
-	printk("\nREMARK: RTAI WILL NOT ACCESS USER SPACE ARGS ITS WAY.\n\n");
+#ifdef CONFIG_RTAI_USE_STACK_ARGS
+	printk("\nREMARK: RTAI WILL ACCESS USER SPACE ON STACKS ARGS ITS WAY.\n\n");
+#else
+	printk("\nREMARK: RTAI WILL NOT ACCESS USER SPACE ON STACKS ARGS ITS WAY.\n\n");
 #endif
 	return 0;
 }

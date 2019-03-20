@@ -72,7 +72,7 @@ static inline double kf_lat_eval(long period)
 		if (!rt_task_wait_period()) {
 			y = (rt_rdtsc() - resume_time);
 		} else {
-			y = period;
+			y = xe;
 		}
 		if (y < xm) xm = y;
 #if !HINF

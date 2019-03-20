@@ -17,6 +17,7 @@
  *
  */
 
+
 #include <linux/module.h>
 #include <linux/init.h>
 #include <linux/kernel.h>
@@ -52,15 +53,6 @@ MODULE_PARM_DESC(avrgtime, "Averages are calculated for <avrgtime (s)> runs (def
 int use_fpu = 0;
 RTAI_MODULE_PARM(use_fpu, int);
 MODULE_PARM_DESC(use_fpu, "do we want to use the FPU? (default: 0)");
-
-int start_timer = 1;
-RTAI_MODULE_PARM(start_timer, int);
-MODULE_PARM_DESC(start_timer,
-		 "declares if the timer should be started or not (default: 1)");
-
-int timer_mode = 0;
-RTAI_MODULE_PARM(timer_mode, int);
-MODULE_PARM_DESC(timer_mode, "timer running mode: 0-oneshot, 1-periodic");
 
 #define DEBUG_FIFO 1
 #define TIMER_TO_CPU 3		// < 0  || > 1 to maintain a symmetric processed timer.
@@ -111,7 +103,6 @@ void fun(long thread)
 	int min_diff = 0;
 	int max_diff = 0;
 	int warmedup;
-	RTIME t, svt;
 
 	rtf_put(DEBUG_FIFO, &period, sizeof(period));
 	rtf_put(DEBUG_FIFO, &avrgtime, sizeof(avrgtime));
@@ -124,7 +115,6 @@ void fun(long thread)
 	}
 #endif
 
-	svt = rt_get_cpu_time_ns();
 	warmedup = samp.ovrn = 0;
 	while (1) {
 
@@ -138,18 +128,10 @@ void fun(long thread)
 			expected += period_counts;
 
 			if (!rt_task_wait_period()) {
-				if (timer_mode) {
-					diff = (int) ((t = rt_get_cpu_time_ns()) - svt - period);
-					svt = t;
-				} else {
-					diff = (int) count2nano(rt_get_time() - expected);
-				}
+				diff = (int) count2nano(rt_get_time() - expected);
 			} else {
 				samp.ovrn++;
 				diff = 0;
-				if (timer_mode) {
-					svt = rt_get_cpu_time_ns();
-				}
 			}
 
 			if (diff < min_diff) { min_diff = diff; }
@@ -197,18 +179,7 @@ static int __latency_init(void)
 		RUN_ON_CPUS
 	);
 
-	/* Test if we have to start the timer                                */
-	if (start_timer) {
-		if (timer_mode) {
-			rt_set_periodic_mode();
-		} else {
-			rt_set_oneshot_mode();
-		}
-//		rt_assign_irq_to_cpu(TIMER_8254_IRQ, TIMER_TO_CPU);
-		period_counts = start_rt_timer(nano2count(period));
-	} else {
-		period_counts = nano2count(period);
-	}
+	period_counts = nano2count(period);
 
 	loops = ((1000000000*avrgtime)/period)/ECHOSPEED;
 
@@ -226,11 +197,6 @@ static void
 __latency_exit(void)
 {
 	int cpuid;
-
-	/* If we started the timer we have to revert this now. */
-	if (start_timer) {
-		stop_rt_timer();
-	}
 
 	/* Now delete our task and remove the FIFO. */
 	rt_task_delete(&thread);

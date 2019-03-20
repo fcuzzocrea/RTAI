@@ -16,6 +16,7 @@
  *
  */
 
+
 #include <linux/kernel.h>
 #include <linux/module.h>
 #include <linux/init.h>
@@ -31,11 +32,12 @@ MODULE_LICENSE("GPL");
 
 //#define DISTRIBUTE
 #define SEM_TYPE (CNT_SEM | FIFO_Q)
+#define NTASKS 10
 
-static int ntasks = 10;
+static int ntasks = NTASKS;
 static int loops  = 2000;
 
-static RT_TASK **thread, *task;
+static RT_TASK *thread[NTASKS], *task;
 
 static SEM sem;
 
@@ -47,7 +49,7 @@ static void pend_task(long t)
 	tmsk = 1 << t%2;
 	t = t/2;
 	thread[t] = rt_thread_init(0xcacca + t, 0, 1, SCHED_FIFO, tmsk);
-	while(1) {
+	while(change < 3) {
 		switch (change) {
 			case 0:
 				rt_task_suspend(thread[t]);
@@ -58,12 +60,11 @@ static void pend_task(long t)
 			case 2:
 				rt_return(rt_receive(NULL, &msg), 0);
 				break;
-			case 3:
-				rt_make_soft_real_time(thread[t]);
-				return;
 		}
 	}
 	rt_make_soft_real_time(thread[t]);
+	thread[t] = NULL;
+	return;
 }
 
 static void sched_task(long id) 
@@ -129,6 +130,8 @@ static void sched_task(long id)
 		rt_rpc(thread[k], 0, &msg);
 	}
 	rt_make_soft_real_time(task);
+	task = NULL;
+	return;
 }
 
 static int __switches_init(void)
@@ -137,7 +140,6 @@ static int __switches_init(void)
 
 	rt_typed_sem_init(&sem, 1, SEM_TYPE);
 	printk("\nWait for it ...\n");
-        thread = (void *)kmalloc(ntasks*sizeof(RT_TASK *), GFP_KERNEL);
 	for (i = 0; i < ntasks; i++) thread[i] = NULL; 
 
 	for (i = 0; i < ntasks; i++) {
@@ -155,9 +157,15 @@ static int __switches_init(void)
 
 static void __switches_exit(void)
 {
+	int i, k;
+	do {
+		for (i = k = 0; i < ntasks; i++) {
+			if (!thread[i]) k++;
+		}
+		msleep(10);
+	} while (k != ntasks && task);
+
 	rt_sem_delete(&sem);
-	stop_rt_timer();
-        kfree(thread);
 }
 
 module_init(__switches_init);

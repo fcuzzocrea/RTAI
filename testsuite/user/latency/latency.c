@@ -34,7 +34,6 @@ License along with this library; if not, see <http://www.gnu.org/licenses/>.
 #else
 #define PERIOD 100000
 #endif
-#define TIMER_MODE  0
 
 #define ECHOSPEED 1
 
@@ -67,7 +66,6 @@ int main(int argc, char *argv[])
 	int period;
 	int warmedup;
 	int i;
-	RTIME t, svt;
 	RTIME expected, exectime[3];
 	MBX *mbx;
 	RT_TASK *task, *latchk;
@@ -93,16 +91,7 @@ int main(int argc, char *argv[])
 	printf("\n*** latency verification tool with real time hardened user space processes/threads ***\n");
 	printf("***    period = %i (ns),  avrgtime = %i (s)    ***\n\n", PERIOD, AVRGTIME);
 
-	if (argc == 1) {
-		if (TIMER_MODE) {
-			rt_set_periodic_mode();
-		} else {
-			rt_set_oneshot_mode();
-		}
-		period = start_rt_timer(nano2count(PERIOD));
-	} else {
-		period = nano2count(PERIOD);
-	}
+	period = nano2count(PERIOD);
 
         for(i = 0; i < MAXDIM; i++) {
                 a[i] = b[i] = 3.141592;
@@ -114,7 +103,6 @@ int main(int argc, char *argv[])
 	rt_make_hard_real_time();
 	rt_task_make_periodic(task, expected = rt_get_tscnt() + 10*period, period);
 
-	svt = rt_get_cpu_time_ns();
 	warmedup = samp.ovrn = i = 0;
 	while (!end) {
 		min_diff = 1000000000;
@@ -125,18 +113,10 @@ int main(int argc, char *argv[])
 			expected += period;
 
 			if (!rt_task_wait_period()) {
-				if (TIMER_MODE) {
-					diff = (int) ((t = rt_get_cpu_time_ns()) - svt - PERIOD);
-					svt = t;
-				} else {
-					diff = (int) count2nano(rt_get_tscnt() - expected);
-				}
+				diff = (int) count2nano(rt_get_tscnt() - expected);
 			} else {
 				samp.ovrn++;
 				diff = 0;
-				if (TIMER_MODE) {
-					svt = rt_get_cpu_time_ns();
-				}
 			}
 			if (diff < min_diff) {
 				min_diff = diff;
@@ -163,10 +143,8 @@ int main(int argc, char *argv[])
 	while (rt_get_adr(nam2num("LATCHK"))) {
 		rt_sleep(nano2count(1000000));
 	}
+
 	rt_make_soft_real_time();
-	if (argc == 1) {
-		stop_rt_timer();	
-	}
 	rt_get_exectime(task, exectime);
 	if (exectime[1] && exectime[2]) {
 		printf("\n>>> S = %g, EXECTIME = %G\n", s, (double)exectime[0]/(double)(exectime[2] - exectime[1]));

@@ -15,7 +15,7 @@ AC_INIT(rtai,5.1,rtai@rtai.org)
 
 CONFIG_RTAI_VERSION_MAJOR=5
 CONFIG_RTAI_VERSION_MINOR=0
-CONFIG_RTAI_REVISION_LEVEL=1
+CONFIG_RTAI_REVISION_LEVEL=2
 
 AC_CONFIG_HEADERS(rtai_config.h)
 AC_CONFIG_AUX_DIR(base/config/autoconf)
@@ -728,6 +728,15 @@ AC_ARG_ENABLE(long-timed-lists,
 	*) unset CONFIG_RTAI_LONG_TIMED_LIST;;
 	esac])
 AC_MSG_RESULT(${CONFIG_RTAI_LONG_TIMED_LIST:-no})
+
+AC_MSG_CHECKING(for using RTAI way for user-kernel space on stack args exchange)
+AC_ARG_ENABLE(use-stack-args,
+	[ --enable-use-stack-args       Keep using RTAI way for user-kernel space on stack args exchange],
+	[case "$enableval" in
+	y | yes) CONFIG_RTAI_USE_STACK_ARGS=y ;;
+	*) unset CONFIG_RTAI_USE_STACK_ARGS;;
+	esac])
+AC_MSG_RESULT(${CONFIG_RTAI_USE_STACK_ARGS:-no})
 
 AC_MSG_CHECKING(for latency self calibration metrics)
 AC_ARG_ENABLE(latency-self-calibration-metrics,
@@ -1588,6 +1597,7 @@ dnl test x$CONFIG_RTAI_LEDS = xy && AC_DEFINE(CONFIG_RTAI_LEDS_BUILTIN,1,[Kconfi
 test x$CONFIG_RTAI_SCHED_ISR_LOCK = xy && AC_DEFINE(CONFIG_RTAI_SCHED_ISR_LOCK,1,[Kconfig])
 AC_DEFINE_UNQUOTED(CONFIG_RTAI_RTC_FREQ,$CONFIG_RTAI_RTC_FREQ,[Kconfig])
 test x$CONFIG_RTAI_LONG_TIMED_LIST = xy && AC_DEFINE(CONFIG_RTAI_LONG_TIMED_LIST,1,[Kconfig])
+test x$CONFIG_RTAI_USE_STACK_ARGS = xy && AC_DEFINE(CONFIG_RTAI_USE_STACK_ARGS,1,[Kconfig])
 AC_DEFINE_UNQUOTED(CONFIG_RTAI_SCHED_8254_LATENCY,$CONFIG_RTAI_SCHED_8254_LATENCY,[Kconfig])
 AC_DEFINE_UNQUOTED(CONFIG_RTAI_LATENCY_SELF_CALIBRATION_METRICS,$CONFIG_RTAI_LATENCY_SELF_CALIBRATION_METRICS,[Kconfig])
 AC_DEFINE_UNQUOTED(CONFIG_RTAI_LATENCY_SELF_CALIBRATION_FREQ,$CONFIG_RTAI_LATENCY_SELF_CALIBRATION_FREQ,[Kconfig])
@@ -2138,6 +2148,7 @@ AC_CONFIG_FILES([ \
         base/arch/x86/hal/GNUmakefile \
         base/arch/x86/calibration/GNUmakefile \
 	base/arch/x86/calibration/setsmi \
+	base/arch/x86/calibration/smicnt \
         base/include/asm-x86/GNUmakefile \
         base/arch/arm/GNUmakefile \
 	base/arch/arm/hal/GNUmakefile \

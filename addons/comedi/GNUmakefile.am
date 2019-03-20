@@ -66,4 +66,4 @@ libkcomedilxrt_a_SOURCES = kcomedi.c
 
 libkcomedilxrt_a_AR = $(CROSS_COMPILE)ar cru
 
-EXTRA_DIST = Makefile.kbuild patchlinuxcomedi
+EXTRA_DIST = Makefile.kbuild

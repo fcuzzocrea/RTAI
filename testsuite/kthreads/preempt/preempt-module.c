@@ -137,7 +137,6 @@ static void fun(long dumy)
 
 static int __preempt_init(void)
 {
-	start_rt_timer(0);
 	period = nano2count(PERIOD);
 	rtf_create(FIFO, 1000);
 	expected = rt_get_time() + nano2count(100000000);
@@ -152,7 +151,6 @@ static void __preempt_exit(void)
 {
 	endme = 3;
 	while(endme) msleep(10);
-	stop_rt_timer();	
 	rtf_destroy(FIFO);
 	printk("END OF PREEMPT TEST\n\n");
 }

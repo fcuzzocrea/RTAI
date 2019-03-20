@@ -117,7 +117,6 @@ void fun(long dummy)
 static int __latency_init(void)
 {
 	rtf_create(ECHO_FIFO, 1000);
-	start_rt_timer(0);
 	rt_thread_create(fun, 0, 0);
 	return 0;
 }
@@ -127,7 +126,6 @@ static void __latency_exit(void)
 {
 	endme = 1;
 	while(endme) msleep(10);
-	stop_rt_timer();
 	rtf_destroy(ECHO_FIFO);
 }
 

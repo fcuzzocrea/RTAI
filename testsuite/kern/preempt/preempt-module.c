@@ -16,6 +16,7 @@
  *
  */
 
+
 #include <linux/kernel.h>
 #include <linux/module.h>
 #include <linux/init.h>
@@ -26,8 +27,6 @@
 #include <rtai_fifos.h>
 
 MODULE_LICENSE("GPL");
-
-#define ONESHOT_MODE
 
 #define FIFO 0
 
@@ -94,28 +93,20 @@ static void fun(long thread) {
 	int average;
 	int min_diff;
 	int max_diff;
-	RTIME svt, t;
 
-	t = 0;
 	min_diff = 1000000000;
 	max_diff = -1000000000;
 	while (1) {
 		unsigned long flags;
 		average = 0;
 
-		svt = rt_get_cpu_time_ns();
 		for (skip = 0; skip < NAVRG; skip++) {
 			cpu_used[rtai_cpuid()]++;
 			expected += period;
 			rt_task_wait_period();
 
 			rt_global_save_flags(&flags);
-#ifndef ONESHOT_MODE
-			diff = (int) ((t = rt_get_cpu_time_ns()) - svt - TICK_TIME);
-			svt = t;
-#else
 			diff = (int) count2nano(rt_get_time() - expected);
-#endif
 			if (diff < min_diff) {
 				min_diff = diff;
 			}
@@ -142,10 +133,7 @@ static int __preempt_init(void)
 	rt_task_init_cpuid(&thread, fun, 0, 5000, 0, USE_FPU, 0, 0);
 	rt_task_init_cpuid(&Fast_Task, Fast_Thread, 0, 5000, 1, 0, 0, 0);
 	rt_task_init_cpuid(&Slow_Task, Slow_Thread, 0, 5000, 2, 0, 0, 0);
-#ifdef ONESHOT_MODE
-	rt_set_oneshot_mode();
-#endif
-	period = start_rt_timer(nano2count(TICK_TIME));
+	period = nano2count(TICK_TIME);
 	expected = start = rt_get_time() + 100*period;
 	rt_task_make_periodic(&thread, start, period);
 	rt_task_make_periodic(&Fast_Task, start, FASTMUL*period);
@@ -158,7 +146,6 @@ static void __preempt_exit(void)
 {
 	int cpuid;
 
-	stop_rt_timer();	
 	rt_task_delete(&thread);
 	rt_task_delete(&Slow_Task);
 	rt_task_delete(&Fast_Task);

@@ -28,6 +28,7 @@
 #include <linux/module.h>
 #include <linux/version.h>
 #include <linux/delay.h>
+#include <linux/sched.h>
 #include <asm/uaccess.h>
 
 #include <rtai_schedcore.h>
@@ -57,9 +58,9 @@ MODULE_LICENSE("GPL");
 #endif
 
 #ifdef CONFIG_RTAI_USE_STACK_ARGS
-#define USE_STACK_ARGS 1
+#define RTAI_USE_STACK_ARGS 1
 #else
-#define USE_STACK_ARGS 0
+#define RTAI_USE_STACK_ARGS 0
 #endif
 
 #define KSPACE(adr)  ((unsigned long)adr > PAGE_OFFSET)
@@ -184,7 +185,7 @@ static RTAI_SYSCALL_MODE int RT_comedi_command(void *dev, struct cmds_ofstlens *
 {
 	int retval;
 	comedi_cmd cmd[2]; // 2 instances, a safe room for 64 getting into 32
-	if (KSPACE(ofstlens) || USE_STACK_ARGS) {
+	if (KSPACE(ofstlens) || RTAI_USE_STACK_ARGS) {
 		memcpy(cmd, (void *)ofstlens + ofstlens->cmd_ofst, ofstlens->cmd_len);
 	} else {
 		rt_copy_from_user(cmd, (void *)ofstlens + ofstlens->cmd_ofst, ofstlens->cmd_len);
@@ -219,7 +220,7 @@ static inline int __rt_comedi_wait(RTIME until, unsigned int *cbmask, int waitmo
 			default: // useless, just to avoid compiler warnings
 				return RTE_PERM;
 		}
-		if (KSPACE(cbmask) || USE_STACK_ARGS) {
+		if (KSPACE(cbmask) || RTAI_USE_STACK_ARGS) {
 			cbmask[0] = (unsigned int)task->resumsg;
 		} else {
 			rt_put_user((unsigned int)task->resumsg, cbmask);
@@ -265,7 +266,7 @@ RTAI_SYSCALL_MODE long rt_comedi_command_data_read(void *dev, unsigned int subde
 	RTAI_COMEDI_LOCK(dev, subdev);
 	ofstf = ofsti = comedi_get_buffer_offset(dev, subdev);
 	for (i = 0; i < nchans; i++) {
-		if (kspace || USE_STACK_ARGS) {
+		if (kspace || RTAI_USE_STACK_ARGS) {
 			data[i] = *(aibuf + ofstf % size);
 		} else {
 			rt_put_user(*(aibuf + ofstf % size), &data[i]);
@@ -325,7 +326,7 @@ static inline int __rt_comedi_command_data_wread(void *dev, unsigned int subdev,
 			return RTE_PERM;
 	}
 	if (!retval && (mask & cbmask)) {
-		if (kspace || USE_STACK_ARGS) {
+		if (kspace || RTAI_USE_STACK_ARGS) {
 			cbmaskarg[0] = cbmask;
 		} else {
 			rt_put_user(cbmask, cbmaskarg);
@@ -385,7 +386,7 @@ RTAI_SYSCALL_MODE long rt_comedi_command_data_write(void *dev, unsigned int subd
 	RTAI_COMEDI_LOCK(dev, subdev);
 	ofstf = ofsti = (comedi_get_buffer_offset(dev, subdev) + avbs) % size;
 	for (i = 0; i < nchans; i++) {
-		if (kspace || USE_STACK_ARGS) {
+		if (kspace || RTAI_USE_STACK_ARGS) {
 			*(aobuf + ofstf % size) = data[i];
 		} else {
 			rt_get_user(*(aobuf + ofstf % size), &data[i]);
@@ -500,7 +501,7 @@ RTAI_SYSCALL_MODE char *rt_comedi_get_driver_name(void *dev, char *name)
 {
 	const char *kname;
 	if ((kname = comedi_get_driver_name((void *)dev)) != 0) {
-		if (KSPACE(name)  || USE_STACK_ARGS) {
+		if (KSPACE(name)  || RTAI_USE_STACK_ARGS) {
 			strncpy(name, kname, COMEDI_NAMELEN);
 		} else {
 			rt_copy_to_user(name, kname, strnlen(kname, COMEDI_NAMELEN));
@@ -514,7 +515,7 @@ RTAI_SYSCALL_MODE char *rt_comedi_get_board_name(void *dev, char *name)
 {
 	const char *kname;
 	if ((kname = comedi_get_board_name((void *)dev)) != 0) {
-		if (KSPACE(name) || USE_STACK_ARGS) {
+		if (KSPACE(name) || RTAI_USE_STACK_ARGS) {
 			strncpy(name, kname, COMEDI_NAMELEN);
 		} else {
 			rt_copy_to_user(name, kname, strnlen(kname, COMEDI_NAMELEN));
@@ -588,9 +589,9 @@ RTAI_SYSCALL_MODE int rt_comedi_do_insnlist(void *dev, comedi_insnlist *ilist)
 	int i, n;
 #ifdef CONFIG_RTAI_USE_STACK_ARGS
 	for (i = 0; i < ilist->n_insns; i ++) {
-		RTAI_COMEDI_LOCK(dev, insn->subdev);
+		RTAI_COMEDI_LOCK(dev, ilist->insns[i].subdev);
 		n = comedi_do_insn(dev, &ilist->insns[i]);
-		RTAI_COMEDI_UNLOCK(dev, insn->subdev);
+		RTAI_COMEDI_UNLOCK(dev, ilist->insns[i].subdev);
 		if (n < 0) break;
 	}
 #else
@@ -625,7 +626,7 @@ RTAI_SYSCALL_MODE int RT_comedi_do_insnlist(void *dev, long n_insns, struct insn
 	comedi_insn insn[2]; // 2 instances, a safe room for 64 getting into 32
 	for (i = 0; i < n_insns; i ++) {
 
-		if (KSPACE(ofstlens) || USE_STACK_ARGS) {
+		if (KSPACE(ofstlens) || RTAI_USE_STACK_ARGS) {
 			memcpy(insn, insns, ofstlens->insn_len);	
 		} else {
 			rt_copy_from_user(insn, insns, ofstlens->insn_len);	

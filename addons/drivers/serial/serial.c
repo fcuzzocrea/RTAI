@@ -21,6 +21,10 @@
  */
 
 
+/* Nov. 2002, Rich Walker <rw@shadow.org.uk>, fixed support for UART 16450   */
+/* Jan. 2003, Richard Brunelle <rbrunelle@envitech.com>, fixed ISR hard flow */
+/* Apr. 2008, Renato Castello <zx81@gmx.net>, support for shared interrupts  */
+
 #include <linux/module.h>
 #include <linux/init.h>
 #include <linux/kernel.h>
@@ -29,9 +33,9 @@
 #include <linux/version.h>
 #include <linux/spinlock.h>
 #include <linux/slab.h>
+#include <linux/sched.h>
 
 #include <asm/uaccess.h> 
-//#include <asm/system.h>
 #include <asm/io.h>
 
 #include <rtai_lxrt.h>
@@ -382,7 +386,7 @@ static inline int mbxevdrp(struct rt_spmbx *mbx, char **msg, int msg_size)
 		if (kspace) {
 			memcpy(*msg, mbx->bufadr + fbyte, tocpy);
 		} else {
-			rt_copy_from_user(*msg, mbx->bufadr + mbx->fbyte, tocpy);
+			rt_copy_from_user(*msg, mbx->bufadr + fbyte, tocpy);
 		}
 		avbs     -= tocpy;
 		msg_size -= tocpy;

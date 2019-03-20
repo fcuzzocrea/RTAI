@@ -62,3 +62,6 @@
 - If SMI is enabled and latencies are high, often appearing periodic also, use the 
   RTAI tools to monitor and, possibly, fix it.
 
+Finally, I have found it interesting what shown at:
+relacs.sourceforge.net/plugins/rtaicomedi
+

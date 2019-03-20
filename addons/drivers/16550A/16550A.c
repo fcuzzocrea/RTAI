@@ -1197,8 +1197,8 @@ void rt_16550_exit(void)
 			kfree(device[i]);
 		}
 
-	rt_16550_pnp_cleanup();
 	rt_16550_pci_cleanup();
+	rt_16550_pnp_cleanup();
 }
 
 module_init(rt_16550_init);

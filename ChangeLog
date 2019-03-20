@@ -6,15 +6,274 @@
 # but WITHOUT ANY WARRANTY, to the extent permitted by law; without
 # even the implied warranty of MERCHANTABILITY or FITNESS FOR A
 # PARTICULAR PURPOSE.
-2017-07-14 Marco Morandini <marco.morandini@polimi.it>
 
-	* Got rid of rtai-lab/matrixx
 
-2016-05-15 Pierangelo Masarati <pierangelo.masarati@polimi.it>
+2018-11-04 Paolo Mantegazza <mantegazza@aero.polimi.it>
+
+	* addons/drivers/-> serial/serial.c, comedi/comedi-module.c;
+	  base/ipc/-> bits/bits.c, mbx/mbx.c, mq/mq.c, netrpc/netrpc.c,
+	  sem/sem.c, tbx/tbx.c; base/sched/api.c; addons/rtdm/xn: fixed
+	  error dereferencing pointer to incomplete type ‘struct 
+	  task_struct’for Linux >= 4.14.71.
+	* base/ipc/fifos.c: define CURRENT_TIME for Linux >= 4.14.71.
+	* base/arch/x86/hal/hal.c: for Linux >= 4.14.71, include 
+         <linux/sched/types.h> to find param defined in "struct sched_param".
+	* base/include/rtai_shm.h: cast pgd in pud_offset call, to avoid a 
+	  compilation error with Linux >= 4.14.71.
+	* base/sched/sched.c: fix for mmdrop and set_task_state, missing for
+	  Linux >= 4.14.71.
+	* base/include/asm/rtai_lxrt.h: lazy fpu has gone, any form of fpu
+	  counter used nomore; it is likely that version from 4.4.162 onward
+	  inheredited the same behaviour.
+	* base/include/asm/rtai_fpu.h: use Linux fpregs_activate, always; in
+	  enable_fpu, code our own clts(), Linux may have it nomore.
+
+2018-05-21 Paolo Mantegazza <mantegazza@aero.polimi.it>
+
+	* base/arch/x86/Kconfig: updated to the latest rtai_math state, glibc
+	  used nomore.
+	* base/math/README.KLIBM: updated to the illustrate the latest set up.
+	* base/math/libm.c: remove glibc support; fix ccosh and accosh bug in
+	  MUSL; add libm_cmplx.hc for possible missing 32 bits complex support
+	  uclibc-ng.
+	* base/math/libm_cmplx.hc.gsl: added, possible support for missing 32 bits 
+	  complex uclib-ng.
+
+2018-05-03 Paolo Mantegazza <mantegazza@aero.polimi.it>
+
+	* base/sched/sched.c: expand infos when echoing of Linuxx syscalls/traps
+	  is enabled in hard real time, extending it to the use of linux syscalls
+	  server.
+
+2018-04-06 Paolo Mantegazza <mantegazza@aero.polimi.it>
+
+	* base/arch/x86/hal/hal.c: abort compilation if no TSC is configured.
+
+2018-02-17 Paolo Mantegazza <mantegazza@aero.polimi.it>
+
+	* base/math/libm.c, README.KLIBM: added full suport and documentation
+	  for the use of uClibg-ng complex functions
+
+2018-02-15 Paolo Mantegazza <mantegazza@aero.polimi.it>
+
+	* base/arch/x86/Kconfig: inform that uclibc-ng is used, in place if
+	  uclibc.
+
+2018-02-14 Paolo Mantegazza <mantegazza@aero.polimi.it>
+
+	* base/math/README.KLIBM: updated instructions to support uClibc-ng,
+	  in place of uClib.
+
+2018-02-08 Paolo Mantegazza <mantegazza@aero.polimi.it>
+
+	* base/math/libm.c: avoid MUSL caring of complex functions if
+	  the complex option is not configured in RTAI.
+
+2018-02-05 Pierangelo Masarati <pierangelo.masarati@polimi.it>
 
 	* RTAI 5.1
 
-2016-05-15 Pierangelo Masarati <pierangelo.masarati@polimi.it>
+2018-02-02 Paolo Mantegazza <mantegazza@aero.polimi.it>
+
+	* base/math/libm.c: added own missing "void __stack_chk_fail(void)",
+	  who does need it has still to be ascertained.
+
+2018-01-16 Pierangelo Masarati <pierangelo.masarati@polimi.it>
+
+	* RTAI 5.1-test2
+
+2017-12-27 Tom (tom@shngai) <ventureg@163.com>
+
+	* addons/serial/seria.c: do not mess mbx->fbyte in mbxevdrp, use fbyte.
+
+2017-12-27 Paolo Mantegazza <mantegazza@aero.polimi.it>
+	   (pointed out by Duane Jeffery <duanej@aurorascientific.com>)
+
+	* base/include/rtai_posix.h: call the specific kernel space function
+	  to support timer create.
+	* base/include/rtai_tasklets.h: declare the specific kernel space
+	  function to support timer create.
+	* base/tasklets/tasklets.c: recover the missing specific kernel space
+	  function to support timer create
+	  
+2017-11-22 Pierangelo Masarati <pierangelo.masarati@polimi.it>
+
+	* RTAI 5.1-test1
+
+2017-11-22 Paolo Mantegazza <mantegazza@aero.polimi.it>
+
+	* base/sched/sched.c and base/arch/x86/calibration/calibrate.c: 
+	  iif rt_wait_period returns with an error in the calibrating tasks,
+	  set the measured latency to the available estimate.
+
+2017-11-21 Paolo Mantegazza <mantegazza@aero.polimi.it>
+
+	* base/sched/sched.c: always use rtai_simuldiv for calibrating 
+	  latencies in kernel space.
+
+2017-11-19 Tom (tom@shngai) <ventureg@163.com>
+
+	* base/include/asm-x86/rtai_lxrt_32.h and rtai_lxrt_64.h:
+	* rtai-lab/matlab/rtmain.c, rtai-lab/matrixx/mxp.c,
+	  rtai-lab/scicoslab/rtmain44.c and rtai-lab/scilab/rtmain.c:
+	  fixed set_double for both 32 and 64 bits architectures; the 
+	  previous version was Ok only for 32 ones.
+
+2017-11-14 Paolo Mantegazza <mantegazza@aero.polimi.it>
+
+	* base/include/asm-x86/rtai_lxrt_32.h and rtai_lxrt_64.h:
+	  remove their common code of rt_strncpy_from_user, fix
+	  it to care for count and put it in the common independent
+	  rtai_lxrt.h.
+	* base/include/asm-x86/rtai_lxrt.h: see above.
+
+2017-11-13 Paolo Mantegazza <mantegazza@aero.polimi.it>
+
+	* base/ipc/msg/msg.c: fixed a missing rt_strncpy_from_user in 
+	  rt_Name_locate.
+	* base/include/asm-x86/rtai_lxrt_32.h and rtai_lxrt_64.h: 
+	  provide and alternative version of __do_strncpy_from_user, 
+	  the existing one does not work on an Intel Ix-6xxx, likely because
+	  of Intel MPX; the change is formally controlled by an ifdef 
+	  on the configuration parameter CONFIG_RTAI_USE_STACK_ARGS.
+	* base/sched/sys.c: comment out, so to be recallable, forcing the end 
+	* base/sched/api.c: conditioned rt_exec_linux_syscall code according
+	  to param CONFIG_RTAI_USE_STACK_ARGS.
+
+2017-11-12 Paolo Mantegazza <mantegazza@aero.polimi.it>
+
+	* base/sched/sched.c and
+	* base/arch/x86/hal/hal.c: undef CONFIG_TRACEPOINTS, to avoid
+	  a missing floating point tracing symbol.
+	* base/include/asm-x86/rtai_fpu.h: prepared to relax undef 
+	  CONFIG_TRACEPOINTS.
+
+2017-11-09 Paolo Mantegazza <mantegazza@aero.polimi.it>
+
+	* base/tasklets/taskelets.c: added specific functions to support
+	  posix timers.
+	* base/include/rtai_posix.h: added specific functions to support
+	  posix timers.
+	* base/include/asm-x86/rtai_usi.h: fixed to work without exploting
+	  user-kernel arg passing through the stack.
+
+2017-11-07 Paolo Mantegazza <mantegazza@aero.polimi.it>
+
+	* base/ipc/netrpc/netrpc.c: fixed args passing from-to user space,
+	  by using standrd copy from-to user space, so to avoid troubles
+	  on any hardware not allowing the simpler memcpy when args are
+	  on the stack.
+
+2017-11-05 Paolo Mantegazza <mantegazza@aero.polimi.it>
+
+	* base/sched/sched.c: restructured the coding of intercept_syscall, 
+	  fast and normal,  to avoid possible compiler issues; return value 
+	  for the unblocked case in lxrt_intercept_syscall assigned consistently 
+	  with the possibility of directly passing, or not passing, call args 
+	  on the stack.
+
+2017-11-05 Paolo Mantegazza <mantegazza@aero.polimi.it>
+
+	* base/arch/x86/calibration/smi-module.c: added a check of the 
+	  smi count.
+
+2017-11-04 Paolo Mantegazza <mantegazza@aero.polimi.it>
+
+	* base/arch/x86/calibration/smi-module.c and README.SMI: added the
+          possibility of using setsmi to provide an SMI chipset, not yet 
+	  listed in the module and explained its use in README.SMI
+	* base/arch/x86/calibration/calibrate.h and calibration_helper.c:
+	  rewritten to support SMI control for chips not yet listed in 
+	  smi_module.c.
+
+2017-10-25 Paolo Mantegazza <mantegazza@aero.polimi.it>
+
+	* testsuite/switches/switches-module.c: be sure all threads ended
+	  before exiting the module.
+
+2017-10-21 Paolo Mantegazza <mantegazza@aero.polimi.it>
+
+	* base/ipc/netrpc/netrpc.c: instrumented to let any user easily 
+	  check if memcpy is properly used just for kernel to kernel 
+	  copies, within her/his own application.
+
+2017-10-21 Paolo Mantegazza <mantegazza@aero.polimi.it>
+
+	* base/ipc/netrpc/netrpc.c: copy _rt_net_rpc call args accordingly
+	  to the calling space (signalled by Tom (tom@shangai) <ventureg@163.com>,
+	  while using qrtailab).
+
+2017-10-21 Tom (tom@shangai) <ventureg@163.com>
+
+	* base/arch/x86/calibration/smispv.c: check if an SMI device has 
+	  been found.
+
+2017-10-20 Paolo Mantegazza <mantegazza@aero.polimi.it>
+
+	* base/arch/x86/calibration/smi-module.c: use an array of string 
+	  pointer reminders in place of a switch.
+
+2017-10-19 Paolo Mantegazza <mantegazza@aero.polimi.it>
+
+	* base/arch/x86/calibration/smi-module.c: fixed to comply with what
+	  stated in README.SMI, extended printout to dmsg what has been
+	  done, some cleanup, added a few chipsets more.
+
+2017-06-14 Paolo Mantegazza <mantegazza@aero.polimi.it>
+
+	* addons/drivers/16550A/16550A_pci.h: Do not use the once 
+	  DEFINE_PCI_DEVICE_TABLE, eventually disappeared from the most
+	  recent kernels used by RTAI.
+
+2017-05-29 Paolo Mantegazza <mantegazza@aero.polimi.it>
+
+	* addons/comedi/rtai_comedi.h, kcomedi-module.c: fixes to comply 
+	  with the way RTAI syscall args are exchanged between kernel and
+	  user space,
+	* addons/drivers/serial/rtai_serial.h, serial.c: fixes to comply 
+	  with the way RTAI syscall args are exchanged between kernel and
+	  user space,
+	* base/include/rtai_fifos.h and base/ipc/fifos/fifos.c: fixes to
+	  comply with the way RTAI syscall args are exchanged between kernel
+	  and user space,
+
+2017-05-24 Aßfalg Josef <ja@paul.eu>
+	   Paolo Mantegazza <mantegazza@aero.polimi.it>
+
+	* base/arch/x86/Kconfig: added configure param RTAI_USE_STACK_ARGS, 
+	  to be used to let the user choose how RTAI syscall args are 
+	  exchanged between kernel and user space.
+	* base/arch/x86/hal/hal.c: fixes to comply with the way RTAI syscall
+	  args are exchanged between kernel and user space; print a message
+	  showing the way parameters will be exchanged.
+	* base/include/rtai_lxrt.h: calls for task infos and exectime made to
+	  comply with the way args are exchanged between kernel and user space,
+	* base/sched/sched.c, lxrt.c, api.c: fixes to comply with the way RTAI
+	  syscall args are exchanged between kernel and user space,
+	* base/ipc/shm/shm.c: fixes to comply with the way RTAI syscall args
+	  are exchanged between kernel and user space,
+
+2017-05-16 Paolo Mantegazza <mantegazza@aero.polimi.it>
+
+	* addons/rtdm/xn.h: keep rtdm unchanged, as far as possible, by
+	  providing a couple of no more available patch legacy functions.
+
+2017-05-15 Paolo Mantegazza <mantegazza@aero.polimi.it>
+
+	* base/include/rtai_netrpc.h: to avoid troubles with linux > 4.1.18
+	  set a safe number of MAX SOCKS and STUBS; a newer version of netrpc
+	  will allow more with linux > 4.1.18 also.
+	* base/ipc/netrpc.c: refurbished version, supporting a large number
+	  of SOCKS and STUBS also with linux > 4.1.18; it works as the former
+	  release for any linux version, but needs a change to the module
+	  for making it effective the supoort of a larger number of SOCKS
+	  and STUBS with linux > 4.1.18.
+
+2017-05-15 Paolo Mantegazza <mantegazza@aero.polimi.it>
+
+	* addons/rtdm/xn.h: define SPIN_LOCK_UNLOCKED, if it is not defined.
+
+2017-05-15 Pierangelo Masarati <pierangelo.masarati@polimi.it>
 
 	* README.CONF_RMRKS: added missing file
 

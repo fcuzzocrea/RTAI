@@ -130,13 +130,19 @@ int ComediDev_CounterInUse[MAX_COMEDI_DEVICES][MAX_COMEDI_COUNTERS] = {{0}};
 
 static void DummySend(void) { }
 
-// this function is hacked from system.h
-static inline void set_double(double *to, double *from)
+static inline int set_double(double *to, double *from)
 {
-  unsigned long l = ((unsigned long *)from)[0];
-  unsigned long h = ((unsigned long *)from)[1];
-  __asm__ __volatile__ (
-			"1: movl (%0), %%eax; movl 4(%0), %%edx; lock; cmpxchg8b (%0); jnz 1b" : : "D"(to), "b"(l), "c"(h) : "ax", "dx", "memory");
+	if (to && from) {
+		if (sizeof(unsigned long) == 8) {
+			to[0] = from[0];
+		} else { /* What below is hacked from /usr/src/linux/include/asm-i386/system.h */
+			unsigned long l = ((unsigned long *)from)[0];
+			unsigned long h = ((unsigned long *)from)[1];
+			__asm__ __volatile__ ("1: movl (%0), %%eax; movl 4(%0), %%edx; lock; cmpxchg8b (%0); jnz 1b" : : "D"(to), "b"(l), "c"(h) : "ax", "dx", "memory");
+		}
+		return 1;
+	}
+	return 0;
 }
 
 static inline void strncpyz(char *dest, const char *src, int n)

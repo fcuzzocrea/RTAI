@@ -324,7 +324,6 @@ int __rt_dev_socket(rtdm_user_info_t *user_info, int protocol_family,
 	ret = -EAFNOSUPPORT;
 	if (!device)
 		goto err_out;
-
 	ret = create_instance(device, &context, &fildes, user_info, nrt_mode);
 	if (ret != 0)
 		goto cleanup_out;

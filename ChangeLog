@@ -8,6 +8,15 @@
 # PARTICULAR PURPOSE.
 
 
+2019-03-22 Paolo Mantegazza <mantegazza@aero.polimi.it>
+
+	* bas/math/libm.c: make available d2str, always.
+
+2019-03-21 Paolo Mantegazza <mantegazza@aero.polimi.it>
+
+	* RTAI public repository <savannah.nongnu.org/projects/rtai> aligned
+	  to its latest in house version.
+
 2018-11-04 Paolo Mantegazza <mantegazza@aero.polimi.it>
 
 	* addons/drivers/-> serial/serial.c, comedi/comedi-module.c;

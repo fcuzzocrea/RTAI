@@ -202,8 +202,6 @@ EXPORT_SYMBOL(__fpclassifyf);
 EXPORT_SYMBOL(__signbit);
 EXPORT_SYMBOL(__signbitf);
 
-#if defined(CONFIG_RTAI_MATH_KCOMPLEX) && (defined(_RTAI_EXPORT_NEWLIB_H) || defined(_RTAI_EXPORT_MUSL_H) || defined(_RTAI_EXPORT_UCLIBC_H))
-
 char *d2str(double d, int dgt, char *str)
 {
 	const int MAXDGT = 17;
@@ -256,6 +254,8 @@ char *d2str(double d, int dgt, char *str)
 	return str;
 }
 EXPORT_SYMBOL(d2str);
+
+#if defined(CONFIG_RTAI_MATH_KCOMPLEX) && (defined(_RTAI_EXPORT_NEWLIB_H) || defined(_RTAI_EXPORT_MUSL_H) || defined(_RTAI_EXPORT_UCLIBC_H))
 
 char *cd2str(complex double cd, int dgt, char *str)
 {
